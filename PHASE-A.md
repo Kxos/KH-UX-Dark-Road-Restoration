@@ -89,13 +89,77 @@ redirigerlo non serve patchare il binario: basta controllare la sorgente da cui 
 legge. Potrebbe risultare più semplice del previsto — o più complicato, se la catena
 passa dall'SDK Square Enix. È la prima cosa da chiarire.
 
-## 5. Prossimi passi
+## 5. Da dove arriva l'host — risolto
 
-1. **Trovare da dove viene l'host.** Seguire i chiamanti di `FUN_007bd5b8` a ritroso
-   fino al punto in cui l'URL viene composto, e capire se la sorgente è l'SDK Bridge o
-   un file di configurazione.
-2. **Estrarre i campi delle tabelle `master::`.** Senza nomi di funzione serve un'altra
-   euristica: raggruppare le funzioni che referenziano molte stringhe snake_case brevi —
-   i deserializzatori rapidjson confrontano ogni chiave con una stringa letterale.
-3. **Scrivere il primo endpoint** (fase B): rispondere all'handshake con
-   `nativeSessionId` e `sharedSecurityKey` scelti da noi.
+Risalita di 3 livelli nel grafo delle chiamate da `FUN_007bd5b8` e `FUN_0082f454`:
+97 funzioni raccolte.
+
+### Il bootstrap consegna l'URL
+
+Il chiamante diretto dell'handshake, **`FUN_007be0d0`**, legge dalla risposta JSON:
+
+```c
+maintenance = json["maintenance"];
+if (maintenance == 0) {              // funzionamento normale
+    url         = json["url"];       // base operativa per le chiamate successive
+    nativeToken = json["nativeToken"];
+    ...
+}
+```
+
+e nella richiesta invia `UUID`, `deviceType`, `nativeToken`.
+
+**Ecco perché l'host non è nel client: è il server a consegnarlo.** Il bootstrap
+risponde con `url`, il client la usa come base per tutto il resto, e la funzione gemella
+`FUN_007bd5b8` estrae da lì `nativeSessionId` e `sharedSecurityKey`.
+
+### L'host del bootstrap è in una libreria impacchettata
+
+L'APK contiene una seconda libreria nativa dal nome offuscato, `lib__57d5__.so`
+(1 MB), con **entropia 7,94 bit/byte**: impacchettata o cifrata. Nessuna stringa utile,
+nessun host. È lì che vive l'SDK Square Enix Bridge, e staticamente non si apre.
+
+Scansione di tutti i 708 file dell'APK: l'unico host Square Enix presente è
+`cache.sqex-bridge.jp` (le news). `psg.`, `/native/` e `native/session` hanno zero
+occorrenze nel binario di gioco.
+
+### Perché è comunque una buona notizia
+
+Non serve recuperare l'host staticamente, perché non serve *patchare* nulla:
+
+1. L'host del bootstrap è già documentato esternamente da `xlash123/khux-re-api`
+   (`psg.sqex-bridge.jp/native/session`), e si conferma empiricamente osservando la
+   risoluzione DNS all'avvio dell'app.
+2. Basta **redirigere quel singolo host** via DNS o `hosts`.
+3. Da lì in poi il controllo è totale: la nostra risposta di bootstrap consegna al
+   client la `url` del nostro server, e la risposta di sessione la `sharedSecurityKey`,
+   cioè la chiave AES dell'intero canale.
+
+**Nessuna patch del binario è necessaria per dirottare il client.** Un redirect DNS e
+due risposte JSON.
+
+## 6. Endpoint già noti
+
+Dalle format string, il sottosistema di chat (`ChatManager`), che usa `%s` come base URL:
+
+```
+%s/user                      %s/chat/message/%d
+%s/user/block                %s/chat/message/%d/%d
+%s/user/block/%s             %s/chat/message/report
+%s/user/chat/%d
+```
+
+Gli endpoint di gioco principali non usano questo schema e non sono enumerabili dalle
+sole stringhe: vanno ricavati dal traffico o da ulteriore analisi.
+
+## 7. Prossimi passi
+
+1. **Fase B — il primo endpoint.** Rispondere al bootstrap con
+   `{maintenance: 0, url: "<nostro server>", nativeToken: …}` e alla sessione con
+   `nativeSessionId` + `sharedSecurityKey` scelti da noi. È il punto in cui il progetto
+   smette di essere analisi e diventa software funzionante.
+2. **Conferma empirica dell'host** del bootstrap: avviare l'app con un DNS sink e
+   osservare la prima risoluzione.
+3. **Campi delle tabelle `master::`.** Senza nomi di funzione serve un'euristica:
+   raggruppare le funzioni che referenziano molte stringhe snake_case brevi — i
+   deserializzatori rapidjson confrontano ogni chiave con una stringa letterale.
