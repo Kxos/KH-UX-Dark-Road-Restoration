@@ -47,7 +47,26 @@ API_PATTERNS = [
 
 # Deserializzatori del master data: il bersaglio della fase C.
 # Nel binario ogni tabella e' una classe master::X con la sua funzione di parsing.
-MASTER_PATTERN = r'master::'
+#
+# Il nome puo' presentarsi in due forme a seconda che il demangler di Ghidra abbia
+# girato: demangolata (master::Medal::...) oppure mangled (_ZN6master5Medal...).
+# Intercettiamo entrambe: dipendere dal demangling e' un rischio che non vale la pena
+# correre su un'analisi da un'ora e mezza.
+MASTER_DEMANGLED = re.compile(r'master::([A-Za-z0-9_]+)')
+MASTER_MANGLED = re.compile(r'N6master(\d+)([A-Za-z0-9_]+)')
+
+
+def master_class_of(name):
+    """Nome della tabella master:: a cui appartiene la funzione, o None."""
+    m = MASTER_DEMANGLED.search(name)
+    if m:
+        return m.group(1)
+    m = MASTER_MANGLED.search(name)
+    if m:
+        length, rest = int(m.group(1)), m.group(2)
+        if len(rest) >= length:
+            return rest[:length]
+    return None
 
 # Rumore da scartare: librerie di terze parti linkate staticamente.
 NOISE_PATTERN = re.compile(
@@ -234,13 +253,9 @@ def analyze_master_tables(funcs, outdir):
     """
     per_class = {}
     for f in funcs:
-        name = display_name(f)
-        if MASTER_PATTERN not in name:
+        cls = master_class_of(display_name(f))
+        if not cls:
             continue
-        m = re.search(r'master::([A-Za-z0-9_]+)', name)
-        if not m:
-            continue
-        cls = m.group(1)
         strs = strings_referenced_by(f)
         # I nomi di campo sono identificatori brevi, tipicamente snake_case.
         fields = [s for s in strs
