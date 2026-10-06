@@ -10,9 +10,9 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 |---|---|---|
 | 1 | Reperimento client e valutazione fattibilità | ✅ completata |
 | 2 | Ricognizione tecnica — architettura, protocollo, schema dati | ✅ completata |
-| A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint da `APIManager` | ⬜ prossima |
+| A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint da `APIManager` | 🔄 in corso |
 | B | Server REST minimo → il client raggiunge la home screen | ⬜ |
-| C | Schema dei campi delle 40 tabelle master | ⬜ |
+| C | Schema dei campi delle 54 tabelle master | ⬜ |
 | D | Popolamento master data, quest e combattimento single-player | ⬜ |
 | E | Photon self-hosted per Union Cross / raid / PvP | ⬜ |
 
@@ -24,8 +24,9 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 - **I simboli C++ non sono strippati**: l'architettura è ricostruibile dai binari.
 - Due stack di rete: **REST** (AES-256-CBC + gzip, chiave negoziata col server) e
   **Photon/eNet UDP** per il realtime.
-- Il namespace `master::` espone lo schema dei dati: **63 tabelle** nella build online,
-  **40 rimosse** nel passaggio a offline. Quelle 40 sono la misura esatta del lavoro.
+- Il namespace `master::` espone lo schema dei dati: **107 tabelle** nella build online
+  WW 4.3.1, **54 rimosse** nel passaggio alla 5.0.1 offline. Quelle 54 sono la misura
+  esatta del lavoro.
 - Il **motore di combattimento è ancora intatto** nel client offline: va rialimentato
   con i dati, non riscritto.
 

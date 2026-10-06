@@ -20,10 +20,16 @@ Il fattore che rende il progetto realistico è che **i simboli C++ non sono stri
 
 | Artefatto | Origine | Stato | Valore |
 |---|---|---|---|
-| `recon/ext/tw252/` — APK Taiwan 2.5.2 | archive.org `KHUx-TW-APKs` | ✅ ELF32 ARM, **non cifrato, con simboli** | **Target primario.** Era *online*: contiene tutto il codice server-dipendente |
-| `recon/web/blobs/libcocos2dcpp-image.bin` | Web Edition 5.0.1 WW | ✅ ELF64 AARCH64, **non cifrato, con simboli** | Build *offline*. Serve come termine di paragone |
+| `recon/ext/ww431/libcocos2dcpp.so` — **APK Worldwide 4.3.1-72** | APKMirror | ✅ ELF64 AARCH64, 33 MB, **non cifrato, con simboli** | **Target primario.** Ultima build pienamente online (apr 2021), inglese. 107 tabelle `master::`, 6.587 simboli C++, 17 simboli `APIManager` |
+| `recon/ext/ww431/libcocos2dcpp-armv7.so` | stesso APK | ✅ ELF32 ARM, 20 MB | Variante a 32 bit della stessa build |
+| `recon/ext/tw252/` — APK Taiwan 2.5.2 | archive.org `KHUx-TW-APKs` | ✅ ELF32 ARM, **non cifrato, con simboli** | Build online più vecchia (~2 anni). Utile come riscontro incrociato |
+| `recon/web/blobs/libcocos2dcpp-image.bin` | Web Edition 5.0.1 WW | ✅ ELF64 AARCH64, **non cifrato, con simboli** | Build *offline*. Il termine di paragone che misura cosa è stato rimosso |
 | `recon/web/blobs/libcocos2dcpp-aot.wasm` | Web Edition 5.0.1 WW | ✅ 61 MB wasm | L'ELF ARM64 ricompilato AOT in WebAssembly |
 | IPA Worldwide (1.0.1 → 4.4.0) | archive.org `khux-ww-IPAs` | ❌ **FairPlay, `cryptid=1` su entrambe le slice** | Inutilizzabili senza device jailbroken. Scaricati e scartati |
+
+> **Nota sulla 4.4.0:** da evitare come target. È di giugno 2021, *dopo* la chiusura del
+> 30 maggio, quindi è già una build di transizione. La 4.3.1 (aprile 2021) è l'ultima
+> pienamente online.
 
 **Due accertamenti che hanno risparmiato download inutili:**
 
@@ -68,37 +74,63 @@ Nel binario esiste un namespace `master::` in cui **ogni tabella di gioco è una
 
 | Build | Tabelle `master::` |
 |---|---|
-| TW 2.5.2 (**online**) | **63** |
-| WW 5.0.1 (**offline**) | 56 |
-| Mantenute | 23 |
-| **Rimosse nel passaggio a offline** | **40** |
-| Aggiunte (`Dark*`, Dark Road) | 33 |
+| TW 2.5.2 (online, 2019) | 63 |
+| **WW 4.3.1 (online, apr 2021)** | **107** |
+| WW 5.0.1 (offline, mag 2021) | 56 |
 
-### Le 40 tabelle da ricostruire — la misura esatta del lavoro
+Il confronto che conta è **WW 4.3.1 → WW 5.0.1**: stessa regione, versioni consecutive,
+a cavallo esatto della chiusura. Misura la rimozione e nient'altro.
+
+| | |
+|---|---|
+| Mantenute | 53 |
+| **Rimosse nel passaggio a offline** | **54** |
+
+### Le 54 tabelle da ricostruire — la misura esatta del lavoro
 
 ```
-Achievement      Advertisement    BenefitResource  CoinLimit        Colosseum
-ColosseumStage   Comeback         DrawMedalType    DrawPetType      Emblem
-EvCampaign       EvMedalList      EvResource       EvScoreReward    EvStage
-GuiltProb        LoginBonus       Medal            Mission          Multi
-MultiStage       MultiTalk        MultiTimemission MypageBackground PetRank
-PetSkill         Player           RaidReward       RaidSetting      Ranking
-RankingReward    Reward           SerialcodeReward Shop             Shuffleskill
-SkillExp         Sphere           SphereArray      SphereMasu       Stamp
+Achievement      Advertisement    BenefitResource  Colosseum        ColosseumStage
+Comeback         CommunicationBgm CommunicationCategory CommunicationRoom CommunicationTalk
+CommunicationThumbnail DarkMainMission DarkPve     DarkPveReward    DrawMedalType
+DrawPetType      Emblem           EvCampaign       EvMedalList      EvResource
+EvScoreReward    EvStage          GuiltProb        KeybladeSubslot  LoginBonus
+Medal            Mission          Moogleshop       Multi            MultiStage
+MultiTalk        MultiTimemission MypageBackground Passive          PassiveSetting
+PetRank          PetSkill         Player           Pvp              PvpScoreReward
+RaidReward       RaidSetting      Ranking          RankingPvp       RankingReward
+Reward           SerialcodeReward Shop             Shuffleskill     SkillExp
+Sphere           SphereArray      SphereMasu       Stamp
 ```
 
-Si legge come l'autopsia della rimozione: `Medal` (le medaglie), `DrawMedalType`/`DrawPetType` (il gacha), `Shop`, `Mission`, `Multi*` (Union Cross), `Raid*`, `Sphere*` (sphere board), `Ranking*`, `LoginBonus`, `Colosseum` (PvP), `Ev*` (eventi). È precisamente ciò che è sparito dall'app lasciando il theater.
+Si legge come l'autopsia della rimozione: `Medal` (le medaglie), `DrawMedalType`/`DrawPetType`
+(il gacha), `Shop`, `Moogleshop`, `Mission`, `Multi*` (Union Cross), `Raid*`, `Sphere*`
+(sphere board), `Ranking*`, `Pvp*`, `Colosseum`, `LoginBonus`, `Ev*` (eventi),
+`Communication*` (chat e stanze). È precisamente ciò che è sparito dall'app lasciando
+il theater.
 
-Le 23 tabelle **sopravvissute** (`Enemy`, `EnemyAttack`, `Stage`, `Skill`, `Buff`, `Burst`, `BattleMisc`, `Keyblade`, `AvatarParts`, `Material`, `RaidEnemy`…) sono un vantaggio concreto: il **motore di combattimento è ancora integro nel client offline**. Non va riscritto — va solo rialimentato con i dati.
+> **Correzione rispetto alla prima stesura.** Una versione precedente di questo report
+> indicava 40 tabelle, calcolate confrontando la build Taiwan 2.5.2 con la WW 5.0.1 —
+> due regioni e due anni di distanza, quindi il diff includeva anche la normale
+> evoluzione del gioco e ne mancava una parte. Il numero corretto è **54**. Sistemi
+> interi assenti nel conteggio precedente: `Pvp`, `PvpScoreReward`, `RankingPvp`,
+> `Moogleshop`, `Passive`/`PassiveSetting`, `KeybladeSubslot` e i cinque
+> `Communication*`.
 
-File: `recon/out/master_classes_*.txt`, `master_removed_in_offline.txt`, `master_added_in_offline.txt`, `master_kept.txt`
+Le 53 tabelle **sopravvissute** (`Enemy`, `EnemyAttack`, `Stage`, `Skill`, `Buff`,
+`Burst`, `BattleMisc`, `Keyblade`, `AvatarParts`, `Material`, `RaidEnemy`…) restano un
+vantaggio concreto: il **motore di combattimento è ancora integro nel client offline**.
+Non va riscritto — va solo rialimentato con i dati.
+
+File: `recon/out/master_classes_{tw252,ww431,ww501}.txt`,
+`master_removed_ww431_to_ww501.txt`, `master_kept_ww431_to_ww501.txt`
 
 ---
 
 ## 5. Cosa manca ancora
 
-1. **APK Worldwide 4.x** (era online, inglese). È il target ideale: stessa epoca degli IPA ma su Android, quindi non cifrato. Non è su archive.org; sta su APKMirror e mirror simili. Il TW 2.5.2 copre il ruolo, ma è più vecchio di ~2 anni e localizzato in cinese.
-2. **I nomi dei campi di ogni tabella.** Le classi `master::` sono note, i campi no: non compaiono come stringhe isolate. Richiedono il disassemblaggio dei costruttori `fromJson` in Ghidra — meccanico ma lungo (~40 funzioni).
+1. ~~**APK Worldwide 4.x**~~ — ✅ **risolto.** Procurata la 4.3.1-72 da APKMirror, con
+   entrambe le architetture e non cifrata.
+2. **I nomi dei campi di ogni tabella.** Le classi `master::` sono note, i campi no: non compaiono come stringhe isolate. Richiedono il disassemblaggio dei deserializzatori rapidjson in Ghidra (~54 funzioni). La pipeline in `recon/ghidra/` lo fa automaticamente: i deserializzatori confrontano ogni chiave con una stringa letterale, quindi le stringhe referenziate dalla funzione di parsing di una tabella *sono* i suoi campi.
 3. **Il content package pre-5.0.** Esiste solo nelle build 5.0.1. Da valutare quanto degli asset Union χ sia sopravvissuto in `Content.zip` (2,1 GB, non ancora scaricato).
 4. **Valori reali del master data.** Lo schema si ricava dal binario; i *contenuti* (statistiche delle medaglie, drop table, costi) vanno ricostruiti da khuxwiki.com.
 
@@ -108,9 +140,9 @@ File: `recon/out/master_classes_*.txt`, `master_removed_in_offline.txt`, `master
 
 | Fase | Contenuto | Stima |
 |---|---|---|
-| **A** | Procurare l'APK WW 4.x; Ghidra su `libcocos2dcpp.so`; isolare `APIManager` e ricavare host, elenco endpoint e formato richiesta | 1–2 settimane |
+| **A** | ✅ APK WW 4.3.1 procurato · ✅ pipeline Ghidra headless pronta · ⬜ isolare `APIManager` e ricavare host, elenco endpoint e formato richiesta | 1–2 settimane |
 | **B** | Server REST minimo: crypto AES/gzip + handshake sessione. **Milestone: il client raggiunge la home screen** | 1–2 settimane |
-| **C** | Estrarre i campi delle 40 tabelle da Ghidra; definire lo schema DB | 2–4 settimane |
+| **C** | Estrarre i campi delle 54 tabelle da Ghidra; definire lo schema DB | 2–4 settimane |
 | **D** | Popolare il master data da khuxwiki; quest e combattimento single-player | 1–2 mesi |
 | **E** | Photon self-hosted per Union Cross / raid / PvP | 3–6 settimane |
 
@@ -140,6 +172,12 @@ Reverse engineering per interoperabilità e preservazione di un servizio dismess
 
 ## 9. Prossimo passo consigliato
 
-**Fase A**, in quest'ordine: procurare l'APK Worldwide 4.x, installare Ghidra, e puntare dritto su `APIManager` per ricavare host ed endpoint. È ciò che sblocca la fase B, e la fase B è la prima in cui si vede qualcosa sullo schermo.
+Completare la **fase A**: far girare `recon/ghidra/run.sh` sul binario WW 4.3.1 arm64 e
+leggere `api_candidates.txt` e il decompilato di `APIManager` per ricavare host ed
+endpoint. È ciò che sblocca la fase B, e la fase B è la prima in cui si vede qualcosa
+sullo schermo.
+
+La stessa esecuzione produce anche `master_fields.json`, cioè i campi delle 54 tabelle:
+la fase C arriva gratis con la fase A.
 
 In parallelo, vale la pena contattare **Restoration Union** — se hanno già catture di traffico del 2021, saltiamo settimane di lavoro.
