@@ -14,6 +14,11 @@
 
 set -euo pipefail
 
+# Git Bash converte gli argomenti che iniziano con "/" in percorsi Windows, quindi
+# -subj "/CN=..." arriverebbe a OpenSSL come "C:/Program Files/Git/CN=...".
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+
 LAN_IP="${1:-}"
 if [[ -z "$LAN_IP" ]]; then
   echo "Uso: $0 <ip-locale-della-macchina>"
@@ -28,7 +33,7 @@ cd "$DIR"
 echo "== CA =="
 openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
   -keyout ca.key -out ca.crt \
-  -subj "/CN=KHUX Restoration Local CA/O=KHUX Restoration" 2>/dev/null
+  -subj "/CN=KHUX Restoration Local CA/O=KHUX Restoration"
 
 echo "== certificato server (IP $LAN_IP) =="
 cat > san.cnf <<EOF
@@ -54,9 +59,9 @@ IP.2  = 127.0.0.1
 EOF
 
 openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr \
-  -config san.cnf 2>/dev/null
+  -config san.cnf
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
-  -out server.crt -days 3650 -extfile san.cnf -extensions ext 2>/dev/null
+  -out server.crt -days 3650 -extfile san.cnf -extensions ext
 
 rm -f server.csr ca.srl
 echo

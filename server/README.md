@@ -46,9 +46,34 @@ KHUX_PUBLIC_URL="https://192.168.1.198" node server/server.js
 | `KHUX_PUBLIC_URL` | `https://127.0.0.1` | **L'IP della macchina sulla LAN**, non localhost: è ciò che il telefono deve poter raggiungere |
 | `KHUX_HTTP_PORT` | `80` | |
 | `KHUX_HTTPS_PORT` | `443` | attivo solo se esistono i certificati |
+| `KHUX_DNS` | attivo | `0` per disattivare il resolver |
+| `KHUX_DNS_PORT` | `53` | |
+| `KHUX_DNS_UPSTREAM` | `1.1.1.1` | dove inoltrare ciò che non dirottiamo |
+| `KHUX_HIJACK` | `sqex-bridge.jp,kingdomhearts.com,square-enix.com` | suffissi da dirottare |
 
-Le porte 80 e 443 su Windows possono richiedere privilegi elevati: per le prove locali
-usa `KHUX_HTTP_PORT=8080`.
+Le porte 80, 443 e 53 su Windows possono richiedere privilegi elevati: per le prove
+locali usa `KHUX_HTTP_PORT=8080 KHUX_DNS_PORT=5355`.
+
+## Il resolver DNS
+
+Integrato, senza dipendenze (`dgram` è nativo). Fa due cose:
+
+1. **Dirotta** i domini elencati in `KHUX_HIJACK` verso il nostro IP. Risponde solo
+   alle query `A`; sulle `AAAA` restituisce una risposta vuota ma valida, che spinge il
+   client su IPv4.
+2. **Inoltra tutto il resto** a monte, così il telefono resta utilizzabile mentre lo
+   usiamo come DNS.
+
+E soprattutto **registra ogni query** in `logs/dns.ndjson`. Questo risolve l'incognita
+rimasta dalla fase A: l'host del bootstrap non l'abbiamo mai estratto dal binario —
+vive in una libreria impacchettata — e lo conosciamo solo da fonte esterna. Qualunque
+nome il client risolva all'avvio comparirà nel log in chiaro.
+
+Se dopo l'avvio del gioco il log DNS mostra un host che non stiamo dirottando,
+aggiungilo a `KHUX_HIJACK` e riprova.
+
+Sul telefono basta quindi impostare il DNS manuale su `192.168.1.198`: niente app né
+modifiche al router.
 
 ## Procedura completa con telefono fisico
 
