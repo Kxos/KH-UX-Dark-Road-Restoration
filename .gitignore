@@ -28,10 +28,16 @@ recon/out/field_candidates_*.txt
 
 # ---------------------------------------------------------------------------
 # Progetti di reverse engineering
+#
+# Il progetto Ghidra contiene una copia del binario importato, e il decompilato
+# e' opera derivata da codice Square Enix: resta tutto in locale.
 # ---------------------------------------------------------------------------
+recon/ghidra/project/
+recon/ghidra/out/
 *.gpr
 *.rep/
 ghidra_*/
+ghidra_*.zip
 .ghidra/
 
 # ---------------------------------------------------------------------------
