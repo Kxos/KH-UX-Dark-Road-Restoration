@@ -23,6 +23,7 @@ const crypto = require('crypto');
 const zlib = require('zlib');
 
 const codec = require('./khux-codec');
+const { startDns } = require('./dns');
 
 // ---------------------------------------------------------------------------
 // Configurazione
@@ -32,6 +33,14 @@ const HTTPS_PORT = Number(process.env.KHUX_HTTPS_PORT || 443);
 const CERT_DIR = path.join(__dirname, 'certs');
 const LOG_DIR = path.join(__dirname, 'logs');
 const LOG_FILE = path.join(LOG_DIR, 'requests.ndjson');
+const DNS_LOG_FILE = path.join(LOG_DIR, 'dns.ndjson');
+
+// DNS: l'IP verso cui dirottare e i domini da dirottare.
+const DNS_ENABLED = process.env.KHUX_DNS !== '0';
+const DNS_PORT = Number(process.env.KHUX_DNS_PORT || 53);
+const DNS_UPSTREAM = process.env.KHUX_DNS_UPSTREAM || '1.1.1.1';
+const HIJACK = (process.env.KHUX_HIJACK || 'sqex-bridge.jp,kingdomhearts.com,square-enix.com')
+  .split(',').map((s) => s.trim()).filter(Boolean);
 
 // La url che consegniamo al client nel bootstrap: deve essere raggiungibile DAL
 // TELEFONO, quindi l'IP della macchina sulla rete locale, non localhost.
@@ -209,6 +218,17 @@ function start() {
     }).on('error', (e) => console.error('HTTPS non avviato:', e.message));
   } else {
     console.log('HTTPS disattivato: certificato assente. Generalo con server/make-cert.sh');
+  }
+
+  if (DNS_ENABLED) {
+    // L'IP da annunciare e' quello della nostra url pubblica.
+    const m = PUBLIC_URL.match(/^https?:\/\/([^/:]+)/);
+    const ip = m ? m[1] : '127.0.0.1';
+    if (!/^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
+      console.log(`DNS disattivato: KHUX_PUBLIC_URL deve contenere un IP, non "${ip}"`);
+    } else {
+      startDns({ ip, hijack: HIJACK, upstream: DNS_UPSTREAM, port: DNS_PORT, logFile: DNS_LOG_FILE });
+    }
   }
 }
 
