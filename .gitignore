@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Materiale proprietario Square Enix — NON deve MAI finire nel repository.
+# Sono file che l'utente si procura da sé; qui vivono solo in locale.
+# ---------------------------------------------------------------------------
+recon/dl/
+recon/ext/
+recon/web/blobs/
+recon/web/parts/
+recon/web/*.html
+recon/web/*.zip
+
+*.apk
+*.xapk
+*.ipa
+*.obb
+*.so
+*.dylib
+*.wasm
+*.jsc
+*.unity3d
+*.dat
+*.bin
+
+# Dump di stringhe estratte dai binari: opere derivate, e rigenerabili
+# in pochi secondi con recon/tools/strings.py
+recon/out/strings_*.txt
+recon/out/field_candidates_*.txt
+
+# ---------------------------------------------------------------------------
+# Progetti di reverse engineering
+# ---------------------------------------------------------------------------
+*.gpr
+*.rep/
+ghidra_*/
+.ghidra/
+
+# ---------------------------------------------------------------------------
+# Server / sviluppo
+# ---------------------------------------------------------------------------
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.crt
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Sistema / editor
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
