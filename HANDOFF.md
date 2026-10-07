@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🔴 **bloccato** — il client non parte su Android 16 |
+| **Test sul dispositivo** | 🔴 **bloccato** — il protector rifiuta su Android 12, 15 e 16 |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -110,12 +110,18 @@ adb logcat -d -b main,system,crash > run.txt
 
 e filtra sul pid del processo del gioco — le righe che contano hanno tag `error`.
 
-### Riscontro su Android 11: il protector non rifiuta
+### Riscontro su Android 11: nessun rifiuto, ma il dato non regge
+
+> ⚠️ **Ridimensionato il 7 ottobre 2026.** Su questo emulatore il codice ARM del
+> protector non arriva mai a eseguire davvero: vedi il dump più sotto, e
+> `HandleNoExec`. L'assenza del rifiuto quindi **non prova** che Android 11 passi il
+> controllo: il controllo forse non è mai partito. Su MuMu Player, dove il protector
+> gira davvero, rifiutano **anche Android 12 e 15**. Vedi «MuMu Player».
 
 Provato su emulatore API 30 (Android 11), entrambe le ABI dell'APK.
 **Nessuna riga `E error`, nessun `ErrorCode`.** Su Android 16 il rifiuto arriva a 0,18 s;
-su Android 11 non arriva mai. È il primo riscontro diretto che il controllo che fallisce
-è legato alla versione del sistema, e non solo un'inferenza.
+su Android 11 non arriva mai. Era stato letto come il primo riscontro diretto che il
+controllo fosse legato alla versione del sistema.
 
 Nessuna delle due varianti completa però l'avvio, per **limiti della traduzione ARM**,
 non del gioco:
@@ -219,11 +225,22 @@ E error : 004c4ba4-013462e6-07fbaf1b      <- identica al Galaxy A54
 F libc  : Fatal signal 6 (SIGABRT) ... abort+0
 ```
 
-Due conclusioni:
+**Rifiutano anche Android 12 e 15.** L'istanza Android 12 ha lo stesso
+`ErrorCode = 90` e la stessa prima tripletta, a circa 0,7 s dall'avvio. Prima del
+rifiuto **non c'è nessuna attività di rete**: il controllo è locale.
 
-- **Android 15 rifiuta come Android 16**: stesso codice 90. Il confine sta tra 11 e 15.
-- **MuMu è un banco valido**: il protector non lo tratta diversamente da un telefono
-  vero. Resta da provare l'istanza **Android 12**, l'altra versione che MuMu offre.
+Rifiutano quindi **Android 12, 15 e 16**, su due dispositivi diversi (Galaxy A54
+fisico, MuMu che si spaccia per SM-A156E), con l'APK patchato e, sul telefono, anche
+con quello originale.
+
+| Ipotesi | Esito |
+|---|---|
+| L'installazione via `adb`, senza Play Store come installer | ❌ reinstallato con `adb install -i com.android.vending`: `installerPackageName=com.android.vending`, stesso `ErrorCode = 90` |
+| Emulatore riconosciuto come tale | improbabile: stesso codice del telefono vero |
+| Versione di Android | **indebolita**: la sola prova a favore, Android 11, viene da un banco su cui il protector non girava |
+
+Conclusione: **MuMu è un banco valido**. Il protector ci gira e non lo tratta
+diversamente da un telefono vero. Resta da capire *che cosa* controlla.
 
 Come si usa, da riga di comando: `<mumu>\nx_main\MuMuManager.exe` crea e avvia le
 istanze, per esempio `info -v all` e `control -v 0 launch`. `adb` è in
@@ -234,16 +251,17 @@ dall'interfaccia grafica: gestore multi-istanza → nuova istanza → Android 12
 
 ### Le vie d'uscita
 
-Un solo fatto solido regge tutto il resto: **su Android 11 il protector non rifiuta, su
-Android 15 e 16 sì**. Il resto dei tentativi è stato rumore di strumentazione.
+Il fatto solido: **il protector rifiuta con il codice 90 su Android 12, 15 e 16**, in
+modo locale e prima della rete. Il «non rifiuta su 11» non è più una prova, vedi sopra.
+La domanda decisiva è se rifiuta anche su un Android vecchio **dove giri davvero**.
 
 1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
    «L'immagine arm64 su host x86».
-2. **Emulatore per giocare** — 🟡 **in corso con MuMu Player**: il protector ci gira
-   davvero. Android 15 rifiuta, Android 12 è da provare: vedi «MuMu Player» sopra. Se
-   rifiuta anche il 12, restano emulatori con Android 9, cioè LDPlayer 9 o BlueStacks
-   con Pie, perché MuMu non offre più l'11. Con il root il dirottamento passa per
-   `/etc/hosts`.
+2. **Emulatore per giocare** — 🟡 **MuMu Player fatto**: il protector ci gira, e
+   rifiutano sia Android 12 sia 15. Vedi «MuMu Player» sopra. **Prossimo: un emulatore
+   con Android 9**, cioè LDPlayer 9 o BlueStacks con Pie, perché MuMu non offre più
+   l'11. Se il 9 passa, la versione conta; se rifiuta, la versione non c'entra e il
+   controllo va cercato altrove. Con il root il dirottamento passa per `/etc/hosts`.
 3. **Dispositivo fisico Android 10–13, arm64.** Il banco pulito: nessuna ambiguità di
    emulazione. Un usato costa poco, e se è **rootabile** il dump del protector arriva in
    omaggio — vedi la sezione sul dump.
@@ -479,8 +497,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
 2. **Un banco Android 9–13 su cui il protector non rifiuti.** È l'unica cosa che ancora
    blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64.
-   MuMu Player esegue il protector: Android 15 rifiuta, **Android 12 è il prossimo
-   test**. Vedi §2.
+   MuMu Player esegue il protector, e rifiutano Android 12 e 15. **Il prossimo test è
+   Android 9**, su LDPlayer 9 o BlueStacks: dice se la versione c'entra davvero. Vedi
+   §2.
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
