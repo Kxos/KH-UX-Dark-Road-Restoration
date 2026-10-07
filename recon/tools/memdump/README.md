@@ -32,8 +32,14 @@ python strings_at.py  <out>\cap1\mem\<file>.bin <va_hex> <raggio> [min]
 | `freeze.sh` | avvia il gioco, `SIGSTOP`, poi scatti `CONT`/`STOP` finché compare `ErrorCode`; salva `maps`, `status`, `pid` |
 | `pick_regions.py` | sceglie dal `maps` le regioni leggibili anonime e `lib__57d5__`, in byte |
 | `dump.sh` | copia le regioni da `/proc/<pid>/mem` con `dd iflag=skip_bytes,count_bytes` |
+| `snap.sh` | fotografa a raffica una regione dal processo **vivo** (per cogliere il codice decifrato prima che l'anti-dump di LIAPP lo azzeri) |
+| `trace.sh` | `strace` statico x86_64 agganciato a `zygote64`: sotto houdini ogni `svc` ARM è una syscall vera, quindi si vedono anche le chiamate del protector |
+| `trace_files.py` | riassume una traccia di `trace.sh`: i path toccati dal processo del gioco, fino al file di verdetto |
 | `grep_dump.py` | cerca stringhe nei `.bin` e stampa l'indirizzo virtuale |
 | `strings_at.py` | elenca le stringhe ASCII intorno a un indirizzo |
+
+`trace.sh` ha bisogno di uno `strace` statico x86_64 in `/data/local/tmp/strace` (non
+versionato; preso da una raccolta di binari statici e spinto con `adb push`).
 
 ## Due trappole, già risolte negli script
 
