@@ -11,7 +11,7 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 | 1 | Reperimento client e valutazione fattibilità | ✅ completata |
 | 2 | Ricognizione tecnica — architettura, protocollo, schema dati | ✅ completata |
 | A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint | ✅ completata |
-| B | Server REST minimo → il client raggiunge la home screen | 🔄 server pronto, test sul device bloccato |
+| B | Server REST minimo → il client raggiunge la home screen | 🔄 server pronto; test bloccato dal protector su Android 16 |
 | C | Schema dei campi delle 54 tabelle master | ✅ completata — 106 tabelle, 1.739 campi |
 | D | Popolamento master data, quest e combattimento single-player | ⬜ |
 | E | Photon self-hosted per Union Cross / raid / PvP | ⬜ |
