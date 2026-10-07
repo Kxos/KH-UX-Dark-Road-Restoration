@@ -14,7 +14,7 @@ qui c'è come.
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🔴 **bloccato** — il client non parte su Android 16 |
-| C · Campi `master::` | ⬜ non iniziata |
+| C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
 
@@ -95,9 +95,11 @@ dispositivo Android 10–13.
 | | Perché |
 |---|---|
 | **Node.js** | il server; nessuna dipendenza da installare |
+| **Python 3** | gli strumenti in `recon/tools/`; nessuna dipendenza |
 | **Git Bash** o WSL | gli script `.sh` |
-| **JDK 17+** | apktool e Ghidra |
-| **Android Studio** | per `adb` — è ciò che manca di più adesso |
+| **JDK 17+** | apktool |
+| **JDK 21+** | Ghidra 12 lo pretende, e rifiuta di partire con meno. Se non c'è, il JBR di Android Studio (`<studio>/jbr`) è un JDK completo e recente: basta puntarci `JAVA_HOME` |
+| **Android Studio** | per `adb` |
 | OpenSSL | di solito incluso in Git Bash |
 
 ### Clonare
@@ -204,6 +206,13 @@ dirottiamo (aggiungilo a `KHUX_HIJACK`), oppure rifiuta il certificato.
 
 ## 5. Ghidra: non rifare l'analisi a vuoto
 
+> **Prima di aprirlo, controlla se serve davvero.** Gli strumenti in `recon/tools/`
+> (`vtables.py`, `codeindex.py`) fanno sull'ELF, in Python puro e in pochi secondi,
+> buona parte di ciò per cui era nato questo progetto Ghidra: confini di tutte le
+> 87.437 funzioni, xref sulle stringhe, vtable per RTTI. La fase C è stata fatta
+> interamente così. Ghidra resta utile per ciò che richiede il **decompilato** —
+> per esempio la tipizzazione dei campi, che da sole le stringhe non danno.
+
 Il progetto Ghidra (829 MB) non è versionato. La prima analisi del binario da 33 MB
 richiede 45–120 minuti:
 
@@ -244,10 +253,11 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    dell'epoca.
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
-4. **Fase C**, in parallelo e indipendente dal dispositivo: i campi delle 54 tabelle
-   `master::`. Serve un'euristica nuova, perché i nomi di funzione non ci sono —
-   raggruppare le funzioni che referenziano molte stringhe snake_case brevi, visto che i
-   deserializzatori rapidjson confrontano ogni chiave con una stringa letterale.
+4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
+   107 classi per RTTI, 1.739 campi, ~3 secondi. Vedi [PHASE-C.md](PHASE-C.md).
+   Resta aperta solo la **tipizzazione** dei campi: i nomi e l'ordine ci sono, i tipi no.
+5. **Fase D**, ora sbloccata: definire lo schema del DB dai campi estratti e popolarlo
+   da khuxwiki.com.
 
 ---
 
