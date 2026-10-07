@@ -12,12 +12,13 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 | 2 | Ricognizione tecnica — architettura, protocollo, schema dati | ✅ completata |
 | A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint | ✅ completata |
 | B | Server REST minimo → il client raggiunge la home screen | 🔄 server pronto, test sul device bloccato |
-| C | Schema dei campi delle 54 tabelle master | ⬜ |
+| C | Schema dei campi delle 54 tabelle master | ✅ completata — 106 tabelle, 1.739 campi |
 | D | Popolamento master data, quest e combattimento single-player | ⬜ |
 | E | Photon self-hosted per Union Cross / raid / PvP | ⬜ |
 
 **[HANDOFF.md](HANDOFF.md)** — come riprendere il lavoro su un'altra macchina, e il problema aperto.
 **[REPORT.md](REPORT.md)** — risultati della ricognizione. **[PHASE-A.md](PHASE-A.md)** — analisi statica.
+**[PHASE-C.md](PHASE-C.md)** — i campi delle tabelle `master::`, ricavati senza Ghidra.
 
 ## Sintesi tecnica
 
@@ -29,7 +30,8 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
   **Photon/eNet UDP** per il realtime.
 - Il namespace `master::` espone lo schema dei dati: **107 tabelle** nella build online
   WW 4.3.1, **54 rimosse** nel passaggio alla 5.0.1 offline. Quelle 54 sono la misura
-  esatta del lavoro.
+  esatta del lavoro — e i loro **759 campi** sono stati ricavati dal binario, con nome
+  e ordine delle colonne.
 - Il **motore di combattimento è ancora intatto** nel client offline: va rialimentato
   con i dati, non riscritto.
 
@@ -46,6 +48,9 @@ recon/dl/ ext/ web/   Materiale proprietario — NON versionato
 
 | Script | Funzione |
 |---|---|
+| `vtables.py` | Vtable e metodi virtuali di una classe C++, via RTTI e rilocazioni |
+| `codeindex.py` | Confini di funzione da `.eh_frame`; costanti indirizzate da ADRP/ADD |
+| `master_fields.py` | La pipeline della fase C: dalle classi `master::` ai loro campi |
 | `remote_zip_ls.py` | Indice di uno ZIP remoto via HTTP range — ispeziona archivi da GB senza scaricarli |
 | `strings.py` | Estrattore di stringhe da binari |
 | `demangle.py` | Recupera e classifica i simboli C++ Itanium |
