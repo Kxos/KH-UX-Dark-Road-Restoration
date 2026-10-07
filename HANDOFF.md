@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🔴 **bloccato** — il protector rifiuta su Android 12, 15 e 16 |
+| **Test sul dispositivo** | 🔴 **bloccato** — il protector rifiuta su Android 9, 12, 15 e 16: la versione non c'entra |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -86,7 +86,7 @@ conclusione era giusta per un'altra ragione — il rapporto del protector — no
 |---|---|
 | Rotto dal nostro ripacchettamento | ❌ si chiude anche l'APK originale intatto |
 | Librerie non allineate a pagine da 16 KB | ❌ i segmenti `LOAD` sono allineati a 64 KB |
-| **Scadenza o licenza datata del protector** | ❌ orologio del telefono riportato al **7 marzo 2021**, prima della chiusura dei server: **stesso `ErrorCode = 90`**, stesso abort. Il protector *legge* la data — la stampa nel rapporto — ma non ci basa il verdetto |
+| **Scadenza o licenza datata del protector** | ⚠️ **test non conclusivo**. L'orologio del telefono era stato riportato al **7 marzo 2021** e il risultato era stato lo stesso `ErrorCode = 90`. Ma quella data è *precedente* alla build 4.3.1 (aprile 2021): una licenza con finestra di validità rifiuterebbe anche lì. La data da provare è **metà maggio 2021**, dopo la build e prima della chiusura del 30 maggio. Il protector *legge* la data: la stampa nel rapporto |
 
 ### Che cos'è `lib__57d5__.so`
 
@@ -237,10 +237,29 @@ con quello originale.
 |---|---|
 | L'installazione via `adb`, senza Play Store come installer | ❌ reinstallato con `adb install -i com.android.vending`: `installerPackageName=com.android.vending`, stesso `ErrorCode = 90` |
 | Emulatore riconosciuto come tale | improbabile: stesso codice del telefono vero |
-| Versione di Android | **indebolita**: la sola prova a favore, Android 11, viene da un banco su cui il protector non girava |
+| Versione di Android | ❌ **esclusa**: rifiuta anche **Android 9**, su LDPlayer 9 (sotto) |
 
 Conclusione: **MuMu è un banco valido**. Il protector ci gira e non lo tratta
 diversamente da un telefono vero. Resta da capire *che cosa* controlla.
+
+### LDPlayer 9: rifiuta anche Android 9, e la versione è esclusa
+
+Provato il 7 ottobre 2026: LDPlayer 9.1.67 (Android 9, si presenta come ASUS
+ASUS_AI2401_A), con `libhoudini` 9.0.7a. **Stesso `ErrorCode = 90`, stessa prima
+tripletta.** Il rifiuto arriva dopo circa 30 s invece che dopo 1 s, perché LDPlayer 9 usa
+VirtualBox, che con Hyper-V attivo (lo pretende MuMu) è lentissimo. Houdini segnala anche
+che alla CPU virtuale mancano `AES`, `POPCNT` e `PCLMULQDQ`.
+
+Rifiutano quindi **Android 9, 12, 15 e 16**, su tre dispositivi. Note pratiche, se si
+torna su LDPlayer:
+
+- il debug ADB è spento di default: va aggiunto `"basicSettings.adbDebug": 1` in
+  `vms\config\leidian0.config` **a istanza spenta**, perché LDPlayer riscrive il file
+  quando la chiude. Poi `adb connect 127.0.0.1:5555`;
+- più server `adb` di versioni diverse (SDK, MuMu, LDPlayer) si chiudono a vicenda: tenerne
+  attivo uno solo;
+- il link «LDPlayer 9» del sito installa **LDPlayer 14**. Il pacchetto vero sta su
+  `https://res.ldrescdn.com/download/package/LDPlayer9.0.exe`.
 
 Come si usa, da riga di comando: `<mumu>\nx_main\MuMuManager.exe` crea e avvia le
 istanze, per esempio `info -v all` e `control -v 0 launch`. `adb` è in
@@ -251,17 +270,17 @@ dall'interfaccia grafica: gestore multi-istanza → nuova istanza → Android 12
 
 ### Le vie d'uscita
 
-Il fatto solido: **il protector rifiuta con il codice 90 su Android 12, 15 e 16**, in
-modo locale e prima della rete. Il «non rifiuta su 11» non è più una prova, vedi sopra.
-La domanda decisiva è se rifiuta anche su un Android vecchio **dove giri davvero**.
+Il fatto solido: **il protector rifiuta con il codice 90 su Android 9, 12, 15 e 16**,
+su tre dispositivi, in modo locale e prima della rete. **La versione di Android non è
+la causa**, e quindi cercare un banco più vecchio non serve. Il controllo che fallisce va
+cercato altrove. Il primo candidato è la **data**, con il test corretto: vedi la tabella
+delle ipotesi escluse.
 
 1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
    «L'immagine arm64 su host x86».
-2. **Emulatore per giocare** — 🟡 **MuMu Player fatto**: il protector ci gira, e
-   rifiutano sia Android 12 sia 15. Vedi «MuMu Player» sopra. **Prossimo: un emulatore
-   con Android 9**, cioè LDPlayer 9 o BlueStacks con Pie, perché MuMu non offre più
-   l'11. Se il 9 passa, la versione conta; se rifiuta, la versione non c'entra e il
-   controllo va cercato altrove. Con il root il dirottamento passa per `/etc/hosts`.
+2. **Emulatore per giocare** — ✅ **fatto**. MuMu Player esegue il protector ed è il
+   banco da usare: è veloce e ha il root. Rifiutano Android 9 (LDPlayer), 12 e 15
+   (MuMu). Vedi sopra.
 3. **Dispositivo fisico Android 10–13, arm64.** Il banco pulito: nessuna ambiguità di
    emulazione. Un usato costa poco, e se è **rootabile** il dump del protector arriva in
    omaggio — vedi la sezione sul dump.
@@ -497,9 +516,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
 2. **Un banco Android 9–13 su cui il protector non rifiuti.** È l'unica cosa che ancora
    blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64.
-   MuMu Player esegue il protector, e rifiutano Android 12 e 15. **Il prossimo test è
-   Android 9**, su LDPlayer 9 o BlueStacks: dice se la versione c'entra davvero. Vedi
-   §2.
+   Il banco c'è: MuMu Player esegue il protector. Ma rifiutano Android 9, 12, 15 e 16,
+   quindi **la versione non c'entra**. Il prossimo test è la **data a metà maggio
+   2021**, vedi §2.
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
