@@ -151,9 +151,32 @@ Controlla sempre `ro.product.cpu.abilist` dopo il boot, prima di perdere tempo.
 > ```bash
 > sdkmanager "system-images;android-30;google_apis;arm64-v8a"
 > ```
-> L'emulatore include `qemu-system-aarch64`, quindi l'emulazione ARM completa è prevista;
-> Google però considera quelle immagini destinate a host ARM e non garantisce questo
-> scenario. Da verificare, non dare per scontato che parta.
+> L'emulatore include `qemu-system-aarch64`, ma **su host x86 non boota** — verificato,
+> vedi il riquadro successivo.
+
+### L'immagine arm64 su host x86: provata, chiusa
+
+Provato il 7 ottobre 2026: `system-images;android-30;google_apis;arm64-v8a` (r16),
+emulatore 37.2.12, Windows 11 su i5-9600K. **Il guest non arriva nemmeno al kernel.**
+Non c'entra il gioco: è l'emulatore.
+
+| Passo | Esito |
+|---|---|
+| `emulator.exe -avd …` | rifiuto immediato: `Avd's CPU Architecture 'arm64' is not supported by the QEMU2 emulator on x86_64 host` |
+| `qemu-system-aarch64.exe -avd …` direttamente | il controllo sta solo nel launcher e si salta. Serve `emulator\lib64` (e `lib64\qt\lib`) nel `PATH`, altrimenti esce con `0xC0000135`, cioè DLL mancante |
+| idem, con `-accel off` | supera i controlli e avvia il main loop, poi esce con codice 1 **senza messaggio** |
+| `qemu-system-aarch64-headless.exe` | è l'unico binario che stampa l'errore vero: **`PCI bus not available for hda`** |
+
+Il frontend inietta sempre `-soundhw hda`, e dispositivi `*_pci` per multi-touch e
+Wi-Fi, anche con `-no-audio` e `hw.audioOutput=no`. La macchina ARM `ranchu` della build
+Windows non ha un bus PCI. Senza `-avd` il binario non accetta le opzioni QEMU grezze
+(`unknown option: -serial`), e `-qemu` può solo aggiungerne, non toglierle. Google non
+mantiene più questo scenario su host x86. Restano solo un QEMU upstream senza i
+dispositivi goldfish, molto lavoro con esito incerto, o un'altra strada.
+
+> Se ci riprovi: con poco spazio su `C:` l'AVD si può spostare su un altro disco
+> cambiando `path=` nel `.ini`. Il controllo di spazio guarda la cartella dell'AVD, e la
+> partizione dati di default chiede 9,6 GB.
 
 ### Dump della memoria del protector: tecnica valida, banco mancante
 
@@ -182,23 +205,34 @@ però probabilmente non servirebbe affatto, perché il gioco partirebbe.
 Un solo fatto solido regge tutto il resto: **su Android 11 il protector non rifiuta, su
 Android 16 sì**. Il resto dei tentativi è stato rumore di strumentazione.
 
-1. **Immagine arm64 vera sull'emulatore.** Elimina il traduttore, che è l'unica cosa che
-   ha fatto fallire i tentativi su API 30. Costo: i *Command-line Tools* e ~1,5 GB di
-   immagine, tutto in locale, niente esposto a terzi. Incerto se parta su host x86
-   (vedi il riquadro sopra). **Da provare per prima**, perché non espone niente.
-2. **Dispositivo fisico Android 10–13, arm64.** Il banco pulito: nessuna ambiguità di
+1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
+   «L'immagine arm64 su host x86».
+2. **Emulatore per giocare** (MuMu Player, LDPlayer, BlueStacks). È il banco più
+   promettente senza telefono: esiste proprio per far girare su PC giochi solo-ARM e
+   protetti, con traduttori ARM diversi da quello di Google che inciampava in
+   `HandleNoExec`. Offre Android 9–12, ha `adb` e root attivabile: con il root il
+   dirottamento passa per `/etc/hosts`. Rischi: è software di terze parti da installare,
+   e il protector potrebbe riconoscere l'emulatore. Anche questo sarebbe comunque un
+   dato utile.
+3. **Dispositivo fisico Android 10–13, arm64.** Il banco pulito: nessuna ambiguità di
    emulazione. Un usato costa poco, e se è **rootabile** il dump del protector arriva in
    omaggio — vedi la sezione sul dump.
-3. **Device farm in cloud** (Firebase Test Lab, BrowserStack): hardware reale con Android
+4. **Device farm in cloud** (Firebase Test Lab, BrowserStack): hardware reale con Android
    vecchio, senza comprare nulla. **Comporta però caricare l'APK su un servizio di
    terzi**, che è una scelta da fare consapevolmente.
-4. **Chiedere a Restoration Union e alle community di preservazione KHUX.** Costo tecnico
+5. **Chiedere a Restoration Union e alle community di preservazione KHUX.** Costo tecnico
    zero, e con ogni probabilità qualcuno *sa già* su quali versioni di Android parte: è
    esattamente l'informazione che stiamo cercando di comprare con ore di lavoro. Era già
    suggerito nel REPORT fin dalla fase 2 e non è mai stato fatto. Va fatto comunque, in
    parallelo a qualunque altra strada.
 
 ~~Emulatore con immagine x86~~ — esaurito, vedi la tabella sopra.
+~~Emulatore con immagine arm64~~ — esaurito su host x86, vedi sopra.
+
+Nota per la device farm: il test completo richiede anche che il client raggiunga il
+nostro server. In cloud non si può cambiare il DNS del dispositivo, quindi lì si
+risponde solo alla domanda «il protector rifiuta su questa versione?», non si cattura
+la superficie REST.
 
 Il test, su qualunque banco, è di un minuto: se il gioco parte, le righe `E error` non
 compaiono.
@@ -406,8 +440,10 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
 
 1. ~~**Il backtrace del tombstone.**~~ — ✅ **risolto**, ma non dal tombstone: è il
    protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
-2. **Un dispositivo Android 10–13, o un emulatore con immagine dell'epoca.** È l'unica
-   cosa che ancora blocca il test sul device, e si verifica in pochi minuti.
+2. **Un banco Android 9–13 su cui il protector non rifiuti.** È l'unica cosa che ancora
+   blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64:
+   la prossima prova senza telefono è un emulatore per giocare, vedi §2 «Le vie
+   d'uscita».
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
