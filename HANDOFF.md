@@ -102,16 +102,63 @@ adb logcat -d -b main,system,crash > run.txt
 
 e filtra sul pid del processo del gioco — le righe che contano hanno tag `error`.
 
+### Riscontro su Android 11: il protector non rifiuta
+
+Provato su emulatore API 30 (Android 11), entrambe le ABI dell'APK.
+**Nessuna riga `E error`, nessun `ErrorCode`.** Su Android 16 il rifiuto arriva a 0,18 s;
+su Android 11 non arriva mai. È il primo riscontro diretto che il controllo che fallisce
+è legato alla versione del sistema, e non solo un'inferenza.
+
+Nessuna delle due varianti completa però l'avvio, per **limiti della traduzione ARM**,
+non del gioco:
+
+| ABI | Esito su API 30 x86_64 |
+|---|---|
+| `arm64-v8a` | muore a ~1,5 s, `SIGSEGV` / `SEGV_ACCERR`. Backtrace: `#01 libndk_translation.so (ndk_translation_HandleNoExec)`, `#04 <anonymous:…>` |
+| `armeabi-v7a` | arriva più lontano — carica il nostro `network_security_config` — poi muore in silenzio, processo zombie, nessun tombstone |
+
+`HandleNoExec` vuol dire che il traduttore non riesce a eseguire codice che l'ospite ha
+prodotto a runtime: cioè precisamente quello che fa un packer che si decifra. Di
+passaggio è confermato che **la patch dell'APK funziona**, perché la configurazione di
+rete viene caricata.
+
+> **Trappola da non ripetere.** Le immagini **x86_64 di API 29 non hanno la traduzione
+> ARM** (`ro.product.cpu.abilist` = `x86_64,x86`): l'APK, che ha solo librerie ARM, non
+> si installa nemmeno — `INSTALL_FAILED_NO_MATCHING_ABIS`. La traduzione arriva con
+> **API 30**, dove l'abilist include `arm64-v8a`. Verificalo sempre dopo il boot.
+
+### Dump della memoria del protector: tecnica valida, banco mancante
+
+Il protector si decifra e salta nel proprio codice: catturarlo in memoria darebbe le sue
+stringhe vere, e probabilmente la tabella che spiega il codice 90. Verificato quel che si
+poteva verificare:
+
+- l'emulatore è una build `userdebug`: `adb root` funziona e `ro.debuggable=1`, quindi
+  **non serve rendere l'APK debuggable** — e questo evita di accendere la spia che
+  l'anti-debug cerca, che è l'obiezione principale a tutto l'approccio;
+- `dd` su `/proc/<pid>/mem` da root funziona (provato su `system_server`), e il
+  congelamento con `SIGSTOP` permette di dumpare con calma.
+
+Non è andato in porto per due ragioni, entrambe del banco e non del metodo: la finestra
+utile è **sotto il secondo e variabile** (un avvio è morto prima di 1,2 s), e la regione
+anonima `rwx` da 4 MB che sembrava il payload è in realtà **il JIT del traduttore** —
+compare già all'avvio ed è vuota. Sotto traduzione il codice ARM del protector non arriva
+mai a eseguire davvero, quindi qui non c'è niente di rappresentativo da catturare.
+
+Su un telefono fisico non rootato servirebbe invece l'APK debuggable, e tornerebbe
+l'ambiguità. **Diventa facile e pulito su un Android 10–13 fisico e rootabile** — dove
+però probabilmente non servirebbe affatto, perché il gioco partirebbe.
+
 ### Le vie d'uscita
 
-1. **Dispositivo Android 10–13.** Il gioco è del 2021 con `targetSdk 29`, e il protector
-   legge e riporta la versione del sistema: su hardware dell'epoca è la scommessa
-   migliore. La strada più diretta.
-2. **Emulatore con immagine Android 10/11.** Il blocco emulatori di Square Enix era
-   *lato server*, e i server non esistono più. Rischio: il protector può avere controlli
-   anti-emulatore propri — ma non si perde nulla a provare.
+1. **Dispositivo fisico Android 10–13, arm64.** Ora non è più un'inferenza: su Android 11
+   il protector non rifiuta, e l'unico ostacolo rimasto era la traduzione ARM, che su
+   hardware ARM non esiste. È la strada, e un usato costa poco.
+   Se è anche **rootabile**, il dump del protector arriva in omaggio.
+2. ~~Emulatore con immagine Android 10/11~~ — provato, non basta: vedi sopra. Resta utile
+   per tutto ciò che non richiede di eseguire il gioco.
 
-Entrambe si verificano in minuti: se il gioco parte, le righe `E error` non compaiono.
+Il test è di un minuto: se il gioco parte, le righe `E error` non compaiono.
 
 ---
 
@@ -156,6 +203,46 @@ unzip -o -j "recon/dl/<apk>" "lib/arm64-v8a/libcocos2dcpp.so" -d recon/ext/ww431
 
 - `apktool.jar` — <https://github.com/iBotPeaches/Apktool/releases>
 - `uber-apk-signer.jar` — <https://github.com/patrickfav/uber-apk-signer/releases>
+
+### Un AVD senza `avdmanager`
+
+Se l'SDK non ha i *cmdline-tools*, `avdmanager` e `sdkmanager` non ci sono — ma un AVD è
+solo due file di testo, e l'emulatore basta che li trovi. Scarica l'immagine da Android
+Studio (SDK Manager → *Show Package Details*, **API 30 Google APIs x86_64**: vedi la
+trappola su API 29 in §2), poi in `~/.android/avd/`:
+
+`khux30.ini`
+
+```ini
+avd.ini.encoding=UTF-8
+path=<home>/.android/avd/khux30.avd
+path.rel=avd/khux30.avd
+target=android-30
+```
+
+`khux30.avd/config.ini`
+
+```ini
+AvdId=khux30
+abi.type=x86_64
+hw.cpu.arch=x86_64
+image.sysdir.1=system-images/android-30/google_apis/x86_64/
+image.androidVersion.api=30
+tag.id=google_apis
+hw.device.name=pixel_3
+hw.ramSize=4096
+hw.gpu.enabled=yes
+hw.gpu.mode=auto
+disk.dataPartition.size=8589934592
+PlayStore.enabled=false
+```
+
+```bash
+ANDROID_SDK_ROOT=<sdk> "$SDK/emulator/emulator" -avd khux30 -no-snapshot -no-boot-anim
+```
+
+Con due dispositivi collegati, **ogni comando `adb` vuole `-s`** (`-s emulator-5554`
+oppure il seriale del telefono), altrimenti rifiuta.
 
 **Ghidra** (solo se riprendi l'analisi statica) — estrai in un percorso **senza spazi**,
 tipo `C:\ghidra\`: <https://github.com/NationalSecurityAgency/ghidra/releases>
