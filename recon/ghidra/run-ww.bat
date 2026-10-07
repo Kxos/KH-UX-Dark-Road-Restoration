@@ -21,7 +21,9 @@ rem --- JDK 17+ ---------------------------------------------------------------
 if not defined JAVA_HOME set "JAVA_HOME=C:\Program Files\Java\jdk-21"
 if not exist "%JAVA_HOME%\bin\java.exe" (
   echo ERRORE: JDK non trovato in "%JAVA_HOME%".
-  echo Imposta JAVA_HOME su un JDK 17 o superiore.
+  echo Ghidra 12 pretende un JDK 21 o superiore e rifiuta di partire con meno.
+  echo Se non ne hai uno installato, il JBR di Android Studio lo e':
+  echo   set "JAVA_HOME=D:\Programmi\Android\Android Studio\jbr"
   pause & exit /b 1
 )
 
