@@ -270,6 +270,7 @@ Misure dirette, `logcat` letto a ogni avvio:
 | originale | MuMu Android 12, root | orologio al **15 maggio 2021** | **13380225** |
 | originale | MuMu Android 12, root | **strace** agganciato | **40** |
 | **originale** | **LDPlayer 9, Android 9, senza root** | nessuna | **nessun rifiuto** — verdetto `0`, il gioco arriva al titolo |
+| originale | LDPlayer 9, Android 9 | lettura di `/proc/<pid>/mem` da root, a gioco vivo | **17471875** (memory protection) |
 
 Letture:
 
@@ -359,8 +360,66 @@ solo premendo **KHUX START**: è il momento da catturare col nostro server.
 Android 7+ un'app con `targetSdk 29` **non si fida delle CA installate dall'utente**. Non
 si può ripatchare (LIAPP → `90`). La strada è installare `server/certs/ca.crt` come **CA
 di sistema** nel guest (in `/system/etc/security/cacerts/<hash>.0`), cosa possibile
-perché `ld.exe` dà root. Il DNS del guest si può dirottare verso il PC con una regola
-`iptables` sulla porta 53, sempre da root, senza toccare le impostazioni Wi-Fi.
+perché `ld.exe` dà root.
+
+### Fase B sul banco LDPlayer 9 — primi passi, 7 ottobre 2026 (sera)
+
+**Il popup di fine servizio è una scadenza a data, dentro il client.** Con l'orologio del
+guest al **15 maggio 2021** il popup sparisce e, premuto nulla, il client **tenta il
+bootstrap** da solo all'avvio. Il testo («ended service as of Tuesday 6/29/2021», con la
+versione offline) è negli asset cifrati della 4.3.1: il client lo mostra quando la data
+supera la chiusura, **senza consultare alcun server**. Per tutta la fase B il guest va
+tenuto con l'orologio prima del 29/6/2021.
+
+**Il bootstrap fallisce con `A connection error has occurred (6 ERROR :251)`.** Il `6`
+coincide con `CURLE_COULDNT_RESOLVE_HOST` di libcurl, e torna con i fatti: dopo l'errore
+il client **non apre alcuna connessione TCP** (il contatore delle regole di dirottamento
+resta fermo, lo SNI non arriva al server). Cioè **il nome dell'host di bootstrap non si
+risolve più nel DNS pubblico** — mentre `psg.sqex-bridge.jp`, l'host ipotizzato in fase A
+da `xlash123/khux-re-api`, risolve ancora (`34.54.148.120`, Google Cloud). Quindi
+**l'host del bootstrap della 4.3.1 non è `psg.sqex-bridge.jp`**, o non solo.
+
+**Il nome non si vede perché LDPlayer risolve fuori dal guest.** Verificato:
+- regole `iptables` DNAT sulla porta 53: contatori a zero;
+- `ndc resolver setnetdns` e `setprop net.dns1` verso il nostro DNS: le risposte non
+  cambiano e il server non riceve query;
+- un nome inventato risolto dal guest **non compare** nella cache DNS di Windows
+  (`Get-DnsClientCache`): non passa neanche dal resolver del PC.
+- `networkSettings.networkDNS: "192.168.1.185"` in `leidian0.config` (chiave trovata nei
+  binari di `dnplayer.exe`, con `networkStatic`, `networkAddress`, `networkGateway`,
+  `networkSwitching`): **nessun effetto**, il guest riceve ancora il DNS del router.
+
+Perché: la rete è una NAT Network di VirtualBox, e `VBoxSVC.log` mostra
+`HostDnsMonitor` che legge i **server DNS di Windows** e li passa al guest via DHCP; il
+motore NAT inoltra poi le query del guest dal lato host. Ne segue che **l'unica leva sul
+DNS del client è il server DNS configurato su Windows**: puntandolo a `127.0.0.1` (il
+nostro server, che inoltra a `1.1.1.1` tutto ciò che non dirotta) le query del gioco
+arriverebbero a noi, compreso il nome dell'host di bootstrap. Richiede privilegi e cambia
+il DNS dell'intero PC finché è attivo, quindi va deciso da chi usa la macchina; il log
+DNS del server (`server/logs/`, non versionato) in quel periodo conterrebbe anche le query
+del PC.
+
+**Leggere la memoria del client vivo lo uccide: `ErrorCode = 17471875`.** È la
+*memory protection* di LIAPP che vede le letture di `/proc/<pid>/mem`, anche da root.
+Sul processo vivo il dump non è praticabile; i dump fatti su MuMu non arrivano alla
+fase del bootstrap (LIAPP li ferma prima), e contengono solo i domini del nostro
+`network_security_config`.
+
+**Strumenti sistemati stasera:**
+- `start-server.bat` **si chiudeva subito**: il `^|` dentro le virgolette arrivava
+  letterale a PowerShell (IP vuoto), e il ripiego `set /p … (es. …):` chiudeva in
+  anticipo il blocco `if` con la sua `)`, facendo abortire `cmd` prima del `pause`. Ora
+  il rilevamento dell'IP sta in `server/lan-ip.ps1`. **Non servono privilegi di
+  amministratore**: su Windows le porte 53/80/443 si aprono anche senza;
+- `server/make-cert.sh` ora **retrodata** CA e certificato (default `notBefore` 1/1/2020,
+  `notAfter` 2035) con `openssl ca -startdate`: con l'orologio del guest nel 2021 un
+  certificato emesso «oggi» non sarebbe ancora valido;
+- `server.js` registra lo **SNI** di ogni connessione TLS (`[tls:sni]`) e gli errori di
+  handshake (`[tls:errore]`): serve a vedere quale host il client voleva anche quando il
+  DNS non passa da noi;
+- `tools/ldplayer/phaseb-guest.sh` rifà in un colpo la preparazione del guest (CA di
+  sistema in tmpfs, dirottamento TCP 80/443 dell'uid del gioco, orologio a maggio 2021).
+  Va rieseguito a ogni riavvio dell'istanza.
 
 **Dump dell'originale (`orig1`, MuMu Android 12, 196 MB in
 `D:\Progetto_Restauro_KH_UX\dumps\orig1`).** Il congelamento con `SIGSTOP` non scatena
@@ -632,11 +691,11 @@ Produce `recon/ext/patched/khux-patched-aligned-debugSigned.apk`.
 ### Server
 
 ```
-start-server.bat        (tasto destro -> Esegui come amministratore)
+start-server.bat        (doppio clic)
 ```
 
-Rileva l'IP da solo e avvia HTTP, HTTPS e DNS. Servono i privilegi perché usa le porte
-53, 80 e 443. Devi vedere tre righe di ascolto.
+Rileva l'IP da solo (`server/lan-ip.ps1`) e avvia HTTP, HTTPS e DNS sulle porte 80, 443 e
+53. Su Windows non servono privilegi di amministratore. Devi vedere tre righe di ascolto.
 
 ### Rete — i tre inciampi incontrati su Windows
 
@@ -725,14 +784,17 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    (`13380225`) solo su Android ≥ 12. **Su LDPlayer 9 (Android 9) con l'APK originale il
    client arriva al titolo**, e la rete del guest funziona. Vedi §2, «Android 9: il
    client parte».
-3. **Fase B sul banco LDPlayer 9** — il prossimo passo, ora sbloccato:
-   a) avviare il server (`start-server.bat`, da amministratore, porte 53/80/443);
-   b) installare `server/certs/ca.crt` come **CA di sistema** nel guest (root via
-   `ld.exe`), perché l'APK originale non accetta le CA utente;
-   c) dirottare il DNS del guest verso il PC (`iptables` sulla porta 53, da root);
-   d) avviare il gioco, premere **KHUX START**, e raccogliere `logs/requests.ndjson` e il
-   log DNS: è la superficie REST e l'host vero del bootstrap, che staticamente non sono
-   enumerabili.
+3. **Fase B sul banco LDPlayer 9** — in corso, vedi §2 «Fase B sul banco LDPlayer 9»:
+   a) ✅ server avviato (`start-server.bat`, non servono privilegi), certificati
+   retrodatati, SNI registrato;
+   b) ✅ CA di sistema nel guest, TCP 80/443 del gioco dirottato al PC, orologio a maggio
+   2021 — tutto con `tools/ldplayer/phaseb-guest.sh`;
+   c) ✅ il client **tenta il bootstrap**, ma fallisce con `6 ERROR :251` (host non
+   risolvibile: il nome non esiste più nel DNS pubblico);
+   d) **prossimo:** far arrivare il DNS del client al nostro server, puntando il DNS di
+   Windows a `127.0.0.1` (unica leva, vedi §2), per leggere il nome dell'host di
+   bootstrap; aggiungerlo al SAN del certificato e a `KHUX_HIJACK` se serve, e
+   raccogliere `logs/requests.ndjson`.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
    107 classi per RTTI, 1.739 campi, ~3 secondi. Vedi [PHASE-C.md](PHASE-C.md).
    Resta aperta solo la **tipizzazione** dei campi: i nomi e l'ordine ci sono, i tipi no.

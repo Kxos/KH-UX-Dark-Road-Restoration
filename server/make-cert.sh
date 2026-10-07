@@ -21,19 +21,51 @@ export MSYS2_ARG_CONV_EXCL='*'
 
 LAN_IP="${1:-}"
 if [[ -z "$LAN_IP" ]]; then
-  echo "Uso: $0 <ip-locale-della-macchina>"
+  echo "Uso: $0 <ip-locale-della-macchina> [inizio-validita YYMMDDHHMMSSZ]"
   echo "Trovalo con: ipconfig | grep IPv4"
   exit 1
 fi
+
+# Inizio validita' nel passato: il client va fatto girare con l'orologio a prima
+# del 29/6/2021, altrimenti mostra il popup di fine servizio e non si connette.
+# Un certificato emesso "oggi" sarebbe per lui non ancora valido.
+START="${2:-200101000000Z}"
+END="351231000000Z"
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/certs"
 mkdir -p "$DIR"
 cd "$DIR"
 
-echo "== CA =="
-openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
-  -keyout ca.key -out ca.crt \
+# `openssl ca` e' l'unico modo, in OpenSSL 3.2, di fissare notBefore a mano.
+rm -f index.txt* serial* ca.cnf
+touch index.txt
+echo 1000 > serial
+cat > ca.cnf <<EOF
+[ca]
+default_ca = local
+[local]
+dir             = .
+database        = index.txt
+new_certs_dir   = .
+serial          = serial
+default_md      = sha256
+policy          = any
+unique_subject  = no
+copy_extensions = none
+[any]
+commonName       = supplied
+organizationName = optional
+[v3_ca]
+basicConstraints     = critical, CA:TRUE
+keyUsage             = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+EOF
+
+echo "== CA (valida da $START) =="
+openssl req -new -newkey rsa:2048 -nodes -keyout ca.key -out ca.csr \
   -subj "/CN=KHUX Restoration Local CA/O=KHUX Restoration"
+openssl ca -batch -notext -selfsign -config ca.cnf -keyfile ca.key \
+  -in ca.csr -out ca.crt -startdate "$START" -enddate "$END" -extensions v3_ca
 
 echo "== certificato server (IP $LAN_IP) =="
 cat > san.cnf <<EOF
@@ -60,14 +92,16 @@ EOF
 
 openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr \
   -config san.cnf
-openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
-  -out server.crt -days 3650 -extfile san.cnf -extensions ext
+openssl ca -batch -notext -config ca.cnf -cert ca.crt -keyfile ca.key \
+  -in server.csr -out server.crt -startdate "$START" -enddate "$END" \
+  -extfile san.cnf -extensions ext
 
-rm -f server.csr ca.srl
+rm -f ca.csr server.csr index.txt* serial* ca.cnf ./*.pem
+openssl x509 -in server.crt -noout -subject -dates
 echo
 echo "fatto:"
 ls -la "$DIR"
 echo
-echo "Prossimo passo: trasferisci ca.crt sul telefono e installalo come CA utente."
-echo "Serve comunque ripacchettizzare l'APK perche' Android 7+ ignora le CA utente"
-echo "a meno che l'app non lo consenta esplicitamente (networkSecurityConfig)."
+echo "Prossimo passo: ca.crt va installato come CA di SISTEMA sul dispositivo di prova"
+echo "(l'APK originale ignora le CA utente e non si puo' ripatchare: LIAPP lo rifiuta)."
+echo "Vedi HANDOFF.md, fase B sul banco LDPlayer 9."
