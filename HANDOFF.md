@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🔴 **bloccato** — il protector rifiuta su Android 9, 12, 15 e 16: la versione non c'entra |
+| **Test sul dispositivo** | 🟠 protector **identificato: LIAPP** (Lockin Company). Rifiuta su Android 9/12/15/16 — non è la versione: è la *detection* di LIAPP (root/VM/USB-debug). Pista aperta: telefono pulito con debug USB spento |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -52,6 +52,13 @@ I Zygote: Process 23947 exited due to signal 6 (Aborted)
 
 Non è un crash: è un rifiuto, con tanto di rapporto diagnostico. Il protector legge
 modello, produttore, **versione del sistema** e orologio, e aborta.
+
+> **Aggiornamento del 7 ottobre 2026 (sera): il protector è LIAPP di Lockin Company.**
+> `ErrorCode = 90` è il verdetto di morte di LIAPP, non un singolo controllo. La causa
+> può cambiare da banco a banco: sugli emulatori è la VM-detection (LIAPP nomina MuMu),
+> sul telefono fisico l'indiziato è la **USB Debugging detection** attiva per `adb`.
+> L'analisi completa è nella sezione «Il protector è LIAPP», più sotto. Le righe qui
+> sopra restano valide come descrizione del rapporto.
 
 **Le sette triplette non sono tutte impronte** — correzione a una prima lettura.
 Confrontando due avvii diversi, **solo la prima è identica**; le altre sei cambiano ogni
@@ -228,6 +235,54 @@ decifrato vive nelle regioni `rwx` basse (`[anon:Mem_0x20000000]`, ~62 MB a `0x0
 e nelle librerie `nb/` tradotte. Il passo successivo è disassemblare quella regione, o
 mettere un breakpoint prima della scrittura del file di verdetto.
 
+### Il protector è LIAPP (Lockin Company) — identificato il 7 ottobre 2026
+
+Le impronte del dump combaciano con **LIAPP**, il protector mobile della coreana
+**Lockin Company**: il nome `lib__57d5__.so`, la lista di package di altre app sullo
+stack, `DisableVerifier`, lo schema «rapporto `ErrorCode = N` + righe diagnostiche →
+`abort`». La pagina ufficiale *LIAPP – learn more* elenca esattamente i controlli che
+vediamo, e fa chiarezza sul codice 90.
+
+**Cosa blocca LIAPP, per sua stessa documentazione:**
+
+- **root** — «blocks execution on rooted devices»;
+- **macchine virtuali** — «blocks execution on virtual devices», e **nomina NOX,
+  BlueStacks e MuMuPlayer**;
+- **anti-debugging** e **USB Debugging detection**;
+- **memory protection** — «prevents unauthorized memory access and dumps»;
+- anti-tampering / anti-repackaging, hooking, VPN, Fake GPS, macro, overlay;
+- **licenza**: «apps LIAPP-applied within the license period can be used *permanently*».
+  Cioè la protezione **non scade a runtime** e non valida nulla online: coerente con
+  «nessuna rete prima del rifiuto». L'ipotesi «licenza scaduta» è quindi chiusa due
+  volte — dall'orologio e dalla documentazione.
+
+**Questo riscrive la lettura del codice 90.** Non è *un* controllo unico: è il verdetto
+di morte di LIAPP, e la *causa* può essere diversa su ogni banco.
+
+- **Sugli emulatori (MuMu, LDPlayer)** il colpevole più probabile è la **VM detection**:
+  LIAPP nomina MuMu per nome. Lo strace lo conferma — prima dell'abort il processo legge
+  `/system/etc/mumu-configs/*`, `libhoudini.so`, `/system/lib64/arm64/cpuinfo`,
+  `scaling_cur_freq`: tutte firme da emulatore. Su MuMu c'è **anche** il root. Due
+  motivi indipendenti, entrambi sufficienti.
+- **Sul Galaxy A54 fisico** niente root né emulatore: lì l'indiziato è la **USB Debugging
+  detection**. Per leggere `logcat` il debug ADB era **acceso** — ed è proprio una delle
+  condizioni che LIAPP rifiuta. È un'ipotesi **non ancora verificata** ma ad alto impatto:
+  se è così, **su un telefono pulito con il debug USB spento il gioco originale potrebbe
+  partire**. Va provato guardando lo schermo, senza adb (vedi «Vie d'uscita»).
+- **La memory protection** spiega perché, provando a fotografare a raffica il segmento di
+  codice del protector (`snap.sh`), la regione risultava **azzerata**: LIAPP ripulisce il
+  codice decifrato appena fiuta un accesso. Il dump a processo congelato (`capture.ps1`)
+  riesce lo stesso perché fotografa prima che la pulizia parta.
+
+Strumenti nuovi per l'indagine, in `recon/tools/memdump/`: `snap.sh` (fotografa a raffica
+una regione dal processo vivo) e `trace.sh` (strace statico x86_64 agganciato a
+`zygote64`; sotto houdini ogni `svc` del codice ARM diventa una syscall vera, quindi
+strace vede anche le chiamate diffuse del protector). Con `trace.sh` abbiamo visto la
+scrittura del verdetto: `openat(... l5Xzi1ZFinmQC.txt, O_RDWR|O_CREAT)` →
+`write("90\n<ts>\n0\n<pid>\n")` → `fchmod 0644`, subito prima dell'`abort`. Il file viene
+prima **letto** più volte in sola lettura e poi **riscritto**: non è una cache del
+verdetto (cancellarlo e rilanciare dà di nuovo 90, verificato).
+
 ### MuMu Player: il protector gira davvero, e su Android 15 rifiuta
 
 Provato il 7 ottobre 2026: MuMu Player 6.8, istanza Android 15. Si presenta come un
@@ -301,6 +356,17 @@ il client, ma **capire che cosa controlla il protector**. La strada è il dump d
 memoria del protector decifrato, vedi «Dump della memoria del protector». Su MuMu le
 condizioni che mancavano ci sono tutte: root, `/proc/<pid>/mem`, e soprattutto un
 traduttore che esegue davvero il codice ARM, per circa 1 s prima dell'abort.
+
+> **Dopo l'identificazione di LIAPP, la pista più economica è un'altra.** LIAPP rifiuta
+> su MuMu per via della VM-detection, e sul Galaxy quasi certamente per la **USB Debugging
+> detection** accesa per `adb`. Prima di comprare hardware o disassemblare, va provata
+> l'ipotesi a costo zero: **telefono fisico pulito (meglio arm64), debug USB spento, APK
+> originale, guardando lo schermo** — senza adb, senza root, senza emulatore. Se il gioco
+> parte, il blocco di preservazione cade: il client gira e lo si può pilotare con un
+> redirect DNS verso il nostro server (non serve adb per quello). Lo svantaggio è che
+> senza adb non si cattura `logcat`: si osserva solo *se* parte. La cattura della
+> superficie REST si fa in un secondo momento, su un telefono dove il debug si possa
+> tenere spento mentre si reindirizza il DNS dal router.
 
 1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
    «L'immagine arm64 su host x86».
