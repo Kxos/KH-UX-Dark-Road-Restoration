@@ -86,7 +86,7 @@ conclusione era giusta per un'altra ragione — il rapporto del protector — no
 |---|---|
 | Rotto dal nostro ripacchettamento | ❌ si chiude anche l'APK originale intatto |
 | Librerie non allineate a pagine da 16 KB | ❌ i segmenti `LOAD` sono allineati a 64 KB |
-| **Scadenza o licenza datata del protector** | ⚠️ **test non conclusivo**. L'orologio del telefono era stato riportato al **7 marzo 2021** e il risultato era stato lo stesso `ErrorCode = 90`. Ma quella data è *precedente* alla build 4.3.1 (aprile 2021): una licenza con finestra di validità rifiuterebbe anche lì. La data da provare è **metà maggio 2021**, dopo la build e prima della chiusura del 30 maggio. Il protector *legge* la data: la stampa nel rapporto |
+| **Scadenza o licenza datata del protector** | ❌ Primo test: orologio del telefono al **7 marzo 2021**, stesso `ErrorCode = 90`. Non bastava, perché quella data è *precedente* alla build 4.3.1 (aprile 2021). Rifatto su MuMu Android 12 con root (`date 051512002021.00`, `auto_time 0`): orologio al **15 maggio 2021**, dopo la build e prima della chiusura del 30 maggio. Il rapporto stampa `2021/05/15 12:00:19` e dà **lo stesso `ErrorCode = 90`**. L'orologio di sistema non è la causa |
 
 ### Che cos'è `lib__57d5__.so`
 
@@ -272,9 +272,14 @@ dall'interfaccia grafica: gestore multi-istanza → nuova istanza → Android 12
 
 Il fatto solido: **il protector rifiuta con il codice 90 su Android 9, 12, 15 e 16**,
 su tre dispositivi, in modo locale e prima della rete. **La versione di Android non è
-la causa**, e quindi cercare un banco più vecchio non serve. Il controllo che fallisce va
-cercato altrove. Il primo candidato è la **data**, con il test corretto: vedi la tabella
-delle ipotesi escluse.
+la causa**, e quindi cercare un banco più vecchio non serve. Esclusi anche l'orologio,
+con la data di maggio 2021, l'installer, e emulatore contro telefono.
+
+Il banco ora c'è: **MuMu Player con root**. Il blocco non è più trovare dove far girare
+il client, ma **capire che cosa controlla il protector**. La strada è il dump della
+memoria del protector decifrato, vedi «Dump della memoria del protector». Su MuMu le
+condizioni che mancavano ci sono tutte: root, `/proc/<pid>/mem`, e soprattutto un
+traduttore che esegue davvero il codice ARM, per circa 1 s prima dell'abort.
 
 1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
    «L'immagine arm64 su host x86».
@@ -517,8 +522,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
 2. **Un banco Android 9–13 su cui il protector non rifiuti.** È l'unica cosa che ancora
    blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64.
    Il banco c'è: MuMu Player esegue il protector. Ma rifiutano Android 9, 12, 15 e 16,
-   quindi **la versione non c'entra**. Il prossimo test è la **data a metà maggio
-   2021**, vedi §2.
+   quindi **la versione non c'entra**. Esclusa anche la data, con l'orologio a maggio
+   2021. **Prossimo passo: dump del protector decifrato su MuMu con root**, per leggere
+   che cosa controlla il codice 90. Vedi §2.
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
