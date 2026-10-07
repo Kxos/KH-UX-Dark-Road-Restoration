@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟠 protector **identificato: LIAPP** (Lockin Company). Rifiuta su Android 9/12/15/16 — non è la versione: è la *detection* di LIAPP (root/VM/USB-debug). Pista aperta: telefono pulito con debug USB spento |
+| **Test sul dispositivo** | 🔴 protector **identificato: LIAPP** (Lockin Company). L'APK originale rifiuta con **`ErrorCode = 13380225`** su telefono vero (Android 16) e su MuMu (Android 12): non dipendono da emulatore, root, versione, debug USB, orologio né rete. Il `90` dei test precedenti era l'anti-repackaging del nostro APK patchato |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -53,12 +53,11 @@ I Zygote: Process 23947 exited due to signal 6 (Aborted)
 Non è un crash: è un rifiuto, con tanto di rapporto diagnostico. Il protector legge
 modello, produttore, **versione del sistema** e orologio, e aborta.
 
-> **Aggiornamento del 7 ottobre 2026 (sera): il protector è LIAPP di Lockin Company.**
-> `ErrorCode = 90` è il verdetto di morte di LIAPP, non un singolo controllo. La causa
-> può cambiare da banco a banco: sugli emulatori è la VM-detection (LIAPP nomina MuMu),
-> sul telefono fisico l'indiziato è la **USB Debugging detection** attiva per `adb`.
-> L'analisi completa è nella sezione «Il protector è LIAPP», più sotto. Le righe qui
-> sopra restano valide come descrizione del rapporto.
+> **Aggiornamento del 7 ottobre 2026 (sera): il protector è LIAPP di Lockin Company, e il
+> `90` era colpa nostra.** Ogni `ErrorCode = 90` mai visto veniva dall'APK **patchato**:
+> è l'**anti-repackaging** di LIAPP che vede la firma di debug. L'APK **originale** dà un
+> altro codice, **`13380225`**, identico su telefono e su MuMu. Vedi «Mappa dei codici
+> LIAPP», più sotto. Il rapporto qui sopra resta valido come forma.
 
 **Le sette triplette non sono tutte impronte** — correzione a una prima lettura.
 Confrontando due avvii diversi, **solo la prima è identica**; le altre sei cambiano ogni
@@ -91,7 +90,7 @@ conclusione era giusta per un'altra ragione — il rapporto del protector — no
 
 | Ipotesi | Esito |
 |---|---|
-| Rotto dal nostro ripacchettamento | ❌ si chiude anche l'APK originale intatto |
+| Rotto dal nostro ripacchettamento | ⚠️ **in parte vero**: l'originale si chiude anch'esso, ma con un altro codice (`13380225`). Il `90` è proprio l'anti-repackaging scatenato dalla nostra firma — vedi «Mappa dei codici LIAPP» |
 | Librerie non allineate a pagine da 16 KB | ❌ i segmenti `LOAD` sono allineati a 64 KB |
 | **Scadenza o licenza datata del protector** | ❌ Primo test: orologio del telefono al **7 marzo 2021**, stesso `ErrorCode = 90`. Non bastava, perché quella data è *precedente* alla build 4.3.1 (aprile 2021). Rifatto su MuMu Android 12 con root (`date 051512002021.00`, `auto_time 0`): orologio al **15 maggio 2021**, dopo la build e prima della chiusura del 30 maggio. Il rapporto stampa `2021/05/15 12:00:19` e dà **lo stesso `ErrorCode = 90`**. L'orologio di sistema non è la causa |
 
@@ -256,19 +255,47 @@ vediamo, e fa chiarezza sul codice 90.
   «nessuna rete prima del rifiuto». L'ipotesi «licenza scaduta» è quindi chiusa due
   volte — dall'orologio e dalla documentazione.
 
-**Questo riscrive la lettura del codice 90.** Non è *un* controllo unico: è il verdetto
-di morte di LIAPP, e la *causa* può essere diversa su ogni banco.
+### Mappa dei codici LIAPP — misurata il 7 ottobre 2026
 
-- **Sugli emulatori (MuMu, LDPlayer)** il colpevole più probabile è la **VM detection**:
-  LIAPP nomina MuMu per nome. Lo strace lo conferma — prima dell'abort il processo legge
-  `/system/etc/mumu-configs/*`, `libhoudini.so`, `/system/lib64/arm64/cpuinfo`,
-  `scaling_cur_freq`: tutte firme da emulatore. Su MuMu c'è **anche** il root. Due
-  motivi indipendenti, entrambi sufficienti.
-- **Sul Galaxy A54 fisico** niente root né emulatore: lì l'indiziato è la **USB Debugging
-  detection**. Per leggere `logcat` il debug ADB era **acceso** — ed è proprio una delle
-  condizioni che LIAPP rifiuta. È un'ipotesi **non ancora verificata** ma ad alto impatto:
-  se è così, **su un telefono pulito con il debug USB spento il gioco originale potrebbe
-  partire**. Va provato guardando lo schermo, senza adb (vedi «Vie d'uscita»).
+Il codice **cambia con la condizione**, e ogni condizione dà sempre lo stesso codice.
+Misure dirette, `logcat` letto a ogni avvio:
+
+| APK | Banco | Condizione | `ErrorCode` |
+|---|---|---|---|
+| **patchato** (firma di debug) | Galaxy A54 (16), MuMu (12, 15), LDPlayer (9) | qualunque | **90** |
+| patchato | Galaxy A54 | opzioni sviluppatore **spente** | **90** |
+| **originale** 4.3.1 | Galaxy A54, Android 16, **senza root** | opzioni sviluppatore spente | **13380225** |
+| originale | Galaxy A54 | debug USB **acceso** | **13380225** |
+| originale | MuMu Android 12, root | orologio di oggi | **13380225** |
+| originale | MuMu Android 12, root | orologio al **15 maggio 2021** | **13380225** |
+| originale | MuMu Android 12, root | **strace** agganciato | **40** |
+
+Letture:
+
+- **`90` = anti-repackaging.** Compare solo con l'APK ri-firmato, su qualunque banco e
+  qualunque stato del debug. **Tutta l'analisi precedente si basava su `90`** e quindi
+  misurava la nostra patch, non il problema vero. In particolare, i test «esclusa la
+  versione» (Android 9/12/15/16) e «esclusa la data» erano stati fatti col patchato: non
+  dicevano nulla sul controllo che ferma l'originale. Quelli sono stati **rifatti con
+  l'originale** (righe sopra).
+- **`40` = anti-debug.** Compare quando un tracer (`ptrace`) è agganciato. Lo strace va
+  usato sapendo che cambia la risposta.
+- **`13380225` (`0xCC2A81`) è il codice dell'originale, ed è lo stesso ovunque**: telefono
+  vero senza root e MuMu con root, Android 16 e 12, debug acceso e spento, data di oggi e
+  di maggio 2021. Quindi **non** è VM-detection, root, versione di Android, debug USB o
+  orologio. Lo strace dell'originale mostra anche **nessuna connessione di rete** prima
+  del rifiuto, solo i socket locali di `logdw`/`statsdw`. È un controllo **locale, comune
+  a tutti i banchi**, e non ancora identificato. Indiziati rimasti: integrità/installazione
+  dell'APK (es. LIAPP che si aspetta lo split di Play invece dell'APK unico), un
+  identificativo o una chiave di attivazione che non c'è, o un controllo legato al
+  servizio Square Enix spento.
+- **L'ipotesi «debug USB» è smentita.** Il telefono pulito col debug spento rifiuta lo
+  stesso, con lo stesso codice di quando è acceso.
+
+L'APK originale verificato (SHA-256 `3be176ab…985b`, uguale a quello pubblicato da
+APKMirror, firma Square Enix v3 `f7b60074`) è in `D:\Progetto_Restauro_KH_UX\apk\
+khux-4.3.1-original.apk`.
+
 - **La memory protection** spiega perché, provando a fotografare a raffica il segmento di
   codice del protector (`snap.sh`), la regione risultava **azzerata**: LIAPP ripulisce il
   codice decifrato appena fiuta un accesso. Il dump a processo congelato (`capture.ps1`)
@@ -357,16 +384,12 @@ memoria del protector decifrato, vedi «Dump della memoria del protector». Su M
 condizioni che mancavano ci sono tutte: root, `/proc/<pid>/mem`, e soprattutto un
 traduttore che esegue davvero il codice ARM, per circa 1 s prima dell'abort.
 
-> **Dopo l'identificazione di LIAPP, la pista più economica è un'altra.** LIAPP rifiuta
-> su MuMu per via della VM-detection, e sul Galaxy quasi certamente per la **USB Debugging
-> detection** accesa per `adb`. Prima di comprare hardware o disassemblare, va provata
-> l'ipotesi a costo zero: **telefono fisico pulito (meglio arm64), debug USB spento, APK
-> originale, guardando lo schermo** — senza adb, senza root, senza emulatore. Se il gioco
-> parte, il blocco di preservazione cade: il client gira e lo si può pilotare con un
-> redirect DNS verso il nostro server (non serve adb per quello). Lo svantaggio è che
-> senza adb non si cattura `logcat`: si osserva solo *se* parte. La cattura della
-> superficie REST si fa in un secondo momento, su un telefono dove il debug si possa
-> tenere spento mentre si reindirizza il DNS dal router.
+> **Provato e smentito: il telefono pulito col debug USB spento.** L'APK originale rifiuta
+> lo stesso con `13380225` (vedi «Mappa dei codici LIAPP»). Da qui in poi **i test vanno
+> fatti solo con l'APK originale**: il patchato si ferma all'anti-repackaging (`90`) e
+> nasconde tutto il resto. Siccome `13380225` è identico su telefono e su MuMu, **MuMu
+> resta un banco fedele** per studiarlo, con root e senza bisogno del telefono. Evitare
+> lo strace per misurare il codice: l'anti-debug lo trasforma in `40`.
 
 1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
    «L'immagine arm64 su host x86».
