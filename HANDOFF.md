@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🔴 protector **identificato: LIAPP** (Lockin Company). L'APK originale rifiuta con **`ErrorCode = 13380225`** su telefono vero (Android 16) e su MuMu (Android 12): non dipendono da emulatore, root, versione, debug USB, orologio né rete. Il `90` dei test precedenti era l'anti-repackaging del nostro APK patchato |
+| **Test sul dispositivo** | 🟢 **il client parte** — APK **originale** su **LDPlayer 9 (Android 9)**: LIAPP dà verdetto `0` e il gioco arriva alla **schermata del titolo**. Su Android 12 e 16 rifiuta con `13380225`: **la causa è la versione di Android**. Il `90` dei test precedenti era l'anti-repackaging del nostro APK patchato. Prossimo ostacolo: il guest LDPlayer non ha rete |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -269,6 +269,7 @@ Misure dirette, `logcat` letto a ogni avvio:
 | originale | MuMu Android 12, root | orologio di oggi | **13380225** |
 | originale | MuMu Android 12, root | orologio al **15 maggio 2021** | **13380225** |
 | originale | MuMu Android 12, root | **strace** agganciato | **40** |
+| **originale** | **LDPlayer 9, Android 9, senza root** | nessuna | **nessun rifiuto** — verdetto `0`, il gioco arriva al titolo |
 
 Letture:
 
@@ -291,11 +292,47 @@ Letture:
   servizio Square Enix spento.
 - **L'ipotesi «debug USB» è smentita.** Il telefono pulito col debug spento rifiuta lo
   stesso, con lo stesso codice di quando è acceso.
-- **La versione di Android è di nuovo in gioco.** Tutti i banchi su cui abbiamo provato
-  l'**originale** sono **più recenti della build**: la 4.3.1 è di aprile 2021, quando
-  l'Android corrente era l'11; il codice `13380225` l'abbiamo visto su **12** e **16**. Il
-  test su Android 9 (LDPlayer) era col patchato, quindi non conta. Serve un banco con
-  **Android ≤ 11** e l'APK originale: è il test più informativo rimasto.
+- **`13380225` = versione di Android non supportata — verificato.** Tutti i banchi su cui
+  l'originale rifiutava sono **più recenti della build** (4.3.1 = aprile 2021, Android 11
+  corrente): 12 e 16. Su **LDPlayer 9 (Android 9)**, senza root, l'originale **passa**.
+  Vedi «Android 9: il client parte».
+
+### Android 9: il client parte — 7 ottobre 2026
+
+**Primo avvio riuscito del client in tutto il progetto.** APK originale 4.3.1 (hash
+verificato nel guest) su LDPlayer 9.5.37, Android 9, ABI `arm64-v8a` via houdini, root
+spento.
+
+- **LIAPP lascia passare**: nessuna riga `E error`, nessun `abort`. Il file di verdetto ha
+  un **nome diverso** da quello dei rifiuti — `app_57d5/SEgF3I_JinmQC0.txt` invece di
+  `l5Xzi1ZFinmQC.txt` — e contiene `0\n<ts>\n0\n0`: codice **0**, tutto in regola. Accanto
+  c'è un `data3.db` (71 byte, inizia con il path di `app_57d5`).
+- **Il gioco gira**: motore Cocos, audio Square Enix (`sqexsdlib` 18.05.18.C), billing,
+  Firebase, Facebook/Twitter SDK. Chiede l'accesso a **Google Play Games**
+  (`AchievementManager: start login`): la schermata di Google fallisce per mancanza di
+  rete, si chiude con «Indietro» e il gioco va avanti.
+- **Arriva alla schermata del titolo**: «Version 4.3.1», pulsanti **KHUX START**, **KHDR
+  START** e **x3 [ex tres]**, e un popup **«End of Service Notification»** («ended service
+  as of Tuesday 6/29/2021… an offline version… is now available»).
+- **Il guest non ha rete** (`ping`: *Network is unreachable*; DNS fallisce per tutti). Il
+  popup di fine servizio quindi è **generato in locale** dal client, non scaricato. Il
+  testo non è in chiaro nell'APK: sta negli asset cifrati. Va capito *quando* il client lo
+  mostra (data? fallimento del bootstrap?): è la prima cosa da guardare con il nostro
+  server in ascolto.
+- Le preferenze del gioco (`Cocos2dxPrefsFile.xml`, chiave `data`) sono cifrate, formato
+  con magic `BGAD`.
+
+**Come si usa LDPlayer 9 qui:**
+
+- **adb non si apre** con questa versione (9.5.37), nemmeno con
+  `"basicSettings.adbDebug": 1` in `vms\config\leidian0.config`: nessuna porta in ascolto.
+  Non serve: **`<ld>\ld.exe -s 0 "<comando>"`** esegue comandi shell nel guest, da
+  root (`context=u:r:ldinit`), e **`ldconsole installapp --index 0 --filename <apk>`**
+  installa. `logcat`, `pm`, `am`, `input`, `cat` di `/data/data` funzionano tutti così;
+- per spegnerlo: `ldconsole quit --index 0` può non bastare, `ldconsole quitall` sì. La
+  config si modifica **solo a istanza spenta**;
+- con Hyper-V attivo (lo vuole MuMu) il boot richiede qualche minuto, poi l'uso è fluido;
+- gli screenshot si prendono dalla finestra `dnplayer` (PowerShell + `CopyFromScreen`).
 
 **Dump dell'originale (`orig1`, MuMu Android 12, 196 MB in
 `D:\Progetto_Restauro_KH_UX\dumps\orig1`).** Il congelamento con `SIGSTOP` non scatena
@@ -405,6 +442,11 @@ memoria del protector decifrato, vedi «Dump della memoria del protector». Su M
 condizioni che mancavano ci sono tutte: root, `/proc/<pid>/mem`, e soprattutto un
 traduttore che esegue davvero il codice ARM, per circa 1 s prima dell'abort.
 
+> **✅ Risolto il 7 ottobre 2026: su Android 9 il client parte** (LDPlayer 9, APK
+> originale) — vedi «Android 9: il client parte». Il prossimo passo è dare rete al guest e
+> puntarlo al nostro server (DNS), per catturare la superficie REST e il bootstrap. Le note
+> sotto restano come storia del percorso.
+>
 > **Provato e smentito: il telefono pulito col debug USB spento.** L'APK originale rifiuta
 > lo stesso con `13380225` (vedi «Mappa dei codici LIAPP»). Da qui in poi **i test vanno
 > fatti solo con l'APK originale**: il patchato si ferma all'anti-repackaging (`90`) e
