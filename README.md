@@ -10,18 +10,21 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 |---|---|---|
 | 1 | Reperimento client e valutazione fattibilità | ✅ completata |
 | 2 | Ricognizione tecnica — architettura, protocollo, schema dati | ✅ completata |
-| A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint da `APIManager` | 🔄 in corso |
-| B | Server REST minimo → il client raggiunge la home screen | ⬜ |
+| A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint | ✅ completata |
+| B | Server REST minimo → il client raggiunge la home screen | 🔄 server pronto, test sul device bloccato |
 | C | Schema dei campi delle 54 tabelle master | ⬜ |
 | D | Popolamento master data, quest e combattimento single-player | ⬜ |
 | E | Photon self-hosted per Union Cross / raid / PvP | ⬜ |
 
-**[REPORT.md](REPORT.md)** contiene i risultati completi della ricognizione.
+**[HANDOFF.md](HANDOFF.md)** — come riprendere il lavoro su un'altra macchina, e il problema aperto.
+**[REPORT.md](REPORT.md)** — risultati della ricognizione. **[PHASE-A.md](PHASE-A.md)** — analisi statica.
 
 ## Sintesi tecnica
 
 - Il gioco è **Cocos2d-x con logica in C++ nativo** (non Unity/IL2CPP).
-- **I simboli C++ non sono strippati**: l'architettura è ricostruibile dai binari.
+- **Il binario è strippato al 95%**: 4.882 funzioni con nome su 97.879, quasi tutte
+  librerie. Il livello API si trova per xref sulle stringhe di protocollo, non per nome.
+- Il client è protetto da `lib__57d5__.so`, impacchettata e non rimovibile.
 - Due stack di rete: **REST** (AES-256-CBC + gzip, chiave negoziata col server) e
   **Photon/eNet UDP** per il realtime.
 - Il namespace `master::` espone lo schema dei dati: **107 tabelle** nella build online
