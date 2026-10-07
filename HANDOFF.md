@@ -291,6 +291,27 @@ Letture:
   servizio Square Enix spento.
 - **L'ipotesi «debug USB» è smentita.** Il telefono pulito col debug spento rifiuta lo
   stesso, con lo stesso codice di quando è acceso.
+- **La versione di Android è di nuovo in gioco.** Tutti i banchi su cui abbiamo provato
+  l'**originale** sono **più recenti della build**: la 4.3.1 è di aprile 2021, quando
+  l'Android corrente era l'11; il codice `13380225` l'abbiamo visto su **12** e **16**. Il
+  test su Android 9 (LDPlayer) era col patchato, quindi non conta. Serve un banco con
+  **Android ≤ 11** e l'APK originale: è il test più informativo rimasto.
+
+**Dump dell'originale (`orig1`, MuMu Android 12, 196 MB in
+`D:\Progetto_Restauro_KH_UX\dumps\orig1`).** Il congelamento con `SIGSTOP` non scatena
+l'anti-debug: il rapporto catturato è `13380225`. A differenza del dump del patchato, **il
+testo del rapporto non resta in chiaro** (niente `ErrorCode`, niente data). Resta invece
+la **struttura del verdetto**, una sola copia in memoria anonima:
+
+```
++0x00  ... 3891 (pid)
++0x10  00 00 00 01 | 81 2a cc 00 (= 13380225) | 2a 71 c6 6a (= timestamp del rapporto)
++0x20  "004c4ba4-013462e6-07fbaf1b" "10e43769-37d456dc-68c25102" ...  (le triplette)
+       ... "Samsung" ... "SM-A156E" ... "12"
+```
+
+Nessuna stringa di motivazione accanto al codice. `13380225` = `0x00CC2A81` **non ha
+riscontri pubblici** (cercato in decimale ed esadecimale).
 
 L'APK originale verificato (SHA-256 `3be176ab…985b`, uguale a quello pubblicato da
 APKMirror, firma Square Enix v3 `f7b60074`) è in `D:\Progetto_Restauro_KH_UX\apk\
