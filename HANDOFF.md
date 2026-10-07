@@ -44,14 +44,20 @@ E error : com.square_enix.android_googleplay.khuxww
 E error : samsung
 E error : SM-A546B
 E error : 16                              <- la versione di Android, che quindi legge
-E error : 004c4ba4-013462e6-07fbaf1b      <- 7 triplette di hash: impronte d'ambiente
+E error : 004c4ba4-013462e6-07fbaf1b      <- 7 triplette; solo la prima e' stabile
   ... (altre 6)
 F libc  : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 23947, pid 23947
 I Zygote: Process 23947 exited due to signal 6 (Aborted)
 ```
 
-Non è un crash: è un rifiuto, con tanto di rapporto diagnostico. Il protector raccoglie
-modello, produttore e **versione del sistema**, calcola sette impronte, e aborta.
+Non è un crash: è un rifiuto, con tanto di rapporto diagnostico. Il protector legge
+modello, produttore, **versione del sistema** e orologio, e aborta.
+
+**Le sette triplette non sono tutte impronte** — correzione a una prima lettura.
+Confrontando due avvii diversi, **solo la prima è identica**; le altre sei cambiano ogni
+volta. La prima è quindi un'impronta vera, di dispositivo o applicazione; le altre sei
+sono valori per-sessione, nonce o roba derivata dall'ASLR. C'è molto meno da dedurre
+guardandole di quanto sembrasse.
 
 Il literal `ErrorCode = ` **non esiste in chiaro da nessuna parte** — né in
 `classes.dex`, né in `libcocos2dcpp.so`, né in `lib__57d5__.so`. È costruito a runtime
@@ -79,6 +85,7 @@ conclusione era giusta per un'altra ragione — il rapporto del protector — no
 |---|---|
 | Rotto dal nostro ripacchettamento | ❌ si chiude anche l'APK originale intatto |
 | Librerie non allineate a pagine da 16 KB | ❌ i segmenti `LOAD` sono allineati a 64 KB |
+| **Scadenza o licenza datata del protector** | ❌ orologio del telefono riportato al **7 marzo 2021**, prima della chiusura dei server: **stesso `ErrorCode = 90`**, stesso abort. Il protector *legge* la data — la stampa nel rapporto — ma non ci basa il verdetto |
 
 ### Che cos'è `lib__57d5__.so`
 
@@ -122,10 +129,31 @@ prodotto a runtime: cioè precisamente quello che fa un packer che si decifra. D
 passaggio è confermato che **la patch dell'APK funziona**, perché la configurazione di
 rete viene caricata.
 
-> **Trappola da non ripetere.** Le immagini **x86_64 di API 29 non hanno la traduzione
-> ARM** (`ro.product.cpu.abilist` = `x86_64,x86`): l'APK, che ha solo librerie ARM, non
-> si installa nemmeno — `INSTALL_FAILED_NO_MATCHING_ABIS`. La traduzione arriva con
-> **API 30**, dove l'abilist include `arm64-v8a`. Verificalo sempre dopo il boot.
+### L'emulatore x86: quadro completo, e chiuso
+
+La traduzione ARM esiste solo in una finestra stretta di immagini, e quella finestra è
+già stata usata. Verificato, non dedotto:
+
+| Immagine | `ro.product.cpu.abilist` | Esito |
+|---|---|---|
+| API 29 x86_64 | `x86_64,x86` | non installa — `INSTALL_FAILED_NO_MATCHING_ABIS` |
+| **API 30 x86_64** | `x86_64,x86,arm64-v8a,armeabi-v7a,armeabi` | installa, nessun `ErrorCode`, muore nel traduttore |
+| API 33 x86_64 | `x86_64` | non installa — `INSTALL_FAILED_NO_MATCHING_ABIS` |
+
+Google ha aggiunto la traduzione ARM con API 30 e l'ha tolta dalle immagini più recenti.
+**Nessuna altra immagine x86 può dire di più**: o non installa, o inciampa nel traduttore.
+Controlla sempre `ro.product.cpu.abilist` dopo il boot, prima di perdere tempo.
+
+> **Le immagini arm64 non compaiono in SDK Manager su un host x86.** Non è che non
+> esistano: sono filtrate per architettura dell'host. Per averle serve `sdkmanager` da
+> riga di comando — cioè installare *Android SDK Command-line Tools* dalla scheda
+> *SDK Tools* — e poi chiedere il pacchetto per nome:
+> ```bash
+> sdkmanager "system-images;android-30;google_apis;arm64-v8a"
+> ```
+> L'emulatore include `qemu-system-aarch64`, quindi l'emulazione ARM completa è prevista;
+> Google però considera quelle immagini destinate a host ARM e non garantisce questo
+> scenario. Da verificare, non dare per scontato che parta.
 
 ### Dump della memoria del protector: tecnica valida, banco mancante
 
@@ -151,14 +179,29 @@ però probabilmente non servirebbe affatto, perché il gioco partirebbe.
 
 ### Le vie d'uscita
 
-1. **Dispositivo fisico Android 10–13, arm64.** Ora non è più un'inferenza: su Android 11
-   il protector non rifiuta, e l'unico ostacolo rimasto era la traduzione ARM, che su
-   hardware ARM non esiste. È la strada, e un usato costa poco.
-   Se è anche **rootabile**, il dump del protector arriva in omaggio.
-2. ~~Emulatore con immagine Android 10/11~~ — provato, non basta: vedi sopra. Resta utile
-   per tutto ciò che non richiede di eseguire il gioco.
+Un solo fatto solido regge tutto il resto: **su Android 11 il protector non rifiuta, su
+Android 16 sì**. Il resto dei tentativi è stato rumore di strumentazione.
 
-Il test è di un minuto: se il gioco parte, le righe `E error` non compaiono.
+1. **Immagine arm64 vera sull'emulatore.** Elimina il traduttore, che è l'unica cosa che
+   ha fatto fallire i tentativi su API 30. Costo: i *Command-line Tools* e ~1,5 GB di
+   immagine, tutto in locale, niente esposto a terzi. Incerto se parta su host x86
+   (vedi il riquadro sopra). **Da provare per prima**, perché non espone niente.
+2. **Dispositivo fisico Android 10–13, arm64.** Il banco pulito: nessuna ambiguità di
+   emulazione. Un usato costa poco, e se è **rootabile** il dump del protector arriva in
+   omaggio — vedi la sezione sul dump.
+3. **Device farm in cloud** (Firebase Test Lab, BrowserStack): hardware reale con Android
+   vecchio, senza comprare nulla. **Comporta però caricare l'APK su un servizio di
+   terzi**, che è una scelta da fare consapevolmente.
+4. **Chiedere a Restoration Union e alle community di preservazione KHUX.** Costo tecnico
+   zero, e con ogni probabilità qualcuno *sa già* su quali versioni di Android parte: è
+   esattamente l'informazione che stiamo cercando di comprare con ore di lavoro. Era già
+   suggerito nel REPORT fin dalla fase 2 e non è mai stato fatto. Va fatto comunque, in
+   parallelo a qualunque altra strada.
+
+~~Emulatore con immagine x86~~ — esaurito, vedi la tabella sopra.
+
+Il test, su qualunque banco, è di un minuto: se il gioco parte, le righe `E error` non
+compaiono.
 
 ---
 
@@ -207,9 +250,9 @@ unzip -o -j "recon/dl/<apk>" "lib/arm64-v8a/libcocos2dcpp.so" -d recon/ext/ww431
 ### Un AVD senza `avdmanager`
 
 Se l'SDK non ha i *cmdline-tools*, `avdmanager` e `sdkmanager` non ci sono — ma un AVD è
-solo due file di testo, e l'emulatore basta che li trovi. Scarica l'immagine da Android
-Studio (SDK Manager → *Show Package Details*, **API 30 Google APIs x86_64**: vedi la
-trappola su API 29 in §2), poi in `~/.android/avd/`:
+solo due file di testo, e l'emulatore basta che li trovi. Scegli l'immagine guardando
+prima la tabella delle ABI in §2 — **API 30 Google APIs x86_64** è l'unica x86 che
+installi l'APK — poi in `~/.android/avd/`:
 
 `khux30.ini`
 
