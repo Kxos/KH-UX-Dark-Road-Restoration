@@ -55,9 +55,10 @@ modello, produttore, **versione del sistema** e orologio, e aborta.
 
 **Le sette triplette non sono tutte impronte** — correzione a una prima lettura.
 Confrontando due avvii diversi, **solo la prima è identica**; le altre sei cambiano ogni
-volta. La prima è quindi un'impronta vera, di dispositivo o applicazione; le altre sei
-sono valori per-sessione, nonce o roba derivata dall'ASLR. C'è molto meno da dedurre
-guardandole di quanto sembrasse.
+volta. La prima è quindi un'impronta vera; le altre sei sono valori per-sessione, nonce
+o roba derivata dall'ASLR. C'è molto meno da dedurre guardandole di quanto sembrasse.
+La prima, `004c4ba4-013462e6-07fbaf1b`, è **identica anche su MuMu Player**, cioè su un
+altro «dispositivo»: è un'impronta dell'**applicazione**, non del telefono.
 
 Il literal `ErrorCode = ` **non esiste in chiaro da nessuna parte** — né in
 `classes.dex`, né in `libcocos2dcpp.so`, né in `lib__57d5__.so`. È costruito a runtime
@@ -200,20 +201,49 @@ Su un telefono fisico non rootato servirebbe invece l'APK debuggable, e tornereb
 l'ambiguità. **Diventa facile e pulito su un Android 10–13 fisico e rootabile** — dove
 però probabilmente non servirebbe affatto, perché il gioco partirebbe.
 
+### MuMu Player: il protector gira davvero, e su Android 15 rifiuta
+
+Provato il 7 ottobre 2026: MuMu Player 6.8, istanza Android 15. Si presenta come un
+Samsung SM-A156E, con `abilist` `x86_64,arm64-v8a,x86`. Il traduttore ARM è
+**`libhoudini.so`** v7, caricato da `libnb.so`: è quello di Intel, non
+`libndk_translation` di Google.
+
+**Houdini esegue il protector fino in fondo**: si decifra, gira e produce il suo
+rapporto. È esattamente ciò che `libndk_translation` non riusciva a fare
+(`HandleNoExec`). A 1 s dall'avvio:
+
+```
+E error : ErrorCode = 90
+E error : Samsung / SM-A156E / 15
+E error : 004c4ba4-013462e6-07fbaf1b      <- identica al Galaxy A54
+F libc  : Fatal signal 6 (SIGABRT) ... abort+0
+```
+
+Due conclusioni:
+
+- **Android 15 rifiuta come Android 16**: stesso codice 90. Il confine sta tra 11 e 15.
+- **MuMu è un banco valido**: il protector non lo tratta diversamente da un telefono
+  vero. Resta da provare l'istanza **Android 12**, l'altra versione che MuMu offre.
+
+Come si usa, da riga di comando: `<mumu>\nx_main\MuMuManager.exe` crea e avvia le
+istanze, per esempio `info -v all` e `control -v 0 launch`. `adb` è in
+`<mumu>\nx_main\adb.exe`, sulla porta 16384 per l'istanza 0 (la dà `info`). Il motore
+Android 12 non è preinstallato: `create --version 12` risponde
+`android engine not installed`, e `upgrade` non può scendere da 15 a 12. Va scaricato
+dall'interfaccia grafica: gestore multi-istanza → nuova istanza → Android 12.
+
 ### Le vie d'uscita
 
 Un solo fatto solido regge tutto il resto: **su Android 11 il protector non rifiuta, su
-Android 16 sì**. Il resto dei tentativi è stato rumore di strumentazione.
+Android 15 e 16 sì**. Il resto dei tentativi è stato rumore di strumentazione.
 
 1. ~~**Immagine arm64 vera sull'emulatore.**~~ — ❌ su host x86 non boota, vedi
    «L'immagine arm64 su host x86».
-2. **Emulatore per giocare** (MuMu Player, LDPlayer, BlueStacks). È il banco più
-   promettente senza telefono: esiste proprio per far girare su PC giochi solo-ARM e
-   protetti, con traduttori ARM diversi da quello di Google che inciampava in
-   `HandleNoExec`. Offre Android 9–12, ha `adb` e root attivabile: con il root il
-   dirottamento passa per `/etc/hosts`. Rischi: è software di terze parti da installare,
-   e il protector potrebbe riconoscere l'emulatore. Anche questo sarebbe comunque un
-   dato utile.
+2. **Emulatore per giocare** — 🟡 **in corso con MuMu Player**: il protector ci gira
+   davvero. Android 15 rifiuta, Android 12 è da provare: vedi «MuMu Player» sopra. Se
+   rifiuta anche il 12, restano emulatori con Android 9, cioè LDPlayer 9 o BlueStacks
+   con Pie, perché MuMu non offre più l'11. Con il root il dirottamento passa per
+   `/etc/hosts`.
 3. **Dispositivo fisico Android 10–13, arm64.** Il banco pulito: nessuna ambiguità di
    emulazione. Un usato costa poco, e se è **rootabile** il dump del protector arriva in
    omaggio — vedi la sezione sul dump.
@@ -270,7 +300,9 @@ Scegli la variante con `arm64-v8a`. Mettilo in `recon/dl/`.
 > Il materiale pesante (APK, immagini di sistema, dump) può anche stare fuori dal
 > repository, su un disco con spazio. Gli script prendono i percorsi come argomenti.
 > Sulla postazione di sviluppo attuale sta in `D:\Progetto_Restauro_KH_UX\`: l'APK
-> patchato è in `apk\`. L'SDK Android è in `D:\Programmi\Android\SDK`.
+> patchato è in `apk\`, MuMu Player in `MuMuPlayer\` (spostato dopo l'installazione, con
+> una junction al vecchio percorso `D:\Program Files\Netease\MuMuPlayer`). L'SDK
+> Android è in `D:\Programmi\Android\SDK`.
 **Evita la 4.4.0**: è di giugno 2021, dopo la chiusura del 30 maggio, quindi già una
 build di transizione.
 
@@ -446,9 +478,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
 1. ~~**Il backtrace del tombstone.**~~ — ✅ **risolto**, ma non dal tombstone: è il
    protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
 2. **Un banco Android 9–13 su cui il protector non rifiuti.** È l'unica cosa che ancora
-   blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64:
-   la prossima prova senza telefono è un emulatore per giocare, vedi §2 «Le vie
-   d'uscita».
+   blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64.
+   MuMu Player esegue il protector: Android 15 rifiuta, **Android 12 è il prossimo
+   test**. Vedi §2.
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
