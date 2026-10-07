@@ -185,27 +185,48 @@ dispositivi goldfish, molto lavoro con esito incerto, o un'altra strada.
 > cambiando `path=` nel `.ini`. Il controllo di spazio guarda la cartella dell'AVD, e la
 > partizione dati di default chiede 9,6 GB.
 
-### Dump della memoria del protector: tecnica valida, banco mancante
+### Dump della memoria del protector: fatto su MuMu con root
 
-Il protector si decifra e salta nel proprio codice: catturarlo in memoria darebbe le sue
-stringhe vere, e probabilmente la tabella che spiega il codice 90. Verificato quel che si
-poteva verificare:
+Riuscito il 7 ottobre 2026, su MuMu Android 12 con root. La tecnica di base — congelare
+il processo e copiare `/proc/<pid>/mem` — funziona, con due correzioni rispetto al primo
+tentativo sull'emulatore Google:
 
-- l'emulatore è una build `userdebug`: `adb root` funziona e `ro.debuggable=1`, quindi
-  **non serve rendere l'APK debuggable** — e questo evita di accendere la spia che
-  l'anti-debug cerca, che è l'obiezione principale a tutto l'approccio;
-- `dd` su `/proc/<pid>/mem` da root funziona (provato su `system_server`), e il
-  congelamento con `SIGSTOP` permette di dumpare con calma.
+- **la finestra è brevissima e il processo muore presto**: congelare a tempo fisso
+  mancava sempre il bersaglio. Soluzione: `SIGSTOP` subito, poi far avanzare a scatti
+  (`CONT` / `STOP` ogni 20 ms) finché in logcat non compare `ErrorCode`, e fermarsi lì.
+  Così il processo resta congelato **dopo** aver scritto il rapporto ma **prima**
+  dell'`abort`;
+- **`dd` di toybox tiene `skip` a 32 bit**: con `bs=4096` gli indirizzi alti (`0x77…`)
+  vanno in overflow e `dd` esce con `-NNN < 0`. La shell `mksh` fa anch'essa i conti a
+  32 bit. Soluzione: calcolare gli offset in Python e passarli a `dd` in byte con
+  `iflag=skip_bytes,count_bytes`, che li legge a 64 bit.
 
-Non è andato in porto per due ragioni, entrambe del banco e non del metodo: la finestra
-utile è **sotto il secondo e variabile** (un avvio è morto prima di 1,2 s), e la regione
-anonima `rwx` da 4 MB che sembrava il payload è in realtà **il JIT del traduttore** —
-compare già all'avvio ed è vuota. Sotto traduzione il codice ARM del protector non arriva
-mai a eseguire davvero, quindi qui non c'è niente di rappresentativo da catturare.
+Gli script sono in `recon/tools/memdump/`, con un README. I dump non sono versionati:
+stanno in `D:\Progetto_Restauro_KH_UX\dumps` (~200 MB).
 
-Su un telefono fisico non rootato servirebbe invece l'APK debuggable, e tornerebbe
-l'ambiguità. **Diventa facile e pulito su un Android 10–13 fisico e rootabile** — dove
-però probabilmente non servirebbe affatto, perché il gioco partirebbe.
+**Cosa si è trovato:**
+
+- **Il rapporto è assemblato a runtime.** La stringa `ErrorCode = 90\n…\nSM-A156E\n12\n`
+  con le sette triplette compare **in chiaro sullo stack del thread principale**, non in
+  nessuna libreria su disco. Conferma: il rapporto lo costruisce il protector dopo
+  essersi decifrato, come già si sospettava.
+- **Il protector scrive il verdetto su disco.** Il file privato
+  `app_57d5/l5Xzi1ZFinmQC.txt` (nome a caso, costante tra gli avvii) contiene
+  `90`, un timestamp Unix, `0`, e il `pid`. Cioè **codice d'errore, ora e processo**. Da
+  verificare se a un avvio successivo lo rilegge: se sì, cancellarlo potrebbe cambiare il
+  comportamento, ed è un esperimento a costo zero.
+- **Vicino al rapporto, sullo stack, c'è una lunga lista di package di altre app**
+  (`com.netease.*`, `jp.co.mixi.monsterstrike`, `kr.txwy.and.blhx`, …), la stringa
+  `_ZN3art7Runtime15DisableVerifierE` e `/proc/sys/vm/pagecache_limit_switch`. Sono
+  impronte tipiche di un controllo d'ambiente: cerca emulatori, strumenti e app note. Ma
+  da solo non spiega il codice 90, perché **rifiuta anche sul Galaxy fisico**, dove quelle
+  app non ci sono.
+
+**Quello che manca ancora:** il dump cattura il codice ARM *tradotto da houdini*, non
+l'originale, e non abbiamo ancora isolato *quale* controllo porta al 90. Il payload
+decifrato vive nelle regioni `rwx` basse (`[anon:Mem_0x20000000]`, ~62 MB a `0x0d3ec000`)
+e nelle librerie `nb/` tradotte. Il passo successivo è disassemblare quella regione, o
+mettere un breakpoint prima della scrittura del file di verdetto.
 
 ### MuMu Player: il protector gira davvero, e su Android 15 rifiuta
 
@@ -519,12 +540,16 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
 
 1. ~~**Il backtrace del tombstone.**~~ — ✅ **risolto**, ma non dal tombstone: è il
    protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
-2. **Un banco Android 9–13 su cui il protector non rifiuti.** È l'unica cosa che ancora
-   blocca il test sul device. Gli emulatori ufficiali sono esauriti, sia x86 che arm64.
-   Il banco c'è: MuMu Player esegue il protector. Ma rifiutano Android 9, 12, 15 e 16,
-   quindi **la versione non c'entra**. Esclusa anche la data, con l'orologio a maggio
-   2021. **Prossimo passo: dump del protector decifrato su MuMu con root**, per leggere
-   che cosa controlla il codice 90. Vedi §2.
+2. **Capire che cosa fa rifiutare il protector (codice 90).** È l'unica cosa che ancora
+   blocca il test sul device. Il banco c'è — MuMu Player con root esegue il protector —
+   ed è escluso che la causa sia la versione di Android (rifiuta su 9/12/15/16), la data
+   (orologio a maggio 2021) o l'installer. **Il dump della memoria è fatto**, script in
+   `recon/tools/memdump/`, risultati in §2: il rapporto è assemblato a runtime e il
+   verdetto finisce in `app_57d5/l5Xzi1ZFinmQC.txt`. **Prossimi passi concreti:**
+   a) cancellare quel file e rilanciare, per vedere se il verdetto è messo in cache;
+   b) disassemblare la regione `rwx` bassa (`[anon:Mem_0x20000000]`) dove sta il payload
+   decifrato; c) in parallelo, chiedere alla community di preservazione KHUX su quali
+   banchi il gioco partiva (costo zero, mai fatto).
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
