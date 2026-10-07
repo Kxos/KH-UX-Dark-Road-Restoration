@@ -266,6 +266,11 @@ cd KH-UX-Dark-Road-Restoration
 <https://www.apkmirror.com/apk/square-enix-inc/kingdom-hearts-unchained/kingdom-hearts-unchained-4-3-1-release/>
 
 Scegli la variante con `arm64-v8a`. Mettilo in `recon/dl/`.
+
+> Il materiale pesante (APK, immagini di sistema, dump) può anche stare fuori dal
+> repository, su un disco con spazio. Gli script prendono i percorsi come argomenti.
+> Sulla postazione di sviluppo attuale sta in `D:\Progetto_Restauro_KH_UX\`: l'APK
+> patchato è in `apk\`. L'SDK Android è in `D:\Programmi\Android\SDK`.
 **Evita la 4.4.0**: è di giugno 2021, dopo la chiusura del 30 maggio, quindi già una
 build di transizione.
 
