@@ -21,13 +21,16 @@ if errorlevel 1 (
 
 rem --- IP sulla rete locale --------------------------------------------------
 rem Prende il primo IPv4 privato non virtuale: e' l'indirizzo che il telefono
-rem deve poter raggiungere.
-for /f "delims=" %%I in ('powershell -NoProfile -Command ^
-  "(Get-NetIPAddress -AddressFamily IPv4 ^| Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and $_.InterfaceAlias -notlike 'vEthernet*' -and $_.InterfaceAlias -notlike '*Tunnel*' -and $_.InterfaceAlias -notlike '*VPN*' -and $_.PrefixOrigin -eq 'Dhcp' } ^| Select-Object -First 1 -ExpandProperty IPAddress)"') do set "LAN_IP=%%I"
+rem deve poter raggiungere. La logica sta in server\lan-ip.ps1: dentro un for /f
+rem le pipe di PowerShell si rompono con l'escape di cmd.
+set "LAN_IP="
+for /f "delims=" %%I in ('powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0server\lan-ip.ps1"') do set "LAN_IP=%%I"
 
+rem Niente parentesi nel testo qui sotto: dentro un blocco if una ")" lo chiude
+rem in anticipo e cmd abortisce senza mostrare nulla.
 if "%LAN_IP%"=="" (
   echo Non sono riuscito a determinare l'IP locale.
-  set /p LAN_IP=Inseriscilo a mano (es. 192.168.1.198):
+  set /p "LAN_IP=Inseriscilo a mano, es. 192.168.1.198: "
 )
 
 echo ===========================================================

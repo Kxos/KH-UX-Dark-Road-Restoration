@@ -210,11 +210,28 @@ function start() {
   const key = path.join(CERT_DIR, 'server.key');
   const cert = path.join(CERT_DIR, 'server.crt');
   if (fs.existsSync(key) && fs.existsSync(cert)) {
+    // Lo SNI dice quale host il client voleva raggiungere, anche quando l'handshake
+    // poi fallisce: e' l'unico modo di vedere il nome se il DNS non passa da noi
+    // (LDPlayer risolve fuori dal guest e noi dirottiamo solo il TCP).
+    const sniSeen = new Set();
     https.createServer(
-      { key: fs.readFileSync(key), cert: fs.readFileSync(cert) },
+      {
+        key: fs.readFileSync(key),
+        cert: fs.readFileSync(cert),
+        SNICallback: (servername, cb) => {
+          if (!sniSeen.has(servername)) {
+            sniSeen.add(servername);
+            console.log(`\x1b[36m[tls:sni]\x1b[0m ${servername}`);
+          }
+          cb(null);
+        },
+      },
       handler('https')
     ).listen(HTTPS_PORT, '0.0.0.0', () => {
       console.log(`in ascolto su https://0.0.0.0:${HTTPS_PORT}`);
+    }).on('tlsClientError', (e, sock) => {
+      const sni = sock.servername || '-';
+      console.log(`\x1b[31m[tls:errore]\x1b[0m ${sni}  ${e.code || ''} ${e.message}`);
     }).on('error', (e) => console.error('HTTPS non avviato:', e.message));
   } else {
     console.log('HTTPS disattivato: certificato assente. Generalo con server/make-cert.sh');
