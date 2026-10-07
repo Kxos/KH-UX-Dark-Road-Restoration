@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟢 **il client parte** — APK **originale** su **LDPlayer 9 (Android 9)**: LIAPP dà verdetto `0` e il gioco arriva alla **schermata del titolo**. Su Android 12 e 16 rifiuta con `13380225`: **la causa è la versione di Android**. Il `90` dei test precedenti era l'anti-repackaging del nostro APK patchato. Prossimo ostacolo: il guest LDPlayer non ha rete |
+| **Test sul dispositivo** | 🟢 **il client parte** — APK **originale** su **LDPlayer 9 (Android 9)**: LIAPP dà verdetto `0` e il gioco arriva alla **schermata del titolo**. Su Android 12 e 16 rifiuta con `13380225`: **la causa è la versione di Android**. Il `90` dei test precedenti era l'anti-repackaging del nostro APK patchato. Rete del guest risolta. Prossimo: server + CA di sistema + DNS, poi KHUX START |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -332,7 +332,35 @@ spento.
 - per spegnerlo: `ldconsole quit --index 0` può non bastare, `ldconsole quitall` sì. La
   config si modifica **solo a istanza spenta**;
 - con Hyper-V attivo (lo vuole MuMu) il boot richiede qualche minuto, poi l'uso è fluido;
-- gli screenshot si prendono dalla finestra `dnplayer` (PowerShell + `CopyFromScreen`).
+- **screenshot dall'interno del guest**, non dallo schermo del PC (la finestra può non
+  essere in primo piano e si cattura il desktop): `ld.exe -s 0 "screencap -p
+  /sdcard/Pictures/x.png"` e il file compare in `C:\Users\<utente>\Documents\XuanZhi9\
+  Pictures\` — cartella condivisa `vboxsf`, come `Misc` e `Applications`.
+
+**La rete del guest — risolto.** Il guest sta su una *NAT Network* di VirtualBox,
+`LdNatNetwork0` (`172.16.1.0/24`): DHCP su `.3` (`VBoxNetDHCP`), gateway su `.1`
+(`VBoxNetNAT`), il guest prende `.4`. Il primo giorno **non c'era rete** perché un
+riavvio rapido dell'istanza aveva lasciato **orfano** il vecchio `VBoxNetDHCP`: al
+secondo avvio VirtualBox non riesce a ripartire la rete («Cannot start DHCP server
+because it is already running», in `%USERPROFILE%\.Ld9VirtualBox\VBoxSVC.log`) e **non
+lancia `VBoxNetNAT`**. Il DHCP risponde lo stesso, ma il gateway non esiste: ARP
+`NUD_FAILED`, Android stacca e riattacca il Wi-Fi in ciclo, *Network is unreachable*.
+Rimedio: `ldconsole quitall`, attendere che `Ld9BoxHeadless` sparisca, terminare
+`VBoxNetDHCP`/`VBoxNetNAT` rimasti, rilanciare. Controllo: con l'istanza accesa devono
+esserci **entrambi** i processi. Dopo: ping al gateway, a `8.8.8.8` e DNS funzionano.
+
+**Con la rete, stesso popup di fine servizio**, e in 60 s nessuna connessione TCP
+duratura del gioco verso Square Enix (solo chiamate brevi degli SDK: la Graph API di
+Facebook risponde). Il bootstrap verso il server di gioco parte, con ogni probabilità,
+solo premendo **KHUX START**: è il momento da catturare col nostro server.
+
+**Per la fase B serve un'accortezza sul certificato.** L'APK patchato aggiungeva un
+`network_security_config` che fa accettare le CA utente; l'originale non lo ha, e su
+Android 7+ un'app con `targetSdk 29` **non si fida delle CA installate dall'utente**. Non
+si può ripatchare (LIAPP → `90`). La strada è installare `server/certs/ca.crt` come **CA
+di sistema** nel guest (in `/system/etc/security/cacerts/<hash>.0`), cosa possibile
+perché `ld.exe` dà root. Il DNS del guest si può dirottare verso il PC con una regola
+`iptables` sulla porta 53, sempre da root, senza toccare le impostazioni Wi-Fi.
 
 **Dump dell'originale (`orig1`, MuMu Android 12, 196 MB in
 `D:\Progetto_Restauro_KH_UX\dumps\orig1`).** Il congelamento con `SIGSTOP` non scatena
@@ -692,18 +720,19 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
 
 1. ~~**Il backtrace del tombstone.**~~ — ✅ **risolto**, ma non dal tombstone: è il
    protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
-2. **Capire che cosa fa rifiutare il protector (codice 90).** È l'unica cosa che ancora
-   blocca il test sul device. Il banco c'è — MuMu Player con root esegue il protector —
-   ed è escluso che la causa sia la versione di Android (rifiuta su 9/12/15/16), la data
-   (orologio a maggio 2021) o l'installer. **Il dump della memoria è fatto**, script in
-   `recon/tools/memdump/`, risultati in §2: il rapporto è assemblato a runtime e il
-   verdetto finisce in `app_57d5/l5Xzi1ZFinmQC.txt`. **Prossimi passi concreti:**
-   a) cancellare quel file e rilanciare, per vedere se il verdetto è messo in cache;
-   b) disassemblare la regione `rwx` bassa (`[anon:Mem_0x20000000]`) dove sta il payload
-   decifrato; c) in parallelo, chiedere alla community di preservazione KHUX su quali
-   banchi il gioco partiva (costo zero, mai fatto).
-3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
-   del gioco, che staticamente non è enumerabile.
+2. ~~**Capire che cosa fa rifiutare il protector.**~~ — ✅ **risolto il 7 ottobre 2026.**
+   È LIAPP; il `90` era l'anti-repackaging del nostro APK patchato, e l'originale rifiuta
+   (`13380225`) solo su Android ≥ 12. **Su LDPlayer 9 (Android 9) con l'APK originale il
+   client arriva al titolo**, e la rete del guest funziona. Vedi §2, «Android 9: il
+   client parte».
+3. **Fase B sul banco LDPlayer 9** — il prossimo passo, ora sbloccato:
+   a) avviare il server (`start-server.bat`, da amministratore, porte 53/80/443);
+   b) installare `server/certs/ca.crt` come **CA di sistema** nel guest (root via
+   `ld.exe`), perché l'APK originale non accetta le CA utente;
+   c) dirottare il DNS del guest verso il PC (`iptables` sulla porta 53, da root);
+   d) avviare il gioco, premere **KHUX START**, e raccogliere `logs/requests.ndjson` e il
+   log DNS: è la superficie REST e l'host vero del bootstrap, che staticamente non sono
+   enumerabili.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
    107 classi per RTTI, 1.739 campi, ~3 secondi. Vedi [PHASE-C.md](PHASE-C.md).
    Resta aperta solo la **tipizzazione** dei campi: i nomi e l'ordine ci sono, i tipi no.
