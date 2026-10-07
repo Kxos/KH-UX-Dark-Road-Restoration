@@ -26,6 +26,13 @@ recon/web/*.zip
 recon/out/strings_*.txt
 recon/out/field_candidates_*.txt
 
+# Nota sul confine, perche' la riga sopra e quella sotto sembrano simili.
+# `master_classes_*` e `master_fields_*` SONO versionati di proposito: sono lo
+# *schema* — nomi di tabella e di colonna — cioe' la descrizione d'interfaccia
+# che serve a reinterfacciarsi col servizio dismesso. Il master data vero
+# (statistiche, drop table, costi) non entra qui ne' ora ne' mai.
+# `field_candidates_*` invece e' lo scarto grezzo di una ricerca, non uno schema.
+
 # ---------------------------------------------------------------------------
 # Progetti di reverse engineering
 #

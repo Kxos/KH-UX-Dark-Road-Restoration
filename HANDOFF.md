@@ -30,61 +30,88 @@ qui c'è come.
 
 ---
 
-## 2. Il problema aperto
+## 2. Il problema aperto — causa accertata il 7 ottobre 2026
 
-**Il gioco si chiude dopo circa un secondo, su Android 16.**
+**Il gioco si chiude dopo circa un secondo, su Android 16.** È il **protector che si
+autotermina dopo un controllo d'ambiente fallito**, e lo dichiara lui stesso.
+
+A ~170 ms dall'avvio del processo, subito prima dell'abort (Galaxy A54, Android 16):
 
 ```
-libc  F  Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 6466, pid 6466
+E error : ErrorCode = 90
+E error : 2026/10/07 11:43:51
+E error : com.square_enix.android_googleplay.khuxww
+E error : samsung
+E error : SM-A546B
+E error : 16                              <- la versione di Android, che quindi legge
+E error : 004c4ba4-013462e6-07fbaf1b      <- 7 triplette di hash: impronte d'ambiente
+  ... (altre 6)
+F libc  : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 23947, pid 23947
+I Zygote: Process 23947 exited due to signal 6 (Aborted)
 ```
 
-`SI_QUEUE` significa che il segnale è stato inviato di proposito via `sigqueue()`, dal
-processo a sé stesso. Non è un segfault né un `abort()` ordinario: è
-un'**autoterminazione deliberata**.
+Non è un crash: è un rifiuto, con tanto di rapporto diagnostico. Il protector raccoglie
+modello, produttore e **versione del sistema**, calcola sette impronte, e aborta.
 
-### Ipotesi già escluse, con il dato che le ha smentite
+Il literal `ErrorCode = ` **non esiste in chiaro da nessuna parte** — né in
+`classes.dex`, né in `libcocos2dcpp.so`, né in `lib__57d5__.so`. È costruito a runtime
+dal protector dopo essersi decifrato, il che conferma che il rapporto viene da lui. Cosa
+significhi il codice 90 non è documentato pubblicamente.
+
+### Due conclusioni precedenti da correggere
+
+**Il criterio del backtrace non era applicabile.** Diceva: «se tra i frame compare
+`lib__57d5__.so` → è il protector». Non comparirà mai. Tutti e quattro i tombstone
+raccolti dicono **`2 total frames`**, entrambi dentro `libc` (`abort+156` e
+`__libc_current_sigrtmin+4`, che è solo il simbolo esportato più vicino), **senza
+`Abort message`**. Lo stack unwinder si ferma dentro libc, quindi nessuna libreria
+dell'app può apparire nel backtrace, qualunque sia la causa. Il tombstone non era il
+posto giusto dove guardare: **la risposta era nel buffer principale di logcat**.
+
+**`SI_QUEUE` non dimostrava nulla.** Era stato letto come prova di un `sigqueue()`
+deliberato, contrapposto a un `abort()` ordinario. Ma `raise()` di bionic usa
+`rt_tgsigqueueinfo`, quindi quel `si_code` è anche quello di un `abort()` normale. La
+conclusione era giusta per un'altra ragione — il rapporto del protector — non per questa.
+
+### Ipotesi escluse, con il dato che le ha smentite
 
 | Ipotesi | Esito |
 |---|---|
-| Rotto dal nostro ripacchettamento | ❌ **si chiude anche l'APK originale intatto** |
+| Rotto dal nostro ripacchettamento | ❌ si chiude anche l'APK originale intatto |
 | Librerie non allineate a pagine da 16 KB | ❌ i segmenti `LOAD` sono allineati a 64 KB |
-| Enforcement W^X da `targetSdk 29` | ❓ ricostruito con `targetSdk 28`, **esito non ancora verificato** |
 
-### Ipotesi corrente
+### Che cos'è `lib__57d5__.so`
 
-`lib__57d5__.so` è un protector impacchettato (1 MB, entropia 7,94 bit/byte). Il suo
-caricatore è travestito da classe Kotlin
-(`kotlin.coroutines.experimental.intrinsics.IntrinsicsKt__…$10`), fa
+Protector impacchettato (1 MB, entropia 7,94 bit/byte). Il caricatore è travestito da
+classe Kotlin (`kotlin.coroutines.experimental.intrinsics.IntrinsicsKt__…$10`), fa
 `System.loadLibrary("__57d5__")` in un `<clinit>` e poi centinaia di chiamate a un
 decrittatore nativo, anch'esso camuffato. È referenziato da decine di classi in tutto il
 dex: **non è rimovibile**, è uno strato di decifratura intrecciato nell'app.
 
-Un protector del 2021 i cui controlli d'ambiente falliscono su Android 16 spiegherebbe
-tutto, compresa l'autoterminazione silenziosa.
+### Come si riproduce la cattura
 
-### Il dato che manca
-
-Il **backtrace del tombstone**. In Logcat di Android Studio il filtro predefinito
-`package:mine` lo nasconde, perché il tombstone lo scrive `crash_dump64`, non l'app.
+Il filtro predefinito `package:mine` di Android Studio nasconde queste righe. Da riga di
+comando:
 
 ```bash
-adb logcat -b crash -d
+adb logcat -c && adb shell monkey -p com.square_enix.android_googleplay.khuxww \
+    -c android.intent.category.LAUNCHER 1
+# attendi ~10 s, poi:
+adb logcat -d -b main,system,crash > run.txt
 ```
 
-Oppure in Logcat sostituisci il filtro con `tag:DEBUG | tag:libc`, riproduci il crash e
-leggi le righe `#00`–`#15` sotto `backtrace:`.
+e filtra sul pid del processo del gioco — le righe che contano hanno tag `error`.
 
-**Se tra i frame compare `lib__57d5__.so`** → è il protector, e la risposta è un
-dispositivo Android 10–13.
-**Se compare altro** → potrebbe esserci una via d'uscita.
+### Le vie d'uscita
 
-### Alternative se è il protector
-
-1. **Dispositivo Android 10–13.** Il gioco è del 2021 con `targetSdk 29`: su hardware
-   dell'epoca è probabile che parta. La strada più diretta.
+1. **Dispositivo Android 10–13.** Il gioco è del 2021 con `targetSdk 29`, e il protector
+   legge e riporta la versione del sistema: su hardware dell'epoca è la scommessa
+   migliore. La strada più diretta.
 2. **Emulatore con immagine Android 10/11.** Il blocco emulatori di Square Enix era
    *lato server*, e i server non esistono più. Rischio: il protector può avere controlli
    anti-emulatore propri — ma non si perde nulla a provare.
+
+Entrambe si verificano in minuti: se il gioco parte, le righe `E error` non compaiono.
 
 ---
 
@@ -247,10 +274,10 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
 
 ## 6. Prossimi passi, in ordine
 
-1. **Il backtrace del tombstone.** Decide se il blocco è il protector o altro. Tutto il
-   resto dipende da questo.
-2. **Se è il protector**, un dispositivo Android 10–13, o un emulatore con immagine
-   dell'epoca.
+1. ~~**Il backtrace del tombstone.**~~ — ✅ **risolto**, ma non dal tombstone: è il
+   protector, e lo dice lui stesso nel buffer principale di logcat. Vedi §2.
+2. **Un dispositivo Android 10–13, o un emulatore con immagine dell'epoca.** È l'unica
+   cosa che ancora blocca il test sul device, e si verifica in pochi minuti.
 3. **Appena il client parla**, raccogliere `logs/requests.ndjson`: è la superficie REST
    del gioco, che staticamente non è enumerabile.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:

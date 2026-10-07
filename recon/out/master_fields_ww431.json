@@ -1,0 +1,3339 @@
+{
+  "Achievement": {
+    "class_functions": [
+      "0xe12e50"
+    ],
+    "fields": [
+      "titleId",
+      "os",
+      "achievementId",
+      "category",
+      "targetId",
+      "num"
+    ],
+    "other_strings": [],
+    "parser": "0xe12e50",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe13100",
+      "0xe13124"
+    ],
+    "vtable": "0x1eb2708"
+  },
+  "Advertisement": {
+    "class_functions": [
+      "0xe162d4"
+    ],
+    "fields": [
+      "advertisementId",
+      "display",
+      "appearLimit",
+      "initialPosition",
+      "type",
+      "id",
+      "assignSkillType",
+      "assignSkillId",
+      "assignSkillLv",
+      "burstUpperNumber",
+      "num",
+      "odds",
+      "startDatetime",
+      "endDatetime"
+    ],
+    "other_strings": [],
+    "parser": "0xe162d4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe167d0",
+      "0xe167f4"
+    ],
+    "vtable": "0x1eb2e28"
+  },
+  "AvatarParts": {
+    "class_functions": [
+      "0xdeea48"
+    ],
+    "fields": [
+      "avatarPartsId",
+      "name",
+      "partsType",
+      "gender",
+      "combinationType",
+      "combinationFlag",
+      "position",
+      "luxCategory",
+      "luxAddRate",
+      "setKind",
+      "fixedFlag",
+      "validSetCloth",
+      "setCloth",
+      "status"
+    ],
+    "other_strings": [],
+    "parser": "0xdeea48",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdeef68",
+      "0xdeef8c"
+    ],
+    "vtable": "0x1eaef38"
+  },
+  "Badstatus": {
+    "class_functions": [
+      "0xdef30c"
+    ],
+    "fields": [
+      "badstatusId",
+      "name",
+      "iconId",
+      "effect",
+      "target",
+      "power"
+    ],
+    "other_strings": [],
+    "parser": "0xdef30c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdef604",
+      "0xdef628"
+    ],
+    "vtable": "0x1eaf068"
+  },
+  "Base": {
+    "class_functions": [],
+    "fields": [],
+    "other_strings": [],
+    "parser": null,
+    "vmethods": [],
+    "vtable": null
+  },
+  "BattleMisc": {
+    "class_functions": [
+      "0xdef9a8"
+    ],
+    "fields": [
+      "battleMiscId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xdef9a8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdefb18",
+      "0xdefb3c"
+    ],
+    "vtable": "0x1eaf198"
+  },
+  "BenefitResource": {
+    "class_functions": [
+      "0xe1284c"
+    ],
+    "fields": [
+      "fileId",
+      "fileName",
+      "startTime",
+      "endTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe1284c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe12aac",
+      "0xe12ad0"
+    ],
+    "vtable": "0x1eb25d8"
+  },
+  "Buff": {
+    "class_functions": [
+      "0xdefebc"
+    ],
+    "fields": [
+      "buffId",
+      "grade",
+      "name",
+      "iconId",
+      "effect",
+      "addPower"
+    ],
+    "other_strings": [],
+    "parser": "0xdefebc",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf0168",
+      "0xdf018c"
+    ],
+    "vtable": "0x1eaf2c8"
+  },
+  "Burst": {
+    "class_functions": [
+      "0xdf050c"
+    ],
+    "fields": [
+      "burstId",
+      "motionId",
+      "effectId",
+      "distance",
+      "effectDirectionFix",
+      "name",
+      "description",
+      "maxEnhanceCount",
+      "attribute",
+      "attributeChange",
+      "imitation",
+      "target",
+      "hitCount",
+      "gauge",
+      "penetrate",
+      "critical",
+      "criticalPower",
+      "displayPower",
+      "displayPowerPerEnforce",
+      "displayMaxPower",
+      "displayMaxPowerPerEnforce",
+      "basePower",
+      "basePowerPerEnforce",
+      "damageType",
+      "specialPowerType",
+      "sp1",
+      "sp2",
+      "sp1PerEnforce",
+      "sp2PerEnforce",
+      "addTurn",
+      "addCount",
+      "bufAttack",
+      "debufAttack",
+      "debufAttackAll",
+      "bufDefense",
+      "debufDefense",
+      "debufDefenseAll",
+      "bufAttackPower",
+      "debufAttackPower",
+      "debufAttackPowerAll",
+      "bufDefensePower",
+      "debufDefensePower",
+      "debufDefensePowerAll",
+      "bufAttackSpeed",
+      "debufAttackSpeed",
+      "debufAttackSpeedAll",
+      "bufDefenseSpeed",
+      "debufDefenseSpeed",
+      "debufDefenseSpeedAll",
+      "bufAttackMagic",
+      "debufAttackMagic",
+      "debufAttackMagicAll",
+      "bufDefenseMagic",
+      "debufDefenseMagic",
+      "debufDefenseMagicAll",
+      "bufAttackUpright",
+      "debufAttackUpright",
+      "debufAttackUprightAll",
+      "bufDefenseUpright",
+      "debufDefenseUpright",
+      "debufDefenseUprightAll",
+      "bufAttackReverse",
+      "debufAttackReverse",
+      "debufAttackReverseAll",
+      "bufDefenseReverse",
+      "debufDefenseReverse",
+      "debufDefenseReverseAll",
+      "resetBufAtttack",
+      "resetDebufAttack",
+      "resetDebufAttackAll",
+      "resetBufDefense",
+      "resetDebufDefense",
+      "resetDebufDefenseAll",
+      "resetBufAtttackPower",
+      "resetDebufAttackPower",
+      "resetDebufAttackPowerAll",
+      "resetBufDefensePower",
+      "resetDebufDefensePower",
+      "resetDebufDefensePowerAll",
+      "resetBufAtttackSpeed",
+      "resetDebufAttackSpeed",
+      "resetDebufAttackSpeedAll",
+      "resetBufDefenseSpeed",
+      "resetDebufDefenseSpeed",
+      "resetDebufDefenseSpeedAll",
+      "resetBufAtttackMagic",
+      "resetDebufAttackMagic",
+      "resetDebufAttackMagicAll",
+      "resetBufDefenseMagic",
+      "resetDebufDefenseMagic",
+      "resetDebufDefenseMagicAll",
+      "resetBufAtttackUpright",
+      "resetDebufAttackUpright",
+      "resetDebufAttackUprightAll",
+      "resetBufDefenseUpright",
+      "resetDebufDefenseUpright",
+      "resetDebufDefenseUprightAll",
+      "resetBufAtttackReverse",
+      "resetDebufAttackReverse",
+      "resetDebufAttackReverseAll",
+      "resetBufDefenseReverse",
+      "resetDebufDefenseReverse",
+      "resetDebufDefenseReverseAll",
+      "copyBufBase",
+      "copyBufAttribute",
+      "heal",
+      "healShake",
+      "curePoison",
+      "cureSleep",
+      "cureDeepPoison",
+      "cureParalysis",
+      "recovery",
+      "oprUrgencyId",
+      "oprUrgencyValue",
+      "addGuiltBonusId",
+      "addGuiltBonusCount",
+      "addGuiltBonusValue",
+      "superburstTiming",
+      "recurringAttribute",
+      "reflectionTurn",
+      "reflectionAttribute",
+      "reflectionMagnification",
+      "reflectionResetAttribute",
+      "addBaseCountType",
+      "addBaseCountValue",
+      "addBaseAtkSelf",
+      "addBaseDefSelf",
+      "addBaseAtkOpponent",
+      "addBaseDefOpponent",
+      "resetBase",
+      "addBaseAttribute",
+      "matchCountType",
+      "matchCountValue",
+      "matchMagnification",
+      "unmatchMagnification"
+    ],
+    "other_strings": [],
+    "parser": "0xdf050c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf2be4",
+      "0xdf2c08"
+    ],
+    "vtable": "0x1eaf3f8"
+  },
+  "Colosseum": {
+    "class_functions": [
+      "0xdf2f88"
+    ],
+    "fields": [
+      "colosseumId",
+      "colosseumStageId",
+      "round",
+      "ap",
+      "arrivalStageCount",
+      "rankId",
+      "excellentUnlockCount",
+      "validStageReward",
+      "stageRewardType",
+      "stageRewardId",
+      "stageRewardAssignType",
+      "stageRewardSkillId",
+      "stageRewardSkillLv",
+      "stageRewardNum",
+      "validReward",
+      "rewardType",
+      "rewardId",
+      "rewardAssignType",
+      "rewardSkillId",
+      "rewardSkillLv",
+      "rewardNum"
+    ],
+    "other_strings": [],
+    "parser": "0xdf2f88",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf3864",
+      "0xdf3888"
+    ],
+    "vtable": "0x1eaf528"
+  },
+  "ColosseumStage": {
+    "class_functions": [
+      "0xdf3c08"
+    ],
+    "fields": [
+      "colosseumStageId",
+      "openDate",
+      "closeDate",
+      "rankingCloseDate",
+      "headColosseumId",
+      "termColosseumId",
+      "rankingId",
+      "validStage",
+      "stageId",
+      "loopStageCount",
+      "lvPerLoop"
+    ],
+    "other_strings": [],
+    "parser": "0xdf3c08",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf40b0",
+      "0xdf40d4"
+    ],
+    "vtable": "0x1eaf658"
+  },
+  "Comeback": {
+    "class_functions": [
+      "0xe16b74"
+    ],
+    "fields": [
+      "comebackId",
+      "title",
+      "description",
+      "comment",
+      "day",
+      "require",
+      "stageStartId",
+      "stageEndId",
+      "comebackMissionNum",
+      "startDate",
+      "endDate",
+      "rewardType",
+      "itemId",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "burstUpperNumber",
+      "itemNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe16b74",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe171a4",
+      "0xe171c8"
+    ],
+    "vtable": "0x1eb2f58"
+  },
+  "CommunicationBgm": {
+    "class_functions": [
+      "0xe1ba3c"
+    ],
+    "fields": [
+      "bgmId",
+      "sortId",
+      "name",
+      "bgm"
+    ],
+    "other_strings": [],
+    "parser": "0xe1ba3c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1bc5c",
+      "0xe1bc80"
+    ],
+    "vtable": "0x1eb3a08"
+  },
+  "CommunicationCategory": {
+    "class_functions": [
+      "0xe1c000"
+    ],
+    "fields": [
+      "categoryId",
+      "sortId",
+      "bannerUrl",
+      "startTime",
+      "endTime",
+      "status"
+    ],
+    "other_strings": [],
+    "parser": "0xe1c000",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1c2e8",
+      "0xe1c30c"
+    ],
+    "vtable": "0x1eb3b38"
+  },
+  "CommunicationRoom": {
+    "class_functions": [
+      "0xe1c68c"
+    ],
+    "fields": [
+      "id",
+      "backgroundId",
+      "sortId",
+      "validChild",
+      "startTime",
+      "endTime",
+      "viewType",
+      "validParts",
+      "partsId",
+      "dataType",
+      "xPostion",
+      "yPostion",
+      "zSort",
+      "bgmId",
+      "ballonScale",
+      "minMember",
+      "maxMember",
+      "validAvatar",
+      "avatarXPosition",
+      "avatarYPosition",
+      "avatarDirection"
+    ],
+    "other_strings": [],
+    "parser": "0xe1c68c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1d06c",
+      "0xe1d090"
+    ],
+    "vtable": "0x1eb3c68"
+  },
+  "CommunicationTalk": {
+    "class_functions": [
+      "0xe1d410"
+    ],
+    "fields": [
+      "talkId",
+      "sortId",
+      "display",
+      "talk",
+      "voice"
+    ],
+    "other_strings": [],
+    "parser": "0xe1d410",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1d674",
+      "0xe1d698"
+    ],
+    "vtable": "0x1eb3d98"
+  },
+  "CommunicationThumbnail": {
+    "class_functions": [
+      "0xe1da18"
+    ],
+    "fields": [
+      "thumbnailId",
+      "sortId",
+      "image"
+    ],
+    "other_strings": [],
+    "parser": "0xe1da18",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1dbd0",
+      "0xe1dbf4"
+    ],
+    "vtable": "0x1eb3ec8"
+  },
+  "DarkAbility": {
+    "class_functions": [
+      "0xe221b4"
+    ],
+    "fields": [
+      "abilityId",
+      "motionId",
+      "effectId",
+      "distance",
+      "effectDirectionFix",
+      "name",
+      "name2lines",
+      "description",
+      "attribute",
+      "damageType",
+      "power",
+      "powerConvexStage",
+      "bonusFeverpoint",
+      "selfStatusId",
+      "selfStatusNumber",
+      "opponentStatusId",
+      "opponentStatusNumber"
+    ],
+    "other_strings": [],
+    "parser": "0xe221b4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe227b8",
+      "0xe227dc"
+    ],
+    "vtable": "0x1eb4978"
+  },
+  "DarkBattleMisc": {
+    "class_functions": [
+      "0xe22b5c"
+    ],
+    "fields": [
+      "battleMiscId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xe22b5c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe22ccc",
+      "0xe22cf0"
+    ],
+    "vtable": "0x1eb4aa8"
+  },
+  "DarkBook": {
+    "class_functions": [
+      "0xe2a1ac"
+    ],
+    "fields": [
+      "bookId",
+      "category",
+      "targetId",
+      "sortId",
+      "validRank",
+      "rankNum",
+      "rewardType",
+      "rewardId",
+      "rewardNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe2a1ac",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2a684",
+      "0xe2a6a8"
+    ],
+    "vtable": "0x1eb5b48"
+  },
+  "DarkBossStage": {
+    "class_functions": [
+      "0xe1ff18"
+    ],
+    "fields": [
+      "openId",
+      "battleNumber",
+      "scenarioType",
+      "bossStageId",
+      "validEnemyId",
+      "enemyListCount",
+      "enemyListId",
+      "enemyListType",
+      "enemyBackgroundId",
+      "enemyBackgroundType",
+      "enemyBackgroundSwitch",
+      "bgmBattle",
+      "validBossId",
+      "bossId",
+      "victoryConditions",
+      "victoryValue",
+      "bossBackgroundId",
+      "victoryPose",
+      "victorySe",
+      "bgmBoss",
+      "disableContinue",
+      "mainPartner",
+      "subPartner1",
+      "subPartner2",
+      "subPartner3",
+      "subPartner4",
+      "partnerDisplay",
+      "validBeforeDrama",
+      "beforeDramaId",
+      "beforeDramaType",
+      "validAfterDrama",
+      "afterDramaId",
+      "afterDramaType",
+      "bgmPartner"
+    ],
+    "other_strings": [],
+    "parser": "0xe1ff18",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe20a9c",
+      "0xe20ac0"
+    ],
+    "vtable": "0x1eb44b8"
+  },
+  "DarkBuff": {
+    "class_functions": [
+      "0xe23070"
+    ],
+    "fields": [
+      "buffId",
+      "grade",
+      "name",
+      "effect",
+      "addPower"
+    ],
+    "other_strings": [],
+    "parser": "0xe23070",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe232cc",
+      "0xe232f0"
+    ],
+    "vtable": "0x1eb4bd8"
+  },
+  "DarkCard": {
+    "class_functions": [
+      "0xe23670"
+    ],
+    "fields": [
+      "cardId",
+      "imageCardId",
+      "sortId",
+      "flavor",
+      "exchangeSp",
+      "exchangeBp",
+      "attributeCategory",
+      "cardTypeId",
+      "name",
+      "abilityId",
+      "validSubability",
+      "subabilityId"
+    ],
+    "other_strings": [],
+    "parser": "0xe23670",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe23aec",
+      "0xe23b10"
+    ],
+    "vtable": "0x1eb4d08"
+  },
+  "DarkDrawCardType": {
+    "class_functions": [
+      "0xe27f00"
+    ],
+    "fields": [
+      "drawCardTypeId",
+      "sortId",
+      "name",
+      "benefitId",
+      "parentId",
+      "payType",
+      "price",
+      "validFluctuationPrice",
+      "fluctuationPrice",
+      "validLot",
+      "lotName",
+      "lotCount",
+      "tableIds",
+      "bannerUrl",
+      "detailUrl",
+      "dayCount",
+      "warrantNumberOfTime",
+      "warrantDisplayOfTime",
+      "validComment",
+      "comment",
+      "warrantCounterId",
+      "warrantTableIds",
+      "warrantCardListIds",
+      "warrantCardRepeat",
+      "warrantResetCardListIds",
+      "displayTimeLeft",
+      "startDate",
+      "endDate"
+    ],
+    "other_strings": [],
+    "parser": "0xe27f00",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe28a4c",
+      "0xe28a70"
+    ],
+    "vtable": "0x1eb5688"
+  },
+  "DarkEnemy": {
+    "class_functions": [
+      "0xe23e90"
+    ],
+    "fields": [
+      "enemyId",
+      "enemyDisplayId",
+      "deadType",
+      "level",
+      "attackInterval",
+      "hp",
+      "attack",
+      "defense",
+      "matk",
+      "mdef",
+      "dropBp",
+      "unrestricted",
+      "dropHp",
+      "resistFire",
+      "resistWater",
+      "resistLightning",
+      "resistWind",
+      "resistHoly",
+      "resistDarkness",
+      "resistNoAttribute",
+      "registPoison",
+      "registSleep",
+      "registParalysis",
+      "registDarkness",
+      "registConfus",
+      "validSkill",
+      "skillId",
+      "skillRequire",
+      "skillRequireArg",
+      "skillReference",
+      "skillOdds"
+    ],
+    "other_strings": [],
+    "parser": "0xe23e90",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe249a8",
+      "0xe249cc"
+    ],
+    "vtable": "0x1eb4e38"
+  },
+  "DarkEnemyAbility": {
+    "class_functions": [
+      "0xe24d4c"
+    ],
+    "fields": [
+      "enemyAbilityId",
+      "enemyMotionId",
+      "enemyEffectId",
+      "effectDirectionFix",
+      "name",
+      "description",
+      "attribute",
+      "damageType",
+      "power",
+      "selfStatusId",
+      "selfStatusNumber",
+      "opponentStatusId",
+      "opponentStatusNumber"
+    ],
+    "other_strings": [],
+    "parser": "0xe24d4c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2521c",
+      "0xe25240"
+    ],
+    "vtable": "0x1eb4f68"
+  },
+  "DarkEnemyDisplay": {
+    "class_functions": [
+      "0xe255c0"
+    ],
+    "fields": [
+      "enemyDisplayId",
+      "name",
+      "flavor",
+      "kind",
+      "showType",
+      "showSwf",
+      "showFrame",
+      "hideFrame",
+      "spBattle",
+      "battleOffsetX",
+      "battleOffsetY",
+      "cameraY",
+      "distanceAway",
+      "bookListX",
+      "bookListY",
+      "bookListHeight",
+      "bookDetailX",
+      "bookDetailY",
+      "bookDetailHeight",
+      "displayHeight"
+    ],
+    "other_strings": [],
+    "parser": "0xe255c0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe25c9c",
+      "0xe25cc0"
+    ],
+    "vtable": "0x1eb5098"
+  },
+  "DarkEvResource": {
+    "class_functions": [
+      "0xe26040"
+    ],
+    "fields": [
+      "resourceId",
+      "priority",
+      "validResource",
+      "dlKind",
+      "endTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe26040",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe262a8",
+      "0xe262cc"
+    ],
+    "vtable": "0x1eb51c8"
+  },
+  "DarkEvStage": {
+    "class_functions": [
+      "0xe2aa28"
+    ],
+    "fields": [
+      "evStageId",
+      "sortId",
+      "partner",
+      "validEnemyId",
+      "enemyListCount",
+      "enemyListId",
+      "enemyListType",
+      "enemyBackgroundId",
+      "enemyBackgroundType",
+      "enemyBackgroundSwitch",
+      "bgmBattle",
+      "validBossId",
+      "bossId",
+      "victoryConditions",
+      "victoryValue",
+      "bossBackgroundId",
+      "victoryPose",
+      "victorySe",
+      "bgmBoss",
+      "disableContinue",
+      "payType",
+      "freeCount",
+      "payCount",
+      "resetCount",
+      "bannerUrl",
+      "detailUrl",
+      "startDate",
+      "endDate"
+    ],
+    "other_strings": [],
+    "parser": "0xe2aa28",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2b2f4",
+      "0xe2b318"
+    ],
+    "vtable": "0x1eb5c78"
+  },
+  "DarkInitItem": {
+    "class_functions": [
+      "0xe20e40"
+    ],
+    "fields": [
+      "id",
+      "category",
+      "equipType",
+      "equipNo",
+      "param",
+      "itemId"
+    ],
+    "other_strings": [],
+    "parser": "0xe20e40",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe210e0",
+      "0xe21104"
+    ],
+    "vtable": "0x1eb45e8"
+  },
+  "DarkItemshop": {
+    "class_functions": [
+      "0xe28df0"
+    ],
+    "fields": [
+      "itemshopId",
+      "sortId",
+      "itemType",
+      "itemId",
+      "itemNum",
+      "benefitId",
+      "payType",
+      "price",
+      "count",
+      "frameType",
+      "display",
+      "startDate",
+      "endDate"
+    ],
+    "other_strings": [],
+    "parser": "0xe28df0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe292a0",
+      "0xe292c4"
+    ],
+    "vtable": "0x1eb57b8"
+  },
+  "DarkMainMission": {
+    "class_functions": [
+      "0xe2664c"
+    ],
+    "fields": [
+      "missionId",
+      "missionBoardName",
+      "conditionId",
+      "validTarget",
+      "targetType",
+      "targetValue1",
+      "targetValue2",
+      "targetValue3",
+      "targetNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe2664c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe26b34",
+      "0xe26b58"
+    ],
+    "vtable": "0x1eb52f8"
+  },
+  "DarkMap": {
+    "class_functions": [
+      "0xe29644"
+    ],
+    "fields": [
+      "id",
+      "fileName",
+      "offsetX",
+      "offsetY",
+      "priority",
+      "nextId"
+    ],
+    "other_strings": [],
+    "parser": "0xe29644",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe298f4",
+      "0xe29918"
+    ],
+    "vtable": "0x1eb58e8"
+  },
+  "DarkMapList": {
+    "class_functions": [
+      "0xe29c98"
+    ],
+    "fields": [
+      "mapListId",
+      "mapId"
+    ],
+    "other_strings": [],
+    "parser": "0xe29c98",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe29e08",
+      "0xe29e2c"
+    ],
+    "vtable": "0x1eb5a18"
+  },
+  "DarkMaterial": {
+    "class_functions": [
+      "0xe26ed8"
+    ],
+    "fields": [
+      "materialId",
+      "type",
+      "imageId",
+      "validAttributeId",
+      "attributeId",
+      "sortId",
+      "name",
+      "description",
+      "rare",
+      "validEffect",
+      "effectType",
+      "attribute",
+      "effectNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe26ed8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe27478",
+      "0xe2749c"
+    ],
+    "vtable": "0x1eb5428"
+  },
+  "DarkMaterialRecipe": {
+    "class_functions": [
+      "0xe2de70"
+    ],
+    "fields": [
+      "recipeId",
+      "materialId",
+      "sortId",
+      "type",
+      "needBp",
+      "validNeedMaterial",
+      "needMaterialId",
+      "needMaterialNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe2de70",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2e240",
+      "0xe2e264"
+    ],
+    "vtable": "0x1eb6398"
+  },
+  "DarkMisc": {
+    "class_functions": [
+      "0xe21484"
+    ],
+    "fields": [
+      "miscId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xe21484",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe215f4",
+      "0xe21618"
+    ],
+    "vtable": "0x1eb4718"
+  },
+  "DarkMissionBoard": {
+    "class_functions": [
+      "0xe2cc28"
+    ],
+    "fields": [
+      "missionBoardId",
+      "missionBoardType",
+      "missionBoardName",
+      "flavor",
+      "benefitId",
+      "sortId",
+      "missionNum",
+      "listId",
+      "rewardType",
+      "rewardId",
+      "rewardNum",
+      "startDate",
+      "endDate"
+    ],
+    "other_strings": [],
+    "parser": "0xe2cc28",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2d0f8",
+      "0xe2d11c"
+    ],
+    "vtable": "0x1eb6138"
+  },
+  "DarkMissionList": {
+    "class_functions": [
+      "0xe2d49c"
+    ],
+    "fields": [
+      "missionId",
+      "listId",
+      "sortId",
+      "missionListName",
+      "conditionId",
+      "validTarget",
+      "targetType",
+      "targetValue1",
+      "targetValue2",
+      "targetValue3",
+      "targetNum",
+      "rewardType",
+      "rewardId",
+      "rewardNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe2d49c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2dacc",
+      "0xe2daf0"
+    ],
+    "vtable": "0x1eb6268"
+  },
+  "DarkPlayer": {
+    "class_functions": [
+      "0xe2b698"
+    ],
+    "fields": [
+      "lv",
+      "needBp",
+      "hp",
+      "attack",
+      "defense",
+      "magicAttack",
+      "magicDefense",
+      "friend1Id",
+      "friend2Id",
+      "friend3Id",
+      "friend4Id",
+      "friend5Id"
+    ],
+    "other_strings": [],
+    "parser": "0xe2b698",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2bafc",
+      "0xe2bb20"
+    ],
+    "vtable": "0x1eb5da8"
+  },
+  "DarkPlayerParts": {
+    "class_functions": [
+      "0xe2bea0"
+    ],
+    "fields": [
+      "id",
+      "hair",
+      "haircolor",
+      "face",
+      "costume",
+      "body",
+      "keybladeCategory",
+      "keybladeGrade",
+      "accessory"
+    ],
+    "other_strings": [],
+    "parser": "0xe2bea0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2c220",
+      "0xe2c244"
+    ],
+    "vtable": "0x1eb5ed8"
+  },
+  "DarkPve": {
+    "class_functions": [
+      "0xe2e5e4"
+    ],
+    "fields": [
+      "pveId",
+      "name",
+      "worldId",
+      "listId",
+      "startReward",
+      "endReward",
+      "startRankingReward",
+      "endRankingReward",
+      "startDatetime",
+      "endDatetime"
+    ],
+    "other_strings": [],
+    "parser": "0xe2e5e4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2e9d4",
+      "0xe2e9f8"
+    ],
+    "vtable": "0x1eb64c8"
+  },
+  "DarkPveReward": {
+    "class_functions": [
+      "0xe2ed78"
+    ],
+    "fields": [
+      "pveRewardId",
+      "floor",
+      "validReward",
+      "rewardType",
+      "rewardId",
+      "rewardNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe2ed78",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2f124",
+      "0xe2f148"
+    ],
+    "vtable": "0x1eb65f8"
+  },
+  "DarkRankingReward": {
+    "class_functions": [
+      "0xe2f4c8"
+    ],
+    "fields": [
+      "rankingRewardId",
+      "startRank",
+      "endRank",
+      "validReward",
+      "rewardType",
+      "rewardId",
+      "rewardNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe2f4c8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2f8b4",
+      "0xe2f8d8"
+    ],
+    "vtable": "0x1eb6728"
+  },
+  "DarkStageDrama": {
+    "class_functions": [
+      "0xe2c5c4"
+    ],
+    "fields": [
+      "id",
+      "validBeforeDrama",
+      "dramaId",
+      "dramaType"
+    ],
+    "other_strings": [],
+    "parser": "0xe2c5c4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe2c884",
+      "0xe2c8a8"
+    ],
+    "vtable": "0x1eb6008"
+  },
+  "DarkStatus": {
+    "class_functions": [
+      "0xe2781c"
+    ],
+    "fields": [
+      "statusId",
+      "statusType",
+      "name",
+      "value1",
+      "value2",
+      "value3",
+      "value4",
+      "value5"
+    ],
+    "other_strings": [],
+    "parser": "0xe2781c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe27b5c",
+      "0xe27b80"
+    ],
+    "vtable": "0x1eb5558"
+  },
+  "DarkWorldStage": {
+    "class_functions": [
+      "0xe21998"
+    ],
+    "fields": [
+      "worldStageId",
+      "name",
+      "worldId",
+      "difficulty",
+      "releaseNum",
+      "enemyListId",
+      "enemyBackgroundId",
+      "enemyBackgroundType",
+      "enemyBackgroundSwitch",
+      "bgmBattle",
+      "startDate",
+      "endDate"
+    ],
+    "other_strings": [],
+    "parser": "0xe21998",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe21e10",
+      "0xe21e34"
+    ],
+    "vtable": "0x1eb4848"
+  },
+  "DrawMedalType": {
+    "class_functions": [
+      "0xdf4454"
+    ],
+    "fields": [
+      "drawMedalTypeId",
+      "drawType",
+      "sortId",
+      "name",
+      "benefitId",
+      "payType",
+      "price",
+      "validFluctuationPrice",
+      "fluctuationPrice",
+      "tableId",
+      "validLot",
+      "lotName",
+      "lotCount",
+      "lotSsr",
+      "lotPsr",
+      "lotSr",
+      "lotPr",
+      "lotR",
+      "lotPn",
+      "lotN",
+      "tableIds",
+      "vipcoinNumber",
+      "limitedvipcoinNumber",
+      "validAdd",
+      "addType",
+      "addId",
+      "addSkillType",
+      "addSkillId",
+      "addSkillLv",
+      "addNum",
+      "bannerUrl",
+      "mypageBanner",
+      "detailUrl",
+      "dayCount",
+      "warrantNumberOfTime",
+      "warrantDisplayOfTime",
+      "validComment",
+      "comment",
+      "warrantCounterId",
+      "warrantTableIds",
+      "warrantMedalListIds",
+      "warrantMedalRepeat",
+      "warrantResetMedalListIds",
+      "displayTimeLeft",
+      "startDate",
+      "endDate",
+      "isDeleted"
+    ],
+    "other_strings": [],
+    "parser": "0xdf4454",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf5738",
+      "0xdf575c"
+    ],
+    "vtable": "0x1eaf788"
+  },
+  "DrawPetType": {
+    "class_functions": [
+      "0xe15760"
+    ],
+    "fields": [
+      "drawPetTypeId",
+      "drawType",
+      "sortId",
+      "payType",
+      "price",
+      "lotName",
+      "lotCount",
+      "tableId",
+      "vipcoinNumber",
+      "limitedvipcoinNumber",
+      "lastoneValidAdd",
+      "lastoneAddType",
+      "lastoneAddId",
+      "lastoneAddSkillType",
+      "lastoneAddSkillId",
+      "lastoneAddSkillLv",
+      "lastoneAddNum",
+      "bannerUrl",
+      "mypageBanner",
+      "detailUrl",
+      "displayTimeLeft",
+      "startDate",
+      "endDate",
+      "isDeleted"
+    ],
+    "other_strings": [],
+    "parser": "0xe15760",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe15f30",
+      "0xe15f54"
+    ],
+    "vtable": "0x1eb2cf8"
+  },
+  "Emblem": {
+    "class_functions": [
+      "0xe182cc"
+    ],
+    "fields": [
+      "emblemId",
+      "imageId",
+      "sortId",
+      "name",
+      "description",
+      "category",
+      "attribute",
+      "source",
+      "keybladeCategory",
+      "slot1",
+      "slot2",
+      "slot3",
+      "slot4",
+      "slot5",
+      "upperParam",
+      "endTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe182cc",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe18854",
+      "0xe18878"
+    ],
+    "vtable": "0x1eb31b8"
+  },
+  "Enemy": {
+    "class_functions": [
+      "0xdf5adc"
+    ],
+    "fields": [
+      "enemyId",
+      "name",
+      "flavor",
+      "displayId",
+      "show",
+      "showSwf",
+      "showFrame",
+      "hideFrame",
+      "moveSpeed",
+      "hitRadius",
+      "tapRadius",
+      "width",
+      "height",
+      "spBattle",
+      "cameraY",
+      "distanceAway",
+      "kind",
+      "kind2",
+      "absorbAttribute",
+      "attribute",
+      "validGrowth",
+      "baseLv",
+      "hp",
+      "attack",
+      "defense",
+      "exp",
+      "money",
+      "raidPoint",
+      "lux",
+      "score",
+      "attackCp",
+      "suppressCp",
+      "attackHp",
+      "suppressHp",
+      "battlePattern",
+      "displayHeight",
+      "uiDisplayHeight",
+      "validUrgency",
+      "urgency",
+      "urgencyValue",
+      "urgencyFrequency",
+      "urgencySkillId",
+      "validSkill",
+      "skillId",
+      "skillRequire",
+      "skillRequireArg",
+      "skillOdds",
+      "protectPoison",
+      "protectDeepPoison",
+      "protectSleep",
+      "protectParalysis",
+      "registPoison",
+      "registDeepPoison",
+      "registSleep",
+      "registParalysis",
+      "bufAttack",
+      "bufDefense",
+      "bufAttackPower",
+      "bufDefensePower",
+      "bufAttackSpeed",
+      "bufDefenseSpeed",
+      "bufAttackMagic",
+      "bufDefenseMagic",
+      "bufAttackUpright",
+      "bufDefenseUpright",
+      "bufAttackReverse",
+      "bufDefenseReverse",
+      "bufTurn",
+      "bufCount",
+      "statusAilments",
+      "statusAilmentsTurn",
+      "statusAilmentsCount",
+      "titleOffsetX",
+      "titleOffsetY"
+    ],
+    "other_strings": [],
+    "parser": "0xdf5adc",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf765c",
+      "0xdf7680"
+    ],
+    "vtable": "0x1eaf8b8"
+  },
+  "EnemyAttack": {
+    "class_functions": [
+      "0xdf7a00"
+    ],
+    "fields": [
+      "enemyAttackId",
+      "name",
+      "attackMotion",
+      "hitEffect",
+      "effectDirectionFix",
+      "display",
+      "attackTarget",
+      "choiseAttribute",
+      "hitCount",
+      "power",
+      "critical",
+      "criticalPower",
+      "target",
+      "effect",
+      "addTarget",
+      "addTurn",
+      "addCount",
+      "bufAttack",
+      "bufDefense",
+      "bufAttackPower",
+      "bufDefensePower",
+      "bufAttackSpeed",
+      "bufDefenseSpeed",
+      "bufAttackMagic",
+      "bufDefenseMagic",
+      "bufAttackUpright",
+      "bufDefenseUpright",
+      "bufAttackReverse",
+      "bufDefenseReverse",
+      "resetAttack",
+      "resetDefense",
+      "resetAttackPower",
+      "resetDefensePower",
+      "resetAttackSpeed",
+      "resetDefenseSpeed",
+      "resetAttackMagic",
+      "resetDefenseMagic",
+      "resetAttackUpright",
+      "resetDefenseUpright",
+      "resetAttackReverse",
+      "resetDefenseReverse",
+      "heal",
+      "healShake",
+      "poison",
+      "deepPoison",
+      "sleep",
+      "paralysis",
+      "curePoison",
+      "cureSleep",
+      "cureParalysis",
+      "spEffect",
+      "reflectionTurn",
+      "reflectionAttribute",
+      "reflectionMagnification",
+      "reflectionResetAttribute",
+      "uplightPDefense",
+      "uplightSDefense",
+      "uplightMDefense",
+      "reversePDefense",
+      "reverseSDefense",
+      "reverseMDefense"
+    ],
+    "other_strings": [],
+    "parser": "0xdf7a00",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf8cfc",
+      "0xdf8d20"
+    ],
+    "vtable": "0x1eaf9e8"
+  },
+  "EvCampaign": {
+    "class_functions": [
+      "0xdf90a0"
+    ],
+    "fields": [
+      "campaignId",
+      "type",
+      "power",
+      "displayText",
+      "stageType",
+      "validStageId",
+      "stageId",
+      "startTime",
+      "endTime",
+      "weekMonday",
+      "weekTuesday",
+      "weekWednesday",
+      "weekThursday",
+      "weekFriday",
+      "weekSaturday",
+      "weekSunday",
+      "groupPattern",
+      "validMinute"
+    ],
+    "other_strings": [],
+    "parser": "0xdf90a0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdf9710",
+      "0xdf9734"
+    ],
+    "vtable": "0x1eafb18"
+  },
+  "EvMedalList": {
+    "class_functions": [
+      "0xdecaa8"
+    ],
+    "fields": [
+      "evMedalListId",
+      "listId",
+      "medalId",
+      "rate",
+      "display",
+      "isDeleted"
+    ],
+    "other_strings": [],
+    "parser": "0xdecaa8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdecd48",
+      "0xdecd6c"
+    ],
+    "vtable": "0x1eaea58"
+  },
+  "EvResource": {
+    "class_functions": [
+      "0xe0d9b8"
+    ],
+    "fields": [
+      "resourceId",
+      "priority",
+      "validResource",
+      "dlKind",
+      "endTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe0d9b8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0dc20",
+      "0xe0dc44"
+    ],
+    "vtable": "0x1eb1d88"
+  },
+  "EvScoreReward": {
+    "class_functions": [
+      "0xded0ec"
+    ],
+    "fields": [
+      "scoreRewardId",
+      "score",
+      "validReward",
+      "type",
+      "id",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "num"
+    ],
+    "other_strings": [],
+    "parser": "0xded0ec",
+    "vmethods": [
+      "0x5e00c4",
+      "0xded684",
+      "0xded6a8"
+    ],
+    "vtable": "0x1eaeba8"
+  },
+  "EvStage": {
+    "class_functions": [
+      "0xdf9ab4"
+    ],
+    "fields": [
+      "eventStageId",
+      "parentEventStageId",
+      "validStageId",
+      "stageId",
+      "validStageWidthId",
+      "stageStartId",
+      "stageEndId",
+      "resetFlag",
+      "eventCategory",
+      "eventType",
+      "scoreMedalListId",
+      "scoreStartReward",
+      "scoreEndReward",
+      "rankingId",
+      "bannerUrl",
+      "mypageBanner",
+      "detailUrl",
+      "startTime",
+      "endTime",
+      "endDispTime",
+      "boardEndTime",
+      "weekMonday",
+      "weekTuesday",
+      "weekWednesday",
+      "weekThursday",
+      "weekFriday",
+      "weekSaturday",
+      "weekSunday",
+      "benefitId",
+      "benefitMonday",
+      "benefitTuesday",
+      "benefitWednesday",
+      "benefitThursday",
+      "benefitFriday",
+      "benefitSaturday",
+      "benefitSunday",
+      "groupPattern",
+      "validMinute"
+    ],
+    "other_strings": [],
+    "parser": "0xdf9ab4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfa6d4",
+      "0xdfa6f8"
+    ],
+    "vtable": "0x1eafc48"
+  },
+  "GuiltProb": {
+    "class_functions": [
+      "0xe0c98c"
+    ],
+    "fields": [
+      "id",
+      "value",
+      "factor",
+      "weight",
+      "isCampaign"
+    ],
+    "other_strings": [],
+    "parser": "0xe0c98c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0cbdc",
+      "0xe0cc00"
+    ],
+    "vtable": "0x1eb1b28"
+  },
+  "InitItem": {
+    "class_functions": [
+      "0xdfaa78"
+    ],
+    "fields": [
+      "id",
+      "category",
+      "equipType",
+      "equipNo",
+      "param",
+      "itemId",
+      "skillId"
+    ],
+    "other_strings": [],
+    "parser": "0xdfaa78",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfad60",
+      "0xdfad84"
+    ],
+    "vtable": "0x1eafd78"
+  },
+  "Keyblade": {
+    "class_functions": [
+      "0xdfb104"
+    ],
+    "fields": [
+      "keybladeId",
+      "name",
+      "description",
+      "lv",
+      "displayId",
+      "category",
+      "subslotRate",
+      "passive",
+      "passivePower",
+      "drawCount",
+      "maxBurstGauge",
+      "validConsist",
+      "attribute",
+      "darklight",
+      "accord",
+      "dlaccord",
+      "partnerRate",
+      "evolveId",
+      "validNeedMaterial",
+      "needMaterialId",
+      "needMaterialNum",
+      "rotation",
+      "scaling",
+      "ofsX",
+      "ofsY"
+    ],
+    "other_strings": [],
+    "parser": "0xdfb104",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfbbcc",
+      "0xdfbbf0"
+    ],
+    "vtable": "0x1eafea8"
+  },
+  "KeybladeSubslot": {
+    "class_functions": [
+      "0xe18bf8"
+    ],
+    "fields": [
+      "subslotId",
+      "category",
+      "slotNumber",
+      "attribute",
+      "darklight"
+    ],
+    "other_strings": [],
+    "parser": "0xe18bf8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe18e48",
+      "0xe18e6c"
+    ],
+    "vtable": "0x1eb32e8"
+  },
+  "LoginBonus": {
+    "class_functions": [
+      "0xdfbf70"
+    ],
+    "fields": [
+      "loginBonusId",
+      "bonusType",
+      "title",
+      "description",
+      "comment",
+      "day",
+      "startDate",
+      "endDate",
+      "rewardType",
+      "rewardId",
+      "rewardAssignSkillType",
+      "rewardAssignSkillId",
+      "rewardAssignSkillLv",
+      "rewardNum"
+    ],
+    "other_strings": [],
+    "parser": "0xdfbf70",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfc488",
+      "0xdfc4ac"
+    ],
+    "vtable": "0x1eaffd8"
+  },
+  "LsiGame": {
+    "class_functions": [
+      "0xe1ad34"
+    ],
+    "fields": [
+      "gameId",
+      "groupId",
+      "sortId",
+      "challenge",
+      "name",
+      "modeName",
+      "explanation",
+      "helpUrl",
+      "targetScore",
+      "bgm",
+      "status"
+    ],
+    "other_strings": [],
+    "parser": "0xe1ad34",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1b184",
+      "0xe1b1a8"
+    ],
+    "vtable": "0x1eb37a8"
+  },
+  "Material": {
+    "class_functions": [
+      "0xdfc82c"
+    ],
+    "fields": [
+      "materialId",
+      "category",
+      "sortId",
+      "name",
+      "description",
+      "sell"
+    ],
+    "other_strings": [],
+    "parser": "0xdfc82c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfcae4",
+      "0xdfcb08"
+    ],
+    "vtable": "0x1eb0108"
+  },
+  "Medal": {
+    "class_functions": [
+      "0xdfce88"
+    ],
+    "fields": [
+      "medalId",
+      "imageId",
+      "thumbId",
+      "cutinId",
+      "imageCategory",
+      "artId",
+      "displayId",
+      "sortId",
+      "name",
+      "flavor",
+      "advantage",
+      "listSortId",
+      "autoEnhance",
+      "validPack",
+      "type",
+      "attribute",
+      "darklight",
+      "validSource",
+      "source",
+      "rare",
+      "skillSlot",
+      "shuffleskillSlot",
+      "spShuffleskillSlot",
+      "addPetPt",
+      "guiltValue",
+      "addGuiltBurstLv",
+      "addGuiltBurstLvMax",
+      "maxLv",
+      "expType",
+      "cost",
+      "minCost",
+      "growthType",
+      "attack",
+      "maxAttack",
+      "addMaxAttack",
+      "defense",
+      "maxDefense",
+      "addMaxDefense",
+      "validBurst",
+      "burstId",
+      "validSuperBurst",
+      "superBurstId",
+      "burstEnhanceCategory",
+      "groupId",
+      "sellSpherePoint",
+      "materialExp",
+      "sell",
+      "sellJewel",
+      "sellTicket",
+      "sellPerLv",
+      "enhanceAttack",
+      "enhanceDefense",
+      "enhanceCost",
+      "enhanceGuilt",
+      "shuffleSkillGroupId",
+      "burstLvGroupId",
+      "validEvolve",
+      "evolveId",
+      "evolveMoney",
+      "validEvolveNeed",
+      "evolveNeedId",
+      "voice",
+      "bgm"
+    ],
+    "other_strings": [],
+    "parser": "0xdfce88",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfe18c",
+      "0xdfe1b0"
+    ],
+    "vtable": "0x1eb0238"
+  },
+  "MedalMisc": {
+    "class_functions": [
+      "0xdfe530"
+    ],
+    "fields": [
+      "medalMiscId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xdfe530",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfe70c",
+      "0xdfe730"
+    ],
+    "vtable": "0x1eb0368"
+  },
+  "Misc": {
+    "class_functions": [
+      "0xdfeab0"
+    ],
+    "fields": [
+      "miscId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xdfeab0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdfec20",
+      "0xdfec44"
+    ],
+    "vtable": "0x1eb0498"
+  },
+  "Mission": {
+    "class_functions": [
+      "0xe17548"
+    ],
+    "fields": [
+      "id",
+      "missionType",
+      "sortId",
+      "conditionId",
+      "page",
+      "missionName",
+      "validTarget",
+      "targetType",
+      "targetId",
+      "targetNum",
+      "validStages",
+      "targetStageType",
+      "targetStageStartId",
+      "targetStageEndId",
+      "rewardType",
+      "itemId",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "burstUpperNumber",
+      "itemNum",
+      "startDate",
+      "endDate",
+      "rewardEndTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe17548",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe17f28",
+      "0xe17f4c"
+    ],
+    "vtable": "0x1eb3088"
+  },
+  "Moogleshop": {
+    "class_functions": [
+      "0xe1e5d8"
+    ],
+    "fields": [
+      "moogleshopId",
+      "type",
+      "sortId",
+      "shuffleSkillId",
+      "itemType",
+      "itemId",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "burstUpperNumber",
+      "itemNum",
+      "flavor",
+      "benefitId",
+      "payType",
+      "price",
+      "count",
+      "cpTitle",
+      "frameType",
+      "display",
+      "startDate",
+      "endDate"
+    ],
+    "other_strings": [],
+    "parser": "0xe1e5d8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1eccc",
+      "0xe1ecf0"
+    ],
+    "vtable": "0x1eb4128"
+  },
+  "Multi": {
+    "class_functions": [
+      "0xe0e5c4"
+    ],
+    "fields": [
+      "multiId",
+      "coinId",
+      "useAp",
+      "valid",
+      "stageStartId",
+      "stageEndId",
+      "weight",
+      "bannerUrl",
+      "detailUrl",
+      "startTime",
+      "endTime",
+      "boardEndTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe0e5c4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0eb90",
+      "0xe0ebb4"
+    ],
+    "vtable": "0x1eb1fe8"
+  },
+  "MultiStage": {
+    "class_functions": [
+      "0xe0ef34"
+    ],
+    "fields": [
+      "multiStageId",
+      "stageBinId",
+      "hpFactor",
+      "validDamagemvp",
+      "damagemvpRewardType",
+      "damagemvpItemId",
+      "damagemvpSkillType",
+      "damagemvpSkillId",
+      "damagemvpSkillLv",
+      "damagemvpBurstUpperNumber",
+      "damagemvpItemNum",
+      "validHelpmvp",
+      "helpmvpRewardType",
+      "helpmvpItemId",
+      "helpmvpSkillType",
+      "helpmvpSkillId",
+      "helpmvpSkillLv",
+      "helpmvpBurstUpperNumber",
+      "helpmvpItemNum",
+      "nohelpmvpRewardType",
+      "nohelpmvpItemId",
+      "nohelpmvpSkillType",
+      "nohelpmvpSkillId",
+      "nohelpmvpSkillLv",
+      "nohelpmvpBurstUpperNumber",
+      "nohelpmvpItemNum",
+      "clearmissionRequire",
+      "clearmissionName",
+      "clearmissionDataType",
+      "clearmissionIdType",
+      "clearmissionId",
+      "clearmissionNum",
+      "clearmissionRewardType",
+      "clearmissionItemId",
+      "clearmissionSkillType",
+      "clearmissionSkillId",
+      "clearmissionSkillLv",
+      "clearmissionBurstUpperNumber",
+      "clearmissionItemNum",
+      "validTimemission",
+      "timemissionRequire",
+      "timemissionId",
+      "timemissionNum",
+      "timemissionStartId",
+      "timemissionEndId",
+      "bgmField",
+      "bgmBattle",
+      "bgmBoss"
+    ],
+    "other_strings": [],
+    "parser": "0xe0ef34",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe10424",
+      "0xe10448"
+    ],
+    "vtable": "0x1eb2118"
+  },
+  "MultiTalk": {
+    "class_functions": [
+      "0xe0dfc4"
+    ],
+    "fields": [
+      "talkId",
+      "category",
+      "talk",
+      "imageId",
+      "motionId"
+    ],
+    "other_strings": [],
+    "parser": "0xe0dfc4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0e220",
+      "0xe0e244"
+    ],
+    "vtable": "0x1eb1eb8"
+  },
+  "MultiTimemission": {
+    "class_functions": [
+      "0xe107c8"
+    ],
+    "fields": [
+      "timemissionId",
+      "require",
+      "name",
+      "dataType",
+      "idType",
+      "id",
+      "num",
+      "time",
+      "appearId",
+      "rewardType",
+      "itemId",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "burstUpperNumber",
+      "itemNum",
+      "weight1",
+      "weight2",
+      "weight3",
+      "weight4",
+      "weight5",
+      "weight6",
+      "weight7",
+      "weight8",
+      "weight9",
+      "weight10"
+    ],
+    "other_strings": [],
+    "parser": "0xe107c8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe11068",
+      "0xe1108c"
+    ],
+    "vtable": "0x1eb2248"
+  },
+  "MypageBackground": {
+    "class_functions": [
+      "0xe0cf80"
+    ],
+    "fields": [
+      "id",
+      "backgroundId",
+      "sortId",
+      "validChild",
+      "startTime",
+      "endTime",
+      "viewType",
+      "validParts",
+      "partsId",
+      "dataType",
+      "xPostion",
+      "yPostion",
+      "zSort"
+    ],
+    "other_strings": [],
+    "parser": "0xe0cf80",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0d614",
+      "0xe0d638"
+    ],
+    "vtable": "0x1eb1c58"
+  },
+  "Passive": {
+    "class_functions": [
+      "0xe1f070"
+    ],
+    "fields": [
+      "passiveId",
+      "name",
+      "validPassive",
+      "type",
+      "value",
+      "hp",
+      "abilitygauge",
+      "attack",
+      "defense",
+      "attribute"
+    ],
+    "other_strings": [],
+    "parser": "0xe1f070",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1f4dc",
+      "0xe1f500"
+    ],
+    "vtable": "0x1eb4258"
+  },
+  "PassiveSetting": {
+    "class_functions": [
+      "0xe1f880"
+    ],
+    "fields": [
+      "passiveSettingId",
+      "sortId",
+      "passiveConditions",
+      "passiveValue1",
+      "passiveValue2",
+      "description",
+      "passiveId"
+    ],
+    "other_strings": [],
+    "parser": "0xe1f880",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1fb74",
+      "0xe1fb98"
+    ],
+    "vtable": "0x1eb4388"
+  },
+  "PetParts": {
+    "class_functions": [
+      "0xe134a4"
+    ],
+    "fields": [
+      "petPartsId",
+      "name",
+      "partsType",
+      "combinationType",
+      "combinationFlag",
+      "offsetNumber"
+    ],
+    "other_strings": [],
+    "parser": "0xe134a4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe13754",
+      "0xe13778"
+    ],
+    "vtable": "0x1eb2838"
+  },
+  "PetPartsOffset": {
+    "class_functions": [
+      "0xe13af8"
+    ],
+    "fields": [
+      "petPartsId",
+      "baseY",
+      "bodyLeftFrontLegX",
+      "bodyLeftFrontLegY",
+      "bodyRightFrontLegX",
+      "bodyRightFrontLegY",
+      "bodyLeftBackLegX",
+      "bodyLeftBackLegY",
+      "bodyRightBackLegX",
+      "bodyRightBackLegY",
+      "bodyTailX",
+      "bodyTailY",
+      "bodyAcNecklaceX",
+      "bodyAcNecklaceY",
+      "bodyBagX",
+      "bodyBagY",
+      "bodySpX",
+      "bodySpY",
+      "bodyShadowX",
+      "bodyShadowScale",
+      "headEarFrontX",
+      "headEarFrontY",
+      "headEarBackX",
+      "headEarBackY",
+      "headMouthX",
+      "headMouthY",
+      "headMaskX",
+      "headMaskY",
+      "headHatX",
+      "headHatY",
+      "headNecklaceX",
+      "headNecklaceY"
+    ],
+    "other_strings": [],
+    "parser": "0xe13af8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1454c",
+      "0xe14570"
+    ],
+    "vtable": "0x1eb2968"
+  },
+  "PetRank": {
+    "class_functions": [
+      "0xe150d0"
+    ],
+    "fields": [
+      "rank",
+      "needPt",
+      "magnification",
+      "rankUpSkill",
+      "validOpenSkill",
+      "openSkillIds"
+    ],
+    "other_strings": [],
+    "parser": "0xe150d0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe153bc",
+      "0xe153e0"
+    ],
+    "vtable": "0x1eb2bc8"
+  },
+  "PetSkill": {
+    "class_functions": [
+      "0xe148f0"
+    ],
+    "fields": [
+      "skillId",
+      "thumbId",
+      "name",
+      "description",
+      "invokeDescription",
+      "invokeType",
+      "skillValue1",
+      "skillValue2",
+      "skillValue3",
+      "skillValue4",
+      "skillValue5"
+    ],
+    "other_strings": [],
+    "parser": "0xe148f0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe14d2c",
+      "0xe14d50"
+    ],
+    "vtable": "0x1eb2a98"
+  },
+  "Player": {
+    "class_functions": [
+      "0xdfefc4"
+    ],
+    "fields": [
+      "lv",
+      "needExp",
+      "luxMedal",
+      "ap",
+      "cost",
+      "hp",
+      "rewardId"
+    ],
+    "other_strings": [],
+    "parser": "0xdfefc4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdff2ac",
+      "0xdff2d0"
+    ],
+    "vtable": "0x1eb05c8"
+  },
+  "Pvp": {
+    "class_functions": [
+      "0xe191ec"
+    ],
+    "fields": [
+      "pvpId",
+      "stageId",
+      "stageBinId",
+      "dayCount",
+      "benefitDayCount",
+      "battleTimeout",
+      "validHoldKeyblade",
+      "holdKeyblade",
+      "validRank",
+      "rankUpPer",
+      "rankDownPer",
+      "groupId",
+      "scoreStartReward",
+      "scoreEndReward",
+      "rankingId",
+      "detailUrl",
+      "startTime",
+      "endTime"
+    ],
+    "other_strings": [],
+    "parser": "0xe191ec",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe19920",
+      "0xe19944"
+    ],
+    "vtable": "0x1eb3418"
+  },
+  "PvpScoreReward": {
+    "class_functions": [
+      "0xe19cc4"
+    ],
+    "fields": [
+      "scoreRewardId",
+      "score",
+      "validReward",
+      "type",
+      "id",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "num"
+    ],
+    "other_strings": [],
+    "parser": "0xe19cc4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1a25c",
+      "0xe1a280"
+    ],
+    "vtable": "0x1eb3548"
+  },
+  "RaidEnemy": {
+    "class_functions": [
+      "0xdff650"
+    ],
+    "fields": [
+      "raidEnemyId",
+      "name",
+      "raidDisplayId",
+      "attribute",
+      "rare",
+      "weakness",
+      "validParts",
+      "parts",
+      "validGrowth",
+      "baseLv",
+      "hp",
+      "attack",
+      "defense",
+      "expAttack",
+      "expSuppress",
+      "moneyAttack",
+      "moneySuppress",
+      "luxAttack",
+      "luxSuppress",
+      "burstAttack",
+      "burstSuppress",
+      "hpAttack",
+      "hpSuppress",
+      "guiltSuppress",
+      "rewardId",
+      "mvpRewardId",
+      "destroyAllRewardId",
+      "validLocked",
+      "lockedLv",
+      "lockedRewardId",
+      "lockedMvpRewardId",
+      "lockedDestroyAllRewardId",
+      "drawHeight",
+      "attackWidth",
+      "attackHeight",
+      "validSkill",
+      "skillId",
+      "skillRequire",
+      "skillRequireArg",
+      "skillOdds",
+      "protectPoison",
+      "protectDeepPoison",
+      "protectSleep",
+      "protectParalysis",
+      "protectConfusion",
+      "registPoison",
+      "registDeepPoison",
+      "registSleep",
+      "registParalysis",
+      "registConfusion",
+      "bufAttack",
+      "bufDefense",
+      "bufAttackPower",
+      "bufDefensePower",
+      "bufAttackSpeed",
+      "bufDefenseSpeed",
+      "bufAttackMagic",
+      "bufDefenseMagic",
+      "bufAttackUpright",
+      "bufDefenseUpright",
+      "bufAttackReverse",
+      "bufDefenseReverse",
+      "bufTurn",
+      "bufCount",
+      "statusAilments",
+      "statusAilmentsTurn",
+      "statusAilmentsCount",
+      "bgmRaid"
+    ],
+    "other_strings": [],
+    "parser": "0xdff650",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe013f4",
+      "0xe01418"
+    ],
+    "vtable": "0x1eb06f8"
+  },
+  "RaidEnemyAttack": {
+    "class_functions": [
+      "0xe01798"
+    ],
+    "fields": [
+      "raidEnemyAttackId",
+      "name",
+      "display",
+      "choiseAttribute",
+      "hitCount",
+      "power",
+      "critical",
+      "criticalPower",
+      "target",
+      "effect",
+      "addTarget",
+      "addTurn",
+      "addCount",
+      "bufAttack",
+      "bufDefense",
+      "bufAttackPower",
+      "bufDefensePower",
+      "bufAttackSpeed",
+      "bufDefenseSpeed",
+      "bufAttackMagic",
+      "bufDefenseMagic",
+      "bufAttackUpright",
+      "bufDefenseUpright",
+      "bufAttackReverse",
+      "bufDefenseReverse",
+      "resetAttack",
+      "resetDefense",
+      "resetAttackPower",
+      "resetDefensePower",
+      "resetAttackSpeed",
+      "resetDefenseSpeed",
+      "resetAttackMagic",
+      "resetDefenseMagic",
+      "resetAttackUpright",
+      "resetDefenseUpright",
+      "resetAttackReverse",
+      "resetDefenseReverse",
+      "heal",
+      "healShake",
+      "poison",
+      "deepPoison",
+      "sleep",
+      "paralysis",
+      "curePoison",
+      "cureSleep",
+      "cureParalysis"
+    ],
+    "other_strings": [],
+    "parser": "0xe01798",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe02628",
+      "0xe0264c"
+    ],
+    "vtable": "0x1eb0828"
+  },
+  "RaidReward": {
+    "class_functions": [
+      "0xe029cc"
+    ],
+    "fields": [
+      "raidRewardId",
+      "oddsUpPerLv",
+      "pointUpPerLv",
+      "validReward",
+      "type",
+      "id",
+      "assignSkillType",
+      "assignSkillId",
+      "assignSkillLv",
+      "burstUpperNumber",
+      "num",
+      "odds"
+    ],
+    "other_strings": [],
+    "parser": "0xe029cc",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe030ec",
+      "0xe03110"
+    ],
+    "vtable": "0x1eb0958"
+  },
+  "RaidSetting": {
+    "class_functions": [
+      "0xe03490"
+    ],
+    "fields": [
+      "raidSettingId",
+      "bossId",
+      "bossUpTime",
+      "useAp",
+      "rareBossId",
+      "rareBossUpTime",
+      "rareUseAp",
+      "rareUpType",
+      "rareUpTypeArg",
+      "rareUpTriggerBossId",
+      "validUnlockRare",
+      "unlockRareBossId",
+      "unlockRareNum"
+    ],
+    "other_strings": [],
+    "parser": "0xe03490",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe039b8",
+      "0xe039dc"
+    ],
+    "vtable": "0x1eb0a88"
+  },
+  "Ranking": {
+    "class_functions": [
+      "0xe0bab0"
+    ],
+    "fields": [
+      "rankingId",
+      "category",
+      "startDatetime",
+      "endDatetime",
+      "startRank",
+      "endRank",
+      "unionStartRank",
+      "unionEndRank",
+      "validReward"
+    ],
+    "other_strings": [],
+    "parser": "0xe0bab0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0bf10",
+      "0xe0bf34"
+    ],
+    "vtable": "0x1eb18c8"
+  },
+  "RankingPvp": {
+    "class_functions": [
+      "0xe1a600"
+    ],
+    "fields": [
+      "rankingId",
+      "startDatetime",
+      "endDatetime",
+      "pvpStartRank",
+      "pvpEndRank",
+      "validReward"
+    ],
+    "other_strings": [],
+    "parser": "0xe1a600",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1a990",
+      "0xe1a9b4"
+    ],
+    "vtable": "0x1eb3678"
+  },
+  "RankingReward": {
+    "class_functions": [
+      "0xe03d5c"
+    ],
+    "fields": [
+      "rankingRewardId",
+      "startRank",
+      "endRank",
+      "validReward",
+      "type",
+      "id",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "burstUpperNumber",
+      "num"
+    ],
+    "other_strings": [],
+    "parser": "0xe03d5c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe043d8",
+      "0xe043fc"
+    ],
+    "vtable": "0x1eb0bb8"
+  },
+  "Reward": {
+    "class_functions": [
+      "0xe0477c"
+    ],
+    "fields": [
+      "rewardId",
+      "validReward",
+      "display",
+      "type",
+      "id",
+      "assignSkillType",
+      "assignSkillId",
+      "assignSkillLv",
+      "num",
+      "odds"
+    ],
+    "other_strings": [],
+    "parser": "0xe0477c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe04e14",
+      "0xe04e38"
+    ],
+    "vtable": "0x1eb0ce8"
+  },
+  "SerialcodeReward": {
+    "class_functions": [
+      "0xe0a4c0"
+    ],
+    "fields": [
+      "serialcodeRewardId",
+      "name",
+      "startDate",
+      "endDate",
+      "itemId",
+      "validReward",
+      "type",
+      "id",
+      "skillType",
+      "skillId",
+      "skillLv",
+      "num"
+    ],
+    "other_strings": [],
+    "parser": "0xe0a4c0",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0ab88",
+      "0xe0abac"
+    ],
+    "vtable": "0x1eb1668"
+  },
+  "Shop": {
+    "class_functions": [
+      "0xe0af2c"
+    ],
+    "fields": [
+      "shopId",
+      "productId",
+      "sortId",
+      "type",
+      "os",
+      "price",
+      "coin",
+      "addCoin",
+      "extraCoinOnBalloon",
+      "stageSkipTicket",
+      "darkDrawTicket",
+      "cpAddCoin",
+      "cpExtraCoinOnBalloon",
+      "cpStageSkipTicket",
+      "explanation",
+      "appleStatus",
+      "benefitId",
+      "benefitBonusValue",
+      "benefitExplanation",
+      "useBenefitExplanation",
+      "thumbId",
+      "status",
+      "display"
+    ],
+    "other_strings": [],
+    "parser": "0xe0af2c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0b70c",
+      "0xe0b730"
+    ],
+    "vtable": "0x1eb1798"
+  },
+  "Shuffleskill": {
+    "class_functions": [
+      "0xe11e24"
+    ],
+    "fields": [
+      "shuffleSkillId",
+      "category",
+      "type",
+      "name",
+      "sortId",
+      "duplicate",
+      "ability",
+      "hp",
+      "poison",
+      "paralyze",
+      "sleep",
+      "enemyKind",
+      "enemyKindRate",
+      "raidKindRate",
+      "addDamage",
+      "attack",
+      "defense",
+      "rate",
+      "campaignRate"
+    ],
+    "other_strings": [],
+    "parser": "0xe11e24",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe124a8",
+      "0xe124cc"
+    ],
+    "vtable": "0x1eb24a8"
+  },
+  "Skill": {
+    "class_functions": [
+      "0xe051b8"
+    ],
+    "fields": [
+      "skillId",
+      "imageId",
+      "thumbId",
+      "name",
+      "description",
+      "rank",
+      "maxLv",
+      "expType",
+      "sortId",
+      "categoryEvolve",
+      "invokeType",
+      "invokeProb",
+      "invokeProbPerLv",
+      "invokeShowTiming",
+      "value1",
+      "attackUp",
+      "burstCancel",
+      "burstLock",
+      "damageCut",
+      "dokonjo",
+      "counter",
+      "addAction",
+      "addPoison",
+      "addDeepPoison",
+      "addSleep",
+      "addParalysis",
+      "conditionTurn",
+      "conditionCount",
+      "pvpConditionTurn",
+      "pvpConditionCount",
+      "prizeHpUp",
+      "prizeBurstUp",
+      "luxUp",
+      "moneyUp",
+      "raidUp"
+    ],
+    "other_strings": [],
+    "parser": "0xe051b8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe05d10",
+      "0xe05d34"
+    ],
+    "vtable": "0x1eb0e18"
+  },
+  "SkillExp": {
+    "class_functions": [
+      "0xe060b4"
+    ],
+    "fields": [
+      "expId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xe060b4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe06290",
+      "0xe062b4"
+    ],
+    "vtable": "0x1eb0f48"
+  },
+  "Sphere": {
+    "class_functions": [
+      "0xe06634"
+    ],
+    "fields": [
+      "sphereBoardId",
+      "boardName",
+      "kindId",
+      "boardId",
+      "arryId",
+      "masuId",
+      "type",
+      "openId",
+      "openParam",
+      "price",
+      "detailUrl",
+      "startDatetime",
+      "endDatetime"
+    ],
+    "other_strings": [],
+    "parser": "0xe06634",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe06b04",
+      "0xe06b28"
+    ],
+    "vtable": "0x1eb1078"
+  },
+  "SphereArray": {
+    "class_functions": [
+      "0xe06ea8"
+    ],
+    "fields": [
+      "arryId",
+      "spCol4",
+      "spCol3",
+      "spCol2",
+      "spCol1",
+      "spCol0"
+    ],
+    "other_strings": [],
+    "parser": "0xe06ea8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe07314",
+      "0xe07338"
+    ],
+    "vtable": "0x1eb11a8"
+  },
+  "SphereMasu": {
+    "class_functions": [
+      "0xe076b8"
+    ],
+    "fields": [
+      "masuId",
+      "sphereBoardId",
+      "spherePoint",
+      "rewardSelect",
+      "medalCategory",
+      "rewardId",
+      "rewardExpand",
+      "rewardExpandId",
+      "rewardValue",
+      "burstUpperNumber"
+    ],
+    "other_strings": [],
+    "parser": "0xe076b8",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe07d50",
+      "0xe07d74"
+    ],
+    "vtable": "0x1eb12d8"
+  },
+  "Stage": {
+    "class_functions": [
+      "0xe080f4"
+    ],
+    "fields": [
+      "stageId",
+      "stageBinId",
+      "id",
+      "name",
+      "mapName",
+      "useAp",
+      "chapterId",
+      "worldId",
+      "thumbId",
+      "onlyDrama",
+      "stageKind",
+      "showIcon",
+      "hideIcon",
+      "noPartner",
+      "validStopStage",
+      "validBeforeDrama",
+      "beforeDramaId",
+      "beforeDramaType",
+      "validAfterDrama",
+      "afterDramaId",
+      "afterDramaType",
+      "branchType",
+      "disableContinue",
+      "addLevel",
+      "holdKeyblade",
+      "hardmodeRequire",
+      "hardmodeName",
+      "hardmodeComparison",
+      "hardmodeNum",
+      "validClearGetTitle",
+      "clearGetTitle",
+      "validClearGetSphere",
+      "clearGetSphere",
+      "resetClearGet",
+      "validClearGetItem",
+      "clearGetItemType",
+      "clearGetItemId",
+      "clearGetAssignSkillType",
+      "clearGetAssignSkillId",
+      "clearGetAssignSkillLv",
+      "clearGetItemNum",
+      "resetSubMission",
+      "validSubmission",
+      "submissionRequire",
+      "submissionName",
+      "submissionDataType",
+      "submissionIdType",
+      "submissionId",
+      "submissionNum",
+      "submissionRewardType",
+      "submissionItemId",
+      "submissionSkillType",
+      "submissionSkillId",
+      "submissionSkillLv",
+      "submissionItemNum",
+      "combinedSubmissionFlag",
+      "raidBoss",
+      "bgmField",
+      "bgmBattle",
+      "bgmBoss"
+    ],
+    "other_strings": [],
+    "parser": "0xe080f4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe09a70",
+      "0xe09a94"
+    ],
+    "vtable": "0x1eb1408"
+  },
+  "StageDrama": {
+    "class_functions": [
+      "0xe1df74"
+    ],
+    "fields": [
+      "id",
+      "validBeforeDrama",
+      "dramaId",
+      "dramaType"
+    ],
+    "other_strings": [],
+    "parser": "0xe1df74",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1e234",
+      "0xe1e258"
+    ],
+    "vtable": "0x1eb3ff8"
+  },
+  "Stamp": {
+    "class_functions": [
+      "0xe0c2b4"
+    ],
+    "fields": [
+      "stampId",
+      "category",
+      "imageId",
+      "require",
+      "sortId",
+      "imageWidth",
+      "imageHeight",
+      "validStamp"
+    ],
+    "other_strings": [],
+    "parser": "0xe0c2b4",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0c5e8",
+      "0xe0c60c"
+    ],
+    "vtable": "0x1eb19f8"
+  },
+  "Theater": {
+    "class_functions": [
+      "0xe1140c"
+    ],
+    "fields": [
+      "theaterId",
+      "worldId",
+      "num",
+      "resourceId",
+      "dramaNameType",
+      "validDramaName",
+      "dramaName",
+      "stageId",
+      "stageNum",
+      "validStageMaster",
+      "validBeforeDrama",
+      "dramaId",
+      "dramaType",
+      "bgm",
+      "validHomeopen",
+      "validTheater"
+    ],
+    "other_strings": [],
+    "parser": "0xe1140c",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe11a80",
+      "0xe11aa4"
+    ],
+    "vtable": "0x1eb2378"
+  },
+  "Title": {
+    "class_functions": [
+      "0xe09e14"
+    ],
+    "fields": [
+      "titleId",
+      "category",
+      "title",
+      "description",
+      "require",
+      "value",
+      "label"
+    ],
+    "other_strings": [],
+    "parser": "0xe09e14",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe0a11c",
+      "0xe0a140"
+    ],
+    "vtable": "0x1eb1538"
+  },
+  "TutorialMisc": {
+    "class_functions": [
+      "0xdee370"
+    ],
+    "fields": [
+      "tutorialId",
+      "startClearQuest",
+      "startMiscId",
+      "num1",
+      "num2",
+      "setClearQuest",
+      "setMiscId",
+      "valid"
+    ],
+    "other_strings": [],
+    "parser": "0xdee370",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdee6a4",
+      "0xdee6c8"
+    ],
+    "vtable": "0x1eaee08"
+  },
+  "World": {
+    "class_functions": [
+      "0xdeda28"
+    ],
+    "fields": [
+      "worldId",
+      "worldName",
+      "raidBackground",
+      "instanceLwf",
+      "instance",
+      "xPos",
+      "yPos",
+      "rate",
+      "validParts",
+      "partsId",
+      "xPostion",
+      "yPostion"
+    ],
+    "other_strings": [],
+    "parser": "0xdeda28",
+    "vmethods": [
+      "0x5e00c4",
+      "0xdedfcc",
+      "0xdedff0"
+    ],
+    "vtable": "0x1eaecd8"
+  },
+  "XtresMisc": {
+    "class_functions": [
+      "0xe1b528"
+    ],
+    "fields": [
+      "miscId",
+      "value"
+    ],
+    "other_strings": [],
+    "parser": "0xe1b528",
+    "vmethods": [
+      "0x5e00c4",
+      "0xe1b698",
+      "0xe1b6bc"
+    ],
+    "vtable": "0x1eb38d8"
+  }
+}
