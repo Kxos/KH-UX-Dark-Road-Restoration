@@ -37,7 +37,7 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 46).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 48).
 
 **Ripartire in tre comandi** (script di sessione in `tools/ldplayer/session/`, log del
 server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
@@ -45,10 +45,10 @@ server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
 ```powershell
 .\tools\ldplayer\session\relogin.ps1 -Tag x    # server + rientro del giocatore salvato: home
 .\tools\ldplayer\session\cycle.ps1 -Tag x      # da NUOVO giocatore (cancella il salvataggio)
-powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 46   # solo il server
+powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 48   # solo il server
 ```
 
-Alzare `-Revision` (default 46 negli script) dopo ogni modifica di `server/master_data/`.
+Alzare `-Revision` (default 48 negli script) dopo ogni modifica di `server/master_data/`.
 Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo una
 `/compact` o su un'altra macchina basta leggere questa sezione e «Dove siamo rimasti».
 
@@ -56,7 +56,7 @@ Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "46"                   # revisione dati master
+$env:KHUX_REVISION      = "48"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -158,8 +158,10 @@ vedi il suo README). `vmread` si ricostruisce con `build_vmread.py`.
    schermata principale** (§2, «La schermata principale»), con lo sfondo. Il giocatore si
    salva e al rientro va dritto alla home (§2, «Salvataggio del giocatore»), anche dopo
    un aggiornamento dei master (§2, «Il crash dopo l'aggiornamento dei master»). Quests e
-   la missione 2 fino a «Select a Keyblade» (§2, «Quests»). Prossimo: Confirm e
-   `/stage/start` della missione 2. Si procede come sempre:
+   la missione 2 completa, con forzieri, drop e inventario (munny, jewel, materiali)
+   generati dalle mappe e controllati offline da `server/check-stage-data.js` (§2,
+   «Missione 2, forzieri, drop e inventario»). Prossimo: missione 3 (Combat 102), Avatar
+   Coin (tipo 14), e la fonte degli stage mancanti (10 in tabella su 979). Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
@@ -1622,6 +1624,59 @@ seguendo lo schermo invece dei tocchi fissi: ~2 minuti), `bench_start.ps1` tocca
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.
+
+### Missione 2, forzieri, drop e inventario dai dati — 8 ottobre 2026, notte
+
+**Missione 2 (Combat 101, stage 1013) completa**: Confirm, tutorial «Friends» (OK a
+960,975, stile diverso da `DismissTutorial`), scelta della medaglia amica, Start,
+`POST /stage/start`, tutorial «1 Turn Triumphs» (stesso stile), tutorial del flick,
+`-Seek` fino a `/stage/clear`, RESULTS con gli obiettivi spuntati, LEVEL UP, missione 3
+sbloccata. `bench_prologue.ps1 -Seek` funziona per qualunque stage.
+
+**Forzieri e drop per ogni stage, dalle mappe.** `recon/tools/stage_poi.py` legge tutte le
+`stage/mappoi_stg<id>_NN.bin` dell'addnl (`ipa431\names_addnl.tsv` + `addnl.mp4`, chiave
+5.0.1 in `BGAD_KEY`) e scrive `server/game_data/stage_poi.json` (non versionato):
+- nemici: record da 8 interi `x, y, enemyId, 1, 1, 1, reward, uid`. **reward** è la riga
+  della tabella `reward` del drop: 1 per quasi tutti, una sua per il primo nemico di ogni
+  mappa (80002, 80003, 10100–10130). `FUN_00e7e6e8(…, uid, reward)` la carica e **senza
+  riga va in crash** appena parte lo stage (fault addr 0x10): è il crash del primo
+  tentativo della missione 2;
+- forzieri: dopo l'ultimo nemico un contatore e record da 5 interi `x, y, reward, tipo,
+  uid` (righe usate: 1, 80, 81, 90; tipi 13/14/15/19, forse la grafica);
+- `uid` è lo spazio di id comune a nemici e forzieri, quello di `userTreasures` /
+  `userEnemyDropItems` e di `getTreasures` / `getEnemyDropItems` in `/stage/clear`.
+
+Solo 7 stage hanno una mappa (1010–1040: 1040 solo l'intestazione), e **la tabella
+`stage` della 5.0.1 offline ha 10 stage** contro le 979 missioni della storia
+(khuxwiki, «Story Quests»): gli altri stage sono ancora da trovare (fase D).
+
+`make-game-tables.js` genera le righe `reward` da `stage_poi.json`: per i nemici
+materiale 13 in posizione 0, per i forzieri CP (81), HP (80) o munny (90) in posizione 1
+quando la riga serve a entrambi (la 1). `server.js` manda a ogni forziere, posizione per
+posizione, il tipo del premio (0 dove il premio è del nemico) e ai nemici gli uid da 1 al
+massimo della mappa, tolti i forzieri.
+
+**Controllo offline: `node server/check-stage-data.js [--verbose]`.** Per ogni stage
+della tabella, senza aprire il gioco: righe `reward` di forzieri e nemici (assenti =
+crash), forzieri che resterebbero vuoti, tipi di premio non gestiti, materiali assenti.
+Sulla tabella che ha fatto crashare la missione 2 trova 12 errori in 5 stage (gli altri 10
+avrebbero fatto crashare Dwarf Woodlands e Dark Forest 1–2); rigenerata, 0 errori. Va
+eseguito dopo ogni modifica di master o mappe: sul banco basta poi un campione.
+
+**Inventario salvato** (`server/save/player.json`): `money` (munny, da
+`getPoint.money`), `freeStone` (jewel: premio del primo completamento, `clearGetItemType`
+2, es. 300 in Combat 101), `materials` (da `getMaterials` e dai premi di tipo 5 degli
+obiettivi compiuti per la prima volta). Risposte: `userPoint.money`, `GET /user/stone`
+(azione 7: `userStone.freeStone/payStone`), `GET /user/material` (azione 16) e
+`userMaterials` in `/stage/clear`. Sul banco l'HUD mostra 300 jewel dopo la missione 2.
+`firstClearFlag` ora vale «stage mai completato» (`stageScores`), e
+`lastClearStageId` avanza solo.
+
+Aperti: tipo 14 = **Avatar Coin** (CONGRATULATIONS: «Avatar Coin x6»), tipo 3 (premi di
+1030–1050) non ricavato: per ora finiscono solo nel log (`[inventario]`). Il contenuto
+dei forzieri è nostro (CP 10.000, HP 500, munny 100). Il forziere della riga 1 (premio
+del nemico in posizione 0, del forziere in posizione 1) non è ancora stato aperto sul
+banco: da verificare che la regola «stessa posizione» regga.
 
 
 ### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026

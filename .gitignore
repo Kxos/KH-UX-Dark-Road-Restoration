@@ -94,3 +94,4 @@ server/save/
 # binario costruito da tools/ldplayer/armtrace/build_vmread.py
 tools/ldplayer/armtrace/vmread
 tools/bin/
+server/game_data/

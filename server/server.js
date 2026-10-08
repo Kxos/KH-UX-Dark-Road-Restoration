@@ -150,6 +150,8 @@ function route(url) {
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
   if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
+  if (p === '/user/stone') return 'userstone';
+  if (p === '/user/material') return 'usermaterial';
   if (p === '/campaign') return 'campaign';
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
@@ -718,14 +720,35 @@ function deckStats() {
 // barra degli speciali), 9 HP. Prologue (1010): forziere arancione id 18, reward 81
 // (record 948,1778,81,14,18 della sezione +0x28 di mappoi_stg01010_01.bin, letto da
 // FUN_00e60f28: x, y, reward, tipo, id).
-const CHEST_TYPE = Number(process.env.KHUX_CHEST_TYPE || 8);
-const STAGE_TREASURES = {
-  1010: (process.env.KHUX_TREASURE_IDS || '18').split(',')
-    .map((id) => ({ uniqueTreasureId: Number(id), dropItemTypeIds: [CHEST_TYPE] })),
-};
+// Forzieri e nemici di ogni stage: server/game_data/stage_poi.json, generato dalle
+// mappe con recon/tools/stage_poi.py (non versionato: dati di gioco). Le righe di
+// reward le scrive make-game-tables.js: posizione 0 il premio del nemico (tipo 5),
+// posizione 1 quello del forziere quando la riga serve a entrambi (es. la 1).
+const ENEMY_DROP_TYPE = Number(process.env.KHUX_ENEMY_DROP_TYPE || 5);
+let STAGE_POI = {};
+try {
+  STAGE_POI = JSON.parse(fs.readFileSync(path.join(__dirname, 'game_data', 'stage_poi.json'), 'utf8'));
+} catch {
+  console.warn('[poi] server/game_data/stage_poi.json assente: forzieri e drop solo nel Prologue');
+  STAGE_POI = { 1010: { chests: [{ uid: 18, reward: 81 }], enemies: [{ uid: 17 }] } };
+}
+
+function rewardRowById(rewardId) {
+  return masterRows('reward').find((r) => r.rewardId === rewardId);
+}
+
+// dropItemTypeIds di un forziere: per ogni premio della riga il suo tipo, 0 dove il
+// premio e' del nemico (materiale: nel forziere resta vuoto)
+function chestDropTypes(rewardId) {
+  const row = rewardRowById(rewardId);
+  if (!row) return [];
+  return row.type.slice(0, 4).map((t) => (t === ENEMY_DROP_TYPE ? 0 : t));
+}
 
 function stageTreasures(stageId) {
-  return STAGE_TREASURES[stageId] || [];
+  return (STAGE_POI[stageId]?.chests || [])
+    .map((c) => ({ uniqueTreasureId: c.uid, dropItemTypeIds: chestDropTypes(c.reward) }))
+    .filter((t) => t.dropItemTypeIds.some(Boolean));
 }
 
 // Drop dei nemici: userEnemyDropItems[] (FUN_007a11c8: uniqueEnemyId, dropItemTypeIds
@@ -733,15 +756,17 @@ function stageTreasures(stageId) {
 // record del nemico nella mappa (x, y, enemyId, 1, 1, 1, 1, id). Il contenuto e' la
 // riga di reward del nemico (make-game-tables.js). Sul banco: con tipo 5 (materiale) il
 // nemico lascia un sacchetto argento, contato dall'HUD in alto; in CONGRATULATIONS i
-// sacchetti si aprono e rivelano l'oggetto. Prologue: id 1-17 (mappoi_stg01010_0N).
-const ENEMY_DROP_IDS = {
-  1010: (process.env.KHUX_ENEMY_DROP_IDS || '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17')
-    .split(',').filter(Boolean).map(Number),
-};
-const ENEMY_DROP_TYPE = Number(process.env.KHUX_ENEMY_DROP_TYPE || 5);
-
+// sacchetti si aprono e rivelano l'oggetto. Non tutti gli uid dei nemici compaiono
+// come record nella mappa (es. 1 nel Prologue): si mandano tutti quelli da 1 al
+// massimo, tolti i forzieri (stesso spazio di id).
 function stageEnemyDrops(stageId) {
-  return (ENEMY_DROP_IDS[stageId] || []).map((id) => ({ uniqueEnemyId: id, dropItemTypeIds: [ENEMY_DROP_TYPE], stealType: 0 }));
+  const poi = STAGE_POI[stageId];
+  if (!poi) return [];
+  const chests = new Set(poi.chests.map((c) => c.uid));
+  const max = Math.max(0, ...poi.enemies.map((e) => e.uid));
+  const ids = [];
+  for (let id = 1; id <= max; id++) if (!chests.has(id)) ids.push(id);
+  return ids.map((id) => ({ uniqueEnemyId: id, dropItemTypeIds: [ENEMY_DROP_TYPE], stealType: 0 }));
 }
 
 // userData.userPoint, letto da FUN_0078b230 sia in GET /user sia in POST /stage/start.
@@ -756,7 +781,8 @@ function luxRankFor(lux) {
 
 function userPointData(now) {
   return {
-    money: 0, lux: player.lux, totalLux: player.lux, // lux e totalLux: uint64
+    money: player.money || 0, // munny
+    lux: player.lux, totalLux: player.lux, // lux e totalLux: uint64
     spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
     // In battaglia il client mostra maxHp e colora l'HP in rapporto a hp/baseHp
     // (provato con 111/222/333): per un giocatore integro coincidono, dal livello 1
@@ -836,6 +862,28 @@ function respondUser(res) {
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
 }
 
+// Inventario del giocatore per tipo di oggetto, come lo usano le tabelle master
+// (clearGetItemType, submissionRewardType, reward.type): 2 jewel (userStone.freeStone),
+// 4 munny (userPoint.money), 5 materiale (userMaterials, id della tabella material).
+// Gli altri tipi (es. 14 negli obiettivi del Prologue) non sono ancora ricavati: si
+// annotano nel log.
+function grantItem(type, id, num) {
+  num = Number(num) || 0;
+  if (!type || !num) return;
+  if (type === 2) player.freeStone = (player.freeStone || 0) + num;
+  else if (type === 4) player.money = (player.money || 0) + num;
+  else if (type === 5 && id) {
+    player.materials = player.materials || {};
+    player.materials[id] = (player.materials[id] || 0) + num;
+  } else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
+}
+
+// userMaterials[] (FUN_007a25e8): userMaterialId uint64, materialId, number
+function userMaterialsData() {
+  return Object.entries(player.materials || {}).filter(([, n]) => n > 0)
+    .map(([id, n]) => ({ userMaterialId: Number(id), materialId: Number(id), number: n }));
+}
+
 function stageNumber(stageId) {
   if (!stageId) return 0;
   return masterRows('stage').find((r) => r.stageId === stageId)?.id ?? 0;
@@ -888,8 +936,18 @@ function respondStageClear(res, req) {
   const now = serverTime();
   // il corpo non porta stageId (solo l'esito): lo stage e' quello di /stage/start
   const stageId = req?.stageId ?? player.currentStageId ?? START_STAGE_ID;
-  const first = player.lastClearStageId !== stageId;
-  player.lastClearStageId = stageId;
+  player.stageScores = player.stageScores || {};
+  const first = !(stageId in player.stageScores); // mai completato prima
+  const stage = masterRows('stage').find((r) => r.stageId === stageId);
+  // l'ultimo stage completato avanza solo (rigiocare il Prologue non lo riporta indietro)
+  if (stageNumber(stageId) >= stageNumber(player.lastClearStageId)) player.lastClearStageId = stageId;
+  // munny e materiali raccolti (sacchetti dei nemici, forzieri) come li riporta il client
+  player.money = (player.money || 0) + (Number(req?.getPoint?.money) || 0);
+  for (const m of req?.getMaterials || []) grantItem(5, m.materialId, m.number);
+  // premio del primo completamento («Quest Complete!»: es. Combat 101, 300 jewel)
+  if (first && stage?.validClearGetItem) {
+    stage.clearGetItemType.forEach((t, i) => grantItem(t, stage.clearGetItemId[i], stage.clearGetItemNum[i]));
+  }
   // clearMissionIds: le missioni compiute in questa partita, come le riporta il corpo
   // della richiesta; il client le spunta nella schermata RESULTS. Vuoto = nessuna spunta.
   // Le missioni sui Lux (submissionRequire 29, «Collect %d or more Lux») il client non
@@ -898,14 +956,17 @@ function respondStageClear(res, req) {
   const lux = Number(req?.getPoint?.lux) || 0;
   player.lux += lux; // userPoint.lux/totalLux e luxRank nella risposta: dopo lo stage
   const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
-  const stage = masterRows('stage').find((r) => r.stageId === stageId);
   (stage?.submissionRequire || []).forEach((kind, i) => {
     if (kind === 29 && lux >= (stage.submissionNum?.[i] ?? Infinity) && !cleared.includes(i + 1)) cleared.push(i + 1);
   });
   cleared.sort((a, b) => a - b).splice(3);
-  player.clearMissions[stageId] = [...new Set([...stageClearMissions(stageId), ...cleared])].sort((a, b) => a - b).slice(0, 3);
+  // premio di ogni obiettivo compiuto per la prima volta («Objective Complete!»)
+  const before = stageClearMissions(stageId);
+  for (const n of cleared.filter((n) => !before.includes(n))) {
+    grantItem(stage?.submissionRewardType?.[n - 1], stage?.submissionItemId?.[n - 1], stage?.submissionItemNum?.[n - 1]);
+  }
+  player.clearMissions[stageId] = [...new Set([...before, ...cleared])].sort((a, b) => a - b).slice(0, 3);
   // stage completato, con il record di Lux (Lux Record nell'elenco delle missioni)
-  player.stageScores = player.stageScores || {};
   player.stageScores[stageId] = Math.max(player.stageScores[stageId] || 0, lux);
   savePlayer();
   send(res, 200, {
@@ -918,7 +979,7 @@ function respondStageClear(res, req) {
     clearMissionIds: cleared,
     userPvpRanking: { rank: 0, class: 0, point: 0 },
     status: 0,
-    userMaterials: [],
+    userMaterials: userMaterialsData(),
     getLux: lux, // uint64
     // stage normale: anche FUN_00794094 (pet.userPetParts[]) e FUN_00797a84
     // (emblemIds[]), entrambi obbligatori (senza: «200 ERROR :116»)
@@ -1211,6 +1272,11 @@ function handler(scheme) {
       // GET /user/point (azione 2) e POST /user/sphere/reset (azione 62): solo
       // userData.userPoint (FUN_0078b230)
       if (kind === 'userpoint') return send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) } });
+      // GET /user/stone (azione 7, FUN_00776e38): i jewel. freeStone = guadagnati in
+      // gioco (premi delle missioni), payStone = comprati (sempre 0)
+      if (kind === 'userstone') return send(res, 200, { ret: ret(), userStone: { freeStone: player.freeStone || 0, payStone: 0 } });
+      // GET /user/material (azione 16): userMaterials[]
+      if (kind === 'usermaterial') return send(res, 200, { ret: ret(), userMaterials: userMaterialsData() });
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);

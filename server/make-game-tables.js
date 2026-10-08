@@ -75,28 +75,49 @@ for (let lv = 0; lv <= 99; lv++) {
   }));
 }
 
-// reward: premi dei forzieri (e di altro). Tipi ricavati da FUN_00b07090: 4 monete,
+// reward: premi dei forzieri e dei nemici. Una riga ha fino a 4 premi (type/id/num/
+// odds); il client tiene quelli il cui tipo compare, nella stessa posizione, in
+// dropItemTypeIds di /stage/start (server.js). Tipi ricavati da FUN_00b07090: 4 monete,
 // 8 CP (Attack Prize: barra degli speciali), 9 HP; 5 = materiale (id della tabella
-// material, es. 13 Spring Water: nel forziere non funziona, resta vuoto). La riga 81
-// e' il forziere arancione del Prologue (stage/mappoi_stg01010_01.bin); contenuto e
-// quantita' sono nostri.
-// KHUX_CHEST_ITEM = id dell'oggetto (0 per CP/HP/monete), KHUX_CHEST_CP = quantita'.
-const rewardIds = (process.env.KHUX_CHEST_REWARDS || '81').split(',').map(Number);
-const chestType = Number(process.env.KHUX_CHEST_TYPE || 8);
-const rewardRow = (rewardId, type, id, num) => Object.assign(blank('reward'), {
-  rewardId, validReward: 1, display: [1], type: [type], id: [id],
-  assignSkillType: [0], assignSkillId: [0], assignSkillLv: [0], num: [num], odds: [10000],
+// material: nel forziere non funziona, resta vuoto; dal nemico e' il sacchetto argento).
+// Le righe usate vengono dalle mappe (server/game_data/stage_poi.json, generato da
+// recon/tools/stage_poi.py): per i forzieri la terza colonna del record, per i nemici
+// la settima (di solito 1; il primo nemico di ogni mappa ne ha una sua, es. 80002, e
+// senza riga il client va in crash in FUN_00e7e6e8). Contenuti e quantita' sono nostri, per riga del forziere:
+// CHEST_PRIZES (KHUX_CHEST_TYPE/KHUX_CHEST_CP cambiano il premio predefinito).
+const rewardRow = (rewardId, prizes) => Object.assign(blank('reward'), {
+  rewardId, validReward: 1,
+  display: prizes.map(() => 1), type: prizes.map((p) => p.type), id: prizes.map((p) => p.id || 0),
+  assignSkillType: prizes.map(() => 0), assignSkillId: prizes.map(() => 0), assignSkillLv: prizes.map(() => 0),
+  num: prizes.map((p) => p.num), odds: prizes.map(() => 10000),
 });
-const rewards = rewardIds.map((rewardId) => rewardRow(rewardId, chestType,
-  Number(process.env.KHUX_CHEST_ITEM || 0), Number(process.env.KHUX_CHEST_CP || 10000)));
-// Drop dei nemici: il client cerca in reward una riga per nemico (FUN_00e7e6e8, la
-// stessa tabella dei forzieri; senza la riga va in crash). Provato sul banco con le
-// righe 1 e = enemyId (80001, 88001, 81020): tipo 5 (materiale) fa salire il
-// contatore argento dell'HUD. Quale delle due sia letta non e' ancora accertato.
-const enemyRewardIds = (process.env.KHUX_ENEMY_REWARDS || '1,80001,88001,81020').split(',').filter(Boolean).map(Number);
-for (const rewardId of enemyRewardIds.filter((r) => !rewardIds.includes(r))) {
-  rewards.push(rewardRow(rewardId, Number(process.env.KHUX_ENEMY_DROP_TYPE || 5),
-    Number(process.env.KHUX_ENEMY_DROP_ITEM || 13), Number(process.env.KHUX_ENEMY_DROP_NUM || 1)));
+const CHEST_DEFAULT = { type: Number(process.env.KHUX_CHEST_TYPE || 8), num: Number(process.env.KHUX_CHEST_CP || 10000) };
+const CHEST_PRIZES = {
+  81: CHEST_DEFAULT,              // forziere piccolo arancione (Prologue, Combat 101...)
+  80: { type: 9, num: 500 },      // HP
+  90: { type: 4, num: 100 },      // munny
+};
+const ENEMY_PRIZE = {
+  type: Number(process.env.KHUX_ENEMY_DROP_TYPE || 5),
+  id: Number(process.env.KHUX_ENEMY_DROP_ITEM || 13), num: Number(process.env.KHUX_ENEMY_DROP_NUM || 1),
+};
+let poi = {};
+try {
+  poi = JSON.parse(fs.readFileSync(path.join(__dirname, 'game_data', 'stage_poi.json'), 'utf8'));
+} catch {
+  console.warn('stage_poi.json assente: solo le righe del Prologue');
+  poi = { 1010: { chests: [{ uid: 18, reward: 81 }], enemies: [{ reward: 80001 }] } };
+}
+const chestRewards = new Set(Object.values(poi).flatMap((s) => s.chests.map((c) => c.reward)));
+const enemyRewards = new Set([1, ...Object.values(poi).flatMap((s) => s.enemies.map((e) => e.reward))]);
+const rewards = [];
+for (const id of [...new Set([...chestRewards, ...enemyRewards])].sort((a, b) => a - b)) {
+  // posizione 0 il premio del nemico, posizione 1 quello del forziere (se la riga e'
+  // di entrambi, come la 1): server.js manda a ciascuno il tipo nella sua posizione
+  const prizes = [];
+  if (enemyRewards.has(id)) prizes.push(ENEMY_PRIZE);
+  if (chestRewards.has(id)) prizes.push(CHEST_PRIZES[id] || CHEST_DEFAULT);
+  rewards.push(rewardRow(id, prizes));
 }
 
 // mypageBackground: sfondo della schermata principale (FUN_00bb400c). Il client cerca
