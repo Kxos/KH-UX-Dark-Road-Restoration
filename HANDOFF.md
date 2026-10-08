@@ -13,11 +13,11 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
+| **Test sul dispositivo** | 🟡 **il Prologue si gioca fino in fondo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Nuovo giocatore: titolo, contratto, data di nascita, master, filmato, nome, editor avatar, Union, `/user/create`, catena di avvio, **Prologue** (combattimento, forziere, speciale con swipe, boss), RESULTS e CONGRATULATIONS; poi `/raid/list`, `/party` e stop a **`/party/member/list` (azione 86)**. Vedi «Dove siamo rimasti» qui sotto |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 | **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
-### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
+### Come riprendere il lavoro (stato all'8 ottobre 2026, notte)
 
 **Posizione (dall'8 ottobre 2026).** Tutto il lavoro sta su D: per lo spazio su C::
 repository in `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration`, Ghidra in
@@ -25,7 +25,11 @@ repository in `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration`, 
 dal vecchio `C:\work\Android\ghidra_…`), gli AVD `khux30`/`khux33` in
 `D:\Progetto_Restauro_KH_UX\avd` (i `.ini` in `%USERPROFILE%\.android\avd` puntano lì),
 screenshot e tombstone in `D:\Progetto_Restauro_KH_UX\screenshots`. Claude Code va
-aperto dalla cartella del repository su D:.
+aperto dalla cartella del repository su D:. La cartella vuota
+`C:\work\Android\KH-UX-Dark-Road-Restoration` (era la directory di lavoro della
+sessione che ha fatto lo spostamento) si può cancellare. Su C: lo spazio cala anche per
+`C:\pagefile.sys`, che Windows ingrandisce quando LDPlayer, Ghidra e server girano
+insieme (14,9 GB l'8 ottobre): non è un file del progetto.
 
 **Banco.** LDPlayer 9 (`D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9`), istanza 0,
 APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
@@ -47,12 +51,21 @@ $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
 node server\server.js
 ```
 
-Prima del primo avvio si rigenerano `server/master_data/` con
-`node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts`, `initItem` e le
-tabelle della battaglia (elenco in §2, «La prima battaglia»), con `node server/import-master.js` dalle tabelle
-dell'`extra.mp4` 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»). Infine
-`node server/make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json` genera
-`medal` e `player`, che la 5.0.1 non ha (§2, «HP del giocatore e medaglie iniziali»).
+`server/master_data/` (fuori dal repository) si rigenera così, nell'ordine:
+
+```powershell
+node server\make-master-stub.js --force          # 106 tabelle minime + misc
+node server\import-master.js D:\Progetto_Restauro_KH_UX\apk501\extra_files `
+  avatarParts initItem misc stage world stageDrama enemy enemyAttack keyblade skill buff `
+  burst battleMisc badstatus tutorialMisc medalMisc material title theater raidEnemy raidEnemyAttack
+node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # medal, player (lv 0-99, HP 3000), reward (81)
+```
+
+`extra_files` = le 55 tabelle della 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»;
+si riestraggono dall'`extra.mp4` dell'APK 5.0.1 con la chiave 5.0.1). `wiki\medals.json`
+= valori khuxwiki delle tre medaglie iniziali (tabella in §2, «HP del giocatore e
+medaglie iniziali»; se manca, si riscrive da lì). Dopo ogni modifica dei master si alza
+`KHUX_REVISION`.
 
 La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
 
@@ -81,7 +94,12 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
   ancora provato sul banco);
 - `tombstone.ps1`: dall'ultimo tombstone gli indirizzi ARM (Ghidra) del crash sotto
   houdini;
-- `bench_prologue.ps1`: nel Prologue, dopo `bench_flow.ps1`, fino al forziere arancione;
+- `bench_prologue.ps1 -Out <log>`: dopo `bench_flow.ps1`, gioca tutto il Prologue
+  (Shadow, forziere arancione con confronto dell'HUD prima/dopo, swipe dello speciale
+  di Donald sul boss, attacchi fino a `/stage/clear`) e tocca i risultati; ~1 minuto.
+  Uso tipico: `bench_flow.ps1 -Out $log; bench_prologue.ps1 -Out $log -Shot x`;
+- `Swipe` (in `bench_lib.ps1`): lo speciale si lancia con uno swipe **rapido** in
+  diagonale sulla medaglia, `Swipe 130 790 400 520 150` (Donald);
 - screenshot (e tombstone) in `D:\Progetto_Restauro_KH_UX\screenshots\`: passano dalla
   cartella condivisa di LDPlayer (`Documents\XuanZhi9\Pictures`) e vengono spostati.
 
@@ -113,9 +131,17 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    si apre e, con `avatarParts` e le parti iniziali di `initItem` prese dalle tabelle
    master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»).
    Con `initItem` completa il tutorial prosegue: conferma dell'avatar, scelta della Union,
-   `POST /user/create`, la catena di avvio e **la prima battaglia** (Prologue, stage
-   1010) con HP 1000 e il deck iniziale (Donald A, Goofy A, Yuna): resta da capire il
-   gesto per giocare il turno. Restano 285 layout citati dal
+   `POST /user/create`, la catena di avvio e **il Prologue completo** (stage 1010, HP
+   3000, deck Donald A / Goofy A / Yuna, forziere, speciale con swipe, boss),
+   `/stage/clear`, RESULTS, CONGRATULATIONS, `/user/point`, `/user/stone`,
+   `PUT /tutorial/status {phase 995}`, `/system/push/regist`, `/campaign`, `/raid/list`,
+   `/party`; **fermo a `GET /party/member/list` (azione 86, corpo
+   `{"getDetail":1,"platformType":1}`)**, «200 ERROR :86». Si procede come sempre:
+   `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
+   risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
+   Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
+   l'utente) non è ancora stato catturato; quantità vere di HP iniziale e CP del
+   forziere sconosciute (segnaposto 3000 e 10.000). Restano 285 layout citati dal
    binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
    comunità) se servono.
 3. Fase D: popolare i master secondo `recon/out/master_types_ww431.json`. Fonte principale:
