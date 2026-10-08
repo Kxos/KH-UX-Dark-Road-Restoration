@@ -92,10 +92,15 @@ const rewardRow = (rewardId, prizes) => Object.assign(blank('reward'), {
   num: prizes.map((p) => p.num), odds: prizes.map(() => 10000),
 });
 const CHEST_DEFAULT = { type: Number(process.env.KHUX_CHEST_TYPE || 8), num: Number(process.env.KHUX_CHEST_CP || 10000) };
+// Righe dei forzieri riconosciute confrontando le mappe con i tesori di khuxwiki
+// (InfoQuestKHUX, {{TC|codice}}) nelle missioni 1-6: 81 = Attack Prize medio (a2), 80 =
+// Attack Prize piccolo (a1, o barile «ba»), 90 = barile con HP (bh), 1 = barile vuoto (b;
+// la 1 e' anche la riga predefinita dei nemici). Le quantita' sono nostre.
 const CHEST_PRIZES = {
-  81: CHEST_DEFAULT,              // forziere piccolo arancione (Prologue, Combat 101...)
-  80: { type: 9, num: 500 },      // HP
-  90: { type: 4, num: 100 },      // munny
+  81: CHEST_DEFAULT,              // a2
+  80: { type: 8, num: Math.round(CHEST_DEFAULT.num / 2) }, // a1
+  90: { type: 9, num: 500 },      // bh
+  1: null,                        // b: vuoto
 };
 const ENEMY_PRIZE = {
   type: Number(process.env.KHUX_ENEMY_DROP_TYPE || 5),
@@ -116,7 +121,7 @@ for (const id of [...new Set([...chestRewards, ...enemyRewards])].sort((a, b) =>
   // di entrambi, come la 1): server.js manda a ciascuno il tipo nella sua posizione
   const prizes = [];
   if (enemyRewards.has(id)) prizes.push(ENEMY_PRIZE);
-  if (chestRewards.has(id)) prizes.push(CHEST_PRIZES[id] || CHEST_DEFAULT);
+  if (chestRewards.has(id) && CHEST_PRIZES[id] !== null) prizes.push(CHEST_PRIZES[id] || CHEST_DEFAULT);
   rewards.push(rewardRow(id, prizes));
 }
 

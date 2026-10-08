@@ -58,7 +58,8 @@ for (const st of stages) {
       const row = rewards.get(c.reward);
       if (!row) { err(s, `forziere ${c.uid}: riga reward ${c.reward} assente (crash all'apertura)`); continue; }
       const sent = row.type.map((t, i) => ({ t, i })).filter(({ t }) => t !== ENEMY_TYPE);
-      if (!sent.length) err(s, `forziere ${c.uid}: la riga ${c.reward} ha solo materiali, il forziere resta vuoto`);
+      // la riga 1 e' il barile vuoto (khuxwiki «b»): vuoto di proposito
+      if (!sent.length && c.reward !== 1) err(s, `forziere ${c.uid}: la riga ${c.reward} ha solo materiali, il forziere resta vuoto`);
       for (const { t } of sent) if (!CHEST_OK.has(t)) warn(s, `forziere ${c.uid}: tipo ${t} non provato nel forziere`);
       if (verbose) console.log(`  ok      ${s}: forziere ${c.uid} -> reward ${c.reward} ${JSON.stringify(sent.map(({ t, i }) => [t, row.num[i]]))}`);
     }
@@ -81,6 +82,32 @@ for (const st of stages) {
     if (!GRANT_OK.has(t)) warn(s, `obiettivo ${i + 1}: premio di tipo ${t} non gestito dal server`);
     if (t === 5) { const m = checkMaterial(`obiettivo ${i + 1}`, st.submissionItemId[i]); if (m) err(s, m); }
   });
+}
+// Confronto con khuxwiki (recon/tools/wiki_quests.py; KHUX_WIKI_QUESTS o il percorso
+// predefinito): stessa missione per numero (campo id della tabella stage). Jewel del primo
+// completamento, quantita' degli Avatar Coin degli obiettivi, numero di tesori.
+const WIKI = process.env.KHUX_WIKI_QUESTS || 'D:\\Progetto_Restauro_KH_UX\\wiki\\quests.json';
+let wiki = null;
+try { wiki = JSON.parse(fs.readFileSync(WIKI, 'utf8')); } catch { console.log(`(wiki non trovata in ${WIKI}: confronto saltato)`); }
+if (wiki) {
+  const byNumber = new Map(Object.values(wiki).filter((q) => q.title.startsWith('Quest ')).map((q) => [Number(q.number), q]));
+  for (const st of stages) {
+    const q = byNumber.get(st.id);
+    const s = `${st.stageId} ${st.name}`;
+    if (!q || st.stageId > 1000000) continue; // 1001010: un'altra copia del Prologue
+    if (q.name && q.name !== st.name) warn(s, `la wiki ha «${q.name}» come missione ${st.id}`);
+    const jewel = st.validClearGetItem ? st.clearGetItemType.reduce((a, t, i) => a + (t === 2 ? st.clearGetItemNum[i] : 0), 0) : 0;
+    const wikiJewel = parseInt(q.jewel || '0', 10) || 0;
+    if (jewel !== wikiJewel) warn(s, `jewel del primo completamento ${jewel}, wiki ${wikiJewel}`);
+    q.objectives.forEach((o, i) => {
+      if (o.reward === 'Avatar Coin' && (st.submissionRewardType[i] !== 14 || st.submissionItemNum[i] !== Number(o.qty))) {
+        warn(s, `obiettivo ${i + 1}: wiki ${o.qty} Avatar Coin, tabella tipo ${st.submissionRewardType[i]} x${st.submissionItemNum[i]}`);
+      }
+    });
+    const chests = poi[st.stageId]?.chests.length;
+    if (chests !== undefined && chests !== q.treasures.length) warn(s, `${chests} forzieri nella mappa, ${q.treasures.length} tesori nella wiki`);
+    if (verbose) console.log(`  wiki    ${s}: missione ${q.number}, jewel ${wikiJewel}, tesori ${q.treasures.map((t) => t.code).join(' ')}`);
+  }
 }
 console.log(`${stages.length} stage, ${withMap} con mappa; ${rewards.size} righe reward; ${errors} errori, ${warnings} avvisi`);
 process.exit(errors ? 1 : 0);
