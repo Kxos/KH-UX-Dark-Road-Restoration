@@ -92,7 +92,18 @@ for (const rewardId of enemyRewardIds.filter((r) => !rewardIds.includes(r))) {
     Number(process.env.KHUX_ENEMY_DROP_ITEM || 13), Number(process.env.KHUX_ENEMY_DROP_NUM || 1)));
 }
 
+// mypageBackground: sfondo della schermata principale (FUN_00bb400c). Il client cerca
+// la riga del backgroundId di /mypage, o 150911 (0x24d7f) di default, e senza riga va
+// in crash. La tabella non c'e' nella 5.0.1: una riga per ogni sfondo che ha grafica
+// nelle risorse (lwf/home/<id>/<id>.lwf), senza parti aggiuntive (validParts 0).
+const backgrounds = [150911, 2, 3, 4, 5, 6, 99].map((id, i) => Object.assign(blank('mypageBackground'), {
+  id, backgroundId: id, sortId: i + 1,
+  startTime: '2015-01-01 00:00:00', endTime: '2099-12-31 23:59:59',
+  partsId: [], dataType: [], xPostion: [], yPostion: [], zSort: [],
+}));
+
 fs.mkdirSync(OUT, { recursive: true });
+fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgrounds));
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));

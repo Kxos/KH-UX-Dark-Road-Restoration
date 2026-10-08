@@ -1,5 +1,5 @@
 {
-  "_doc": "Schemi delle risposte di gioco (interfaccia, non dati): percorso API -> azione, parser e campi obbligatori con il tipo. Ricavati con recon/tools/action_case.py + response_schema.py. 'x[]' = elementi dell'array x (assenti nella risposta minima). Il server genera da qui la risposta minima per le rotte che non gestisce a mano.",
+  "_doc": "Schemi delle risposte di gioco (interfaccia, non dati): percorso API -> azione, parser e campi obbligatori con il tipo. Ricavati con recon/tools/action_case.py + response_schema.py. 'x[]' = elementi dell'array x (assenti nella risposta minima). 'values' (facoltativo) = valori diversi dal default per alcuni percorsi. Il server genera da qui la risposta minima per le rotte che non gestisce a mano.",
   "/party": {
     "action": 83,
     "parsers": ["FUN_00779574 (senza partyId nella richiesta: il party del giocatore)"],
@@ -30,6 +30,8 @@
       }
     }
   },
+  "/user/theater/available": { "action": 185, "parsers": ["FUN_00797834"],
+    "fields": { "availableTheaterIds": "array" } },
   "/stage/pickup": { "action": 250, "parsers": ["FUN_007ad5ac (elemento FUN_007ad4c0)"],
     "note": "La chiave e' scritta cosi' nel binario: pisckupStages.",
     "fields": { "pisckupStages": "array" } },
@@ -45,6 +47,18 @@
       "stageAchievement.pvpRanking.userPvpRanking.rank": "uint",
       "stageAchievement.pvpRanking.userPvpRanking.class": "uint",
       "stageAchievement.pvpRanking.userPvpRanking.point": "uint" } },
+  "/mypage": { "action": 59, "note": "backgroundId: riga di mypageBackground (150911 = sfondo predefinito); senza riga crash in FUN_00bb400c.", "parsers": ["FUN_0077ae10 (adminMypageTexts[]: FUN_0077ab34, openBanners[]: FUN_0077abe8)", "FUN_0077ac88 (rankingRewards)"],
+    "fields": { "adminMypageTexts": "array", "openBanners": "array", "userPresentCount": "int",
+      "isChangeCoordinate": "int", "rankingRewards": "object",
+      "rankingRewards.rankingColosseum": "int", "rankingRewards.rankingParty": "int",
+      "rankingRewards.rankingLuxWeekly": "int", "rankingRewards.rankingLuxMonthly": "int",
+      "rankingRewards.rankingLux": "int", "rankingRewards.rankingHighScore": "int",
+      "rankingRewards.rankingPvp": "int",
+      "backgroundId": "uint", "isNewAlbumChallenge": "uint", "isMissionReward": "bool" },
+    "values": { "backgroundId": 150911 } },
+  "/party/notice": { "action": 81, "parsers": ["FUN_00779b08 (newcomerUsers[]: FUN_00779a14)"],
+    "fields": { "hasNewOffer": "int", "isApply": "int", "hasNewApplicant": "int", "isNewLeader": "int",
+      "newcomerUsers": "array" } },
   "/party/lux_up_time": { "action": 105, "parsers": ["FUN_0077b338"],
     "fields": { "luxUp": "object", "luxUp.magnification": "uint", "luxUp.available": "bool", "luxUp.restrictionKind": "uint" } },
   "/party/member/list": {

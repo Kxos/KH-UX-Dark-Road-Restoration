@@ -153,6 +153,7 @@ function route(url) {
   if (p === '/campaign') return 'campaign';
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
+  if (p === '/user/support') return 'usersupport';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -539,8 +540,12 @@ function respondKhuxLogin(res) {
 // campo dello schema e' obbligatorio; gli array restano vuoti.
 // ---------------------------------------------------------------------------
 const API_SCHEMA_FILE = path.join(__dirname, '..', 'recon', 'out', 'api_responses_ww431.json');
-const API_SCHEMA = fs.existsSync(API_SCHEMA_FILE)
-  ? JSON.parse(fs.readFileSync(API_SCHEMA_FILE, 'utf8')) : {};
+// Gli schemi candidati di recon/tools/batch_schema.py valgono solo dove manca una voce
+// verificata.
+const API_SCHEMA_AUTO_FILE = path.join(__dirname, '..', 'recon', 'out', 'api_responses_auto_ww431.json');
+const API_SCHEMA = Object.assign(
+  fs.existsSync(API_SCHEMA_AUTO_FILE) ? JSON.parse(fs.readFileSync(API_SCHEMA_AUTO_FILE, 'utf8')) : {},
+  fs.existsSync(API_SCHEMA_FILE) ? JSON.parse(fs.readFileSync(API_SCHEMA_FILE, 'utf8')) : {});
 
 function defaultFor(type) {
   switch (type) {
@@ -563,7 +568,9 @@ function schemaResponse(apiPath) {
     const keys = p.split('.');
     let o = body;
     for (const k of keys.slice(0, -1)) o = (o[k] ??= {});
-    if (!(keys[keys.length - 1] in o)) o[keys[keys.length - 1]] = defaultFor(entry.fields[p]);
+    if (!(keys[keys.length - 1] in o)) {
+      o[keys[keys.length - 1]] = entry.values && p in entry.values ? entry.values[p] : defaultFor(entry.fields[p]);
+    }
   }
   return body;
 }
@@ -577,7 +584,7 @@ function schemaResponse(apiPath) {
 const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
 
 // Il giocatore creato con POST /user/create (solo in memoria, per ora).
-const player = { name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null, clearMissions: {} };
+const player = { name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null, clearMissions: {}, lux: 0 };
 
 // Missioni dello stage completate finora (id 1-3, al massimo 3).
 function stageClearMissions(stageId) {
@@ -652,9 +659,18 @@ function stageEnemyDrops(stageId) {
 }
 
 // userData.userPoint, letto da FUN_0078b230 sia in GET /user sia in POST /stage/start.
+// Il livello del giocatore e' il rango Lux: la barra dei risultati (FUN_009aaad0 ->
+// FUN_006ea1b4) usa userDetail.luxRank come livello e userPoint.lux come valore,
+// contro le soglie cumulative needExp della tabella player (righe lv e lv+1). Con
+// luxRank 0 la soglia del livello 1 e' 0: «LEVEL UP!» e barra piena a ogni stage.
+function luxRankFor(lux) {
+  const rows = masterRows('player').filter((r) => r.lv >= 1 && r.needExp <= lux);
+  return Math.max(1, ...rows.map((r) => r.lv));
+}
+
 function userPointData(now) {
   return {
-    money: 0, lux: 0, totalLux: 0, // lux e totalLux: uint64
+    money: 0, lux: player.lux, totalLux: player.lux, // lux e totalLux: uint64
     spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
     // In battaglia il client mostra maxHp e colora l'HP in rapporto a hp/baseHp
     // (provato con 111/222/333): per un giocatore integro coincidono, dal livello 1
@@ -736,7 +752,7 @@ function respondUser(res) {
 // userData.userDetail (FUN_0078babc), in GET /user e POST /stage/clear.
 function userDetailData() {
   return {
-    level: 1, exp: 0, luxRank: 0, luxGetRatio: 0,
+    level: luxRankFor(player.lux), exp: 0, luxRank: luxRankFor(player.lux), luxGetRatio: 0,
     titleLeftId: 0, titleRightId: 0, titlePlateId: 0, maxDeckCost: 0,
     playTimezones: [], // int[], al massimo 6
     playFrequently: 0,
@@ -778,6 +794,7 @@ function respondStageClear(res, req) {
   // le riporta: le valuta il server sui Lux della partita (getPoint.lux), che
   // restituisce in getLux (la barra Lux di RESULTS).
   const lux = Number(req?.getPoint?.lux) || 0;
+  player.lux += lux; // userPoint.lux/totalLux e luxRank nella risposta: dopo lo stage
   const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
   const stage = masterRows('stage').find((r) => r.stageId === stageId);
   (stage?.submissionRequire || []).forEach((kind, i) => {
@@ -1014,6 +1031,21 @@ function handler(scheme) {
             raid: { raidId: 0, level: 0, useAp: 0, timeLeft: now, feverFlag: 0, feverTime: now, stageId: 0, parts: [] },
           },
           raids: [],
+        });
+      }
+      // GET /user/support: la medaglia di supporto del giocatore (supportUser). Con
+      // medalId 0 la home cerca la medaglia 0 e va in crash (FUN_00721a24, riga nulla):
+      // si usa la prima medaglia del deck, con la keyblade iniziale.
+      if (kind === 'usersupport') {
+        const m = startingInventory().medals[0] || { userMedalId: 0, medalId: 0 };
+        return send(res, 200, {
+          ret: ret(),
+          supportUser: {
+            supportUserId: 1, userName: player.name, level: luxRankFor(player.lux),
+            titleLeftId: 0, titleRightId: 0, titlePlateId: 0, partyId: 0,
+            userKeybladeId: USER_KEYBLADE_ID, keybladeId: startingInventory().keybladeId,
+            userMedalId: m.userMedalId, medalId: m.medalId, lastActionDatetime: serverTime(),
+          },
         });
       }
       // GET /raid/reward/151101 (azione 120): userData.userPoint (FUN_0078b230),

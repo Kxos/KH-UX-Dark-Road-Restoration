@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟡 **il Prologue si gioca fino in fondo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Nuovo giocatore: titolo, contratto, data di nascita, master, filmato, nome, editor avatar, Union, `/user/create`, catena di avvio, **Prologue** (combattimento, forziere, speciale con swipe, boss), RESULTS (obiettivi spuntati) e CONGRATULATIONS (sacchetti aperti); poi altre dieci API e **la storia riparte** (dialogo con Chirithy). Vedi «Dove siamo rimasti» qui sotto |
+| **Test sul dispositivo** | 🟡 **il Prologue si gioca fino in fondo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Nuovo giocatore: titolo, contratto, data di nascita, master, filmato, nome, editor avatar, Union, `/user/create`, catena di avvio, **Prologue** (combattimento, forziere, speciale con swipe, boss), RESULTS (obiettivi spuntati) e CONGRATULATIONS (sacchetti aperti); dialogo con Chirithy e **schermata principale (home)**. Vedi «Dove siamo rimasti» qui sotto |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 | **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
@@ -43,7 +43,7 @@ Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` +
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "25"                   # revisione dati master
+$env:KHUX_REVISION      = "26"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -58,7 +58,7 @@ node server\make-master-stub.js --force          # 106 tabelle minime + misc
 node server\import-master.js D:\Progetto_Restauro_KH_UX\apk501\extra_files `
   avatarParts initItem misc stage world stageDrama enemy enemyAttack keyblade skill buff `
   burst battleMisc badstatus tutorialMisc medalMisc material title theater raidEnemy raidEnemyAttack
-node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # medal, player (lv 0-99, HP 3000), reward (81 forziere CP; 1, 80001, 88001, 81020 drop dei nemici)
+node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # medal, player (lv 0-99, HP 3000), reward (81 forziere CP; 1, 80001, 88001, 81020 drop dei nemici), mypageBackground
 ```
 
 `extra_files` = le 55 tabelle della 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»;
@@ -136,8 +136,9 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    `/stage/clear`, RESULTS, CONGRATULATIONS, `/user/point`, `/user/stone`,
    `PUT /tutorial/status {phase 995}`, `/system/push/regist`, `/campaign`, `/raid/list`,
    `/party`, `/party/member/list` e altre otto API (§2, «Dopo il Prologue»): obiettivi
-   spuntati, sacchetti dei nemici, e **la storia riparte con il dialogo di Chirithy**.
-   Prossimo: proseguire il dialogo sul banco e gestire le API che seguono. Si procede come sempre:
+   spuntati, sacchetti dei nemici, il dialogo di Chirithy (saltato con SKIP) e **la
+   schermata principale** (§2, «La schermata principale»). Prossimo: lo sfondo nero della
+   home e i menu (Quests per il secondo stage). Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
@@ -1462,6 +1463,40 @@ quindi i forzieri vogliono un altro tipo di oggetto (2/3/6/7/10 da provare).
 Dopo `/stage/pickup` e `/stage/160310` **la storia riparte**: dialogo con Chirithy
 («Pretty scary stuff, huh?…»). `bench_prologue.ps1` salva ora una schermata per ogni
 passo dei risultati (`<Shot>_r1..r6`).
+
+### La schermata principale (home) — 8 ottobre 2026, sera
+
+**Il livello è il rango Lux.** La barra di RESULTS (`FUN_009aaad0` → `FUN_006ea1b4`)
+usa `userDetail.luxRank` come livello e `userPoint.lux` come valore, contro le soglie
+cumulative `needExp` delle righe `lv` e `lv+1` della tabella `player`. Con `luxRank` 0
+la soglia del livello 1 è 0: «LEVEL UP!» e barra piena a ogni stage, anche con 0 Lux.
+Ora il server parte da rango 1, somma i Lux di ogni `/stage/clear` (`player.lux`) e
+calcola rango e livello dalla tabella (99 Lux: «Lv 1, 1 to next level»).
+
+**Regola del banco (dell'utente): i dialoghi con SKIP si saltano sempre.**
+`SkipDialog` in `bench_lib.ps1` (firma: SKIP chiaro a (155,50), riquadro (247,190,99) a
+(500,1000)). I risultati si scorrono subito con OK (960,965): dal lancio alla home in
+circa 2 minuti e mezzo.
+
+**Schemi in blocco.** `recon/tools/batch_schema.py` (passi `plan` e `merge`) ricava dal
+dispatcher i parser di tutte le azioni senza schema, li decompila in una sola sessione
+Ghidra (con i sotto-parser) e scrive `recon/out/api_responses_auto_ww431.json`: 168
+rotte con campi. Il server le usa solo dove manca una voce verificata in
+`api_responses_ww431.json`; le voci possono avere `values` (valori diversi dal default).
+**Attenzione agli id a 0**: una risposta generata con `medalId: 0` (es. `/user/support`)
+fa cercare al client una riga master inesistente e lo manda in crash; quelle rotte vanno
+gestite a mano.
+
+**Altre API e dati** (verificati sul banco): 185 `/user/theater/available`
+(`availableTheaterIds[]`), 81 `PUT /party/notice`, 59 `/mypage` (`backgroundId` 150911),
+177 `/pet/coordinate/members`, `/user/support` a mano (prima medaglia del deck). La tabella
+**`mypageBackground`** (assente nella 5.0.1) la genera `make-game-tables.js`: una riga per
+ogni sfondo con grafica (`lwf/home/{2..6,99,150911}`); senza la riga del `backgroundId`
+crash in `FUN_00bb400c`.
+
+**Si arriva alla home**: Lv 1, «LV Up in 1», AP 10/10, Quests, Moogle Shop, Avatar
+Boards, Shop, Presents, MENU, Beginner's Guide. Aperto: lo sfondo è nero (la riga c'è,
+la grafica non compare); il client ripete `GET /user/mission/list`.
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

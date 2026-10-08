@@ -46,11 +46,17 @@ while (-not (Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -m
     $p = $pts[$i % $pts.Count]; Tap $p[0] $p[1]; $i++; Start-Sleep -Milliseconds 600
 }
 Write-Host ("  {0,-28} {1,5:N1} s" -f 'POST /stage/clear', $sw.Elapsed.TotalSeconds)
-Start-Sleep 2
-Shot "${Shot}_clear" | Out-Null
-# RESULTS, CONGRATULATIONS, ...: uno screenshot per schermata (${Shot}_r1..r6). In
-# CONGRATULATIONS i sacchetti argento (drop dei nemici) si aprono da soli, con calma.
-foreach ($k in 1..6) { Start-Sleep 5; Shot "${Shot}_r$k" | Out-Null; Tap 960 950; Start-Sleep 1 }
+# RESULTS e CONGRATULATIONS senza attese: si tocca subito OK (960,965, vale anche come
+# «tap screen») finche' parte il dialogo, che si salta con SKIP (indicazioni
+# dell'utente). Uno screenshot per schermata (${Shot}_r1, _r2, ...) per verificarle.
+Start-Sleep 3
+for ($k = 1; $k -le 8; $k++) {
+    $c = Px @(@(155, 50), @(500, 1000))
+    if ($c[0][0] -gt 150 -and $c[0][1] -gt 150 -and (IsNear $c[1] @(247, 190, 99))) { break }
+    Shot "${Shot}_r$k" | Out-Null
+    Tap 960 965; Start-Sleep -Milliseconds 1500
+}
+SkipDialog 10 | Out-Null
 Shot "${Shot}_dopo" | Out-Null
 LastRequests $Out 6
 Status
