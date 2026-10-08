@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟢 **il client parla con il nostro server** — APK **originale** su **LDPlayer 9 (Android 9)**. Host di bootstrap trovato: **`api-s.sp.kingdomhearts.com`**, prima chiamata **`PUT /system/status`**, TLS accettato. Il client rifiuta la nostra risposta vuota con `200 ERROR :251`. Prossimo: il formato della risposta a `/system/status` |
+| **Test sul dispositivo** | 🟢 **handshake di avvio completo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Il client accetta status, token e sessione, e manda la prima richiesta **cifrata con la nostra chiave**, che decifriamo: `POST /system/login`. Prossimo: il formato della risposta a `/system/login` (errore attuale `200 ERROR :251`) |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -445,6 +445,49 @@ Il `251` resta e con ogni probabilità identifica la chiamata (`/system/status`)
 server risponde `{}` agli endpoint sconosciuti, e il client lo rifiuta: serve il formato
 giusto della risposta, da ricavare dal binario.
 
+**La sequenza di avvio, ricavata dalla decompilazione e verificata sul banco.**
+`FUN_007bbe20` (= `FUN_6bbe20` senza la base `0x100000` di Ghidra) è il punto d'ingresso:
+per l'azione **251 (`0xfb`)**, o se non c'è ancora una sessione, prima di eseguire l'azione
+fa la catena qui sotto. Ogni passo ha la sua callback; un passo che fallisce ricade nel
+gestore generico `FUN_007bcf68` e l'errore mostrato porta il numero dell'azione che
+l'ha avviata, quindi **resta `:251` per tutta la catena**.
+
+| # | Richiesta | Callback | Risposta che il client accetta |
+|---|---|---|---|
+| 1 | `PUT /system/status`, `{"appSignature":…}` in chiaro | `FUN_007bd720` | `{"appStatus":{"mode":"","current":"","server":""}}` — tre **stringhe**; `server` vuoto = resta sul dominio predefinito. Pieno, è un URL cifrato (chiave da `systemStatusUpdateResult`+`current`+`mode`) che sostituisce il dominio |
+| 2 | `GET /login/token?m=0` | `FUN_007be0d0` | `{"url":…, "nativeToken":…}` — `url` è l'URL **completo** della richiesta di sessione, non una base |
+| 3 | `POST <url>?m=0`, `{"UUID","deviceType":2,"nativeToken"}` in chiaro | `FUN_007bd5b8` | `{"nativeSessionId":…, "sharedSecurityKey":…}` — **la chiave AES la scegliamo noi** |
+| 4 | `POST /system/login?m=0`, **cifrata** | gestore dell'azione 251 | ❓ da ricavare |
+
+**In tutte le risposte `maintenance` va omesso.** Il client controlla che il suo tipo
+JSON sia null; anche `0` vale come manutenzione attiva e porta al popup con `viewUrl`.
+Il vecchio server mandava `maintenance: 0`: era sbagliato.
+
+**Il canale cifrato funziona con la nostra chiave.** Dal passo 4 il corpo è un form con
+un solo campo, `v=<base64>`, e `<base64>` è **AES-256-CBC del JSON, IV a zero, senza
+Base64 interno** (strategia `zero+noInnerB64` di `khux-codec.js`). Il server ora toglie
+l'involucro `v=` e registra il JSON decifrato. Il primo, da `/system/login`:
+
+```json
+{"length":33089376,"digest":"a8bcd7218e83fb9913d6d3f7da2f3866","ruv":713458956,
+ "deviceType":2,"systemVersion":"28","appVersion":"4.3.1"}
+```
+
+`length` è esattamente la dimensione di `libcocos2dcpp.so`: `digest` è con ogni
+probabilità il suo MD5, cioè un controllo d'integrità del client fatto **dal server**. A
+noi basta accettarlo. `ruv` arriva da `FUN_007bc5c8`, che costruisce ogni richiesta
+di gioco e aggiunge l'header `X-Sqex-Hole-Retry: %d` (e `X-Sqex-Hole-Nsid` da
+`FUN_007bccec`).
+
+**Ancora da capire per il passo 4:** se la risposta va cifrata come la richiesta, e quali
+campi legge il gestore della 251. Indizio: `FUN_007bcf68` chiama `FUN_0077eb98(id, json)`,
+che è con ogni probabilità il dispatcher per azione; è il prossimo da decompilare.
+
+Strumenti usati, rifacibili in pochi minuti: le stringhe per funzione con
+`recon/tools/codeindex.py` (intervallo `0x6b9000–0x6bf000`), poi la decompilazione
+headless sul progetto Ghidra esistente (`-process … -noanalysis -readOnly`) con un
+post-script che stampa il C delle funzioni richieste. JDK: il JBR di Android Studio.
+
 Rumore da ignorare nel log DNS: con il DNS di Windows sul server compaiono anche le
 query del PC (Microsoft, Discord, NVIDIA…) e quelle di LDPlayer (`ldmnq.com`,
 `ldplayer.net`, `changzhi.top`). Le app di Google nel guest falliscono con
@@ -845,9 +888,11 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    d) ✅ DNS del guest al nostro server (DNS di Windows sull'IP LAN, DNS privato del
    guest spento): l'host di bootstrap è **`api-s.sp.kingdomhearts.com`**, prima chiamata
    `PUT /system/status` — vedi §2 «Fase B — 8 ottobre»;
-   e) **prossimo:** ricavare dal binario il formato della risposta a `/system/status`
-   (errore attuale `200 ERROR :251`), implementarla, e proseguire chiamata per chiamata
-   raccogliendo `logs/requests.ndjson`.
+   e) ✅ status, token e sessione implementati dal decompilato; il client accetta la
+   nostra chiave e la sua prima richiesta cifrata (`/system/login`) si decifra;
+   f) **prossimo:** il formato della risposta a `POST /system/login` (azione 251, errore
+   attuale `200 ERROR :251`): decompilare `FUN_0077eb98` e capire se la risposta va
+   cifrata. Poi avanti chiamata per chiamata, raccogliendo `logs/requests.ndjson`.
    A fine sessione: rimettere il DNS di Windows su automatico.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
    107 classi per RTTI, 1.739 campi, ~3 secondi. Vedi [PHASE-C.md](PHASE-C.md).

@@ -46,6 +46,10 @@ const HIJACK = (process.env.KHUX_HIJACK || 'sqex-bridge.jp,kingdomhearts.com,squ
 // TELEFONO, quindi l'IP della macchina sulla rete locale, non localhost.
 const PUBLIC_URL = process.env.KHUX_PUBLIC_URL || 'https://127.0.0.1';
 
+// Dove mandare la richiesta di sessione. Per nome, non per IP: l'host di
+// bootstrap risolve gia' su di noi ed e' coperto dal certificato.
+const SESSION_BASE = process.env.KHUX_SESSION_BASE || 'https://api-s.sp.kingdomhearts.com';
+
 // Stato di sessione. La sharedSecurityKey la scegliamo noi: e' il punto in cui
 // prendiamo il controllo dell'intero canale cifrato.
 const SESSION = {
@@ -104,7 +108,10 @@ function parseBody(buf, headers) {
   }
 
   const asText = data.toString('utf8');
-  const dec = codec.decode(asText.trim(), SESSION.sharedSecurityKey);
+  // Dopo la sessione il client manda form urlencoded con un solo campo:
+  // v=<base64 di AES-256-CBC(JSON), IV a zero>.
+  const form = /^v=/.test(asText) ? new URLSearchParams(asText).get('v') : null;
+  const dec = codec.decode((form || asText).trim(), SESSION.sharedSecurityKey);
   if (dec.ok) {
     out.bodyDecoded = dec.json;
     out.ivStrategy = dec.strategy;
@@ -125,28 +132,42 @@ function parseBody(buf, headers) {
 // ---------------------------------------------------------------------------
 function route(url) {
   const p = url.split('?')[0].toLowerCase();
+  if (p.includes('system/status')) return 'status';
   if (p.includes('session')) return 'session';
+  if (p.includes('login/token')) return 'bootstrap';
   if (p.includes('bootstrap') || p.includes('startup') || p.includes('init')) return 'bootstrap';
   return null;
 }
 
+function respondStatus(res) {
+  // PUT /system/status, richiesta 251 (0xfb). Letto da FUN_007bd720:
+  //  - maintenance deve mancare (o essere null), altrimenti ramo manutenzione;
+  //  - appStatus.{mode,current,server} devono essere stringhe, altrimenti errore;
+  //  - server vuoto = resta sul dominio predefinito e passa al bootstrap. Pieno,
+  //    e' un URL cifrato (chiave da systemStatusUpdateResult+current+mode) che
+  //    sostituisce il dominio: non ci serve.
+  send(res, 200, {
+    appStatus: { mode: '', current: '', server: '' },
+  });
+}
+
+// In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
+// il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
+
 function respondSession(res) {
-  // Letto da FUN_007bd5b8. Entrambi i campi li decidiamo noi.
+  // Letto da FUN_007bd5b8: due stringhe, entrambe decise da noi.
   send(res, 200, {
     nativeSessionId: SESSION.nativeSessionId,
     sharedSecurityKey: SESSION.sharedSecurityKey,
-    // il bootstrap vive sullo stesso endpoint in alcune varianti: non costa nulla
-    maintenance: 0,
-    url: PUBLIC_URL,
-    nativeToken: SESSION.nativeToken,
   });
 }
 
 function respondBootstrap(res) {
-  // Letto da FUN_007be0d0: nel ramo maintenance==0 la url e' la base operativa.
+  // GET /login/token?m=0, letto da FUN_007be0d0. "url" non e' una base: e' l'URL
+  // completo della richiesta di sessione (corpo UUID, deviceType, nativeToken;
+  // risposta letta da FUN_007bd5b8).
   send(res, 200, {
-    maintenance: 0,
-    url: PUBLIC_URL,
+    url: `${SESSION_BASE}/session`,
     nativeToken: SESSION.nativeToken,
   });
 }
@@ -181,6 +202,7 @@ function handler(scheme) {
       };
       logRequest(entry);
 
+      if (kind === 'status') return respondStatus(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 
