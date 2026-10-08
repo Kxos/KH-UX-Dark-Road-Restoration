@@ -56,12 +56,19 @@ python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee54:0xe6
 dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.py`.)
 
 **Script del banco** (`tools/ldplayer/`, `-Out` = file di log del server):
-- `bench_newcomer.ps1`: avvio, KHUX START, contratto, data di nascita, Download, SKIP
-  del filmato, screenshot e analisi dell'eventuale tombstone;
-- `bench_start.ps1`: avvio e KHUX START (giocatore esistente), poi screenshot e ultime
-  richieste;
-- `bench_tutorial.ps1`: dopo `bench_newcomer.ps1`, nome, editor avatar, Union e
-  `/user/create`, fino alla prima battaglia;
+- `bench_lib.ps1`: funzioni comuni, **senza attese fisse**. Lo schermo si legge dentro il
+  guest (`screencap` grezzo, 16 byte di intestazione, poi `dd` dei soli pixel che
+  servono: ~0,2 s a lettura); `Step` tocca un pulsante e attende che la schermata
+  successiva sia riconosciuta dai suoi pixel, ritoccando se non cambia; `WaitLog`
+  attende una richiesta nel log del server;
+- `bench_flow.ps1 -Out <log> [-Until name|editor|union|battle]`: nuovo giocatore dal
+  lancio alla prima battaglia (titolo, contratto, data di nascita, Download, SKIP, nome,
+  editor, conferma, vetrata con SKIP, Union, `/user/create`, `/stage/start`) in
+  **~42 s** (prima ~330 s con le attese fisse). Le firme delle schermate sono in testa
+  allo script;
+- `bench_start.ps1`: giocatore esistente, KHUX START ritoccato finché arriva
+  `/khux/login`, poi attende che il log si fermi (riscritto con `bench_lib.ps1`, non
+  ancora provato sul banco);
 - `tombstone.ps1`: dall'ultimo tombstone gli indirizzi ARM (Ghidra) del crash sotto
   houdini;
 - screenshot in `C:\Users\<utente>\Documents\XuanZhi9\Pictures\`.
@@ -1150,7 +1157,7 @@ argomento 1 (legge solo `systemLogin.newcomerKhux`, bool, e lo copia nel flag
 (`respondUserCreate`) risponde `newcomerKhux: false` e ricorda in memoria nome, Union e
 avatar, che `GET /user` ora restituisce.
 
-Sul banco (`tools/ldplayer/bench_newcomer.ps1` poi `bench_tutorial.ps1`) il nuovo
+Sul banco (oggi `tools/ldplayer/bench_flow.ps1`) il nuovo
 giocatore, dopo `/user/create`, percorre la stessa catena del giocatore esistente:
 
 ```
