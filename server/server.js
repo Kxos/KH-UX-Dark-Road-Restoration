@@ -136,6 +136,11 @@ function route(url) {
   if (p.includes('system/login')) return 'login';
   if (p.includes('system/coppa')) return 'coppa';
   if (p.includes('system/resourcesize')) return 'resourcesize';
+  if (p.includes('system/resourceev')) return 'resourceev';
+  if (p.includes('system/resource')) return 'resource';
+  if (p.startsWith('/resource/')) return 'resourcefile';
+  if (p.includes('tutorial/status')) return 'tutorialstatus';
+  if (p.includes('khux/login')) return 'khuxlogin';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
   if (p.includes('session')) return 'session';
@@ -161,6 +166,7 @@ function respondStatus(res) {
 const SERVER_TIME_START = Date.parse(process.env.KHUX_SERVER_TIME || '2021-05-15T12:00:00Z');
 const STARTED_AT = Date.now();
 const REVISION = Number(process.env.KHUX_REVISION || 0);
+const NEWCOMER = process.env.KHUX_NEWCOMER !== '0';
 
 function serverTime() {
   // Formato letto da FUN_007197ec: "YYYY-MM-DD HH:MM:SS".
@@ -222,7 +228,10 @@ function respondLogin(res) {
   // (FUN_0077f830); i link li legge FUN_00791070.
   const body = {
     ret: ret(),
-    systemLogin: { newcomerKhux: true, newcomerDark: true },
+    // Un nuovo giocatore NON scarica le risorse all'avvio (FUN_00ecd988): fa il
+    // tutorial con la grafica gia' installata (APK + OBB). KHUX_NEWCOMER=0
+    // presenta un giocatore esistente, l'unico che arriva all'azione 28.
+    systemLogin: { newcomerKhux: NEWCOMER, newcomerDark: NEWCOMER },
     data: LOGIN_DATA,
   };
   for (const k of LOGIN_LINKS) body[k] = '';
@@ -374,6 +383,105 @@ function respondMasterFile(req, res) {
   res.end(body);
 }
 
+// ---------------------------------------------------------------------------
+// Risorse
+//
+// GET /system/resource (azione 28, richiesta da FUN_007e518c con corpo
+// {revision, resoMode}; risposta letta da FUN_00ec7ad0):
+//   { resource: { mode, minVersion, versions: [ {data: [file], index: [file]} ] } }
+// mode 0 = niente da scaricare, 1 o 2 = scarica. La versione i-esima vale
+// minVersion + i. file = {url, md5, size}: stringhe non vuote e size > 0.
+//
+// Il downloader (FUN_00ec8304 -> FUN_00eccf04) accetta un file solo se il
+// corpo e' lungo `size`, il suo MD5 esadecimale e' `md5` e il Content-Type
+// contiene "application/octet-stream". Lo salva nella cartella scrivibile con un
+// nome derivato dall'url; la cache (FUN_00824bfc) rifa' lo stesso controllo.
+//
+// Il client chiede l'azione 28 solo se le revisioni delle risorse differiscono,
+// il giocatore NON e' nuovo e il tutorial risulta finito (stato del tutorial,
+// FUN_0079004c, campo isFinished).
+//
+// I pacchetti sono i file di RESOURCE_DIR/<versione>/{data,index}/ (cartella non
+// versionata: conterra' risorse di Square Enix).
+// ---------------------------------------------------------------------------
+const RESOURCE_DIR = process.env.KHUX_RESOURCE_DIR || path.join(__dirname, 'resource_data');
+
+function resourceFiles(version, kind) {
+  const dir = path.join(RESOURCE_DIR, String(version), kind);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).sort().map((name) => {
+    const body = fs.readFileSync(path.join(dir, name));
+    return {
+      url: `${SESSION_BASE}/resource/${version}/${kind}/${encodeURIComponent(name)}`,
+      md5: crypto.createHash('md5').update(body).digest('hex'),
+      size: body.length,
+    };
+  }).filter((f) => f.size > 0);
+}
+
+function respondResource(res) {
+  const versions = fs.existsSync(RESOURCE_DIR)
+    ? fs.readdirSync(RESOURCE_DIR).filter((v) => /^\d+$/.test(v)).map(Number).sort((a, b) => a - b)
+    : [];
+  const body = { ret: ret() };
+  if (versions.length === 0) {
+    body.resource = { mode: 0, minVersion: 0, versions: [] };
+  } else {
+    // le versioni devono essere consecutive: la i-esima vale minVersion + i
+    const min = versions[0];
+    const list = [];
+    for (let v = min; v <= versions[versions.length - 1]; v++) {
+      list.push({ data: resourceFiles(v, 'data'), index: resourceFiles(v, 'index') });
+    }
+    body.resource = { mode: 1, minVersion: min, versions: list };
+  }
+  send(res, 200, body);
+}
+
+function respondResourceEv(res) {
+  // GET /system/resourceEv (azione 29, FUN_00ec7f80): array "resourceEv" di
+  // {resourceId (uint), versions}. Nessuna risorsa evento.
+  send(res, 200, { ret: ret(), resourceEv: [] });
+}
+
+function respondResourceFile(req, res) {
+  const parts = req.url.split('?')[0].split('/').slice(2).map(decodeURIComponent);
+  const [version, kind, name] = parts;
+  if (parts.length !== 3 || !/^\d+$/.test(version) || !['data', 'index'].includes(kind)
+      || name.includes('/') || name.includes('\\') || name.startsWith('.')) {
+    res.writeHead(404);
+    return res.end();
+  }
+  const file = path.join(RESOURCE_DIR, version, kind, name);
+  if (!fs.existsSync(file)) {
+    res.writeHead(404);
+    return res.end();
+  }
+  const body = fs.readFileSync(file);
+  res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': body.length });
+  res.end(body);
+}
+
+function respondTutorialStatus(res) {
+  // GET/PUT /tutorial/status (azioni 69/70), letto da FUN_0079004c alla radice:
+  // phase (uint), popupFlag (uint64), isFinished (uint), acquireTutorialJewel
+  // (bool). isFinished decide, con newcomer, se scaricare le risorse all'avvio.
+  const finished = process.env.KHUX_TUTORIAL_FINISHED === '1' || !NEWCOMER;
+  send(res, 200, {
+    ret: ret(),
+    phase: 0,
+    popupFlag: 0,
+    isFinished: finished ? 1 : 0,
+    acquireTutorialJewel: false,
+  });
+}
+
+function respondKhuxLogin(res) {
+  // POST /khux/login (azione 252), solo per un giocatore esistente: dopo
+  // /system/coppa. Letto da FUN_0077f764: gameLogin.acquirableLoginBonus (bool).
+  send(res, 200, { ret: ret(), gameLogin: { acquirableLoginBonus: false } });
+}
+
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
 // il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
 
@@ -435,6 +543,11 @@ function handler(scheme) {
       if (kind === 'resourcesize') return respondResourceSize(res);
       if (kind === 'master') return respondMaster(res);
       if (kind === 'masterfile') return respondMasterFile(req, res);
+      if (kind === 'resource') return respondResource(res);
+      if (kind === 'resourceev') return respondResourceEv(res);
+      if (kind === 'resourcefile') return respondResourceFile(req, res);
+      if (kind === 'tutorialstatus') return respondTutorialStatus(res);
+      if (kind === 'khuxlogin') return respondKhuxLogin(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 

@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. Prossimo: le **risorse** (OBB e protocollo di download) |
+| **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Prossimo: **OBB** e risorse originali |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -690,6 +690,101 @@ risorse, e in parallelo il protocollo con cui il client li scarica
 (`SceneDownload::callDownloadAPI`, `FUN_00eccf04`). I valori veri delle tabelle
 (khuxwiki, fase D) torneranno utili quando la grafica ci sarà.
 
+### Il protocollo di download delle risorse — ricavato e provato l'8 ottobre 2026
+
+**Chi lo avvia e quando.** `FUN_00ecd988` decide all'avvio cosa scaricare:
+- **dati master** (azione 27) se la revisione master locale differisce da quella del
+  server;
+- **risorse** (azione 28) se differisce la revisione delle risorse, **ma solo se il
+  giocatore non è nuovo e ha finito il tutorial**. Il primo dato è
+  `systemLogin.newcomerKhux` (singleton `FUN_007c1dfc` +0x88), il secondo `isFinished`
+  dello stato del tutorial (+0xb8).
+
+Un nuovo giocatore quindi non scarica risorse all'avvio: fa il tutorial con la grafica
+già installata, cioè APK **e OBB**. È per questo che il primo crash dopo la
+registrazione del nome (`AvatarEditAnim`) non si risolve dal server: per un nuovo
+giocatore **gli OBB sono indispensabili**.
+
+**Le richieste.** Si trovano cercando le funzioni che scrivono l'id dell'azione in
+`[oggetto,#0x28]` prima di accodare con `FUN_007bba54` (script `reqids.py`, nel
+blocco note):
+
+| Funzione | Azione | Corpo |
+|---|---|---|
+| `FUN_007e4e2c` | 27 `GET /system/master/20200423` | `revision`, `commonRevision` |
+| `FUN_007e518c` | **28 `GET /system/resource`** | `revision` (risorse locali), `resoMode` |
+| `FUN_007e54e4` | 29 `GET /system/resourceEv` | `resourceIds` |
+| `FUN_0080e3b4` | 242 `PUT /system/resourcesize/20200423` | `resoMode`, `masterRevision`, … |
+| `FUN_00811a98` / `FUN_00811df8` / `FUN_00812100` | 256 / 257 / 258, le stesse per Dark Road | |
+
+**Il giocatore esistente passa da altre due chiamate**, ora nel server:
+- `POST /khux/login` (azione 252, `FUN_0077f764`): `{gameLogin: {acquirableLoginBonus: bool}}`;
+- `GET /tutorial/status` (69/70, `FUN_0079004c`, letto dalla radice): `phase` (uint),
+  `popupFlag` (uint64), `isFinished` (uint), `acquireTutorialJewel` (bool).
+
+**La risposta a `/system/resource`** (ramo 28 → `FUN_00ec7ad0`):
+
+```json
+{ "resource": { "mode": 1, "minVersion": 1,
+    "versions": [ { "data":  [ {"url": "…", "md5": "…", "size": 123} ],
+                    "index": [ {"url": "…", "md5": "…", "size": 45} ] } ] } }
+```
+
+- `mode`: 0 = niente, 1 = completo (cancella e riscrive il pacchetto), 2 = incrementale
+  (controlla la dimensione attuale e aggiunge in coda);
+- la versione i-esima vale `minVersion + i`;
+- ogni file (`FUN_00eca04c`) vuole `url` e `md5` stringhe non vuote e `size` > 0;
+- `/system/resourceEv` (`FUN_00ec7f80`): array `resourceEv` di
+  `{resourceId (uint), versions}`.
+
+**Il download** (`FUN_00ec8304` → `FUN_00eccf04`, in un thread) accetta un file solo
+se tre condizioni valgono insieme:
+- il corpo è lungo `size`;
+- l'MD5 esadecimale del corpo è `md5`;
+- il Content-Type contiene `application/octet-stream`.
+
+Lo mette in cache con un nome offuscato: url cifrato con XOR LCG (seme `0x79`, passo
+`b*-3-0x3d`), poi Base64 con `-` e `_` e senza `=` (`FUN_01323294`). La cache
+(`FUN_00824bfc`) rifà lo stesso controllo.
+
+**L'installazione** (`FUN_00ec85bc`, a coda finita):
+- i file `data` vengono concatenati in **`files/r/misc.mp4`** (Dark Road:
+  `r/.misc.mp4`; risorse evento: nome proprio + `.mp4`), eventualmente spezzato in
+  parti `%s.%d`;
+- i file `index` dell'ultima versione vengono concatenati in un temporaneo `misc.wav`,
+  poi rinominato **`r/misc.png`**;
+- infine `FUN_00ec9b4c` riapre l'indice con il lettore BGAD e pretende, in ordine:
+  1. un record di nome **`/`** (l'indice);
+  2. un record **`md5`**, che decifrato con la chiave di `FUN_00ec75f4` è lungo 32;
+  3. facoltativo, un record **`size`** con la dimensione del pacchetto in decimale,
+     uguale alla somma dei `data`.
+
+  Se qualcosa non torna, compare «**Save error. Please check the storage space on your
+  device.**».
+
+Le risorse scaricate sono quindi **pacchetti BGAD come quelli dell'APK**, che `files/r/`
+sostituisce. L'indice del CDN però aveva in più i record `md5` e `size`.
+
+**Prova sul banco** (`KHUX_NEWCOMER=0`, revisione 7). Il flusso registrato è:
+
+```
+/system/status, /login/token, /session, /system/login, /system/coppa,
+/khux/login, /tutorial/status, resourcesize ×4, Download →
+/system/master + 106 tabelle → GET /system/resource {"revision":0,"resoMode":0}
+→ GET /resource/1/data/… → GET /resource/1/index/…
+```
+
+- I file arrivano intatti (MD5 confrontati nel guest) e diventano `r/misc.mp4` e
+  `r/misc.png`.
+- Con byte casuali, e anche con la coppia `misc.mp4`/`misc.png` dell'APK, finisce in
+  «Save error», come previsto: all'indice dell'APK mancano i record `md5` e `size`.
+- Il protocollo è dunque verificato fino al controllo dell'indice. Per superarlo
+  servono gli indici originali del CDN, oppure ricavare la chiave dei record `md5`
+  (`FUN_00ec75f4`) e costruirne uno.
+
+Il server serve i pacchetti da `server/resource_data/<versione>/{data,index}/` (non
+versionata).
+
 ### I pacchetti di asset dell'APK — decifrati l'8 ottobre 2026
 
 Gli asset dell'APK (`misc.mp4`, `extra.mp4`, `aliud.png`, …) non sono video né immagini:
@@ -1240,8 +1335,19 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    minime (`server/make-master-stub.js`) e 98 id di `misc`. Il gioco arriva alla
    **registrazione del nome**; il crash successivo, all'editor avatar, è per una
    **risorsa grafica assente** (`AvatarEditAnim.ExportJson`), che non sta nell'APK.
-   **Prossimo:** risorse. Servono gli OBB (comunità di preservazione) e il protocollo
-   di download delle risorse (`SceneDownload::callDownloadAPI`, `FUN_00eccf04`).
+   o) ✅ **protocollo di download delle risorse** (§2, «Il protocollo di download
+   delle risorse»): azione 28 e formato della risposta, controlli del downloader,
+   installazione in `files/r/misc.mp4` + `misc.png`. Provato sul banco con un
+   giocatore esistente: il client scarica i file che serviamo. Si ferma al controllo
+   dell'indice, che vuole i record `md5` e `size` dei file originali del CDN.
+   **Prossimo:** due strade, non alternative:
+   - gli **OBB** (comunità di preservazione), indispensabili per un nuovo giocatore
+     (tutorial ed editor avatar);
+   - eventuali **archivi del CDN delle risorse** (`misc.mp4`/`misc.png` con indice
+     completo), che il server sa già servire.
+
+   Dal lato codice: la chiave dei record `md5` (`FUN_00ec75f4`), se si vorrà costruire
+   un indice da sé.
    **Prossimo:** la forma del JSON dentro le tabelle, partendo da una piccola. Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso

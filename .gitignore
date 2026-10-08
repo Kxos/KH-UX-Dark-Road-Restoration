@@ -87,4 +87,6 @@ server/certs/
 server/logs/
 # dati master serviti al client: sono (o derivano da) dati di Square Enix
 server/master_data/
+# pacchetti di risorse serviti al client: sono (o derivano da) risorse di Square Enix
+server/resource_data/
 tools/bin/
