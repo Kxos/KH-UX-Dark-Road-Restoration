@@ -1029,6 +1029,35 @@ layout). Gli asset online della 4.x arrivavano dal CDN come risorse scaricate (`
 `main.60`/`patch.69` sono i dati di Dark Road. Una copia del CDN non risulta pubblica
 (ricerca dell'8 ottobre 2026).
 
+**Ritrovati: il pacchetto `addnl` dell'IPA iOS 4.3.1** (8 ottobre 2026, notte). Ricerca
+tra le copie su Internet Archive (`khux-ww-IPAs`, `khux-jp-IPAs`, `khux-5.0.1*`,
+`api.sp.kingdomhearts.com`) e nella Wayback (nessun file del CDN archiviato; gli host
+noti sono `api`, `api-s`, `help` e `cache.sp.kingdomhearts.com`):
+- le IPA iOS dalla 3.2.0 alla 4.3.x contengono **`addnl.mp4` + `addnl.png`**, che l'APK
+  Android non ha; il client li monta come **secondo slot KHUX** con percorso relativo
+  (`FUN_01322c08(2,"addnl.png","addnl.mp4",…)` in `FUN_00ec66c8`, se `FUN_0085dbdc()`);
+- `KHUx 4.3.1.ipa` (WW): `addnl.mp4` 132.056.004 byte, `addnl.png` 1.660.489; l'indice si
+  apre con **la stessa chiave 5.0.1**: 10.145 record, 19.806 nomi, 1.309 `cocostudio`, e
+  c'è **`AvatarEditScene_ver131.json`** (con `Book`, `CenterUI`, …);
+- con `addnl` i layout mancanti scendono da 441 a **285**; i 285 restanti sono forse codice
+  morto, o stavano solo sul CDN;
+- `KHUx 4.4.0.ipa` è già di transizione all'offline: `aliud.mp4` = `main.76` e niente
+  `addnl`;
+- gli OBB 5.0.1 non nascondono altro: 322.271 record, 80.497 indicizzati, gli altri sono
+  record da 4 byte (più 7 LWF/BTF).
+
+`recon/tools/remote_zip.py` legge l'elenco di uno zip remoto (IPA) ed estrae un file
+con richieste Range, senza scaricare tutto. Su `D:\Progetto_Restauro_KH_UX\ipa431\`
+stanno `addnl.mp4` e `addnl.png`.
+
+**Risorse versione 3** = OBB 5.0.1 + `addnl` in un solo pacchetto:
+`recon/tools/resource_merge.py` concatena i dati e ricostruisce l'indice (BGI v3,
+strato interno con la chiave di sessione, record `/` con cifratura 2, poi `md5` e
+`size`); a parità di nome vince il primo pacchetto (qui il 5.0.1). In
+`resource_data\3\data` ci sono i 33 pezzi della versione 2 (hard link) più 2 pezzi di
+`addnl`; la versione 2 è stata spostata in `resource_data\v2_obb_only`.
+`KHUX_RESOURCE_SIZE` = 2.317.958.810.
+
 Strumenti: `recon/tools/bgad_extract.py` estrae un file dagli OBB dato l'offset
 dell'elenco `IDX_DUMP` di `bgi_check.py` (con `IDX_KEY` = chiave 5.0.1).
 
