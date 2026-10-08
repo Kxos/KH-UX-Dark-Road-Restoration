@@ -418,15 +418,34 @@ function respondMasterFile(req, res) {
 // ---------------------------------------------------------------------------
 const RESOURCE_DIR = process.env.KHUX_RESOURCE_DIR || path.join(__dirname, 'resource_data');
 
+// I pacchetti possono pesare gigabyte (gli OBB): l'MD5 si calcola una volta, a
+// blocchi, e si tiene in cache finche' dimensione e data del file non cambiano.
+const md5Cache = new Map();
+
+function fileMd5(file) {
+  const st = fs.statSync(file);
+  const k = `${file}|${st.size}|${st.mtimeMs}`;
+  if (!md5Cache.has(k)) {
+    const h = crypto.createHash('md5');
+    const fd = fs.openSync(file, 'r');
+    const buf = Buffer.alloc(16 * 1024 * 1024);
+    let n;
+    while ((n = fs.readSync(fd, buf, 0, buf.length, null)) > 0) h.update(buf.subarray(0, n));
+    fs.closeSync(fd);
+    md5Cache.set(k, h.digest('hex'));
+  }
+  return md5Cache.get(k);
+}
+
 function resourceFiles(version, kind) {
   const dir = path.join(RESOURCE_DIR, String(version), kind);
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir).sort().map((name) => {
-    const body = fs.readFileSync(path.join(dir, name));
+    const file = path.join(dir, name);
     return {
       url: `${SESSION_BASE}/resource/${version}/${kind}/${encodeURIComponent(name)}`,
-      md5: crypto.createHash('md5').update(body).digest('hex'),
-      size: body.length,
+      md5: fileMd5(file),
+      size: fs.statSync(file).size,
     };
   }).filter((f) => f.size > 0);
 }
@@ -478,9 +497,8 @@ function respondResourceFile(req, res) {
     res.writeHead(404);
     return res.end();
   }
-  const body = fs.readFileSync(file);
-  res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': body.length });
-  res.end(body);
+  res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': fs.statSync(file).size });
+  fs.createReadStream(file).pipe(res);
 }
 
 function respondTutorialStatus(res) {
@@ -676,6 +694,11 @@ function handler(scheme) {
 // ---------------------------------------------------------------------------
 function start() {
   console.log('--- server privato KHUX (fase B) ---');
+  // MD5 dei pacchetti di risorse calcolati subito, non alla prima richiesta del client
+  for (const v of resourceVersions()) {
+    const n = resourceFiles(v, 'data').length + resourceFiles(v, 'index').length;
+    console.log(`risorse versione ${v}: ${n} file pronti`);
+  }
   console.log('url consegnata al client :', PUBLIC_URL);
   console.log('nativeSessionId          :', SESSION.nativeSessionId);
   console.log('sharedSecurityKey        :', SESSION.sharedSecurityKey);

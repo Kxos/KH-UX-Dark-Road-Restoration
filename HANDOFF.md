@@ -867,11 +867,69 @@ con la chiave del server originale, non possiamo leggerlo. Ne segue anche che gl
 indici che serviamo noi devono avere lo strato interno cifrato con **la nostra** chiave
 di sessione.
 
-**La strada in corso:** la 5.0.1 è offline, quindi il suo `aliud.png` deve essere
-leggibile senza server. Si scarica il suo `base.apk` e se ne estrae l'indice degli OBB
-76/87. Download in `D:\Progetto_Restauro_KH_UX\obb76\` e `apk501\`. I primi tentativi
-erano corrotti da due `curl` sullo stesso file: ora si scarica a segmenti paralleli e
-si verifica l'MD5.
+### Gli OBB 5.0.1 serviti al client 4.3.1 — 8 ottobre 2026
+
+**File scaricati e verificati** (Internet Archive, MD5 identici a quelli dichiarati;
+tutti fuori dal repository, su `D:\Progetto_Restauro_KH_UX\`):
+
+| File | Byte | MD5 |
+|---|---|---|
+| `obb76\main.76.com.square_enix.android_googleplay.khuxww.obb` | 1.652.397.828 | `2e77be60c0bb61456275f9e7d4768cad` |
+| `obb76\patch.87.com.square_enix.android_googleplay.khuxww.obb` | 533.504.978 | `6fd36c21ed70e60f57d466105a018980` |
+| `apk501\base.apk` (5.0.1) | 89.615.133 | `eef1d80dc60af7aa7b3e3d1597259060` |
+
+Il primo tentativo di download era corrotto: due `curl` aggiungevano dati allo stesso
+file. `tools/segdl.ps1` ora scarica a segmenti paralleli (3 MB/s invece di 0,4) e
+verifica l'MD5.
+
+**La chiave dell'indice degli OBB.** L'`aliud.png` della 5.0.1 (28,9 MB) ha i record
+`/`, `md5` e `size`; lo strato interno del BGI è cifrato. Essendo la 5.0.1 offline, la
+chiave doveva stare nel binario: `recon/tools/bgi_keyhunt.py` prova ogni finestra di 32
+byte delle sezioni dati e trova **una sola candidata**, nella `.rodata` del
+`libcocos2dcpp.so` 5.0.1 all'offset `0xe6ee54`. Il valore non si versiona: è dato di
+Square Enix, si rilegge da lì. Con quella chiave (`recon/tools/bgi_check.py`):
+- **80.497 record e 321.987 nomi**;
+- tutti gli 80.497 offset puntano a header BGAD nella concatenazione main 76 + patch 87;
+- il record `size` vale 2.185.902.806, esattamente main + patch;
+- cartelle `lwf` (289.358), `map`, `text`, `img`, `audio`, `cocostudio`, …, e c'è
+  **`cocostudio/publish/AvatarEditAnim.ExportJson`**.
+
+Gli OBB 5.0.1 contengono quindi la grafica completa, compresa quella di Union χ.
+
+**Come li serviamo al client 4.3.1.** Il client monta le risorse scaricate
+(`r/misc.png` + `r/misc.mp4`) aprendo l'indice con la **chiave di sessione**, che decide
+il server. Quindi:
+1. `KHUX_RESOURCE_KEY` = la chiave della 5.0.1, che il server mette in `data[3]` di
+   `/system/login`;
+2. la versione di risorse 2 contiene come `data` i due OBB concatenati e spezzati in 33
+   pezzi da 64 MB (`recon/tools/resource_split.py`). I pezzi servono perché il
+   downloader tiene in memoria ogni file intero;
+3. come `index` c'è l'`aliud.png` della 5.0.1, così com'è;
+4. il server ora calcola l'MD5 a blocchi, una volta sola (all'avvio), e serve i file in
+   streaming. `KHUX_RESOURCE_DIR` punta alla cartella su `D:`.
+
+**Sul banco**, da giocatore esistente:
+- 33 pezzi + indice scaricati in **1,3 minuti**;
+- installati come `r/misc.mp4` (2 GB) + `r/misc.mp4.1` (38 MB, il client spezza oltre
+  i 2 GB) + `r/misc.png`;
+- al riavvio l'indice si monta con la chiave 5.0.1 senza errori e il client ripercorre
+  la catena di avvio fino a `/stage/start`.
+
+**Nuovo giocatore** con le risorse installate:
+- filmato → nome → OK → il client **entra nell'editor avatar** (`FUN_00d6a4f4`) e carica
+  dal pacchetto `cocostudio/publish/AvatarEditScene_ver131.json`. Prima andava in crash
+  per `AvatarEditAnim` mancante;
+- nuovo crash più avanti, dentro la scena: puntatore nullo, con `0xd6a930`
+  (`getChildByName("Book")` sul layout) sullo stack e lo zlib di `bg::FileManager`
+  attivo.
+
+Cause possibili, da verificare:
+- tabelle master vuote: l'editor non trova le parti dell'avatar (`avatarParts`);
+- differenze di layout tra gli asset 5.0.1 e il codice 4.3.1.
+
+Lato Dark Road gli OBB andrebbero invece montati come `main.60`/`patch.69` sotto
+`/sdcard/Android/obb/<pacchetto>/`, ma l'indice `aliud.png` della 4.3.1 è cifrato con la
+chiave del server originale. La via servita qui (risorse KHUX) aggira il problema.
 
 ### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026
 
@@ -1520,6 +1578,11 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    server la sceglie, `resource_index.py` costruisce l'indice, e sul banco l'indice
    viene accettato (niente «Save error»). Il crash successivo, a `0x12c1ee0`, è nella
    scena dopo il download.
+   t) ✅ **OBB 5.0.1 scaricati, verificati e serviti** (§2, «Gli OBB 5.0.1 serviti al
+   client 4.3.1»): chiave dell'indice trovata nella 5.0.1, OBB serviti come risorse
+   KHUX, montati dal client 4.3.1. L'editor avatar ora carica la sua grafica e va in
+   crash più avanti. **Prossimo:** quel crash (`avatarParts` vuota o layout 5.0.1) e i
+   dati di gioco (fase D).
    s) ✅ **catena di avvio completa** (§2, «La catena di avvio completa»): oltre 30
    API accettate. Il client arriva a `StartDeckEditDialog::startStory`, cioè avvia il
    primo stage della storia. **Prossimo:** dati di gioco veri (fase D: stage, medaglie,
