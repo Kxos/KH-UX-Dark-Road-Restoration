@@ -109,6 +109,8 @@
   "/refund/info": { "action": 320, "parsers": ["FUN_007bb2e0"],
     "fields": { "nativeTagName": "string", "payStone": "uint", "refund": "string", "endDate": "string",
                 "refundTermFlag": "uint", "userId": "uint64" } },
+  "/stage/160310": { "action": 108, "parsers": ["FUN_0079f1fc"],
+    "fields": { "stories": "array", "newStageId": "uint", "luxRank": "uint", "openRankingId": "uint" } },
   "/user/chat": {
     "action": 6,
     "parsers": ["FUN_0077a868", "FUN_0077a6cc (userData.userChat)"],

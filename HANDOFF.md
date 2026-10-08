@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Prossimo: **OBB** e risorse originali |
+| **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -886,6 +886,39 @@ Poi pretende anche `userPopUp.isPopBenefitStone` (int). Il server la costruisce 
 tagName, userEndpointUrl, stampIds (int[])}`, più `authToken` e `userToken` alla
 radice.
 
+**La catena di avvio completa**, percorsa sul banco l'8 ottobre 2026. Ogni schema è
+in `api_responses_ww431.json`:
+
+```
+/khux/login → /tutorial/status → PUT /user/awakening → GET /user → /user/start
+→ /user/chat → /party (83: senza partyId basta userParty) → /user/stone → /user/shop
+→ /user/option (149) → /tutorial/status → /user/mission (187) → DELETE /pvp/lock
+→ PUT /passive/list (249) → PUT /emblem/list (188) → /user/sphere → /user/medal
+→ /user/skill → /user/material → /user/keyblade → /user/deck
+→ /keyblade/subslot (191) → /user/avatar/all → /user/avatar/parts → /user/title
+→ /user/link (152) → /user/support → PUT /playtime/bp (311) → /pvp/keyblade
+→ /stage/160310 (108) → POST /stage/start (113)
+```
+
+L'ordine non segue gli id: va scoperto sul banco, e conviene ricavare in blocco
+gli schemi delle azioni vicine. Molte sono già pronte anche se non ancora chieste:
+birthday, item, album, present, avatar, payment/info, need/url, mission/list, pvp,
+pvp/vs_list, multi/status, multi/talk, refund/info.
+
+**Il confine: dalla catena di avvio al gioco.** L'ultima richiesta, `POST /stage/start`
+con `{"stageId":0, "userKeybladeId":<spazzatura>}`, la costruisce `FUN_007e68c4`
+(azione 113). La chiama un functor la cui classe, dall'RTTI della vtable a
+`0x1eee8c0`, è una lambda di **`StartDeckEditDialog::startStory`**. Il client cioè
+ha finito di caricare e **avvia da solo il primo stage della storia**, con stage 0 e
+keyblade inesistente perché tabelle master e inventario sono vuoti.
+
+`stageResumption.resumptionStatus = 0` è corretto: `FUN_006ea7b4` lo usa come switch
+(0 = niente da riprendere, 1 = riprendi lo stage, 2 e 3 altri casi).
+
+Da qui non servono altre forme di risposta, ma **dati di gioco**: stage, medaglie e
+keyblade nelle tabelle master (fase D, khuxwiki), un inventario iniziale coerente, e
+la grafica (OBB).
+
 **Il protocollo delle risorse è completo**: richiesta, risposta, download, verifica,
 installazione e indice. Il server sa servire qualunque coppia pacchetto + indice
 nel formato originale, e costruirne l'indice.
@@ -1458,6 +1491,10 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    server la sceglie, `resource_index.py` costruisce l'indice, e sul banco l'indice
    viene accettato (niente «Save error»). Il crash successivo, a `0x12c1ee0`, è nella
    scena dopo il download.
+   s) ✅ **catena di avvio completa** (§2, «La catena di avvio completa»): oltre 30
+   API accettate. Il client arriva a `StartDeckEditDialog::startStory`, cioè avvia il
+   primo stage della storia. **Prossimo:** dati di gioco veri (fase D: stage, medaglie,
+   keyblade, inventario iniziale) e OBB.
    r) ✅ **`GET /user` e `/user/chat` accettate** (§2, «I dati del giocatore»), con
    strumenti per ricavare gli schemi di risposta e un server che genera le risposte
    minime dagli schemi. **Prossimo:** `GET /party` (azione 83) e le chiamate che seguono.
