@@ -15,6 +15,76 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. L'editor avatar ora carica la sua grafica e va in crash più avanti (`avatarParts` vuota o layout 5.0.1). Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+
+### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
+
+**Banco.** LDPlayer 9 (`D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9`), istanza 0,
+APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
+`tools/ldplayer/phaseb-guest.sh`: CA di sistema, orologio al 15/5/2021, DNS verso il
+PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
+**192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
+Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
+`misc.png`, revisione 2) e le tabelle master (revisione 7).
+
+**Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
+
+```powershell
+$env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
+$env:KHUX_REVISION      = "7"                    # revisione dati master
+$env:KHUX_RESOURCE_SIZE = "2185902806"           # byte annunciati per il download
+$env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 2 = OBB in 33 pezzi + aliud.png 5.0.1
+$env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
+# $env:KHUX_NEWCOMER    = "0"   # giocatore esistente: catena /user/* e download risorse
+node server\server.js
+```
+
+Prima del primo avvio si rigenerano `server/master_data/` con
+`node server/make-master-stub.js`.
+
+La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
+
+```powershell
+python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee54:0xe6ee54+32].hex())" D:\Progetto_Restauro_KH_UX\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so
+```
+
+(`apk501\ext` = estrazione di `base.apk` 5.0.1; i pezzi in `resource_data\2\data` si
+rifanno con `recon/tools/resource_split.py <cartella> 64 <main.76> <patch.87>`, l'indice
+è l'`assets/aliud.png` 5.0.1 copiato in `resource_data\2\index\misc.png`.)
+
+**Script del banco** (`tools/ldplayer/`, `-Out` = file di log del server):
+- `bench_newcomer.ps1`: avvio, KHUX START, contratto, data di nascita, Download, SKIP
+  del filmato, screenshot e analisi dell'eventuale tombstone;
+- `bench_start.ps1`: avvio e KHUX START (giocatore esistente), poi screenshot e ultime
+  richieste;
+- `tombstone.ps1`: dall'ultimo tombstone gli indirizzi ARM (Ghidra) del crash sotto
+  houdini;
+- screenshot in `C:\Users\<utente>\Documents\XuanZhi9\Pictures\`.
+
+**Analisi** (Ghidra headless: progetto `recon/ghidra/project`, JDK
+`D:\Programmi\Android\Android Studio\jbr`, Ghidra in
+`C:\work\Android\ghidra_12.1.4_PUBLIC_20260921\ghidra_12.1.4_PUBLIC`; si lancia con
+`-process libcocos2dcpp.so -noanalysis -readOnly -scriptPath recon/ghidra`):
+- `khux_decomp.py` (decompila; `t 300` = timeout), `khux_listing.py` (segue il flusso),
+  `khux_linear.py` (lineare: serve nei rami del dispatcher);
+- dispatcher delle risposte `FUN_007c3204`: per un'azione si parte da
+  `recon/tools/action_case.py`, poi si decompilano i parser e si passa il C a
+  `recon/tools/response_schema.py`. Lo schema va in `recon/out/api_responses_ww431.json`
+  (il server genera da lì le risposte minime);
+- `request_ids.py` (chi costruisce la richiesta di un'azione), `who_refs.py` (chi usa
+  un indirizzo), `getter_ids.py` (id costanti passati a un getter master),
+  `master_types.py` (tipi dei master), `bgad.py` / `bgad_names.py` / `bgi_check.py` /
+  `bgi_keyhunt.py` / `resource_index.py` (pacchetti e indici), `dex_consts.py`;
+- indirizzi: Ghidra = file + `0x100000`. Il disassemblato lineare del dispatcher si
+  rifà con `khux_linear.py <out> 007c3204 007d1080`.
+
+**Dove siamo rimasti:**
+1. Da **giocatore esistente** la catena di avvio passa tutta e il client avvia il primo
+   stage (`POST /stage/start`, `StartDeckEditDialog::startStory`): mancano dati di gioco.
+2. Da **nuovo giocatore**, con le risorse OBB installate: filmato → nome → editor avatar
+   (`FUN_00d6a4f4`, `AvatarEditScene_ver131.json`), poi crash per puntatore nullo. Da
+   indagare: `avatarParts` vuota nei master, oppure layout 5.0.1 diverso dal 4.3.1.
+3. Fase D: popolare i master (khuxwiki) secondo `recon/out/master_types_ww431.json`.
 
 ### Quello che sappiamo, tutto ricavato dal binario
 
