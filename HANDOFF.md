@@ -15,7 +15,7 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
-| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar si apre**; mancano le parti (`avatarParts`, fase D). Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar si apre e funziona**, con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
@@ -25,13 +25,13 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 7).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 9, con `avatarParts` e le parti iniziali).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "7"                    # revisione dati master
+$env:KHUX_REVISION      = "9"                    # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -40,7 +40,9 @@ node server\server.js
 ```
 
 Prima del primo avvio si rigenerano `server/master_data/` con
-`node server/make-master-stub.js`.
+`node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts` intera e
+`initItem` con le sole righe di categoria 100, con `node server/import-master.js` dalle tabelle
+dell'`extra.mp4` 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»).
 
 La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
 
@@ -87,10 +89,12 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
 2. Da **nuovo giocatore**, con le risorse OBB installate: filmato → nome → editor avatar
    (`FUN_00d6a4f4`): **risolto** servendo come risorse la versione 3 = OBB 5.0.1 +
    `addnl` dell'IPA iOS 4.3.1 (§2, «Gli OBB 5.0.1 serviti al client 4.3.1»). L'editor
-   si apre; mancano le parti (`avatarParts` vuota). Restano 285 layout citati dal
+   si apre e, con `avatarParts` e le parti iniziali di `initItem` prese dalle tabelle
+   master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»). Restano 285 layout citati dal
    binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
    comunità) se servono.
-3. Fase D: popolare i master (khuxwiki) secondo `recon/out/master_types_ww431.json`.
+3. Fase D: popolare i master secondo `recon/out/master_types_ww431.json`. Fonte principale:
+   le 55 tabelle dell'`extra.mp4` 5.0.1 (`server/import-master.js`); khuxwiki per le altre.
 
 ### Quello che sappiamo, tutto ricavato dal binario
 
@@ -1075,6 +1079,39 @@ dell'elenco `IDX_DUMP` di `bgi_check.py` (con `IDX_KEY` = chiave 5.0.1).
 Lato Dark Road gli OBB andrebbero invece montati come `main.60`/`patch.69` sotto
 `/sdcard/Android/obb/<pacchetto>/`, ma l'indice `aliud.png` della 4.3.1 è cifrato con la
 chiave del server originale. La via servita qui (risorse KHUX) aggira il problema.
+
+### Le tabelle master della 5.0.1 offline e l'editor avatar — 8 ottobre 2026, notte
+
+**Dove sono.** Né gli OBB né `misc` della 5.0.1 hanno tabelle master: stanno
+nell'**`extra.mp4` dell'APK 5.0.1**. Il suo indice `extra.png` e i suoi record sono
+cifrati con la **chiave 5.0.1** (la stessa dell'indice OBB, `.rodata` `0xe6ee54`),
+non con quella dei pacchetti della 4.3.1. L'ha trovata `recon/tools/pack_keyhunt.py`,
+che cerca nella libreria la chiave che fa decifrare record compressi in header zlib
+validi. Contenuto: **55 tabelle in JSON** (array di righe), tra cui `avatarParts`
+(2.824 righe), `initItem`, `misc`, `tutorialMisc`, `stage`, `keyblade`, `skill`,
+`enemy`, `buff`, … più tutte le `dark*`. Estratte in
+`D:\Progetto_Restauro_KH_UX\apk501\extra_files\` (dati di Square Enix, fuori dal repo).
+`avatarParts` ha **esattamente i campi dello schema 4.3.1**.
+
+**Come si importano.** `node server/import-master.js <cartella> <tabella> …` copia le
+tabelle nominate in `server/master_data/` dopo aver controllato che ogni riga abbia i
+campi dello schema; i tipi li verifica il server quando le serve. Dopo un'importazione
+va alzata `KHUX_REVISION`, perché il client riscarichi i master.
+
+**L'editor avatar.**
+- Con `avatarParts` importata la lista resta vuota: l'editor mostra le parti
+  **possedute**, non tutto il catalogo. Il nuovo giocatore non chiama API prima
+  dell'editor: le parti iniziali vengono da **`initItem`**.
+- In `initItem` (197 righe) la **categoria 100** ha 110 righe i cui `itemId` sono tutti
+  `avatarPartsId`. Le altre categorie (3, 7, 13, 24, 25, 31, 101) rimandano a tabelle
+  ancora vuote (medaglie, keyblade, …).
+- Importate `avatarParts` intera e `initItem` **con le sole righe di categoria 100**
+  (revisione master 9): **l'editor funziona**. Sets (Sporty Blue/Yellow, Cool
+  Black/Red), Hairstyles (Short, Faux Hawk, Layered), le icone dagli OBB; scegliendo
+  una parte l'avatar cambia e la parte risulta «In use».
+- Da fare: il resto di `initItem` insieme alle tabelle a cui rimanda (fase D), poi OK
+  nell'editor e il passo successivo del tutorial.
+
 
 ### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026
 
