@@ -15,7 +15,7 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
-| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. L'editor avatar ora carica la sua grafica e va in crash più avanti (`avatarParts` vuota o layout 5.0.1). Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. L'editor avatar va in crash perché il suo layout 4.3.1 non c'è: gli OBB 5.0.1 coprono solo 160 dei 601 layout del 4.3.1. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
@@ -74,7 +74,9 @@ rifanno con `recon/tools/resource_split.py <cartella> 64 <main.76> <patch.87>`, 
 - `request_ids.py` (chi costruisce la richiesta di un'azione), `who_refs.py` (chi usa
   un indirizzo), `getter_ids.py` (id costanti passati a un getter master),
   `master_types.py` (tipi dei master), `bgad.py` / `bgad_names.py` / `bgi_check.py` /
-  `bgi_keyhunt.py` / `resource_index.py` (pacchetti e indici), `dex_consts.py`;
+  `bgi_keyhunt.py` / `resource_index.py` (pacchetti e indici), `bgad_extract.py` (un
+  file dagli OBB), `asset_coverage.py` (asset citati dal binario contro un indice),
+  `dex_consts.py`;
 - indirizzi: Ghidra = file + `0x100000`. Il disassemblato lineare del dispatcher si
   rifà con `khux_linear.py <out> 007c3204 007d1080`.
 
@@ -82,8 +84,11 @@ rifanno con `recon/tools/resource_split.py <cartella> 64 <main.76> <patch.87>`, 
 1. Da **giocatore esistente** la catena di avvio passa tutta e il client avvia il primo
    stage (`POST /stage/start`, `StartDeckEditDialog::startStory`): mancano dati di gioco.
 2. Da **nuovo giocatore**, con le risorse OBB installate: filmato → nome → editor avatar
-   (`FUN_00d6a4f4`, `AvatarEditScene_ver131.json`), poi crash per puntatore nullo. Da
-   indagare: `avatarParts` vuota nei master, oppure layout 5.0.1 diverso dal 4.3.1.
+   (`FUN_00d6a4f4`), poi crash per puntatore nullo. **Causa accertata**:
+   `AvatarEditScene_ver131.json` non esiste negli OBB 5.0.1, e con lui mancano 441 dei
+   601 layout citati dal 4.3.1 (§2, «Gli OBB 5.0.1 serviti al client 4.3.1»). Serve una
+   scelta di direzione: cercare le risorse online della 4.x presso le comunità,
+   adattare i 13 layout `Offline_` equivalenti, oppure ripartire dal client 5.0.1.
 3. Fase D: popolare i master (khuxwiki) secondo `recon/out/master_types_ww431.json`.
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -993,9 +998,39 @@ il server. Quindi:
   (`getChildByName("Book")` sul layout) sullo stack e lo zlib di `bg::FileManager`
   attivo.
 
-Cause possibili, da verificare:
-- tabelle master vuote: l'editor non trova le parti dell'avatar (`avatarParts`);
-- differenze di layout tra gli asset 5.0.1 e il codice 4.3.1.
+**Causa accertata (8 ottobre 2026, notte): il layout non esiste negli OBB 5.0.1.**
+- Il codice (`FUN_00d6a4f4`) carica `cocostudio/publish/AvatarEditScene_ver131.json` con
+  `FUN_006e0eb8` e ne salva il nodo in `this[0x66]` (`+0x330`); poi chiama
+  `getChildByName` (`FUN_006e0e2c`) su quel nodo per `Book`, `CenterUI`, `LeftUI`,
+  `CenterUI_Left`, `CenterUI_Right`, `Switch`, `Decision` (e `Tab_Accessorie` dentro
+  `CenterUI_Left`). Il tombstone ha come ritorno `0xd6a930`, subito dopo la prima di
+  queste chiamate: il nodo radice è nullo.
+- L'indice 5.0.1 (80.497 record) **non ha** `AvatarEditScene_ver131.json`; ha
+  `Offline_AvatarEditScene.json`, una scena diversa (figli `CenterUI_Left`,
+  `CenterUI_Right`, `KB_On`, `Switch`, `MyCoordinate`, `Decision`; niente `Book`,
+  `CenterUI`, `LeftUI`). Le tabelle master non c'entrano.
+
+**Il problema è generale, non dell'editor.** `recon/tools/asset_coverage.py` confronta i
+percorsi citati dal binario 4.3.1 con i nomi dell'indice OBB 5.0.1 più quelli di
+`misc.mp4` dell'APK 4.3.1:
+
+| Cartella | Citati dal 4.3.1 | Mancanti |
+|---|---|---|
+| `cocostudio` | 601 | 441 |
+| `img` | 449 | 165 |
+| `lwf` | 229 | 156 |
+| `json` | 24 | 0 |
+
+Solo 13 dei 441 layout hanno un equivalente rinominato nella 5.0.1 (`Offline_…` o un
+altro `_verNNN`, es. `MyPageScene_ver340` → `Offline_MyPageScene`). Mancano scene centrali
+come `ChatScene`, `PresentBOXScene`, `MedalEvoScene_ver320`, `PartyTop_*`. La 5.0.1
+offline ha tolto le funzioni online, e con esse i loro asset (il suo binario cita solo 212
+layout). Gli asset online della 4.x arrivavano dal CDN come risorse scaricate (`r/misc`);
+`main.60`/`patch.69` sono i dati di Dark Road. Una copia del CDN non risulta pubblica
+(ricerca dell'8 ottobre 2026).
+
+Strumenti: `recon/tools/bgad_extract.py` estrae un file dagli OBB dato l'offset
+dell'elenco `IDX_DUMP` di `bgi_check.py` (con `IDX_KEY` = chiave 5.0.1).
 
 Lato Dark Road gli OBB andrebbero invece montati come `main.60`/`patch.69` sotto
 `/sdcard/Android/obb/<pacchetto>/`, ma l'indice `aliud.png` della 4.3.1 è cifrato con la
