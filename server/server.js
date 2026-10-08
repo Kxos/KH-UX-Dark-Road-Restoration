@@ -497,13 +497,15 @@ function respondResource(res) {
   if (versions.length === 0) {
     body.resource = { mode: 0, minVersion: 0, versions: [] };
   } else {
-    // le versioni devono essere consecutive: la i-esima vale minVersion + i
-    const min = versions[0];
-    const list = [];
-    for (let v = min; v <= versions[versions.length - 1]; v++) {
-      list.push({ data: resourceFiles(v, 'data'), index: resourceFiles(v, 'index') });
-    }
-    body.resource = { mode: 1, minVersion: min, versions: list };
+    // Solo l'ultima versione: ognuna delle nostre e' un pacchetto completo (la 4 = la 3
+    // + le mappe generate). Con mode 1 il client scarica i data di TUTTE le versioni
+    // elencate e li concatena: con 3 e 4 insieme misc.mp4 veniva di 4,6 GB, la
+    // dimensione non tornava con l'indice e compariva «Save error».
+    const last = versions[versions.length - 1];
+    body.resource = {
+      mode: 1, minVersion: last,
+      versions: [{ data: resourceFiles(last, 'data'), index: resourceFiles(last, 'index') }],
+    };
   }
   send(res, 200, body);
 }
