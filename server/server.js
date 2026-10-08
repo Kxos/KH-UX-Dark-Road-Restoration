@@ -144,6 +144,7 @@ function route(url) {
   if (p === '/user/create') return 'usercreate';
   if (p === '/user/keyblade') return 'userkeyblade';
   if (p === '/user/deck') return 'userdeck';
+  if (p === '/user/medal') return 'usermedal';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/user') return 'user';
@@ -599,7 +600,10 @@ function userPointData(now) {
   return {
     money: 0, lux: 0, totalLux: 0, // lux e totalLux: uint64
     spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
-    attack: 0, defense: 0, baseHp: 0, hp: 0, ap: 10, maxHp: 0, maxAp: 10,
+    // In battaglia il client mostra maxHp e colora l'HP in rapporto a hp/baseHp
+    // (provato con 111/222/333): per un giocatore integro coincidono, dal livello 1
+    // della tabella player.
+    attack: 0, defense: 0, baseHp: levelHp(1), hp: levelHp(1), ap: 10, maxHp: levelHp(1), maxAp: 10,
     lastApDatetime: now,
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
@@ -684,6 +688,54 @@ const START_STAGE_ID = Number(process.env.KHUX_START_STAGE || 1010);
 const USER_KEYBLADE_ID = 1;
 const USER_DECK_ID = 1;
 
+function masterRows(name) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(MASTER_DIR, name + '.json'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+// Inventario iniziale da initItem: categoria 3 = medaglie del deck (equipType 3,
+// equipNo = slot, param = livello), categoria 13 = keyblade iniziale. Le medaglie
+// hanno userMedalId 1, 2, 3 nell'ordine degli slot.
+function startingInventory() {
+  const rows = masterRows('initItem');
+  const medals = rows.filter((r) => r.category === 3).sort((a, b) => a.equipNo - b.equipNo)
+    .map((r, i) => ({ userMedalId: i + 1, medalId: r.itemId, level: r.param || 1 }));
+  const kb = rows.find((r) => r.category === 13);
+  return { medals, keybladeId: kb ? kb.itemId : 1000 };
+}
+
+// HP del livello 1 dalla tabella player (generata da make-game-tables.js).
+function levelHp(lv = 1) {
+  const row = masterRows('player').find((r) => r.lv === lv);
+  return row ? row.hp : 0;
+}
+
+function respondUserMedal(res) {
+  // GET /user/medal (azione 15): userMedals[], elemento letto da FUN_0078d608
+  // (userSkills al massimo 2, userShuffleSkills).
+  const now = serverTime();
+  send(res, 200, {
+    ret: ret(),
+    userMedals: startingInventory().medals.map((m) => ({
+      userMedalId: m.userMedalId, // uint64
+      medalId: m.medalId,
+      number: 1, // uint
+      level: m.level, exp: 0,
+      attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
+      lock: 0, upperCost: 0, guiltFactor: 0, // guiltFactor: uint
+      userSkills: [], userShuffleSkills: [],
+      getDatetime: now,
+    })),
+  });
+}
+
+function deckMedalIds() {
+  return startingInventory().medals.map((m) => m.userMedalId);
+}
+
 function respondUserKeyblade(res) {
   // GET /user/keyblade (azione 11): userKeyblades[], elemento letto da FUN_0078c904
   // (deckMedals: al massimo 5 uint64).
@@ -694,8 +746,8 @@ function respondUserKeyblade(res) {
       userDeckId: USER_DECK_ID, // uint64
       userKeybladeSubslotId: 0, // uint64
       category: 1,
-      keybladeId: 1000,
-      deckMedals: [],
+      keybladeId: startingInventory().keybladeId,
+      deckMedals: deckMedalIds(),
       burst: 0, totalAttack: 0, totalDefense: 0, isFavorite: 0,
       skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
       skillUpperTotalDefence: 0, subslotRate: 10000, // uint
@@ -710,7 +762,7 @@ function respondUserDeck(res) {
     ret: ret(),
     userDecks: [{
       userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
-      deckMedals: [], petBaseSlotMedal: 0,
+      deckMedals: deckMedalIds(), petBaseSlotMedal: 0,
     }],
   });
 }
@@ -797,6 +849,7 @@ function handler(scheme) {
       if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
       if (kind === 'userkeyblade') return respondUserKeyblade(res);
       if (kind === 'userdeck') return respondUserDeck(res);
+      if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'user') return respondUser(res);

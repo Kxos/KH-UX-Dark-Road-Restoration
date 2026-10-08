@@ -25,13 +25,13 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 11).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 12).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "11"                   # revisione dati master
+$env:KHUX_REVISION      = "12"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -42,7 +42,9 @@ node server\server.js
 Prima del primo avvio si rigenerano `server/master_data/` con
 `node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts`, `initItem` e le
 tabelle della battaglia (elenco in §2, «La prima battaglia»), con `node server/import-master.js` dalle tabelle
-dell'`extra.mp4` 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»).
+dell'`extra.mp4` 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»). Infine
+`node server/make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json` genera
+`medal` e `player`, che la 5.0.1 non ha (§2, «HP del giocatore e medaglie iniziali»).
 
 La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
 
@@ -102,7 +104,8 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»).
    Con `initItem` completa il tutorial prosegue: conferma dell'avatar, scelta della Union,
    `POST /user/create`, la catena di avvio e **la prima battaglia** (Prologue, stage
-   1010), con HP 0 e deck vuoto: mancano `player` e `medal`. Restano 285 layout citati dal
+   1010) con HP 1000 e il deck iniziale (Donald A, Goofy A, Yuna): resta da capire il
+   gesto per giocare il turno. Restano 285 layout citati dal
    binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
    comunità) se servono.
 3. Fase D: popolare i master secondo `recon/out/master_types_ww431.json`. Fonte principale:
@@ -1215,8 +1218,71 @@ parte**: l'avatar del giocatore contro uno Shadow LV 1 bersagliato, con HUD (SPE
 HP, contatori in alto, OPTIONS) e il pulsante «ENEMY TURN». L'HP del giocatore è **0**
 (`userPoint.hp`/`maxHp` a 0) e il deck è senza medaglie.
 
-Prossimo: statistiche del giocatore (HP, attacco: probabilmente la tabella `player`, che
-manca nella 5.0.1) e medaglie iniziali (`medal` da khuxwiki, `/user/medal`, deck).
+### HP del giocatore e medaglie iniziali — 8 ottobre 2026, notte
+
+**HP.** Prova con `userPoint` `baseHp`/`hp`/`maxHp` = 111/222/333: la battaglia mostra
+**333** in rosso, con la barra quasi vuota. Il client mostra `maxHp` e colora in rapporto
+all'HP corrente: per un giocatore integro i tre valori coincidono. Il valore al livello
+1 non si trova né nella 5.0.1 né su khuxwiki (l'HP cresce con i nodi delle Avatar
+Board, +20 ciascuno): **1000 è un nostro segnaposto** (`KHUX_PLAYER_HP`), nella
+tabella `player` generata da `server/make-game-tables.js` (99 livelli; anche AP, costo
+ed EXP sono segnaposto). Riferimento di scala: lo Shadow LV 1 del Prologue ha attacco
+200 e HP 1550 (`enemy` 5.0.1).
+
+**Le medaglie del tutorial esistono nei pacchetti.** In `addnl` (IPA 4.3.1) ci sono le
+immagini di **21 medaglie**, e solo quelle: `img/medal/Medal_L_<id>.png`, `Medal_S_…`,
+`mixture/medal/compose/<id>/…`. Sono **texture BTF** dentro record con cifratura 3:
+- i record con cifratura 3 dei pacchetti montati come risorse si aprono con la chiave
+  di sessione (per noi la 5.0.1): `BGAD_KEY=<hex> recon/tools/bgad_extract.py …`;
+- `recon/tools/btf.py` converte le BTF in PNG: `\x89BTF`, tela (`+0x16`, es.
+  640×640), ritaglio (`+0x1a` x, y, `+0x1e` w, h), dimensione compressa (`+0x22`),
+  poi zlib di w×h×4 byte RGBA.
+
+L'id della medaglia è leggibile: prima cifra il rango (1 bronzo, 3 argento, 9
+speciale), seconda l'attributo (1 Power, 2 Speed, 3 Magic). Riconosciute dalle
+immagini, confrontate con il set 1 di khuxwiki:
+
+| Id | Medaglia | Id | Medaglia | Id | Medaglia |
+|---|---|---|---|---|---|
+| 11012 | Wakka | 12011 | Tidus | 13011 | Olette A |
+| 11021 | **Goofy A** | 12022 | KH Sora | 13021 | **Donald A** |
+| 11031 | Paine | 12031 | Rikku | 13031 | **Yuna** |
+| 11041 | Pence A | 12041 | Hayner A | 13032 | Yuna (variante) |
+| 11052 | Hercules | 12051 | Stitch | 13041 | Selphie |
+| 33023 | KH II Sora (argento) | 33043 | KH II King Mickey (argento) | 13051 | Jiminy Cricket |
+| 90011 | Moogle | 90031 | Louie | 90041 | Dewey |
+
+(più `Medal_S_42046`.) Le tre in grassetto sono il **deck iniziale** di `initItem`
+(categoria 3: slot 1 Donald A 13021, slot 2 Goofy A 11021, slot 3 Yuna 13031, livello
+1; categoria 13: keyblade 1000).
+
+**La tabella `medal`** (63 campi) la genera `server/make-game-tables.js` da un file di
+valori fuori dal repository (`D:\Progetto_Restauro_KH_UX\wiki\medals.json`, dati
+khuxwiki del rango 1★):
+
+| Medaglia | No. | STR min/max | DEF min/max | Attacco speciale |
+|---|---|---|---|---|
+| Goofy A | 7 | 1299 / 1901 | 1228 / 1797 | Thunder Raid, tutti, 2 colpi, 2 barre, ×1.54 |
+| Donald A | 67 | 1268 / 1855 | 1279 / 1872 | Thundaga, tutti, 2 colpi, 2 barre, ×1.54 |
+| Yuna | 73 | 1292 / 1890 | 1240 / 1814 | Firaga, tutti, 2 colpi, 3 barre, ×1.75 |
+
+Gli attacchi speciali sono **righe della tabella `burst` della 5.0.1** (10091 Thunder
+Raid, 10141 Thundaga, 10121 Firaga): la 5.0.1 ha conservato proprio quelli del tutorial,
+e il nome coincide con la wiki. Valori nostri: `attribute` 1/2/3 come nell'id,
+`darklight` 1 = Upright, `rare` 1, costo 1, livello massimo 10, `imageId` = `medalId`
+(il client compone `img/medal/Medal_L_%d.png`); `type`, `growthType`, `expType` = 1, non
+ricavati.
+
+**Il server** ricava l'inventario da `initItem`: `GET /user/medal` (azione 15) con le tre
+medaglie (`userMedalId` 1–3), keyblade e deck con `deckMedals` [1, 2, 3].
+
+**Sul banco** (revisione master 12, `bench_flow.ps1` in 48 s): battaglia del Prologue
+con **HP 1000** in verde, **Donald** (Magic) e **Goofy** (Power) in mano con il costo
+dello speciale (2), contatore 3/3. Un tocco sulla medaglia sposta l'avatar ma non
+completa il turno: il gesto di gioco va ancora capito. Nessun crash.
+
+Prossimo: giocare il turno (gesto sulla medaglia e sul nemico), le altre 18 medaglie del
+set del tutorial, la fine dello stage (`/stage/finish` o simile).
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.
