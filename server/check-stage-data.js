@@ -8,7 +8,7 @@
 //  - nemici: la riga di reward del record della mappa (FUN_00e7e6e8: senza, crash
 //    appena parte lo stage) e premio materiale esistente;
 //  - premi di fine stage e degli obiettivi: tipo gestito da grantItem di server.js
-//    (2 jewel, 4 munny, 5 materiale) e materiale presente nella tabella material.
+//    (2 jewel, 4 munny, 5 materiale, 14 Avatar Coin) e materiale presente nella tabella material.
 // Esce con codice 1 se trova errori (gli avvisi non contano).
 //
 //   node server/check-stage-data.js [--verbose]
@@ -31,7 +31,7 @@ try {
 
 const ENEMY_TYPE = 5;
 const CHEST_OK = new Set([4, 8, 9]);
-const GRANT_OK = new Set([2, 4, 5]);
+const GRANT_OK = new Set([2, 4, 5, 14]);
 const rewards = new Map(table('reward').map((r) => [r.rewardId, r]));
 const materials = new Set(table('material').map((m) => m.materialId));
 const stages = table('stage');
