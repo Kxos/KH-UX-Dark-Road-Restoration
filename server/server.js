@@ -141,6 +141,7 @@ function route(url) {
   if (p.startsWith('/resource/')) return 'resourcefile';
   if (p.includes('tutorial/status')) return 'tutorialstatus';
   if (p.includes('khux/login')) return 'khuxlogin';
+  if (p === '/user/create') return 'usercreate';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -564,6 +565,31 @@ function schemaResponse(apiPath) {
 // giocatore di livello 1, senza progressi.
 const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
 
+// Il giocatore creato con POST /user/create (solo in memoria, per ora).
+const player = { name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null };
+
+function respondUserCreate(res, req) {
+  // POST /user/create (azione 253), alla fine del tutorial iniziale (nome, data di
+  // nascita, editor avatar, scelta della Union). Corpo: birthday, name, unionId,
+  // updateAvatarData {gender, hairPartsId, hairColorPartsId, facePartsId,
+  // bodyPartsId, skinPartsId, accessoriesPartsIds}. Il ramo 253 di FUN_007c3204
+  // chiama FUN_0077f650 con 1 (legge solo systemLogin.newcomerKhux, bool, e lo copia
+  // nel flag "nuovo giocatore" della sessione, +0x88) e FUN_0077f764
+  // (gameLogin.acquirableLoginBonus, bool): entrambi obbligatori.
+  if (req) {
+    player.name = req.name ?? player.name;
+    player.unionId = req.unionId ?? player.unionId;
+    player.birthday = req.birthday ?? player.birthday;
+    player.avatar = req.updateAvatarData ?? player.avatar;
+    player.gender = player.avatar?.gender ?? player.gender;
+  }
+  send(res, 200, {
+    ret: ret(),
+    systemLogin: { newcomerKhux: false, newcomerDark: false },
+    gameLogin: { acquirableLoginBonus: false },
+  });
+}
+
 function respondUser(res) {
   const now = serverTime();
   const userData = {
@@ -571,8 +597,8 @@ function respondUser(res) {
       userId: 1, // uint64
       nativeUserId: 1, // uint64
       platformId: 0,
-      userName: PLAYER_NAME, // max 32 byte
-      gender: 0,
+      userName: player.name, // max 32 byte
+      gender: player.gender,
       comment: '', // max 256 byte
       deviceType: 2,
       continueLoginCount: 1,
@@ -599,7 +625,7 @@ function respondUser(res) {
       playTimezones: [], // int[], al massimo 6
       playFrequently: 0,
       partyId: 0, // uint64
-      unionId: 0, maxMedal: 0, mvpCount: 0, equipCoordinateNo: 0, lastClearStageId: 0,
+      unionId: player.unionId, maxMedal: 0, mvpCount: 0, equipCoordinateNo: 0, lastClearStageId: 0,
       isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
     },
     stageResumption: { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 },
@@ -674,6 +700,7 @@ function handler(scheme) {
       if (kind === 'resourcefile') return respondResourceFile(req, res);
       if (kind === 'tutorialstatus') return respondTutorialStatus(res);
       if (kind === 'khuxlogin') return respondKhuxLogin(res);
+      if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);

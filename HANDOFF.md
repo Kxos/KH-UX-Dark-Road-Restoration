@@ -15,7 +15,7 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
-| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il tutorial arriva alla scelta della Union e a `POST /user/create`, con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, fino a `POST /stage/start`, con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
@@ -60,6 +60,8 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
   del filmato, screenshot e analisi dell'eventuale tombstone;
 - `bench_start.ps1`: avvio e KHUX START (giocatore esistente), poi screenshot e ultime
   richieste;
+- `bench_tutorial.ps1`: dopo `bench_newcomer.ps1`, nome, editor avatar, Union e
+  `/user/create`, fino alla prima battaglia;
 - `tombstone.ps1`: dall'ultimo tombstone gli indirizzi ARM (Ghidra) del crash sotto
   houdini;
 - screenshot in `C:\Users\<utente>\Documents\XuanZhi9\Pictures\`.
@@ -92,7 +94,8 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    si apre e, con `avatarParts` e le parti iniziali di `initItem` prese dalle tabelle
    master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»).
    Con `initItem` completa il tutorial prosegue: conferma dell'avatar, scelta della Union,
-   poi `POST /user/create` (azione 253), che il server non gestisce ancora. Restano 285 layout citati dal
+   `POST /user/create` (risolta), poi la catena del giocatore esistente fino a
+   `POST /stage/start`, dove servono keyblade, deck e stage iniziali. Restano 285 layout citati dal
    binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
    comunità) se servono.
 3. Fase D: popolare i master secondo `recon/out/master_types_ww431.json`. Fonte principale:
@@ -1140,7 +1143,30 @@ tabelle a cui rimanda ancora vuote, il client **non va in crash**. Sul banco:
    "facePartsId":20001,"bodyPartsId":1,"skinPartsId":30001,"accessoriesPartsIds":[109001]}}
 ```
 
-Prossimo: la risposta di `POST /user/create`.
+**`POST /user/create` risolta.** Ramo 253 di `FUN_007c3204`: `FUN_0077f650` con
+argomento 1 (legge solo `systemLogin.newcomerKhux`, bool, e lo copia nel flag
+«nuovo giocatore» della sessione, `+0x88`) e `FUN_0077f764`
+(`gameLogin.acquirableLoginBonus`, bool), entrambi obbligatori. Il server
+(`respondUserCreate`) risponde `newcomerKhux: false` e ricorda in memoria nome, Union e
+avatar, che `GET /user` ora restituisce.
+
+Sul banco (`tools/ldplayer/bench_newcomer.ps1` poi `bench_tutorial.ps1`) il nuovo
+giocatore, dopo `/user/create`, percorre la stessa catena del giocatore esistente:
+
+```
+POST /user/create, GET /user, /user/start, /user/chat, /party, /user/stone, /user/shop,
+/user/option, /tutorial/status, /user/mission, PUT /passive/list, PUT /emblem/list,
+/user/sphere, /user/medal, /user/skill, /user/material, /user/keyblade, /user/deck,
+/keyblade/subslot, /user/avatar/all, /user/avatar/parts, /user/title, /user/link,
+/user/support, PUT /playtime/bp, PUT /tutorial/status {"phase":50}, GET /stage/160310,
+POST /stage/start {"stageId":0,"supportUserId":0,"userKeybladeId":4703244876357301000}
+```
+
+e si ferma a `POST /stage/start` (azione 113, «200 ERROR :113»): `stageId` 0 e un
+`userKeybladeId` senza senso, perché `/user/keyblade` e `/user/deck` sono vuoti. Il
+prossimo capitolo è dare al giocatore il necessario per la prima battaglia: keyblade e
+deck iniziali (le categorie 13 e 3 di `initItem`), lo stage del tutorial, poi la
+risposta di `/stage/start`.
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.
