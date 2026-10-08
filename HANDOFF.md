@@ -581,10 +581,55 @@ errore, e nel guest compare **`files/m/m065.jpg`** (`misc` è la tabella 65 del 
 Il file in cache è a sua volta un **record BGAD** (cifratura 3, compressione zlib): il
 client ricifra le tabelle nel suo formato, leggibile con `bgad.py`.
 
-**Cosa manca:** il **contenuto** delle tabelle. `[]` passa il trasporto, ma il JSON vero
-di ogni tabella va ricostruito dai parser `master::` (fase C ha nomi e ordine dei campi,
-non i tipi né la forma: array di oggetti? oggetto con chiavi?). Il prossimo passo è
-decompilare il parser di una tabella piccola e servirne una versione minima valida.
+### Il contenuto delle tabelle master — ricavato e verificato l'8 ottobre 2026
+
+**La forma.** `FUN_00ebaef8` riceve il JSON decifrato di una tabella e lo scorre come
+**array di righe** (passo `0x14`, la dimensione di un valore rapidjson in questa build).
+Passa ogni riga al **lettore di riga** della tabella, registrato nell'array del loader
+(`0x20a0b80`, passo `0x80`: nome a +0, lettore a +0x30, categoria khux/dark a +0x70).
+Se una riga torna null, la tabella fallisce con **errore 3** e il download si ferma. Le
+righe valide diventano record binari a dimensione fissa, mescolati (MT19937),
+indicizzati per chiave (metodo virtuale 2) e scritti in `m/m%03d.jpg`.
+
+**I tipi.** Ogni lettore chiama `FUN_0071f8ec(riga, "campo")` e controlla i flag del
+valore (a +0x10): `+0x11 bit 2` = `kIntFlag` (int32), `+0x11 bit 4` = `kInt64Flag`,
+`+0x12 bit 4` = `kStringFlag`, `== 4` = array con un limite `n < N`. **Ogni campo è
+obbligatorio**: se manca, il getter restituisce un valore nullo statico e il controllo
+fallisce. Le chiavi in più sono ignorate. Le stringhe sono copiate con `strncpy`, quindi
+troncate e non rifiutate; gli array possono essere più corti del limite, anche vuoti.
+
+`recon/tools/master_types.py` estrae i tipi dal decompilato dei 106 lettori. Lo schema
+risultante è in **`recon/out/master_types_ww431.json`**, versionato perché descrive
+l'interfaccia, non i dati. Contiene 106 tabelle e **1.739 campi, tutti risolti**: 1.300
+`int`, 165 `string`, 6 `int64`, 268 array (`int[N]`, `int64[N]`, `string(128)[3]`…).
+Nessun booleano né decimale: anche i flag `valid*` sono interi.
+
+Esempi:
+
+```
+misc       miscId int, value int
+badstatus  badstatusId int, name string(64), iconId int, effect int, target int, power int[2]
+world      …, partsId string(128)[3], xPostion int[3], yPostion int[3]
+```
+
+Il server controlla ogni `master_data/<nome>.json` contro lo schema e **non serve** le
+tabelle che non passano. Con `KHUX_MASTER_SERVE_INVALID=1` le serve lo stesso, per le
+prove.
+
+**Verifica sul banco.** Le prove sono due.
+- *Positiva*: `misc`, `badstatus` e `world` con una riga valida ciascuna, revisione 2. Il
+  client le scarica tutte e tre, mostra «Complete» e salva `m034`, `m065`, `m079`
+  (l'indice del file **non** segue l'ordine alfabetico: `world` → `m034`).
+- *Negativa*: `misc` con `"value":"0"` (stringa invece di int), revisione 3. Compare
+  «**Master data error. (200 ERROR)**» al 33,3%, `badstatus` non viene più chiesto e
+  `m065` resta quello vecchio.
+
+Lo schema è quindi confermato in tutte e due le direzioni.
+
+**Cosa manca:** i **valori**. Ora sappiamo scrivere tabelle che il client accetta, ma
+quali righe servono perché il gioco parta dopo il filmato (quali `miscId`, quale
+`player` di livello 1, quale `stage` del tutorial…) va ricavato. Le fonti sono khuxwiki
+(fase D) e i punti del codice che leggono le tabelle.
 
 ### I pacchetti di asset dell'APK — decifrati l'8 ottobre 2026
 
@@ -1128,6 +1173,11 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    preservazione** (Restoration Union e simili);
    l) ✅ **formato di trasporto dei file master verificato sul banco**: il client scarica
    e salva una tabella servita da noi (§2, «Il formato dei file master»).
+   m) ✅ **forma e tipi di tutte le 106 tabelle** (§2, «Il contenuto delle tabelle
+   master»): array di righe con tutti i campi, tipi esatti; schema in
+   `recon/out/master_types_ww431.json`, validato dal server, confermato sul banco con
+   una prova positiva e una negativa. **Prossimo:** i valori minimi perché il gioco
+   superi il filmato.
    **Prossimo:** la forma del JSON dentro le tabelle, partendo da una piccola. Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso

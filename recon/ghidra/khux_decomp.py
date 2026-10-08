@@ -10,6 +10,10 @@ out = open(args[0], 'w')
 timeout = 120
 if len(args) > 1 and args[1].startswith('t='):
     timeout = int(args.pop(1)[2:])
+elif len(args) > 2 and args[1] == 't':
+    # analyzeHeadless.bat spezza gli argomenti anche sull'uguale: t=300 -> 't' '300'
+    args.pop(1)
+    timeout = int(args.pop(1))
 ifc = DecompInterface()
 ifc.openProgram(currentProgram)
 af = currentProgram.getAddressFactory()

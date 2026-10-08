@@ -279,9 +279,73 @@ function masterBody(name) {
   return Buffer.from(enc.toString('base64'), 'utf8');
 }
 
+// Lo schema (recon/out/master_types_ww431.json, ricavato dai lettori di riga)
+// dice tipo e limiti di ogni campo. Il client vuole un ARRAY di righe; in ogni
+// riga TUTTI i campi, del tipo esatto: un campo assente o sbagliato fa fallire
+// la riga, e con lei l'intera tabella (errore 3). Le chiavi in piu' sono ignorate.
+const MASTER_SCHEMA_FILE = path.join(__dirname, '..', 'recon', 'out', 'master_types_ww431.json');
+const MASTER_SCHEMA = fs.existsSync(MASTER_SCHEMA_FILE)
+  ? JSON.parse(fs.readFileSync(MASTER_SCHEMA_FILE, 'utf8')) : {};
+// Per le prove sul banco: servire anche le tabelle che lo schema rifiuta.
+const MASTER_SERVE_INVALID = process.env.KHUX_MASTER_SERVE_INVALID === '1';
+
+function checkMasterValue(v, type) {
+  // type: int | int64 | string(N) | string | <elemento>[N]
+  const arr = /^(.*)\[(\d+)\]$/.exec(type);
+  if (arr) {
+    if (!Array.isArray(v)) return 'non e\' un array';
+    if (v.length > Number(arr[2])) return `piu' di ${arr[2]} elementi`;
+    for (const e of v) {
+      const err = checkMasterValue(e, arr[1]);
+      if (err) return 'elemento: ' + err;
+    }
+    return null;
+  }
+  if (type === 'int') {
+    return Number.isInteger(v) && v >= -2147483648 && v <= 2147483647 ? null : 'non e\' un int32';
+  }
+  if (type === 'int64') return Number.isInteger(v) ? null : 'non e\' un intero';
+  // string(N): il client copia con strncpy, quindi oltre N byte tronca senza errore
+  if (/^string(?:\(\d+\))?$/.test(type)) return typeof v === 'string' ? null : 'non e\' una stringa';
+  return `tipo sconosciuto ${type}`;
+}
+
+function checkMasterTable(name, rows) {
+  const schema = MASTER_SCHEMA[name];
+  if (!schema) return [`tabella sconosciuta: ${name}`];
+  if (!Array.isArray(rows)) return ['la radice deve essere un array di righe'];
+  const errors = [];
+  rows.forEach((row, i) => {
+    if (row === null || typeof row !== 'object' || Array.isArray(row)) {
+      errors.push(`riga ${i}: non e' un oggetto`);
+      return;
+    }
+    for (const [field, type] of schema) {
+      if (!(field in row)) errors.push(`riga ${i}: manca ${field}`);
+      else {
+        const err = checkMasterValue(row[field], type);
+        if (err) errors.push(`riga ${i}: ${field} ${err} (${type})`);
+      }
+    }
+  });
+  return errors;
+}
+
 function masterTables() {
   if (!fs.existsSync(MASTER_DIR)) return [];
-  return fs.readdirSync(MASTER_DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
+  const names = fs.readdirSync(MASTER_DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
+  return names.filter((name) => {
+    let errors;
+    try {
+      errors = checkMasterTable(name, JSON.parse(fs.readFileSync(path.join(MASTER_DIR, name + '.json'), 'utf8')));
+    } catch (e) {
+      errors = ['JSON non valido: ' + e.message];
+    }
+    if (errors.length === 0) return true;
+    console.warn(`[master] ${name}: ${errors.length} errori, es. ${errors.slice(0, 3).join('; ')}`
+      + (MASTER_SERVE_INVALID ? ' — la servo lo stesso' : ' — non la servo'));
+    return MASTER_SERVE_INVALID;
+  });
 }
 
 function respondMaster(res) {
