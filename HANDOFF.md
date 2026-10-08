@@ -1688,6 +1688,18 @@ Darkside, dopo la 5 il tutorial della home che indica MENU. Il server ora parte 
 (`Win32_Process.Create`): con `Start-Process` moriva insieme allo script che lo lanciava, e
 il client restava sul caricamento fino a «6 ERROR :143».
 
+**Missione 7 (1040): crash nel parser della mappa, prima di `/stage/start`.** Tombstone
+in `FUN_00e5f6e8` (fault addr 0x24). `stage/mappoi_stg<id>.bin` è un'intestazione `STG`
+(numero di parti, ecc.: 1040 ne dichiara 1) e ogni parte `mappoi_stg<id>_NN.bin` è il
+file `MAP` della stanza (aree, nemici, forzieri, oggetti; contiene il nome della mappa,
+es. `DB_0…`). Le risorse servite hanno le parti solo per 1010–1030: **ogni altra missione
+va in crash all'avvio**. Le grafiche delle stanze ci sono (86 cartelle `map/`: DB, AG,
+BC, CD, CS…), manca solo la disposizione di nemici e forzieri. Due strade, da scegliere:
+- cercare i `mappoi` originali (archivi del CDN delle risorse, comunità di preservazione);
+- generarli: formato in parte noto (aree 0x44, nemici 0x20, forzieri 0x14, oggetti 0x10),
+  nemici e tesori per stanza da khuxwiki (`quests.json`), coordinate prese dalle mappe
+  esistenti della stessa stanza o dalla collisione `map/<stanza>/*_cls.bin`.
+
 **Contenuto dei forzieri, da khuxwiki.** Confrontando le mappe delle missioni 1–6 con i
 tesori della wiki (`{{TC|codice|stanza}}`): riga 81 = Attack Prize medio (`a2`), 80 =
 Attack Prize piccolo (`a1` o barile `ba`), 90 = barile con HP (`bh`), 1 = barile vuoto
