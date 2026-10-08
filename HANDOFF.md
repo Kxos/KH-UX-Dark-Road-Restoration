@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟢 **il client parte** — APK **originale** su **LDPlayer 9 (Android 9)**: LIAPP dà verdetto `0` e il gioco arriva alla **schermata del titolo**. Su Android 12 e 16 rifiuta con `13380225`: **la causa è la versione di Android**. Il `90` dei test precedenti era l'anti-repackaging del nostro APK patchato. Rete del guest risolta. Prossimo: server + CA di sistema + DNS, poi KHUX START |
+| **Test sul dispositivo** | 🟢 **il client parla con il nostro server** — APK **originale** su **LDPlayer 9 (Android 9)**. Host di bootstrap trovato: **`api-s.sp.kingdomhearts.com`**, prima chiamata **`PUT /system/status`**, TLS accettato. Il client rifiuta la nostra risposta vuota con `200 ERROR :251`. Prossimo: il formato della risposta a `/system/status` |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -379,6 +379,11 @@ risolve più nel DNS pubblico** — mentre `psg.sqex-bridge.jp`, l'host ipotizza
 da `xlash123/khux-re-api`, risolve ancora (`34.54.148.120`, Google Cloud). Quindi
 **l'host del bootstrap della 4.3.1 non è `psg.sqex-bridge.jp`**, o non solo.
 
+> **Corretto l'8 ottobre 2026: LDPlayer non risolve fuori dal guest.** Le prove qui sotto
+> erano vere, la conclusione no. Era il **DNS privato** di Android in modalità
+> opportunistica: `netd` parlava DNS-over-TLS (porta 853) con 8.8.8.8/8.8.4.4, quindi
+> nessuna regola sulla porta 53 scattava. Vedi «Fase B — 8 ottobre».
+
 **Il nome non si vede perché LDPlayer risolve fuori dal guest.** Verificato:
 - regole `iptables` DNAT sulla porta 53: contatori a zero;
 - `ndc resolver setnetdns` e `setprop net.dns1` verso il nostro DNS: le risposte non
@@ -398,6 +403,52 @@ arriverebbero a noi, compreso il nome dell'host di bootstrap. Richiede privilegi
 il DNS dell'intero PC finché è attivo, quindi va deciso da chi usa la macchina; il log
 DNS del server (`server/logs/`, non versionato) in quel periodo conterrebbe anche le query
 del PC.
+
+### Fase B — 8 ottobre 2026: DNS risolto, il client parla con noi
+
+**Perché il DNS del guest non arrivava mai al nostro server — due cause, in fila.**
+
+1. **VirtualBox scarta i DNS di loopback.** Con il DNS di Windows a `127.0.0.1`,
+   `VBoxSVC.log` mostra `HostDnsMonitorProxy::GetNameServers:` con lista **vuota**. Va
+   messo l'**IP LAN del PC** (`192.168.1.185`): il server ascolta su `0.0.0.0:53` e
+   VirtualBox lo accetta (`name server 1: 192.168.1.185`). Al guest arriva via DHCP
+   **solo all'avvio dell'istanza**: dopo il cambio, `quitall` e rilancio.
+2. **Il guest ha il DNS privato opportunistico acceso** (`dumpsys connectivity`:
+   `UsePrivateDns: true`). La rete del guest elenca `192.168.1.185, 8.8.8.8, 8.8.4.4`;
+   `netd` trova che i due server Google parlano **DNS-over-TLS** e manda tutto lì sulla
+   porta 853. Per questo i contatori sulla porta 53 restavano a zero, le risposte
+   portavano `RRSIG` e nessun nome arrivava al server. Rimedio, ora in
+   `phaseb-guest.sh`: `settings put global private_dns_mode off`, REJECT sulla 853,
+   DNAT della 53 verso il PC.
+
+Con le due correzioni il guest risolve `psg.sqex-bridge.jp` e qualunque
+`*.kingdomhearts.com` in `192.168.1.185`, e le query compaiono in `[dns:dirottata]`.
+
+**L'host di bootstrap è `api-s.sp.kingdomhearts.com`.** Già coperto da `KHUX_HIJACK`
+(suffisso `kingdomhearts.com`) e dal certificato: il client fa l'handshake TLS con la
+nostra CA di sistema senza obiezioni. Ricevuto all'avvio, senza premere nulla:
+
+```
+[dns:dirottata] A api-s.sp.kingdomhearts.com -> 192.168.1.185
+[tls:sni]       api-s.sp.kingdomhearts.com
+[?] PUT /system/status
+    content-type: application/x-www-form-urlencoded;charset=UTF8
+    body(json): {"appSignature":"f048533ed4e1409a732831957a34a09f"}
+```
+
+Il corpo è JSON in chiaro, nonostante il `content-type` dichiari un form. Non è
+`psg.sqex-bridge.jp`, come si supponeva in fase A.
+
+**L'errore cambia: da `6 ERROR :251` a `200 ERROR :251`.** Il primo numero è lo stato del
+trasporto: prima `CURLE_COULDNT_RESOLVE_HOST`, ora lo **stato HTTP** che gli abbiamo dato.
+Il `251` resta e con ogni probabilità identifica la chiamata (`/system/status`). Il
+server risponde `{}` agli endpoint sconosciuti, e il client lo rifiuta: serve il formato
+giusto della risposta, da ricavare dal binario.
+
+Rumore da ignorare nel log DNS: con il DNS di Windows sul server compaiono anche le
+query del PC (Microsoft, Discord, NVIDIA…) e quelle di LDPlayer (`ldmnq.com`,
+`ldplayer.net`, `changzhi.top`). Le app di Google nel guest falliscono con
+`ERR_CERT_DATE_INVALID` per l'orologio al 2021: atteso, non riguarda il gioco.
 
 **Leggere la memoria del client vivo lo uccide: `ErrorCode = 17471875`.** È la
 *memory protection* di LIAPP che vede le letture di `/proc/<pid>/mem`, anche da root.
@@ -791,10 +842,13 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    2021 — tutto con `tools/ldplayer/phaseb-guest.sh`;
    c) ✅ il client **tenta il bootstrap**, ma fallisce con `6 ERROR :251` (host non
    risolvibile: il nome non esiste più nel DNS pubblico);
-   d) **prossimo:** far arrivare il DNS del client al nostro server, puntando il DNS di
-   Windows a `127.0.0.1` (unica leva, vedi §2), per leggere il nome dell'host di
-   bootstrap; aggiungerlo al SAN del certificato e a `KHUX_HIJACK` se serve, e
-   raccogliere `logs/requests.ndjson`.
+   d) ✅ DNS del guest al nostro server (DNS di Windows sull'IP LAN, DNS privato del
+   guest spento): l'host di bootstrap è **`api-s.sp.kingdomhearts.com`**, prima chiamata
+   `PUT /system/status` — vedi §2 «Fase B — 8 ottobre»;
+   e) **prossimo:** ricavare dal binario il formato della risposta a `/system/status`
+   (errore attuale `200 ERROR :251`), implementarla, e proseguire chiamata per chiamata
+   raccogliendo `logs/requests.ndjson`.
+   A fine sessione: rimettere il DNS di Windows su automatico.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
    107 classi per RTTI, 1.739 campi, ~3 secondi. Vedi [PHASE-C.md](PHASE-C.md).
    Resta aperta solo la **tipizzazione** dei campi: i nomi e l'ordine ci sono, i tipi no.
