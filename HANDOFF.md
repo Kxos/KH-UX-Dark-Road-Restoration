@@ -36,8 +36,14 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 `tools/ldplayer/phaseb-guest.sh`: CA di sistema, orologio al 15/5/2021, DNS verso il
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
-Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 53).
+Nel guest restano installate le risorse (`files/r/misc.mp4` + `.1` + `misc.png`):
+**versione 7** = OBB 5.0.1 + `addnl` + il pacchetto delle mappe generate
+(`D:\Progetto_Restauro_KH_UX\stage_gen\files\stage\`: parte `_00` di 1040, intestazione
+1050). Tabelle master: revisione 53 nel repository; il banco ha ancora la 52 e la 53
+arriva da sola al prossimo `relogin.ps1`. Una nuova versione delle risorse si pubblica
+con `resource_pack.py` + `resource_merge.py` in `resource_data\<N>` (§2, «Mappe generate
+e risorse aggiuntive») e si installa con `update-resources.ps1` (~5 minuti, 2,3 GB).
+Il server annuncia solo l'ultima versione presente.
 
 **Ripartire in tre comandi** (script di sessione in `tools/ldplayer/session/`, log del
 server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
@@ -160,10 +166,23 @@ vedi il suo README). `vmread` si ricostruisce con `build_vmread.py`.
    un aggiornamento dei master (§2, «Il crash dopo l'aggiornamento dei master»). Quests e
    la missione 2 completa, con forzieri, drop e inventario (munny, jewel, materiali)
    generati dalle mappe e controllati offline da `server/check-stage-data.js` (§2,
-   «Missione 2, forzieri, drop e inventario»). Missioni 1–6 giocabili; la 7 va in
-   crash perché mancano le sue mappe `mappoi` (§2, «Missione 7»). Prossimo: mappe delle
-   missioni successive (originali o generate) e gli stage mancanti (10 in tabella su
-   979). Si procede come sempre:
+   «Missione 2, forzieri, drop e inventario»). **Missioni 1–7 giocabili** (la 7 con
+   la mappa generata, §2, «Mappe generate e risorse aggiuntive»); la lista mostra la 8,
+   che non ha ancora la mappa. Stato del giocatore salvato: LV 15 (con la tabella vera
+   dei livelli scenderà a ~LV 2–3), 1.600 jewel, medaglia Dewey ★.
+   **Prossimo, in ordine** (9 ottobre 2026):
+   a) decodificare `stage_raw`, `enemy_raw`, `medal_raw` di thethiny (struttura diversa
+      dallo schema 4.3.1: stage 1.020 B, enemy 1.100 B, medal 1.300 B; i nomi in chiaro
+      aiutano a trovare gli offset) → righe vere di stage, nemici e medaglie;
+   b) missione 8 (1050, «Dwarf's Cottage», probabilmente `DW_0003_00_00`): manca una mappa
+      modello di quella stanza; nemici e tesori dalla wiki (`quests.json`);
+   c) `story.ps1`: controllare lo schermo a ogni passo (i tempi fissi perdono il passo
+      dopo un aggiornamento o con un tutorial guidato);
+   d) `wiki_quests.py`: il parser dei nemici (`{{EN|...}}` con template annidati) è da
+      correggere;
+   e) contatti (da fare l'utente): thethiny, Roboloid, r/KHUx (§2, «Ricerca online dei
+      dati originali»).
+   Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
