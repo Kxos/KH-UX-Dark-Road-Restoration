@@ -133,6 +133,8 @@ function parseBody(buf, headers) {
 function route(url) {
   const p = url.split('?')[0].toLowerCase();
   if (p.includes('system/status')) return 'status';
+  if (p.includes('system/login')) return 'login';
+  if (p.includes('system/coppa')) return 'coppa';
   if (p.includes('session')) return 'session';
   if (p.includes('login/token')) return 'bootstrap';
   if (p.includes('bootstrap') || p.includes('startup') || p.includes('init')) return 'bootstrap';
@@ -149,6 +151,86 @@ function respondStatus(res) {
   send(res, 200, {
     appStatus: { mode: '', current: '', server: '' },
   });
+}
+
+// Ora del server consegnata al client: deve stare prima della chiusura del
+// 29/6/2021, come l'orologio del guest. Scorre da quando il server e' partito.
+const SERVER_TIME_START = Date.parse(process.env.KHUX_SERVER_TIME || '2021-05-15T12:00:00Z');
+const STARTED_AT = Date.now();
+
+function serverTime() {
+  // Formato letto da FUN_007197ec: "YYYY-MM-DD HH:MM:SS".
+  const t = new Date(SERVER_TIME_START + (Date.now() - STARTED_AT));
+  return t.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * L'involucro "ret" di ogni risposta di gioco, letto da FUN_0077eb98. Il client
+ * valida i campi in quest'ordine, e al primo tipo sbagliato tratta la risposta
+ * come errore: i booleani devono essere booleani, i numeri interi.
+ */
+function ret() {
+  return {
+    isMaintenance: false,
+    isPhotonMaintenance: false,
+    isKhuxMaintenance: false,
+    isDarkMaintenance: false,
+    sessionTO: false,
+    isNewDayPeriod: 0,
+    isRetry: false,
+    versionApp: '4.3.1',
+    versionRes: 0,
+    versionResLow: 0,
+    versionDat: 0,
+    commonVersionDat: 0,
+    darkVersionRes: 0,
+    darkVersionDat: 0,
+    functionFlags: 0,
+    serverTime: serverTime(),
+    // "error" (con "viewUrl") e "isCommunicationMaintenance" sono facoltativi
+  };
+}
+
+// Le stringhe della risposta a /system/login, nell'ordine in cui le legge
+// FUN_00791070: link a pagine web (supporto, termini, store, social...). Il
+// client le pretende tutte, come stringhe; vuote bastano per proseguire.
+const LOGIN_LINKS = [
+  'support', 'register', 'update', 'help', 'staff', 'agreement', 'license',
+  'shikin', 'tokutei', 'store', 'odds', 'petOdds', 'appUpdate', 'officialSite',
+  'officialTwitter', 'movie', 'beginnersGuide', 'passiveSettingList', 'darkHelp',
+  'darkOdds', 'officialTwitterCustom',
+];
+
+// "data" della risposta di login, letto da FUN_0077f830: almeno 4 stringhe
+// Base64 (cocos2d::base64Decode) che il client si aspetta di 8, 32, 32 e 32
+// byte. Hanno l'aria di un seme e di tre chiavi da 256 bit; a cosa servano non
+// e' ancora chiaro. Casuali, ma stabili per tutta la vita del server.
+const LOGIN_DATA = [8, 32, 32, 32].map((n) => crypto.randomBytes(n).toString('base64'));
+
+function respondLogin(res) {
+  // POST /system/login, azione 251: corpo cifrato {length, digest, ruv,
+  // deviceType, systemVersion, appVersion}. length e digest descrivono
+  // libcocos2dcpp.so: il server originale ci controllava l'integrita' del client.
+  // Il ramo 0xfb di FUN_007c3204 pretende systemLogin (FUN_0077f650) e data
+  // (FUN_0077f830); i link li legge FUN_00791070.
+  const body = {
+    ret: ret(),
+    systemLogin: { newcomerKhux: true, newcomerDark: true },
+    data: LOGIN_DATA,
+  };
+  for (const k of LOGIN_LINKS) body[k] = '';
+  send(res, 200, body);
+}
+
+function respondCoppa(res) {
+  // GET /system/coppa, azione 26, letto da FUN_00778b64: un oggetto "misc" di
+  // interi senza segno, con chiavi numeriche. Il significato dei codici non e'
+  // ancora noto; 0 basta perche' il client li accetti.
+  const misc = {};
+  for (const k of ['116', '804', '900', '901', '902', '903', '904', '905', '906', '907']) {
+    misc[k] = 0;
+  }
+  send(res, 200, { ret: ret(), misc });
 }
 
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
@@ -189,7 +271,11 @@ function handler(scheme) {
     const chunks = [];
     req.on('data', (c) => chunks.push(c));
     req.on('end', () => {
-      const buf = Buffer.concat(chunks);
+      let buf = Buffer.concat(chunks);
+      // Le GET portano il payload cifrato nella query: ?m=0&v=<base64>. Lo si
+      // tratta come se fosse il corpo, cosi' passa dallo stesso decodificatore.
+      const qv = new URLSearchParams(req.url.split('?')[1] || '').get('v');
+      if (!buf.length && qv) buf = Buffer.from('v=' + encodeURIComponent(qv));
       const kind = route(req.url);
       const entry = {
         scheme,
@@ -203,13 +289,15 @@ function handler(scheme) {
       logRequest(entry);
 
       if (kind === 'status') return respondStatus(res);
+      if (kind === 'login') return respondLogin(res);
+      if (kind === 'coppa') return respondCoppa(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 
-      // Sconosciuta: rispondiamo qualcosa di innocuo perche' il client prosegua
-      // e ci mostri la richiesta successiva. Scoprire la sequenza vale piu' che
-      // rispondere correttamente a una singola chiamata.
-      send(res, 200, {});
+      // Sconosciuta: rispondiamo il minimo che il client accetta, cioe' il solo
+      // involucro "ret", perche' prosegua e ci mostri la richiesta successiva.
+      // Scoprire la sequenza vale piu' che rispondere bene a una singola chiamata.
+      send(res, 200, { ret: ret() });
     });
   };
 }

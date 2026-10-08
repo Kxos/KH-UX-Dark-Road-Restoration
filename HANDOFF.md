@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟢 **handshake di avvio completo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Il client accetta status, token e sessione, e manda la prima richiesta **cifrata con la nostra chiave**, che decifriamo: `POST /system/login`. Prossimo: il formato della risposta a `/system/login` (errore attuale `200 ERROR :251`) |
+| **Test sul dispositivo** | 🟢 **schermata del titolo servita dal nostro server** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Status, token, sessione, `/system/login` e `/system/coppa` accettati, canale cifrato con la nostra chiave. Prossimo: **KHUX START** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -457,7 +457,11 @@ l'ha avviata, quindi **resta `:251` per tutta la catena**.
 | 1 | `PUT /system/status`, `{"appSignature":…}` in chiaro | `FUN_007bd720` | `{"appStatus":{"mode":"","current":"","server":""}}` — tre **stringhe**; `server` vuoto = resta sul dominio predefinito. Pieno, è un URL cifrato (chiave da `systemStatusUpdateResult`+`current`+`mode`) che sostituisce il dominio |
 | 2 | `GET /login/token?m=0` | `FUN_007be0d0` | `{"url":…, "nativeToken":…}` — `url` è l'URL **completo** della richiesta di sessione, non una base |
 | 3 | `POST <url>?m=0`, `{"UUID","deviceType":2,"nativeToken"}` in chiaro | `FUN_007bd5b8` | `{"nativeSessionId":…, "sharedSecurityKey":…}` — **la chiave AES la scegliamo noi** |
-| 4 | `POST /system/login?m=0`, **cifrata** | gestore dell'azione 251 | ❓ da ricavare |
+| 4 | `POST /system/login?m=0`, **cifrata** — azione 251 | `FUN_007c2adc` → `FUN_007c3204` | `ret` + `systemLogin` + `data` + 21 stringhe di link — vedi sotto |
+| 5 | `GET /system/coppa?m=0&v=…` — azione 26 | `FUN_007c3204` → `FUN_00778b64` | `ret` + `misc` — vedi sotto |
+
+Dopo il passo 5 il client mostra la **schermata del titolo** e si ferma ad aspettare
+KHUX START / KHDR START.
 
 **In tutte le risposte `maintenance` va omesso.** Il client controlla che il suo tipo
 JSON sia null; anche `0` vale come manutenzione attiva e porta al popup con `viewUrl`.
@@ -479,9 +483,49 @@ noi basta accettarlo. `ruv` arriva da `FUN_007bc5c8`, che costruisce ogni richie
 di gioco e aggiunge l'header `X-Sqex-Hole-Retry: %d` (e `X-Sqex-Hole-Nsid` da
 `FUN_007bccec`).
 
-**Ancora da capire per il passo 4:** se la risposta va cifrata come la richiesta, e quali
-campi legge il gestore della 251. Indizio: `FUN_007bcf68` chiama `FUN_0077eb98(id, json)`,
-che è con ogni probabilità il dispatcher per azione; è il prossimo da decompilare.
+**Le risposte di gioco vanno in chiaro.** `RESTClient::onRespond` (`FUN_00774fa0`)
+sceglie in base al Content-Type, cercato come **sottostringa**: `application/json` o
+`text/javascript` → parse diretto; `application/encoded-json` o `application/octet-stream`
+→ decifratura (`FUN_00771b3c`); altro → errore di trasporto 2. Il nostro
+`application/json; charset=utf-8` va bene: la cifratura serve solo alle richieste.
+
+**L'involucro `ret`, comune a tutte le risposte di gioco** (`FUN_0077eb98`, chiamato dal
+gestore generico `FUN_007bcf68`). Il client legge i campi in quest'ordine e al primo tipo
+sbagliato scarta la risposta: errore 2, che a schermo diventa `200 ERROR :<azione>`.
+I tipi seguono il rapidjson di cocos2d (`kBoolFlag 0x100`, `kIntFlag 0x400`,
+`kUintFlag 0x800`, `kStringFlag 0x100000`).
+
+| Campo | Tipo |
+|---|---|
+| `isMaintenance`, `isPhotonMaintenance`, `isKhuxMaintenance`, `isDarkMaintenance`, `sessionTO` | bool |
+| `isNewDayPeriod` | int |
+| `isRetry` | bool |
+| `versionApp` | stringa — confrontata con la versione dell'app (`FUN_0085dca0`) |
+| `versionRes`, `versionResLow`, `versionDat`, `commonVersionDat`, `darkVersionRes`, `darkVersionDat`, `functionFlags` | int |
+| `serverTime` | stringa `YYYY-MM-DD HH:MM:SS` (`FUN_007197ec`: separatori `- - spazio : :`, anno ≥ 1000) |
+| `error` (+ `viewUrl`), `isCommunicationMaintenance` | facoltativi |
+
+**Il controllo per azione, `FUN_007c3204`.** È uno switch su 320 azioni, troppo grande
+per il decompilatore: la tabella di salto sta a `0x177e414`, con indice `id-1` e valori
+relativi alla tabella. I rami si leggono con `recon/ghidra/khux_listing.py`, che
+disassembla anche il codice raggiunto solo da tabelle non ricostruite. Il ramo
+dell'azione N chiama uno o più parser; se uno restituisce null → errore 2.
+
+**Risposta a `/system/login` (azione 251).** Oltre a `ret`:
+- `systemLogin`: `{"newcomerKhux": bool, "newcomerDark": bool}` (`FUN_0077f650`);
+- `data`: array di **almeno 4 stringhe Base64** (`FUN_0077f830`, decodifica con
+  `cocos2d::base64Decode` = `FUN_013553dc`), da **8, 32, 32 e 32 byte**. Sembrano un
+  seme e tre chiavi da 256 bit; a cosa servano non è ancora noto. Il server le genera
+  casuali, stabili per la vita del processo;
+- 21 stringhe di link (`FUN_00791070`): `support`, `register`, `update`, `help`, `staff`,
+  `agreement`, `license`, `shikin`, `tokutei`, `store`, `odds`, `petOdds`, `appUpdate`,
+  `officialSite`, `officialTwitter`, `movie`, `beginnersGuide`, `passiveSettingList`,
+  `darkHelp`, `darkOdds`, `officialTwitterCustom`. Vuote bastano.
+
+**Risposta a `/system/coppa` (azione 26).** Oltre a `ret`, `misc`: un oggetto di **interi
+senza segno** con chiavi `"116"`, `"804"`, `"900"`…`"907"` (`FUN_00778b64`). Significato
+ignoto; 0 va bene. Le GET portano il payload cifrato nella query (`?m=0&v=…`), e il server
+ora lo decifra come un corpo.
 
 Strumenti usati, rifacibili in pochi minuti: le stringhe per funzione con
 `recon/tools/codeindex.py` (intervallo `0x6b9000–0x6bf000`), poi la decompilazione
@@ -890,9 +934,11 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    `PUT /system/status` — vedi §2 «Fase B — 8 ottobre»;
    e) ✅ status, token e sessione implementati dal decompilato; il client accetta la
    nostra chiave e la sua prima richiesta cifrata (`/system/login`) si decifra;
-   f) **prossimo:** il formato della risposta a `POST /system/login` (azione 251, errore
-   attuale `200 ERROR :251`): decompilare `FUN_0077eb98` e capire se la risposta va
-   cifrata. Poi avanti chiamata per chiamata, raccogliendo `logs/requests.ndjson`.
+   f) ✅ `/system/login` e `/system/coppa` implementati: **il client arriva alla schermata
+   del titolo servito dal nostro server**;
+   g) **prossimo:** premere **KHUX START** e proseguire chiamata per chiamata, con lo
+   stesso metodo: leggere `200 ERROR :<azione>`, trovare il ramo dell'azione nella
+   tabella di `FUN_007c3204`, decompilare i suoi parser, implementare la risposta.
    A fine sessione: rimettere il DNS di Windows su automatico.
 4. ~~**Fase C**, i campi delle 54 tabelle `master::`~~ — ✅ **fatta**, e senza Ghidra:
    107 classi per RTTI, 1.739 campi, ~3 secondi. Vedi [PHASE-C.md](PHASE-C.md).
