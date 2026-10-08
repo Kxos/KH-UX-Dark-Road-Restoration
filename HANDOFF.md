@@ -15,7 +15,7 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
-| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, fino a `POST /stage/start`, con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
@@ -25,13 +25,13 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 10, con `avatarParts` e `initItem`).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 11).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "10"                   # revisione dati master
+$env:KHUX_REVISION      = "11"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -40,8 +40,8 @@ node server\server.js
 ```
 
 Prima del primo avvio si rigenerano `server/master_data/` con
-`node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts` e
-`initItem` intere, con `node server/import-master.js` dalle tabelle
+`node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts`, `initItem` e le
+tabelle della battaglia (elenco in §2, «La prima battaglia»), con `node server/import-master.js` dalle tabelle
 dell'`extra.mp4` 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»).
 
 La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
@@ -94,8 +94,8 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    si apre e, con `avatarParts` e le parti iniziali di `initItem` prese dalle tabelle
    master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»).
    Con `initItem` completa il tutorial prosegue: conferma dell'avatar, scelta della Union,
-   `POST /user/create` (risolta), poi la catena del giocatore esistente fino a
-   `POST /stage/start`, dove servono keyblade, deck e stage iniziali. Restano 285 layout citati dal
+   `POST /user/create`, la catena di avvio e **la prima battaglia** (Prologue, stage
+   1010), con HP 0 e deck vuoto: mancano `player` e `medal`. Restano 285 layout citati dal
    binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
    comunità) se servono.
 3. Fase D: popolare i master secondo `recon/out/master_types_ww431.json`. Fonte principale:
@@ -1162,11 +1162,54 @@ POST /user/create, GET /user, /user/start, /user/chat, /party, /user/stone, /use
 POST /stage/start {"stageId":0,"supportUserId":0,"userKeybladeId":4703244876357301000}
 ```
 
-e si ferma a `POST /stage/start` (azione 113, «200 ERROR :113»): `stageId` 0 e un
-`userKeybladeId` senza senso, perché `/user/keyblade` e `/user/deck` sono vuoti. Il
-prossimo capitolo è dare al giocatore il necessario per la prima battaglia: keyblade e
-deck iniziali (le categorie 13 e 3 di `initItem`), lo stage del tutorial, poi la
-risposta di `/stage/start`.
+e si fermava a `POST /stage/start` (azione 113): `stageId` 0 e un `userKeybladeId`
+senza senso, perché storie, keyblade e deck erano vuoti.
+
+### La prima battaglia — 8 ottobre 2026, notte
+
+**Tabelle master importate** dalla 5.0.1 (`server/import-master.js`, revisione 11),
+tutte con i campi dello schema 4.3.1: `misc` (178 righe, contiene tutti i 98 id letti dal
+codice; 804 = 8), `stage` (10: gli stage del tutorial, Prologue 1010, Combat 101/102,
+Dwarf Woodlands, The Dark Forest…), `world`, `stageDrama`, `enemy` (12), `enemyAttack`,
+`keyblade` (64, Starlight = 1000), `skill`, `buff`, `burst`, `battleMisc`, `badstatus`,
+`tutorialMisc`, `medalMisc`, `material`, `title`, `theater`, `raidEnemy`,
+`raidEnemyAttack`, oltre ad `avatarParts` e `initItem`.
+
+Delle 106 tabelle dello schema, 49 esistono nella 5.0.1 con gli stessi campi; tre
+`dark*` hanno un campo in più; **54 mancano**, tra cui `medal`, `player`, `passive`,
+`sphere`, `shop`, `mission`, `loginBonus`, `pvp`, `raidSetting`. Per queste servirà
+khuxwiki.
+
+**Risposte nuove nel server**:
+- `GET /stage/160310` (azione 108, `FUN_0079f1fc`): `stories[]` (elemento
+  `FUN_0079e794`: `stageId`, `useAp`, `score` uint64, `playStatus`, `clearMissionIds`
+  int[] ≤ 3), `newStageId`, `luxRank`, `openRankingId`. Con la storia 1010 il client
+  avvia lo stage 1010: **lo stage di `startStory` viene da qui**;
+- `GET /user/keyblade` (azione 11, elemento `FUN_0078c904`): una Starlight,
+  `userKeybladeId` 1, `userDeckId` 1, `deckMedals` vuoto (≤ 5 uint64). **Da qui viene
+  `userKeybladeId`**;
+- `GET /user/deck` (azione 12, elemento `FUN_00792a8c`): deck 1 con la keyblade 1;
+- `POST /stage/start` (azione 113): `userData.userPoint` (`FUN_0078b230`, come in
+  `GET /user`), `startStageData` (`FUN_007a1428`: `stageId`, `supportUserId` uint64,
+  `userKeybladeId` uint64, `clearMissionIds`, `stageSkip`, `eventId`, `highScore`
+  uint64), `userRandomEnemies[]` (`FUN_007a11c8`: `uniqueEnemyId`, `dropItemTypeIds`
+  int[] ≤ 4, `stealType`), `userEnemyDropItems[]`, `userTreasures[]` (`FUN_007a1308`),
+  `campaigns[]`, `luxMagnifications.{campaign,party}`, `supportUsers[]`
+  (`FUN_0078aa3c`, elemento `FUN_0078a5c4`).
+
+Altri elementi ricavati: medaglia dell'utente (`FUN_0078d608`: `userMedalId` uint64,
+`medalId`, `number`, `level`, `exp`, `attackUpperNumber`, `defenseUpperNumber`,
+`burstUpperNumber`, `lock`, `upperCost`, `guiltFactor`, `userSkills` ≤ 2,
+`userShuffleSkills`, `getDatetime`).
+
+**Sul banco** il nuovo giocatore, dopo `/user/create` e la catena di avvio, manda
+`POST /stage/start {"stageId":1010,"userKeybladeId":1}` e **la battaglia del Prologue
+parte**: l'avatar del giocatore contro uno Shadow LV 1 bersagliato, con HUD (SPECIAL,
+HP, contatori in alto, OPTIONS) e il pulsante «ENEMY TURN». L'HP del giocatore è **0**
+(`userPoint.hp`/`maxHp` a 0) e il deck è senza medaglie.
+
+Prossimo: statistiche del giocatore (HP, attacco: probabilmente la tabella `player`, che
+manca nella 5.0.1) e medaglie iniziali (`medal` da khuxwiki, `/user/medal`, deck).
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

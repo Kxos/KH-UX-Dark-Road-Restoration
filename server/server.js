@@ -142,6 +142,10 @@ function route(url) {
   if (p.includes('tutorial/status')) return 'tutorialstatus';
   if (p.includes('khux/login')) return 'khuxlogin';
   if (p === '/user/create') return 'usercreate';
+  if (p === '/user/keyblade') return 'userkeyblade';
+  if (p === '/user/deck') return 'userdeck';
+  if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
+  if (p === '/stage/start') return 'stagestart';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -590,6 +594,54 @@ function respondUserCreate(res, req) {
   });
 }
 
+// userData.userPoint, letto da FUN_0078b230 sia in GET /user sia in POST /stage/start.
+function userPointData(now) {
+  return {
+    money: 0, lux: 0, totalLux: 0, // lux e totalLux: uint64
+    spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
+    attack: 0, defense: 0, baseHp: 0, hp: 0, ap: 10, maxHp: 0, maxAp: 10,
+    lastApDatetime: now,
+    stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
+    // da qui in poi uint
+    specialPoint: 0, stageSkipTicket: 0, superSkipTicket: 0, vipPoint: 0,
+    guiltBurstLv: 0, multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
+    drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
+    limitedDrawTicket1: 0, limitedDrawTicket2: 0, limitedDrawTicket3: 0,
+  };
+}
+
+function respondStageStart(res, req) {
+  // POST /stage/start (azione 113). Corpo: stageId, supportUserId, userKeybladeId
+  // (+ stageSkip, eventId, isSteal). Il ramo 113 di FUN_007c3204 chiama, tutti
+  // obbligatori: FUN_0078b230 (userData.userPoint), FUN_007a1690 (userRandomEnemies[],
+  // userEnemyDropItems[], userTreasures[], startStageData, campaigns[],
+  // luxMagnifications) e FUN_0078aa3c("supportUsers"). Elementi: FUN_007a11c8
+  // (nemico: uniqueEnemyId, dropItemTypeIds int[] <= 4, stealType), FUN_007a1308
+  // (tesoro), FUN_007a1428 (startStageData: stageId, supportUserId uint64,
+  // userKeybladeId uint64, clearMissionIds int[] <= 3, stageSkip, eventId,
+  // highScore uint64).
+  const now = serverTime();
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now) },
+    startStageData: {
+      stageId: req?.stageId ?? START_STAGE_ID,
+      supportUserId: req?.supportUserId ?? 0,
+      userKeybladeId: req?.userKeybladeId ?? USER_KEYBLADE_ID,
+      clearMissionIds: [],
+      stageSkip: req?.stageSkip ?? 0,
+      eventId: req?.eventId ?? 0,
+      highScore: 0,
+    },
+    userRandomEnemies: [],
+    userEnemyDropItems: [],
+    userTreasures: [],
+    campaigns: [],
+    luxMagnifications: { campaign: 0, party: 0 },
+    supportUsers: [],
+  });
+}
+
 function respondUser(res) {
   const now = serverTime();
   const userData = {
@@ -607,18 +659,7 @@ function respondUser(res) {
       isAdult: 1,
       nativeTagName: '', // max 14 byte; letto solo da GET /user (modo 1)
     },
-    userPoint: {
-      money: 0, lux: 0, totalLux: 0, // lux e totalLux: uint64
-      spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
-      attack: 0, defense: 0, baseHp: 0, hp: 0, ap: 10, maxHp: 0, maxAp: 10,
-      lastApDatetime: now,
-      stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
-      // da qui in poi uint
-      specialPoint: 0, stageSkipTicket: 0, superSkipTicket: 0, vipPoint: 0,
-      guiltBurstLv: 0, multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
-      drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
-      limitedDrawTicket1: 0, limitedDrawTicket2: 0, limitedDrawTicket3: 0,
-    },
+    userPoint: userPointData(now),
     userDetail: {
       level: 1, exp: 0, luxRank: 0, luxGetRatio: 0,
       titleLeftId: 0, titleRightId: 0, titlePlateId: 0, maxDeckCost: 0,
@@ -632,6 +673,59 @@ function respondUser(res) {
     medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
   };
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
+}
+
+// ---------------------------------------------------------------------------
+// Inventario iniziale e storia: il minimo per la prima battaglia del tutorial.
+// Gli id rimandano alle tabelle master della 5.0.1 offline (keyblade 1000 =
+// Starlight, stage 1010 = Prologue). La tabella medal non c'e': deck senza medaglie.
+// ---------------------------------------------------------------------------
+const START_STAGE_ID = Number(process.env.KHUX_START_STAGE || 1010);
+const USER_KEYBLADE_ID = 1;
+const USER_DECK_ID = 1;
+
+function respondUserKeyblade(res) {
+  // GET /user/keyblade (azione 11): userKeyblades[], elemento letto da FUN_0078c904
+  // (deckMedals: al massimo 5 uint64).
+  send(res, 200, {
+    ret: ret(),
+    userKeyblades: [{
+      userKeybladeId: USER_KEYBLADE_ID, // uint64
+      userDeckId: USER_DECK_ID, // uint64
+      userKeybladeSubslotId: 0, // uint64
+      category: 1,
+      keybladeId: 1000,
+      deckMedals: [],
+      burst: 0, totalAttack: 0, totalDefense: 0, isFavorite: 0,
+      skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
+      skillUpperTotalDefence: 0, subslotRate: 10000, // uint
+      getDatetime: serverTime(),
+    }],
+  });
+}
+
+function respondUserDeck(res) {
+  // GET /user/deck (azione 12): userDecks[], elemento letto da FUN_00792a8c.
+  send(res, 200, {
+    ret: ret(),
+    userDecks: [{
+      userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
+      deckMedals: [], petBaseSlotMedal: 0,
+    }],
+  });
+}
+
+function respondStageList(res) {
+  // GET /stage/160310 (azione 108, FUN_0079f1fc): stories[] (elemento FUN_0079e794:
+  // stageId, useAp, score uint64, playStatus, clearMissionIds int[] <= 3),
+  // newStageId, luxRank, openRankingId (uint).
+  send(res, 200, {
+    ret: ret(),
+    stories: [{ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] }],
+    newStageId: START_STAGE_ID,
+    luxRank: 0,
+    openRankingId: 0,
+  });
 }
 
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
@@ -701,6 +795,10 @@ function handler(scheme) {
       if (kind === 'tutorialstatus') return respondTutorialStatus(res);
       if (kind === 'khuxlogin') return respondKhuxLogin(res);
       if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
+      if (kind === 'userkeyblade') return respondUserKeyblade(res);
+      if (kind === 'userdeck') return respondUserDeck(res);
+      if (kind === 'stagelist') return respondStageList(res);
+      if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
