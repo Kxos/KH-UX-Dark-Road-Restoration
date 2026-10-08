@@ -10,7 +10,7 @@
 //   costo 1, livello massimo 10 (khuxwiki, «Stats»), immagini = medalId
 //   (img/medal/Medal_L_%d.png). Il significato di type, growthType ed expType non e'
 //   ricavato: valgono 1.
-// player: livelli 1..99 con HP, AP e costo segnaposto (KHUX_PLAYER_HP, default 1000):
+// player: livelli 1..99 con HP, AP e costo segnaposto (KHUX_PLAYER_HP, default 3000):
 //   la tabella vera non e' stata trovata.
 //
 //   node server/make-game-tables.js <valori medaglie.json>
@@ -56,7 +56,9 @@ const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
   sell: 10, materialExp: 10,
 }));
 
-const hp = Number(process.env.KHUX_PLAYER_HP || 1000);
+// 3000: oltre, l'HUD allunga l'arco dell'HP e carica texture (Avatar_Circle_01/06,
+// Avatar_Side_0N) che non sono in nessun pacchetto: crash (FUN_00b157c8).
+const hp = Number(process.env.KHUX_PLAYER_HP || 3000);
 const players = [];
 for (let lv = 1; lv <= 99; lv++) {
   players.push(Object.assign(blank('player'), {
@@ -64,7 +66,18 @@ for (let lv = 1; lv <= 99; lv++) {
   }));
 }
 
+// reward: premi dei forzieri (e di altro). Tipi ricavati da FUN_00b07090: 4 monete,
+// 8 CP (Attack Prize: barra degli speciali), 9 HP. La riga 81 e' il forziere
+// arancione del Prologue (stage/mappoi_stg01010_01.bin); la quantita' e' nostra.
+const rewardIds = (process.env.KHUX_CHEST_REWARDS || '81').split(',').map(Number);
+const rewards = rewardIds.map((rewardId) => Object.assign(blank('reward'), {
+  rewardId, validReward: 1, display: [1], type: [8], id: [0],
+  assignSkillType: [0], assignSkillId: [0], assignSkillLv: [0],
+  num: [Number(process.env.KHUX_CHEST_CP || 100)], odds: [10000],
+}));
+
 fs.mkdirSync(OUT, { recursive: true });
+fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})`);

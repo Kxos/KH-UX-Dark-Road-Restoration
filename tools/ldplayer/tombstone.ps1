@@ -1,7 +1,11 @@
 # Ultimo tombstone del guest: registri e puntatori nel codice di libcocos2dcpp (indirizzi Ghidra)
 $ld = 'D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9'
 & "$ld\ld.exe" -s 0 "cp `$(ls -t /data/tombstones/tombstone_* | head -1) /sdcard/Pictures/tomb.txt"
-$t = Get-Content "$env:USERPROFILE\Documents\XuanZhi9\Pictures\tomb.txt"
+# passa dalla cartella condivisa e finisce in D:\Progetto_Restauro_KH_UX\screenshots
+$tomb = "D:\Progetto_Restauro_KH_UX\screenshots\tombstone_$(Get-Date -Format yyyyMMdd_HHmmss).txt"
+Start-Sleep -Milliseconds 300
+Move-Item -LiteralPath "$env:USERPROFILE\Documents\XuanZhi9\Pictures\tomb.txt" -Destination $tomb -Force
+$t = Get-Content $tomb
 $t[5..11]
 $m = $t | Select-String -Pattern "^\s+([0-9a-f']+)-[0-9a-f']+ r--\s+0\s+\S+\s+.*libcocos2dcpp" | Select-Object -First 1
 $lo = [Convert]::ToInt64(($m.Matches[0].Groups[1].Value -replace "'", ''), 16)

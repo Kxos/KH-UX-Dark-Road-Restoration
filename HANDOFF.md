@@ -25,13 +25,13 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 12).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 18).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "12"                   # revisione dati master
+$env:KHUX_REVISION      = "18"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -73,7 +73,9 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
   ancora provato sul banco);
 - `tombstone.ps1`: dall'ultimo tombstone gli indirizzi ARM (Ghidra) del crash sotto
   houdini;
-- screenshot in `C:\Users\<utente>\Documents\XuanZhi9\Pictures\`.
+- `bench_prologue.ps1`: nel Prologue, dopo `bench_flow.ps1`, fino al forziere arancione;
+- screenshot (e tombstone) in `D:\Progetto_Restauro_KH_UX\screenshots\`: passano dalla
+  cartella condivisa di LDPlayer (`Documents\XuanZhi9\Pictures`) e vengono spostati.
 
 **Analisi** (Ghidra headless: progetto `recon/ghidra/project`, JDK
 `D:\Programmi\Android\Android Studio\jbr`, Ghidra in
@@ -1281,8 +1283,63 @@ con **HP 1000** in verde, **Donald** (Magic) e **Goofy** (Power) in mano con il 
 dello speciale (2), contatore 3/3. Un tocco sulla medaglia sposta l'avatar ma non
 completa il turno: il gesto di gioco va ancora capito. Nessun crash.
 
-Prossimo: giocare il turno (gesto sulla medaglia e sul nemico), le altre 18 medaglie del
-set del tutorial, la fine dello stage (`/stage/finish` o simile).
+### Il Prologue giocato: combattimento, forzieri, HP — 8 ottobre 2026, notte
+
+**Come si gioca** (verificato sul banco; `tools/ldplayer/bench_prologue.ps1` ripete la
+sequenza fino al forziere):
+- sulla mappa si tocca il terreno per muoversi e il nemico per attaccarlo; il contatto
+  apre la battaglia a turni («PLAYER TURN» / «ENEMY TURN»);
+- nel Prologue i nemici mostrano «TAP!»: l'attacco è il tocco sul nemico;
+- lo **speciale** di una medaglia si usa con uno **swipe in diagonale** sulla medaglia,
+  quando la barra SPECIAL basta per il suo costo (indicazione dell'utente; `Swipe` in
+  `bench_lib.ps1`);
+- colpendo e sconfiggendo i nemici cadono sfere arancioni (CP, barra speciale) e verdi
+  (HP): le quantità sono nella tabella `enemy` 5.0.1 (Shadow: `attackCp` 50,
+  `suppressCp` 100, `attackHp` 30, `suppressHp` 144). Sul banco l'HP risale (787 → 870
+  dopo il gruppo di 3 Shadow);
+- percorso del Prologue: Shadow sulla scalinata, gruppo di 3 Shadow nella piazza della
+  fontana, forziere arancione sulla scalinata alta, poi il bersaglio: **Mega-Shadow** con
+  9 Shadow.
+
+**Morte e continuazione.** Con 1000 HP lo sciame del boss uccide il giocatore in un turno
+(circa 110 di danno per Shadow); `userPoint.attack/defense` e `totalAttack/totalDefense`
+della keyblade (ora la somma del deck) **non** cambiano il danno subito. Il client
+chiede `POST /stage/continue` (azione 115). Nel tutorial non si poteva morire
+(indicazione dell'utente).
+
+**La barra HP.** `FUN_00b157c8` dimensiona l'arco dell'HP attorno al ritratto in base
+all'HP massimo: oltre 3000 l'arco si allunga e carica `img/ui/PlayerStatusIndicator/
+Avatar_Circle_01/06.png` e `Avatar_Side_01..04.png`, che **non sono in nessun
+pacchetto** (OBB, addnl, misc): crash per puntatore nullo (provato con 4000 e 3330). Con
+**3000** l'arco copre la metà inferiore del cerchio e appare pieno; con 1000 ne copriva
+un quarto. L'HP di partenza è ora 3000 (segnaposto, `KHUX_PLAYER_HP`).
+
+**I forzieri** (non ancora funzionanti):
+- `StageUtil::getTreasurePrizes` (`FUN_00e7e980`), chiamata alla **creazione** del
+  forziere (`FUN_00b09a38`, struttura: +8 tipo/grafica, +0xc id del reward, +0x10 id
+  univoco, +0x14 già aperto), cerca in `userTreasures` (da `/stage/start`) l'elemento
+  con lo stesso `uniqueTreasureId`, legge la riga di **`reward`** indicata dalla mappa
+  (tabella non presente nella 5.0.1; campi `validReward`, `display[4]`, `type[4]`,
+  `id[4]`, …, `num[4]`, `odds[4]`) e tiene i premi il cui tipo compare, nella stessa
+  posizione, in `dropItemTypeIds` (tipi 2–34);
+- tipi di premio (`FUN_00b07090`): **4 monete, 8 CP (Attack Prize, barra speciale),
+  9 HP**, 2/3/5/6/7/10 oggetti; le immagini `img/prizes/Prize_{Money,Hp,Cp,Treasure,
+  Lux}NN.png`;
+- i punti della mappa sono in `stage/mappoi_stg<id>[_NN].bin` dell'addnl (formato `MAP`:
+  aree da 0x44 byte, nemici da 0x20 byte, poi gli oggetti; parser `FUN_00e5f6e8`); nel
+  Prologue il forziere è il record `1, 948, 1778, 81, 14, 18` dopo i 10 nemici del boss;
+- provati come id univoco e come reward 1, 14, 17, 18 e 81 in tutte le combinazioni, con
+  premio CP: il forziere resta vuoto. Da capire dove il parser della mappa mette quei
+  numeri nella struttura del forziere.
+
+**Risposte nuove nel server** (`server.js`): `/stage/continue` e `/stage/retire`
+(`userKeyblades` e `userData.stageResumption`), `/stage/clear` (azione 116:
+`userData.{userPoint,userDetail,stageResumption}`, `stageRewardUserMedalIds[]`,
+`highScoreReward[]`, `firstClearFlag`, `stageOpenNum`, `clearMissionIds[]`,
+`userPvpRanking {rank,class,point}`, `status`, `userMaterials[]`, `getLux`,
+`guiltBurst*UserMedalIds[]`) — **non ancora provate sul banco**.
+
+Prossimo: i forzieri, poi lo speciale con lo swipe contro il boss e la fine dello stage.
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

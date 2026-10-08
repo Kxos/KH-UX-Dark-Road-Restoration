@@ -147,6 +147,8 @@ function route(url) {
   if (p === '/user/medal') return 'usermedal';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
+  if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
+  if (p === '/stage/clear') return 'stageclear';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -595,6 +597,32 @@ function respondUserCreate(res, req) {
   });
 }
 
+function deckStats() {
+  const medals = masterRows('medal');
+  let attack = 0;
+  let defense = 0;
+  for (const m of startingInventory().medals) {
+    const row = medals.find((r) => r.medalId === m.medalId);
+    if (row) { attack += row.attack; defense += row.defense; }
+  }
+  return { attack, defense };
+}
+
+// Forzieri degli stage. Il client, aprendo un forziere (StageUtil::getTreasurePrizes,
+// FUN_00e7e980), cerca in userTreasures l'elemento con lo stesso uniqueTreasureId e
+// legge la riga di `reward` indicata dalla mappa (stage/mappoi_stg<id>_NN.bin
+// dell'addnl); dei suoi premi tiene quelli il cui tipo compare, nella stessa
+// posizione, in dropItemTypeIds. Tipi (FUN_00b07090): 4 monete, 8 CP (Attack Prize,
+// barra degli speciali), 9 HP. Prologue (1010): forziere arancione id 17, reward 81.
+const STAGE_TREASURES = {
+  1010: (process.env.KHUX_TREASURE_IDS || '17').split(',')
+    .map((id) => ({ uniqueTreasureId: Number(id), dropItemTypeIds: [8] })),
+};
+
+function stageTreasures(stageId) {
+  return STAGE_TREASURES[stageId] || [];
+}
+
 // userData.userPoint, letto da FUN_0078b230 sia in GET /user sia in POST /stage/start.
 function userPointData(now) {
   return {
@@ -603,7 +631,11 @@ function userPointData(now) {
     // In battaglia il client mostra maxHp e colora l'HP in rapporto a hp/baseHp
     // (provato con 111/222/333): per un giocatore integro coincidono, dal livello 1
     // della tabella player.
-    attack: 0, defense: 0, baseHp: levelHp(1), hp: levelHp(1), ap: 10, maxHp: levelHp(1), maxAp: 10,
+    // attack/defense: somma di STR e DEF (livello 1) delle medaglie del deck. A 0 il
+    // giocatore non ha difesa: nel Prologue moriva in un turno, e nel tutorial non si
+    // poteva morire.
+    ...deckStats(),
+    baseHp: levelHp(1), hp: levelHp(1), ap: 10, maxHp: levelHp(1), maxAp: 10,
     lastApDatetime: now,
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
@@ -639,7 +671,7 @@ function respondStageStart(res, req) {
     },
     userRandomEnemies: [],
     userEnemyDropItems: [],
-    userTreasures: [],
+    userTreasures: stageTreasures(req?.stageId ?? START_STAGE_ID),
     campaigns: [],
     luxMagnifications: { campaign: 0, party: 0 },
     supportUsers: [],
@@ -664,19 +696,64 @@ function respondUser(res) {
       nativeTagName: '', // max 14 byte; letto solo da GET /user (modo 1)
     },
     userPoint: userPointData(now),
-    userDetail: {
-      level: 1, exp: 0, luxRank: 0, luxGetRatio: 0,
-      titleLeftId: 0, titleRightId: 0, titlePlateId: 0, maxDeckCost: 0,
-      playTimezones: [], // int[], al massimo 6
-      playFrequently: 0,
-      partyId: 0, // uint64
-      unionId: player.unionId, maxMedal: 0, mvpCount: 0, equipCoordinateNo: 0, lastClearStageId: 0,
-      isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
-    },
-    stageResumption: { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 },
+    userDetail: userDetailData(),
+    stageResumption: stageResumptionData(),
     medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
   };
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
+}
+
+// userData.userDetail (FUN_0078babc), in GET /user e POST /stage/clear.
+function userDetailData() {
+  return {
+    level: 1, exp: 0, luxRank: 0, luxGetRatio: 0,
+    titleLeftId: 0, titleRightId: 0, titlePlateId: 0, maxDeckCost: 0,
+    playTimezones: [], // int[], al massimo 6
+    playFrequently: 0,
+    partyId: 0, // uint64
+    unionId: player.unionId, maxMedal: 0, mvpCount: 0, equipCoordinateNo: 0,
+    lastClearStageId: player.lastClearStageId || 0,
+    isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
+  };
+}
+
+// userData.stageResumption (FUN_0078c138): 0 = niente da riprendere.
+function stageResumptionData() {
+  return { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 };
+}
+
+function respondStageContinue(res) {
+  // POST /stage/continue (azione 115, dopo il KO) e /stage/retire (114): il ramo
+  // rilegge userKeyblades (FUN_0078cca8); retire anche userData.stageResumption.
+  send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userData: { stageResumption: stageResumptionData() } });
+}
+
+function respondStageClear(res, req) {
+  // POST /stage/clear (azione 116). Il ramo chiama FUN_0078b230 (userData.userPoint),
+  // FUN_0078babc (userData.userDetail), FUN_007817a0 (stageRewardUserMedalIds[]
+  // {rewardkind, userMedalId uint64, display}, poi per uno stage normale
+  // highScoreReward[] (clearTimeMissionIds[] / pvpPointReward[] in altri modi),
+  // firstClearFlag, stageOpenNum, clearMissionIds[], userPvpRanking {rank, class,
+  // point}, status, userMaterials[], getLux uint64), FUN_0078c138
+  // (userData.stageResumption) e FUN_007a5dec (guiltBurstFirstUserMedalIds[],
+  // guiltBurstMaxUserMedalIds[]).
+  const now = serverTime();
+  const first = req?.stageId && player.lastClearStageId !== req.stageId;
+  if (req?.stageId) player.lastClearStageId = req.stageId;
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now), userDetail: userDetailData(), stageResumption: stageResumptionData() },
+    stageRewardUserMedalIds: [],
+    highScoreReward: [], clearTimeMissionIds: [], pvpPointReward: [],
+    firstClearFlag: first ? 1 : 0,
+    stageOpenNum: 1,
+    clearMissionIds: [],
+    userPvpRanking: { rank: 0, class: 0, point: 0 },
+    status: 0,
+    userMaterials: [],
+    getLux: 0,
+    guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -736,24 +813,27 @@ function deckMedalIds() {
   return startingInventory().medals.map((m) => m.userMedalId);
 }
 
+// userKeyblades[], elemento letto da FUN_0078c904 (deckMedals: al massimo 5 uint64).
+// totalAttack/totalDefense = somma del deck, come userPoint.attack/defense.
+function userKeybladesData() {
+  const { attack, defense } = deckStats();
+  return [{
+    userKeybladeId: USER_KEYBLADE_ID, // uint64
+    userDeckId: USER_DECK_ID, // uint64
+    userKeybladeSubslotId: 0, // uint64
+    category: 1,
+    keybladeId: startingInventory().keybladeId,
+    deckMedals: deckMedalIds(),
+    burst: 0, totalAttack: attack, totalDefense: defense, isFavorite: 0,
+    skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
+    skillUpperTotalDefence: 0, subslotRate: 10000, // uint
+    getDatetime: serverTime(),
+  }];
+}
+
 function respondUserKeyblade(res) {
-  // GET /user/keyblade (azione 11): userKeyblades[], elemento letto da FUN_0078c904
-  // (deckMedals: al massimo 5 uint64).
-  send(res, 200, {
-    ret: ret(),
-    userKeyblades: [{
-      userKeybladeId: USER_KEYBLADE_ID, // uint64
-      userDeckId: USER_DECK_ID, // uint64
-      userKeybladeSubslotId: 0, // uint64
-      category: 1,
-      keybladeId: startingInventory().keybladeId,
-      deckMedals: deckMedalIds(),
-      burst: 0, totalAttack: 0, totalDefense: 0, isFavorite: 0,
-      skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
-      skillUpperTotalDefence: 0, subslotRate: 10000, // uint
-      getDatetime: serverTime(),
-    }],
-  });
+  // GET /user/keyblade (azione 11)
+  send(res, 200, { ret: ret(), userKeyblades: userKeybladesData() });
 }
 
 function respondUserDeck(res) {
@@ -852,6 +932,8 @@ function handler(scheme) {
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
+      if (kind === 'stagecontinue') return respondStageContinue(res);
+      if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);

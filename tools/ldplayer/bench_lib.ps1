@@ -7,11 +7,21 @@
 $LD = 'D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9'
 $PKG = 'com.square_enix.android_googleplay.khuxww'
 $SCREEN_W = 1920
-$PICS = "$env:USERPROFILE\Documents\XuanZhi9\Pictures"
+# /sdcard/Pictures del guest e' la cartella condivisa di LDPlayer sotto Documenti:
+# gli screenshot passano di li' e vengono subito spostati su D: ($SHOTS).
+$SHARED = "$env:USERPROFILE\Documents\XuanZhi9\Pictures"
+$SHOTS = 'D:\Progetto_Restauro_KH_UX\screenshots'
+New-Item -ItemType Directory -Force $SHOTS | Out-Null
 
 function Sh([string]$cmd) { & "$LD\ld.exe" -s 0 $cmd }
 
 function Tap([int]$x, [int]$y) { Sh "input tap $x $y" | Out-Null }
+
+# Swipe da (x1,y1) a (x2,y2) in $ms millisecondi: lo swipe in diagonale su una
+# medaglia ne usa l'attacco speciale, se la barra SPECIAL basta per il suo costo.
+function Swipe([int]$x1, [int]$y1, [int]$x2, [int]$y2, [int]$ms = 250) {
+    Sh "input swipe $x1 $y1 $x2 $y2 $ms" | Out-Null
+}
 
 # Colori dei punti dati, come array di @(r, g, b), con una sola cattura.
 function Px([int[][]]$pts) {
@@ -37,8 +47,8 @@ function WaitFor([int[][]]$pts, [scriptblock]$cond, [double]$timeout = 60, [stri
         if (& $cond $c) { Write-Host ("  {0,-28} {1,5:N1} s" -f $what, $sw.Elapsed.TotalSeconds); return $true }
         Start-Sleep -Milliseconds 250
     }
-    Sh "screencap -p /sdcard/Pictures/${what}_timeout.png" | Out-Null
-    Write-Host "  $what : SCADUTO dopo $timeout s (screenshot ${what}_timeout.png)"
+    Shot "${what}_timeout" | Out-Null
+    Write-Host "  $what : SCADUTO dopo $timeout s (screenshot $SHOTS\${what}_timeout.png)"
     $false
 }
 
@@ -62,8 +72,8 @@ function Step([int]$x, [int]$y, [string]$what, [int[][]]$pts, [scriptblock]$cond
             Start-Sleep -Milliseconds 200
         }
     }
-    Sh "screencap -p /sdcard/Pictures/${what}_timeout.png" | Out-Null
-    Write-Host "  $what : SCADUTO dopo $timeout s (screenshot ${what}_timeout.png)"
+    Shot "${what}_timeout" | Out-Null
+    Write-Host "  $what : SCADUTO dopo $timeout s (screenshot $SHOTS\${what}_timeout.png)"
     $false
 }
 
@@ -88,7 +98,15 @@ function WaitLog([string]$file, [string]$pattern, [int]$from, [double]$timeout =
     $false
 }
 
-function Shot([string]$name) { Sh "screencap -p /sdcard/Pictures/$name.png" | Out-Null; "$PICS\$name.png" }
+# Screenshot in $SHOTS\<name>.png (passa dalla cartella condivisa e viene spostato).
+function Shot([string]$name) {
+    Sh "screencap -p /sdcard/Pictures/$name.png" | Out-Null
+    $src = Join-Path $SHARED "$name.png"
+    $dst = Join-Path $SHOTS "$name.png"
+    for ($i = 0; $i -lt 20 -and -not (Test-Path -LiteralPath $src); $i++) { Start-Sleep -Milliseconds 100 }
+    Move-Item -LiteralPath $src -Destination $dst -Force
+    $dst
+}
 
 # Ultime richieste al server (senza DNS e master), una per riga.
 function LastRequests([string]$file, [int]$n = 8) {
