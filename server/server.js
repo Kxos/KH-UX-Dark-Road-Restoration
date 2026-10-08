@@ -192,8 +192,11 @@ function ret() {
     // Revisioni di risorse e dati master dichiarate dal server. Il client le
     // confronta con le sue (0 su un'installazione vergine) per decidere cosa
     // scaricare: con tutto a 0 crede di essere aggiornato.
-    versionRes: REVISION,
-    versionResLow: REVISION,
+    // Per le risorse: l'ultima versione presente in resource_data (0 se nessuna).
+    // Dopo un'installazione riuscita il client dichiara quella revisione; se il
+    // server ne dichiarasse un'altra, riproporrebbe il download a ogni avvio.
+    versionRes: latestResourceVersion(),
+    versionResLow: latestResourceVersion(),
     versionDat: REVISION,
     commonVersionDat: REVISION,
     darkVersionRes: REVISION,
@@ -427,10 +430,19 @@ function resourceFiles(version, kind) {
   }).filter((f) => f.size > 0);
 }
 
-function respondResource(res) {
-  const versions = fs.existsSync(RESOURCE_DIR)
+function resourceVersions() {
+  return fs.existsSync(RESOURCE_DIR)
     ? fs.readdirSync(RESOURCE_DIR).filter((v) => /^\d+$/.test(v)).map(Number).sort((a, b) => a - b)
     : [];
+}
+
+function latestResourceVersion() {
+  const v = resourceVersions();
+  return v.length ? v[v.length - 1] : 0;
+}
+
+function respondResource(res) {
+  const versions = resourceVersions();
   const body = { ret: ret() };
   if (versions.length === 0) {
     body.resource = { mode: 0, minVersion: 0, versions: [] };
