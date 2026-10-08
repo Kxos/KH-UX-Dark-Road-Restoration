@@ -2,7 +2,7 @@
 # La chiave delle risorse non sta nel repository: si rilegge dal binario 5.0.1.
 # Log: D:\Progetto_Restauro_KH_UX\logs\server.log (lo leggono cycle.ps1 e relogin.ps1).
 #   powershell -File run-server.ps1 [-Revision N]
-param([int]$Revision = 46)
+param([int]$Revision = 48)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
