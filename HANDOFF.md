@@ -37,7 +37,7 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 49).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 50).
 
 **Ripartire in tre comandi** (script di sessione in `tools/ldplayer/session/`, log del
 server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
@@ -45,10 +45,10 @@ server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
 ```powershell
 .\tools\ldplayer\session\relogin.ps1 -Tag x    # server + rientro del giocatore salvato: home
 .\tools\ldplayer\session\cycle.ps1 -Tag x      # da NUOVO giocatore (cancella il salvataggio)
-powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 49   # solo il server
+powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 50   # solo il server
 ```
 
-Alzare `-Revision` (default 49 negli script) dopo ogni modifica di `server/master_data/`.
+Alzare `-Revision` (default 50 negli script) dopo ogni modifica di `server/master_data/`.
 Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo una
 `/compact` o su un'altra macchina basta leggere questa sezione e «Dove siamo rimasti».
 
@@ -56,7 +56,7 @@ Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "49"                   # revisione dati master
+$env:KHUX_REVISION      = "50"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"

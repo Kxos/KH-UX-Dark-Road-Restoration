@@ -877,12 +877,21 @@ function respondUser(res) {
 // (clearGetItemType, submissionRewardType, reward.type): 2 jewel (userStone.freeStone),
 // 4 munny (userPoint.money), 5 materiale (userMaterials, id della tabella material),
 // 14 Avatar Coin (userPoint.spherePoint: gli Avatar Boards sono le «sphere» del client,
-// /user/sphere/buy sblocca i nodi, masu; CONGRATULATIONS: «Avatar Coin x6»).
-// Gli altri tipi (es. 3) non sono ancora ricavati: si annotano nel log.
+// /user/sphere/buy sblocca i nodi, masu; CONGRATULATIONS: «Avatar Coin x6»),
+// 3 medaglia (id della tabella medal: es. 90041 = Dewey ★ in The Dark Forest Pt. 2,
+// riconosciuta confrontando la tabella stage con khuxwiki; una userMedal per copia).
+// Gli altri tipi non sono ancora ricavati: si annotano nel log.
 function grantItem(type, id, num) {
   num = Number(num) || 0;
   if (!type || !num) return;
-  if (type === 2) player.freeStone = (player.freeStone || 0) + num;
+  if (type === 3 && id) {
+    player.medals = player.medals || [];
+    for (let k = 0; k < num; k++) {
+      const userMedalId = 101 + player.medals.length;
+      player.medals.push({ userMedalId, medalId: id, level: 1, getDatetime: serverTime() });
+    }
+    if (!masterRows('medal').some((m) => m.medalId === id)) console.log(`  [inventario] medaglia ${id} assente dalla tabella medal`);
+  } else if (type === 2) player.freeStone = (player.freeStone || 0) + num;
   else if (type === 4) player.money = (player.money || 0) + num;
   else if (type === 14) player.spherePoint = (player.spherePoint || 0) + num;
   else if (type === 5 && id) {
@@ -1059,16 +1068,18 @@ function levelHp(lv = 1) {
 
 // userMedals[], elemento letto da FUN_0078d608 (userSkills al massimo 2,
 // userShuffleSkills).
+// Le medaglie iniziali del deck (userMedalId 1-3) e quelle ricevute come premio
+// (player.medals, userMedalId da 101).
 function userMedalsData(now) {
-  return startingInventory().medals.map((m) => ({
+  return [...startingInventory().medals, ...(player.medals || [])].map((m) => ({
     userMedalId: m.userMedalId, // uint64
     medalId: m.medalId,
     number: 1, // uint
-    level: m.level, exp: 0,
+    level: m.level || 1, exp: 0,
     attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
     lock: 0, upperCost: 0, guiltFactor: 0, // guiltFactor: uint
     userSkills: [], userShuffleSkills: [],
-    getDatetime: now,
+    getDatetime: m.getDatetime || now,
   }));
 }
 

@@ -31,7 +31,12 @@ try {
 
 const ENEMY_TYPE = 5;
 const CHEST_OK = new Set([4, 8, 9]);
-const GRANT_OK = new Set([2, 4, 5, 14]);
+const GRANT_OK = new Set([2, 3, 4, 5, 14]);
+const medals = new Set(table('medal').map((m) => m.medalId));
+// premio di tipo 3 (medaglia): la riga deve esistere nella tabella medal
+function checkMedal(s, where, t, id) {
+  if (t === 3 && !medals.has(id)) err(s, `${where}: medaglia ${id} assente dalla tabella medal (wiki_all: nome dal confronto con la wiki)`);
+}
 const rewards = new Map(table('reward').map((r) => [r.rewardId, r]));
 const materials = new Set(table('material').map((m) => m.materialId));
 const stages = table('stage');
@@ -76,11 +81,13 @@ for (const st of stages) {
     st.clearGetItemType.forEach((t, i) => {
       if (!GRANT_OK.has(t)) warn(s, `premio di fine stage di tipo ${t} non gestito dal server`);
       if (t === 5) { const m = checkMaterial('premio di fine stage', st.clearGetItemId[i]); if (m) err(s, m); }
+      checkMedal(s, 'premio di fine stage', t, st.clearGetItemId[i]);
     });
   }
   (st.submissionRewardType || []).slice(0, st.validSubmission).forEach((t, i) => {
     if (!GRANT_OK.has(t)) warn(s, `obiettivo ${i + 1}: premio di tipo ${t} non gestito dal server`);
     if (t === 5) { const m = checkMaterial(`obiettivo ${i + 1}`, st.submissionItemId[i]); if (m) err(s, m); }
+    checkMedal(s, `obiettivo ${i + 1}`, t, st.submissionItemId[i]);
   });
 }
 // Confronto con khuxwiki (recon/tools/wiki_quests.py; KHUX_WIKI_QUESTS o il percorso
