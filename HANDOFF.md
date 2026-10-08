@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟡 **il gioco parte con il nostro server, ma senza dati** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, `resourcesize` e **filmato introduttivo**; poi crash, perché non ci sono dati master né risorse. Prossimo: il protocollo di download |
+| **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. Prossimo: le **risorse** (OBB e protocollo di download) |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -626,10 +626,69 @@ prove.
 
 Lo schema è quindi confermato in tutte e due le direzioni.
 
-**Cosa manca:** i **valori**. Ora sappiamo scrivere tabelle che il client accetta, ma
-quali righe servono perché il gioco parta dopo il filmato (quali `miscId`, quale
-`player` di livello 1, quale `stage` del tutorial…) va ricavato. Le fonti sono khuxwiki
-(fase D) e i punti del codice che leggono le tabelle.
+### Oltre il filmato con tabelle minime — 8 ottobre 2026
+
+**Tutte le 106 tabelle vuote (`[]`) passano**: il client le scarica, dice «Complete» e
+avvia il filmato. Ma alla fine del filmato va in crash come prima.
+
+**Come trovare l'istruzione ARM di un crash sotto houdini.** Il backtrace del tombstone è
+tutto dentro `libhoudini`, ma due cose lo aggirano:
+- **i registri x86 contengono l'istruzione ARM in corso**. Qui `rbx = 0xf9400808` è
+  `ldr x8, [x0, #0x10]`, quindi `x0` è nullo e il fault è a `0x10`;
+- **nelle zone di memoria del tombstone ci sono gli indirizzi ARM**: lo stack di houdini
+  conserva PC e indirizzi di ritorno del codice tradotto. Basta filtrare i valori che
+  cadono nella mappatura `r--` di `libcocos2dcpp.so` (base letta dalla mappa del
+  tombstone) e convertirli: Ghidra = valore − base + `0x100000`. Lo stato dei registri
+  ARM (x0, x1, …) sta in una zona `[anon:Mem_0x10002002]` vicino a `rdi`/`r13`.
+
+`tools/ldplayer/tombstone.ps1` fa tutto questo sull'ultimo tombstone del guest.
+
+**Primo crash: `misc` 804.** L'indirizzo trovato era `0x9614dc`, in `FUN_00960ee8`, il
+popup di registrazione del nome (`NameRegister_App_ver400.json`):
+
+```
+FUN_00efe8b4(&riga, 0x324, 0);      // getter di misc per id: 804
+ldr x8, [riga, #0x10]               // dati della riga: riga nulla -> crash
+```
+
+Il valore è la **lunghezza massima del nome** (testo `Txt_Limit1`). Il getter riceve
+l'id in `w0` e restituisce la riga tramite `x8`; i chiamanti non controllano il null.
+
+**Gli id di `misc` usati dal codice.** `recon/tools/getter_ids.py` traccia le costanti
+passate al getter: **98 id** distinti, più 20 chiamate con id calcolato. L'elenco, con i
+chiamanti, è in `recon/out/misc_ids_ww431.txt`. È versionato perché è l'interfaccia, non
+i valori.
+
+**`server/make-master-stub.js`** genera in `master_data/` tutte le 106 tabelle vuote e
+`misc` con i 98 id. Il valore è 0, salvo **804 = 10**, un nostro segnaposto. Sono valori
+inventati da noi, non dati originali; lo 0 è un ripiego ragionevole perché su ARM una
+divisione per zero dà 0 senza eccezione.
+
+**Risultato sul banco.** Con `misc` popolata il filmato finisce e compare la
+registrazione del nome: «Banisher of darkness, gatherer of light — what is your name?»,
+«**Max 10 char.**». Il nome si inserisce. Premuto **OK**, nuovo crash, **prima di
+qualunque chiamata al server**:
+- fault a `0x8`; lo stato ARM contiene la stringa `AvatarEditAnim`;
+- gli indirizzi portano a `FUN_011849d4`, che è `cocostudio::Armature::init(nome)`, e a
+  `FUN_01197cc8`, la ricerca dei dati dell'armatura per nome. Restituisce null perché
+  l'animazione **non è mai stata caricata**;
+- dopo il nome si entra nell'**editor dell'avatar** (`SceneAvatarEdit`), che usa
+  `cocostudio/publish/AvatarEditAnim.ExportJson`.
+
+**Quel file non c'è nell'APK.** L'indice dei pacchetti (`misc.png`, 2.831 file) contiene
+la grafica solo **fino alla registrazione del nome**:
+- 152 file `cocostudio/publish/`, tra cui `NameRegister_App_ver400.json`;
+- solo **3 animazioni** `.ExportJson`, quelle del titolo e del filmato.
+
+L'editor avatar, e tutto ciò che viene dopo, arriva dalle **risorse scaricate o dagli
+OBB**.
+
+**Conclusione: il prossimo blocco non sono i dati master ma le risorse grafiche.** Le
+tabelle minime bastano ad arrivare fin dove arriva la grafica dell'APK. Per andare oltre
+servono gli OBB (`main.72…obb` e `patch.72…obb`, vedi sotto) o i file del CDN delle
+risorse, e in parallelo il protocollo con cui il client li scarica
+(`SceneDownload::callDownloadAPI`, `FUN_00eccf04`). I valori veri delle tabelle
+(khuxwiki, fase D) torneranno utili quando la grafica ci sarà.
 
 ### I pacchetti di asset dell'APK — decifrati l'8 ottobre 2026
 
@@ -1176,8 +1235,13 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    m) ✅ **forma e tipi di tutte le 106 tabelle** (§2, «Il contenuto delle tabelle
    master»): array di righe con tutti i campi, tipi esatti; schema in
    `recon/out/master_types_ww431.json`, validato dal server, confermato sul banco con
-   una prova positiva e una negativa. **Prossimo:** i valori minimi perché il gioco
-   superi il filmato.
+   una prova positiva e una negativa.
+   n) ✅ **oltre il filmato** (§2, «Oltre il filmato con tabelle minime»): 106 tabelle
+   minime (`server/make-master-stub.js`) e 98 id di `misc`. Il gioco arriva alla
+   **registrazione del nome**; il crash successivo, all'editor avatar, è per una
+   **risorsa grafica assente** (`AvatarEditAnim.ExportJson`), che non sta nell'APK.
+   **Prossimo:** risorse. Servono gli OBB (comunità di preservazione) e il protocollo
+   di download delle risorse (`SceneDownload::callDownloadAPI`, `FUN_00eccf04`).
    **Prossimo:** la forma del JSON dentro le tabelle, partendo da una piccola. Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso
