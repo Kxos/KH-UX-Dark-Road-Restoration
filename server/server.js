@@ -135,6 +135,7 @@ function route(url) {
   if (p.includes('system/status')) return 'status';
   if (p.includes('system/login')) return 'login';
   if (p.includes('system/coppa')) return 'coppa';
+  if (p.includes('system/resourcesize')) return 'resourcesize';
   if (p.includes('session')) return 'session';
   if (p.includes('login/token')) return 'bootstrap';
   if (p.includes('bootstrap') || p.includes('startup') || p.includes('init')) return 'bootstrap';
@@ -233,6 +234,14 @@ function respondCoppa(res) {
   send(res, 200, { ret: ret(), misc });
 }
 
+function respondResourceSize(res) {
+  // PUT /system/resourcesize/<data>, azione 242. Corpo: {resoMode,
+  // masterRevision, resourceRevision, commonMasterRevision, evResourceIds}.
+  // Il ramo 242 di FUN_007c3204 legge solo "size", intero senza segno: i byte
+  // da scaricare prima di giocare.
+  send(res, 200, { ret: ret(), size: 0 });
+}
+
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
 // il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
 
@@ -291,6 +300,7 @@ function handler(scheme) {
       if (kind === 'status') return respondStatus(res);
       if (kind === 'login') return respondLogin(res);
       if (kind === 'coppa') return respondCoppa(res);
+      if (kind === 'resourcesize') return respondResourceSize(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 

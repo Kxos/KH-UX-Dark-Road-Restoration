@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟢 **schermata del titolo servita dal nostro server** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Status, token, sessione, `/system/login` e `/system/coppa` accettati, canale cifrato con la nostra chiave. Prossimo: **KHUX START** |
+| **Test sul dispositivo** | 🟢 **il gioco parte con il nostro server** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, `resourcesize` e **filmato introduttivo**. Prossimo: le chiamate dopo il filmato |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -461,7 +461,15 @@ l'ha avviata, quindi **resta `:251` per tutta la catena**.
 | 5 | `GET /system/coppa?m=0&v=…` — azione 26 | `FUN_007c3204` → `FUN_00778b64` | `ret` + `misc` — vedi sotto |
 
 Dopo il passo 5 il client mostra la **schermata del titolo** e si ferma ad aspettare
-KHUX START / KHDR START.
+KHUX START / KHDR START. Premendo **KHUX START** (nuovo utente):
+
+| # | Schermata / richiesta | Esito |
+|---|---|---|
+| 6 | `POST /system/errorlog` — il client segnala che la fatturazione Google Play non è disponibile | basta `ret` |
+| 7 | *User Agreement* — vuoto, perché il link `agreement` è vuoto. **Accept** | nessuna richiesta |
+| 8 | *Birthdate Registration* (mese e anno) → conferma | nessuna richiesta: resta in locale |
+| 9 | `PUT /system/resourcesize/20200423?m=1` — azione **242**, corpo `{resoMode, masterRevision, resourceRevision, commonMasterRevision, evResourceIds}`, tutti a 0 | `ret` + **`size`** (uint, `kUint64Flag 0x2000`): i byte da scaricare. Con `0` il client salta il download |
+| 10 | «Complete» e **filmato introduttivo** di KHUX | il gioco è avviato |
 
 **In tutte le risposte `maintenance` va omesso.** Il client controlla che il suo tipo
 JSON sia null; anche `0` vale come manutenzione attiva e porta al popup con `viewUrl`.
@@ -936,7 +944,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    nostra chiave e la sua prima richiesta cifrata (`/system/login`) si decifra;
    f) ✅ `/system/login` e `/system/coppa` implementati: **il client arriva alla schermata
    del titolo servito dal nostro server**;
-   g) **prossimo:** premere **KHUX START** e proseguire chiamata per chiamata, con lo
+   g) ✅ KHUX START → contratto → data di nascita → `resourcesize` (`size: 0`) → **il
+   filmato introduttivo parte**;
+   h) **prossimo:** dopo il filmato, proseguire chiamata per chiamata, con lo
    stesso metodo: leggere `200 ERROR :<azione>`, trovare il ramo dell'azione nella
    tabella di `FUN_007c3204`, decompilare i suoi parser, implementare la risposta.
    A fine sessione: rimettere il DNS di Windows su automatico.
