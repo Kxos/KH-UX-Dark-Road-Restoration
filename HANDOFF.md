@@ -487,6 +487,77 @@ Da capire nel binario: indizi da seguire sono `resoMode`, `masterRevision`,
 `resourceRevision`, `commonMasterRevision`, `evResourceIds` nella richiesta, e i
 `versionRes`/`versionDat`/`commonVersionDat` di `ret`, che oggi mandiamo a 0.
 
+### Il protocollo di download — 8 ottobre 2026
+
+**A decidere se scaricare sono le revisioni dentro `ret`, non `size`.** Il client
+confronta le sue revisioni locali (0 su un'installazione vergine) con `versionRes`,
+`versionDat`, `commonVersionDat`… che il server dichiara in ogni `ret`. Con tutto a 0
+crede di essere aggiornato. Con `KHUX_REVISION=1` (e `KHUX_RESOURCE_SIZE` > 0), premuto
+**Download** parte «Downloading... 0.0%» e arriva:
+
+```
+GET /system/master/20200423?m=1&v=…   →  {"revision":0,"commonRevision":0, ruv…}
+```
+
+È l'**azione 27**, il download dei **dati master** (richiesta costruita da `FUN_711a98`).
+
+**La risposta all'azione 27** (ramo 27 di `FUN_007c3204` → `FUN_00eba4bc`, con il
+singleton di `FUN_00eb7d50`), oltre a `ret`:
+
+```json
+{
+  "master": { "revision": 1, "commonRevision": 1, "count": 106 },
+  "<tabella>": { "revision": 1, "url": "https://…", "key": "<32 caratteri>", "md5": "…" },
+  …
+}
+```
+
+- `master.revision`, `commonRevision`, `count`: interi;
+- per ognuna delle **106 tabelle**, un oggetto letto da `FUN_00eb7ef4`: `revision`
+  (int), `url`, `key`, `md5` (stringhe). Le tabelle assenti vengono saltate senza errore.
+  `key` sono 32 byte copiati in un contesto AES (`FUN_0083b9dc`, lo stesso della
+  sessione).
+
+**Ogni tabella è un file a parte**: il client lo scarica da `url`, lo decifra con `key` e
+lo verifica con `md5`. In locale lo salva come `m/m%03d.jpg` (finto JPG, magic `bPes`;
+`FUN_dbaef8` scrive, `FUN_db8070` legge, `FUN_db9580` compone il percorso). Un errore
+lascia `last_master_error.gif` e `last_masterdata_message`.
+
+**Il contenuto è JSON.** Esiste un `info/tutorial_master` dentro il pacchetto di asset
+dell'APK (`misc.mp4`, letto tramite `FUN_1222710`), e `FUN_dbbfb4` lo passa al parser
+rapidjson (`FUN_61fb20`, quello di «Expect either an object or array at root»). È un
+master di esempio **già nell'APK**: estrarlo darebbe il formato esatto senza indovinare.
+
+**I nomi delle 106 tabelle** (le chiavi della risposta), scritti in `.bss`
+dall'inizializzatore statico `FUN_5d823c`. Nel loader l'array sta a `0x20a0b80`, passo
+`0x80` byte:
+
+`achievement`, `advertisement`, `avatarParts`, `badstatus`, `battleMisc`,
+`benefitResource`, `buff`, `burst`, `colosseum`, `colosseumStage`, `comeback`,
+`communicationBgm`, `communicationCategory`, `communicationRoom`, `communicationTalk`,
+`communicationThumbnail`, `darkAbility`, `darkBattleMisc`, `darkBook`, `darkBossStage`,
+`darkBuff`, `darkCard`, `darkDrawCardType`, `darkEnemy`, `darkEnemyAbility`,
+`darkEnemyDisplay`, `darkEvResource`, `darkEvStage`, `darkInitItem`, `darkItemshop`,
+`darkMainMission`, `darkMap`, `darkMapList`, `darkMaterial`, `darkMaterialRecipe`,
+`darkMisc`, `darkMissionBoard`, `darkMissionList`, `darkPlayer`, `darkPlayerParts`,
+`darkPve`, `darkPveReward`, `darkRankingReward`, `darkStageDrama`, `darkStatus`,
+`darkWorldStage`, `drawMedalType`, `drawPetType`, `emblem`, `enemy`, `enemyAttack`,
+`evCampaign`, `evMedalList`, `evResource`, `evScoreReward`, `evStage`, `guiltProb`,
+`initItem`, `keyblade`, `keybladeSubslot`, `loginBonus`, `lsiGame`, `material`, `medal`,
+`medalMisc`, `misc`, `mission`, `moogleshop`, `multi`, `multiStage`, `multiTalk`,
+`multiTimemission`, `mypageBackground`, `passive`, `passiveSetting`, `petParts`,
+`petPartsOffset`, `petRank`, `petSkill`, `player`, `pvp`, `pvpScoreReward`, `raidEnemy`,
+`raidEnemyAttack`, `raidReward`, `raidSetting`, `ranking`, `rankingPvp`, `rankingReward`,
+`reward`, `serialcodeReward`, `shop`, `shuffleskill`, `skill`, `skillExp`, `sphere`,
+`sphereArray`, `sphereMasu`, `stage`, `stageDrama`, `stamp`, `theater`, `title`,
+`tutorialMisc`, `world`, `xtresMisc`.
+
+**Le altre richieste di download**, vicine nel binario e non ancora viste in rete:
+`FUN_711df8` (`revision`, probabilmente le risorse), `FUN_712100` (`resourceIds`),
+`FUN_712770` (`notUpdate`), `FUN_715fb8` (le revisioni senza `resoMode`). L'ID d'azione
+non è una costante: sta nell'oggetto richiesta (`+0x28`) e lo imposta il costruttore.
+La scena è `SceneDownload::callDownloadAPI`, il dialogo `DownloadSelectDialog::callPrepareAPI`.
+
 **In tutte le risposte `maintenance` va omesso.** Il client controlla che il suo tipo
 JSON sia null; anche `0` vale come manutenzione attiva e porta al popup con `viewUrl`.
 Il vecchio server mandava `maintenance: 0`: era sbagliato.
@@ -962,11 +1033,17 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    del titolo servito dal nostro server**;
    g) ✅ KHUX START → contratto → data di nascita → `resourcesize` (`size: 0`) → **il
    filmato introduttivo parte**;
-   h) ❌ **dopo il filmato il client va in crash: non ha dati master né risorse**, e il
-   download non parte (vedi «Perché il crash» in §2). **Prossimo:** capire dal binario
-   il protocollo di download (dove legge l'elenco dei file e da quale host li
-   scarica), poi decidere da dove prendere i dati — è il punto in cui la fase B
-   incontra la fase D. Per le chiamate successive vale lo
+   h) ❌ **dopo il filmato il client va in crash: non ha dati master né risorse** (vedi
+   «Perché il crash» in §2);
+   i) ✅ **protocollo dei dati master ricavato** (§2, «Il protocollo di download»): le
+   revisioni in `ret` avviano il download, l'azione 27 (`/system/master`) restituisce
+   per ognuna delle 106 tabelle `url` + `key` AES + `md5`, e ogni tabella è un file JSON
+   cifrato;
+   j) **prossimo:** estrarre `info/tutorial_master` dal pacchetto di asset dell'APK
+   (`misc.mp4`) per avere un master JSON vero come modello; capire la cifratura del file
+   scaricato (AES con `key`, modalità e IV); poi servire un primo file master dal nostro
+   server. In parallelo, il download delle **risorse** (`FUN_711df8`/`FUN_712100`).
+   Per le chiamate successive vale lo
    stesso metodo: leggere `200 ERROR :<azione>`, trovare il ramo dell'azione nella
    tabella di `FUN_007c3204`, decompilare i suoi parser, implementare la risposta.
    A fine sessione: rimettere il DNS di Windows su automatico.

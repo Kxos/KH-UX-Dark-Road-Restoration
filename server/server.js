@@ -158,6 +158,7 @@ function respondStatus(res) {
 // 29/6/2021, come l'orologio del guest. Scorre da quando il server e' partito.
 const SERVER_TIME_START = Date.parse(process.env.KHUX_SERVER_TIME || '2021-05-15T12:00:00Z');
 const STARTED_AT = Date.now();
+const REVISION = Number(process.env.KHUX_REVISION || 0);
 
 function serverTime() {
   // Formato letto da FUN_007197ec: "YYYY-MM-DD HH:MM:SS".
@@ -180,12 +181,15 @@ function ret() {
     isNewDayPeriod: 0,
     isRetry: false,
     versionApp: '4.3.1',
-    versionRes: 0,
-    versionResLow: 0,
-    versionDat: 0,
-    commonVersionDat: 0,
-    darkVersionRes: 0,
-    darkVersionDat: 0,
+    // Revisioni di risorse e dati master dichiarate dal server. Il client le
+    // confronta con le sue (0 su un'installazione vergine) per decidere cosa
+    // scaricare: con tutto a 0 crede di essere aggiornato.
+    versionRes: REVISION,
+    versionResLow: REVISION,
+    versionDat: REVISION,
+    commonVersionDat: REVISION,
+    darkVersionRes: REVISION,
+    darkVersionDat: REVISION,
     functionFlags: 0,
     serverTime: serverTime(),
     // "error" (con "viewUrl") e "isCommunicationMaintenance" sono facoltativi
