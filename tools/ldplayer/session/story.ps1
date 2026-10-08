@@ -12,7 +12,9 @@ Set-Location $repo
 function OkPopup { $c = Px @(@(960, 975)); if (IsRed $c[0]) { Tap 960 975; Start-Sleep 2; return $true }; return $false }
 function Close { $null = DismissTutorial; $null = OkPopup }
 
-if (-not $FromList) { Tap 100 960; Start-Sleep 4; Close; Tap 630 400; Start-Sleep 4; Close }
+# dalla home per MENU -> Quests -> STORY: funziona anche quando un tutorial guidato
+# della home blocca il pulsante Quests (dopo la missione 5 indica MENU)
+if (-not $FromList) { Tap 1790 45; Start-Sleep 3; Tap 1740 297; Start-Sleep 10; Close; Tap 630 400; Start-Sleep 4; Close }
 Shot "${Tag}_lista" | Out-Null
 Tap 1300 690; Start-Sleep 5; Close                  # Begin
 Tap 970 1005; Start-Sleep 5; Close                  # Confirm

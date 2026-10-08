@@ -50,7 +50,8 @@ const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
   cost: 1, minCost: 1,
   attack: m.attack, maxAttack: m.maxAttack,
   defense: m.defense, maxDefense: m.maxDefense,
-  validBurst: 1, burstId: m.burstId,
+  // medaglie EXP ed evoluzione (es. Dewey ★): nessun attacco speciale
+  validBurst: m.burstId ? 1 : 0, burstId: m.burstId || 0,
   burstEnhanceCategory: [0, 0],
   groupId: 0, // nessun gruppo (con medalId: riga cercata e assente)
   sell: 10, materialExp: 10,
