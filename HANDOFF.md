@@ -37,7 +37,7 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 50).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 52).
 
 **Ripartire in tre comandi** (script di sessione in `tools/ldplayer/session/`, log del
 server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
@@ -45,10 +45,10 @@ server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
 ```powershell
 .\tools\ldplayer\session\relogin.ps1 -Tag x    # server + rientro del giocatore salvato: home
 .\tools\ldplayer\session\cycle.ps1 -Tag x      # da NUOVO giocatore (cancella il salvataggio)
-powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 50   # solo il server
+powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 52   # solo il server
 ```
 
-Alzare `-Revision` (default 50 negli script) dopo ogni modifica di `server/master_data/`.
+Alzare `-Revision` (default 52 negli script) dopo ogni modifica di `server/master_data/`.
 Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo una
 `/compact` o su un'altra macchina basta leggere questa sezione e «Dove siamo rimasti».
 
@@ -56,7 +56,7 @@ Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "50"                   # revisione dati master
+$env:KHUX_REVISION      = "52"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -1743,6 +1743,24 @@ non ha grafica** nelle risorse. Hanno grafica i displayId 1, 6, 7, 8, 17, 37, 10
 serie 5001–5086, 7001–7005, 8001–8022 (Dark Road?). Versione 6: Yellow Opera sostituito
 da Soldier (l'obiettivo «Defeat Yellow Opera» non si può completare). Anche la tabella
 `enemy` della 5.0.1 ha solo 12 nemici.
+
+Con la versione 6 la **missione 7 si gioca fino in fondo**: campo «Dark Forest: Entrance»,
+TARGET Nosy Mole ×2, `/stage/clear`, RESULTS, LEVEL UP. Poi:
+- CONGRATULATIONS andava in crash sulle medaglie premio assenti dalla tabella (90146,
+  90083): aggiunte a `medals.json` con nome e tipo dalla wiki e **grafica sostitutiva**
+  di Dewey ★ (`imageId` 90041: solo 22 medaglie hanno immagine nelle risorse);
+  `make-game-tables.js` usa `imageId` se c'è. Revisione master 52;
+- tornando alla lista, `FUN_006e94ec` apre l'intestazione `mappoi_stg<id>.bin` della
+  **missione successiva** (8 = 1050, assente) e cerca il suo bersaglio (`+0x28`, o
+  `+0x18`) nella tabella `enemy`: crash. Versione 7: intestazione 1050 copiata da 1040
+  con bersaglio Large Body (89007). Per giocarla serve la stanza «Dwarf's Cottage»
+  (probabilmente `DW_0003_00_00`, senza mappa modello).
+
+**Memoria del PC.** Dopo diversi download da 2,3 GB `Ld9BoxHeadless` (la VM di LDPlayer)
+arrivava a 30 GB di memoria impegnata: memoria virtuale libera 0,1 GB, il file di
+paging non può crescere (C: quasi pieno) e Windows rifiuta di avviare `ld.exe` («file
+di paging troppo piccolo»). Rimedio: `ldconsole quit --index 0`, `launch`, poi
+`phaseb-guest.sh 192.168.1.185` (copiato in `Documents\XuanZhi9\Misc`).
 
 **Contenuto dei forzieri, da khuxwiki.** Confrontando le mappe delle missioni 1–6 con i
 tesori della wiki (`{{TC|codice|stanza}}`): riga 81 = Attack Prize medio (`a2`), 80 =

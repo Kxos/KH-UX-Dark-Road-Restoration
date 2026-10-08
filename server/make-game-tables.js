@@ -39,7 +39,10 @@ function blank(table) {
 
 const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
   medalId: m.medalId,
-  imageId: m.medalId, thumbId: m.medalId, cutinId: m.medalId, artId: m.medalId, displayId: m.medalId,
+  // imageId nel file dei valori: grafica sostitutiva per le medaglie senza immagine nelle
+  // risorse (img/medal/Medal_L_<id>.png c'e' solo per 22 medaglie)
+  imageId: m.imageId || m.medalId, thumbId: m.imageId || m.medalId, cutinId: m.imageId || m.medalId,
+  artId: m.imageId || m.medalId, displayId: m.imageId || m.medalId,
   sortId: m.no, listSortId: m.no,
   name: m.name, flavor: m.flavor || '', advantage: m.advantage || '',
   type: 1,
