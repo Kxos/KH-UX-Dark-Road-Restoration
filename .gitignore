@@ -85,4 +85,6 @@ desktop.ini
 # ---------------------------------------------------------------------------
 server/certs/
 server/logs/
+# dati master serviti al client: sono (o derivano da) dati di Square Enix
+server/master_data/
 tools/bin/
