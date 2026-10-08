@@ -69,15 +69,28 @@ for (let lv = 0; lv <= 99; lv++) {
 }
 
 // reward: premi dei forzieri (e di altro). Tipi ricavati da FUN_00b07090: 4 monete,
-// 8 CP (Attack Prize: barra degli speciali), 9 HP. La riga 81 e' il forziere
-// arancione del Prologue (stage/mappoi_stg01010_01.bin); la quantita' e' nostra.
+// 8 CP (Attack Prize: barra degli speciali), 9 HP; 5 = materiale (id della tabella
+// material, es. 13 Spring Water: nel forziere non funziona, resta vuoto). La riga 81
+// e' il forziere arancione del Prologue (stage/mappoi_stg01010_01.bin); contenuto e
+// quantita' sono nostri.
+// KHUX_CHEST_ITEM = id dell'oggetto (0 per CP/HP/monete), KHUX_CHEST_CP = quantita'.
 const rewardIds = (process.env.KHUX_CHEST_REWARDS || '81').split(',').map(Number);
 const chestType = Number(process.env.KHUX_CHEST_TYPE || 8);
-const rewards = rewardIds.map((rewardId) => Object.assign(blank('reward'), {
-  rewardId, validReward: 1, display: [1], type: [chestType], id: [0],
-  assignSkillType: [0], assignSkillId: [0], assignSkillLv: [0],
-  num: [Number(process.env.KHUX_CHEST_CP || 10000)], odds: [10000],
-}));
+const rewardRow = (rewardId, type, id, num) => Object.assign(blank('reward'), {
+  rewardId, validReward: 1, display: [1], type: [type], id: [id],
+  assignSkillType: [0], assignSkillId: [0], assignSkillLv: [0], num: [num], odds: [10000],
+});
+const rewards = rewardIds.map((rewardId) => rewardRow(rewardId, chestType,
+  Number(process.env.KHUX_CHEST_ITEM || 0), Number(process.env.KHUX_CHEST_CP || 10000)));
+// Drop dei nemici: il client cerca in reward una riga per nemico (FUN_00e7e6e8, la
+// stessa tabella dei forzieri; senza la riga va in crash). Provato sul banco con le
+// righe 1 e = enemyId (80001, 88001, 81020): tipo 5 (materiale) fa salire il
+// contatore argento dell'HUD. Quale delle due sia letta non e' ancora accertato.
+const enemyRewardIds = (process.env.KHUX_ENEMY_REWARDS || '1,80001,88001,81020').split(',').filter(Boolean).map(Number);
+for (const rewardId of enemyRewardIds.filter((r) => !rewardIds.includes(r))) {
+  rewards.push(rewardRow(rewardId, Number(process.env.KHUX_ENEMY_DROP_TYPE || 5),
+    Number(process.env.KHUX_ENEMY_DROP_ITEM || 13), Number(process.env.KHUX_ENEMY_DROP_NUM || 1)));
+}
 
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));

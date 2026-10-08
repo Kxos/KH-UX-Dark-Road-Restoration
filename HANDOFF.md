@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟡 **il Prologue si gioca fino in fondo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Nuovo giocatore: titolo, contratto, data di nascita, master, filmato, nome, editor avatar, Union, `/user/create`, catena di avvio, **Prologue** (combattimento, forziere, speciale con swipe, boss), RESULTS e CONGRATULATIONS; poi `/raid/list`, `/party` e stop a **`/party/member/list` (azione 86)**. Vedi «Dove siamo rimasti» qui sotto |
+| **Test sul dispositivo** | 🟡 **il Prologue si gioca fino in fondo** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Nuovo giocatore: titolo, contratto, data di nascita, master, filmato, nome, editor avatar, Union, `/user/create`, catena di avvio, **Prologue** (combattimento, forziere, speciale con swipe, boss), RESULTS (obiettivi spuntati) e CONGRATULATIONS (sacchetti aperti); poi altre dieci API e **la storia riparte** (dialogo con Chirithy). Vedi «Dove siamo rimasti» qui sotto |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 | **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
@@ -43,7 +43,7 @@ Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` +
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "22"                   # revisione dati master
+$env:KHUX_REVISION      = "25"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -58,7 +58,7 @@ node server\make-master-stub.js --force          # 106 tabelle minime + misc
 node server\import-master.js D:\Progetto_Restauro_KH_UX\apk501\extra_files `
   avatarParts initItem misc stage world stageDrama enemy enemyAttack keyblade skill buff `
   burst battleMisc badstatus tutorialMisc medalMisc material title theater raidEnemy raidEnemyAttack
-node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # medal, player (lv 0-99, HP 3000), reward (81)
+node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # medal, player (lv 0-99, HP 3000), reward (81 forziere CP; 1, 80001, 88001, 81020 drop dei nemici)
 ```
 
 `extra_files` = le 55 tabelle della 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»;
@@ -135,8 +135,9 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    3000, deck Donald A / Goofy A / Yuna, forziere, speciale con swipe, boss),
    `/stage/clear`, RESULTS, CONGRATULATIONS, `/user/point`, `/user/stone`,
    `PUT /tutorial/status {phase 995}`, `/system/push/regist`, `/campaign`, `/raid/list`,
-   `/party`; **fermo a `GET /party/member/list` (azione 86, corpo
-   `{"getDetail":1,"platformType":1}`)**, «200 ERROR :86». Si procede come sempre:
+   `/party`, `/party/member/list` e altre otto API (§2, «Dopo il Prologue»): obiettivi
+   spuntati, sacchetti dei nemici, e **la storia riparte con il dialogo di Chirithy**.
+   Prossimo: proseguire il dialogo sul banco e gestire le API che seguono. Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
@@ -1417,6 +1418,50 @@ number 2}]`, `getEnemyDropItems`, `getTreasures`, `clearMissionIds [1,2]`,
 swipe, boss) e i risultati, in circa 1 minuto dopo `bench_flow.ps1`.
 
 Prossimo: `/party/member/list` e le schermate che seguono il Prologue.
+
+### Dopo il Prologue: obiettivi, sacchetti e la storia che riparte — 8 ottobre 2026, sera
+
+**Obiettivi in RESULTS.** Il client spunta (medaglia Mickey gialla) gli id che il
+server rimanda in `clearMissionIds` di `/stage/clear`: con `[]` nessuna spunta, anche
+a missioni compiute. Il corpo della richiesta riporta le missioni compiute
+(`clearMissionIds: [1,2]`), **tranne quelle sui Lux** (`submissionRequire` 29, «Collect
+%d or more Lux», soglia in `submissionNum`): le valuta il server su `getPoint.lux` e
+restituisce i Lux in `getLux` (la barra Lux di RESULTS, prima ferma a 0). Ora tutte e
+tre si spuntano e CONGRATULATIONS mostra i premi «Objective Complete!» (Avatar Coin,
+Mythril Shard: `submissionRewardType` 14 e 5). **Il corpo di `/stage/clear` non
+contiene `stageId`**: lo stage è quello di `/stage/start` (prima `firstClearFlag` e
+`lastClearStageId` non venivano mai impostati). Con `firstClearFlag` 1 il percorso dopo
+lo stage cambia (Sphere Board: `/user/sphere/reset`, `/user/sphere/check`).
+
+**I contatori in alto nell'HUD** (oro, argento, gemma, stella). L'**argento** conta i
+**sacchetti** lasciati dai nemici: un sacchetto è un drop di un nemico, raccolto in
+battaglia senza sapere cosa contiene; in CONGRATULATIONS i sacchetti si aprono da soli,
+uno alla volta, e rivelano l'oggetto (indicazione dell'utente, confermata sul banco).
+Servono `userEnemyDropItems[]` in `/stage/start` (`FUN_007a11c8`: `uniqueEnemyId`
+= ultimo numero del record del nemico nella mappa, `dropItemTypeIds` [5], `stealType`)
+e una riga di `reward` per il nemico: `FUN_00e7e6e8` la cerca con `FUN_00f04580`
+(tabella interna 7 = `reward`, la stessa dei forzieri) e **va in crash** (fault 0x10)
+se manca. Funziona con le righe 1 e 80001/88001/81020 (= `enemyId`); quale delle due
+sia letta non è accertato. Tipo 5 = materiale (13 Spring Water). L'**oro** resta a 0:
+il forziere del Prologue dà CP (tipo 8, nostro); con tipo 5 il forziere si apre vuoto,
+quindi i forzieri vogliono un altro tipo di oggetto (2/3/6/7/10 da provare).
+
+**API nuove** (schemi in `api_responses_ww431.json`, tutte provate sul banco):
+
+| Azione | Percorso | Risposta |
+|---|---|---|
+| 86 | `GET /party/member/list` | `userParty` (`FUN_00779574`) + `partyUserList[]` (`FUN_00785400`; con `getDetail` letta due volte, deve essere un array) |
+| 62 | `POST /user/sphere/reset` | `userData.userPoint` |
+| 61 | `POST /user/sphere/check/170119` | `userSphere` (`FUN_00777978` modo 1); con `checkTypes` contenente 3, `closeEventSphereBoardIds[]` |
+| 120 | `GET /raid/reward/151101` | `userData.userPoint`, `raidRewards[]`, `guiltBurst*UserMedalIds[]` |
+| 241 | `GET /user/notice` | `raidNotice.{isSelfRaid,isOthersRaid}` |
+| 105 | `GET /party/lux_up_time` | `luxUp.{magnification,available,restrictionKind}` |
+| 169 | `GET /stage/achievements` | `stageAchievement` (numeratori/denominatori, `pvpRanking.userPvpRanking`) |
+| 250 | `GET /stage/pickup` | `pisckupStages[]` (sic) |
+
+Dopo `/stage/pickup` e `/stage/160310` **la storia riparte**: dialogo con Chirithy
+(«Pretty scary stuff, huh?…»). `bench_prologue.ps1` salva ora una schermata per ogni
+passo dei risultati (`<Shot>_r1..r6`).
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

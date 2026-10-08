@@ -149,9 +149,10 @@ function route(url) {
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
-  if (p === '/user/point') return 'userpoint';
+  if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
   if (p === '/campaign') return 'campaign';
   if (p.startsWith('/raid/list')) return 'raidlist';
+  if (p.startsWith('/raid/reward')) return 'raidreward';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -576,7 +577,12 @@ function schemaResponse(apiPath) {
 const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
 
 // Il giocatore creato con POST /user/create (solo in memoria, per ora).
-const player = { name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null };
+const player = { name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null, clearMissions: {} };
+
+// Missioni dello stage completate finora (id 1-3, al massimo 3).
+function stageClearMissions(stageId) {
+  return player.clearMissions[stageId] || [];
+}
 
 function respondUserCreate(res, req) {
   // POST /user/create (azione 253), alla fine del tutorial iniziale (nome, data di
@@ -629,6 +635,22 @@ function stageTreasures(stageId) {
   return STAGE_TREASURES[stageId] || [];
 }
 
+// Drop dei nemici: userEnemyDropItems[] (FUN_007a11c8: uniqueEnemyId, dropItemTypeIds
+// int[] <= 4, stealType), come per i forzieri. uniqueEnemyId = ultimo numero del
+// record del nemico nella mappa (x, y, enemyId, 1, 1, 1, 1, id). Il contenuto e' la
+// riga di reward del nemico (make-game-tables.js). Sul banco: con tipo 5 (materiale) il
+// nemico lascia un sacchetto argento, contato dall'HUD in alto; in CONGRATULATIONS i
+// sacchetti si aprono e rivelano l'oggetto. Prologue: id 1-17 (mappoi_stg01010_0N).
+const ENEMY_DROP_IDS = {
+  1010: (process.env.KHUX_ENEMY_DROP_IDS || '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17')
+    .split(',').filter(Boolean).map(Number),
+};
+const ENEMY_DROP_TYPE = Number(process.env.KHUX_ENEMY_DROP_TYPE || 5);
+
+function stageEnemyDrops(stageId) {
+  return (ENEMY_DROP_IDS[stageId] || []).map((id) => ({ uniqueEnemyId: id, dropItemTypeIds: [ENEMY_DROP_TYPE], stealType: 0 }));
+}
+
 // userData.userPoint, letto da FUN_0078b230 sia in GET /user sia in POST /stage/start.
 function userPointData(now) {
   return {
@@ -663,6 +685,8 @@ function respondStageStart(res, req) {
   // userKeybladeId uint64, clearMissionIds int[] <= 3, stageSkip, eventId,
   // highScore uint64).
   const now = serverTime();
+  // /stage/clear non riporta lo stage: vale quello avviato qui
+  player.currentStageId = req?.stageId ?? START_STAGE_ID;
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
@@ -670,13 +694,13 @@ function respondStageStart(res, req) {
       stageId: req?.stageId ?? START_STAGE_ID,
       supportUserId: req?.supportUserId ?? 0,
       userKeybladeId: req?.userKeybladeId ?? USER_KEYBLADE_ID,
-      clearMissionIds: [],
+      clearMissionIds: stageClearMissions(req?.stageId ?? START_STAGE_ID),
       stageSkip: req?.stageSkip ?? 0,
       eventId: req?.eventId ?? 0,
       highScore: 0,
     },
     userRandomEnemies: [],
-    userEnemyDropItems: [],
+    userEnemyDropItems: stageEnemyDrops(req?.stageId ?? START_STAGE_ID),
     userTreasures: stageTreasures(req?.stageId ?? START_STAGE_ID),
     campaigns: [],
     luxMagnifications: { campaign: 0, party: 0 },
@@ -744,8 +768,23 @@ function respondStageClear(res, req) {
   // (userData.stageResumption) e FUN_007a5dec (guiltBurstFirstUserMedalIds[],
   // guiltBurstMaxUserMedalIds[]).
   const now = serverTime();
-  const first = req?.stageId && player.lastClearStageId !== req.stageId;
-  if (req?.stageId) player.lastClearStageId = req.stageId;
+  // il corpo non porta stageId (solo l'esito): lo stage e' quello di /stage/start
+  const stageId = req?.stageId ?? player.currentStageId ?? START_STAGE_ID;
+  const first = player.lastClearStageId !== stageId;
+  player.lastClearStageId = stageId;
+  // clearMissionIds: le missioni compiute in questa partita, come le riporta il corpo
+  // della richiesta; il client le spunta nella schermata RESULTS. Vuoto = nessuna spunta.
+  // Le missioni sui Lux (submissionRequire 29, «Collect %d or more Lux») il client non
+  // le riporta: le valuta il server sui Lux della partita (getPoint.lux), che
+  // restituisce in getLux (la barra Lux di RESULTS).
+  const lux = Number(req?.getPoint?.lux) || 0;
+  const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
+  const stage = masterRows('stage').find((r) => r.stageId === stageId);
+  (stage?.submissionRequire || []).forEach((kind, i) => {
+    if (kind === 29 && lux >= (stage.submissionNum?.[i] ?? Infinity) && !cleared.includes(i + 1)) cleared.push(i + 1);
+  });
+  cleared.sort((a, b) => a - b).splice(3);
+  player.clearMissions[stageId] = [...new Set([...stageClearMissions(stageId), ...cleared])].sort((a, b) => a - b).slice(0, 3);
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData(), stageResumption: stageResumptionData() },
@@ -753,11 +792,11 @@ function respondStageClear(res, req) {
     highScoreReward: [], clearTimeMissionIds: [], pvpPointReward: [],
     firstClearFlag: first ? 1 : 0,
     stageOpenNum: 1,
-    clearMissionIds: [],
+    clearMissionIds: cleared,
     userPvpRanking: { rank: 0, class: 0, point: 0 },
     status: 0,
     userMaterials: [],
-    getLux: 0,
+    getLux: lux, // uint64
     // stage normale: anche FUN_00794094 (pet.userPetParts[]) e FUN_00797a84
     // (emblemIds[]), entrambi obbligatori (senza: «200 ERROR :116»)
     pet: { userPetParts: [] },
@@ -879,7 +918,7 @@ function respondStageList(res) {
   // newStageId, luxRank, openRankingId (uint).
   send(res, 200, {
     ret: ret(),
-    stories: [{ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] }],
+    stories: [{ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: stageClearMissions(START_STAGE_ID) }],
     newStageId: START_STAGE_ID,
     luxRank: 0,
     openRankingId: 0,
@@ -977,7 +1016,18 @@ function handler(scheme) {
           raids: [],
         });
       }
-      // GET /user/point (azione 2): solo userData.userPoint (FUN_0078b230)
+      // GET /raid/reward/151101 (azione 120): userData.userPoint (FUN_0078b230),
+      // raidRewards[] (FUN_0079cac0) e i due array di FUN_007a5dec. Nessun premio.
+      if (kind === 'raidreward') {
+        return send(res, 200, {
+          ret: ret(),
+          userData: { userPoint: userPointData(serverTime()) },
+          raidRewards: [],
+          guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+        });
+      }
+      // GET /user/point (azione 2) e POST /user/sphere/reset (azione 62): solo
+      // userData.userPoint (FUN_0078b230)
       if (kind === 'userpoint') return send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) } });
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
