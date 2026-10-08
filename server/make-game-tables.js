@@ -60,9 +60,11 @@ const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
 // Avatar_Side_0N) che non sono in nessun pacchetto: crash (FUN_00b157c8).
 const hp = Number(process.env.KHUX_PLAYER_HP || 3000);
 const players = [];
-for (let lv = 1; lv <= 99; lv++) {
+// anche il livello 0: la barra dell'EXP dopo /stage/clear (FUN_006ea1b4) legge le righe
+// lv e lv+1 della tabella e va in crash se una manca.
+for (let lv = 0; lv <= 99; lv++) {
   players.push(Object.assign(blank('player'), {
-    lv, needExp: (lv - 1) * 100, luxMedal: 0, ap: 10 + lv, cost: 5 + lv, hp: hp + (lv - 1) * 20, rewardId: 0,
+    lv, needExp: Math.max(lv - 1, 0) * 100, luxMedal: 0, ap: 10 + lv, cost: 5 + lv, hp: hp + Math.max(lv - 1, 0) * 20, rewardId: 0,
   }));
 }
 
@@ -70,10 +72,11 @@ for (let lv = 1; lv <= 99; lv++) {
 // 8 CP (Attack Prize: barra degli speciali), 9 HP. La riga 81 e' il forziere
 // arancione del Prologue (stage/mappoi_stg01010_01.bin); la quantita' e' nostra.
 const rewardIds = (process.env.KHUX_CHEST_REWARDS || '81').split(',').map(Number);
+const chestType = Number(process.env.KHUX_CHEST_TYPE || 8);
 const rewards = rewardIds.map((rewardId) => Object.assign(blank('reward'), {
-  rewardId, validReward: 1, display: [1], type: [8], id: [0],
+  rewardId, validReward: 1, display: [1], type: [chestType], id: [0],
   assignSkillType: [0], assignSkillId: [0], assignSkillLv: [0],
-  num: [Number(process.env.KHUX_CHEST_CP || 100)], odds: [10000],
+  num: [Number(process.env.KHUX_CHEST_CP || 10000)], odds: [10000],
 }));
 
 fs.mkdirSync(OUT, { recursive: true });

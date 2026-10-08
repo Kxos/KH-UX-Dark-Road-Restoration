@@ -1,4 +1,4 @@
-param([string]$Shot = 'prologue')
+param([string]$Shot = 'prologue', [string]$Out)
 # Prologue (stage 1010), da subito dopo bench_flow.ps1 fino al forziere arancione.
 # Sequenza di tocchi misurata sul banco (la mappa e la telecamera sono fisse):
 # Shadow sulla scalinata, piazza della fontana, gruppo di 3 Shadow, scalinata alta,
@@ -17,4 +17,38 @@ Tap 1020 200; Start-Sleep 4          # scalinata alta
 Shot "${Shot}_prima" | Out-Null
 Tap 970 220; Start-Sleep 5           # forziere arancione
 Shot "${Shot}_forziere" | Out-Null
+# HUD (ritratto, SPECIAL, HP) prima e dopo il forziere, affiancati
+Add-Type -AssemblyName System.Drawing
+$cmp = New-Object Drawing.Bitmap 1000, 240
+$g = [Drawing.Graphics]::FromImage($cmp)
+$i = 0
+foreach ($n in "${Shot}_prima", "${Shot}_forziere") {
+    $b = [Drawing.Bitmap]::FromFile("$SHOTS\$n.png")
+    $g.DrawImage($b, (New-Object Drawing.Rectangle ($i * 500), 0, 500, 240), (New-Object Drawing.Rectangle 0, 0, 500, 240), [Drawing.GraphicsUnit]::Pixel)
+    $b.Dispose(); $i++
+}
+$cmp.Save("$SHOTS\${Shot}_hud.png"); $g.Dispose(); $cmp.Dispose()
+"confronto HUD: $SHOTS\${Shot}_hud.png"
+if (-not $Out) { Status; return }
+
+# Boss (Mega-Shadow + 9 Shadow): ci si avvicina e si toccano i nemici finche' il
+# server riceve /stage/clear; poi si toccano le schermate dei risultati.
+Tap 1340 270; Start-Sleep 3
+Tap 1340 270; Start-Sleep 6
+$from = LogLines $Out
+# speciale di Donald (Thundaga, colpisce tutti): swipe rapido in diagonale sulla
+# medaglia, provato sul banco (SPECIAL 3 -> 1, sciame sconfitto)
+Swipe 130 790 400 520 150; Start-Sleep 4
+$pts = @(@(1010, 460), @(860, 330), @(1180, 500), @(680, 680), @(870, 720), @(1150, 740), @(990, 880), @(1290, 640), @(1060, 330))
+$sw = [Diagnostics.Stopwatch]::StartNew(); $i = 0
+while (-not (Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -match 'POST /stage/clear' })) {
+    if ($sw.Elapsed.TotalSeconds -gt 240) { Write-Host '  boss: nessun /stage/clear dopo 240 s'; break }
+    $p = $pts[$i % $pts.Count]; Tap $p[0] $p[1]; $i++; Start-Sleep -Milliseconds 600
+}
+Write-Host ("  {0,-28} {1,5:N1} s" -f 'POST /stage/clear', $sw.Elapsed.TotalSeconds)
+Start-Sleep 6
+Shot "${Shot}_clear" | Out-Null
+foreach ($k in 1..6) { Tap 960 950; Start-Sleep 3 }   # RESULTS, CONGRATULATIONS, ...
+Shot "${Shot}_dopo" | Out-Null
+LastRequests $Out 6
 Status

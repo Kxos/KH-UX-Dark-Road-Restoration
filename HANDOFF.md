@@ -25,13 +25,13 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 18).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 22).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "18"                   # revisione dati master
+$env:KHUX_REVISION      = "22"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -1339,7 +1339,47 @@ un quarto. L'HP di partenza è ora 3000 (segnaposto, `KHUX_PLAYER_HP`).
 `userPvpRanking {rank,class,point}`, `status`, `userMaterials[]`, `getLux`,
 `guiltBurst*UserMedalIds[]`) — **non ancora provate sul banco**.
 
-Prossimo: i forzieri, poi lo speciale con lo swipe contro il boss e la fine dello stage.
+### Il Prologue completato — 8 ottobre 2026, notte
+
+**Forziere: funziona.** L'id univoco è l'ultimo numero del record della mappa (**18**)
+e la riga di `reward` è il terzo (**81**): `FUN_00e60f28` legge la sezione `+0x28` di
+`mappoi_stg01010_01.bin` (record da 0x14 byte: x, y, reward, tipo, id). Le prove
+precedenti fallivano perché la barra non si muoveva in modo visibile con 100–300 CP:
+con il tipo 9 (HP, 500) l'HP passa da 2781 a 3000, con il tipo 8 e 10.000 CP lo SPECIAL
+sale da 2 a 3. **10.000 CP è un nostro valore** (circa una tacca intera); quello vero non
+è sulla wiki. Il client manda poi in `/stage/clear` `getTreasures: [18]`.
+
+**Speciale: swipe rapido in diagonale** sulla medaglia, da (130,790) a (400,520) in
+150 ms: il Thundaga di Donald colpisce tutto lo sciame del boss (SPECIAL 3 → 1). Gesti
+più lenti (300–400 ms) o verticali non funzionano. Con lo swipe il boss cade in 7 s;
+senza, a soli tocchi, il giocatore muore una volta e il client continua con
+`POST /stage/continue` (gestita). Nel tutorial la morte mostra un avviso (indicazione
+dell'utente), non ancora catturato.
+
+**`POST /stage/clear` (azione 116) completa.** Oltre ai campi già elencati, per uno
+stage normale il parser `FUN_007817a0` pretende, in quest'ordine: `pet.userPetParts[]`
+(`FUN_00794094`), `emblemIds[]` (`FUN_00797a84`), poi l'inventario aggiornato:
+`userMaterials[]`, `userMedals[]`, `userSkills[]`, `userTitles[]`, `userKeyblades[]`,
+`userDecks[]`, `userAvatarParts[]`, `subslotMaxNum`/`userKeybladeSubslots[]`
+(`FUN_00798a64` modo 1), infine `getLux`. Il corpo della richiesta riporta
+l'esito: `getPoint {exp 17, money 55, lux 77}`, `getMaterials [{materialId 13,
+number 2}]`, `getEnemyDropItems`, `getTreasures`, `clearMissionIds [1,2]`,
+`enemyDeadNumber 14`, `maximumDamage`, `burst`, `conditions`.
+
+**Dopo la fine stage**: «QUEST COMPLETE!», **RESULTS** (Prologue, i tre obiettivi),
+**CONGRATULATIONS!** (50 Munny, Spring Water ×2), poi:
+- `GET /user/point` (azione 2): solo `userData.userPoint` — gestita;
+- `GET /user/stone`, `PUT /tutorial/status {"phase":995}`, `POST /system/push/regist`;
+- la barra dell'EXP (`FUN_006ea1b4`) legge le righe `lv` e `lv+1` della tabella
+  `player` (indice 0x5b): senza la riga del **livello 0** va in crash. Ora
+  `make-game-tables.js` genera i livelli 0–99 (revisione master 22);
+- `GET /campaign` (azione 143): `campaigns`, array di int — gestita;
+- `GET /raid/list/181221` (azione 240): **non ancora gestita**, «200 ERROR :240».
+
+`tools/ldplayer/bench_prologue.ps1 -Out <log>` gioca ora tutto il Prologue (forziere,
+swipe, boss) e i risultati, in circa 1 minuto dopo `bench_flow.ps1`.
+
+Prossimo: `/raid/list` e le schermate che seguono il Prologue.
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

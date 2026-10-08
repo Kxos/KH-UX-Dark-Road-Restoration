@@ -149,6 +149,8 @@ function route(url) {
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
+  if (p === '/user/point') return 'userpoint';
+  if (p === '/campaign') return 'campaign';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -613,10 +615,13 @@ function deckStats() {
 // legge la riga di `reward` indicata dalla mappa (stage/mappoi_stg<id>_NN.bin
 // dell'addnl); dei suoi premi tiene quelli il cui tipo compare, nella stessa
 // posizione, in dropItemTypeIds. Tipi (FUN_00b07090): 4 monete, 8 CP (Attack Prize,
-// barra degli speciali), 9 HP. Prologue (1010): forziere arancione id 17, reward 81.
+// barra degli speciali), 9 HP. Prologue (1010): forziere arancione id 18, reward 81
+// (record 948,1778,81,14,18 della sezione +0x28 di mappoi_stg01010_01.bin, letto da
+// FUN_00e60f28: x, y, reward, tipo, id).
+const CHEST_TYPE = Number(process.env.KHUX_CHEST_TYPE || 8);
 const STAGE_TREASURES = {
-  1010: (process.env.KHUX_TREASURE_IDS || '17').split(',')
-    .map((id) => ({ uniqueTreasureId: Number(id), dropItemTypeIds: [8] })),
+  1010: (process.env.KHUX_TREASURE_IDS || '18').split(',')
+    .map((id) => ({ uniqueTreasureId: Number(id), dropItemTypeIds: [CHEST_TYPE] })),
 };
 
 function stageTreasures(stageId) {
@@ -752,6 +757,23 @@ function respondStageClear(res, req) {
     status: 0,
     userMaterials: [],
     getLux: 0,
+    // stage normale: anche FUN_00794094 (pet.userPetParts[]) e FUN_00797a84
+    // (emblemIds[]), entrambi obbligatori (senza: «200 ERROR :116»)
+    pet: { userPetParts: [] },
+    emblemIds: [],
+    // poi, tutti obbligatori e in quest'ordine, l'inventario aggiornato:
+    // userMaterials (FUN_007a25e8), userMedals (FUN_0078da18), userSkills
+    // (FUN_0078e934), userTitles (FUN_007a2ed0), userKeyblades (FUN_0078cca8),
+    // userDecks (FUN_00792bf4), userAvatarParts (FUN_007a1d14), subslot
+    // (FUN_00798a64 modo 1), infine getLux
+    userMedals: userMedalsData(now),
+    userSkills: [],
+    userTitles: [],
+    userKeyblades: userKeybladesData(),
+    userDecks: userDecksData(),
+    userAvatarParts: [],
+    subslotMaxNum: 0,
+    userKeybladeSubslots: [],
     guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
   });
 }
@@ -790,23 +812,24 @@ function levelHp(lv = 1) {
   return row ? row.hp : 0;
 }
 
+// userMedals[], elemento letto da FUN_0078d608 (userSkills al massimo 2,
+// userShuffleSkills).
+function userMedalsData(now) {
+  return startingInventory().medals.map((m) => ({
+    userMedalId: m.userMedalId, // uint64
+    medalId: m.medalId,
+    number: 1, // uint
+    level: m.level, exp: 0,
+    attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
+    lock: 0, upperCost: 0, guiltFactor: 0, // guiltFactor: uint
+    userSkills: [], userShuffleSkills: [],
+    getDatetime: now,
+  }));
+}
+
 function respondUserMedal(res) {
-  // GET /user/medal (azione 15): userMedals[], elemento letto da FUN_0078d608
-  // (userSkills al massimo 2, userShuffleSkills).
-  const now = serverTime();
-  send(res, 200, {
-    ret: ret(),
-    userMedals: startingInventory().medals.map((m) => ({
-      userMedalId: m.userMedalId, // uint64
-      medalId: m.medalId,
-      number: 1, // uint
-      level: m.level, exp: 0,
-      attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
-      lock: 0, upperCost: 0, guiltFactor: 0, // guiltFactor: uint
-      userSkills: [], userShuffleSkills: [],
-      getDatetime: now,
-    })),
-  });
+  // GET /user/medal (azione 15)
+  send(res, 200, { ret: ret(), userMedals: userMedalsData(serverTime()) });
 }
 
 function deckMedalIds() {
@@ -836,15 +859,17 @@ function respondUserKeyblade(res) {
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData() });
 }
 
+// userDecks[], elemento letto da FUN_00792a8c.
+function userDecksData() {
+  return [{
+    userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
+    deckMedals: deckMedalIds(), petBaseSlotMedal: 0,
+  }];
+}
+
 function respondUserDeck(res) {
-  // GET /user/deck (azione 12): userDecks[], elemento letto da FUN_00792a8c.
-  send(res, 200, {
-    ret: ret(),
-    userDecks: [{
-      userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
-      deckMedals: deckMedalIds(), petBaseSlotMedal: 0,
-    }],
-  });
+  // GET /user/deck (azione 12)
+  send(res, 200, { ret: ret(), userDecks: userDecksData() });
 }
 
 function respondStageList(res) {
@@ -934,6 +959,10 @@ function handler(scheme) {
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
+      // GET /user/point (azione 2): solo userData.userPoint (FUN_0078b230)
+      // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
+      if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: [] });
+      if (kind === 'userpoint') return send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) } });
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
