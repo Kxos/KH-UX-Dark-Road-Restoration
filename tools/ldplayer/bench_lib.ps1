@@ -77,6 +77,17 @@ function Step([int]$x, [int]$y, [string]$what, [int[][]]$pts, [scriptblock]$cond
     $false
 }
 
+# Dialoghi della storia: se c'e' SKIP si salta sempre (regola dell'utente). Firma:
+# testo SKIP chiaro in alto a sinistra (155,50) e riquadro del dialogo (247,190,99)
+# in basso (500,1000). Attende fino a $timeout secondi un dialogo; $true se l'ha saltato.
+function SkipDialog([double]$timeout = 10) {
+    if (-not (WaitFor @(@(155, 50), @(500, 1000)) {
+            param($c) $c[0][0] -gt 150 -and $c[0][1] -gt 150 -and (IsNear $c[1] @(247, 190, 99)) } $timeout 'dialogo')) {
+        return $false
+    }
+    Tap 155 50; Start-Sleep 2; $true
+}
+
 # Attende un pulsante rosso nel punto (x, y) e lo tocca.
 function TapRed([int]$x, [int]$y, [string]$what, [double]$timeout = 60) {
     if (WaitFor @(, @($x, $y)) { param($c) IsRed $c[0] } $timeout $what) { Tap $x $y; return $true }
