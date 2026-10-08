@@ -27,8 +27,11 @@ $ok = (Step 40 1020 'contratto' @(@(1080, 1000), @(600, 990), @(960, 500)) {
         param($c) (IsRed $c[0]) -and $c[1][2] -gt 120 -and $c[1][0] -lt 40 }) -and
       (Step 820 715 'conferma data' @(@(1080, 815), @(600, 815)) {
         param($c) (IsRed $c[0]) -and (IsOrange $c[1]) }) -and
-      (Step 1080 815 'download' @(@(1080, 740), @(600, 740)) {
-        param($c) (IsRed $c[0]) -and (IsOrange $c[1]) }) -and
+      # con misc 116 (/system/coppa) diverso da 0 il client scarica durante il filmato,
+      # senza il dialogo «Download»: si accettano entrambi
+      (Step 1080 815 'download o filmato' @(@(1080, 740), @(600, 740), @(155, 50), @(1080, 1000)) {
+        param($c) ((IsRed $c[0]) -and (IsOrange $c[1])) -or
+                  ($c[2][0] -gt 110 -and $c[2][1] -gt 110 -and (IsDark $c[3])) }) -and
       (Step 1080 740 'filmato' @(@(155, 50), @(1080, 1000)) {
         param($c) $c[0][0] -gt 110 -and $c[0][1] -gt 110 -and (IsDark $c[1]) }) -and
       (Step 155 50 'nome' @(@(850, 1010), @(1080, 1000), @(155, 50)) {

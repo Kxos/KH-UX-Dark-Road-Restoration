@@ -91,4 +91,6 @@ server/master_data/
 server/resource_data/
 # salvataggio del giocatore (dati personali di gioco)
 server/save/
+# binario costruito da tools/ldplayer/armtrace/build_vmread.py
+tools/ldplayer/armtrace/vmread
 tools/bin/
