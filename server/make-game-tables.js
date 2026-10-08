@@ -70,13 +70,32 @@ if (medals.length && !medals.some((m) => m.medalId === 1)) {
 // 3000: oltre, l'HUD allunga l'arco dell'HP e carica texture (Avatar_Circle_01/06,
 // Avatar_Side_0N) che non sono in nessun pacchetto: crash (FUN_00b157c8).
 const hp = Number(process.env.KHUX_PLAYER_HP || 3000);
+
+// Tabelle vere di una versione precedente, se disponibili: righe binarie di
+// thethiny/KHUx-Server (data/<tabella>_raw.json), decodificate con
+// recon/tools/raw_master.py in <tabella>_dec.json. Fuori dal repository.
+const REAL_DIR = process.env.KHUX_REAL_MASTER_DIR || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny';
+const realTable = (name) => {
+  try { return JSON.parse(fs.readFileSync(path.join(REAL_DIR, name + '_dec.json'), 'utf8')); } catch { return null; }
+};
+
 const players = [];
-// anche il livello 0: la barra dell'EXP dopo /stage/clear (FUN_006ea1b4) legge le righe
-// lv e lv+1 della tabella e va in crash se una manca.
-for (let lv = 0; lv <= 99; lv++) {
-  players.push(Object.assign(blank('player'), {
-    lv, needExp: Math.max(lv - 1, 0) * 100, luxMedal: 0, ap: 10 + lv, cost: 5 + lv, hp: hp + Math.max(lv - 1, 0) * 20, rewardId: 0,
-  }));
+const realPlayers = realTable('player');
+if (realPlayers) {
+  // livelli veri (soglie di Lux cumulative, AP, costo del deck, Lux medal); l'HP resta
+  // al massimo a KHUX_PLAYER_HP (sopra 3000 l'HUD va in crash, vedi sopra).
+  // rewardId a 0: le righe di premio dei livelli non sono nella nostra tabella reward.
+  for (const r of realPlayers) players.push(Object.assign(blank('player'), r, { hp: Math.min(r.hp, hp), rewardId: 0 }));
+  // anche il livello 0 (vedi sotto)
+  players.unshift(Object.assign(blank('player'), players[0], { lv: 0, needExp: 0 }));
+} else {
+  // anche il livello 0: la barra dell'EXP dopo /stage/clear (FUN_006ea1b4) legge le righe
+  // lv e lv+1 della tabella e va in crash se una manca.
+  for (let lv = 0; lv <= 99; lv++) {
+    players.push(Object.assign(blank('player'), {
+      lv, needExp: Math.max(lv - 1, 0) * 100, luxMedal: 0, ap: 10 + lv, cost: 5 + lv, hp: hp + Math.max(lv - 1, 0) * 20, rewardId: 0,
+    }));
+  }
 }
 
 // reward: premi dei forzieri e dei nemici. Una riga ha fino a 4 premi (type/id/num/
@@ -119,13 +138,22 @@ try {
 }
 const chestRewards = new Set(Object.values(poi).flatMap((s) => s.chests.map((c) => c.reward)));
 const enemyRewards = new Set([1, ...Object.values(poi).flatMap((s) => s.enemies.map((e) => e.reward))]);
+const realRewards = new Map((realTable('reward') || []).map((r) => [r.rewardId, r]));
 const rewards = [];
 for (const id of [...new Set([...chestRewards, ...enemyRewards])].sort((a, b) => a - b)) {
   // posizione 0 il premio del nemico, posizione 1 quello del forziere (se la riga e'
   // di entrambi, come la 1): server.js manda a ciascuno il tipo nella sua posizione
   const prizes = [];
   if (enemyRewards.has(id)) prizes.push(ENEMY_PRIZE);
-  if (chestRewards.has(id) && CHEST_PRIZES[id] !== null) prizes.push(CHEST_PRIZES[id] || CHEST_DEFAULT);
+  // forzieri: la riga vera se c'e' ed e' valida (es. 80 = CP 15.000, 81 = CP 30.000,
+  // 90 = HP 1.400; la 1 non e' valida: barile vuoto), con premi di tipo 4/8/9 soltanto
+  const real = realRewards.get(id);
+  const realChest = real && real.validReward > 0 && !enemyRewards.has(id)
+    ? real.type.slice(0, real.validReward).map((t, i) => ({ type: t, id: real.id[i], num: real.num[i] }))
+      .filter((p) => [4, 8, 9].includes(p.type))
+    : null;
+  if (chestRewards.has(id) && realChest && realChest.length) prizes.push(...realChest);
+  else if (chestRewards.has(id) && CHEST_PRIZES[id] !== null) prizes.push(CHEST_PRIZES[id] || CHEST_DEFAULT);
   rewards.push(rewardRow(id, prizes));
 }
 

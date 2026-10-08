@@ -37,7 +37,7 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 52).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 53).
 
 **Ripartire in tre comandi** (script di sessione in `tools/ldplayer/session/`, log del
 server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
@@ -45,10 +45,10 @@ server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
 ```powershell
 .\tools\ldplayer\session\relogin.ps1 -Tag x    # server + rientro del giocatore salvato: home
 .\tools\ldplayer\session\cycle.ps1 -Tag x      # da NUOVO giocatore (cancella il salvataggio)
-powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 52   # solo il server
+powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 53   # solo il server
 ```
 
-Alzare `-Revision` (default 52 negli script) dopo ogni modifica di `server/master_data/`.
+Alzare `-Revision` (default 53 negli script) dopo ogni modifica di `server/master_data/`.
 Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo una
 `/compact` o su un'altra macchina basta leggere questa sezione e «Dove siamo rimasti».
 
@@ -56,7 +56,7 @@ Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "52"                   # revisione dati master
+$env:KHUX_REVISION      = "53"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -1755,6 +1755,30 @@ TARGET Nosy Mole ×2, `/stage/clear`, RESULTS, LEVEL UP. Poi:
   `+0x18`) nella tabella `enemy`: crash. Versione 7: intestazione 1050 copiata da 1040
   con bersaglio Large Body (89007). Per giocarla serve la stanza «Dwarf's Cottage»
   (probabilmente `DW_0003_00_00`, senza mappa modello).
+
+**Ricerca online dei dati originali (9 ottobre 2026).** Nessun dump pubblico dei
+`mappoi` né delle tabelle master complete del periodo live. Fonti utili:
+- **thethiny/KHUxTools** e **thethiny/KHUx-Server** (GitHub, attivi nel 2026): l'autore
+  dichiara di avere `misc.mp4` v1.0.1/v1.2.3 e file `r/` scaricati dal CDN (2016–17).
+  `KHUx-Server/data/*_raw.json` ha righe **binarie** delle master di una versione
+  precedente: `stage` 1.140 righe (1.020 B), `enemy` 665 (1.100 B), `medal` 522 (1.300 B),
+  `reward` 1.457 (136 B), `player` 301 (28 B). `recon/tools/raw_master.py` le decodifica
+  con lo schema della 4.3.1: **reward** e **player** tornano (needExp a 32 bit);
+  stage/enemy/medal hanno un'altra struttura (da ricavare). Scaricati in
+  `D:\Progetto_Restauro_KH_UX\external\thethiny` (fuori dal repository).
+- Righe vere che confermano le deduzioni: reward 1 non valida (barile vuoto), 80 = CP
+  15.000, 81 = CP 30.000, 90 = HP 1.400; 10100 = una medaglia a caso tra 11012/12011/13011/
+  11021 (il primo nemico di ogni mappa lascia una medaglia); player: soglie di Lux vere
+  (LV 2 = 729), AP 16+, costo 42+, HP 3000+. `make-game-tables.js` usa ora righe dei
+  forzieri e livelli veri (HP tenuto a 3000), revisione 53.
+- Grafica: **Roboloid/khux** (GitHub, ~2,5 GB di PNG: 1.930 medaglie, parti avatar e pet,
+  113 frame di nemici, sfondi), **luxenvulpies/KHUX_Medal_Website** (1.881 medaglie),
+  dump della wiki su Internet Archive (`wiki-www.khuxwiki.com_w-20240119`, immagini 9,8
+  GB). Sono PNG esportati, non LWF.
+- IPA WW 1.0.1–4.4.0 e JP 1.0.2–4.4.1 (`khux-ww-IPAs`, `khux-jp-IPAs`), OBB JP 5.0.1
+  (`khux-5.0.1-jp`): senza `mappoi` probabilmente (le storie arrivavano dal CDN).
+- Da fare: contattare thethiny (r/ del CDN, master complete) e Roboloid; appello su
+  r/KHUx per chi ha ancora `files/r/` di una 4.x.
 
 **Memoria del PC.** Dopo diversi download da 2,3 GB `Ld9BoxHeadless` (la VM di LDPlayer)
 arrivava a 30 GB di memoria impegnata: memoria virtuale libera 0,1 GB, il file di
