@@ -627,6 +627,16 @@ try {
 } catch {
   console.log(`[save] nessun salvataggio in ${SAVE_FILE}: nuovo giocatore`);
 }
+// Salvataggi di prima degli Avatar Coin: si accreditano una volta quelli degli obiettivi
+// gia' compiuti
+if (player.created && player.spherePoint === undefined) {
+  player.spherePoint = 0;
+  for (const [sid, done] of Object.entries(player.clearMissions || {})) {
+    const st = masterRows('stage').find((r) => r.stageId === Number(sid));
+    for (const n of done) if (st?.submissionRewardType?.[n - 1] === 14) player.spherePoint += st.submissionItemNum[n - 1];
+  }
+  console.log(`[save] Avatar Coin degli obiettivi gia' compiuti: ${player.spherePoint}`);
+}
 
 function savePlayer() {
   fs.mkdirSync(path.dirname(SAVE_FILE), { recursive: true });
@@ -783,7 +793,8 @@ function userPointData(now) {
   return {
     money: player.money || 0, // munny
     lux: player.lux, totalLux: player.lux, // lux e totalLux: uint64
-    spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
+    spherePoint: player.spherePoint || 0, // Avatar Coin
+    kizunaPoint: 0, raidPoint: 0,
     // In battaglia il client mostra maxHp e colora l'HP in rapporto a hp/baseHp
     // (provato con 111/222/333): per un giocatore integro coincidono, dal livello 1
     // della tabella player.
@@ -864,14 +875,16 @@ function respondUser(res) {
 
 // Inventario del giocatore per tipo di oggetto, come lo usano le tabelle master
 // (clearGetItemType, submissionRewardType, reward.type): 2 jewel (userStone.freeStone),
-// 4 munny (userPoint.money), 5 materiale (userMaterials, id della tabella material).
-// Gli altri tipi (es. 14 negli obiettivi del Prologue) non sono ancora ricavati: si
-// annotano nel log.
+// 4 munny (userPoint.money), 5 materiale (userMaterials, id della tabella material),
+// 14 Avatar Coin (userPoint.spherePoint: gli Avatar Boards sono le «sphere» del client,
+// /user/sphere/buy sblocca i nodi, masu; CONGRATULATIONS: «Avatar Coin x6»).
+// Gli altri tipi (es. 3) non sono ancora ricavati: si annotano nel log.
 function grantItem(type, id, num) {
   num = Number(num) || 0;
   if (!type || !num) return;
   if (type === 2) player.freeStone = (player.freeStone || 0) + num;
   else if (type === 4) player.money = (player.money || 0) + num;
+  else if (type === 14) player.spherePoint = (player.spherePoint || 0) + num;
   else if (type === 5 && id) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
