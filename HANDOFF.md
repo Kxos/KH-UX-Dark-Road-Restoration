@@ -1672,11 +1672,22 @@ obiettivi compiuti per la prima volta). Risposte: `userPoint.money`, `GET /user/
 `firstClearFlag` ora vale «stage mai completato» (`stageScores`), e
 `lastClearStageId` avanza solo.
 
-Aperti: tipo 14 = **Avatar Coin** (CONGRATULATIONS: «Avatar Coin x6»), tipo 3 (premi di
-1030–1050) non ricavato: per ora finiscono solo nel log (`[inventario]`). Il contenuto
-dei forzieri è nostro (CP 10.000, HP 500, munny 100). Il forziere della riga 1 (premio
-del nemico in posizione 0, del forziere in posizione 1) non è ancora stato aperto sul
-banco: da verificare che la regola «stessa posizione» regga.
+Tipo 14 = **Avatar Coin** = `userPoint.spherePoint` (gli Avatar Boards sono le «sphere»
+del client). Tipo 3 (premi di 1030–1050) non ancora ricavato: finisce solo nel log
+(`[inventario]`).
+
+**Contenuto dei forzieri, da khuxwiki.** Confrontando le mappe delle missioni 1–6 con i
+tesori della wiki (`{{TC|codice|stanza}}`): riga 81 = Attack Prize medio (`a2`), 80 =
+Attack Prize piccolo (`a1` o barile `ba`), 90 = barile con HP (`bh`), 1 = barile vuoto
+(`b`; è anche la riga predefinita dei nemici). Le quantità sono nostre (CP 10.000 e
+5.000, HP 500). `check-stage-data.js` confronta anche ogni stage con la wiki (jewel,
+Avatar Coin degli obiettivi, numero di tesori).
+
+**khuxwiki in locale.** `recon/tools/wiki_dump.py` scarica il wikitesto via API (per
+template, es. `InfoQuestKHUX`: 6.544 pagine; o `--all 0,10,14`: tutta la wiki, circa
+27.000 pagine) in `D:\Progetto_Restauro_KH_UX\wiki\` (fuori dal repository).
+`recon/tools/wiki_quests.py` ne ricava `quests.json`: 978 missioni della storia (1–979)
+con obiettivi e premi, jewel, premi di fine missione, tesori e nemici per stanza.
 
 
 ### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026
