@@ -1,12 +1,23 @@
-param([string]$Out, [string]$Shot = 'khuxstart', [int]$Wait = 25)
-# Avvio da zero e KHUX START; poi screenshot e ultime richieste al server.
-$ld = 'D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9'
-$pkg = 'com.square_enix.android_googleplay.khuxww'
-& "$ld\ld.exe" -s 0 "logcat -c; rm -f /data/tombstones/*; am force-stop $pkg; monkey -p $pkg -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1"
-Start-Sleep 75
-& "$ld\ld.exe" -s 0 "input tap 200 1020"
-Start-Sleep $Wait
-& "$ld\ld.exe" -s 0 "screencap -p /sdcard/Pictures/$Shot.png"
-Get-Content $Out | Where-Object { $_ -notmatch '\[dns\]|dns:dirottata|tls:sni|content-type' } |
-    Select-String -Pattern '#\d+ |body\(decifrato|\[master\]' | Select-Object -Last 14 | ForEach-Object { $_.Line.Substring(0, [Math]::Min(220, $_.Line.Length)) }
-"pid: " + (& "$ld\ld.exe" -s 0 "pidof $pkg")
+param([string]$Out, [string]$Shot = 'khuxstart', [double]$Settle = 8)
+# Giocatore esistente (server con KHUX_NEWCOMER=0): lancio e KHUX START, ritoccato
+# finche' il server ($Out) riceve POST /khux/login; poi, quando il log resta fermo
+# per $Settle secondi, screenshot e ultime richieste. Nessuna attesa fissa.
+. "$PSScriptRoot\bench_lib.ps1"
+$sw = [Diagnostics.Stopwatch]::StartNew()
+$from = LogLines $Out
+Sh "logcat -c; rm -f /data/tombstones/*; am force-stop $PKG; monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1" | Out-Null
+while (-not (Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -match 'POST /khux/login' })) {
+    if ($sw.Elapsed.TotalSeconds -gt 120) { Write-Host '  KHUX START: nessun /khux/login dopo 120 s'; break }
+    Tap 40 1020; Start-Sleep -Seconds 2
+}
+Write-Host ("  {0,-28} {1,5:N1} s" -f 'POST /khux/login', $sw.Elapsed.TotalSeconds)
+$n = LogLines $Out; $quiet = [Diagnostics.Stopwatch]::StartNew()
+while ($quiet.Elapsed.TotalSeconds -lt $Settle -and $sw.Elapsed.TotalSeconds -lt 300) {
+    Start-Sleep -Milliseconds 500
+    $m = LogLines $Out
+    if ($m -ne $n) { $n = $m; $quiet.Restart() }
+}
+Shot $Shot | Out-Null
+Write-Host ("totale {0:N0} s" -f $sw.Elapsed.TotalSeconds)
+LastRequests $Out 8
+Status
