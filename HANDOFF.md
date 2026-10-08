@@ -1673,8 +1673,20 @@ obiettivi compiuti per la prima volta). Risposte: `userPoint.money`, `GET /user/
 `lastClearStageId` avanza solo.
 
 Tipo 14 = **Avatar Coin** = `userPoint.spherePoint` (gli Avatar Boards sono le «sphere»
-del client). Tipo 3 (premi di 1030–1050) non ancora ricavato: finisce solo nel log
-(`[inventario]`).
+del client).
+
+Tipo 3 = **medaglia** (id della tabella `medal`): confrontando la tabella `stage` con la
+wiki (`namedal`) 90041 = Dewey ★, 90146 = Huey & Dewey & Louie 6★, 90083 = Fairy Godmother
+3★, 90025 = Huey 5★, 90084 = Yen Sid 4★, 90094 = Flora 4★. Le medaglie ricevute vanno in
+`player.medals` (`userMedalId` da 101) e in `userMedals`. Solo 22 medaglie hanno grafica
+nelle risorse servite (`img/medal/Medal_L_<id>.png`); per ora la tabella ha Dewey ★
+(`medals.json`), e `check-stage-data.js` segnala come errore ogni medaglia premio assente.
+
+**Missioni 3–6 giocate** con `tools/ldplayer/session/story.ps1` (MENU → Quests → STORY,
+Begin, Confirm, amico, Start, `-Seek`, risultati): dopo la 3 la battaglia scriptata con
+Darkside, dopo la 5 il tutorial della home che indica MENU. Il server ora parte staccato
+(`Win32_Process.Create`): con `Start-Process` moriva insieme allo script che lo lanciava, e
+il client restava sul caricamento fino a «6 ERROR :143».
 
 **Contenuto dei forzieri, da khuxwiki.** Confrontando le mappe delle missioni 1–6 con i
 tesori della wiki (`{{TC|codice|stanza}}`): riga 81 = Attack Prize medio (`a2`), 80 =
