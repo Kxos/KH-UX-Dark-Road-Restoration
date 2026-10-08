@@ -37,9 +37,22 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 22).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 46).
 
-**Server**, da `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
+**Ripartire in tre comandi** (script di sessione in `tools/ldplayer/session/`, log del
+server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
+
+```powershell
+.\tools\ldplayer\session\relogin.ps1 -Tag x    # server + rientro del giocatore salvato: home
+.\tools\ldplayer\session\cycle.ps1 -Tag x      # da NUOVO giocatore (cancella il salvataggio)
+powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 46   # solo il server
+```
+
+Alzare `-Revision` (default 46 negli script) dopo ogni modifica di `server/master_data/`.
+Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo una
+`/compact` o su un'altra macchina basta leggere questa sezione e «Dove siamo rimasti».
+
+**Server a mano**, da `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
@@ -77,6 +90,11 @@ python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee54:0xe6
 `main.76` + `patch.87` + `addnl.mp4`, fatti con `recon/tools/resource_split.py`;
 `resource_data\3\index\misc.png` con `recon/tools/resource_merge.py` dall'`aliud.png` 5.0.1 e
 dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.py`.)
+
+**Crash del client**: `tools/ldplayer/tombstone.ps1` (indirizzi ARM sospetti dal
+tombstone) e, quando non bastano, **`tools/ldplayer/armtrace/`** (registri ARM al momento
+del crash: `capture.ps1 -Arm`, provocare il crash, `capture.ps1 -Collect`, `-Release`;
+vedi il suo README). `vmread` si ricostruisce con `build_vmread.py`.
 
 **Script del banco** (`tools/ldplayer/`, `-Out` = file di log del server):
 - `bench_lib.ps1`: funzioni comuni, **senza attese fisse**. Lo schermo si legge dentro il
