@@ -43,7 +43,7 @@ Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` +
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "38"                   # revisione dati master
+$env:KHUX_REVISION      = "46"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -138,9 +138,10 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    `/party`, `/party/member/list` e altre otto API (§2, «Dopo il Prologue»): obiettivi
    spuntati, sacchetti dei nemici, il dialogo di Chirithy (saltato con SKIP) e **la
    schermata principale** (§2, «La schermata principale»), con lo sfondo. Il giocatore si
-   salva e al rientro va dritto alla home (§2, «Salvataggio del giocatore»). Prossimo: il
-   tutorial della home (freccia «New!» su Quests) e il secondo stage; il crash dopo un
-   aggiornamento dei master per chi rientra. Si procede come sempre:
+   salva e al rientro va dritto alla home (§2, «Salvataggio del giocatore»), anche dopo
+   un aggiornamento dei master (§2, «Il crash dopo l'aggiornamento dei master»). Quests e
+   la missione 2 fino a «Select a Keyblade» (§2, «Quests»). Prossimo: Confirm e
+   `/stage/start` della missione 2. Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
@@ -1528,9 +1529,8 @@ png (sotto) + lwf (sopra, l'acqua della fontana) la home mostra la piazza di Day
 Town; l'immagine è più larga dello schermo.
 
 **Aggiornamento dei master per chi rientra**: il client chiede il download («2,16 GB»,
-ma scarica solo i master) e poi va nel crash noto a `0x12c1ee0`; al riavvio entra nella
-home. Annunciare in `resourcesize` solo la dimensione dei master non evita il crash: la
-dimensione resta quella intera. **Aperto.**
+ma scarica solo i master). Il crash che seguiva (`0x12c1ee0`) è **risolto**: era la voce
+116 di `misc` in `/system/coppa` (§2, «Il crash dopo l'aggiornamento dei master»).
 
 ### Quests, la lista delle missioni e la missione 2 — 8 ottobre 2026, notte
 
@@ -1559,7 +1559,25 @@ dimensione resta quella intera. **Aperto.**
 - Si arriva a **«Select a Keyblade»** (deck, Starlight, Confirm). Prossimo: Confirm e
   `/stage/start` della missione 2.
 
-### Il crash dopo l'aggiornamento dei master — aperto
+### Il crash dopo l'aggiornamento dei master — risolto l'8 ottobre 2026, notte
+
+**Causa**: la voce **116 della mappa `misc` di `/system/coppa`**, che mandavamo a 0. A
+fine download `SceneDownload::update` (`FUN_00cfbef8`, slot 113 della vtable di
+`SceneDownload`) chiama `FUN_00cfb268`, che confronta il campo `+0x3bc` della scena (0 dal
+costruttore) con la voce 116 di quella mappa (oggetto di sessione `+0x3a0`, chiave 0x74):
+se sono uguali chiama un metodo di `cocos2d::Node` sul nodo `+0x3a8`, che nella
+`SceneDownload` dei soli master non viene mai creato (memoria non inizializzata: i due
+float in `x0`). Con 116 = 1 il client prende l'altra strada (`FUN_00cfbd78`), scarica i
+master e prosegue fino alla home. Verificato due volte (revisioni 45 e 46). Il nuovo
+giocatore non passa da qui.
+
+**Trovato con `tools/ldplayer/armtrace`** (vedi il suo README): processo fermato
+nell'istante del crash sospendendo `tombstoned`, memoria letta con `process_vm_readv`
+(LIAPP chiude il gioco se si apre `/proc/<pid>/mem`), registri ARM emulati letti dallo
+stato di houdini: `pc` = `0x12c1ee4`, **`x30` = `0xcfb310`**. Le note che seguono sono
+l'indagine statica precedente.
+
+Indagine statica (prima dello strumento):
 
 Per chi rientra, quando la revisione dei master cambia: `resourcesize` (5 richieste, due
 con revisioni 0 e `resoMode` 0/1 per la scelta della risoluzione), dialogo «Download»,
@@ -1576,10 +1594,7 @@ Al riavvio si entra nella home. Ricostruito:
   richieste con revisioni 0), il contenuto dei master (crash anche con master identici e
   solo la revisione cambiata), `darkVersionRes`, lo stato del tutorial (`isFinished` 1), i
   layout del titolo e del download (tutti presenti).
-- Il percorso del nuovo giocatore usa lo stesso dialogo e lo stesso download senza crash:
-  la differenza è la ricreazione della `SceneTitle` dopo il download. Prossimo passo: uno
-  strumento dinamico (tracciare le chiamate ARM sotto houdini) per sapere quale etichetta
-  viene aggiornata.
+- Il percorso del nuovo giocatore usa lo stesso dialogo e lo stesso download senza crash.
 
 **Banco**: `DismissTutorial` (finestre con OK, anche a più pagine), `GameWait` (attesa in
 tempo di gioco: con una finestra aperta il gioco è fermo), `FindTarget` (indicatore rosa

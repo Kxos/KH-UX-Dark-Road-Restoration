@@ -272,6 +272,14 @@ function respondCoppa(res) {
   for (const k of ['116', '804', '900', '901', '902', '903', '904', '905', '906', '907']) {
     misc[k] = 0;
   }
+  // misc 116 non puo' essere 0. A fine download SceneDownload::update (FUN_00cfbef8 ->
+  // FUN_00cfb268) confronta il suo campo +0x3bc (0 dal costruttore) con la voce 116 di
+  // questa mappa (oggetto di sessione +0x3a0, chiave 0x74): se sono uguali chiama un
+  // metodo sul nodo +0x3a8, che nella SceneDownload dei soli master non viene mai creato
+  // (memoria non inizializzata): crash a 0x12c1ee0 dopo ogni aggiornamento dei master
+  // per chi rientra. Trovato con tools/ldplayer/armtrace (x30 = 0xcfb310). Con un valore
+  // diverso il client prende l'altra strada (FUN_00cfbd78) e prosegue verso la home.
+  misc['116'] = Number(process.env.KHUX_COPPA_116 || 1);
   send(res, 200, { ret: ret(), misc });
 }
 
