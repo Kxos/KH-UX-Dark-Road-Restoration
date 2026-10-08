@@ -43,7 +43,7 @@ Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` +
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "29"                   # revisione dati master
+$env:KHUX_REVISION      = "38"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -1531,6 +1531,55 @@ Town; l'immagine è più larga dello schermo.
 ma scarica solo i master) e poi va nel crash noto a `0x12c1ee0`; al riavvio entra nella
 home. Annunciare in `resourcesize` solo la dimensione dei master non evita il crash: la
 dimensione resta quella intera. **Aperto.**
+
+### Quests, la lista delle missioni e la missione 2 — 8 ottobre 2026, notte
+
+- **Schermata Quests** (`SceneAdventureSelect`, `FUN_00d97410`): `userDetail.lastClearStageId`
+  è il **numero di missione** (campo `id` della tabella `stage`: Prologue = 1), non lo
+  `stageId` (1010). Il client lo confronta con `misc` 106 (130) per sbloccare il quarto
+  pulsante (Colosseum); con 1010 risultava sbloccato e cercava il testo `text/ui/102850008`,
+  assente: crash. Ora: STORY, Special (missione 6), Events (14), Union Cross (24),
+  Colosseum (130). Tutte mostrano «COMPLETE» perché `/stage/achievements` ha numeratori e
+  denominatori a 0 (da sistemare).
+- **Testi**: `FUN_00719f18` legge `text/<categoria>/<id>.txt` (categorie `ui`, `drama`,
+  `audio`) dal `misc` dell'APK (2.398 testi `ui`) e dalle risorse scaricate (588): solo 2 id
+  costanti mancano in entrambi (102850008, 106260102).
+- **Lista STORY** (`/stage/160310`): gli stage completati (`player.stageScores`: record di
+  Lux, missioni spuntate, `playStatus` 2) e il primo non completato (`newStageId`). La
+  missione 2 «Combat 101» (1013) compare come NEW.
+- **«Begin»**: tre crash risolti in fila. `userDetail.maxMedal` 0 → popup
+  `PopupNormal_MedalOver` (layout assente): ora 300, segnaposto. `maxDeckCost` 0 →
+  `PopupNormal_Cost_Over` (assente): ora dal campo `cost` di `player`. Medaglia mancante →
+  ripiego sulla **medaglia 1** (`FUN_00eb577c`): `make-game-tables.js` aggiunge la riga 1.
+  Catena di evoluzione delle **keyblade** (`FUN_008c28fc`, tabella interna 0x44): la 5.0.1
+  ha solo alcuni livelli (1000, 1040, 1110, 1215) ma `evolveId` punta a quelli tolti
+  (1010): `import-master.js` collega ogni riga alla successiva presente. Poi
+  `GET /stage/support/list` (azione 111): `supportUsers[]` con il giocatore stesso
+  (elemento `FUN_0078a5c4` con `userMedal`, `userSkills`, `userAvatar`).
+- Si arriva a **«Select a Keyblade»** (deck, Starlight, Confirm). Prossimo: Confirm e
+  `/stage/start` della missione 2.
+
+### Il crash dopo l'aggiornamento dei master — aperto
+
+Per chi rientra, quando la revisione dei master cambia: `resourcesize` (5 richieste, due
+con revisioni 0 e `resoMode` 0/1 per la scelta della risoluzione), dialogo «Download»,
+download dei 106 master (5,7% → 100%), icona di caricamento, crash senza altre richieste.
+Al riavvio si entra nella home. Ricostruito:
+- il percorso dopo il download (lambda di `SceneTitle::khuxDownloadResolutionSelect`,
+  trovate con le vtable delle `std::function`): `0xc3f418` → `FUN_00a9b018` (master) →
+  `0xc3fcd4` → `FUN_00a9d198` → `0xc3fb74` → `FUN_00b9556c` (schermata di transizione) →
+  `0xc3f770` → `FUN_00c3f88c(1,1)` (nuova `SceneTitle`) → `0xc3f994`;
+- il crash è `Label::setString` (`FUN_012afc74`) su un'etichetta già liberata: dai
+  registri ARM emulati (struttura puntata da `r13` nel tombstone) `x0` =
+  `0x4268000043680000`, cioè due float (232.0, 58.0) al posto del puntatore.
+- **Escluso** (provato sul banco): la dimensione annunciata (intera, solo master, 0 alle
+  richieste con revisioni 0), il contenuto dei master (crash anche con master identici e
+  solo la revisione cambiata), `darkVersionRes`, lo stato del tutorial (`isFinished` 1), i
+  layout del titolo e del download (tutti presenti).
+- Il percorso del nuovo giocatore usa lo stesso dialogo e lo stesso download senza crash:
+  la differenza è la ricreazione della `SceneTitle` dopo il download. Prossimo passo: uno
+  strumento dinamico (tracciare le chiamate ARM sotto houdini) per sapere quale etichetta
+  viene aggiornata.
 
 **Banco**: `DismissTutorial` (finestre con OK, anche a più pagine), `GameWait` (attesa in
 tempo di gioco: con una finestra aperta il gioco è fermo), `FindTarget` (indicatore rosa

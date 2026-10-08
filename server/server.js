@@ -154,6 +154,7 @@ function route(url) {
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
   if (p === '/user/support') return 'usersupport';
+  if (p === '/stage/support/list') return 'supportlist';
   if (p === '/user/avatar' || p === '/user/avatar/all' || p === '/user/avatar/parts') return 'useravatar';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
@@ -282,10 +283,13 @@ function respondResourceSize(res, req) {
   // Con 0 il client salta il download e, senza dati master, va in crash dopo il
   // filmato introduttivo. KHUX_RESOURCE_SIZE serve a provocare il download per
   // scoprirne il protocollo.
-  // Annunciare solo la dimensione dei master quando il client ha gia' le risorse
-  // (resourceRevision) fa comparire «1,19 MB», ma dopo il download la scena va in crash
-  // a 0x12c1ee0 (provato l'8 ottobre 2026): la dimensione resta quella intera.
-  send(res, 200, { ret: ret(), size: Number(process.env.KHUX_RESOURCE_SIZE || 0) });
+  // Se il client dichiara master e risorse gia' aggiornati la dimensione e' 0. (Il «0
+  // manda in crash» del 7 ottobre riguardava un client senza master, revisione 0.)
+  // Il crash dopo un aggiornamento dei master per chi rientra (0x12c1ee0) NON dipende da
+  // qui: vedi HANDOFF, «Il crash dopo l'aggiornamento dei master».
+  const upToDate = Number(req?.masterRevision) >= REVISION
+    && Number(req?.resourceRevision) >= latestResourceVersion();
+  send(res, 200, { ret: ret(), size: upToDate ? 0 : Number(process.env.KHUX_RESOURCE_SIZE || 0) });
 }
 
 // ---------------------------------------------------------------------------
@@ -824,17 +828,31 @@ function respondUser(res) {
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
 }
 
+function stageNumber(stageId) {
+  if (!stageId) return 0;
+  return masterRows('stage').find((r) => r.stageId === stageId)?.id ?? 0;
+}
+
 // userData.userDetail (FUN_0078babc), in GET /user e POST /stage/clear.
 function userDetailData() {
   return {
     level: luxRankFor(player.lux), exp: 0, luxRank: luxRankFor(player.lux), luxGetRatio: 0,
-    titleLeftId: 0, titleRightId: 0, titlePlateId: 0, maxDeckCost: 0,
+    // maxDeckCost: con 0 «Begin» apre il popup di costo superato (PopupNormal_Cost_Over,
+    // assente dalle risorse): crash. Dal campo cost della tabella player.
+    titleLeftId: 0, titleRightId: 0, titlePlateId: 0,
+    maxDeckCost: masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.cost ?? 10,
     playTimezones: [], // int[], al massimo 6
     playFrequently: 0,
     partyId: 0, // uint64
-    unionId: player.unionId, maxMedal: 0, mvpCount: 0,
+    // maxMedal: medaglie possedibili. Con 0 (e 3 medaglie) «Begin» apre il popup di
+    // limite superato (PopupNormal_MedalOver.json, assente dalle risorse): crash.
+    // 300 e' un segnaposto, il valore iniziale vero non e' noto.
+    unionId: player.unionId, maxMedal: Number(process.env.KHUX_MAX_MEDAL || 300), mvpCount: 0,
     equipCoordinateNo: player.avatar ? AVATAR_COORDINATE : 0, // coordinato indossato (userAvatars)
-    lastClearStageId: player.lastClearStageId || 0,
+    // numero della missione (campo id della tabella stage: Prologue = 1), non lo stageId
+    // (1010): la schermata Quests (FUN_00d97410) lo confronta con misc 106 (130) per
+    // sbloccare il quarto pulsante, e da sbloccato cerca un testo che non c'e' (crash).
+    lastClearStageId: stageNumber(player.lastClearStageId),
     isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
 }
@@ -878,6 +896,9 @@ function respondStageClear(res, req) {
   });
   cleared.sort((a, b) => a - b).splice(3);
   player.clearMissions[stageId] = [...new Set([...stageClearMissions(stageId), ...cleared])].sort((a, b) => a - b).slice(0, 3);
+  // stage completato, con il record di Lux (Lux Record nell'elenco delle missioni)
+  player.stageScores = player.stageScores || {};
+  player.stageScores[stageId] = Math.max(player.stageScores[stageId] || 0, lux);
   savePlayer();
   send(res, 200, {
     ret: ret(),
@@ -1006,14 +1027,34 @@ function respondUserDeck(res) {
   send(res, 200, { ret: ret(), userDecks: userDecksData() });
 }
 
+const STAGE_CLEARED = Number(process.env.KHUX_STAGE_CLEARED || 2);
+
 function respondStageList(res) {
   // GET /stage/160310 (azione 108, FUN_0079f1fc): stories[] (elemento FUN_0079e794:
   // stageId, useAp, score uint64, playStatus, clearMissionIds int[] <= 3),
   // newStageId, luxRank, openRankingId (uint).
+  // Gli stage completati (player.stageScores: stageId -> record di Lux) e poi il primo
+  // non ancora completato, nell'ordine del numero di missione (campo id della tabella
+  // stage). playStatus: 0 = nuovo, STAGE_CLEARED (2, da verificare) = completato.
+  const stages = masterRows('stage').filter((r) => r.stageKind === 1).sort((a, b) => a.id - b.id);
+  const scores = player.stageScores || {};
+  const stories = [];
+  let next = null;
+  for (const r of stages) {
+    if (r.stageId in scores) {
+      stories.push({ stageId: r.stageId, useAp: r.useAp, score: scores[r.stageId], playStatus: STAGE_CLEARED,
+        clearMissionIds: stageClearMissions(r.stageId) });
+    } else {
+      next = r;
+      stories.push({ stageId: r.stageId, useAp: r.useAp, score: 0, playStatus: 0, clearMissionIds: [] });
+      break;
+    }
+  }
+  if (!stories.length) stories.push({ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] });
   send(res, 200, {
     ret: ret(),
-    stories: [{ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: stageClearMissions(START_STAGE_ID) }],
-    newStageId: START_STAGE_ID,
+    stories,
+    newStageId: next ? next.stageId : stories[stories.length - 1].stageId,
     luxRank: 0,
     openRankingId: 0,
   });
@@ -1124,6 +1165,23 @@ function handler(scheme) {
             userMedalId: m.userMedalId, medalId: m.medalId, lastActionDatetime: serverTime(),
           },
         });
+      }
+      // GET /stage/support/list (azione 111, FUN_0078aa3c "supportUsers"): prima della
+      // scelta del deck. Con la lista vuota il client va in crash sulle statistiche di una
+      // medaglia senza riga (FUN_00721a24). Elemento FUN_0078a5c4, con userMedal
+      // (FUN_0078dd60 -> FUN_0078d608), userSkills[] e userAvatar (FUN_0078c55c). Un
+      // supporto: il giocatore stesso, con la prima medaglia del deck.
+      if (kind === 'supportlist') {
+        const now = serverTime();
+        const medal = userMedalsData(now)[0];
+        const supportUsers = medal ? [{
+          supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
+          titleLeftId: 0, titleRightId: 0, titlePlateId: 0, addKizunaPoint: 0,
+          keybladeId: startingInventory().keybladeId, partyId: 0, isParty: 0, isGuilt: 0, isLinkThumbnail: 0,
+          userMedal: medal, userSkills: [], userAvatar: userAvatarData(),
+          lastActionDatetime: now, earnLuxRank: 0,
+        }] : [];
+        return send(res, 200, { ret: ret(), supportUsers });
       }
       // GET /user/avatar (21), /user/avatar/all (22), /user/avatar/parts (23)
       if (kind === 'useravatar') {

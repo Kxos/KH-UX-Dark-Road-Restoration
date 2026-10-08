@@ -52,9 +52,16 @@ const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
   defense: m.defense, maxDefense: m.maxDefense,
   validBurst: 1, burstId: m.burstId,
   burstEnhanceCategory: [0, 0],
-  groupId: m.medalId,
+  groupId: 0, // nessun gruppo (con medalId: riga cercata e assente)
   sell: 10, materialExp: 10,
 }));
+
+// Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1
+// (FUN_00eb577c); senza riga va in crash (es. «Begin» su una missione). Segnaposto:
+// copia della prima medaglia del file dei valori, con medalId 1.
+if (medals.length && !medals.some((m) => m.medalId === 1)) {
+  medals.push(Object.assign({}, medals[0], { medalId: 1 }));
+}
 
 // 3000: oltre, l'HUD allunga l'arco dell'HP e carica texture (Avatar_Circle_01/06,
 // Avatar_Side_0N) che non sono in nessun pacchetto: crash (FUN_00b157c8).
