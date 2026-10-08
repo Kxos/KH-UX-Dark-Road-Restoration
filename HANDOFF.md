@@ -552,6 +552,40 @@ dall'inizializzatore statico `FUN_5d823c`. Nel loader l'array sta a `0x20a0b80`,
 `sphereArray`, `sphereMasu`, `stage`, `stageDrama`, `stamp`, `theater`, `title`,
 `tutorialMisc`, `world`, `xtresMisc`.
 
+### Il formato dei file master — verificato sul banco l'8 ottobre 2026
+
+**Trasporto.** Un file master è una normale risposta HTTP con Content-Type
+`application/octet-stream` (o `application/encoded-json`). `RESTClient::onRespond` la
+passa a `FUN_00771b3c`:
+
+```
+corpo → curl_easy_unescape → base64Decode → AES-256-CBC (key, IV a zero, PKCS#7) → JSON
+```
+
+- `FUN_013ab1cc` è `curl_easy_unescape` (sta nel blocco di libcurl, stessa firma);
+- la decifratura è `FUN_0083ba6c` → `FUN_0083b858`: OpenSSL `AES_set_decrypt_key(256)` +
+  `AES_cbc_encrypt`, IV a zero, padding PKCS#7. **La chiave sono i 32 byte della stringa
+  `key`** della risposta all'azione 27, così come sono (`FUN_0083b9dc` li copia);
+- è lo stesso schema del canale di sessione, solo nella direzione opposta;
+- `md5` = **MD5 esadecimale del corpo HTTP così come arriva** (cioè del Base64). Con
+  questa regola il client accetta il file, quindi l'ipotesi regge.
+
+`FUN_0083c024` è solo MD5 in esadecimale (serve anche alla chiave dell'URL cifrato di
+`/system/status`). `FUN_00eccf04` è il downloader generico dei file (dimensione + MD5 del
+corpo): probabilmente quello delle **risorse**.
+
+**Prova riuscita.** Il server serve le tabelle che trova in `server/master_data/<nome>.json`
+(cartella non versionata), con chiave stabile derivata dal nome. Con un solo `misc.json`
+contenente `[]` e `KHUX_REVISION=1`: azione 27 → `GET /master/misc` → «Complete», nessun
+errore, e nel guest compare **`files/m/m065.jpg`** (`misc` è la tabella 65 del loader).
+Il file in cache è a sua volta un **record BGAD** (cifratura 3, compressione zlib): il
+client ricifra le tabelle nel suo formato, leggibile con `bgad.py`.
+
+**Cosa manca:** il **contenuto** delle tabelle. `[]` passa il trasporto, ma il JSON vero
+di ogni tabella va ricostruito dai parser `master::` (fase C ha nomi e ordine dei campi,
+non i tipi né la forma: array di oggetti? oggetto con chiavi?). Il prossimo passo è
+decompilare il parser di una tabella piccola e servirne una versione minima valida.
+
 ### I pacchetti di asset dell'APK — decifrati l'8 ottobre 2026
 
 Gli asset dell'APK (`misc.mp4`, `extra.mp4`, `aliud.png`, …) non sono video né immagini:
@@ -1091,7 +1125,10 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    dipendere anche da loro). Nomi attesi: `main.72.com.square_enix.android_googleplay.khuxww.obb`
    e `patch.72.….obb`, MD5 `610e8ecd0187b5e9eb93963c8cd9d6d3` e
    `f4dd5699e567e0af8de7846703bc2ce5`. **Restano da cercare presso le comunità di
-   preservazione** (Restoration Union e simili). Intanto: usare
+   preservazione** (Restoration Union e simili);
+   l) ✅ **formato di trasporto dei file master verificato sul banco**: il client scarica
+   e salva una tabella servita da noi (§2, «Il formato dei file master»).
+   **Prossimo:** la forma del JSON dentro le tabelle, partendo da una piccola. Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso
    ChaCha8). In parallelo, il download delle **risorse** (`FUN_711df8`/`FUN_712100`).

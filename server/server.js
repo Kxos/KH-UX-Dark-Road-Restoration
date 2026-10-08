@@ -136,6 +136,8 @@ function route(url) {
   if (p.includes('system/login')) return 'login';
   if (p.includes('system/coppa')) return 'coppa';
   if (p.includes('system/resourcesize')) return 'resourcesize';
+  if (p.includes('system/master')) return 'master';
+  if (p.startsWith('/master/')) return 'masterfile';
   if (p.includes('session')) return 'session';
   if (p.includes('login/token')) return 'bootstrap';
   if (p.includes('bootstrap') || p.includes('startup') || p.includes('init')) return 'bootstrap';
@@ -249,6 +251,65 @@ function respondResourceSize(res) {
   send(res, 200, { ret: ret(), size: Number(process.env.KHUX_RESOURCE_SIZE || 0) });
 }
 
+// ---------------------------------------------------------------------------
+// Dati master
+//
+// GET /system/master/<data> (azione 27, FUN_00eba4bc) restituisce per ogni
+// tabella {revision, url, key, md5}. Il client scarica url e lo decodifica come
+// ogni risposta "application/encoded-json" o "application/octet-stream"
+// (FUN_00771b3c): curl_easy_unescape -> base64 -> AES-256-CBC con key (i 32
+// byte della stringa), IV a zero, PKCS#7 -> JSON. md5: ipotesi, MD5 esadecimale
+// del corpo scaricato (cosi' fa il downloader generico FUN_00eccf04).
+//
+// Le tabelle sono i file <nome>.json di MASTER_DIR (non versionata: sono dati
+// di Square Enix o ne derivano). Nessun file, nessuna tabella.
+// ---------------------------------------------------------------------------
+const MASTER_DIR = process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data');
+
+function masterKey(name) {
+  // 32 caratteri stabili tra i riavvii: il client li usa come chiave AES-256.
+  return crypto.createHash('sha256').update('khux-master:' + name).digest('hex').slice(0, 32);
+}
+
+function masterBody(name) {
+  const file = path.join(MASTER_DIR, name + '.json');
+  if (!/^[A-Za-z0-9]+$/.test(name) || !fs.existsSync(file)) return null;
+  const c = crypto.createCipheriv('aes-256-cbc', Buffer.from(masterKey(name), 'utf8'), Buffer.alloc(16));
+  const enc = Buffer.concat([c.update(fs.readFileSync(file)), c.final()]);
+  return Buffer.from(enc.toString('base64'), 'utf8');
+}
+
+function masterTables() {
+  if (!fs.existsSync(MASTER_DIR)) return [];
+  return fs.readdirSync(MASTER_DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
+}
+
+function respondMaster(res) {
+  const body = { ret: ret() };
+  const tables = masterTables();
+  body.master = { revision: REVISION, commonRevision: REVISION, count: tables.length };
+  for (const name of tables) {
+    body[name] = {
+      revision: REVISION,
+      url: `${SESSION_BASE}/master/${name}`,
+      key: masterKey(name),
+      md5: crypto.createHash('md5').update(masterBody(name)).digest('hex'),
+    };
+  }
+  send(res, 200, body);
+}
+
+function respondMasterFile(req, res) {
+  const name = req.url.split('?')[0].split('/').pop();
+  const body = masterBody(name);
+  if (!body) {
+    res.writeHead(404);
+    return res.end();
+  }
+  res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': body.length });
+  res.end(body);
+}
+
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
 // il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
 
@@ -308,6 +369,8 @@ function handler(scheme) {
       if (kind === 'login') return respondLogin(res);
       if (kind === 'coppa') return respondCoppa(res);
       if (kind === 'resourcesize') return respondResourceSize(res);
+      if (kind === 'master') return respondMaster(res);
+      if (kind === 'masterfile') return respondMasterFile(req, res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 
