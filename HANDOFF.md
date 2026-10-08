@@ -43,7 +43,7 @@ Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` +
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "26"                   # revisione dati master
+$env:KHUX_REVISION      = "29"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -137,8 +137,10 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    `PUT /tutorial/status {phase 995}`, `/system/push/regist`, `/campaign`, `/raid/list`,
    `/party`, `/party/member/list` e altre otto API (§2, «Dopo il Prologue»): obiettivi
    spuntati, sacchetti dei nemici, il dialogo di Chirithy (saltato con SKIP) e **la
-   schermata principale** (§2, «La schermata principale»). Prossimo: lo sfondo nero della
-   home e i menu (Quests per il secondo stage). Si procede come sempre:
+   schermata principale** (§2, «La schermata principale»), con lo sfondo. Il giocatore si
+   salva e al rientro va dritto alla home (§2, «Salvataggio del giocatore»). Prossimo: il
+   tutorial della home (freccia «New!» su Quests) e il secondo stage; il crash dopo un
+   aggiornamento dei master per chi rientra. Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
@@ -1495,8 +1497,46 @@ ogni sfondo con grafica (`lwf/home/{2..6,99,150911}`); senza la riga del `backgr
 crash in `FUN_00bb400c`.
 
 **Si arriva alla home**: Lv 1, «LV Up in 1», AP 10/10, Quests, Moogle Shop, Avatar
-Boards, Shop, Presents, MENU, Beginner's Guide. Aperto: lo sfondo è nero (la riga c'è,
-la grafica non compare); il client ripete `GET /user/mission/list`.
+Boards, Shop, Presents, MENU, Beginner's Guide.
+
+### Salvataggio del giocatore, rientro diretto nella home, sfondo — 8 ottobre 2026, sera
+
+**Il giocatore si salva su disco** (`KHUX_SAVE`, di default `server/save/player.json`,
+escluso da git) a ogni modifica: nome, avatar, Union, Lux, missioni, fase del tutorial,
+`created`. È «nuovo» finché non ha fatto `/user/create` (`isNewcomer()`;
+`KHUX_NEWCOMER=0/1` lo forza). Per ricominciare si cancella il file. **Al rientro non
+rifà il tutorial**: `/system/login` → `/khux/login` → catena di avvio → home, con i suoi
+dati (provato sul banco: Lv 1, «LV Up in 1», avatar con la keyblade).
+
+**`/tutorial/status`** restituisce la fase salvata (`PUT`: 50 prima del Prologue, 995
+dopo). `isFinished` vale 1 solo da `KHUX_TUTORIAL_LAST_PHASE` (999) in su: con 1 a fase
+995 la home crea il **pet** (`lwf/pet/motion/…`, assente dalle risorse) e va in crash in
+`FUN_011fa128`. Restituendo la fase vera il client mostra anche **i tutorial originali**
+che prima saltava: finestre «Movement», «Attacking Enemies», «Finding Your Target»,
+«Special Attack Gauge», «Special Attacks», «Collecting Lux»; tutorial guidati (schermo
+oscurato, cerchio di luce) sul forziere e sullo speciale di Donald; in home la freccia
+«New!» su Quests.
+
+**Avatar**: `/user/avatar`, `/user/avatar/all` (`userAvatars[]`, elemento `FUN_0078c55c`)
+e `/user/avatar/parts` (`FUN_007a1be8`: `userAvatarPartsId`, `partsType`,
+`avatarPartsId`, `getDatetime`) dal salvataggio; `userDetail.equipCoordinateNo` 1.
+
+**Sfondo della home** (`FUN_00bb400c`): si disegna solo dalle parti di
+`mypageBackground` (`validParts`, poi `partsId`/`dataType`/posizioni/`zSort`):
+`dataType` 1 = `lwf/home/<id>/<id>.png`, 2 = `.lwf`, 3 = `img/home/<id>/<id>.plist`. Con
+png (sotto) + lwf (sopra, l'acqua della fontana) la home mostra la piazza di Daybreak
+Town; l'immagine è più larga dello schermo.
+
+**Aggiornamento dei master per chi rientra**: il client chiede il download («2,16 GB»,
+ma scarica solo i master) e poi va nel crash noto a `0x12c1ee0`; al riavvio entra nella
+home. Annunciare in `resourcesize` solo la dimensione dei master non evita il crash: la
+dimensione resta quella intera. **Aperto.**
+
+**Banco**: `DismissTutorial` (finestre con OK, anche a più pagine), `GameWait` (attesa in
+tempo di gioco: con una finestra aperta il gioco è fermo), `FindTarget` (indicatore rosa
+TARGET), `FindSpotlight` (tutorial guidati), `bench_prologue.ps1 -Seek` (il Prologue
+seguendo lo schermo invece dei tocchi fissi: ~2 minuti), `bench_start.ps1` tocca
+«Download» se compare.
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

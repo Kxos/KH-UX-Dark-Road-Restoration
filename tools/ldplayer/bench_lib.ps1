@@ -88,6 +88,86 @@ function SkipDialog([double]$timeout = 10) {
     Tap 155 50; Start-Sleep 2; $true
 }
 
+# Finestre del tutorial in battaglia («Movement», ...): compaiono quando il server
+# restituisce la fase salvata (es. 50). Firma: OK rosso (850,1000), banda blu scuro del
+# titolo a lato del testo (400,140), cornice blu (1600,500). Le chiude tutte (anche a
+# piu' pagine).
+function DismissTutorial {
+    $closed = $false
+    for ($k = 0; $k -lt 6; $k++) {
+        $c = Px @(@(850, 1000), @(400, 140), @(1600, 500))
+        if (-not ((IsRed $c[0]) -and (IsNear $c[1] @(0, 48, 99) 30) -and (IsNear $c[2] @(8, 81, 148) 30))) { return $closed }
+        $closed = $true
+        # $TutShot (facoltativo): prefisso degli screenshot di ogni finestra chiusa
+        if ($script:TutShot) { $script:TutN++; Shot ("{0}_tut{1:D2}" -f $script:TutShot, $script:TutN) | Out-Null }
+        # la pagina successiva arriva con un'animazione: attesa piu' lunga
+        Tap 960 990; Start-Sleep -Milliseconds 2000
+    }
+    $closed
+}
+
+# Attesa in tempo di gioco: con una finestra del tutorial aperta il gioco e' fermo, quindi
+# quel tempo non conta. Chiude le finestre che compaiono durante l'attesa.
+function GameWait([double]$seconds) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $paused = 0.0
+    while ($sw.Elapsed.TotalSeconds - $paused -lt $seconds) {
+        $t0 = $sw.Elapsed.TotalSeconds
+        if (DismissTutorial) { $paused += $sw.Elapsed.TotalSeconds - $t0 + 1 }
+        Start-Sleep -Milliseconds 300
+    }
+}
+
+# Indicatore rosa «TARGET» in battaglia: punta sempre al bersaglio dello stage. Da uno
+# screenshot, il centro del gruppo di pixel rosa (R>200, G<100, B>120) piu' grande, a
+# celle di 80 px (altri rosa, come i fiori, sono pochi pixel sparsi). $null se manca.
+function FindTarget([string]$png) {
+    Add-Type -AssemblyName System.Drawing
+    $b = [Drawing.Bitmap]::FromFile($png)
+    $cells = @{}
+    for ($y = 0; $y -lt $b.Height; $y += 4) {
+        for ($x = 0; $x -lt $b.Width; $x += 4) {
+            $c = $b.GetPixel($x, $y)
+            if ($c.R -gt 200 -and $c.G -lt 100 -and $c.B -gt 120) {
+                $k = '{0},{1}' -f [int][Math]::Floor($x / 80), [int][Math]::Floor($y / 80)
+                if (-not $cells[$k]) { $cells[$k] = [Collections.ArrayList]@() }
+                [void]$cells[$k].Add(@($x, $y))
+            }
+        }
+    }
+    $b.Dispose()
+    $best = $cells.GetEnumerator() | Sort-Object { $_.Value.Count } -Descending | Select-Object -First 1
+    if (-not $best -or $best.Value.Count -lt 15) { return $null }
+    $sx = ($best.Value | ForEach-Object { $_[0] } | Measure-Object -Average).Average
+    $sy = ($best.Value | ForEach-Object { $_[1] } | Measure-Object -Average).Average
+    @([int]$sx, [int]$sy)
+}
+
+# Tutorial «guidati» (es. il forziere): lo schermo si oscura tranne un cerchio di luce
+# sull'oggetto da toccare. Nell'area di gioco (senza l'HUD) la luminosita' mediana per
+# celle da 80 px scende sotto 110 (normale: ~145) e il cerchio supera 1,8 volte la
+# mediana. Restituisce il centro delle celle piu' luminose, o $null.
+function FindSpotlight([string]$png) {
+    Add-Type -AssemblyName System.Drawing
+    $b = [Drawing.Bitmap]::FromFile($png)
+    $cells = @{}
+    for ($y = 160; $y -lt 960; $y += 8) {
+        for ($x = 320; $x -lt 1700; $x += 8) {
+            $c = $b.GetPixel($x, $y)
+            $k = '{0},{1}' -f [int][Math]::Floor($x / 80), [int][Math]::Floor($y / 80)
+            $cells[$k] += ($c.R + $c.G + $c.B) / 3 / 100
+        }
+    }
+    $b.Dispose()
+    $v = @($cells.Values | Sort-Object)
+    $med = $v[[int]($v.Count / 2)]; $max = $v[-1]
+    if ($med -ge 110 -or $max -lt 1.8 * $med) { return $null }
+    $top = @($cells.GetEnumerator() | Where-Object { $_.Value -ge 0.85 * $max })
+    $xs = $top | ForEach-Object { [int]($_.Key.Split(',')[0]) * 80 + 40 }
+    $ys = $top | ForEach-Object { [int]($_.Key.Split(',')[1]) * 80 + 40 }
+    @([int]($xs | Measure-Object -Average).Average, [int]($ys | Measure-Object -Average).Average)
+}
+
 # Attende un pulsante rosso nel punto (x, y) e lo tocca.
 function TapRed([int]$x, [int]$y, [string]$what, [double]$timeout = 60) {
     if (WaitFor @(, @($x, $y)) { param($c) IsRed $c[0] } $timeout $what) { Tap $x $y; return $true }

@@ -95,11 +95,18 @@ for (const rewardId of enemyRewardIds.filter((r) => !rewardIds.includes(r))) {
 // mypageBackground: sfondo della schermata principale (FUN_00bb400c). Il client cerca
 // la riga del backgroundId di /mypage, o 150911 (0x24d7f) di default, e senza riga va
 // in crash. La tabella non c'e' nella 5.0.1: una riga per ogni sfondo che ha grafica
-// nelle risorse (lwf/home/<id>/<id>.lwf), senza parti aggiuntive (validParts 0).
+// nelle risorse. La grafica si disegna SOLO dalle parti (validParts = quante, poi
+// partsId/dataType/xPostion/yPostion/zSort): dataType 1 = lwf/home/<id>/<id>.png,
+// 2 = lwf/home/<id>/<id>.lwf, 3 = img/home/<id>/<id>.plist. Con validParts 0 la home
+// resta nera. Qui due parti: l'immagine di fondo (png, sotto) e l'animazione lwf
+// (sopra: per 150911 l'acqua della fontana). Posizioni nostre (KHUX_BG_X/Y).
+const bgX = Number(process.env.KHUX_BG_X || 0);
+const bgY = Number(process.env.KHUX_BG_Y || 0);
 const backgrounds = [150911, 2, 3, 4, 5, 6, 99].map((id, i) => Object.assign(blank('mypageBackground'), {
   id, backgroundId: id, sortId: i + 1,
   startTime: '2015-01-01 00:00:00', endTime: '2099-12-31 23:59:59',
-  partsId: [], dataType: [], xPostion: [], yPostion: [], zSort: [],
+  validParts: 2, partsId: [id, id], dataType: [1, 2],
+  xPostion: [bgX, bgX], yPostion: [bgY, bgY], zSort: [0, 1],
 }));
 
 fs.mkdirSync(OUT, { recursive: true });

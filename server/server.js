@@ -154,6 +154,7 @@ function route(url) {
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
   if (p === '/user/support') return 'usersupport';
+  if (p === '/user/avatar' || p === '/user/avatar/all' || p === '/user/avatar/parts') return 'useravatar';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -180,7 +181,6 @@ function respondStatus(res) {
 const SERVER_TIME_START = Date.parse(process.env.KHUX_SERVER_TIME || '2021-05-15T12:00:00Z');
 const STARTED_AT = Date.now();
 const REVISION = Number(process.env.KHUX_REVISION || 0);
-const NEWCOMER = process.env.KHUX_NEWCOMER !== '0';
 
 function serverTime() {
   // Formato letto da FUN_007197ec: "YYYY-MM-DD HH:MM:SS".
@@ -256,7 +256,7 @@ function respondLogin(res) {
     // Un nuovo giocatore NON scarica le risorse all'avvio (FUN_00ecd988): fa il
     // tutorial con la grafica gia' installata (APK + OBB). KHUX_NEWCOMER=0
     // presenta un giocatore esistente, l'unico che arriva all'azione 28.
-    systemLogin: { newcomerKhux: NEWCOMER, newcomerDark: NEWCOMER },
+    systemLogin: { newcomerKhux: isNewcomer(), newcomerDark: isNewcomer() },
     data: LOGIN_DATA,
   };
   for (const k of LOGIN_LINKS) body[k] = '';
@@ -274,7 +274,7 @@ function respondCoppa(res) {
   send(res, 200, { ret: ret(), misc });
 }
 
-function respondResourceSize(res) {
+function respondResourceSize(res, req) {
   // PUT /system/resourcesize/<data>, azione 242. Corpo: {resoMode,
   // masterRevision, resourceRevision, commonMasterRevision, evResourceIds}.
   // Il ramo 242 di FUN_007c3204 legge solo "size", intero senza segno: i byte
@@ -282,6 +282,9 @@ function respondResourceSize(res) {
   // Con 0 il client salta il download e, senza dati master, va in crash dopo il
   // filmato introduttivo. KHUX_RESOURCE_SIZE serve a provocare il download per
   // scoprirne il protocollo.
+  // Annunciare solo la dimensione dei master quando il client ha gia' le risorse
+  // (resourceRevision) fa comparire «1,19 MB», ma dopo il download la scena va in crash
+  // a 0x12c1ee0 (provato l'8 ottobre 2026): la dimensione resta quella intera.
   send(res, 200, { ret: ret(), size: Number(process.env.KHUX_RESOURCE_SIZE || 0) });
 }
 
@@ -514,14 +517,25 @@ function respondResourceFile(req, res) {
   fs.createReadStream(file).pipe(res);
 }
 
-function respondTutorialStatus(res) {
+const TUTORIAL_LAST_PHASE = Number(process.env.KHUX_TUTORIAL_LAST_PHASE || 999);
+
+function respondTutorialStatus(res, req) {
   // GET/PUT /tutorial/status (azioni 69/70), letto da FUN_0079004c alla radice:
   // phase (uint), popupFlag (uint64), isFinished (uint), acquireTutorialJewel
   // (bool). isFinished decide, con newcomer, se scaricare le risorse all'avvio.
-  const finished = process.env.KHUX_TUTORIAL_FINISHED === '1' || !NEWCOMER;
+  // PUT porta la fase raggiunta (50 prima del Prologue, 995 dopo): si salva e GET la
+  // restituisce, cosi' chi rientra riprende da li'.
+  if (Number.isInteger(req?.phase) && req.phase !== player.tutorialPhase) {
+    player.tutorialPhase = req.phase;
+    savePlayer();
+  }
+  // Finito solo in fondo: a fase 995 (dopo il Prologue) la home ha ancora la guida per
+  // principianti, e con isFinished 1 al rientro crea il pet (lwf/pet/motion/, assente
+  // dalle risorse): crash in FUN_011fa128.
+  const finished = process.env.KHUX_TUTORIAL_FINISHED === '1' || player.tutorialPhase >= TUTORIAL_LAST_PHASE;
   send(res, 200, {
     ret: ret(),
-    phase: 0,
+    phase: player.tutorialPhase,
     popupFlag: 0,
     isFinished: finished ? 1 : 0,
     acquireTutorialJewel: false,
@@ -583,8 +597,66 @@ function schemaResponse(apiPath) {
 // giocatore di livello 1, senza progressi.
 const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
 
-// Il giocatore creato con POST /user/create (solo in memoria, per ora).
-const player = { name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null, clearMissions: {}, lux: 0 };
+// Il giocatore creato con POST /user/create. Si salva su disco (KHUX_SAVE, di default
+// server/save/player.json, fuori dal repository) a ogni modifica e si ricarica
+// all'avvio: chi ha gia' fatto il tutorial, rientrando, va dritto alla home con i suoi
+// dati. Un solo giocatore per server; per ricominciare da capo si cancella il file.
+const SAVE_FILE = process.env.KHUX_SAVE || path.join(__dirname, 'save', 'player.json');
+const player = {
+  name: PLAYER_NAME, gender: 0, unionId: 0, birthday: null, avatar: null, clearMissions: {}, lux: 0,
+  created: false, // true dopo POST /user/create: non e' piu' un nuovo giocatore
+  tutorialPhase: 0, // ultima fase di PUT /tutorial/status (50 prima del Prologue, 995 dopo)
+};
+try {
+  Object.assign(player, JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8')));
+  console.log(`[save] giocatore caricato da ${SAVE_FILE}: ${player.name}, fase ${player.tutorialPhase}, ${player.lux} Lux`);
+} catch {
+  console.log(`[save] nessun salvataggio in ${SAVE_FILE}: nuovo giocatore`);
+}
+
+function savePlayer() {
+  fs.mkdirSync(path.dirname(SAVE_FILE), { recursive: true });
+  fs.writeFileSync(SAVE_FILE + '.tmp', JSON.stringify(player, null, 1));
+  fs.renameSync(SAVE_FILE + '.tmp', SAVE_FILE);
+}
+
+// L'avatar del giocatore (updateAvatarData di /user/create), come lo leggono
+// FUN_0078c55c (userAvatar, elementi di userAvatars) e FUN_007a1be8 (elementi di
+// userAvatarParts). Al rientro la home costruisce l'avatar da qui (FUN_00b3c350):
+// senza, crash.
+const AVATAR_COORDINATE = 1;
+
+function userAvatarData() {
+  const a = player.avatar || {};
+  return {
+    myCoordinateNo: AVATAR_COORDINATE, gender: a.gender ?? player.gender,
+    hairPartsId: a.hairPartsId || 0, hairColorPartsId: a.hairColorPartsId || 0,
+    facePartsId: a.facePartsId || 0, bodyPartsId: a.bodyPartsId || 0, skinPartsId: a.skinPartsId || 0,
+    accessoriesPartsIds: a.accessoriesPartsIds || [],
+  };
+}
+
+// Parti possedute: quelle indossate (tipo dalla tabella avatarParts).
+function userAvatarPartsData() {
+  const a = userAvatarData();
+  const ids = [a.hairPartsId, a.hairColorPartsId, a.facePartsId, a.bodyPartsId, a.skinPartsId, ...a.accessoriesPartsIds]
+    .filter(Boolean);
+  const rows = masterRows('avatarParts');
+  return [...new Set(ids)].map((id, i) => ({
+    userAvatarPartsId: i + 1, // uint64
+    partsType: rows.find((r) => r.avatarPartsId === id)?.partsType ?? 0,
+    avatarPartsId: id,
+    getDatetime: serverTime(),
+  }));
+}
+
+// Nuovo giocatore (tutorial dall'inizio) finche' non ha fatto /user/create.
+// KHUX_NEWCOMER=0/1 lo forza, per le prove.
+function isNewcomer() {
+  if (process.env.KHUX_NEWCOMER === '0') return false;
+  if (process.env.KHUX_NEWCOMER === '1') return true;
+  return !player.created;
+}
 
 // Missioni dello stage completate finora (id 1-3, al massimo 3).
 function stageClearMissions(stageId) {
@@ -606,6 +678,8 @@ function respondUserCreate(res, req) {
     player.avatar = req.updateAvatarData ?? player.avatar;
     player.gender = player.avatar?.gender ?? player.gender;
   }
+  player.created = true;
+  savePlayer();
   send(res, 200, {
     ret: ret(),
     systemLogin: { newcomerKhux: false, newcomerDark: false },
@@ -703,6 +777,7 @@ function respondStageStart(res, req) {
   const now = serverTime();
   // /stage/clear non riporta lo stage: vale quello avviato qui
   player.currentStageId = req?.stageId ?? START_STAGE_ID;
+  savePlayer();
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
@@ -757,7 +832,8 @@ function userDetailData() {
     playTimezones: [], // int[], al massimo 6
     playFrequently: 0,
     partyId: 0, // uint64
-    unionId: player.unionId, maxMedal: 0, mvpCount: 0, equipCoordinateNo: 0,
+    unionId: player.unionId, maxMedal: 0, mvpCount: 0,
+    equipCoordinateNo: player.avatar ? AVATAR_COORDINATE : 0, // coordinato indossato (userAvatars)
     lastClearStageId: player.lastClearStageId || 0,
     isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
@@ -802,6 +878,7 @@ function respondStageClear(res, req) {
   });
   cleared.sort((a, b) => a - b).splice(3);
   player.clearMissions[stageId] = [...new Set([...stageClearMissions(stageId), ...cleared])].sort((a, b) => a - b).slice(0, 3);
+  savePlayer();
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData(), stageResumption: stageResumptionData() },
@@ -1000,13 +1077,13 @@ function handler(scheme) {
       if (kind === 'status') return respondStatus(res);
       if (kind === 'login') return respondLogin(res);
       if (kind === 'coppa') return respondCoppa(res);
-      if (kind === 'resourcesize') return respondResourceSize(res);
+      if (kind === 'resourcesize') return respondResourceSize(res, entry.bodyDecoded);
       if (kind === 'master') return respondMaster(res);
       if (kind === 'masterfile') return respondMasterFile(req, res);
       if (kind === 'resource') return respondResource(res);
       if (kind === 'resourceev') return respondResourceEv(res);
       if (kind === 'resourcefile') return respondResourceFile(req, res);
-      if (kind === 'tutorialstatus') return respondTutorialStatus(res);
+      if (kind === 'tutorialstatus') return respondTutorialStatus(res, entry.bodyDecoded);
       if (kind === 'khuxlogin') return respondKhuxLogin(res);
       if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
       if (kind === 'userkeyblade') return respondUserKeyblade(res);
@@ -1047,6 +1124,13 @@ function handler(scheme) {
             userMedalId: m.userMedalId, medalId: m.medalId, lastActionDatetime: serverTime(),
           },
         });
+      }
+      // GET /user/avatar (21), /user/avatar/all (22), /user/avatar/parts (23)
+      if (kind === 'useravatar') {
+        const p = req.url.split('?')[0];
+        if (p === '/user/avatar/parts') return send(res, 200, { ret: ret(), userAvatarParts: userAvatarPartsData() });
+        if (p === '/user/avatar/all') return send(res, 200, { ret: ret(), userAvatars: [userAvatarData()] });
+        return send(res, 200, { ret: ret(), userAvatar: userAvatarData() });
       }
       // GET /raid/reward/151101 (azione 120): userData.userPoint (FUN_0078b230),
       // raidRewards[] (FUN_0079cac0) e i due array di FUN_007a5dec. Nessun premio.
