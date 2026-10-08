@@ -1702,6 +1702,48 @@ BC, CD, CS…), manca solo la disposizione di nemici e forzieri. Due strade, da 
   nemici e tesori per stanza da khuxwiki (`quests.json`), coordinate prese dalle mappe
   esistenti della stessa stanza o dalla collisione `map/<stanza>/*_cls.bin`.
 
+Gli originali non si trovano: l'archivio web della comunità (`khux-5.0.1-ww-web` su
+Internet Archive) usa gli stessi OBB 5.0.1, e l'indice dell'IPA 4.4.0 non ha `mappoi`.
+Nel gioco originale le mappe dopo il tutorial arrivavano con gli aggiornamenti delle
+risorse dal CDN.
+
+### Mappe generate e risorse aggiuntive — 8 ottobre 2026, notte
+
+**Formato `MAP`** (parser `FUN_00e5f6e8`, verificato sulle mappe 1010–1030):
+`+0x24` X (inizio del blocco dati), `+0x28/+0x2c/+0x30` posizioni delle sezioni dopo i
+nemici meno 0x34; `X+0x34` aree, `X+0x38` nemici; da `X+0x3c` aree da 0x44 byte
+(`[0]` primo nemico, `[1]` quanti; l'area 0 del modello 1030 è l'arena del bersaglio),
+poi nemici da 0x20 (`x, y, enemyId, 1, 1, 1, reward, uid`), poi forzieri, oggetti,
+un'altra sezione. Ogni parte porta il nome della stanza (`DB_0000_00_00` = Fountain
+Square, `DW_0001_00_00` = Dark Forest: Entrance, …): sono le 86 cartelle `map/`.
+L'intestazione `STG` (`mappoi_stg<id>.bin`): parti, posizione di partenza, bersaglio
+(enemyId), numero di aree e di nemici.
+
+**Strumenti.** `recon/tools/mappoi_gen.py <modello> <spec.json> <uscita>`: una parte
+nuova da un modello della stessa stanza (aree e oggetti del modello, nemici e forzieri
+dalla spec; rigenera 1030 da se stessa con la stessa struttura).
+`recon/tools/resource_pack.py <cartella> <chiave> <dati> <indice>`: pacchetto BGAD dei
+file generati, da unire con `resource_merge.py` come quarto pacchetto (dopo OBB e addnl):
+la versione delle risorse cresce (4, 5, 6: i pezzi della 3 come hard link + un pezzo).
+`tools/ldplayer/session/update-resources.ps1`: il client scarica le risorse solo a
+tutorial «finito», quindi il server parte una volta con `-TutorialFinished`; lo script
+attende anche la fine dell'installazione (interromperla lascia `files/r` a metà e la
+home va in crash cercando `MyPageScene_ver340.json`).
+
+**Errori trovati e corretti.** `/system/resource` elencava tutte le versioni (3 e 4): in
+modo 1 il client le scaricava e concatenava (misc.mp4 di 4,6 GB, «Save error»). Ora
+annuncia solo l'ultima.
+
+**Missione 7 (1040).** Con la mappa generata (stanza `DW_0001`, modello 1030; nemici
+dalla wiki: Nosy Mole ×2 bersaglio, Shadow ×3, Shadow ×1, Yellow Opera ×1) il client
+supera il parser e manda `/stage/start`, poi va in crash caricando la grafica dei nemici
+(`FUN_00adcb84`, `lwf/character/enemy/<displayId>/wait`): **Yellow Opera (displayId 3)
+non ha grafica** nelle risorse. Hanno grafica i displayId 1, 6, 7, 8, 17, 37, 1020
+(Shadow, Soldier, Large Body, Nosy Mole, Armored Knight, Dire Plant, Mega-Shadow) e le
+serie 5001–5086, 7001–7005, 8001–8022 (Dark Road?). Versione 6: Yellow Opera sostituito
+da Soldier (l'obiettivo «Defeat Yellow Opera» non si può completare). Anche la tabella
+`enemy` della 5.0.1 ha solo 12 nemici.
+
 **Contenuto dei forzieri, da khuxwiki.** Confrontando le mappe delle missioni 1–6 con i
 tesori della wiki (`{{TC|codice|stanza}}`): riga 81 = Attack Prize medio (`a2`), 80 =
 Attack Prize piccolo (`a1` o barile `ba`), 90 = barile con HP (`bh`), 1 = barile vuoto
