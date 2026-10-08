@@ -15,7 +15,7 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
-| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar si apre e funziona**, con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il tutorial arriva alla scelta della Union e a `POST /user/create`, con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
@@ -25,13 +25,13 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 9, con `avatarParts` e le parti iniziali).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 10, con `avatarParts` e `initItem`).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "9"                    # revisione dati master
+$env:KHUX_REVISION      = "10"                   # revisione dati master
 $env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
@@ -40,8 +40,8 @@ node server\server.js
 ```
 
 Prima del primo avvio si rigenerano `server/master_data/` con
-`node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts` intera e
-`initItem` con le sole righe di categoria 100, con `node server/import-master.js` dalle tabelle
+`node server/make-master-stub.js`, poi si importano le tabelle vere: `avatarParts` e
+`initItem` intere, con `node server/import-master.js` dalle tabelle
 dell'`extra.mp4` 5.0.1 (§2, «Le tabelle master della 5.0.1 offline»).
 
 La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
@@ -90,7 +90,9 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
    (`FUN_00d6a4f4`): **risolto** servendo come risorse la versione 3 = OBB 5.0.1 +
    `addnl` dell'IPA iOS 4.3.1 (§2, «Gli OBB 5.0.1 serviti al client 4.3.1»). L'editor
    si apre e, con `avatarParts` e le parti iniziali di `initItem` prese dalle tabelle
-   master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»). Restano 285 layout citati dal
+   master della 5.0.1 offline, funziona (§2, «Le tabelle master della 5.0.1 offline»).
+   Con `initItem` completa il tutorial prosegue: conferma dell'avatar, scelta della Union,
+   poi `POST /user/create` (azione 253), che il server non gestisce ancora. Restano 285 layout citati dal
    binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
    comunità) se servono.
 3. Fase D: popolare i master secondo `recon/out/master_types_ww431.json`. Fonte principale:
@@ -1109,8 +1111,39 @@ va alzata `KHUX_REVISION`, perché il client riscarichi i master.
   (revisione master 9): **l'editor funziona**. Sets (Sporty Blue/Yellow, Cool
   Black/Red), Hairstyles (Short, Faux Hawk, Layered), le icone dagli OBB; scegliendo
   una parte l'avatar cambia e la parte risulta «In use».
-- Da fare: il resto di `initItem` insieme alle tabelle a cui rimanda (fase D), poi OK
-  nell'editor e il passo successivo del tutorial.
+**`initItem` completa** (197 righe, revisione master 10). Categorie e `itemId`:
+
+| Categoria | Righe | `itemId` | Note |
+|---|---|---|---|
+| 3 | 3 | 11021, 13021, 13031 | `equipType` 3, `equipNo` 1-3: probabilmente le medaglie del deck iniziale |
+| 7 | 8 | 1001-1008 | |
+| 13 | 1 | 1000 | `equipType` 3: la keyblade iniziale (`keyblade` 1000 = Starlight) |
+| 24 | 22 | 1-22 | |
+| 25 | 11 | 2100001, 2500002, … | `param` 2 |
+| 31 | 20 | 1-20 | |
+| 100 | 110 | `avatarPartsId` | parti avatar iniziali (verificato) |
+| 101 | 22 | 303001, 304001, … | |
+
+Il significato delle categorie non è ancora ricavato dal codice: i campi della riga sono
+in memoria offuscata (`FUN_006dfe9c` scrive, `FUN_006e02d4` legge, comuni a tutte le
+tabelle), e non c'è uno `switch` evidente sui valori. Con la tabella completa, e le
+tabelle a cui rimanda ancora vuote, il client **non va in crash**. Sul banco:
+- editor avatar → OK → «Begin with this avatar?» → OK;
+- scena della vetrata con le cinque Union, popup «Unions», «Select a Union to join» →
+  Unicornis → «Join Unicornis?» → OK, poi scena animata;
+- quindi **`POST /user/create`** (azione 253), che il server non gestisce ancora →
+  «200 ERROR :253». Il corpo:
+
+```json
+{"birthday":"1995-01-01 00:00:00","name":"Kxos","unionId":3,
+ "updateAvatarData":{"gender":1,"hairPartsId":40001,"hairColorPartsId":50001,
+   "facePartsId":20001,"bodyPartsId":1,"skinPartsId":30001,"accessoriesPartsIds":[109001]}}
+```
+
+Prossimo: la risposta di `POST /user/create`.
+
+`recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
+decompilazione headless in una riga.
 
 
 ### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026
