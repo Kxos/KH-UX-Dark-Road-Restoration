@@ -110,6 +110,25 @@ def parse(buf, off=0):
                 end=off + hsize + nlen + size)
 
 
+def record_name(buf, h):
+    """Nome di un record (FUN_01321888): offuscato con l'LCG seed*0x19660d+0x3c6ef35f,
+    seme = dimensione salvata; byte per byte nella versione 1, a parole nella 2.
+    L'indice di un pacchetto si chiama "/"; quello delle risorse scaricate ha in
+    coda anche "md5" e "size" (vedi resource_index.py)."""
+    name = bytearray(buf[h['name_off']:h['name_off'] + h['nlen']])
+    seed = h['size']
+    if h['ver'] == 1:
+        for i in range(len(name)):
+            seed = (seed * 0x19660d + 0x3c6ef35f) & 0xffffffff
+            name[i] ^= seed & 0xff
+        return bytes(name)
+    name += b'\0' * (-len(name) % 4)
+    for i in range(0, len(name), 4):
+        seed = (seed * 0x19660d + 0x3c6ef35f) & 0xffffffff
+        struct.pack_into('<I', name, i, struct.unpack_from('<I', name, i)[0] ^ seed)
+    return bytes(name[:h['nlen']])
+
+
 def decode(buf, h, key, block=_chacha_block, rounds=8):
     """Dati in chiaro di un record (decifrati e decompressi)."""
     data = bytes(buf[h['data_off']:h['data_off'] + h['size']])

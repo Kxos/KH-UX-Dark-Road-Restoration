@@ -780,7 +780,41 @@ sostituisce. L'indice del CDN però aveva in più i record `md5` e `size`.
   «Save error», come previsto: all'indice dell'APK mancano i record `md5` e `size`.
 - Il protocollo è dunque verificato fino al controllo dell'indice. Per superarlo
   servono gli indici originali del CDN, oppure ricavare la chiave dei record `md5`
-  (`FUN_00ec75f4`) e costruirne uno.
+  (`FUN_00ec75f4`) e costruirne uno. **Fatto: vedi sotto.**
+
+**La chiave dei record `md5`/`size` la consegna il server.** `FUN_00ec75f4` legge 32
+byte all'offset 0x48 del record che `FUN_0077f830` costruisce dal campo **`data`** di
+`/system/login`. Il record è 8 + 32 + 32 + 32 byte, e all'offset 0x48 finisce il
+**quarto elemento**, decodificato da Base64. Il ramo di login lo salva nel singleton
+di sessione a `+0xa8`, a `0x7c6e64`.
+
+Quindi il server originale distribuiva ai client la chiave degli indici delle risorse.
+Il nostro la deriva in modo stabile (`sha256("khux-resource-index")`, oppure
+`KHUX_RESOURCE_KEY` in esadecimale) e la mette in `data[3]`.
+
+**I nomi dei record** (`FUN_01321888`) seguono l'header da 0x18 byte e sono offuscati
+con l'LCG `seed*0x19660d + 0x3c6ef35f`, con seme la dimensione salvata del record:
+byte per byte nella versione 1, a parole da 32 bit nella 2. Il record di `misc.png`
+dell'APK si chiama proprio **`/`**. `bgad.py` ora ha `record_name()`.
+
+**`recon/tools/resource_index.py`** costruisce l'indice scaricabile: l'indice di
+partenza (il record `/`), seguito dai record `md5` (MD5 esadecimale del pacchetto) e
+`size` (la sua dimensione). I due record sono cifrati come gli originali: versione 2,
+ChaCha8 con la chiave di sessione, nonce in coda. Il contenuto di `md5` non viene
+confrontato con nulla (basta che sia lungo 32); `size`, se c'è, deve uguagliare la
+somma dei `data`.
+
+**Verificato sul banco.** Ho servito come versione 1 la coppia `misc.mp4` dell'APK +
+indice costruito così: **niente più «Save error»**, quindi l'indice è accettato e
+l'installazione si completa. Subito dopo il gioco va in crash a `0x12c1ee0`
+(`ldr x8, [x0, #0x1e8]`, un metodo di `cocos2d::Node` chiamato su un puntatore
+spazzatura), senza altre richieste al server. È il passo successivo al download e non
+riguarda più il protocollo: il pacchetto di prova è solo una copia di quello dell'APK,
+e la scena che segue vuole risorse e dati utente veri.
+
+**Il protocollo delle risorse è completo**: richiesta, risposta, download, verifica,
+installazione e indice. Il server sa servire qualunque coppia pacchetto + indice
+nel formato originale, e costruirne l'indice.
 
 Il server serve i pacchetti da `server/resource_data/<versione>/{data,index}/` (non
 versionata).
@@ -1346,8 +1380,10 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    - eventuali **archivi del CDN delle risorse** (`misc.mp4`/`misc.png` con indice
      completo), che il server sa già servire.
 
-   Dal lato codice: la chiave dei record `md5` (`FUN_00ec75f4`), se si vorrà costruire
-   un indice da sé.
+   p) ✅ **la chiave dei record `md5`/`size` è `data[3]` di `/system/login`**: il
+   server la sceglie, `resource_index.py` costruisce l'indice, e sul banco l'indice
+   viene accettato (niente «Save error»). Il crash successivo, a `0x12c1ee0`, è nella
+   scena dopo il download.
    **Prossimo:** la forma del JSON dentro le tabelle, partendo da una piccola. Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso

@@ -216,9 +216,17 @@ const LOGIN_LINKS = [
 
 // "data" della risposta di login, letto da FUN_0077f830: almeno 4 stringhe
 // Base64 (cocos2d::base64Decode) che il client si aspetta di 8, 32, 32 e 32
-// byte. Hanno l'aria di un seme e di tre chiavi da 256 bit; a cosa servano non
-// e' ancora chiaro. Casuali, ma stabili per tutta la vita del server.
-const LOGIN_DATA = [8, 32, 32, 32].map((n) => crypto.randomBytes(n).toString('base64'));
+// byte. Hanno l'aria di un seme e di tre chiavi da 256 bit. Il QUARTO e' la chiave
+// dei record md5/size degli indici delle risorse scaricate (FUN_00ec75f4 legge
+// l'offset 0x48 del record): deve essere quella con cui recon/tools/
+// resource_index.py ha cifrato l'indice, quindi e' derivata allo stesso modo
+// (o data in esadecimale con KHUX_RESOURCE_KEY). Gli altri tre, casuali ma
+// stabili per tutta la vita del server: a cosa servano non e' ancora chiaro.
+const RESOURCE_KEY = process.env.KHUX_RESOURCE_KEY
+  ? Buffer.from(process.env.KHUX_RESOURCE_KEY, 'hex')
+  : crypto.createHash('sha256').update('khux-resource-index').digest();
+const LOGIN_DATA = [8, 32, 32].map((n) => crypto.randomBytes(n).toString('base64'))
+  .concat(RESOURCE_KEY.toString('base64'));
 
 function respondLogin(res) {
   // POST /system/login, azione 251: corpo cifrato {length, digest, ruv,
