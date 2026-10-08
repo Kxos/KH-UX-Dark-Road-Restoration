@@ -845,6 +845,47 @@ dell'APK, quindi potremmo servire un `misc` con gli MD5 della 76, **se** il cont
 degli OBB 5.0.1 è compatibile con il client 4.3.1. Da verificare: download in
 `D:\Progetto_Restauro_KH_UX\obb76\`.
 
+### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026
+
+**`GET /user`** (azione 1, ramo `0x7ca040`) chiama in sequenza cinque parser, tutti
+obbligatori:
+
+| Parser | Oggetto | Campi |
+|---|---|---|
+| `FUN_0078ade0` (chiave passata: `userData`, modo 1) | `userData.user` | `userId`, `nativeUserId` (uint64), `platformId`, `userName` (≤ 32 byte), `gender`, `comment` (≤ 256), `deviceType`, `continueLoginCount`, `isFleeze`, `fleezedDatetime` (data), `isAdult`, `nativeTagName` (≤ 14) |
+| `FUN_0078b230` | `userData.userPoint` | `money`, `lux`/`totalLux` (uint64), punti vari, `hp`/`ap`/`max*`, `lastApDatetime` (data), biglietti e punti speciali (uint) |
+| `FUN_0078babc` | `userData.userDetail` | `level`, `exp`, titoli, `maxDeckCost`, `playTimezones` (int[] ≤ 6), `partyId` (uint64), `unionId`, … |
+| `FUN_0078c138` | `userData.stageResumption` | `resumptionStatus`, `stageId`, `raidId` (uint64), `colosseumStageId` |
+| `FUN_0078e30c` | `userData.medalResumption` | `userShuffleSkills` (array), `resumptionStatus` (uint) |
+
+Poi pretende anche `userPopUp.isPopBenefitStone` (int). Il server la costruisce in
+`respondUser()`: un giocatore di livello 1, nome da `KHUX_PLAYER_NAME`.
+
+**Strumenti nuovi**, per percorrere la catena delle API senza lavoro a mano:
+- `recon/tools/action_case.py`: dato un id d'azione trova il ramo del dispatcher e
+  ne elenca le chiamate (i parser) e le chiavi lette;
+- `recon/tools/response_schema.py`: dal decompilato dei parser ricostruisce i
+  percorsi annidati e i tipi (int, uint, int64, uint64, string, datetime, bool,
+  object, array). Segnala come `@FUN_…` i sotto-parser chiamati su un valore noto,
+  che vanno decompilati a parte (es. `FUN_0077a6cc` su `userData.userChat`);
+- `recon/ghidra/khux_linear.py`: disassemblato lineare, che non salta i rami
+  raggiunti solo dalla tabella di salto;
+- `recon/out/api_responses_ww431.json`: gli schemi (l'interfaccia, versionata). Il
+  server genera da qui la risposta minima per ogni rotta elencata che non gestisce a
+  mano: 0, "", data corrente, false, {} e [].
+
+**La catena sul banco**, da giocatore esistente:
+
+```
+/khux/login → /tutorial/status → PUT /user/awakening (basta ret) → GET /user ✅
+→ GET /user/start (azione 3: ramo predefinito, basta ret) → GET /user/chat ✅
+→ GET /party (azione 83)  ← «200 ERROR :83», prossimo
+```
+
+`/user/chat` (azione 6, `FUN_0077a868`) vuole `userData.userChat.{userId (uint64),
+tagName, userEndpointUrl, stampIds (int[])}`, più `authToken` e `userToken` alla
+radice.
+
 **Il protocollo delle risorse è completo**: richiesta, risposta, download, verifica,
 installazione e indice. Il server sa servire qualunque coppia pacchetto + indice
 nel formato originale, e costruirne l'indice.
@@ -1417,6 +1458,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    server la sceglie, `resource_index.py` costruisce l'indice, e sul banco l'indice
    viene accettato (niente «Save error»). Il crash successivo, a `0x12c1ee0`, è nella
    scena dopo il download.
+   r) ✅ **`GET /user` e `/user/chat` accettate** (§2, «I dati del giocatore»), con
+   strumenti per ricavare gli schemi di risposta e un server che genera le risposte
+   minime dagli schemi. **Prossimo:** `GET /party` (azione 83) e le chiamate che seguono.
    q) ✅ **oltre il download**: con `versionRes` uguale all'ultima versione servita il
    giocatore esistente arriva a `PUT /user/awakening` e `GET /user`. **Prossimo:** la
    risposta di `GET /user` (azione 1), oppure gli OBB 5.0.1 da Internet Archive

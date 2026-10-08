@@ -1,0 +1,17 @@
+{
+  "_doc": "Schemi delle risposte di gioco (interfaccia, non dati): percorso API -> azione, parser e campi obbligatori con il tipo. Ricavati con recon/tools/action_case.py + response_schema.py. 'x[]' = elementi dell'array x (assenti nella risposta minima). Il server genera da qui la risposta minima per le rotte che non gestisce a mano.",
+  "/user/chat": {
+    "action": 6,
+    "parsers": ["FUN_0077a868", "FUN_0077a6cc (userData.userChat)"],
+    "fields": {
+      "userData": "object",
+      "userData.userChat": "object",
+      "userData.userChat.stampIds": "array",
+      "userData.userChat.userId": "uint64",
+      "userData.userChat.tagName": "string",
+      "userData.userChat.userEndpointUrl": "string",
+      "authToken": "string",
+      "userToken": "string"
+    }
+  }
+}

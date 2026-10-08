@@ -141,6 +141,7 @@ function route(url) {
   if (p.startsWith('/resource/')) return 'resourcefile';
   if (p.includes('tutorial/status')) return 'tutorialstatus';
   if (p.includes('khux/login')) return 'khuxlogin';
+  if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
   if (p.includes('session')) return 'session';
@@ -502,6 +503,93 @@ function respondKhuxLogin(res) {
   send(res, 200, { ret: ret(), gameLogin: { acquirableLoginBonus: false } });
 }
 
+// ---------------------------------------------------------------------------
+// Risposte generate dagli schemi (recon/out/api_responses_ww431.json): per le
+// rotte che non gestiamo a mano, la risposta minima che il parser accetta. Ogni
+// campo dello schema e' obbligatorio; gli array restano vuoti.
+// ---------------------------------------------------------------------------
+const API_SCHEMA_FILE = path.join(__dirname, '..', 'recon', 'out', 'api_responses_ww431.json');
+const API_SCHEMA = fs.existsSync(API_SCHEMA_FILE)
+  ? JSON.parse(fs.readFileSync(API_SCHEMA_FILE, 'utf8')) : {};
+
+function defaultFor(type) {
+  switch (type) {
+    case 'object': return {};
+    case 'array': return [];
+    case 'string': return '';
+    case 'datetime': return serverTime();
+    case 'bool': return false;
+    default: return 0; // int, uint, int64, uint64
+  }
+}
+
+function schemaResponse(apiPath) {
+  const entry = API_SCHEMA[apiPath];
+  if (!entry || !entry.fields) return null;
+  const body = { ret: ret() };
+  // i genitori prima dei figli: l'ordine alfabetico dei percorsi lo garantisce
+  for (const p of Object.keys(entry.fields).sort()) {
+    if (p.includes('[]')) continue;
+    const keys = p.split('.');
+    let o = body;
+    for (const k of keys.slice(0, -1)) o = (o[k] ??= {});
+    if (!(keys[keys.length - 1] in o)) o[keys[keys.length - 1]] = defaultFor(entry.fields[p]);
+  }
+  return body;
+}
+
+// GET /user (azione 1, callUserGetAPI). Il ramo 1 di FUN_007c3204 chiama, tutti
+// obbligatori: FUN_0078ade0 (userData.user), FUN_0078b230 (userData.userPoint),
+// FUN_0078babc (userData.userDetail), FUN_0078c138 (userData.stageResumption),
+// FUN_0078e30c (userData.medalResumption), poi pretende userPopUp.isPopBenefitStone.
+// Tipi da recon/tools/response_schema.py. I valori sono nostri segnaposto: un
+// giocatore di livello 1, senza progressi.
+const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
+
+function respondUser(res) {
+  const now = serverTime();
+  const userData = {
+    user: {
+      userId: 1, // uint64
+      nativeUserId: 1, // uint64
+      platformId: 0,
+      userName: PLAYER_NAME, // max 32 byte
+      gender: 0,
+      comment: '', // max 256 byte
+      deviceType: 2,
+      continueLoginCount: 1,
+      isFleeze: 0,
+      fleezedDatetime: now,
+      isAdult: 1,
+      nativeTagName: '', // max 14 byte; letto solo da GET /user (modo 1)
+    },
+    userPoint: {
+      money: 0, lux: 0, totalLux: 0, // lux e totalLux: uint64
+      spherePoint: 0, kizunaPoint: 0, raidPoint: 0,
+      attack: 0, defense: 0, baseHp: 0, hp: 0, ap: 10, maxHp: 0, maxAp: 10,
+      lastApDatetime: now,
+      stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
+      // da qui in poi uint
+      specialPoint: 0, stageSkipTicket: 0, superSkipTicket: 0, vipPoint: 0,
+      guiltBurstLv: 0, multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
+      drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
+      limitedDrawTicket1: 0, limitedDrawTicket2: 0, limitedDrawTicket3: 0,
+    },
+    userDetail: {
+      level: 1, exp: 0, luxRank: 0, luxGetRatio: 0,
+      titleLeftId: 0, titleRightId: 0, titlePlateId: 0, maxDeckCost: 0,
+      playTimezones: [], // int[], al massimo 6
+      playFrequently: 0,
+      partyId: 0, // uint64
+      unionId: 0, maxMedal: 0, mvpCount: 0, equipCoordinateNo: 0, lastClearStageId: 0,
+      isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
+    },
+    stageResumption: { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 },
+    medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
+  };
+  send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
+}
+
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
 // il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
 
@@ -568,8 +656,12 @@ function handler(scheme) {
       if (kind === 'resourcefile') return respondResourceFile(req, res);
       if (kind === 'tutorialstatus') return respondTutorialStatus(res);
       if (kind === 'khuxlogin') return respondKhuxLogin(res);
+      if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
+
+      const generated = schemaResponse(req.url.split('?')[0]);
+      if (generated) return send(res, 200, generated);
 
       // Sconosciuta: rispondiamo il minimo che il client accetta, cioe' il solo
       // involucro "ret", perche' prosegua e ci mostri la richiesta successiva.
