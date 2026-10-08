@@ -552,6 +552,43 @@ dall'inizializzatore statico `FUN_5d823c`. Nel loader l'array sta a `0x20a0b80`,
 `sphereArray`, `sphereMasu`, `stage`, `stageDrama`, `stamp`, `theater`, `title`,
 `tutorialMisc`, `world`, `xtresMisc`.
 
+### I pacchetti di asset dell'APK — decifrati l'8 ottobre 2026
+
+Gli asset dell'APK (`misc.mp4`, `extra.mp4`, `aliud.png`, …) non sono video né immagini:
+sono pacchetti **BGAD** del `bg::FileManager`. Formato, cifratura e indice sono descritti
+in testa a **`recon/tools/bgad.py`**, che li estrae per nome:
+
+```bash
+python recon/tools/bgad.py <libcocos2dcpp.so> <pacchetto.mp4> <indice.png> <uscita> [prefisso]
+```
+
+In breve: ogni pacchetto è una sequenza di record BGAD (header di 24 byte); la
+cifratura dei record è **ChaCha a 8 round** con una chiave di 32 byte nella libreria
+(`0x1926890`) e un IV ricavato dal nonce in coda al record. I nomi dei file stanno
+nell'**indice**, il `.png` omonimo (`misc.mp4` → `misc.png`), con un secondo strato di
+ChaCha8. Contenuto di `misc.mp4`: 2.831 file — 2.442 testi (`text/`), 165 animazioni
+`lwf/`, 152 layout `cocostudio/`, immagini d'interfaccia, shader, audio, e due cartelle
+che contano:
+
+- **`json/server_api.json`** — la **tabella completa delle 321 azioni** del client.
+  L'ID d'azione è l'indice nell'array `actions`; ogni voce ha `path` e `method`
+  (0 GET, 1 POST, 2 PUT). Verificato su tutte le azioni viste in rete: 0
+  `/system/status`, 26 `/system/coppa`, 27 `/system/master/20200423`, 242
+  `/system/resourcesize/20200423`, 251 `/system/login`. **È la superficie REST intera**,
+  che finora ricostruivamo una chiamata alla volta;
+- **`json/server_config.json`** — `serverURLDomain` (`https://api-s.sp.kingdomhearts.com`)
+  e le tre stringhe di `systemStatusUpdate*` (la chiave per l'URL cifrato di
+  `/system/status`);
+- **`info/`** — `version` 4.3.1, `build`, `commit`, `lang`, `dark_resource` 10, e:
+  - `info/tutorial_master` = **`85883`**: non un master, ma il **numero di revisione**
+    dei dati del tutorial;
+  - `info/obb/main` e `info/obb/patch`: gli **MD5 di due file OBB**, i pacchetti di
+    espansione di Google Play, che **non sono nell'APK**. Con ogni probabilità i dati
+    master del tutorial (e molte risorse) stanno lì.
+
+I file estratti restano su `D:\Progetto_Restauro_KH_UX\assets431\` (dati di Square Enix:
+non vanno nel repository).
+
 **Le altre richieste di download**, vicine nel binario e non ancora viste in rete:
 `FUN_711df8` (`revision`, probabilmente le risorse), `FUN_712100` (`resourceIds`),
 `FUN_712770` (`notUpdate`), `FUN_715fb8` (le revisioni senza `resoMode`). L'ID d'azione
@@ -1039,10 +1076,16 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    revisioni in `ret` avviano il download, l'azione 27 (`/system/master`) restituisce
    per ognuna delle 106 tabelle `url` + `key` AES + `md5`, e ogni tabella è un file JSON
    cifrato;
-   j) **prossimo:** estrarre `info/tutorial_master` dal pacchetto di asset dell'APK
-   (`misc.mp4`) per avere un master JSON vero come modello; capire la cifratura del file
-   scaricato (AES con `key`, modalità e IV); poi servire un primo file master dal nostro
-   server. In parallelo, il download delle **risorse** (`FUN_711df8`/`FUN_712100`).
+   j) ✅ **pacchetti di asset decifrati** (`recon/tools/bgad.py`): in `misc.mp4` c'è
+   **`json/server_api.json`, la tabella di tutte le 321 azioni**. `info/tutorial_master`
+   è solo la revisione (`85883`); i dati veri stanno quasi certamente nei **file OBB**
+   (`info/obb/main`, `info/obb/patch`: due MD5), che non sono nell'APK;
+   k) **prossimo:** procurarsi gli OBB della 4.3.1 (APKMirror li distribuisce a volte
+   come «APK bundle»/XAPK; altrimenti archivi della comunità), verificarli con gli MD5,
+   ed estrarli con `bgad.py` se sono pacchetti dello stesso tipo. Intanto: usare
+   `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
+   cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso
+   ChaCha8). In parallelo, il download delle **risorse** (`FUN_711df8`/`FUN_712100`).
    Per le chiamate successive vale lo
    stesso metodo: leggere `200 ERROR :<azione>`, trovare il ramo dell'azione nella
    tabella di `FUN_007c3204`, decompilare i suoi parser, implementare la risposta.
