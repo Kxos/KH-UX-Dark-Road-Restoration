@@ -35,6 +35,8 @@ def clean(v):
 
 quests, bonus_names, treasure_codes, reward_fields = {}, collections.Counter(), collections.Counter(), collections.Counter()
 for title, text in raw.items():
+    if '/' in title:            # es. «Quest 2: Combat 101/Archive», versioni precedenti
+        continue
     m = INFO.search(text)
     if not m:
         continue
