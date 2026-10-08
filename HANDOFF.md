@@ -685,7 +685,7 @@ OBB**.
 
 **Conclusione: il prossimo blocco non sono i dati master ma le risorse grafiche.** Le
 tabelle minime bastano ad arrivare fin dove arriva la grafica dell'APK. Per andare oltre
-servono gli OBB (`main.72…obb` e `patch.72…obb`, vedi sotto) o i file del CDN delle
+servono gli OBB (`main.60…obb` e `patch.69…obb`, vedi sotto) o i file del CDN delle
 risorse, e in parallelo il protocollo con cui il client li scarica
 (`SceneDownload::callDownloadAPI`, `FUN_00eccf04`). I valori veri delle tabelle
 (khuxwiki, fase D) torneranno utili quando la grafica ci sarà.
@@ -835,15 +835,43 @@ prossimo capitolo.
   contengono `main.76…obb` (1.652.397.828 byte, MD5 `2e77be60c0bb61456275f9e7d4768cad`) e
   `patch.87…obb` (533.504.978 byte, MD5 `6fd36c21ed70e60f57d466105a018980`), insieme al
   `base.apk` della 5.0.1;
-- sono della **5.0.1**, non i `main.72`/`patch.72` della 4.3.1 (MD5 attesi
-  `610e8ecd…` e `f4dd5699…`), che restano da trovare;
+- sono della **5.0.1**: il client 4.3.1 cerca invece **`main.60.<pacchetto>.obb`** e
+  **`patch.69.<pacchetto>.obb`** (costanti `OBB_MAIN_VERSION_CODE = 60` e
+  `OBB_PATCH_VERSION_CODE = 69` di `BGObbFileManager`, lette dal `classes.dex`; il
+  «72» scritto qui prima era una supposizione sbagliata). Gli MD5 attesi sono quelli di
+  `info/obb/main` e `patch` (`610e8ecd…`, `f4dd5699…`);
 - `cache.sqex-bridge.jp` contiene solo gli avvisi del gioco, non le risorse.
 
-Strada possibile: il client legge gli MD5 attesi da `info/obb/main` e `patch`, che
-stanno nel pacchetto `misc`. I pacchetti scaricati in `files/r/` sostituiscono quelli
-dell'APK, quindi potremmo servire un `misc` con gli MD5 della 76, **se** il contenuto
-degli OBB 5.0.1 è compatibile con il client 4.3.1. Da verificare: download in
-`D:\Progetto_Restauro_KH_UX\obb76\`.
+**Gli OBB sono i dati di Dark Road, non di Union χ.** Verificato l'8 ottobre 2026:
+- un OBB è un **pacchetto BGAD** (record concatenati, qui con cifratura 2), come
+  `misc.mp4`;
+- Java (`BGObbFileManager`) monta i file e passa i percorsi al nativo
+  (`Java_…_onMount` → `FUN_0084d7bc` → callback di `SceneTitle::prepareInit` /
+  `downloadObb`), che li salva nel singleton `FUN_0084dd74()` (+0x10 main, +0x28 patch);
+- `FUN_00ec76ac` costruisce l'elenco dei dati del pacchetto **`aliud`** di Dark Road:
+  [OBB main, oppure `aliud.mp4`; OBB patch, oppure `aliud.mp4.1`];
+- il montaggio (`FUN_00ec66c8`): lato KHUX `r/misc.png`+`r/misc.mp4` (slot 1) e
+  `addnl.png`+`addnl.mp4` (slot 2). Lato Dark l'indice è `aliud.png` dell'APK, oppure
+  l'indice Dark scaricato `r/.misc.png`, con i dati [OBB main, OBB patch,
+  `r/.misc.mp4`].
+
+Quindi gli OBB **non** contengono la grafica dell'editor avatar di KHUX: quella arriva
+dalle risorse scaricate (`r/misc`).
+
+**L'indice degli OBB nell'APK.** `aliud.png` ha la forma degli indici scaricati: record
+`/`, `md5` e `size`, cifratura 2, con `md5` = `3340d0fd0d088a470441972b933bbd74` e `size`
+= 228.769.672. Lo strato interno del BGI però **non si apre con la chiave della
+libreria**. Al montaggio il client passa la **chiave di sessione** (`data[3]` di
+`/system/login`), sia per `r/misc.png` sia per `aliud.png`. Se quell'indice è cifrato
+con la chiave del server originale, non possiamo leggerlo. Ne segue anche che gli
+indici che serviamo noi devono avere lo strato interno cifrato con **la nostra** chiave
+di sessione.
+
+**La strada in corso:** la 5.0.1 è offline, quindi il suo `aliud.png` deve essere
+leggibile senza server. Si scarica il suo `base.apk` e se ne estrae l'indice degli OBB
+76/87. Download in `D:\Progetto_Restauro_KH_UX\obb76\` e `apk501\`. I primi tentativi
+erano corrotti da due `curl` sullo stesso file: ora si scarica a segmenti paralleli e
+si verifica l'MD5.
 
 ### I dati del giocatore — `GET /user` e la catena che segue, 8 ottobre 2026
 
@@ -1462,8 +1490,9 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    Google *APK Expansion* (`/Android/obb/`) nel dex. Sul banco `/sdcard/Android/obb/` non
    esiste e il client arriva lo stesso al filmato: gli OBB servono più avanti, forse
    proprio ai dati del tutorial (ipotesi da verificare: il crash dopo il filmato potrebbe
-   dipendere anche da loro). Nomi attesi: `main.72.com.square_enix.android_googleplay.khuxww.obb`
-   e `patch.72.….obb`, MD5 `610e8ecd0187b5e9eb93963c8cd9d6d3` e
+   dipendere anche da loro; *poi smentita: gli OBB sono i dati di Dark Road*). Nomi
+   attesi, corretti dopo: `main.60.com.square_enix.android_googleplay.khuxww.obb`
+   e `patch.69.….obb`, MD5 `610e8ecd0187b5e9eb93963c8cd9d6d3` e
    `f4dd5699e567e0af8de7846703bc2ce5`. **Restano da cercare presso le comunità di
    preservazione** (Restoration Union e simili);
    l) ✅ **formato di trasporto dei file master verificato sul banco**: il client scarica
