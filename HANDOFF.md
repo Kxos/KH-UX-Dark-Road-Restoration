@@ -1080,9 +1080,18 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    **`json/server_api.json`, la tabella di tutte le 321 azioni**. `info/tutorial_master`
    è solo la revisione (`85883`); i dati veri stanno quasi certamente nei **file OBB**
    (`info/obb/main`, `info/obb/patch`: due MD5), che non sono nell'APK;
-   k) **prossimo:** procurarsi gli OBB della 4.3.1 (APKMirror li distribuisce a volte
-   come «APK bundle»/XAPK; altrimenti archivi della comunità), verificarli con gli MD5,
-   ed estrarli con `bgad.py` se sono pacchetti dello stesso tipo. Intanto: usare
+   k) **OBB: APKMirror non li ha** (verificato l'8 ottobre 2026). Per la 4.3.1 c'è una sola
+   variante, l'APK che già usiamo (versionCode 72, arm64-v8a + armeabi-v7a, nodpi); in
+   tutte le release, dalla 4.0.0 alla 5.0.1, nessun bundle né XAPK. Che il client li usi
+   è certo: `BGObbFileManager` (`mount`, `onDownloaded`, `launchDownloader`),
+   `SceneTitle::prepareInit` e `SceneTitle::downloadObb` nella libreria, e la libreria
+   Google *APK Expansion* (`/Android/obb/`) nel dex. Sul banco `/sdcard/Android/obb/` non
+   esiste e il client arriva lo stesso al filmato: gli OBB servono più avanti, forse
+   proprio ai dati del tutorial (ipotesi da verificare: il crash dopo il filmato potrebbe
+   dipendere anche da loro). Nomi attesi: `main.72.com.square_enix.android_googleplay.khuxww.obb`
+   e `patch.72.….obb`, MD5 `610e8ecd0187b5e9eb93963c8cd9d6d3` e
+   `f4dd5699e567e0af8de7846703bc2ce5`. **Restano da cercare presso le comunità di
+   preservazione** (Restoration Union e simili). Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso
    ChaCha8). In parallelo, il download delle **risorse** (`FUN_711df8`/`FUN_712100`).
