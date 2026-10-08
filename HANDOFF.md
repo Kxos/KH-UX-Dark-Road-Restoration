@@ -1382,12 +1382,15 @@ number 2}]`, `getEnemyDropItems`, `getTreasures`, `clearMissionIds [1,2]`,
   `player` (indice 0x5b): senza la riga del **livello 0** va in crash. Ora
   `make-game-tables.js` genera i livelli 0–99 (revisione master 22);
 - `GET /campaign` (azione 143): `campaigns`, array di int — gestita;
-- `GET /raid/list/181221` (azione 240): **non ancora gestita**, «200 ERROR :240».
+- `GET /raid/list/181221` (azione 240, `FUN_007aadc0`): `selfRaid` (`FUN_0079c07c`:
+  `raidStatus`, `raid` {`raidId` uint64, `level`, `useAp`, `timeLeft`, `feverFlag`,
+  `feverTime`, `stageId`, `parts[]`}) e `raids[]` — gestita (nessun raid);
+- `GET /party`, poi `GET /party/member/list` (azione 86): **non ancora gestita**.
 
 `tools/ldplayer/bench_prologue.ps1 -Out <log>` gioca ora tutto il Prologue (forziere,
 swipe, boss) e i risultati, in circa 1 minuto dopo `bench_flow.ps1`.
 
-Prossimo: `/raid/list` e le schermate che seguono il Prologue.
+Prossimo: `/party/member/list` e le schermate che seguono il Prologue.
 
 `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi Ghidra>` lancia la
 decompilazione headless in una riga.

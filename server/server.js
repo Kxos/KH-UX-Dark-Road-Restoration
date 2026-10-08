@@ -151,6 +151,7 @@ function route(url) {
   if (p === '/stage/clear') return 'stageclear';
   if (p === '/user/point') return 'userpoint';
   if (p === '/campaign') return 'campaign';
+  if (p.startsWith('/raid/list')) return 'raidlist';
   if (p === '/user') return 'user';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
@@ -959,9 +960,24 @@ function handler(scheme) {
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
-      // GET /user/point (azione 2): solo userData.userPoint (FUN_0078b230)
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: [] });
+      // GET /raid/list/181221 (azione 240, FUN_007aadc0): selfRaid (FUN_0079c07c modo 0:
+      // raidStatus int, raid {raidId uint64, level, useAp, timeLeft, feverFlag,
+      // feverTime, stageId, parts[]}) e raids[] ({...raid, isRelief, isEntry}).
+      // Nessun raid: raidStatus 0.
+      if (kind === 'raidlist') {
+        const now = serverTime();
+        return send(res, 200, {
+          ret: ret(),
+          selfRaid: {
+            raidStatus: 0,
+            raid: { raidId: 0, level: 0, useAp: 0, timeLeft: now, feverFlag: 0, feverTime: now, stageId: 0, parts: [] },
+          },
+          raids: [],
+        });
+      }
+      // GET /user/point (azione 2): solo userData.userPoint (FUN_0078b230)
       if (kind === 'userpoint') return send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) } });
       if (kind === 'user') return respondUser(res);
       if (kind === 'session') return respondSession(res);
