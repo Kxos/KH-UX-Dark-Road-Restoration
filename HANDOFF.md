@@ -160,8 +160,10 @@ vedi il suo README). `vmread` si ricostruisce con `build_vmread.py`.
    un aggiornamento dei master (§2, «Il crash dopo l'aggiornamento dei master»). Quests e
    la missione 2 completa, con forzieri, drop e inventario (munny, jewel, materiali)
    generati dalle mappe e controllati offline da `server/check-stage-data.js` (§2,
-   «Missione 2, forzieri, drop e inventario»). Prossimo: missione 3 (Combat 102), Avatar
-   Coin (tipo 14), e la fonte degli stage mancanti (10 in tabella su 979). Si procede come sempre:
+   «Missione 2, forzieri, drop e inventario»). Missioni 1–6 giocabili; la 7 va in
+   crash perché mancano le sue mappe `mappoi` (§2, «Missione 7»). Prossimo: mappe delle
+   missioni successive (originali o generate) e gli stage mancanti (10 in tabella su
+   979). Si procede come sempre:
    `action_case.py` sul dispatcher, decompilazione dei parser, `response_schema.py`,
    risposta in `server.js`, prova con `bench_flow` + `bench_prologue`.
    Aperti: l'avviso che compare morendo nel tutorial (nel tutorial non si muore, dice
