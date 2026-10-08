@@ -812,6 +812,39 @@ spazzatura), senza altre richieste al server. È il passo successivo al download
 riguarda più il protocollo: il pacchetto di prova è solo una copia di quello dell'APK,
 e la scena che segue vuole risorse e dati utente veri.
 
+**Il crash dopo l'installazione è legato solo a quell'avvio.** Il valore in `x0` era
+`0x4268000043680000`, cioè due `float` (232.0, 58.0): una dimensione dove il codice
+si aspettava un nodo, quindi con ogni probabilità un nodo già liberato dopo il
+rimontaggio dei pacchetti. Al riavvio successivo il client dichiara
+`resourceRevision: 1`, quindi l'installazione è stata registrata, e non va più in
+crash. Chiedeva però di riscaricare, perché il server dichiarava `versionRes = 7`.
+
+Ora `ret.versionRes`/`versionResLow` valgono **l'ultima versione presente in
+`resource_data`** (0 se nessuna). Con le revisioni coerenti il giocatore esistente
+prosegue oltre il download:
+
+```
+… /khux/login, /tutorial/status, PUT /user/awakening, GET /user  →  «200 ERROR :1»
+```
+
+`GET /user` (azione 1, `callUserGetAPI`) vuole i dati completi del giocatore: è il
+prossimo capitolo.
+
+**OBB su Internet Archive** (segnalazione dell'utente, verificata l'8 ottobre 2026):
+- gli elementi `main.76.com.square_enix.android_googleplay.khuxww` e `khux-5.0.1-ww`
+  contengono `main.76…obb` (1.652.397.828 byte, MD5 `2e77be60c0bb61456275f9e7d4768cad`) e
+  `patch.87…obb` (533.504.978 byte, MD5 `6fd36c21ed70e60f57d466105a018980`), insieme al
+  `base.apk` della 5.0.1;
+- sono della **5.0.1**, non i `main.72`/`patch.72` della 4.3.1 (MD5 attesi
+  `610e8ecd…` e `f4dd5699…`), che restano da trovare;
+- `cache.sqex-bridge.jp` contiene solo gli avvisi del gioco, non le risorse.
+
+Strada possibile: il client legge gli MD5 attesi da `info/obb/main` e `patch`, che
+stanno nel pacchetto `misc`. I pacchetti scaricati in `files/r/` sostituiscono quelli
+dell'APK, quindi potremmo servire un `misc` con gli MD5 della 76, **se** il contenuto
+degli OBB 5.0.1 è compatibile con il client 4.3.1. Da verificare: download in
+`D:\Progetto_Restauro_KH_UX\obb76\`.
+
 **Il protocollo delle risorse è completo**: richiesta, risposta, download, verifica,
 installazione e indice. Il server sa servire qualunque coppia pacchetto + indice
 nel formato originale, e costruirne l'indice.
@@ -1384,6 +1417,10 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    server la sceglie, `resource_index.py` costruisce l'indice, e sul banco l'indice
    viene accettato (niente «Save error»). Il crash successivo, a `0x12c1ee0`, è nella
    scena dopo il download.
+   q) ✅ **oltre il download**: con `versionRes` uguale all'ultima versione servita il
+   giocatore esistente arriva a `PUT /user/awakening` e `GET /user`. **Prossimo:** la
+   risposta di `GET /user` (azione 1), oppure gli OBB 5.0.1 da Internet Archive
+   (compatibilità con la 4.3.1 da verificare).
    **Prossimo:** la forma del JSON dentro le tabelle, partendo da una piccola. Intanto: usare
    `server_api.json` nel server per dare un nome a ogni azione nei log, e capire la
    cifratura dei file master scaricati (`key` di 32 byte: probabilmente lo stesso
