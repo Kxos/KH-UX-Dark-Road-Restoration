@@ -15,7 +15,7 @@ qui c'è come.
 | B · Server | ✅ scritto e testato in locale |
 | **Test sul dispositivo** | 🟡 **il gioco arriva alla registrazione del nome** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, download delle **106 tabelle master** (schema completo, tabelle minime), filmato introduttivo, **nome del giocatore**; poi crash all'editor avatar perché la sua grafica non è nell'APK. **Protocollo di download delle risorse ricavato e provato** (giocatore esistente): il client scarica i pacchetti che serviamo. Da giocatore esistente il client percorre **tutta la catena di avvio** (oltre 30 API) e avvia il primo stage della storia. Prossimo: **dati di gioco** (fase D) e **OBB** |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
-| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. L'editor avatar va in crash perché il suo layout 4.3.1 non c'è: gli OBB 5.0.1 coprono solo 160 dei 601 layout del 4.3.1. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
+| **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar si apre**; mancano le parti (`avatarParts`, fase D). Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
@@ -25,15 +25,15 @@ APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve essere
 **192.168.1.185** (il PC) durante le prove e tornare **automatico** a fine sessione.
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
-`misc.png`, revisione 2) e le tabelle master (revisione 7).
+`misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 7).
 
 **Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
 $env:KHUX_REVISION      = "7"                    # revisione dati master
-$env:KHUX_RESOURCE_SIZE = "2185902806"           # byte annunciati per il download
-$env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 2 = OBB in 33 pezzi + aliud.png 5.0.1
+$env:KHUX_RESOURCE_SIZE = "2317958810"           # byte annunciati per il download
+$env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"   # versione 3 = OBB 5.0.1 + addnl iOS 4.3.1, indice unito
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1, vedi sotto>"
 # $env:KHUX_NEWCOMER    = "0"   # giocatore esistente: catena /user/* e download risorse
 node server\server.js
@@ -48,9 +48,10 @@ La chiave non sta nel repository. Si rilegge dal binario 5.0.1:
 python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee54:0xe6ee54+32].hex())" D:\Progetto_Restauro_KH_UX\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so
 ```
 
-(`apk501\ext` = estrazione di `base.apk` 5.0.1; i pezzi in `resource_data\2\data` si
-rifanno con `recon/tools/resource_split.py <cartella> 64 <main.76> <patch.87>`, l'indice
-è l'`assets/aliud.png` 5.0.1 copiato in `resource_data\2\index\misc.png`.)
+(`apk501\ext` = estrazione di `base.apk` 5.0.1. `resource_data\3\data`: pezzi da 64 MB di
+`main.76` + `patch.87` + `addnl.mp4`, fatti con `recon/tools/resource_split.py`;
+`resource_data\3\index\misc.png` con `recon/tools/resource_merge.py` dall'`aliud.png` 5.0.1 e
+dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.py`.)
 
 **Script del banco** (`tools/ldplayer/`, `-Out` = file di log del server):
 - `bench_newcomer.ps1`: avvio, KHUX START, contratto, data di nascita, Download, SKIP
@@ -84,11 +85,11 @@ rifanno con `recon/tools/resource_split.py <cartella> 64 <main.76> <patch.87>`, 
 1. Da **giocatore esistente** la catena di avvio passa tutta e il client avvia il primo
    stage (`POST /stage/start`, `StartDeckEditDialog::startStory`): mancano dati di gioco.
 2. Da **nuovo giocatore**, con le risorse OBB installate: filmato → nome → editor avatar
-   (`FUN_00d6a4f4`), poi crash per puntatore nullo. **Causa accertata**:
-   `AvatarEditScene_ver131.json` non esiste negli OBB 5.0.1, e con lui mancano 441 dei
-   601 layout citati dal 4.3.1 (§2, «Gli OBB 5.0.1 serviti al client 4.3.1»). Serve una
-   scelta di direzione: cercare le risorse online della 4.x presso le comunità,
-   adattare i 13 layout `Offline_` equivalenti, oppure ripartire dal client 5.0.1.
+   (`FUN_00d6a4f4`): **risolto** servendo come risorse la versione 3 = OBB 5.0.1 +
+   `addnl` dell'IPA iOS 4.3.1 (§2, «Gli OBB 5.0.1 serviti al client 4.3.1»). L'editor
+   si apre; mancano le parti (`avatarParts` vuota). Restano 285 layout citati dal
+   binario e non trovati: da verificare man mano sul banco, cercando altre copie (IPA JP,
+   comunità) se servono.
 3. Fase D: popolare i master (khuxwiki) secondo `recon/out/master_types_ww431.json`.
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -1057,6 +1058,16 @@ strato interno con la chiave di sessione, record `/` con cifratura 2, poi `md5` 
 `resource_data\3\data` ci sono i 33 pezzi della versione 2 (hard link) più 2 pezzi di
 `addnl`; la versione 2 è stata spostata in `resource_data\v2_obb_only`.
 `KHUX_RESOURCE_SIZE` = 2.317.958.810.
+
+**Provato sul banco** (8 ottobre 2026, notte):
+- giocatore esistente: download della versione 3 (35 pezzi + indice, ~70 s), installata
+  come `misc.mp4` (2 GiB) + `misc.mp4.1` (170.475.162) + `misc.png` (29.385.856). Subito
+  dopo, il solito crash post-installazione a `0x12c1ee0`; al riavvio l'indice unito si
+  monta e la catena arriva a `POST /stage/start`, come prima;
+- **nuovo giocatore: l'editor avatar si apre** («How do you see yourself?»), con
+  l'avatar disegnato, le schede (Sets, Clothes, Accessories, …), COST 1/5, Perks e OK.
+  La lista dice «There are no avatar parts»: è la tabella master `avatarParts` vuota,
+  cioè lavoro della fase D, non grafica mancante.
 
 Strumenti: `recon/tools/bgad_extract.py` estrae un file dagli OBB dato l'offset
 dell'elenco `IDX_DUMP` di `bgi_check.py` (con `IDX_KEY` = chiave 5.0.1).
