@@ -8,11 +8,13 @@
 #  1. CA di sistema: l'APK originale ignora le CA utente e non si puo' ripatchare
 #     (LIAPP rifiuta la firma diversa con ErrorCode 90). /system e' in sola lettura,
 #     quindi si sovrappone alla cartella delle CA una copia in tmpfs.
-#  2. Dirottamento TCP 80/443 del solo uid del gioco verso il PC. Il DNS non serve:
-#     LDPlayer risolve i nomi fuori dallo stack di Android. Il nome voluto dal client
-#     arriva comunque al server, nello SNI e nell'header Host.
+#  2. Dirottamento TCP 80/443 del solo uid del gioco verso il PC. Il nome voluto dal
+#     client arriva comunque al server, nello SNI e nell'header Host.
 #  3. Orologio prima del 29/6/2021: dopo quella data il client mostra il popup di
 #     fine servizio, modale, e non tenta alcuna connessione.
+#  4. DNS verso il PC. Il guest ha il DNS privato opportunistico attivo: netd parla
+#     DNS-over-TLS (porta 853) con 8.8.8.8/8.8.4.4 e scavalca qualunque DNS in
+#     chiaro. Si spegne, si chiude la 853 e si dirotta la 53 al nostro server.
 set -u
 IP=${1:?uso: phaseb-guest.sh <ip-del-pc> [MMDDhhmmYYYY.ss]}
 WHEN=${2:-051512002021.00}
@@ -43,3 +45,13 @@ echo "uid del gioco $UID_: 80/443 -> $IP"
 settings put global auto_time 0
 settings put global auto_time_zone 0
 date $WHEN >/dev/null && echo "orologio: $(date)"
+
+# 4. DNS
+settings put global private_dns_mode off
+for p in udp tcp; do
+  while iptables -t nat -D OUTPUT -p $p --dport 53 ! -d $IP -j DNAT --to-destination $IP:53 2>/dev/null; do :; done
+  iptables -t nat -A OUTPUT -p $p --dport 53 ! -d $IP -j DNAT --to-destination $IP:53
+done
+while iptables -D OUTPUT -p tcp --dport 853 -j REJECT 2>/dev/null; do :; done
+iptables -I OUTPUT -p tcp --dport 853 -j REJECT
+echo "DNS: privato spento, 53 -> $IP, 853 chiusa"
