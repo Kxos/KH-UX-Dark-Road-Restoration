@@ -957,6 +957,14 @@ function respondStageClear(res, req) {
   // munny e materiali raccolti (sacchetti dei nemici, forzieri) come li riporta il client
   player.money = (player.money || 0) + (Number(req?.getPoint?.money) || 0);
   for (const m of req?.getMaterials || []) grantItem(5, m.materialId, m.number);
+  // sacchetti dei nemici: il client riporta solo gli uid (getEnemyDropItems), il
+  // contenuto e' la riga di reward del nemico nella mappa (1 se l'uid non ha record),
+  // come in CONGRATULATIONS (es. Spring Water x12 in Combat 102)
+  const enemyRows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
+  for (const uid of req?.getEnemyDropItems || []) {
+    const row = rewardRowById(enemyRows.get(uid) ?? 1);
+    row?.type.forEach((t, i) => { if (t === ENEMY_DROP_TYPE) grantItem(t, row.id[i], row.num[i]); });
+  }
   // premio del primo completamento («Quest Complete!»: es. Combat 101, 300 jewel)
   if (first && stage?.validClearGetItem) {
     stage.clearGetItemType.forEach((t, i) => grantItem(t, stage.clearGetItemId[i], stage.clearGetItemNum[i]));
