@@ -13,7 +13,7 @@ qui c'è come.
 | 1–2 · Ricognizione | ✅ completata — vedi [REPORT.md](REPORT.md) |
 | A · Analisi statica | ✅ completata — vedi [PHASE-A.md](PHASE-A.md) |
 | B · Server | ✅ scritto e testato in locale |
-| **Test sul dispositivo** | 🟢 **il gioco parte con il nostro server** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, `resourcesize` e **filmato introduttivo**. Prossimo: le chiamate dopo il filmato |
+| **Test sul dispositivo** | 🟡 **il gioco parte con il nostro server, ma senza dati** — APK **originale** su **LDPlayer 9 (Android 9)**, host **`api-s.sp.kingdomhearts.com`**. Titolo, KHUX START, contratto, data di nascita, `resourcesize` e **filmato introduttivo**; poi crash, perché non ci sono dati master né risorse. Prossimo: il protocollo di download |
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 
 ### Quello che sappiamo, tutto ricavato dal binario
@@ -470,6 +470,22 @@ KHUX START / KHDR START. Premendo **KHUX START** (nuovo utente):
 | 8 | *Birthdate Registration* (mese e anno) → conferma | nessuna richiesta: resta in locale |
 | 9 | `PUT /system/resourcesize/20200423?m=1` — azione **242**, corpo `{resoMode, masterRevision, resourceRevision, commonMasterRevision, evResourceIds}`, tutti a 0 | `ret` + **`size`** (uint, `kUint64Flag 0x2000`): i byte da scaricare. Con `0` il client salta il download |
 | 10 | «Complete» e **filmato introduttivo** di KHUX | il gioco è avviato |
+| 11 | fine del filmato (o SKIP) | ❌ **crash**: `SIGSEGV` a `0x10` nel `GLThread`. Backtrace tutto dentro `libhoudini`, quindi la funzione ARM non si vede |
+
+**Perché il crash: il client non ha dati.** Dopo il crash la cartella `files/` dell'app
+contiene solo `AppEventsLogger.persistedevents` e un `s000.gif` da 80 KB (con ogni
+probabilità un salvataggio camuffato). Nessun dato master, nessuna risorsa. Con
+`size: 0` il client crede di essere aggiornato, salta il download e, finito il filmato,
+legge strutture vuote.
+
+**Il download non parte da `size`.** Con `KHUX_RESOURCE_SIZE=1048576` il client mostra
+«Tap "Download" to download the game. (Approx. 1.00 MB)». Premuto **Download**, rimanda
+`PUT /system/resourcesize` e poi dice subito «Complete», **senza chiedere alcun file**.
+L'elenco di cosa scaricare (URL, nomi dei file, revisioni) deve arrivare da un altro
+campo della risposta o da un'altra chiamata, che il client non fa perché manca qualcosa.
+Da capire nel binario: indizi da seguire sono `resoMode`, `masterRevision`,
+`resourceRevision`, `commonMasterRevision`, `evResourceIds` nella richiesta, e i
+`versionRes`/`versionDat`/`commonVersionDat` di `ret`, che oggi mandiamo a 0.
 
 **In tutte le risposte `maintenance` va omesso.** Il client controlla che il suo tipo
 JSON sia null; anche `0` vale come manutenzione attiva e porta al popup con `viewUrl`.
@@ -946,7 +962,11 @@ python recon/tools/digest.py recon/ghidra/out/<nome>
    del titolo servito dal nostro server**;
    g) ✅ KHUX START → contratto → data di nascita → `resourcesize` (`size: 0`) → **il
    filmato introduttivo parte**;
-   h) **prossimo:** dopo il filmato, proseguire chiamata per chiamata, con lo
+   h) ❌ **dopo il filmato il client va in crash: non ha dati master né risorse**, e il
+   download non parte (vedi «Perché il crash» in §2). **Prossimo:** capire dal binario
+   il protocollo di download (dove legge l'elenco dei file e da quale host li
+   scarica), poi decidere da dove prendere i dati — è il punto in cui la fase B
+   incontra la fase D. Per le chiamate successive vale lo
    stesso metodo: leggere `200 ERROR :<azione>`, trovare il ramo dell'azione nella
    tabella di `FUN_007c3204`, decompilare i suoi parser, implementare la risposta.
    A fine sessione: rimettere il DNS di Windows su automatico.

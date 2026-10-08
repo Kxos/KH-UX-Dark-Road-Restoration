@@ -239,7 +239,10 @@ function respondResourceSize(res) {
   // masterRevision, resourceRevision, commonMasterRevision, evResourceIds}.
   // Il ramo 242 di FUN_007c3204 legge solo "size", intero senza segno: i byte
   // da scaricare prima di giocare.
-  send(res, 200, { ret: ret(), size: 0 });
+  // Con 0 il client salta il download e, senza dati master, va in crash dopo il
+  // filmato introduttivo. KHUX_RESOURCE_SIZE serve a provocare il download per
+  // scoprirne il protocollo.
+  send(res, 200, { ret: ret(), size: Number(process.env.KHUX_RESOURCE_SIZE || 0) });
 }
 
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
