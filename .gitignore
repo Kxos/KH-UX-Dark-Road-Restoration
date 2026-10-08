@@ -89,4 +89,6 @@ server/logs/
 server/master_data/
 # pacchetti di risorse serviti al client: sono (o derivano da) risorse di Square Enix
 server/resource_data/
+# salvataggio del giocatore (dati personali di gioco)
+server/save/
 tools/bin/
