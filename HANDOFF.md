@@ -19,6 +19,14 @@ qui c'è come.
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, sera)
 
+**Posizione (dall'8 ottobre 2026).** Tutto il lavoro sta su D: per lo spazio su C::
+repository in `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration`, Ghidra in
+`D:\Progetto_Restauro_KH_UX\Android\ghidra_12.1.4_PUBLIC_20260921` (con una junction
+dal vecchio `C:\work\Android\ghidra_…`), gli AVD `khux30`/`khux33` in
+`D:\Progetto_Restauro_KH_UX\avd` (i `.ini` in `%USERPROFILE%\.android\avd` puntano lì),
+screenshot e tombstone in `D:\Progetto_Restauro_KH_UX\screenshots`. Claude Code va
+aperto dalla cartella del repository su D:.
+
 **Banco.** LDPlayer 9 (`D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9`), istanza 0,
 APK 4.3.1 originale. Dopo ogni riavvio di LDPlayer va rieseguito
 `tools/ldplayer/phaseb-guest.sh`: CA di sistema, orologio al 15/5/2021, DNS verso il
@@ -27,7 +35,7 @@ PC e Private DNS spento. Il DNS IPv4 della scheda Ethernet di Windows deve esser
 Nel guest restano installate le risorse ricavate dagli OBB (`files/r/misc.mp4` + `.1` +
 `misc.png`, revisione 3 = OBB 5.0.1 + `addnl`) e le tabelle master (revisione 22).
 
-**Server**, da `C:\work\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
+**Server**, da `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration` (PowerShell):
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
@@ -79,7 +87,7 @@ dall'`addnl.png` dell'IPA 4.3.1, che si estraggono con `recon/tools/remote_zip.p
 
 **Analisi** (Ghidra headless: progetto `recon/ghidra/project`, JDK
 `D:\Programmi\Android\Android Studio\jbr`, Ghidra in
-`C:\work\Android\ghidra_12.1.4_PUBLIC_20260921\ghidra_12.1.4_PUBLIC`; si lancia con
+`D:\Progetto_Restauro_KH_UX\Android\ghidra_12.1.4_PUBLIC_20260921\ghidra_12.1.4_PUBLIC`; si lancia con
 `-process libcocos2dcpp.so -noanalysis -readOnly -scriptPath recon/ghidra`):
 - `khux_decomp.py` (decompila; `t 300` = timeout), `khux_listing.py` (segue il flusso),
   `khux_linear.py` (lineare: serve nei rami del dispatcher);
