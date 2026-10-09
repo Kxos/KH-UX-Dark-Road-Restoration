@@ -20,7 +20,7 @@ qui c'è come.
 ### Come riprendere il lavoro (stato al 10 ottobre 2026) — LEGGERE PRIMA QUESTO
 
 **Banco ora:** risorse **versione 29** installate (riserva dati 16 MiB, indice 64 KB: i
-cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 63**
+cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 66**
 (default degli script: **alzarla di 1 dopo ogni modifica di `server/master_data`**, poi
 `relogin.ps1` due volte: al primo il client scarica i master e va in crash, noto, al
 secondo entra); `server/master_data` e' fuori dal repository (ignorato): la tabella
@@ -36,8 +36,8 @@ Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
 animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
 vuoto), Sell Materials (vendita e stile), popup «Complete!», fascia rossa e «1/N» del
 popup della quantita', Moogle Shop (scheda Items con scambio funzionante, scheda Traits
-visibile). **Prossimo, in ordine:** 1) Moogle Shop: le altre righe dei Traits (ne compare
-una sola, vedi annotazioni) e lo scambio dei trait (scelta della medaglia); 2) Profilo,
+visibile). **Prossimo, in ordine:** 1) Moogle Shop: scambio dei trait (scelta della medaglia,
+vedi annotazioni); 2) Profilo,
 Avatar Boards, Other, rotolo del menu; 3) missione 8.
 
 **Metodo (regole dell'utente):** stile di ogni schermata dagli originali trovati online
@@ -172,8 +172,10 @@ poi i pulsanti in crash del menu.
   Righe: changeRowItem FUN_00ab175c, changeRowKakusei FUN_00aaf8e4, icona generica
   FUN_0074d540 (LuxBoard, AVT, Incentive, Medal, KB, Stamp, Icon_Skill nel Panel_Item);
   texture generate Mogshop_plate1, But29/But31 (righe dei trait), copie But30 (=But01).
-  **Da fare:** dei 13 Traits ne compare uno solo (Max Gauges +2): filtro del client da
-  capire (initMoogleShopScrollView, SceneMoogleShop); scambio dei trait (Select Medal,
+  Traits: tutte le 13 righe come l'originale (shuffleskill.type deve essere 1, altrimenti la
+  riga non compare; nei layout niente Label Txt_Count_Cus: il codice crea da Txt_Count un
+  CustomRichText con quel nome, FUN_006e436c; nei nomi «%» raddoppiato, passano da un
+  formato printf). **Da fare:** nomi lunghi dei trait che toccano l'icona; scambio dei trait (Select Medal,
   MoogleShop_Traits_MedalSelect_Pop_ver410 e _OverwriteCheck_ver410 mancanti); moogle
   (lwf/mogshop/mog_wait) LWF vuoto; targa LB_Munnies della scena non compare; se una
   risposta va in errore il server ha gia' scalato i jewel (rendere atomico).
