@@ -538,7 +538,11 @@ def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):
                           {'x': 0.0, 'y': 0.0, 'cX': 1.0, 'cY': 1.0, 'kX': 0.0, 'kY': 0.0}]}]})
         key = {'dI': 0, 'x': 0.0, 'y': 0.0, 'z': z, 'cX': 1.0, 'cY': 1.0, 'kX': 0.0, 'kY': 0.0,
                'twE': 0, 'tweenFrame': True, 'bd_src': 1, 'bd_dst': 771}
-        movs.append({'name': n, 'dl': 0.0, 'frame_data': [dict(key, fi=0), dict(key, fi=60)]})
+        # pulsazione come Cursor_Anim_Partner: opacita' 128 -> 255 -> 128 in 60 fotogrammi
+        # (nel video della vendita il riquadro pulsa con un ciclo al secondo)
+        col = lambda a: {'a': a, 'r': 255, 'g': 255, 'b': 255}
+        movs.append({'name': n, 'dl': 0.0, 'frame_data': [
+            dict(key, fi=0, color=col(128)), dict(key, fi=30, color=col(255)), dict(key, fi=60, color=col(128))]})
         texd.append({'name': frame(n)[:-4], 'width': float(pieces[n][2]), 'height': float(pieces[n][3]),
                      'pX': 0.5, 'pY': 0.5, 'plistFile': ''})
     plist_name = plist_name or name + '0.plist'
