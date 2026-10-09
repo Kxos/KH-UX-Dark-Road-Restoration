@@ -103,8 +103,13 @@ poi i pulsanti in crash del menu.
 **Annotazioni per dopo (cose viste sul banco, non ancora affrontate):**
 - Titolo: pulsanti «Restore Resources» (2), «Save User Data», «x3 [ex tres]», «KHDR
   START»: mai provati.
-- Detail medaglia: pulsante «Unequip» → popup di conferma (testi tradotti), azione mai
-  inviata al server; lucchetto ok.
+- Dettaglio medaglia: «Unequip» funziona (`POST /user/medal/remove`, azione 237; prima il
+  client chiede `GET /user/medal/preremove`, risposta generica: da studiare). Pulsante
+  «Share» (condividi con gli amici) mai provato.
+- Home: «Beginner's Guide», «Shop» (jewel), frecce ‹ › delle pagine: mai provati.
+- Pet: l'oggetto pet della sessione (+0x7c0) nasce solo dall'azione 170 (`pet`,
+  `pet.userPetCoordinate`, `petName`, `initCoordinate`), che il client non chiede mai
+  (isPet 0); ogni risposta che porta un petSubslot va in crash (0x7c8d40).
 - Popup Sort/Filter: «Favorite», «SP Attack Bonus / No Bonus» (grigi, forse disattivati
   dal codice), «Imitation», sezione «Special Traits» con 11 icone e «None» due volte:
   da confrontare con l'originale (guida 2017 non mostra i Trait, aggiunti dopo).
