@@ -11,6 +11,10 @@ $D = 'D:\Progetto_Restauro_KH_UX'
 $sg = "$D\stage_gen"
 $key = python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee54:0xe6ee54+32].hex())" "$D\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so"
 python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
+# testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
+# scritti a mano: dove c'e' l'originale prevale
+python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts"
+Copy-Item "$D\layouts\ui_texts\text\ui\*" "$sg\files\text\ui\" -Force
 python -I recon\tools\resource_pack.py "$sg\files" $key "$sg\gen.mp4" "$sg\gen.png"
 $v = "$D\resource_data\$Version"
 if (Test-Path $v) { throw "$v esiste gia'" }

@@ -1360,8 +1360,10 @@ function handler(scheme) {
 // ---------------------------------------------------------------------------
 function start() {
   console.log('--- server privato KHUX (fase B) ---');
-  // MD5 dei pacchetti di risorse calcolati subito, non alla prima richiesta del client
-  for (const v of resourceVersions()) {
+  // MD5 dei pacchetti di risorse calcolati subito, non alla prima richiesta del client;
+  // solo l'ultima versione (l'unica annunciata): con tutte, a dozzine di GB, il server si
+  // metteva in ascolto dopo minuti e il client andava in timeout («28 ERROR :251», curl 28)
+  for (const v of resourceVersions().slice(-1)) {
     const n = resourceFiles(v, 'data').length + resourceFiles(v, 'index').length;
     console.log(`risorse versione ${v}: ${n} file pronti`);
   }

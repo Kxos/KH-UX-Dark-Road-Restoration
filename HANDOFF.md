@@ -17,6 +17,30 @@ qui c'è come.
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 | **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
+### Come riprendere il lavoro (stato al 9 ottobre 2026, pomeriggio)
+
+**Stato al 9 ottobre, in breve** (dettagli in §2, «Il menu a tendina bloccato»,
+«Mappatura dei pulsanti», «Equipment — risolto», «Layout sostitutivi»):
+- tutorial finito dalla fase 995: menu a tendina funzionante; Equipment funzionante
+  (`GET /keyblade/subslot`); Presents funzionante (layout sostitutivi + testi);
+- banco: **risorse versione 15** installate (= OBB 5.0.1 + addnl + pacchetto generato:
+  mappe, LWF vuoti per pet/NPC, layout di `make_layouts.py`, animazioni Armature
+  sostitutive, **2.332 testi `text/ui` originali** dell'IPA 4.4.0); master revisione 57;
+- una versione nuova: `tools\ldplayer\session\build-resources.ps1 -Version N` (genera
+  layout e testi, unisce) poi `update-resources.ps1` (~5 min). Il server prepara solo
+  l'ultima versione (prima le preparava tutte: minuti di avvio e «28 ERROR :251»);
+- **aperto: Medal List** va in crash dopo il layout (`MedalListScene_ver130` e
+  `MedalList_Gen.json` generati) e dopo le animazioni (`Cursor_Anim_MedalSell`,
+  `MedalSelectAnimation`): ora `strlen` su NULL in libc dentro una callback
+  (`std::function`, frame `0x715ac8`, `0x146c57c` = nativeRender), testi esclusi. Da
+  catturare con armtrace (base `0x31c0000`; la ricerca dei registri non ha trovato lo stato
+  di quel thread: provare cercando `x30` nella libreria senza vincolo su `pc`, o leggere
+  la regione dello stack di tutti i thread);
+- altri pulsanti in crash per layout mancanti: Profilo (`AvatarInfoScene_A_ver131`),
+  Moogle Shop (`MoogleShopScene_ver410` + `lwf/mogshop/mog_wait`), Avatar Boards
+  (`SphereBoardScene_ver310`), Other e rotolo (`MenuDialog_ver300`?); vedi la tabella
+  della mappatura. Poi la missione 8 (punto b).
+
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, notte)
 
 **Posizione (dall'8 ottobre 2026).** Tutto il lavoro sta su D: per lo spazio su C::
@@ -1910,6 +1934,33 @@ sostituire con le texture blu). Grafica di riferimento: 112 fogli di Spriters Re
 in `D:\Progetto_Restauro_KH_UX\reference\spriters\` (scaricati con Edge pilotato da
 Playwright per superare la verifica Cloudflare, poi `curl_cffi` con i suoi cookie),
 67 schermate in `reference\<sezione>\` con le fonti in `SOURCES.md`.
+
+**Layout, seguito (9 ottobre, pomeriggio).**
+- `make_layouts.py` ora ha quattro tipi di voce: `copy` (con `retex`: texture `dark_*` →
+  KHUX, togliendo il prefisso o con `DARK_TO_KHUX`), `scene` (nodi vuoti o con
+  `GUIComponent` che carica un layout: `('CenterUI', 'publish/X.json')`), `build`
+  (layout costruito da una descrizione: `P` pannello, `I` immagine, `B` pulsante con
+  Label, `L` etichetta; modelli dei widget clonati da `dark_PresentBOX_base.json`) e
+  `armature` (copia di `ArrowAnim.ExportJson` con armatura e movimenti rinominati);
+- le texture delle risorse sono in formato **BTF** (`\x89BTF`, larghezza/altezza a +0x16,
+  zlib): `recon/tools/btf_to_png.py` le converte (RGBA8888, RGBA4444, a tavolozza).
+  Elenco delle texture `cocostudio/publish` in `D:\Progetto_Restauro_KH_UX\layouts\textures.txt`;
+  equivalenti KHUX scelti: `Panel04` (riquadro blu scuro), `Plate12` (pillola scura),
+  `Plate13` (barra scura), `But16` rosso, `But17` arancione, `Win01`/`Win11`;
+- **testi `text/ui`**: il client ne cita 856 con id costante (`ui_text_ids.py`, elenco in
+  `layouts\ui_text_ids.tsv`), le risorse servite ne avevano 128. Il pacchetto `misc` dell'IPA
+  4.4.0 (`misc.mp4` 21 MB, scaricato con `remote_zip.py` in `ipa440\`, indice
+  `names440misc.tsv`) ne ha 2.403: `import_ui_texts.py` copia i 2.332 assenti (originali)
+  e `build-resources.ps1` li mette nel pacchetto. Lo stesso pacchetto ha anche 21 dei
+  layout mancanti (titolo, registrazione, informazioni: non ancora usati);
+- Medal List: nomi dei widget da `FUN_00df1c00` e vicine (`Win_Bottom` con `Txt` e
+  `Txt_Button` Label, `Medal_Sell_Panel`, `Scroll_Area`, `Button_Back`, `Button_Sort`,
+  `Button_Sell1`/`Txt_Sell1`); il cursore della griglia e' l'armatura
+  `Cursor_Anim_MedalSell` (movimento `Animation1`, `FUN_00882e10`), la selezione
+  `MedalSelectAnimation` (`Medal_Select01`, `FUN_009e7108`); `ArmatureAnimation::play`
+  (`FUN_01188fac`) con un movimento assente → crash;
+- «N ERROR :251» = curl N (28 = timeout): era il server che si metteva in ascolto dopo
+  minuti; `bench_start.ps1` ora preme anche l'OK di quel popup.
 
 Dei 601 layout cocostudio citati dal binario ne mancano 307 (`logs\layout_mancanti.txt`,
 da `asset_coverage.py`), 49 sono schermate intere. Indirizzi da `armtrace`: la base di
