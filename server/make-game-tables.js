@@ -90,6 +90,10 @@ if (realMedals) {
     byId.set(r.medalId, Object.assign(fromReal('medal', r), {
       imageId: img, thumbId: img, cutinId: img, artId: img, displayId: img,
       listSortId: r.sortId, burstEnhanceCategory: [0, 0], groupId: 0,
+      // unk_1116 (tra advantage e type nel formato vecchio) vale 1 esattamente sulle medaglie
+      // di supporto (EXP, evoluzione): e' validPack, le medaglie che si impilano in una cella
+      // con il numero di copie (badge rosso Minfo_Eco_Panel negli screenshot originali)
+      validPack: r.unk_1116 ? 1 : 0,
     }));
   }
   medals.splice(0, medals.length, ...byId.values());
