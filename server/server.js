@@ -151,6 +151,7 @@ function route(url) {
   if (p === '/user/medal/enhance') return 'medalenhance';
   if (p === '/user/medal/evolve') return 'medalevolve';
   if (p === '/user/medal/remove') return 'medalremove';
+  if (p === '/moogleshop/list') return 'moogleshoplist';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
@@ -1540,6 +1541,9 @@ function handler(scheme) {
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
       if (kind === 'medalevolve') return respondMedalEvolve(res, entry.bodyDecoded);
       if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
+      // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
+      // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop
+      if (kind === 'moogleshoplist') return send(res, 200, { ret: ret(), moogleshops: player.moogleshops || [] });
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);

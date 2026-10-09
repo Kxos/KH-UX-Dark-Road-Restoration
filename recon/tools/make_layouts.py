@@ -194,6 +194,89 @@ LAYOUTS = {
             L('Txt_A_Ticket_Label', 140, 14, 100, 28, '0', 20),
         ], visible=False),
     ])),
+    # Moogle Shop (SceneMoogleShop, FUN_00e0d504/FUN_00e0dce8/FUN_00e0ee00, schede
+    # FUN_00e0ea2c): nessun layout esiste nelle risorse. Disposizione dalla 4.1.0 giapponese
+    # (reference\moogle_shop\jp410_*.png, youtube FX5Chfckqkk): schede «Traits»/«Items»
+    # (tab0/tab1: pulsante img/ui/Mogshop_tab_*, Txt_Tab, Icon_New), «Sell Materials»
+    # arancione in alto a destra, finestra con l'elenco (CenterUI > Mshop_win > Area_Traits,
+    # Area_Item, win_Traits, win_Item), «Select Medal» e i Munny posseduti in basso, il
+    # moogle a destra (Moogle_Fla, lwf/mogshop/mog_wait). Nomi dalle stringhe del codice
+    # (func_strings.py) e dal decompilato.
+    'MoogleShopScene_ver410.json': ('scene', [('CenterUI', 'publish/MoogleShop_Gen.json'),
+                                              ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
+    'MoogleShop_Gen.json': ('build', P('moogle_shop_root', 0, 0, 960, 640, [
+        # tab1/tab2 (FUN_00e0ea2c: «tab%d» da 1; testi 106220402/403) sono ImageView: il pulsante (FUN_008d5c18) vi carica img/ui/Mogshop_tab_*
+        # (da Panel: crash in loadTexture); figli rispetto al centro
+        I('tab1', 172, 488, 175, 40, 'Plate01.png', s9=False, children=[
+            L('Txt_Tab', 0, 0, 170, 36, 'Traits', 22),
+            I('Icon_New', 70, 18, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
+        I('tab2', 352, 488, 175, 40, 'Plate01.png', s9=False, children=[
+            L('Txt_Tab', 0, 0, 170, 36, 'Items', 22),
+            I('Icon_New', 70, 18, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
+        B('Button_EquipSell', 626, 492, 178, 53, 'But03', 'Sell Materials', 22, label='Txt_EquipSell',
+          opts=BUTS),
+        P('Mshop_win', 75, 75, 640, 395, [
+            I('win_Traits', 320, 197, 640, 395, 'Panel04.png', opts=GRID),
+            I('win_Item', 320, 197, 640, 395, 'Panel04.png', opts=GRID, visible=False),
+            P('Area_Traits', 10, 10, 620, 375),
+            P('Area_Item', 10, 10, 620, 375, visible=False)]),
+        L('Txt_NoItem', 395, 272, 500, 40, 'No items available.', 24, visible=False),
+        B('Button_MedalSelect', 255, 42, 177, 64, 'But01', 'Select Medal', 22, label='Txt_MedalSelect',
+          opts=BUTS),
+        I('LB_Munnies', 560, 42, 300, 26, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_MunniesPossessed_Label', -85, 0, 120, 24, 'Munny', 17),
+            I('Icon_Munnies', -10, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+            L('Txt_Munnies', 80, 0, 140, 24, '0', 18)]),
+        P('Moogle_Fla', 795, 140, 10, 10),
+    ])),
+    # Righe dell'elenco (FUN_00aaf278 le crea: Traits 721x110, Items 721x184; riempite da
+    # FUN_00aaf8e4 e FUN_00ab175c). Nomi dal decompilato; disposizione dalle righe della 4.1.0
+    # (riquadro scuro con icona del trait, nome, prezzo a destra; oggetti su targa dorata
+    # con «Buy»). Panel_Disable, Caution, LockMask nascosti: li mostra il codice.
+    'MoogleShop_Traits_Panel_ver410.json': ('build', P('Panel', 0, 0, 721, 110, [
+        P('SkillPanel', 30, 15, 660, 80, [
+            I('Skill_Base', 330, 40, 660, 70, 'Plate02.png', opts=PANEL4),
+            I('kakusei_Icon', 45, 40, 60, 60, 'Plate01.png', s9=False),
+            L('Txt_KakuseiSkill', 250, 40, 330, 36, '', 22)]),
+        P('Count', 30, 82, 200, 24, [L('Txt_Count', 100, 12, 190, 22, '', 16)], visible=False),
+        P('Count_Rare', 30, 82, 200, 24, [L('Txt_Count_Cus', 100, 12, 190, 22, '', 16)], visible=False),
+        P('Jewel', 470, 30, 200, 50, [
+            I('Jewel_Icon', 20, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
+            L('Txt_Jewel', 120, 25, 150, 30, '0', 22)]),
+        P('Munnies', 470, 30, 200, 50, visible=False),
+        P('Caution', 30, 0, 660, 20, [L('Txt_Caution', 330, 10, 640, 20, '', 16)], visible=False),
+        I('Icon_New', 30, 90, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False),
+        L('Txt_Limit', 600, 95, 160, 20, '', 16),
+        P('Panel_Disable', 0, 0, 721, 110, visible=False),
+        P('LockMask', 0, 0, 721, 110, [
+            B('ImageButton_LockMask', 360, 55, 721, 110, 'But16', None),
+            I('Icon_Lock', 650, 55, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False)])),
+    'MoogleShop_Item_Panel.json': ('build', P('Item', 0, 0, 721, 184, [
+        P('Panel', 0, 0, 721, 184, [
+            P('Panel_Item', 20, 20, 140, 140),
+            L('Txt_Material_Name', 330, 120, 320, 30, '', 22),
+            L('Txt_Material_Text', 330, 80, 320, 50, '', 18),
+            I('Icon_Skill', 190, 120, 40, 40, 'Plate01.png', s9=False, visible=False),
+            P('Jewel', 500, 110, 200, 40, [
+                I('Jewel_Icon', 20, 20, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
+                L('Txt_Jewel', 120, 20, 150, 30, '0', 22)]),
+            B('But_Buy', 600, 50, 177, 64, 'But01', 'Buy', 24, label='Txt_buy', opts=BUTS),
+            P('Count', 20, 160, 200, 24, [L('Txt_Count', 100, 12, 190, 22, '', 16)], visible=False),
+            I('Plate_Count', 600, 160, 200, 24, 'Plate03.png', opts=PLATE3, visible=False),
+            L('Txt_Limit', 600, 160, 180, 22, '', 16),
+            L('Txt_Caution', 360, 10, 640, 20, '', 16, visible=False),
+            I('Icon_New', 30, 170, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
+        P('Panel_Rare', 0, 0, 721, 184, [
+            P('Panel_Item', 20, 20, 140, 140),
+            I('Plate_Count_Rare', 600, 160, 200, 24, 'Plate03.png', opts=PLATE3),
+            L('Txt_Count_Cus', 600, 160, 180, 22, '', 16)], visible=False),
+        P('LockMask', 0, 0, 721, 184, [
+            B('ImageButton_LockMask', 360, 92, 721, 184, 'But16', None),
+            I('Lock_icon', 650, 92, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False),
+        B('ImageButton_Buy1', 600, 50, 177, 64, 'But01', None, opts=BUTS, visible=False)])),
+    # IconPanel: dentro Panel_Item; Base riceve img/ui/Mogshop_plate1.png (make_textures.py)
+    'MoogleShop_IconPanel.json': ('build', P('IconPanel', 0, 0, 140, 140, [
+        I('Base', 70, 70, 140, 140, 'Plate01.png', s9=False)])),
     # Quantita' da vendere di una medaglia impilata (equip_sell_popup, piu' sotto).
     'EquipSell_Medal_Step1_ver131.json': ('func', 'equip_sell_popup'),
     # Conferma della vendita (FUN_00bf3804): dal popup generico OK/Annulla originale.
@@ -383,6 +466,12 @@ LAYOUTS = {
 # quindi prevalenti); qui solo quelli che li' mancano, dalle immagini di riferimento
 # (reference\) o dall'equivalente Dark Road.
 TEXTS = {
+    # Moogle Shop, testi aggiunti con i trait a Munny (4.1.0, assenti anche dall'IPA 4.4.0):
+    # Txt_Munnies accanto ai Munny posseduti (0xe0e7e4; nel video JP «所持マニー») e la
+    # conferma del trait (0xe14394, «マニー5000000を消費して覚醒能力をつけます。»),
+    # sul modello del testo a jewel 106220409
+    106260102: 'Munny',
+    106260101: 'Setting this trait will cost <important>${1:%d}</important> Munny.',
     # Presents (FUN_00d0b350)
     103500013: 'Presents can be collected here.\nPresents over the limit of 200 will be deleted,\n'
                'oldest first, as will those past their expiry date.',   # Txt_Wording
@@ -473,6 +562,12 @@ COPIES = {'cocostudio/publish/' + n: 'img/incentive/' + n
 COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%d.png' % i for i in range(2, 9)})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
                for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
+# Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come
+# per gli NPC e il pet (FUN_011f9fc4 restituisce NULL se manca: crash)
+_EMPTY_LWF = os.path.join(OUT, 'lwf', 'character', 'npc', '2000', 'wait', 'wait.lwf')
+if os.path.exists(_EMPTY_LWF):
+    os.makedirs(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait'), exist_ok=True)
+    shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
 # Animazione del risultato di Evolve (FUN_00ccbad8: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il
 # client va in crash dopo la risposta. Copia di quella del Level Up (card_strength_result_01)

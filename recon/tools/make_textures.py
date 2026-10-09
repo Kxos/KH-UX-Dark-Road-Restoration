@@ -120,5 +120,37 @@ for suf in ('Off', 'On'):
     b = Image.new('RGBA', (95, 72), (0, 0, 0, 0))
     b.alpha_composite(hslice(load('cocostudio/publish/But16_%s.png' % suf), 95, 58, 30), (0, 7))
     save('But23_%s.png' % suf, b)
+def mog_tab(active):
+    """Scheda del Moogle Shop (img/ui/Mogshop_tab_Off/_On, pulsante di FUN_00e0ea2c):
+    linguetta arrotondata in alto; spenta blu scuro con bordo azzurro, accesa azzurra
+    (reference\\moogle_shop\\jp410_160.png)."""
+    w, h = 175, 40
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    r = 10 * S
+    d.rounded_rectangle((0, 0, w * S - 1, h * S + r), r, fill=(90, 190, 240, 255))
+    b = 2 * S
+    top, bottom = ((80, 200, 245), (40, 140, 210)) if active else ((25, 70, 150), (15, 45, 110))
+    for y in range(b, h * S):
+        t = y / (h * S)
+        c = tuple(int(top[k] + (bottom[k] - top[k]) * t) for k in range(3))
+        d.line((b, y, w * S - 1 - b, y), fill=c + (255,))
+    mask = Image.new('L', im.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, w * S - 1, h * S + r), r, fill=255)
+    out = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    out.paste(im, (0, 0), mask)
+    return out.resize((w, h), Image.LANCZOS)
+
+
+def save_ui(name, im):
+    p = os.path.join(out, 'img', 'ui')
+    os.makedirs(p, exist_ok=True)
+    with open(os.path.join(p, name), 'wb') as fh:
+        fh.write(btf.encode(im))
+    print('img/ui/' + name, im.size)
+
+
+save_ui('Mogshop_tab_Off.png', mog_tab(False))
+save_ui('Mogshop_tab_On.png', mog_tab(True))
 # filtro Guilt 9 (100x100, scala 0,7): l'icona della Guilt 8, l'ultima esistente
 save('MedalInfo_Guilt9.png', fit(load('img/ui/guilt/MedalInfo_Guilt8.png'), (100, 100)))

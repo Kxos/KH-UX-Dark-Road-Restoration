@@ -120,7 +120,14 @@ poi i pulsanti in crash del menu.
   (101210001–003 sono uno spazio nelle risorse inglesi; nell'originale «FOR SYNTHESIS»).
 - Evolve: barra nera sotto il materiale corretta; «Sell Medals» da Evolve ok; mancano le
   animazioni originali del risultato (ora quella del Level Up).
-- Avatar, Moogle Shop, Avatar Boards, Other, rotolo del menu: crash (vedi «Mappatura dei
+- Moogle Shop (10 ottobre): si apre (scena e righe generate, schede tab1/tab2,
+  `GET /moogleshop/list` → `moogleshops[]`). Da fare: la tabella master `moogleshop` e'
+  vuota (nessun articolo: righe dalla khuxwiki, pagina Moogle Shop; acquisto da
+  studiare), il moogle (lwf/mogshop/mog_wait) e' un LWF vuoto, la targa dei Munny
+  (LB_Munnies) non compare, «Sell Materials» va in crash (schermata da studiare),
+  texture img/ui/Mogshop_plate1, ShopBut_Lock*, But29/30/31 assenti (righe articolo).
+  Riferimenti: reference\moogle_shop\ (video JP 4.1.0 FX5Chfckqkk, EN -3Tc94iOomA).
+- Avatar, Avatar Boards, Other, rotolo del menu: crash (vedi «Mappatura dei
   pulsanti»). Missione 8 senza mappa.
 
 **Regole delle risorse scoperte (valgono per ogni schermata futura):**
