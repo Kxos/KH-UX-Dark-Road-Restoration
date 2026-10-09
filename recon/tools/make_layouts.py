@@ -15,6 +15,7 @@ restano quelle della sorgente (texture gia' nelle risorse).
 """
 import json
 import os
+import plistlib
 import shutil
 import sys
 
@@ -335,11 +336,16 @@ LAYOUTS = {
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash (FUN_011843c4). Copia di ArrowAnim con armatura e movimento rinominati.
     # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita (FUN_00882e10,
-    # movimento Animation1; FUN_00883118 lo mostra sulle celle scelte). Copia del cursore
-    # della fusione (Cursor_Anim_MdalMix_ver103, dall'addnl: bagliore Medal_Syn_Select_Eff02
-    # 144x172 che pulsa, stesso movimento Animation1; plist e texture restano i suoi).
-    'Cursor_Anim_MedalSell.ExportJson': ('armature', 'Cursor_Anim_MdalMix_ver103.ExportJson',
-                                         'Cursor_Anim_MedalSell', {}),
+    # movimento Animation1; FUN_00883118 lo mostra sulle celle scelte). Nell'originale e' un
+    # riquadro bianco arrotondato (reference\medal_list\web_reddit_sell_playingcard.jpg):
+    # la cornice bianca con alone del Partner (Deck_Partner_Plate_Cursor 346x122) ricomposta
+    # in 9-slice con 8 ossa (frame_armature), 140x176 centrata come il vecchio bagliore.
+    # Il client legge solo i plist che esistono gia' nelle risorse originali (provato: un plist
+    # con un nome nuovo non si carica, anche identico all'originale). Il nostro sostituisce
+    # quello di EquipmentBGAction, armatura che il codice non cita mai (resource_merge
+    # --last-wins).
+    'Cursor_Anim_MedalSell.ExportJson': ('frame', 'Cursor_Anim_MedalSell', 'Cursor_Anim_Partner0.png',
+                                         (346, 122), 40, 140, 176, (2, 9), 'EquipmentBGAction0.plist'),
     # MedalSelectAnimation: selezione delle medaglie (FUN_009e7108, movimento Medal_Select01).
     'MedalSelectAnimation.ExportJson': ('armature', 'ArrowAnim.ExportJson', 'MedalSelectAnimation',
                                         {'Left': 'Medal_Select01', 'Right': 'Animation1'}),
@@ -506,16 +512,78 @@ def build(s):
     return w
 
 
+def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):
+    """Armatura (ExportJson + plist) che disegna una cornice w x h da una texture di cornice
+    tsize: 4 angoli c x c e 4 lati (fette di 10 px dal centro della texture) scalati solo
+    lungo il lato. Movimento Animation1 fermo. Restituisce (ExportJson, testo del plist)."""
+    tw, th = tsize
+    mx, my = tw // 2 - 5, th // 2 - 5
+    pieces = {   # nome: (x, y, larghezza, altezza) nella texture (y verso il basso)
+        'TL': (0, 0, c, c), 'TR': (tw - c, 0, c, c), 'BL': (0, th - c, c, c), 'BR': (tw - c, th - c, c, c),
+        'T': (mx, 0, 10, c), 'B': (mx, th - c, 10, c), 'L': (0, my, c, 10), 'R': (tw - c, my, c, 10)}
+    hx, hy, k = w / 2 - c / 2, h / 2 - c / 2, c / 2
+    place = {    # nome: (x, y, scala x, scala y) dell'osso, y verso l'alto
+        'TL': (-hx, hy, 1, 1), 'TR': (hx, hy, 1, 1), 'BL': (-hx, -hy, 1, 1), 'BR': (hx, -hy, 1, 1),
+        'T': (0, hy, (w - 2 * c) / 10, 1), 'B': (0, -hy, (w - 2 * c) / 10, 1),
+        'L': (-hx, 0, 1, (h - 2 * c) / 10), 'R': (hx, 0, 1, (h - 2 * c) / 10)}
+    del k
+    frame = lambda n: '%s_%s.png' % (name, n)
+    bones, movs, texd = [], [], []
+    for z, (n, (x, y, sx, sy)) in enumerate(place.items()):
+        # numeri decimali come negli ExportJson originali: il lettore controlla il tipo
+        bones.append({'name': n, 'parent': '', 'dI': 0, 'x': float(x + off[0]), 'y': float(y + off[1]), 'z': z,
+                      'cX': float(sx), 'cY': float(sy), 'kX': 0.0, 'kY': 0.0, 'arrow_x': 0.0, 'arrow_y': 0.0,
+                      'effectbyskeleton': False, 'bl': 0,
+                      'display_data': [{'name': frame(n), 'displayType': 0, 'skin_data': [
+                          {'x': 0.0, 'y': 0.0, 'cX': 1.0, 'cY': 1.0, 'kX': 0.0, 'kY': 0.0}]}]})
+        key = {'dI': 0, 'x': 0.0, 'y': 0.0, 'z': z, 'cX': 1.0, 'cY': 1.0, 'kX': 0.0, 'kY': 0.0,
+               'twE': 0, 'tweenFrame': True, 'bd_src': 1, 'bd_dst': 771}
+        movs.append({'name': n, 'dl': 0.0, 'frame_data': [dict(key, fi=0), dict(key, fi=60)]})
+        texd.append({'name': frame(n)[:-4], 'width': float(pieces[n][2]), 'height': float(pieces[n][3]),
+                     'pX': 0.5, 'pY': 0.5, 'plistFile': ''})
+    plist_name = plist_name or name + '0.plist'
+    ej = {'content_scale': 1.0,
+          'armature_data': [{'strVersion': '1.6.0.0', 'version': 1.6, 'name': name, 'bone_data': bones}],
+          'animation_data': [{'name': name, 'mov_data': [{'name': 'Animation1', 'dr': 61, 'lp': True, 'to': 0,
+                                                          'drTW': 0, 'twE': 0, 'sc': 1.0, 'mov_bone_data': movs}]}],
+          'texture_data': texd, 'config_file_path': [plist_name], 'config_png_path': [png]}
+    # plist come quelli di CocoStudio (tabulazioni, una chiave per riga): scritto su una
+    # riga sola il client non mostrava l'armatura
+    frames = {frame(n): {'width': pw, 'height': ph, 'originalWidth': pw, 'originalHeight': ph,
+                         'x': px, 'y': py, 'offsetX': 0.0, 'offsetY': 0.0}
+              for n, (px, py, pw, ph) in pieces.items()}
+    plist = plistlib.dumps({'frames': frames,
+                            'metadata': {'format': 0, 'textureFileName': png, 'realTextureFileName': png,
+                                         'size': '{%d,%d}' % (tw, th)},
+                            'texture': {'width': tw, 'height': th}}, sort_keys=False).decode('utf-8')
+    return ej, plist_name, plist
+
+
 os.makedirs(os.path.join(OUT, *PUB.split('/')), exist_ok=True)
 for target, spec in LAYOUTS.items():
     if spec[0] == 'scene':
         data, how = scene(spec[1]), 'scena'
+    elif spec[0] == 'frame':
+        data, plist_name, plist = frame_armature(*spec[1:])
+        with open(os.path.join(OUT, *PUB.split('/'), plist_name), 'w', encoding='utf-8', newline='') as fh:
+            fh.write(plist)
+        # il client usa la texture col nome del plist (.plist -> .png), non quella indicata:
+        # la si copia anche con quel nome
+        png_name = plist_name[:-len('.plist')] + '.png'
+        if png_name != spec[2]:
+            shutil.copyfile(os.path.join(SRC, *PUB.split('/'), spec[2]), os.path.join(OUT, *PUB.split('/'), png_name))
+            data['config_png_path'] = [png_name]
+        how = 'cornice 9-slice da ' + spec[2]
     elif spec[0] == 'armature':
         data = json.load(open(os.path.join(SRC, *PUB.split('/'), spec[1]), encoding='utf-8-sig'))
         data['armature_data'][0]['name'] = spec[2]
         data['animation_data'][0]['name'] = spec[2]
         for mv in data['animation_data'][0]['mov_data']:
             mv['name'] = spec[3].get(mv['name'], mv['name'])
+        if len(spec) > 4:               # plist copiato con un nome nuovo
+            shutil.copyfile(os.path.join(SRC, *PUB.split('/'), data['config_file_path'][0]),
+                            os.path.join(OUT, *PUB.split('/'), spec[4]))
+            data['config_file_path'] = [spec[4]]
         how = 'armatura da ' + spec[1]
     elif spec[0] == 'build':
         data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}

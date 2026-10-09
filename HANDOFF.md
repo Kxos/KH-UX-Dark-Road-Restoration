@@ -86,6 +86,36 @@ dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spunta
   Banco: nessuna medaglia tagliata; la 7ª colonna si seleziona (vendita) e apre il
   dettaglio (lista).
 
+**Fatto dopo (9 ottobre, sera):** Unequip in inglese; Level Up completo
+(`POST /user/medal/enhance`, curva EXP del client, popup materiali rari); Evolve non va
+piu' in crash (scena `MedalEvoScene_ver320` e layout generati, stile da
+`reference\medal_evolve\`); vendita nello stile originale (barre curve, Sort arancione,
+Sell rosso, icone delle valute, riquadro bianco di selezione); 46 pulsanti `img/ui/*_On`
+copiati (crash di «Sell Medals» da Evolve). Da fare: stile di Medal List come i
+riferimenti, conferma di un'evoluzione vera, poi i pulsanti in crash del menu.
+
+**Regole delle risorse scoperte (valgono per ogni schermata futura):**
+- Stile: prima si cercano online schermate e dati dell'originale, si salvano in
+  `reference\<schermata>\` e ci si adegua (guide tumblr khux-guides, khuxwiki, reddit...).
+- **Catalogo delle risorse** in `D:\Progetto_Restauro_KH_UX\catalog\`: `index.html`
+  (miniature con ricerca, per cartella; per ogni texture i layout che la usano e se il
+  binario la cita), `textures.tsv`, `layouts.tsv` (widget e texture di ogni layout).
+  Si rifa' con `recon/tools/res_bulk.py` (estrazione in blocco, 16 s per 4000 file) e
+  `recon/tools/catalog.py` (2 min). Le texture sono BTF: `recon/tools/btf.py` le decodifica
+  (tipo 8 RGBA, tipo 9 palette + indici, ritaglio dentro una tela).
+- Il pacchetto generato puo' **sostituire** file originali (`resource_merge.py
+  --last-wins`), ma i **plist nuovi non si caricano**: il client legge solo plist con nomi
+  gia' presenti nelle risorse, e usa la texture col nome del plist (`X0.plist` →
+  `X0.png`), non quella dell'ExportJson. Un'armatura nuova con frame propri sostituisce
+  quindi il plist (e il png) di un'armatura che il binario non cita
+  (`Cursor_Anim_MedalSell` usa `EquipmentBGAction0`; liberi anche MyPageAnime0,
+  AdventureTopAnima0, GlobalNaviAnimation0, LuxUpPanelAnimation0, ActMapTreasureBox*0,
+  Cursor_Anim_QuestPanel0/QuestArrow0). `make_layouts.py`: `('frame', ...)` costruisce una
+  cornice a 9 fette con 8 ossa.
+- I pulsanti di `FUN_008d56f8` caricano `img/ui/<nome>_On.png` al tocco; gli ImageView
+  del modello hanno il 9-slice (bordo 50): per icone e immagini a dimensione naturale
+  `s9=False`.
+
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, notte)
 
 **Posizione (dall'8 ottobre 2026).** Tutto il lavoro sta su D: per lo spazio su C::
