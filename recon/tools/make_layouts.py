@@ -92,6 +92,47 @@ LAYOUTS = {
             L('Txt', 560, 45, 500, 40, '', 22),
         ], visible=False),
     ])),
+    # Sell Medals (FUN_00bf0a10 carica MedalSellScene_ver350, assente). Nomi e genitori dal
+    # decompilato: dalla radice Scroll_Area, Txt_Money (100300003 «Munny»), Txt_A_Coin
+    # (101500006 «Avatar Coins»), Txt_A_Coin_Label, DeckBase2, Txt_Money_Total_Lavel (sic),
+    # Button_Back (da MedalSell_Back in LeftUI), BoxNow, BoxMaxLabel; in Medal_Sell_Panel
+    # Txt_Money_Total, Button (con Txt_Sell) e la barra di FUN_00760c64 (Button_Sort...);
+    # Plate_A_Jewel e Plate_A_Ticket con Txt_A_* e Txt_A_*_Label. Disposizione da
+    # reference\medal_list\medal_sell_yt_02.jpg: in alto Slots, Munny, criterio, Sort; in
+    # basso Sell e i ricavi (Munny, Avatar Coins).
+    # FUN_00bf302c usa il primo figlio di CenterUI, LeftUI e RightUI (vuoto: pannello).
+    'MedalSellScene_ver350.json': ('scene', [('CenterUI', 'publish/MedalSell_Gen.json'),
+                                             ('LeftUI', 'publish/MedalSell_Back.json'),
+                                             ('RightUI', 'publish/MedalSell_Right.json')]),
+    'MedalSell_Right.json': ('build', P('Panel_Right', 0, 0, 10, 10)),
+    'MedalSell_Gen.json': ('build', P('medal_sell_root', 0, 0, 960, 640, [
+        P('Scroll_Area', 70, 95, 820, 355),
+        P('Medal_Sell_Panel', 0, 0, 960, 640, [
+            I('Img_Bar', 480, 485, 960, 70, 'Plate13.png'),
+            L('Txt_Money_Total', 500, 485, 170, 30, '0', 20),
+            L('Txt_Sort_Label', 680, 485, 180, 30, 'Strength', 20),
+            L('Txt_Filter_On', 680, 512, 180, 20, 'Filter ON', 16),
+            B('Button_Sort', 860, 485, 180, 58, 'But17', 'Sort', 24),
+            I('Img_Bottom', 480, 45, 960, 90, 'Plate13.png'),
+            B('Button', 120, 45, 180, 64, 'But17', 'Sell', 26, label='Txt_Sell'),
+        ]),
+        I('DeckBase2', 450, 485, 270, 34, 'Plate12.png'),
+        L('Txt_Slots_Name', 75, 485, 80, 30, 'Slots', 20),
+        L('BoxNow', 165, 485, 60, 30, '0', 20),
+        L('BoxMaxLabel', 225, 485, 70, 30, '/ 0', 20),
+        L('Txt_Money_Total_Lavel', 365, 485, 90, 30, 'Munny', 20),
+        L('Txt_Money', 330, 65, 160, 28, 'Munny', 20),
+        P('Plate_A_Jewel', 420, 51, 300, 28, [
+            L('Txt_A_Jewel', 40, 14, 70, 28, '', 18),
+            L('Txt_A_Jewel_Label', 220, 14, 140, 28, '0', 20),
+        ]),
+        L('Txt_A_Coin', 330, 28, 160, 28, 'Avatar Coins', 20),
+        L('Txt_A_Coin_Label', 640, 28, 140, 28, '0', 20),
+        P('Plate_A_Ticket', 420, 0, 300, 28, [
+            L('Txt_A_Ticket', 40, 14, 70, 28, '', 18),
+            L('Txt_A_Ticket_Label', 220, 14, 140, 28, '0', 20),
+        ], visible=False),
+    ])),
     # Dettaglio medaglia da Medal List: FUN_00aba238 carica SlideMedalInfoScene_ver341 sopra
     # MedalInfoScene e aggiunge un pulsante al primo figlio di LeftUI e di RightUI (medaglia
     # precedente / successiva). Frecce come MedalInfo_Arrow01.json (Medal_Syn_Arrow01 punta a sinistra).

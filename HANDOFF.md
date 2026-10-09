@@ -23,12 +23,18 @@ qui c'è come.
 «Mappatura dei pulsanti», «Equipment — risolto», «Layout sostitutivi»):
 - tutorial finito dalla fase 995: menu a tendina funzionante; Equipment funzionante
   (`GET /keyblade/subslot`); Presents funzionante (layout sostitutivi + testi);
-- banco: **risorse versione 25** installate (= OBB 5.0.1 + addnl + pacchetto generato:
+- banco: **risorse versione 26** installate (= OBB 5.0.1 + addnl + pacchetto generato:
   mappe, LWF vuoti per pet/NPC, layout di `make_layouts.py`, animazioni Armature
   sostitutive, **2.332 testi `text/ui` originali** dell'IPA 4.4.0); master revisione 57;
-- **prove sui layout: `tools\ldplayer\session\build-resources.ps1 -Quick`** (~2 min):
+- **prove sui layout: `tools\ldplayer\session\build-resources.ps1 -Quick`** (~40 s):
   rigenera il pacchetto dentro l'ultima versione e lo scrive direttamente nei file del
-  guest (coda di `files/r/misc.mp4.1` + `misc.png`), poi `relogin.ps1`. Niente download.
+  guest (coda di `files/r/misc.mp4.1` + `misc.png`), poi riavvia solo l'app. Niente
+  download, a patto che le dimensioni non cambino: se cambiano il client butta le risorse
+  (`resourceRevision 0`) e riscarica tutto. Per questo le versioni complete (dalla 26)
+  riservano 4 MiB al pacchetto generato e un nome di riempimento nell'indice, e `-Quick`
+  torna alle dimensioni installate (`resource_merge.py --index-size`; se il pacchetto
+  supera la riserva serve una versione completa). `resource_merge` tiene in cache gli
+  indici decifrati e le keystream (nonce fisso) in `%TEMP%\khux_bgi_cache`: 1 s invece di 60.
   Una versione nuova vera (da far scaricare): `build-resources.ps1 -Version N` poi
   `update-resources.ps1` (~5 min). Il server prepara solo l'ultima versione;
 - **Medal List funziona (9 ottobre)**: lista, dettaglio medaglia, popup Sort/Filter.
