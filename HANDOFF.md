@@ -171,9 +171,10 @@ vedi il suo README). `vmread` si ricostruisce con `build_vmread.py`.
    che non ha ancora la mappa. Stato del giocatore salvato: LV 15 (con la tabella vera
    dei livelli scenderà a ~LV 2–3), 1.600 jewel, medaglia Dewey ★.
    **Prossimo, in ordine** (9 ottobre 2026):
-   a) decodificare `stage_raw`, `enemy_raw`, `medal_raw` di thethiny (struttura diversa
-      dallo schema 4.3.1: stage 1.020 B, enemy 1.100 B, medal 1.300 B; i nomi in chiaro
-      aiutano a trovare gli offset) → righe vere di stage, nemici e medaglie;
+   a) ✅ `stage_raw`, `enemy_raw`, `medal_raw` di thethiny decodificati
+      (`raw_master_old.py`, §2, «Ricerca online dei dati originali»); resta da usarli nelle
+      tabelle master (stage oltre la 1050, statistiche vere di nemici e medaglie, con
+      `imageId` sostitutivo per le medaglie senza grafica) e provarli sul banco;
    b) missione 8 (1050, «Dwarf's Cottage», probabilmente `DW_0003_00_00`): manca una mappa
       modello di quella stanza; nemici e tesori dalla wiki (`quests.json`);
    c) `story.ps1`: controllare lo schermo a ogni passo (i tempi fissi perdono il passo
@@ -1790,6 +1791,20 @@ TARGET Nosy Mole ×2, `/stage/clear`, RESULTS, LEVEL UP. Poi:
   11021 (il primo nemico di ogni mappa lascia una medaglia); player: soglie di Lux vere
   (LV 2 = 729), AP 16+, costo 42+, HP 3000+. `make-game-tables.js` usa ora righe dei
   forzieri e livelli veri (HP tenuto a 3000), revisione 53.
+- **stage, enemy, medal decodificati (9 ottobre 2026)** con `recon/tools/raw_master_old.py
+  <tabella> <righe.json> <uscita.json>` (uscita `external\thethiny\<tabella>_dec.json`).
+  Struttura ricavata confrontando le righe con valori noti (`stage.json` di thethiny, 8
+  stage comuni; `enemy` 5.0.1, 7 nemici; `wiki\medals.json`, 9 medaglie): le stringhe sono
+  `char[N+1]` (129, 65, 513 byte), i nemici hanno **5** livelli invece di 6, mancano
+  alcuni campi della 4.3.1 (hardmode, branchType, …); i campi incerti restano
+  `unk_<offset>`. Gli elementi degli array oltre il contatore `valid*` contengono residui
+  di memoria (pezzi di altre stringhe) e vengono azzerati. Risultato: **1.140 stage**
+  (con `stageBinId` = numero della mappa, obiettivi, premi, musiche), **665 nemici**
+  (HP/attacco/difesa/Lux/munny per livello, abilità, CP), **522 medaglie** (statistiche,
+  rarità, costo, attacco speciale, evoluzioni). Confronto con la 5.0.1: valori quasi tutti
+  uguali (qualche ritocco di HP, punteggi, un obiettivo). Conferme: missione 7 = «Defeat
+  Yellow Opera x1», missione 8 (1050, «Unexpected Visitors», Dwarf's Cottage, mappa 8) =
+  bersaglio Large Body (10007), la 9 (1060) = mappa 9, stessa stanza.
 - Grafica: **Roboloid/khux** (GitHub, ~2,5 GB di PNG: 1.930 medaglie, parti avatar e pet,
   113 frame di nemici, sfondi), **luxenvulpies/KHUX_Medal_Website** (1.881 medaglie),
   dump della wiki su Internet Archive (`wiki-www.khuxwiki.com_w-20240119`, immagini 9,8
