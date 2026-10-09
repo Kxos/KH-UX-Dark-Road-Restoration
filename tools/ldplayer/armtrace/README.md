@@ -54,3 +54,19 @@ Usato l'8 ottobre 2026 per il crash dopo l'aggiornamento dei master (vedi HANDOF
 | `dumprange.sh` | nel guest: copia una regione con `vmread` |
 | `vmread.c`, `build_vmread.py` | lettore di memoria con `process_vm_readv`, e come costruirlo |
 | `analyze.py` | registri e backtrace euristico da uno stack copiato |
+
+## Aggiunte del 9 ottobre 2026
+
+- **Base della libreria.** Sotto houdini oggi `libcocos2dcpp.so` sta a `0x31c0000` (si
+  vede in `/proc/<pid>/maps` e nel tombstone), non a `0x3308000` come presumono
+  `capture.ps1` e `analyze.py`: i loro valori «Ghidra» vanno ridotti di `0x148000`.
+- `findregs.py <cartella houdini>`: cerca le strutture dei registri ARM senza conoscere
+  `x0` (blocco con `pc` e `x30` dentro la libreria, `sp` plausibile). Se il crash avviene
+  in libc (`pc` fuori dalla libreria) non trova nulla: allentare il vincolo su `pc`.
+- `stackcap.ps1 -Tag <nome> [-MenuY <y>]`: arma la cattura, rientra con
+  `bench_start.ps1`, apre una voce del menu (MENU poi il tocco a `1745,<y>`), copia le
+  regioni di houdini, trova `sp` con `findregs.py` e copia con `dumprange.sh` la regione
+  dello stack che lo contiene (`stack.bin`, `stackinfo.txt`).
+- `backtrace.py <libcocos2dcpp.so> <stack.bin> <inizio_hex> <sp_hex> [n]`: indirizzi di
+  ritorno plausibili (preceduti da BL/BLR) con la base corretta. Usato per Equipment
+  (`0xc17240` → `FUN_00c16d14`).
