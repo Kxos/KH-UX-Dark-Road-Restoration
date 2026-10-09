@@ -1,4 +1,4 @@
-# Costruisce resource_data\<N>: pezzi OBB 5.0.1 + addnl della versione 7 (hard link) +
+﻿# Costruisce resource_data\<N>: pezzi OBB 5.0.1 + addnl della versione 7 (hard link) +
 # il pacchetto generato (stage_gen\files: mappe, LWF sostitutivi, layout di
 # make_layouts.py) come ultimo pezzo, e l'indice unito. Poi si installa con
 # update-resources.ps1 (il server annuncia solo l'ultima versione).
@@ -37,7 +37,7 @@ $v = "$D\resource_data\$Version"
 # download e, se cambiano, butta le risorse e riscarica tutto (resourceRevision 0). Il
 # pacchetto generato si riempie di zeri fino a una riserva (letto per offset, la coda non
 # e' mai letta) e l'indice ha un nome di riempimento (resource_merge.py): una versione
-# completa riserva 4 MiB e 4096 byte, -Quick ritorna alle dimensioni installate.
+# completa riserva 16 MiB e 64 KiB, -Quick ritorna alle dimensioni installate.
 if ($Quick) {
   $dataSize = (Get-Item "$v\data\d0035").Length
   $mergeOpt = @('--fast-md5', '--index-size', (Get-Item "$v\index\misc.png").Length)
@@ -46,7 +46,7 @@ if ($Quick) {
   New-Item -ItemType Directory -Force "$v\data", "$v\index" | Out-Null
   Get-ChildItem "$D\resource_data\7\data" | Where-Object Name -ne 'd0035' |
     ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
-  $dataSize = 4MB
+  $dataSize = 16MB   # 4 MiB finiti con le icone dei materiali della khuxwiki (10 ottobre)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
 $genLen = (Get-Item "$sg\gen.mp4").Length
