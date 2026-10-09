@@ -1847,10 +1847,31 @@ Road che va in crash (`SceneDarkroadHome::darkroadPartySeclectPopup`): ora il se
 salva i bit di `popupFlag` e a tutorial finito li dà tutti per visti (2^53−1).
 Provato sul banco: home pulita (compaiono le frecce ‹ › delle pagine della home: non
 toccarle, la seconda pagina e' Dark Road), MENU → Quests funziona.
-Aperti: **Medal List va in crash** (tombstone: `0x6e0ef0`, `0xdf1de4`, `0x1299260`; da
-indagare, forse le nuove tabelle medal o le immagini mancanti); Presents va in crash
-dopo `GET /user/present`. `recon/ghidra/khux_field_readers.py`: chi legge un campo di
-un singleton (chiamata al getter seguita da `[xN,#off]`).
+`recon/ghidra/khux_field_readers.py`: chi legge un campo di un singleton (chiamata al
+getter seguita da `[xN,#off]`).
+
+**Mappatura dei pulsanti (9 ottobre 2026)** con `tools/ldplayer/session/sweep.ps1`
+(app riavviata, un tocco, screenshot, tombstone; rapporto in `logs\sweep.txt`):
+
+| Pulsante | Esito | Causa |
+|---|---|---|
+| Quests (home e menu), Home (menu) | ok | |
+| Shop (home e menu) | ok | schermata con Increase Storage, Moogle Shop, Jewel pack |
+| Chat | ok | «You need to be in a party» (corretto: nessun party) |
+| Beginner's Guide | si apre vuota | contenuto da indagare |
+| Profilo (avatar in alto) | crash | layout `AvatarInfoScene_A_ver131.json` mancante |
+| Moogle Shop | crash | layout `MoogleShopScene_ver410.json` e `lwf/mogshop/mog_wait` mancanti |
+| Avatar Boards (home e menu) | crash | layout `SphereBoardScene_ver310.json` mancante (probabile) |
+| Presents | crash | layout `PresentBOXScene.json` mancante; esistono i `dark_PresentBOX_*` di Dark Road |
+| Medal List | crash | layout `MedalListScene_ver130.json` mancante |
+| Other | crash | layout `MenuDialog_ver300.json` mancante (probabile) |
+| Rotolo (icona sotto il livello) | crash | come Other (`0x11afb7c`), da verificare |
+| Equipment | crash | `std::out_of_range: vector`: dati (risposta del server o master), non layout |
+
+Dei 601 layout cocostudio citati dal binario ne mancano 307 (`logs\layout_mancanti.txt`,
+da `asset_coverage.py`), 49 sono schermate intere. Indirizzi da `armtrace`: la base di
+`libcocos2dcpp.so` sotto houdini oggi e' `0x31c0000` (come in `tombstone.ps1`), non
+`0x3308000` come presume `capture.ps1`: sottrarre `0x148000` ai valori «Ghidra» che stampa.
 
 **Memoria del PC.** Dopo diversi download da 2,3 GB `Ld9BoxHeadless` (la VM di LDPlayer)
 arrivava a 30 GB di memoria impegnata: memoria virtuale libera 0,1 GB, il file di
