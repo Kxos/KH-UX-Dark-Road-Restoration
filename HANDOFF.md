@@ -127,6 +127,15 @@ poi i pulsanti in crash del menu.
   (LB_Munnies) non compare, «Sell Materials» va in crash (schermata da studiare),
   texture img/ui/Mogshop_plate1, ShopBut_Lock*, But29/30/31 assenti (righe articolo).
   Riferimenti: reference\moogle_shop\ (video JP 4.1.0 FX5Chfckqkk, EN -3Tc94iOomA).
+- «Sell Materials» (EquipSellScene, FUN_00c5e584): scena, riga EquipSell_Block e popup
+  Step1/Step2 generati (make_layouts.py), ma va ancora in crash a 0xc5ec70, subito dopo
+  la ricerca di EquipSell_Scroll_Area (nello stack anche «Panel_1», «Button_Back»): capire
+  su quale nodo la cerca (forse il primo figlio di un nodo della scena, come LeftUI in
+  Medal List) — decompilare FUN_00c5e584 attorno a 0xc5ec08.
+- Popup della quantita' (vendita medaglie impilate) rifatto sul video originale
+  (reference\medal_list\web_qty_368.png): da sistemare la fascia «Includes ★★★ Medals
+  or higher.» (nell'originale rossa con le stelle, testo bianco; qui scura con testo
+  rosso, stelle assenti) e la quantita' (mostra «0», nell'originale «1/15»).
 - Avatar, Avatar Boards, Other, rotolo del menu: crash (vedi «Mappatura dei
   pulsanti»). Missione 8 senza mappa.
 

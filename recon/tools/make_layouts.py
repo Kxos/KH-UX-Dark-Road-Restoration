@@ -277,6 +277,43 @@ LAYOUTS = {
     # IconPanel: dentro Panel_Item; Base riceve img/ui/Mogshop_plate1.png (make_textures.py)
     'MoogleShop_IconPanel.json': ('build', P('IconPanel', 0, 0, 140, 140, [
         I('Base', 70, 70, 140, 140, 'Plate01.png', s9=False)])),
+    # Vendita materiali («Sell Materials» del Moogle Shop, FUN_00c5e584): EquipSellScene e i
+    # suoi layout non esistono. Nessuno screenshot originale trovato: stile della vendita
+    # medaglie. Scena: Button_Back, Txt_Money_Total(_Lavel), EquipSell_Scroll_Area, Txt_None.
+    # Riga EquipSell_Block (FUN_00887854, riempita da 0x887cc0..): EquipSellBlock con
+    # MaterialSellIcon, «Txt_data1 » (con lo spazio in coda), Txt_data2, Txt_Material_Name,
+    # Txt_MaterialStock_Fix1, Txt_Money_Fix, PanelMask.
+    'EquipSellScene.json': ('scene', [('CenterUI', 'publish/EquipSell_Gen.json'),
+                                      ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
+    'EquipSell_Gen.json': ('build', P('equip_sell_root', 0, 0, 960, 640, [
+        I('Grid_Under', 480, 280, 950, 380, 'Panel04.png', opts=GRID),
+        P('EquipSell_Scroll_Area', 9, 95, 942, 370),
+        L('Txt_None', 480, 280, 600, 40, '', 24),
+        I('Img_Bottom', 480, 48, 1136, 96, 'Medal_Syn_DeckBase2.png', s9=False),
+        I('Plate_Money_Total', 480, 45, 400, 30, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_Money_Total', -110, 0, 140, 26, 'Munny', 20),
+            I('Icon_Money_Total', -20, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+            L('Txt_Money_Total_Lavel', 100, 0, 160, 26, '0', 22)])])),
+    'EquipSell_Block.json': ('build', P('Panel_Block', 0, 0, 300, 110, [
+        P('EquipSellBlock', 0, 0, 300, 110, [
+            I('Block_Base', 150, 55, 290, 100, 'Plate02.png', opts=PANEL4),
+            I('MaterialSellIcon', 55, 55, 80, 80, 'Plate01.png', s9=False),
+            L('Txt_Material_Name', 200, 80, 190, 26, '', 18),
+            L('Txt_MaterialStock_Fix1', 160, 50, 80, 24, '', 16),
+            L('Txt_data1 ', 230, 50, 80, 24, '', 18),
+            L('Txt_Money_Fix', 160, 22, 80, 24, '', 16),
+            L('Txt_data2', 230, 22, 100, 24, '', 18),
+            P('PanelMask', 0, 0, 300, 110, visible=False)])])),
+    'EquipSell_Dialog_Step1.json': ('func', 'material_sell_popup'),
+    # Conferma (FUN_00c611fc): popup OK/Annulla con il riepilogo
+    'EquipSell_Dialog_Step2.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                    {'Button_OK': 'Button_sell_ok', 'Txt_OK': 'Txt_sell_ok',
+                                     'Button_Close': 'Button_cancel', '4Line_Label': 'Txt_Material_Name_Dlog'},
+                                    False, [
+        ('text', 'Txt_Material_Name_Dlog', ''),
+        L('Txt_data1', 380, 300, 200, 26, '', 20), L('Txt_data2', 580, 300, 200, 26, '', 20),
+        L('Txt_data3', 480, 260, 300, 26, '', 20),
+        L('Txt_MoneyTotalStock_Fix2', 380, 260, 150, 26, '', 20)]),
     # Quantita' da vendere di una medaglia impilata (equip_sell_popup, piu' sotto).
     'EquipSell_Medal_Step1_ver131.json': ('func', 'equip_sell_popup'),
     # Conferma della vendita (FUN_00bf3804): dal popup generico OK/Annulla originale.
@@ -647,67 +684,95 @@ def build(s):
     return w
 
 
-def equip_sell_popup():
-    """EquipSell_Medal_Step1_ver131 (FUN_00883f38): quante copie vendere di una medaglia
-    impilata. Assente da ogni risorsa (toccare una pila nella vendita mandava in crash).
-    Struttura dal discendente di Dark Road dark_Shop_win_check_pop3 (stessi
-    panel_MaterialStock, Button_stock_up/down, Slider MaterialStock_bar), texture KHUX:
-    finestra Win04 come i popup PopupNormal, OK But01 rosso, Annulla But03, slider delle
-    opzioni (Opt_Vol_Gage, Scroll_bar). Il codice cerca: Txt_Medal_Name_Dlog, Txt_data2,
-    Txt_data3, Txt_data5, Icon_Prize2, MaterialStock_bar, Button_stock_down/up,
-    Button_sell_ok/Txt_sell_ok, Button_cancel/Txt_cancel, Warning_Plate/Txt_Rare1/2."""
+def sell_popup(icon='MedalSellIcon', name='Txt_Medal_Name_Dlog', extra=()):
+    """Popup della quantita' da vendere: EquipSell_Medal_Step1_ver131 (medaglie impilate,
+    FUN_00883f38) ed EquipSell_Dialog_Step1 (materiali, FUN_00c5f788). Assenti da ogni
+    risorsa. Struttura dal discendente di Dark Road dark_Shop_win_check_pop3 (stessi
+    panel_MaterialStock, Button_stock_up/down, Slider MaterialStock_bar); aspetto e misure
+    dal popup originale (reference\\medal_list\\web_qty_368.png, youtube WiFh447niJY,
+    video 1280x608, scala 1,12 in x e 0,95 in y): finestra blu, icona e targa del nome
+    in alto, fascia «Includes ★★★ Medals or higher.» (Warning_Plate, Txt_Rare1/2),
+    «Quantity» (Txt_data2, testo 102000001) e «1/15» (Txt_data3), slider in un riquadro
+    scuro con le frecce, targa Munny (Txt_MoneyTotalStock_Fix, Icon_Prize2, Txt_data5),
+    Cancel arancione e Sell rosso. Figli della finestra (ImageView) rispetto al centro."""
     d = json.load(open(os.path.join(SRC, *PUB.split('/'), 'dark_Shop_win_check_pop3.json'), encoding='utf-8-sig'))
     t = d['widgetTree']
     win = find(t, 'win_normaltext')
-    win['options'].update(fileNameData=tex('Win04.png'), scale9Enable=True, capInsetsX=50, capInsetsY=0,
-                          capInsetsWidth=1, capInsetsHeight=1, width=640, height=380, scale9Width=640,
-                          scale9Height=380)
+    # Win04 (100x322) in 9-slice anche in verticale: con capInsetsY 0 la fascia chiara in alto
+    # veniva stirata su meta' finestra
+    win['options'].update(fileNameData=tex('Win04.png'), scale9Enable=True, capInsetsX=50, capInsetsY=60,
+                          capInsetsWidth=1, capInsetsHeight=200, width=640, height=560, scale9Width=640,
+                          scale9Height=560)
     keep = []
     for c in win['children']:
         n = c['options']['name']
-        if n == 'txt_wording':
-            c['options'].update(name='Txt_Medal_Name_Dlog', text='', y=150, height=40, areaHeight=40)
-            c['name'] = 'Txt_Medal_Name_Dlog'
-        elif n in ('but_ok', 'but_close'):
+        if n in ('but_ok', 'but_close'):
             ok = n == 'but_ok'
             o = c['options']
-            o.update(name='Button_sell_ok' if ok else 'Button_cancel', x=155 if ok else -155, y=-140,
+            o.update(name='Button_sell_ok' if ok else 'Button_cancel', x=132 if ok else -133, y=-235,
                      normalData=tex('But01_Off.png' if ok else 'But03_Off.png'),
                      pressedData=tex('But01_On.png' if ok else 'But03_On.png'),
                      disabledData=tex('But01_Disable.png' if ok else 'But03_Off.png'),
-                     width=205, height=68, scale9Width=205, scale9Height=68)
+                     width=172, height=56, scale9Width=172, scale9Height=56, **BUT9)
             c['name'] = o['name']
             lab = c['children'][0]
-            lab['options'].update(name='Txt_sell_ok' if ok else 'Txt_cancel', fontSize=26,
+            lab['options'].update(name='Txt_sell_ok' if ok else 'Txt_cancel', fontSize=24,
                                   text='Sell' if ok else 'Cancel')
             lab['name'] = lab['options']['name']
         elif n == 'panel_MaterialStock':
-            c['options']['y'] = -55
+            c['options'].update(x=-16, y=-34)
+            for b, x in (('Button_stock_up', 232), ('Button_stock_down', -232)):
+                find(c, b)['options']['x'] = x
+            back = find(c, 'MaterialStock_back')['options']
+            back.update(width=353, scale9Width=353)
             bar = find(c, 'MaterialStock_bar')['options']
-            # barra semplice (senza le scritte MIN/MAX di Opt_Vol_Gage), pallino delle opzioni
-            bar.update(ballNormalData=tex('Scroll_bar_off.png'), ballPressedData=tex('Scroll_bar_on.png'))
+            # barra semplice (senza MIN/MAX di Opt_Vol_Gage), pallino blu delle opzioni
+            bar.update(ballNormalData=tex('Scroll_bar_off.png'), ballPressedData=tex('Scroll_bar_on.png'),
+                       width=353)
         else:
-            continue                        # But_draw, txt_possessed, assets: non usati
+            continue                        # txt_wording, But_draw, txt_possessed, assets: non usati
         keep.append(c)
     win['children'] = keep
-    # nomi composti a pezzi sullo stack, non trovati da widget_lookup.py: simboli s_*_01xxxxxx
-    # del decompilato (MedalSellIcon: immagine della medaglia, crash in loadTexture se manca)
-    for s in [
-            I('MedalSellIcon', -200, 70, 89, 109, 'Medal_S_00000001.png', s9=False),
-            L('Txt_data2', 0, 100, 160, 28, 'Held', 20), L('Txt_data3', 150, 100, 120, 28, '0', 20),
-            # nome con uno spazio ideografico in coda (U+3000), come lo cerca il codice
-            # (0x884688: "Txt_data" + 34 e3 80 80): senza, crash in enableShadow
-            L('Txt_data4　', 0, 70, 300, 26, 'Sell how many?', 18),
-            L('Txt_MoneyTotalStock_Fix', 0, 40, 160, 28, 'Munny', 20),
-            I('Icon_Prize2', 70, 40, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
-            L('Txt_data5', 170, 40, 140, 28, '0', 20),
-            L('Txt_MaterialStock_Fix_2', -170, -90, 80, 24, '1', 18),
-            L('Txt_MaterialStock_Fix_3', 170, -90, 80, 24, '1', 18),
-            # i figli di un ImageView stanno rispetto al suo centro
-            I('Warning_Plate', 0, -10, 560, 30, 'Plate03.png', opts=PLATE3, visible=False,
-              children=[L('Txt_Rare1', -90, 0, 220, 26, '', 18), L('Txt_Rare2', 120, 0, 220, 26, '', 18)])]:
-        win['children'].append(build(s))
+    head = [
+        # riquadro scuro dello slider, dietro panel_MaterialStock
+        I('Slider_Base', -16, -34, 576, 154, 'Panel04.png', opts=GRID),
+        # nomi composti a pezzi sullo stack, non trovati da widget_lookup.py (func_strings.py)
+        I(icon, -172, 225, 89, 109, 'Medal_S_00000001.png', s9=False, scale=1.5),
+        I('Name_Plate', 37, 187, 360, 36, 'Plate03.png', opts=PLATE3),
+        L(name, 37, 187, 330, 32, '', 22),
+        L('Txt_data2', -239, 62, 200, 34, 'Quantity', 26),
+        L('Txt_data3', 13, 62, 200, 40, '0', 32),
+        I('Money_Plate', 105, -166, 366, 30, 'Plate03.png', opts=PLATE3),
+        # il codice scrive il ricavo in Txt_MoneyTotalStock_Fix e «Munny» in Txt_data5 (banco)
+        L('Txt_data5', -15, -166, 120, 28, 'Munny', 20),
+        I('Icon_Prize2', 75, -166, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+        L('Txt_MoneyTotalStock_Fix', 205, -166, 160, 30, '0', 22, opts=dict(colorB=0)),
+        I('Warning_Plate', -16, 115, 576, 32, 'Plate03.png', opts=dict(PLATE3, colorR=255, colorG=70, colorB=70),
+          visible=False, children=[L('Txt_Rare1', -150, 0, 260, 28, '', 20), L('Txt_Rare2', 150, 0, 260, 28, '', 20)]),
+    ]
+    win['children'] = [build(head[0])] + win['children'] + [build(s) for s in head[1:] + list(extra)]
     return d
+
+
+def equip_sell_popup():
+    return sell_popup(extra=[
+        # nome con uno spazio ideografico in coda (U+3000), come lo cerca il codice
+        # (0x884688: "Txt_data" + 34 e3 80 80): senza, crash in enableShadow; testo 102000002 = " "
+        L('Txt_data4　', 13, 30, 300, 24, '', 18),
+        L('Txt_MaterialStock_Fix_2', -232, -100, 80, 24, '', 18),
+        L('Txt_MaterialStock_Fix_3', 232, -100, 80, 24, '', 18)])
+
+
+def material_sell_popup():
+    """EquipSell_Dialog_Step1 (FUN_00c5f788): come il popup delle medaglie, con
+    MaterialSellIcon (img/material/material_%d.png), Txt_Material_Name_Dlog,
+    Txt_Material_Info_Dlog, Txt_MoneyStock_Fix e Txt_data1."""
+    return sell_popup('MaterialSellIcon', 'Txt_Material_Name_Dlog', [
+        L('Txt_Material_Info_Dlog', 37, 135, 500, 40, '', 18),
+        L('Txt_MoneyStock_Fix', -239, 22, 200, 26, '', 18),
+        L('Txt_data1', 13, 22, 200, 26, '', 18),
+        L('Txt_MaterialStock_Fix_2', -232, -100, 80, 24, '', 18),
+        L('Txt_MaterialStock_Fix_3', 232, -100, 80, 24, '', 18)])
 
 
 def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):
