@@ -1868,6 +1868,25 @@ getter seguita da `[xN,#off]`).
 | Rotolo (icona sotto il livello) | crash | come Other (`0x11afb7c`), da verificare |
 | Equipment | crash | `std::out_of_range: vector`: dati (risposta del server o master), non layout |
 
+**Equipment, indagine del 9 ottobre (non risolto).** Il lancio di `out_of_range` e'
+in `FUN_00c16d14` (callback di cella del carosello delle keyblade, `0xc1723c` →
+`FUN_00708974`): indicizza il vettore delle keyblade della scena (`DeckEditScene`,
+init `FUN_00bfd960`, vettore a +0x4b8, elementi da 0x80) con un indice che lo sfora.
+Il carosello (`FUN_008bec04` lista, `FUN_008becdc` posizione, oggetto a scena+0x580)
+riceve la lista 0..N-1 e la posizione da `FUN_00722844` (primo record con flag +0x70
+nella tabella di sessione +0x1e8, le keyblade). Il vettore si riempie in due modi: se
+`scena+0x3c0 == 1` dalla tabella di sessione **+0x8c0** (lista di userKeybladeId con
+record figli da 0x48 byte), altrimenti copiando tutte le keyblade (+0x1e8). Letto dal
+vivo con `vmread` (la sessione `FUN_007c1dfc` e' un oggetto statico a `0x515e290`):
++0x1e8 = 1 record, **+0x8c0 = 0 record** → probabilmente la modalita' 1 con vettore
+vuoto. Esclusi: una seconda keyblade/deck (stesso crash), `userKeybladeSubslots` con un
+subslot (formato `{keybladeSubslotId, subslotRate, subslots:[{slotNumber,
+userMedalId}]}`, `FUN_00798980`; +0x8c0 resta vuota). Da trovare: chi riempie +0x8c0
+(candidato: `GET /pvp/keyblade`, oggi senza risposta, azione ignota: le url nel binario
+sono offuscate) e chi imposta `scena+0x3c0`. Strumenti nel blocco note della sessione:
+cattura dello stack ARM al crash (dumprange della regione di `sp`) e backtrace con base
+`0x31c0000`.
+
 Dei 601 layout cocostudio citati dal binario ne mancano 307 (`logs\layout_mancanti.txt`,
 da `asset_coverage.py`), 49 sono schermate intere. Indirizzi da `armtrace`: la base di
 `libcocos2dcpp.so` sotto houdini oggi e' `0x31c0000` (come in `tombstone.ps1`), non
