@@ -218,10 +218,12 @@ LAYOUTS = {
       + [('clone', 'Filter_Evo', n, 'Dummy_Filter') for n in ('Filter_Subslot', 'Filter_Trait', 'Filter_Evo_Set')]),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash (FUN_011843c4). Copia di ArrowAnim con armatura e movimento rinominati.
-    # Cursor_Anim_MedalSell: cursore della griglia di Medal List (FUN_00882e10, movimento
-    # Animation1).
-    'Cursor_Anim_MedalSell.ExportJson': ('armature', 'ArrowAnim.ExportJson', 'Cursor_Anim_MedalSell',
-                                         {'Left': 'Animation1', 'Right': 'Medal_Select01'}),
+    # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita (FUN_00882e10,
+    # movimento Animation1; FUN_00883118 lo mostra sulle celle scelte). Copia del cursore
+    # della fusione (Cursor_Anim_MdalMix_ver103, dall'addnl: bagliore Medal_Syn_Select_Eff02
+    # 144x172 che pulsa, stesso movimento Animation1; plist e texture restano i suoi).
+    'Cursor_Anim_MedalSell.ExportJson': ('armature', 'Cursor_Anim_MdalMix_ver103.ExportJson',
+                                         'Cursor_Anim_MedalSell', {}),
     # MedalSelectAnimation: selezione delle medaglie (FUN_009e7108, movimento Medal_Select01).
     'MedalSelectAnimation.ExportJson': ('armature', 'ArrowAnim.ExportJson', 'MedalSelectAnimation',
                                         {'Left': 'Medal_Select01', 'Right': 'Animation1'}),

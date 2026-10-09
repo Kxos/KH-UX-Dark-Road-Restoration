@@ -69,13 +69,14 @@ dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spunta
   e `isSubslotUpdate` (intero). Il server salva in `player.medalLocks` e restituisce
   `lock`. Banco: bloccata = grigia col lucchetto in lista e in vendita, il tocco non la
   seleziona; sbloccata = selezionabile (210 munny); di nuovo bloccata, salvata.
-- [ ] **Stile della selezione nella vendita.** Ogni medaglia selezionata (anche piu'
-  d'una) deve mostrare un segno di selezione. Oggi nulla: il segno e' `selectView` =
-  armatura `Cursor_Anim_MedalSell` (movimento `Animation1`, `FUN_00882e10`), ora una copia
-  di `ArrowAnim` (frecce): sostituirla con un'armatura generica di selezione (cornice o
-  spunta) costruita da texture presenti (cercare in `layouts\textures.txt` e nei fogli
-  Spriters in `reference\spriters\`), resa visibile per ogni cella selezionata
-  (`FUN_00883118` ne imposta la visibilita').
+- [x] **Stile della selezione nella vendita** (risolto il 9 ottobre). `selectView` =
+  armatura `Cursor_Anim_MedalSell` (movimento `Animation1`, `FUN_00882e10`), ora copia
+  del cursore della fusione `Cursor_Anim_MdalMix_ver103.ExportJson` dell'addnl (estratto
+  con `res_get.py` e `names_v4.tsv` in `layouts\orig`): bagliore giallo pulsante
+  `Medal_Syn_Select_Eff02` (144×172) che segue la sagoma della medaglia, compreso il
+  riquadro del trait in alto a destra (vuoto sulle nostre medaglie senza trait). Banco:
+  tre medaglie selezionate, tre bagliori, 630 munny. Le texture `.png` delle risorse sono
+  in formato BTF: 38 byte di intestazione (larghezza/altezza a 0x1e/0x20) poi zlib RGBA.
 - [ ] **Spazi della griglia.** Nella vendita, sulla prima riga a destra, si vedono medaglie
   tagliate a meta' (probabile `Scroll_Area` di larghezza sbagliata rispetto alle colonne:
   `MedalSell_Gen` 820 px da x=70). Verificare anche in Medal List (`MedalList_Gen`,
