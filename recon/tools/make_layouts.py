@@ -15,6 +15,7 @@ restano quelle della sorgente (texture gia' nelle risorse).
 """
 import json
 import os
+import shutil
 import sys
 
 SRC, OUT = sys.argv[1], sys.argv[2]
@@ -144,10 +145,14 @@ LAYOUTS = {
         L('BoxMaxLabel', 225, 455, 70, 30, '0', 20, visible=False),
         I('DeckBase2', 420, 485, 250, 34, 'Plate12.png'),
         L('Txt_Money', 340, 485, 90, 30, 'Munny', 20),
-        L('Txt_Money_Label', 470, 485, 150, 30, '0', 20),
+        # icone delle valute come nel riferimento (reference\medal_list\medal_sell_yt_02.jpg)
+        I('Icon_Money_Top', 398, 485, 56, 57, 'IncentiveIcon_04.png', scale=0.45, s9=False),
+        L('Txt_Money_Label', 485, 485, 130, 30, '0', 20),
         # in basso: Munny e Avatar Coins ricavati
         L('Txt_Money_Total_Lavel', 600, 65, 160, 28, '0', 20),
+        I('Icon_Money_Sell', 470, 65, 56, 57, 'IncentiveIcon_04.png', scale=0.45, s9=False),
         L('Txt_A_Coin', 380, 28, 160, 28, 'Avatar Coins', 20),
+        I('Icon_A_Coin', 470, 28, 67, 69, 'IncentiveIcon_14.png', scale=0.4, s9=False),
         L('Txt_A_Coin_Label', 600, 28, 160, 28, '0', 20),
         P('Plate_A_Jewel', 700, 51, 200, 28, [
             L('Txt_A_Jewel', 40, 14, 70, 28, '', 18),
@@ -256,11 +261,11 @@ LAYOUTS = {
         # i figli di un ImageView si posizionano rispetto al suo centro
         I('Base_Money1', 295, 64, 270, 25, 'Plate03.png', children=[
             L('Txt_Money', -82, 0, 85, 24, 'Required', 16),
-            I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5),
+            I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5, s9=False),
             L('Txt_Money_Label', 66, 0, 138, 24, '0', 18)]),
         I('Base_Money2', 295, 34, 270, 25, 'Plate03.png', children=[
             L('Txt_Money', -82, 0, 85, 24, 'Munny', 16),
-            I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5),
+            I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5, s9=False),
             L('Txt_Money_Label', 66, 0, 138, 24, '0', 18)]),
         I('Button_Sell1', 491, 49, 119, 58, 'But06_Off.png', children=[
             L('Txt_Sell1', 0, 2, 110, 54, 'Sell Medals', 20)]),
@@ -410,6 +415,20 @@ def rename(w, mapping):
 
 TEXTURES = set(open(os.path.join(SRC, '..', 'textures.txt'), encoding='utf-8-sig').read().split())
 
+# File gia' presenti nelle risorse sotto un altro percorso, copiati (estratti con res_get.py in
+# <cartella layout estratti>) dove il client li cerca: destinazione -> sorgente.
+#  - img/ui/<pulsante>_On/_Off/_Disable: i pulsanti di FUN_008d56f8 caricano
+#    «img/ui/%s_On.png» al tocco (FUN_008d6230); 46 varianti esistono solo in
+#    cocostudio/publish (es. But06_On: crash toccando «Sell Medals» in Evolve e Level Up);
+#  - icone delle valute (img/incentive/IncentiveIcon_NN: 02 jewel, 04 munny, 14 Avatar
+#    Coin) accanto ai layout, per gli ImageView della vendita.
+COPIES = {'cocostudio/publish/' + n: 'img/incentive/' + n
+          for n in ('IncentiveIcon_02.png', 'IncentiveIcon_04.png', 'IncentiveIcon_14.png')}
+for _f in os.listdir(os.path.join(SRC, *PUB.split('/'))):
+    if _f.startswith('But') and _f.endswith(('_On.png', '_Off.png', '_Disable.png')):
+        COPIES.setdefault('img/ui/' + _f, PUB + _f)
+TEXTURES |= {k.split('/')[-1] for k in COPIES if k.startswith(PUB)}
+
 
 def retex(w):
     """Texture dark_* -> equivalente KHUX."""
@@ -451,6 +470,8 @@ def build(s):
              actiontag=_tag[0], visible=s.get('visible', True))
     if 'scale' in s:                    # es. icone a cui il codice carica la texture
         o.update(scaleX=s['scale'], scaleY=s['scale'])
+    if 's9' in s:                       # False per le icone: il modello ha il 9-slice (bordo 50)
+        o['scale9Enable'] = s['s9']
     if 'ignoreSize' in s:               # False: la texture caricata dal codice si adatta a w x h
         o['ignoreSize'] = s['ignoreSize']
     w['name'] = s['name']
@@ -519,6 +540,16 @@ for target, spec in LAYOUTS.items():
     with open(path, 'w', encoding='utf-8') as fh:
         json.dump(data, fh, ensure_ascii=False)
     print(target, '<-', how)
+
+served = {l.split('\t')[0] for l in open(os.path.join(SRC, '..', '..', 'resource_data', 'names_v4.tsv'), encoding='utf-8')}
+n_copied = 0
+for dst, src in COPIES.items():
+    if dst in served or not os.path.exists(os.path.join(SRC, *src.split('/'))):
+        continue
+    os.makedirs(os.path.dirname(os.path.join(OUT, *dst.split('/'))), exist_ok=True)
+    shutil.copyfile(os.path.join(SRC, *src.split('/')), os.path.join(OUT, *dst.split('/')))
+    n_copied += 1
+print('file copiati:', n_copied)
 
 os.makedirs(os.path.join(OUT, 'text', 'ui'), exist_ok=True)
 for tid, s in TEXTS.items():
