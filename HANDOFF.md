@@ -30,10 +30,10 @@ bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000.
 **Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
 Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
 animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
-vuoto). **Prossimo, in ordine:** 1) «Sell Materials»: stile di righe e popup dagli originali (vedi annotazioni);
-2) articoli del Moogle Shop (master `moogleshop` vuota) e acquisto; 3) fascia rossa e
-quantita' del popup di vendita; 4) Profilo, Avatar Boards, Other, rotolo del menu;
-5) missione 8.
+vuoto), Sell Materials (vendita e stile), popup «Complete!», fascia rossa e «1/N» del
+popup della quantita'. **Prossimo, in ordine:** 1) articoli del Moogle Shop (master
+`moogleshop` vuota) e acquisto; 2) Profilo, Avatar Boards, Other, rotolo del menu;
+3) missione 8.
 
 **Metodo (regole dell'utente):** stile di ogni schermata dagli originali trovati online
 (screenshot/video in `reference\<schermata>\`, yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt`
@@ -163,12 +163,18 @@ poi i pulsanti in crash del menu.
   riga `Panel_On`, nel popup `Txt_data4`. **Vendita funzionante** (10 ottobre): conferma EquipSell_Dialog_Step2 (FUN_00c611fc,
   serviva Txt_cancel minuscolo), POST /user/material/sell {userMaterialId, number}
   (azione 50, risposta userData.userPoint + oggetto userMaterial), popup «Complete!».
-  **Resta lo stile:** icona del popup troppo grande (scala 1,5 pensata
-  per le medaglie), disposizione di prezzo/«Price» nelle righe e nel popup.
-- Popup della quantita' (vendita medaglie impilate) rifatto sul video originale
-  (reference\medal_list\web_qty_368.png): da sistemare la fascia «Includes ★★★ Medals
-  or higher.» (nell'originale rossa con le stelle, testo bianco; qui scura con testo
-  rosso, stelle assenti) e la quantita' (mostra «0», nell'originale «1/15»).
+  **Stile** (10 ottobre): nessuno screenshot originale online della schermata (khuxwiki
+  Shop: solo i prezzi, Mythril Stone 50, Gem 100, Crystal 150, altri 10; Mythril Shard e
+  Orichalcum non vendibili, prezzo «---»); righe larghe 460 come le targhe della vendita
+  medaglie (Owned, Price con icona, valore giallo), le colonne le mette il codice a meta'
+  dell'area. Popup: icona a scala 1,1, «Price ◆ 10» (Txt_data1 = «Price», Txt_MoneyStock_Fix
+  = prezzo unitario) nel riquadro dello slider.
+- Popup della quantita' (medaglie e materiali): «1/N» = Txt_MaterialStock_Fix_2 (scelta),
+  Txt_data3 «/» fisso, _Fix_3 (massimo). Fascia «Includes ★★★ Medals or higher.»: Panel
+  rosso (233,18,38, bordi 255,2,0) con testo bianco e tre stelle fisse (rare_star.png),
+  mostrata dal codice se la pila ha piu' di 2 stelle. Esito «Complete!» (FUN_006f4918,
+  PopupNormal_MedalSell_Ok_ver350) come l'originale (reference\material_sell\
+  complete_thumb.png). `Result_LU_Win_Star.png` come ImageView si vede a righe: non usarla.
 - Avatar, Avatar Boards, Other, rotolo del menu: crash (vedi «Mappatura dei
   pulsanti»). Missione 8 senza mappa.
 

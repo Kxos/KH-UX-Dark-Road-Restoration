@@ -16,6 +16,7 @@ restano quelle della sorgente (texture gia' nelle risorse).
 import json
 import os
 import plistlib
+import re
 import shutil
 import sys
 
@@ -56,6 +57,8 @@ BUTS = dict(BUT9, scaleX=0.765, scaleY=0.765)
 PANEL4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=50, capInsetsWidth=1, capInsetsHeight=1)
 # fondo della griglia scurito come negli screenshot originali (quasi nero, bordo blu)
 GRID = dict(PANEL4, colorR=70, colorG=85, colorB=120)
+# Panel a tinta unita (cocostudio 1.6: colorType 1), rosso della fascia di avviso
+RED_BG = dict(colorType=1, bgColorR=233, bgColorG=18, bgColorB=38, bgColorOpacity=255)
 PANEL15 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
 
 
@@ -312,18 +315,25 @@ LAYOUTS = {
             L('Txt_Money_Total', -110, 0, 140, 26, 'Munny', 20),
             I('Icon_Money_Total', -20, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
             L('Txt_Money_Total_Lavel', 100, 0, 160, 26, '0', 22)])])),
-    'EquipSell_Block.json': ('build', P('Panel_Block', 0, 0, 300, 110, [
-        P('EquipSellBlock', 0, 0, 300, 110, [
-            I('Block_Base', 150, 55, 290, 100, 'Plate02.png', opts=PANEL4),
-            I('MaterialSellIcon', 55, 55, 80, 80, 'Plate01.png', s9=False),
-            L('Txt_Material_Name', 200, 80, 190, 26, '', 18),
-            L('Txt_MaterialStock_Fix1', 160, 50, 80, 24, '', 16),
-            L('Txt_data1 ', 230, 50, 80, 24, '', 18),
-            L('Txt_Money_Fix', 160, 22, 80, 24, '', 16),
-            L('Txt_data2', 230, 22, 100, 24, '', 18),
-            P('PanelMask', 0, 0, 300, 110, visible=False),
+    # Le colonne stanno a meta' della larghezza dell'area (~465): riga larga 460, come le
+    # targhe della vendita medaglie: nome in alto, «Owned» con la quantita' (Txt_data1 ha il
+    # testo 102000002 = " "), «Price» (Txt_data2) con l'icona dei Munny e il prezzo in giallo.
+    'EquipSell_Block.json': ('build', P('Panel_Block', 0, 0, 460, 110, [
+        P('EquipSellBlock', 0, 0, 460, 110, [
+            I('Block_Base', 230, 55, 450, 104, 'Plate02.png', opts=PANEL4),
+            I('MaterialSellIcon', 62, 55, 80, 80, 'Plate01.png', s9=False),
+            L('Txt_Material_Name', 280, 84, 300, 28, '', 22),
+            I('Own_Plate', 285, 50, 300, 26, 'Plate03.png', opts=PLATE3),
+            L('Txt_Own', 185, 50, 100, 24, 'Owned', 18),
+            L('Txt_data1 ', 300, 50, 20, 24, '', 18),
+            L('Txt_MaterialStock_Fix1', 370, 50, 120, 24, '', 20),
+            I('Price_Plate', 285, 20, 300, 26, 'Plate03.png', opts=PLATE3),
+            L('Txt_data2', 185, 20, 100, 24, '', 18),
+            I('Icon_Price', 260, 20, 44, 46, 'Icon_Prize.png', s9=False, scale=0.45),
+            L('Txt_Money_Fix', 370, 20, 120, 24, '', 20, opts=dict(colorR=255, colorG=230, colorB=60)),
+            P('PanelMask', 0, 0, 460, 110, visible=False),
             # Panel_On: evidenza della riga scelta (cercato da FUN_00888xxx, crash se manca)
-            I('Panel_On', 150, 55, 290, 100, 'Plate02.png', opts=dict(PANEL4, colorR=120, colorG=220, colorB=255),
+            I('Panel_On', 230, 55, 450, 104, 'Plate02.png', opts=dict(PANEL4, colorR=120, colorG=220, colorB=255),
               visible=False)])])),
     'EquipSell_Dialog_Step1.json': ('func', 'material_sell_popup'),
     # Conferma (FUN_00c611fc): popup OK/Annulla con il riepilogo
@@ -356,7 +366,7 @@ LAYOUTS = {
         P('Alert_Area', 330, 255, 300, 40)]),
     'PopupNormal_MedalMix_RareCaution_Panel.json': ('build', P('Panel_Caution', 0, 0, 600, 40, [
         L('Txt_Wording1', 120, 20, 200, 36, 'Includes', 22),
-        I('Star1', 240, 20, 30, 30, 'Result_LU_Win_Star.png'),
+        I('Star1', 240, 20, 26, 26, 'rare_star.png', s9=False),
         L('Txt_Wording2', 400, 20, 260, 36, 'Medals or higher.', 22),
         L('Txt_Wording3', 300, 20, 560, 36, '', 22, visible=False)])),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
@@ -645,6 +655,10 @@ for _f in os.listdir(os.path.join(SRC, *PUB.split('/'))):
     if _f.startswith('But') and _f.endswith(('_On.png', '_Off.png', '_Disable.png')):
         COPIES.setdefault('img/ui/' + _f, PUB + _f)
 TEXTURES |= {k.split('/')[-1] for k in COPIES if k.startswith(PUB)}
+# texture disegnate da make_textures.py in cocostudio/publish (es. rare_star.png)
+TEXTURES |= set(re.findall(r"save\('([^'/]+\.png)'",
+                           open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_textures.py'),
+                                encoding='utf-8').read()))
 
 
 def retex(w):
@@ -710,7 +724,7 @@ def build(s):
     return w
 
 
-def sell_popup(icon='MedalSellIcon', name='Txt_Medal_Name_Dlog', extra=()):
+def sell_popup(icon='MedalSellIcon', name='Txt_Medal_Name_Dlog', extra=(), icon_pos=(-172, 225, 1.5)):
     """Popup della quantita' da vendere: EquipSell_Medal_Step1_ver131 (medaglie impilate,
     FUN_00883f38) ed EquipSell_Dialog_Step1 (materiali, FUN_00c5f788). Assenti da ogni
     risorsa. Struttura dal discendente di Dark Road dark_Shop_win_check_pop3 (stessi
@@ -763,18 +777,33 @@ def sell_popup(icon='MedalSellIcon', name='Txt_Medal_Name_Dlog', extra=()):
         # riquadro scuro dello slider, dietro panel_MaterialStock
         I('Slider_Base', -16, -34, 576, 154, 'Panel04.png', opts=GRID),
         # nomi composti a pezzi sullo stack, non trovati da widget_lookup.py (func_strings.py)
-        I(icon, -172, 225, 89, 109, 'Medal_S_00000001.png', s9=False, scale=1.5),
+        I(icon, icon_pos[0], icon_pos[1], 89, 109, 'Medal_S_00000001.png', s9=False, scale=icon_pos[2]),
         I('Name_Plate', 37, 187, 360, 36, 'Plate03.png', opts=PLATE3),
         L(name, 37, 187, 330, 32, '', 22),
         L('Txt_data2', -239, 62, 200, 34, 'Quantity', 26),
-        L('Txt_data3', 13, 62, 200, 40, '0', 32),
+        # «1/15» come nell'originale: il codice scrive la quantita' scelta in
+        # Txt_MaterialStock_Fix_2 e il massimo in _3 (banco); Txt_data3 non lo tocca: e' la barra
+        L('Txt_MaterialStock_Fix_2', -20, 62, 80, 40, '1', 32),
+        L('Txt_data3', 13, 62, 30, 40, '/', 32),
+        L('Txt_MaterialStock_Fix_3', 48, 62, 80, 40, '1', 32),
         I('Money_Plate', 105, -166, 366, 30, 'Plate03.png', opts=PLATE3),
         # il codice scrive il ricavo in Txt_MoneyTotalStock_Fix e «Munny» in Txt_data5 (banco)
         L('Txt_data5', -15, -166, 120, 28, 'Munny', 20),
         I('Icon_Prize2', 75, -166, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
         L('Txt_MoneyTotalStock_Fix', 205, -166, 160, 30, '0', 22, opts=dict(colorB=0)),
-        I('Warning_Plate', -16, 115, 576, 32, 'Plate03.png', opts=dict(PLATE3, colorR=255, colorG=70, colorB=70),
-          visible=False, children=[L('Txt_Rare1', -150, 0, 260, 28, '', 20), L('Txt_Rare2', 150, 0, 260, 28, '', 20)]),
+        # fascia rossa «Includes ★★★ Medals or higher.» (reference\medal_list\web_qty_368.png:
+        # rosso 233,18,38 con i bordi 255,2,0, testo bianco, stelle d'oro fisse nel layout).
+        # Il codice cerca Txt_Rare1/2 dentro Warning_Plate e ne chiama solo setVisible (rari > 2):
+        # Panel senza tinta, altrimenti il colore passa ai testi
+        P('Warning_Plate', -304, 98, 576, 34, [
+            P('Warning_Base', 0, 3, 576, 28, opts=RED_BG),
+            P('Warning_Top', 0, 31, 576, 3, opts=dict(RED_BG, bgColorG=2, bgColorB=0, bgColorR=255)),
+            P('Warning_Bottom', 0, 0, 576, 3, opts=dict(RED_BG, bgColorG=2, bgColorB=0, bgColorR=255)),
+            L('Txt_Rare1', 150, 17, 160, 28, 'Includes', 22),
+            I('Rare_Star1', 228, 17, 26, 26, 'rare_star.png', s9=False, scale=1.5),
+            I('Rare_Star2', 260, 17, 26, 26, 'rare_star.png', s9=False, scale=1.5),
+            I('Rare_Star3', 292, 17, 26, 26, 'rare_star.png', s9=False, scale=1.5),
+            L('Txt_Rare2', 450, 17, 260, 28, 'Medals or higher.', 22)], visible=False),
     ]
     win['children'] = [build(head[0])] + win['children'] + [build(s) for s in head[1:] + list(extra)]
     return d
@@ -784,24 +813,24 @@ def equip_sell_popup():
     return sell_popup(extra=[
         # nome con uno spazio ideografico in coda (U+3000), come lo cerca il codice
         # (0x884688: "Txt_data" + 34 e3 80 80): senza, crash in enableShadow; testo 102000002 = " "
-        L('Txt_data4　', 13, 30, 300, 24, '', 18),
-        L('Txt_MaterialStock_Fix_2', -232, -100, 80, 24, '', 18),
-        L('Txt_MaterialStock_Fix_3', 232, -100, 80, 24, '', 18)])
+        L('Txt_data4　', 13, 30, 300, 24, '', 18)])
 
 
 def material_sell_popup():
     """EquipSell_Dialog_Step1 (FUN_00c5f788): come il popup delle medaglie, con
     MaterialSellIcon (img/material/material_%d.png), Txt_Material_Name_Dlog,
     Txt_Material_Info_Dlog, Txt_MoneyStock_Fix e Txt_data1."""
-    return sell_popup('MaterialSellIcon', 'Txt_Material_Name_Dlog', [
+    # icona dei materiali (img/material, ~60 px) meno ingrandita di quella delle medaglie;
+    # prezzo unitario nel riquadro dello slider: «Price» (Txt_data1), icona, valore in giallo
+    # (Txt_MoneyStock_Fix)
+    return sell_popup('MaterialSellIcon', 'Txt_Material_Name_Dlog', icon_pos=(-200, 200, 1.1), extra=[
         L('Txt_Material_Info_Dlog', 37, 135, 500, 40, '', 18),
-        L('Txt_MoneyStock_Fix', -239, 22, 200, 26, '', 18),
-        L('Txt_data1', 13, 22, 200, 26, '', 18),
+        L('Txt_data1', -90, 20, 120, 26, '', 20),
+        I('Icon_Price', -10, 20, 44, 46, 'Icon_Prize.png', s9=False, scale=0.45),
+        L('Txt_MoneyStock_Fix', 70, 20, 120, 26, '', 20, opts=dict(colorR=255, colorG=230, colorB=60)),
         # cercato anche qui (stack al crash); la variante con U+3000 delle medaglie per sicurezza
         L('Txt_data4', 13, 30, 300, 24, '', 18),
-        L('Txt_data4　', 13, 30, 300, 24, '', 18),
-        L('Txt_MaterialStock_Fix_2', -232, -100, 80, 24, '', 18),
-        L('Txt_MaterialStock_Fix_3', 232, -100, 80, 24, '', 18)])
+        L('Txt_data4　', 13, 30, 300, 24, '', 18)])
 
 
 def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):
