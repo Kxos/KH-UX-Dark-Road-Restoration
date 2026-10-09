@@ -81,7 +81,7 @@ LAYOUTS = {
     # Medal_Sell_Panel e' la barra in alto: FUN_00df1c00 la rende visibile e vi cerca
     # Button_Sort (con la Label Txt_Sort, scritta dalla callback di FUN_00760c64).
     'MedalList_Gen.json': ('build', P('medal_list_root', 0, 0, 960, 640, [
-        P('Scroll_Area', 70, 10, 820, 440),
+        P('Scroll_Area', 3, 10, 954, 440),
         P('Medal_Sell_Panel', 0, 450, 960, 70, [
             I('Img_Bar', 480, 35, 960, 70, 'Plate13.png'),
             B('Button_Sell1', 110, 35, 160, 58, 'But17', 'Sell\nMedals', 20, label='Txt_Sell1'),
@@ -120,7 +120,7 @@ LAYOUTS = {
                                              ('RightUI', 'publish/MedalSell_Right.json')]),
     'MedalSell_Right.json': ('build', P('Panel_Right', 0, 0, 10, 10)),
     'MedalSell_Gen.json': ('build', P('medal_sell_root', 0, 0, 960, 640, [
-        P('Scroll_Area', 70, 95, 820, 355),
+        P('Scroll_Area', 9, 95, 942, 355),
         # Medal_Sell_Panel = barra in alto (il codice la rende toccabile: a schermo intero
         # coprirebbe la griglia e la selezione non arriverebbe); i figli della barra in basso
         # stanno fuori dai suoi bordi (y negativa: cocos2d non ritaglia).

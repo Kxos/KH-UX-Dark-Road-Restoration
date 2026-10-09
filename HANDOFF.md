@@ -77,11 +77,14 @@ dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spunta
   riquadro del trait in alto a destra (vuoto sulle nostre medaglie senza trait). Banco:
   tre medaglie selezionate, tre bagliori, 630 munny. Le texture `.png` delle risorse sono
   in formato BTF: 38 byte di intestazione (larghezza/altezza a 0x1e/0x20) poi zlib RGBA.
-- [ ] **Spazi della griglia.** Nella vendita, sulla prima riga a destra, si vedono medaglie
-  tagliate a meta' (probabile `Scroll_Area` di larghezza sbagliata rispetto alle colonne:
-  `MedalSell_Gen` 820 px da x=70). Verificare anche in Medal List (`MedalList_Gen`,
-  `Scroll_Area` 820×440 da x=70,y=10) e confrontare con le immagini di riferimento
-  (`reference\medal_list\`): numero di colonne, margini, nessuna medaglia tagliata ai lati.
+- [x] **Spazi della griglia** (risolto il 9 ottobre). Misure dal banco (la scena e'
+  scalata di 1,6875 e centrata: x_schermo = 960 + (x − 480)·1,6875; celle 120×164 da
+  `FUN_0087fa88`): la vendita ha 7 colonne fisse a passo 126 con la prima a 33 dal bordo
+  di `Scroll_Area`, e con 820 px da x=70 la 7ª era tagliata; Medal List (passo 134,
+  margine 8) ne mostrava 6. Come nei riferimenti, ora 7 colonne intere in entrambe,
+  centrate: `MedalSell_Gen` `Scroll_Area` 942 px da x=9, `MedalList_Gen` 954 px da x=3.
+  Banco: nessuna medaglia tagliata; la 7ª colonna si seleziona (vendita) e apre il
+  dettaglio (lista).
 
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, notte)
 
