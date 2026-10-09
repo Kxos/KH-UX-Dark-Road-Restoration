@@ -150,6 +150,7 @@ function route(url) {
   if (p === '/user/medal/lock') return 'medallock';
   if (p === '/user/medal/enhance') return 'medalenhance';
   if (p === '/user/medal/evolve') return 'medalevolve';
+  if (p === '/user/medal/remove') return 'medalremove';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
@@ -734,8 +735,10 @@ function deckStats() {
   const medals = masterRows('medal');
   let attack = 0;
   let defense = 0;
-  for (const m of startingInventory().medals) {
-    const row = medals.find((r) => r.medalId === m.medalId);
+  const byId = new Map(userMedalList().map((m) => [m.userMedalId, m]));
+  for (const id of deckMedalIds()) {
+    const m = byId.get(id);
+    const row = m && medals.find((r) => r.medalId === m.medalId);
     if (row) { attack += row.attack; defense += row.defense; }
   }
   return { attack, defense };
@@ -1352,8 +1355,30 @@ function respondUserMedal(res) {
   send(res, 200, { ret: ret(), userMedals: userMedalsData(serverTime()) });
 }
 
+// medaglie del deck: player.deck (0 = slot vuoto) dopo Unequip, altrimenti quelle iniziali
 function deckMedalIds() {
-  return startingInventory().medals.map((m) => m.userMedalId);
+  return player.deck || startingInventory().medals.map((m) => m.userMedalId);
+}
+
+// POST /user/medal/remove (azione 237, Unequip dal dettaglio), corpo visto sul banco:
+// {"removeUserMedalId":2}. Lo slot del deck torna vuoto (0). Ramo 237: FUN_007aa8c0 =
+// userKeyblades, userDecks, petSubslots (pet di FUN_007948d0 sulla radice di quel campo),
+// subslotMaxNum + userKeybladeSubslots.
+function respondMedalRemove(res, body) {
+  const id = Number(body?.removeUserMedalId);
+  player.deck = deckMedalIds().map((x) => (x === id ? 0 : x));
+  savePlayer();
+  console.log(`  [unequip] ${id}: deck ${player.deck.join(',')}`);
+  send(res, 200, {
+    ret: ret(),
+    userKeyblades: userKeybladesData(),
+    userDecks: userDecksData(),
+    // array (il primo elemento sarebbe letto come petSubslot, FUN_007948d0 modo 1): vuoto,
+    // perche' con un elemento il dispatcher lo copia nell'oggetto pet della sessione (+0x7c0),
+    // creato solo dall'azione 170 (pet), e senza pet va in crash (0x7c8d40)
+    petSubslots: [],
+    subslotMaxNum: 0, userKeybladeSubslots: userKeybladeSubslotsData(),
+  });
 }
 
 // userKeyblades[], elemento letto da FUN_0078c904 (deckMedals: al massimo 5 uint64).
@@ -1514,6 +1539,7 @@ function handler(scheme) {
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
       if (kind === 'medalevolve') return respondMedalEvolve(res, entry.bodyDecoded);
+      if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);
