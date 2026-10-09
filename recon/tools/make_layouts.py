@@ -109,28 +109,36 @@ LAYOUTS = {
         P('Scroll_Area', 70, 95, 820, 355),
         P('Medal_Sell_Panel', 0, 0, 960, 640, [
             I('Img_Bar', 480, 485, 960, 70, 'Plate13.png'),
-            L('Txt_Money_Total', 500, 485, 170, 30, '0', 20),
             L('Txt_Sort_Label', 680, 485, 180, 30, 'Strength', 20),
             L('Txt_Filter_On', 680, 512, 180, 20, 'Filter ON', 16),
             B('Button_Sort', 860, 485, 180, 58, 'But17', 'Sort', 24),
             I('Img_Bottom', 480, 45, 960, 90, 'Plate13.png'),
             B('Button', 120, 45, 180, 64, 'But17', 'Sell', 26, label='Txt_Sell'),
+            # ricavo della vendita in Munny (riga alta della barra in basso)
+            L('Txt_Money_Total', 600, 65, 160, 28, '0', 20),
         ]),
-        I('DeckBase2', 450, 485, 270, 34, 'Plate12.png'),
-        L('Txt_Slots_Name', 75, 485, 80, 30, 'Slots', 20),
-        L('BoxNow', 165, 485, 60, 30, '0', 20),
-        L('BoxMaxLabel', 225, 485, 70, 30, '/ 0', 20),
-        L('Txt_Money_Total_Lavel', 365, 485, 90, 30, 'Munny', 20),
-        L('Txt_Money', 330, 65, 160, 28, 'Munny', 20),
-        P('Plate_A_Jewel', 420, 51, 300, 28, [
+        # in alto: contatore come in Medal List (FUN_00bf2264 / FUN_00bf5b18), poi i Munny
+        # posseduti: Txt_Money (100300003 «Munny») e Txt_Money_Label (FUN_00bf25fc)
+        L('Txt_MedalGet', 75, 485, 80, 30, 'Slots', 20),
+        L('Txt_MedalGet_Num_Label', 160, 485, 60, 30, '0', 20),
+        L('Txt_MedalGet_Slash', 190, 485, 20, 30, '/', 20),
+        L('Txt_MedalGet_All_Label', 220, 485, 60, 30, '0', 20),
+        L('BoxNow', 165, 455, 60, 30, '0', 20, visible=False),
+        L('BoxMaxLabel', 225, 455, 70, 30, '0', 20, visible=False),
+        I('DeckBase2', 420, 485, 250, 34, 'Plate12.png'),
+        L('Txt_Money', 340, 485, 90, 30, 'Munny', 20),
+        L('Txt_Money_Label', 470, 485, 150, 30, '0', 20),
+        # in basso: Munny e Avatar Coins ricavati
+        L('Txt_Money_Total_Lavel', 380, 65, 160, 28, 'Munny', 20),
+        L('Txt_A_Coin', 380, 28, 160, 28, 'Avatar Coins', 20),
+        L('Txt_A_Coin_Label', 600, 28, 160, 28, '0', 20),
+        P('Plate_A_Jewel', 700, 51, 200, 28, [
             L('Txt_A_Jewel', 40, 14, 70, 28, '', 18),
-            L('Txt_A_Jewel_Label', 220, 14, 140, 28, '0', 20),
-        ]),
-        L('Txt_A_Coin', 330, 28, 160, 28, 'Avatar Coins', 20),
-        L('Txt_A_Coin_Label', 640, 28, 140, 28, '0', 20),
-        P('Plate_A_Ticket', 420, 0, 300, 28, [
+            L('Txt_A_Jewel_Label', 140, 14, 100, 28, '0', 20),
+        ], visible=False),
+        P('Plate_A_Ticket', 700, 14, 200, 28, [
             L('Txt_A_Ticket', 40, 14, 70, 28, '', 18),
-            L('Txt_A_Ticket_Label', 220, 14, 140, 28, '0', 20),
+            L('Txt_A_Ticket_Label', 140, 14, 100, 28, '0', 20),
         ], visible=False),
     ])),
     # Dettaglio medaglia da Medal List: FUN_00aba238 carica SlideMedalInfoScene_ver341 sopra
@@ -199,6 +207,8 @@ TEXTS = {
     106250103: 'Jewels',        # Txt_Stock_2 (Dark Road: ジュエル)
     # Medal List (FUN_00df1c00: barra di aiuto in alto; FUN_00df5d98: modalita' vendita)
     100620045: 'Tap a Medal to see its details.',
+    # Sell Medals (FUN_00bf0a10): titolo di Txt_A_Ticket (accanto a 106130301 «Jewels»)
+    106240301: 'Tickets',
 }
 # Popup Sort (FUN_00a45e24 nella costruzione dei filtri): testi del filtro Super Burst.
 # Nell'IPA 4.4.0 i vicini (106240205-215) sono ancora segnaposto «[id]»: stesso formato
