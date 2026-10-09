@@ -19,21 +19,26 @@ qui c'è come.
 
 ### Come riprendere il lavoro (stato al 10 ottobre 2026) — LEGGERE PRIMA QUESTO
 
-**Banco ora:** risorse **versione 28** installate (riserva indice 64 KB: i cicli
-`build-resources.ps1 -Quick` funzionano senza download); master **revisione 58** (default
-degli script); server e app si riavviano con `tools\ldplayer\session\relogin.ps1 -Tag x`.
+**Banco ora:** risorse **versione 29** installate (riserva dati 16 MiB, indice 64 KB: i
+cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 63**
+(default degli script: **alzarla di 1 dopo ogni modifica di `server/master_data`**, poi
+`relogin.ps1` due volte: al primo il client scarica i master e va in crash, noto, al
+secondo entra); `server/master_data` e' fuori dal repository (ignorato): la tabella
+del Moogle Shop la rigenera `node server/make-moogleshop.js`; server e app si riavviano con `tools\ldplayer\session\relogin.ps1 -Tag x`.
 Se LDPlayer e' spento: `ldconsole launch --index 0`, poi `ld.exe -s 0 "sh
 /mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"`. Salvataggio di prova in
 `server\save\player.json`: Donald 2★ (evoluto), pila di 3 Huey & Dewey & Louie, pila
-bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000.
+bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000, jewel
+1.400, 10 Rainbow Gem comprate al Moogle Shop.
 
 **Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
 Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
 animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
 vuoto), Sell Materials (vendita e stile), popup «Complete!», fascia rossa e «1/N» del
-popup della quantita'. **Prossimo, in ordine:** 1) articoli del Moogle Shop (master
-`moogleshop` vuota) e acquisto; 2) Profilo, Avatar Boards, Other, rotolo del menu;
-3) missione 8.
+popup della quantita', Moogle Shop (scheda Items con scambio funzionante, scheda Traits
+visibile). **Prossimo, in ordine:** 1) Moogle Shop: le altre righe dei Traits (ne compare
+una sola, vedi annotazioni) e lo scambio dei trait (scelta della medaglia); 2) Profilo,
+Avatar Boards, Other, rotolo del menu; 3) missione 8.
 
 **Metodo (regole dell'utente):** stile di ogni schermata dagli originali trovati online
 (screenshot/video in `reference\<schermata>\`, yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt`
@@ -150,13 +155,37 @@ poi i pulsanti in crash del menu.
   (101210001–003 sono uno spazio nelle risorse inglesi; nell'originale «FOR SYNTHESIS»).
 - Evolve: barra nera sotto il materiale corretta; «Sell Medals» da Evolve ok; mancano le
   animazioni originali del risultato (ora quella del Level Up).
-- Moogle Shop (10 ottobre): si apre (scena e righe generate, schede tab1/tab2,
-  `GET /moogleshop/list` → `moogleshops[]`). Da fare: la tabella master `moogleshop` e'
-  vuota (nessun articolo: righe dalla khuxwiki, pagina Moogle Shop; acquisto da
-  studiare), il moogle (lwf/mogshop/mog_wait) e' un LWF vuoto, la targa dei Munny
-  (LB_Munnies) non compare, «Sell Materials» va in crash (schermata da studiare),
-  texture img/ui/Mogshop_plate1, ShopBut_Lock*, But29/30/31 assenti (righe articolo).
-  Riferimenti: reference\moogle_shop\ (video JP 4.1.0 FX5Chfckqkk, EN -3Tc94iOomA).
+- Moogle Shop (10 ottobre): **scheda Items come l'originale e scambio funzionante**
+  (reference\moogle_shop\moogle_shop_01.png). Dati: `server/make-moogleshop.js` genera
+  `moogleshop` e `shuffleskill` (dalla khuxwiki; nessun dump pubblico delle due tabelle).
+  Campi verificati: type 1 Traits / 2 Items; payType 1 jewel (2 munny, ipotesi); itemType
+  come i premi (5 materiale, 3 medaglia); frameType 1 = riga blu (Panel), altrimenti
+  dorata (Panel_Rare/SkillPanel_Rare/Count_Rare); display 1 = mostra «N days left» fino
+  a endDate; count = scambi possibili. shuffleskill: category = numero dell'icona
+  img/kakusei/Kakusei_Icon%04d (10 gauge, 20 HP, 30-50 resistenze, 60/61 terra/aria,
+  70 raid, 80 attacco extra, 90 STR, 100 DEF). `GET /moogleshop/list` elenca le righe
+  attive {moogleshopId, limitCount} (vuoto = «No items available.»). `POST
+  /moogleshop/buy` {moogleshopId, userMedalId, userShuffleSkillId}: azione 248, risposta
+  shuffleskillUserMedals, userMedals, userSkills, userMaterials, emblemIds,
+  guiltBurstFirst/MaxUserMedalIds, userData.userPoint. Conferma
+  `MoogleShop_Traits_AddCheck.json` (openItemBuyPopup FUN_00e16a84), esito «Received …».
+  Righe: changeRowItem FUN_00ab175c, changeRowKakusei FUN_00aaf8e4, icona generica
+  FUN_0074d540 (LuxBoard, AVT, Incentive, Medal, KB, Stamp, Icon_Skill nel Panel_Item);
+  texture generate Mogshop_plate1, But29/But31 (righe dei trait), copie But30 (=But01).
+  **Da fare:** dei 13 Traits ne compare uno solo (Max Gauges +2): filtro del client da
+  capire (initMoogleShopScrollView, SceneMoogleShop); scambio dei trait (Select Medal,
+  MoogleShop_Traits_MedalSelect_Pop_ver410 e _OverwriteCheck_ver410 mancanti); moogle
+  (lwf/mogshop/mog_wait) LWF vuoto; targa LB_Munnies della scena non compare; se una
+  risposta va in errore il server ha gia' scalato i jewel (rendere atomico).
+- **Strumenti nuovi** (10 ottobre): `recon/tools/vtable_users.py` (chi crea una lambda
+  std::function: dalla funzione target() della vtable alle coppie ADRP+ADD/LDR che la
+  usano; cosi' si trovano le funzioni come openItemBuyPopup); `recon/tools/
+  fetch_material_icons.py` (icone dei materiali dalla khuxwiki, 44 su 45; manca
+  Remembrance Gem); `D:\Progetto_Restauro_KH_UX\catalog\missing_layouts.txt`: i 250 layout
+  che il binario cita ma che non esistono (ogni schermata che li usa va in crash finche'
+  non si generano: Album, Chat, Party, Ranking, PvP, Pet, TresCommu, ShopBuyItem_*,
+  Purchase_Pop, Information_Save...).
+- Home: il fumetto del personaggio compare vuoto (testo da trovare).
 - «Sell Materials» (EquipSellScene, FUN_00c5e584): **si apre** (10 ottobre) con i
   materiali del giocatore e il popup della quantita' (EquipSell_Dialog_Step1). Il codice
   cerca `Panel_1` e dentro `EquipSell_Scroll_Area` (radice del layout = Panel_1), nella
