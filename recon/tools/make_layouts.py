@@ -44,6 +44,10 @@ def I(name, x, y, w, h, tex, **kw):
     return dict(cls='ImageView', name=name, x=x, y=y, w=w, h=h, tex=tex, **kw)
 
 
+# targhetta Plate03 in 9-slice come in MedalInfo_Mix_ver340 (bordo 70)
+PLATE3 = dict(scale9Enable=True, capInsetsX=70, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
+
+
 def P(name, x, y, w, h, children=(), **kw):
     return dict(cls='Panel', name=name, x=x, y=y, w=w, h=h, children=list(children), **kw)
 
@@ -120,40 +124,49 @@ LAYOUTS = {
                                              ('LeftUI', 'publish/MedalSell_Back.json'),
                                              ('RightUI', 'publish/MedalSell_Right.json')]),
     'MedalSell_Right.json': ('build', P('Panel_Right', 0, 0, 10, 10)),
+    # Stile dalle schermate originali (reference\medal_list\web_reddit_sell_playingcard.jpg,
+    # web_tumblr_sell1.png, medal_sell_yt_02.jpg): barre curve del Level Up
+    # (Medal_Syn_DeckBase1 in alto, DeckBase2 in basso, come MedalInfo_Mix_ver340), targhette
+    # Plate03 in 9-slice (bordo 70), Sort arancione (But03), Sell rosso (But01), icone delle
+    # valute al centro delle targhette e valori a destra. Posizioni misurate sullo
+    # screenshot di reddit (1334x750: x = 0,853·x' − 89, y = 0,853·(750 − y')).
     'MedalSell_Gen.json': ('build', P('medal_sell_root', 0, 0, 960, 640, [
-        P('Scroll_Area', 9, 95, 942, 355),
+        P('Scroll_Area', 9, 95, 942, 361),
         # Medal_Sell_Panel = barra in alto (il codice la rende toccabile: a schermo intero
         # coprirebbe la griglia e la selezione non arriverebbe); i figli della barra in basso
         # stanno fuori dai suoi bordi (y negativa: cocos2d non ritaglia).
         P('Medal_Sell_Panel', 0, 450, 960, 70, [
-            I('Img_Bar', 480, 35, 960, 70, 'Plate13.png'),
-            L('Txt_Sort_Label', 680, 35, 180, 30, 'Strength', 20),
-            L('Txt_Filter_On', 680, 62, 180, 20, 'Filter ON', 16),
-            B('Button_Sort', 860, 35, 180, 58, 'But17', 'Sort', 24),
-            I('Img_Bottom', 480, -405, 960, 90, 'Plate13.png'),
-            B('Button', 120, -405, 180, 64, 'But17', 'Sell', 26, label='Txt_Sell'),
+            I('Img_Bar', 480, 48, 1136, 111, 'Medal_Syn_DeckBase1.png', s9=False),
+            I('Plate_Sort', 667, 45, 185, 26, 'Plate03.png', opts=PLATE3),
+            L('Txt_Sort_Label', 667, 45, 180, 26, 'Strength', 18),
+            L('Txt_Filter_On', 667, 22, 180, 20, 'Filter ON', 14),
+            B('Button_Sort', 857, 32, 177, 50, 'But03', 'Sort', 24),
+            I('Img_Bottom', 480, -402, 1136, 96, 'Medal_Syn_DeckBase2.png', s9=False),
+            B('Button', 100, -401, 177, 64, 'But01', 'Sell', 30, label='Txt_Sell'),
             # riga alta della barra in basso: titolo «Munny» (il valore e' Txt_Money_Total_Lavel)
-            L('Txt_Money_Total', 380, -385, 160, 28, 'Munny', 20),
+            L('Txt_Money_Total', 262, -384, 100, 24, 'Munny', 17),
         ]),
         # in alto: contatore come in Medal List (FUN_00bf2264 / FUN_00bf5b18), poi i Munny
         # posseduti: Txt_Money (100300003 «Munny») e Txt_Money_Label (FUN_00bf25fc)
-        L('Txt_MedalGet', 75, 485, 80, 30, 'Slots', 20),
-        L('Txt_MedalGet_Num_Label', 160, 485, 60, 30, '0', 20),
-        L('Txt_MedalGet_Slash', 190, 485, 20, 30, '/', 20),
-        L('Txt_MedalGet_All_Label', 220, 485, 60, 30, '0', 20),
+        I('Plate_Slots', 118, 495, 218, 26, 'Plate03.png', opts=PLATE3),
+        L('Txt_MedalGet', 45, 495, 80, 26, 'Slots', 17),
+        L('Txt_MedalGet_Num_Label', 160, 495, 50, 26, '0', 18),
+        L('Txt_MedalGet_Slash', 183, 495, 14, 26, '/', 18),
+        L('Txt_MedalGet_All_Label', 205, 495, 50, 26, '0', 18),
         L('BoxNow', 165, 455, 60, 30, '0', 20, visible=False),
         L('BoxMaxLabel', 225, 455, 70, 30, '0', 20, visible=False),
-        I('DeckBase2', 420, 485, 250, 34, 'Plate12.png'),
-        L('Txt_Money', 340, 485, 90, 30, 'Munny', 20),
-        # icone delle valute come nel riferimento (reference\medal_list\medal_sell_yt_02.jpg)
-        I('Icon_Money_Top', 398, 485, 56, 57, 'IncentiveIcon_04.png', scale=0.45, s9=False),
-        L('Txt_Money_Label', 485, 485, 130, 30, '0', 20),
+        I('DeckBase2', 375, 495, 266, 26, 'Plate03.png', opts=PLATE3),
+        L('Txt_Money', 285, 495, 80, 26, 'Munny', 17),
+        I('Icon_Money_Top', 349, 495, 56, 57, 'IncentiveIcon_04.png', scale=0.4, s9=False),
+        L('Txt_Money_Label', 445, 495, 120, 26, '0', 18),
         # in basso: Munny e Avatar Coins ricavati
-        L('Txt_Money_Total_Lavel', 600, 65, 160, 28, '0', 20),
-        I('Icon_Money_Sell', 470, 65, 56, 57, 'IncentiveIcon_04.png', scale=0.45, s9=False),
-        L('Txt_A_Coin', 380, 28, 160, 28, 'Avatar Coins', 20),
-        I('Icon_A_Coin', 470, 28, 67, 69, 'IncentiveIcon_14.png', scale=0.4, s9=False),
-        L('Txt_A_Coin_Label', 600, 28, 160, 28, '0', 20),
+        I('Plate_Money_Total', 373, 66, 311, 24, 'Plate03.png', opts=PLATE3),
+        I('Icon_Money_Sell', 369, 66, 56, 57, 'IncentiveIcon_04.png', scale=0.4, s9=False),
+        L('Txt_Money_Total_Lavel', 480, 66, 110, 24, '0', 18),
+        I('Plate_A_Coin', 373, 30, 311, 24, 'Plate03.png', opts=PLATE3),
+        L('Txt_A_Coin', 275, 30, 120, 24, 'Avatar Coins', 17),
+        I('Icon_A_Coin', 401, 30, 67, 69, 'IncentiveIcon_14.png', scale=0.38, s9=False),
+        L('Txt_A_Coin_Label', 495, 30, 80, 24, '0', 18),
         P('Plate_A_Jewel', 700, 51, 200, 28, [
             L('Txt_A_Jewel', 40, 14, 70, 28, '', 18),
             L('Txt_A_Jewel_Label', 140, 14, 100, 28, '0', 20),
@@ -246,7 +259,7 @@ LAYOUTS = {
         # cade (-428, -410)·scala px dalla posizione data (misurato sul banco a 0,3 e 0,42).
         I('Dummy_Medal1', 238, 220, 140, 170, 'Plate01.png', scale=0.7),
         I('Dummy_Medal2', 584, 220, 140, 170, 'Plate01.png', scale=0.7),
-        I('Arrow_Evo', 233, 379, 100, 150, 'Medal_Evo_Arrow01.png'),
+        I('Arrow_Evo', 233, 379, 113, 170, 'Medal_Evo_Arrow01.png', s9=False, scale=0.9),
         # stelle (FUN_00736d94, scala 0,75): centrate nell'area, che sta sotto la medaglia
         P('Star_Area1', -88, 256, 300, 30),
         P('Star_Area2', 259, 256, 300, 30)])),
@@ -259,11 +272,11 @@ LAYOUTS = {
         I('Button_LimitCut', 80, 47, 158, 68, 'But01_Off.png', children=[
             L('Txt_LimitCut', 0, 2, 150, 58, 'Evolve', 30)]),
         # i figli di un ImageView si posizionano rispetto al suo centro
-        I('Base_Money1', 295, 64, 270, 25, 'Plate03.png', children=[
+        I('Base_Money1', 295, 64, 270, 25, 'Plate03.png', opts=PLATE3, children=[
             L('Txt_Money', -82, 0, 85, 24, 'Required', 16),
             I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5, s9=False),
             L('Txt_Money_Label', 66, 0, 138, 24, '0', 18)]),
-        I('Base_Money2', 295, 34, 270, 25, 'Plate03.png', children=[
+        I('Base_Money2', 295, 34, 270, 25, 'Plate03.png', opts=PLATE3, children=[
             L('Txt_Money', -82, 0, 85, 24, 'Munny', 16),
             I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5, s9=False),
             L('Txt_Money_Label', 66, 0, 138, 24, '0', 18)]),
@@ -472,6 +485,7 @@ def build(s):
         o.update(scaleX=s['scale'], scaleY=s['scale'])
     if 's9' in s:                       # False per le icone: il modello ha il 9-slice (bordo 50)
         o['scale9Enable'] = s['s9']
+    o.update(s.get('opts', {}))         # opzioni come nei layout originali (es. capInsetsX)
     if 'ignoreSize' in s:               # False: la texture caricata dal codice si adatta a w x h
         o['ignoreSize'] = s['ignoreSize']
     w['name'] = s['name']
