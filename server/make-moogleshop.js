@@ -64,7 +64,9 @@ function trait(type, name, fields) {
   traits.push(Object.assign(blank('shuffleskill'), {
     // category = numero dell'icona (changeRowKakusei formatta il campo +4 in
     // img/kakusei/Kakusei_Icon%04d.png; un'icona inesistente manda in crash loadTexture)
-    shuffleSkillId: traits.length + 1, category: type * 10, type, name, sortId: traits.length + 1,
+    // type 1 per tutti: con altri valori il client non mostra la riga (dei 13 compariva
+    // solo quello con type 1); l'effetto lo danno category e i campi del valore
+    shuffleSkillId: traits.length + 1, category: type * 10, type: 1, name, sortId: traits.length + 1,
   }, fields));
   return traits.length;
 }
@@ -86,10 +88,12 @@ const T = {
 };
 // offerte a tempo come nello screenshot (STR +1000 / DEF +2000 a 1.000 jewel, 3 scambi,
 // riga dorata, «N day left»); poi i trait a 100 jewel (02/2021) e a 5.000.000 munny
+// scadenza: una settimana dopo la generazione della tabella (come le offerte settimanali)
+const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) + ' 23:59:59';
 add({ type: TAB_TRAITS, shuffleSkillId: T.str1000, price: 1000, count: 3, frameType: 0, display: 1,
-  endDate: '2099-12-31 23:59:59' });
+  endDate: weekEnd });
 add({ type: TAB_TRAITS, shuffleSkillId: T.def2000, price: 1000, count: 3, frameType: 0, display: 1,
-  endDate: '2099-12-31 23:59:59' });
+  endDate: weekEnd });
 add({ type: TAB_TRAITS, shuffleSkillId: T.gauge2, price: 5000 });
 add({ type: TAB_TRAITS, shuffleSkillId: T.hp300, price: 5000 });
 for (const k of ['ground70', 'aerial70', 'extra50', 'str1500', 'raid50']) {

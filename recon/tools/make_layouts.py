@@ -278,16 +278,16 @@ LAYOUTS = {
                 I('Skill_Base2', 230, 35, 420, 56, 'Plate03.png', opts=PLATE3),
                 I('kakusei_Icon', 34, 35, 60, 60, 'Plate01.png', s9=False),
                 L('Txt_KakuseiSkill', 210, 35, 300, 36, '', 24)], visible=False),
+            # solo Txt_Count: il codice ne fa un CustomRichText «Txt_Count_Cus» (FUN_006e436c);
+            # una Label con quel nome verrebbe presa al suo posto (crash a 0x879d40, stack mg12)
             P('Count', 480, 6, 220, 26, [
-                L('Txt_Count', 110, 13, 210, 22, '', 16),
-                L('Txt_Count_Cus', 110, 13, 210, 22, '', 16)], visible=False),
+                L('Txt_Count', 110, 13, 210, 22, '', 16)], visible=False),
             # frameType 1: SkillPanel + Count; altrimenti SkillPanel_Rare + «Count_Rare»
             # (stringa Plate_Count_Rare + 6; crash a 0xaafe08, stack mg5), con gli stessi testi
             P('Count_Rare', 480, 6, 220, 26, [
                 I('Plate_Count_Rare', 110, 13, 220, 26, 'Plate03.png',
                   opts=dict(PLATE3, colorR=255, colorG=220, colorB=90)),
-                L('Txt_Count', 110, 13, 210, 22, '', 16),
-                L('Txt_Count_Cus', 110, 13, 210, 22, '', 16)], visible=False)]),
+                L('Txt_Count', 110, 13, 210, 22, '', 16)], visible=False)]),
         P('Jewel', 480, 34, 220, 50, [
             I('Jewel_Icon', 30, 25, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.45),
             L('Txt_Jewel', 140, 25, 150, 34, '0', 26)]),
@@ -330,8 +330,7 @@ LAYOUTS = {
             I('Plate_Count', 150, 15, 300, 26, 'Plate03.png', opts=PLATE3, visible=False),
             I('Plate_Count_Rare', 150, 15, 300, 26, 'Plate03.png',
               opts=dict(PLATE3, colorR=255, colorG=200, colorB=60), visible=False),
-            L('Txt_Count', 150, 15, 280, 22, '', 16),
-            L('Txt_Count_Cus', 150, 15, 280, 22, '', 16)], visible=False),
+            L('Txt_Count', 150, 15, 280, 22, '', 16)], visible=False),   # _Cus: lo crea il codice
         L('Txt_Limit', 612, 16, 200, 22, '', 16),
         P('Caution', 180, 160, 360, 24, [L('Txt_Caution', 180, 12, 360, 20, '', 16)], visible=False),
         I('Icon_New', 40, 165, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False),
