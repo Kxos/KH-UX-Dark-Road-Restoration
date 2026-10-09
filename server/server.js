@@ -147,6 +147,7 @@ function route(url) {
   if (p === '/keyblade/subslot') return 'kbsubslot';
   if (p === '/user/medal') return 'usermedal';
   if (p === '/user/medal/sell') return 'medalsell';
+  if (p === '/user/medal/lock') return 'medallock';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
@@ -1094,7 +1095,8 @@ function userMedalsData(now) {
     number: 1, // uint
     level: m.level || 1, exp: 0,
     attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
-    lock: 0, upperCost: 0, guiltFactor: 0, // guiltFactor: uint
+    lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
+    upperCost: 0, guiltFactor: 0, // guiltFactor: uint
     userSkills: [], userShuffleSkills: [],
     getDatetime: m.getDatetime || now,
   }));
@@ -1149,6 +1151,24 @@ function respondMedalSell(res, body) {
     userMedals: userMedalsData(now),
     sellUserMedalIds: [...sold.keys()],
   });
+}
+
+// POST /user/medal/lock (azione 46), corpo visto sul banco:
+// {"userMedalIds":[110],"isLocks":[1], ...}. Lo stato va in player.medalLocks (anche per
+// le medaglie iniziali 1-3, che non sono in player.medals) e torna nel campo lock di
+// userMedals. Ramo 46 del dispatcher: FUN_0078da18 (userMedals), deleteUserMedalIds,
+// poi isSubslotUpdate (intero letto come flag != 0): senza, «200 ERROR :46».
+function respondMedalLock(res, body) {
+  const ids = Array.isArray(body?.userMedalIds) ? body.userMedalIds : [];
+  player.medalLocks = player.medalLocks || {};
+  ids.forEach((id, i) => {
+    if (Number(body.isLocks?.[i])) player.medalLocks[Number(id)] = 1;
+    else delete player.medalLocks[Number(id)];
+  });
+  savePlayer();
+  console.log(`  [lucchetto] ${ids.map((id, i) => `${id}=${Number(body.isLocks?.[i]) ? 1 : 0}`).join(',')}`);
+  send(res, 200, { ret: ret(), userMedals: userMedalsData(serverTime()), deleteUserMedalIds: [],
+    isSubslotUpdate: 0 });
 }
 
 function respondUserMedal(res) {
@@ -1315,6 +1335,7 @@ function handler(scheme) {
       if (kind === 'kbsubslot') return respondKeybladeSubslot(res);
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
+      if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);
