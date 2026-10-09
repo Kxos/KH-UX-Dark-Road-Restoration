@@ -37,6 +37,21 @@ function blank(table) {
   return row;
 }
 
+// Tabelle vere di una versione precedente, se disponibili: righe binarie di
+// thethiny/KHUx-Server (data/<tabella>_raw.json), decodificate con
+// recon/tools/raw_master.py (player, reward) o raw_master_old.py (stage, enemy, medal) in
+// <tabella>_dec.json. Fuori dal repository.
+const REAL_DIR = process.env.KHUX_REAL_MASTER_DIR || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny';
+const realTable = (name) => {
+  try { return JSON.parse(fs.readFileSync(path.join(REAL_DIR, name + '_dec.json'), 'utf8')); } catch { return null; }
+};
+// solo i campi dello schema 4.3.1 (le righe decodificate hanno anche unk_<offset>)
+const fromReal = (table, r) => {
+  const row = blank(table);
+  for (const k of Object.keys(row)) if (r[k] !== undefined) row[k] = r[k];
+  return row;
+};
+
 const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
   medalId: m.medalId,
   // imageId nel file dei valori: grafica sostitutiva per le medaglie senza immagine nelle
@@ -60,6 +75,26 @@ const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
   sell: 10, materialExp: 10,
 }));
 
+// Medaglie vere (522, compresa la 1), al posto dei valori della wiki; le medaglie del file
+// dei valori che mancano restano. Solo 21 medaglie hanno grafica nelle risorse servite
+// (img/medal/Medal_L_<id>.png, indice delle risorse versione 4): le altre prendono quella
+// di una medaglia dello stesso attributo (1 Power, 2 Speed, 3 Magic), o di Dewey ★.
+const MEDAL_IMAGES = new Set([11012, 11021, 11031, 11041, 11052, 12011, 12022, 12031, 12041, 12051,
+  13011, 13021, 13031, 13032, 13041, 13051, 33023, 33043, 90011, 90031, 90041]);
+const IMAGE_BY_ATTRIBUTE = { 1: 11021, 2: 12011, 3: 13021 };
+const realMedals = realTable('medal');
+if (realMedals) {
+  const byId = new Map(medals.map((m) => [m.medalId, m]));
+  for (const r of realMedals) {
+    const img = MEDAL_IMAGES.has(r.imageId) ? r.imageId : IMAGE_BY_ATTRIBUTE[r.attribute] || 90041;
+    byId.set(r.medalId, Object.assign(fromReal('medal', r), {
+      imageId: img, thumbId: img, cutinId: img, artId: img, displayId: img,
+      listSortId: r.sortId, burstEnhanceCategory: [0, 0], groupId: 0,
+    }));
+  }
+  medals.splice(0, medals.length, ...byId.values());
+}
+
 // Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1
 // (FUN_00eb577c); senza riga va in crash (es. «Begin» su una missione). Segnaposto:
 // copia della prima medaglia del file dei valori, con medalId 1.
@@ -71,13 +106,17 @@ if (medals.length && !medals.some((m) => m.medalId === 1)) {
 // Avatar_Side_0N) che non sono in nessun pacchetto: crash (FUN_00b157c8).
 const hp = Number(process.env.KHUX_PLAYER_HP || 3000);
 
-// Tabelle vere di una versione precedente, se disponibili: righe binarie di
-// thethiny/KHUx-Server (data/<tabella>_raw.json), decodificate con
-// recon/tools/raw_master.py in <tabella>_dec.json. Fuori dal repository.
-const REAL_DIR = process.env.KHUX_REAL_MASTER_DIR || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny';
-const realTable = (name) => {
-  try { return JSON.parse(fs.readFileSync(path.join(REAL_DIR, name + '_dec.json'), 'utf8')); } catch { return null; }
-};
+// enemy: alle righe della 5.0.1 (import-master.js, 12 nemici) si aggiungono i nemici veri
+// che mancano (665; cinque livelli invece di sei, come gran parte delle righe 5.0.1).
+// Molti non hanno grafica nelle risorse (HANDOFF, «Mappe generate»): conta solo per le
+// mappe che li usano.
+let enemies = null;
+const realEnemies = realTable('enemy');
+if (realEnemies) {
+  enemies = JSON.parse(fs.readFileSync(path.join(OUT, 'enemy.json'), 'utf8'));
+  const have = new Set(enemies.map((e) => e.enemyId));
+  for (const r of realEnemies) if (!have.has(r.enemyId)) enemies.push(fromReal('enemy', r));
+}
 
 const players = [];
 const realPlayers = realTable('player');
@@ -179,4 +218,6 @@ fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgro
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
-console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})`);
+if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
+console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})` +
+  (enemies ? `; enemy: ${enemies.length} righe` : ''));

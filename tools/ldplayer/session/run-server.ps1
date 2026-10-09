@@ -4,7 +4,7 @@
 #   powershell -File run-server.ps1 [-Revision N] [-TutorialFinished]
 # -TutorialFinished: il client scarica le risorse (azione 28) solo a tutorial finito;
 # serve per un giro solo (update-resources.ps1), poi la home andrebbe in crash sul pet.
-param([int]$Revision = 53, [switch]$TutorialFinished)
+param([int]$Revision = 57, [switch]$TutorialFinished)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
