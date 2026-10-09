@@ -195,6 +195,64 @@ LAYOUTS = {
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
                                      [('text', 'Txt_Title_Label', 'Unequip this Medal from where it is set.'),
                                       ('text', 'Txt_Cancel', 'Cancel')]),
+    # Evolve (FUN_00cbdd84): senza MedalEvoScene_ver320 FUN_006e0eb8 restituisce null e il
+    # client va in crash all'addChild. Nodi come nella ver260 (UnderUI, CenterUI_Left,
+    # CenterUI_Right a x=480, LeftUI a y=576), ma Under e Left non esistono in nessuna
+    # risorsa: generati con i widget che il codice cerca. UnderUI: Base_Money1/2 (con
+    # Txt_Money, testi 0x5fa74e2/0x5fa74e3, e Txt_Money_Label), Button_LimitCut/
+    # Txt_LimitCut (0x60b3dc1), Button_Sell1/Txt_Sell1 (0x606a9e4), Txt_Wording
+    # (0x60b3dc7). CenterUI_Left: Dummy_Medal1/Star_Area1 (prima) e Dummy_Medal2/
+    # Star_Area2 (dopo).
+    'MedalEvoScene_ver320.json': ('scene', [('UnderUI', 'publish/MedalInfo_Evo_Under_Gen.json'),
+                                            ('CenterUI_Left', 'publish/MedalInfo_Evo_Left_Gen.json'),
+                                            ('CenterUI_Right', 'publish/MedalInfo_Evo_Right_Gen.json', 480, 0),
+                                            ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
+    # Statistiche prima/dopo: la ver260 originale, ma tre texture non esistono in nessuna
+    # risorsa (ImageViewReader va in crash): Medal_Evo_Win e Medal_Evo_Attribute sostituite,
+    # MD_Guilt4_On nascosta. Etichette giapponesi tradotte.
+    'MedalInfo_Evo_Right_Gen.json': ('copy', 'MedalInfo_Evo_Right_ver260.json', {}, False, [
+        ('tex', 'Base_MedalInfo2', 'Panel04B.png'),
+        ('tex', 'Plate4', 'Plate02.png'),
+        ('tex', 'Guilt_Icon', None),
+        ('text', 'ATk', 'STR'), ('text', 'DEF', 'DEF'),
+        ('text', 'Burst', 'Special Attack'), ('text', 'BurstName_Label', ''),
+        ('text', 'Ability', 'Ability'), ('text', 'BurstCost', 'Required Gauges'),
+        # aggiunti dopo la ver260 (FUN_00cbfbd0, FUN_00cc458c): riquadri del Kakusei (skill
+        # di risveglio) e del Super Attack, cloni nascosti del riquadro dello speciale
+        ('clone_r', 'Base_MedalInfo2', 'Base_KakuseiSkill', 'Panel_1',
+         {'BurstName_Label': 'KakuseiSkillName_Label'}),
+        ('clone_r', 'Base_MedalInfo2', 'Base_SuperBurst', 'Panel_1',
+         {'BurstName_Label': 'SuperBurstName_Label', 'Burst': 'Txt_SuperBurstTitle'}),
+        ('add', 'Base_SuperBurst', L('Txt_Ticker_SuperBurst', -150, -60, 300, 24, '', 16))]),
+    'MedalInfo_Evo_Left_Gen.json': ('build', P('Panel_Evo_Left', 0, 0, 480, 640, [
+        # Dummy_Medal1/2 sono ImageView: il codice vi carica l'immagine della medaglia
+        # (FUN_0125194c, loadTexture); da Panel il client va in crash
+        I('Dummy_Medal1', 120, 420, 140, 170, 'Plate01.png'),
+        P('Star_Area1', 50, 300, 140, 30),
+        I('Arrow_Evo', 240, 420, 40, 96, 'Medal_Syn_Arrow01.png', flipX=True),
+        I('Dummy_Medal2', 360, 420, 140, 170, 'Plate01.png'),
+        P('Star_Area2', 290, 300, 140, 30)])),
+    # Area (FUN_00cc174c): i materiali richiesti, un pannello MedalInfo_Evo_Medal ogni 110 px.
+    'MedalInfo_Evo_Under_Gen.json': ('build', P('Panel_Evo_Under', 0, 0, 960, 640, [
+        L('Txt_Wording', 480, 215, 900, 30, '', 20),
+        P('Area', 40, 30, 560, 150),
+        I('Base_Money1', 780, 170, 330, 34, 'Plate12.png', children=[
+            L('Txt_Money', 70, 17, 130, 30, 'Munny', 20),
+            L('Txt_Money_Label', 250, 17, 150, 30, '0', 20)]),
+        I('Base_Money2', 780, 130, 330, 34, 'Plate12.png', children=[
+            L('Txt_Money', 70, 17, 130, 30, 'Munny', 20),
+            L('Txt_Money_Label', 250, 17, 150, 30, '0', 20)]),
+        B('Button_LimitCut', 690, 60, 170, 60, 'But17', 'Limit Break', 22, label='Txt_LimitCut'),
+        B('Button_Sell1', 870, 60, 170, 60, 'But17', 'Evolve', 26, label='Txt_Sell1')])),
+    # Materiale richiesto da Evolve (FUN_00cc57e0, riempito da FUN_00cc5a80): in Medal_S il
+    # codice aggiunge l'icona (medalView) e lo ridimensiona; Possession e' un contenitore con
+    # Label_9 (testo 101399490) e Num_Label (quantita' posseduta), entrambe con ombra
+    # (FUN_006e418c: crash se mancano).
+    'MedalInfo_Evo_Medal.json': ('build', P('Panel_Evo_Medal', 0, 0, 100, 150, [
+        P('Medal_S', 0, 30, 100, 120),
+        P('Possession', 0, 0, 100, 26, [
+            L('Label_9', 34, 13, 70, 24, 'Owned', 16),
+            L('Num_Label', 82, 13, 36, 24, '0', 16)])])),
     'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
                                                   ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
     'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 30, 320, 120, 220, [
@@ -279,12 +337,14 @@ def node(name, tag):
 
 
 def scene(names):
-    """names: 'Nome' (nodo vuoto) o ('Nome', 'publish/layout.json') (nodo con GUIComponent)."""
+    """names: 'Nome' (nodo vuoto), ('Nome', 'publish/layout.json') (nodo con GUIComponent)
+    o ('Nome', 'publish/layout.json', x, y) (nodo spostato, come nelle scene originali)."""
     root = node(None, 10000)
     root['gameobjects'] = []
     for i, n in enumerate(names):
-        name, ui = (n, None) if isinstance(n, str) else n
+        name, ui, x, y = (n, None, 0, 0) if isinstance(n, str) else (tuple(n) + (0, 0))[:4]
         g = dict(node(name, 10001 + i), **{'__type': 'ComGameObjectSurrogate:#EditorCommon.JsonModel'})
+        g.update(x=x, y=y)
         if ui:
             g['components'] = [{'__type': 'ComGUIAdapterSurrogate:#EditorCommon.JsonModel.Component',
                                 'classname': 'GUIComponent', 'name': 'GUIComponent', 'file': None,
@@ -407,6 +467,20 @@ for target, spec in LAYOUTS.items():
         for extra in (spec[4] if len(spec) > 4 else ()):
             if isinstance(extra, tuple) and extra[0] == 'text':     # ('text', nome, testo)
                 find(data['widgetTree'], extra[1])['options']['text'] = extra[2]
+            elif isinstance(extra, tuple) and extra[0] == 'tex':    # ('tex', nome, texture|None)
+                o = find(data['widgetTree'], extra[1])['options']
+                if extra[2]:
+                    o['fileNameData'] = tex(extra[2])
+                else:                       # texture assente ovunque: widget nascosto
+                    o['fileNameData'] = tex('Plate01.png')
+                    o['visible'] = False
+            elif isinstance(extra, tuple) and extra[0] == 'clone_r':
+                # ('clone_r', sorgente, nome, genitore, {figlio: nuovo nome}): clone nascosto
+                # con i figli rinominati (riquadri che una versione successiva aggiunge)
+                clone(data['widgetTree'], *extra[1:4])
+                rename(find(data['widgetTree'], extra[2]), extra[4])
+            elif isinstance(extra, tuple) and extra[0] == 'add':    # ('add', genitore, widget)
+                find(data['widgetTree'], extra[1])['children'].append(build(extra[2]))
             elif isinstance(extra, tuple):          # ('clone', sorgente, nome, genitore)
                 clone(data['widgetTree'], *extra[1:])
             else:

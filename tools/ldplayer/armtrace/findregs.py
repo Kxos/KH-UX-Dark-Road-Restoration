@@ -7,7 +7,11 @@ library (crash in libc, e.g. strlen called from the game: x30 is still in the li
 with --lib-pc only blocks with pc in the library are printed (stricter, fewer false hits).
 """
 import os, struct, sys
-LO, HI = 0x31c0000, 0x4f63000
+# base di libcocos2dcpp sotto houdini: cambia tra un avvio e l'altro (0x31c0000, 0x31d4000);
+# la si legge dal tombstone (tombstone.ps1) o da /proc/<pid>/maps e la si passa in KHUX_BASE
+import os
+LO = int(os.environ.get('KHUX_BASE', '0x31c0000'), 16)
+HI = LO + 0x1da3000
 g = lambda v: v - LO + 0x100000
 lib_pc = '--lib-pc' in sys.argv
 for root, _, files in os.walk(sys.argv[1]):

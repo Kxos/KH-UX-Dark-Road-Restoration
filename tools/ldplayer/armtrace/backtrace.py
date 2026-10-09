@@ -1,6 +1,10 @@
 """bt.py <lib> <stack.bin> <stack_start_hex> <sp_hex> [n]: plausible return addresses (preceded by BL/BLR)."""
 import struct, sys
-LO, HI = 0x31c0000, 0x4f63000
+# base di libcocos2dcpp sotto houdini: cambia tra un avvio e l'altro (0x31c0000, 0x31d4000);
+# la si legge dal tombstone (tombstone.ps1) o da /proc/<pid>/maps e la si passa in KHUX_BASE
+import os
+LO = int(os.environ.get('KHUX_BASE', '0x31c0000'), 16)
+HI = LO + 0x1da3000
 lib = open(sys.argv[1], 'rb').read()
 st = open(sys.argv[2], 'rb').read()
 base, sp = int(sys.argv[3], 16), int(sys.argv[4], 16)
