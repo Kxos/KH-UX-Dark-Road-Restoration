@@ -1,11 +1,11 @@
-# Avvia il server KHUX per il banco LDPlayer (vedi HANDOFF, «Come riprendere il lavoro»).
+﻿# Avvia il server KHUX per il banco LDPlayer (vedi HANDOFF, «Come riprendere il lavoro»).
 # La chiave delle risorse non sta nel repository: si rilegge dal binario 5.0.1.
 # Log: D:\Progetto_Restauro_KH_UX\logs\server.log (lo leggono cycle.ps1 e relogin.ps1).
 #   powershell -File run-server.ps1 [-Revision N] [-TutorialFinished]
 # -TutorialFinished: il client scarica le risorse (azione 28) solo a tutorial finito;
 # dal 9 ottobre 2026 il server lo considera finito gia' dalla fase 995 (dopo il
 # Prologue), quindi serve solo a un giocatore fermo prima.
-param([int]$Revision = 58, [switch]$TutorialFinished)
+param([int]$Revision = 60, [switch]$TutorialFinished)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
