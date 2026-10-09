@@ -1567,7 +1567,13 @@ function handler(scheme) {
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
       // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop
-      if (kind === 'moogleshoplist') return send(res, 200, { ret: ret(), moogleshops: player.moogleshops || [] });
+      // Prova (10 ottobre): con la tabella piena ma moogleshops vuoto il client scrive «No
+      // items available.»: si elencano le righe attive, limitCount = scambi rimasti
+      if (kind === 'moogleshoplist') {
+        const bought = player.moogleshopBought || {};
+        return send(res, 200, { ret: ret(), moogleshops: masterRows('moogleshop').map((r) => ({
+          moogleshopId: r.moogleshopId, limitCount: r.count ? Math.max(0, r.count - (bought[r.moogleshopId] || 0)) : 0 })) });
+      }
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);

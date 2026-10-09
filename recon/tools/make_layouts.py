@@ -271,32 +271,60 @@ LAYOUTS = {
         P('LockMask', 0, 0, 721, 110, [
             B('ImageButton_LockMask', 360, 55, 721, 110, 'But16', None),
             I('Icon_Lock', 650, 55, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False)])),
-    'MoogleShop_Item_Panel.json': ('build', P('Item', 0, 0, 721, 184, [
+    # Ricerche di changeRowItem (FUN_00ab175c, lookups.py sul decompilato): dalla riga Item
+    # (testi Txt_Material_Name/_Text), Panel e Panel_Rare (uno solo visibile secondo frameType;
+    # Panel_Item dentro quello scelto), But_Buy con dentro ImageButton_Buy1, Count con
+    # Plate_Count, Plate_Count_Rare, Txt_Count, Txt_Count_Cus; Jewel/Txt_Jewel, Caution,
+    # Icon_New, Txt_Limit, LockMask (ImageButton_LockMask, Lock_icon). Testi e pulsanti fuori
+    # da Panel/Panel_Rare (la ricerca prende il primo trovato, anche se nascosto). Aspetto da
+    # reference\moogle_shop\moogle_shop_01.png: riga blu, icona a sinistra, nome su targa,
+    # prezzo in jewel e «Exchange» rosso a destra.
+    'MoogleShop_Item_Panel.json': ('build', P('Item_Root', 0, 0, 721, 184, [P('Item', 0, 0, 721, 184, [
         P('Panel', 0, 0, 721, 184, [
-            P('Panel_Item', 20, 20, 140, 140),
-            L('Txt_Material_Name', 330, 120, 320, 30, '', 22),
-            L('Txt_Material_Text', 330, 80, 320, 50, '', 18),
-            I('Icon_Skill', 190, 120, 40, 40, 'Plate01.png', s9=False, visible=False),
-            P('Jewel', 500, 110, 200, 40, [
-                I('Jewel_Icon', 20, 20, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
-                L('Txt_Jewel', 120, 20, 150, 30, '0', 22)]),
-            B('But_Buy', 600, 50, 177, 64, 'But01', 'Buy', 24, label='Txt_buy', opts=BUTS),
-            P('Count', 20, 160, 200, 24, [L('Txt_Count', 100, 12, 190, 22, '', 16)], visible=False),
-            I('Plate_Count', 600, 160, 200, 24, 'Plate03.png', opts=PLATE3, visible=False),
-            L('Txt_Limit', 600, 160, 180, 22, '', 16),
-            L('Txt_Caution', 360, 10, 640, 20, '', 16, visible=False),
-            I('Icon_New', 30, 170, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
+            I('Row_Base', 360, 92, 704, 176, 'Win04.png', opts=dict(PANEL4, capInsetsY=60)),
+            P('Panel_Item', 22, 22, 140, 140)]),
         P('Panel_Rare', 0, 0, 721, 184, [
-            P('Panel_Item', 20, 20, 140, 140),
-            I('Plate_Count_Rare', 600, 160, 200, 24, 'Plate03.png', opts=PLATE3),
-            L('Txt_Count_Cus', 600, 160, 180, 22, '', 16)], visible=False),
+            I('Row_Base_Rare', 360, 92, 704, 176, 'Win04.png',
+              opts=dict(PANEL4, capInsetsY=60, colorR=255, colorG=170, colorB=40)),
+            P('Panel_Item', 22, 22, 140, 140)], visible=False),
+        I('Name_Plate', 440, 140, 520, 44, 'Plate03.png', opts=PLATE3),
+        L('Txt_Material_Name', 330, 140, 300, 36, '', 24),
+        L('Txt_Material_Text', 360, 92, 360, 40, '', 18),
+        P('Jewel', 520, 118, 190, 44, [
+            I('Jewel_Icon', 28, 22, 44, 46, 'Icon_Prize.png', s9=False, scale=0.7),
+            L('Txt_Jewel', 130, 22, 150, 34, '0', 26)]),
+        B('But_Buy', 612, 62, 177, 64, 'But01', 'Exchange', 24, label='Txt_buy', opts=BUTS, children=[
+            B('ImageButton_Buy1', 0, 0, 177, 64, 'But01', None, opts=BUTS, visible=False)]),
+        P('Count', 190, 8, 300, 30, [
+            I('Plate_Count', 150, 15, 300, 26, 'Plate03.png', opts=PLATE3, visible=False),
+            I('Plate_Count_Rare', 150, 15, 300, 26, 'Plate03.png',
+              opts=dict(PLATE3, colorR=255, colorG=200, colorB=60), visible=False),
+            L('Txt_Count', 150, 15, 280, 22, '', 16),
+            L('Txt_Count_Cus', 150, 15, 280, 22, '', 16)], visible=False),
+        L('Txt_Limit', 612, 16, 200, 22, '', 16),
+        P('Caution', 180, 160, 360, 24, [L('Txt_Caution', 180, 12, 360, 20, '', 16)], visible=False),
+        I('Icon_New', 40, 165, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False),
         P('LockMask', 0, 0, 721, 184, [
             B('ImageButton_LockMask', 360, 92, 721, 184, 'But16', None),
-            I('Lock_icon', 650, 92, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False),
-        B('ImageButton_Buy1', 600, 50, 177, 64, 'But01', None, opts=BUTS, visible=False)])),
+            I('Lock_icon', 650, 92, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False)])])),
     # IconPanel: dentro Panel_Item; Base riceve img/ui/Mogshop_plate1.png (make_textures.py)
+    # FUN_0074d540 (icona generica di un premio: tipo, id, nome, quantita') vi cerca e usa
+    # senza controlli LuxBoard, AVT, Incentive, Medal, KB, Stamp (Star_Area facoltativo); li
+    # nasconde e mostra quello del tipo (3 medaglia, 5 materiale e gli altri -> Incentive).
+    # Struttura come i premi di AdventureTop2_SubMission_ver131 (Incentive, Medal, KB, LuxBoard,
+    # AVT); senza: crash all'apertura della scheda Items (mg2, pc 0x74d780)
     'MoogleShop_IconPanel.json': ('build', P('IconPanel', 0, 0, 140, 140, [
-        I('Base', 70, 70, 140, 140, 'Plate01.png', s9=False)])),
+        I('Base', 70, 70, 140, 140, 'Plate01.png', s9=False),
+        I('Incentive', 70, 70, 100, 100, 'Plate01.png', s9=False, visible=False),
+        I('Medal', 70, 70, 89, 109, 'Medal_S_00000001.png', s9=False, visible=False),
+        I('KB', 70, 70, 100, 100, 'Plate01.png', s9=False, visible=False),
+        I('Stamp', 70, 70, 100, 100, 'Plate01.png', s9=False, visible=False),
+        P('LuxBoard', 20, 20, 100, 100, visible=False),
+        P('AVT', 20, 20, 100, 100, visible=False),
+        P('Star_Area', 20, 5, 100, 24, visible=False),
+        # changeRowItem cerca Icon_Skill dentro Panel_Item (l'icona dell'abilita' delle
+        # medaglie con skillType 3) e ne chiama setVisible senza controlli (mg3, pc 0xab1c84)
+        I('Icon_Skill', 115, 115, 40, 40, 'Plate01.png', s9=False, visible=False)])),
     # Vendita materiali («Sell Materials» del Moogle Shop, FUN_00c5e584): EquipSellScene e i
     # suoi layout non esistono. Nessuno screenshot originale trovato: stile della vendita
     # medaglie. Scena: Button_Back, Txt_Money_Total(_Lavel), EquipSell_Scroll_Area, Txt_None.
