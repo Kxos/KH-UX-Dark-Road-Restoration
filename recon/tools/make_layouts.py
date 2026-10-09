@@ -60,26 +60,37 @@ LAYOUTS = {
     # li', ricorsivamente). Disposizione dalle schermate di riferimento
     # (reference\medal_list): in alto Sell Medals, Slots, criterio, Sort; sotto la griglia;
     # in basso la barra di vendita (Win_Bottom: Txt e Txt_Button sono Label).
-    'MedalListScene_ver130.json': ('scene', [('CenterUI', 'publish/MedalList_Gen.json'), 'LeftUI']),
+    # LeftUI non puo' essere vuoto: FUN_00df2be8 ne prende il primo figlio (crash su vettore
+    # vuoto). MedalSell_Back.json (pulsante Indietro) e' originale e gia' nelle risorse.
+    'MedalListScene_ver130.json': ('scene', [('CenterUI', 'publish/MedalList_Gen.json'),
+                                             ('LeftUI', 'publish/MedalSell_Back.json')]),
+    # Medal_Sell_Panel e' la barra in alto: FUN_00df1c00 la rende visibile e vi cerca
+    # Button_Sort (con la Label Txt_Sort, scritta dalla callback di FUN_00760c64).
     'MedalList_Gen.json': ('build', P('medal_list_root', 0, 0, 960, 640, [
-        I('Img_Bar', 480, 485, 960, 70, 'Plate13.png'),
-        B('Button_Sell1', 110, 485, 160, 58, 'But17', 'Sell\nMedals', 20, label='Txt_Sell1'),
-        I('Img_Slots', 330, 485, 240, 34, 'Plate12.png'),
-        L('Txt_Slots', 265, 485, 100, 30, 'Slots', 20),
-        L('Txt_Slots_Num', 395, 485, 110, 30, '0/0', 20),
-        I('Img_SortType', 640, 485, 220, 34, 'Plate12.png'),
-        L('Txt_SortType', 640, 485, 200, 30, 'Strength', 20),
-        B('Button_Sort', 850, 485, 200, 58, 'But17', 'Sort', 24),
         P('Scroll_Area', 70, 10, 820, 440),
-        P('Medal_Sell_Panel', 0, 450, 960, 70, visible=False),
+        P('Medal_Sell_Panel', 0, 450, 960, 70, [
+            I('Img_Bar', 480, 35, 960, 70, 'Plate13.png'),
+            B('Button_Sell1', 110, 35, 160, 58, 'But17', 'Sell\nMedals', 20, label='Txt_Sell1'),
+            I('Img_Slots', 330, 35, 240, 34, 'Plate12.png'),
+            # contatore (FUN_00df284c): Txt_MedalGet = testo 101200050 «Slots», poi medaglie
+            # possedute / capienza, scritte con FUN_00df34a4 (Label con ombra)
+            L('Txt_MedalGet', 265, 35, 100, 30, 'Slots', 20),
+            L('Txt_MedalGet_All_Label', 370, 35, 60, 30, '0', 20),
+            L('Txt_MedalGet_Slash', 400, 35, 20, 30, '/', 20),
+            L('Txt_MedalGet_Num_Label', 430, 35, 60, 30, '0', 20),
+            I('Img_SortType', 640, 35, 220, 34, 'Plate12.png'),
+            # FUN_00760c64 (barra di ordinamento generica) cerca qui anche Txt_Sort_Label
+            # (criterio) e Txt_Filter_On (testo 100100012 «Filter ON»).
+            L('Txt_Sort_Label', 640, 35, 200, 30, 'Strength', 20),
+            L('Txt_Filter_On', 640, 62, 200, 20, 'Filter ON', 16),
+            B('Button_Sort', 850, 35, 200, 58, 'But17', 'Sort', 24),
+        ]),
         P('Win_Bottom', 0, 0, 960, 90, [
             I('Img_Win_Bottom', 480, 45, 960, 90, 'Plate13.png'),
             I('Img_Sell_Button', 150, 45, 200, 58, 'But16_Off.png'),
             L('Txt_Button', 150, 45, 190, 50, 'Sell', 26),
             L('Txt', 560, 45, 500, 40, '', 22),
         ], visible=False),
-        B('Button_Back', 50, 600, 78, 54, 'BackButton', visible=False),
-        L('Txt_MedalGet', 480, 320, 600, 40, '', 22, visible=False),
     ])),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash (FUN_011843c4). Copia di ArrowAnim con armatura e movimento rinominati.

@@ -1,4 +1,5 @@
-param([string]$Tag = 'eq2', [int]$MenuY = 430)
+# -Taps 'x,y','x,y': tocchi successivi (8 s dopo la voce del menu, poi 4 s l'uno)
+param([string]$Tag = 'eq2', [int]$MenuY = 430, [string[]]$Taps = @())
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot)); Set-Location $repo
 $sp0 = $PSScriptRoot
 . .\tools\ldplayer\bench_lib.ps1
@@ -8,6 +9,7 @@ Push-Location tools\ldplayer\armtrace; .\capture.ps1 -Arm | Out-Null; Pop-Locati
 Sh "am force-stop com.square_enix.android_googleplay.khuxww" | Out-Null
 & .\tools\ldplayer\bench_start.ps1 -Out D:\Progetto_Restauro_KH_UX\logs\server.log -Shot "${Tag}_home" -Settle 6 | Out-Null
 Tap 1790 45; Start-Sleep 3; Tap 1745 $MenuY
+if ($Taps) { Start-Sleep 8; foreach ($xy in $Taps) { $x, $y = $xy -split ','; Tap $x $y; Start-Sleep 4 } }
 for ($i = 0; $i -lt 30; $i++) { Start-Sleep -Milliseconds 500; if ("$(Sh "cat $G/pid 2>/dev/null")".Trim()) { break } }
 $p = "$(Sh "cat $G/pid")".Trim()
 "pid $p"
