@@ -224,34 +224,50 @@ LAYOUTS = {
         ('clone_r', 'Base_MedalInfo2', 'Base_SuperBurst', 'Panel_1',
          {'BurstName_Label': 'SuperBurstName_Label', 'Burst': 'Txt_SuperBurstTitle'}),
         ('add', 'Base_SuperBurst', L('Txt_Ticker_SuperBurst', -150, -60, 300, 24, '', 16))]),
+    # Disposizione dal riferimento reference\medal_evolve\evolve.png: medaglie grandi prima e
+    # dopo con la doppia freccia in mezzo, stelle sotto ciascuna, materiali grandi in fila
+    # con «Held N», barra in basso come quella del Level Up (MedalInfo_Mix_ver340).
     'MedalInfo_Evo_Left_Gen.json': ('build', P('Panel_Evo_Left', 0, 0, 480, 640, [
         # Dummy_Medal1/2 sono ImageView: il codice vi carica l'immagine della medaglia
-        # (FUN_0125194c, loadTexture); da Panel il client va in crash
-        I('Dummy_Medal1', 120, 420, 140, 170, 'Plate01.png'),
-        P('Star_Area1', 50, 300, 140, 30),
-        I('Arrow_Evo', 240, 420, 40, 96, 'Medal_Syn_Arrow01.png', flipX=True),
-        I('Dummy_Medal2', 360, 420, 140, 170, 'Plate01.png'),
-        P('Star_Area2', 290, 300, 140, 30)])),
+        # (FUN_0125194c, loadTexture); da Panel il client va in crash. Immagini Medal_L
+        # 640x640 con la medaglia al centro, scala 0,7; a schermo il centro della medaglia
+        # cade (-428, -410)·scala px dalla posizione data (misurato sul banco a 0,3 e 0,42).
+        I('Dummy_Medal1', 238, 220, 140, 170, 'Plate01.png', scale=0.7),
+        I('Dummy_Medal2', 584, 220, 140, 170, 'Plate01.png', scale=0.7),
+        I('Arrow_Evo', 233, 379, 100, 150, 'Medal_Evo_Arrow01.png'),
+        # stelle (FUN_00736d94, scala 0,75): centrate nell'area, che sta sotto la medaglia
+        P('Star_Area1', -88, 256, 300, 30),
+        P('Star_Area2', 259, 256, 300, 30)])),
     # Area (FUN_00cc174c): i materiali richiesti, un pannello MedalInfo_Evo_Medal ogni 110 px.
+    # Barra in basso con le misure del Level Up: Button_LimitCut e Button_Sell1 sono
+    # immagini (il codice vi aggiunge il pulsante But01 / But06 e i testi «Evolve» e
+    # «Sell Medals»), Base_Money1/2 = Required / Munny con l'icona Icon_Prize.
     'MedalInfo_Evo_Under_Gen.json': ('build', P('Panel_Evo_Under', 0, 0, 960, 640, [
-        L('Txt_Wording', 480, 215, 900, 30, '', 20),
-        P('Area', 40, 30, 560, 150),
-        I('Base_Money1', 780, 170, 330, 34, 'Plate12.png', children=[
-            L('Txt_Money', 70, 17, 130, 30, 'Munny', 20),
-            L('Txt_Money_Label', 250, 17, 150, 30, '0', 20)]),
-        I('Base_Money2', 780, 130, 330, 34, 'Plate12.png', children=[
-            L('Txt_Money', 70, 17, 130, 30, 'Munny', 20),
-            L('Txt_Money_Label', 250, 17, 150, 30, '0', 20)]),
-        B('Button_LimitCut', 690, 60, 170, 60, 'But17', 'Limit Break', 22, label='Txt_LimitCut'),
-        B('Button_Sell1', 870, 60, 170, 60, 'But17', 'Evolve', 26, label='Txt_Sell1')])),
+        P('Area', -40, 80, 600, 150),
+        I('Button_LimitCut', 80, 47, 158, 68, 'But01_Off.png', children=[
+            L('Txt_LimitCut', 0, 2, 150, 58, 'Evolve', 30)]),
+        # i figli di un ImageView si posizionano rispetto al suo centro
+        I('Base_Money1', 295, 64, 270, 25, 'Plate03.png', children=[
+            L('Txt_Money', -82, 0, 85, 24, 'Required', 16),
+            I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5),
+            L('Txt_Money_Label', 66, 0, 138, 24, '0', 18)]),
+        I('Base_Money2', 295, 34, 270, 25, 'Plate03.png', children=[
+            L('Txt_Money', -82, 0, 85, 24, 'Munny', 16),
+            I('Icon_Money', -25, 0, 30, 30, 'Icon_Prize.png', scale=0.5),
+            L('Txt_Money_Label', 66, 0, 138, 24, '0', 18)]),
+        I('Button_Sell1', 491, 49, 119, 58, 'But06_Off.png', children=[
+            L('Txt_Sell1', 0, 2, 110, 54, 'Sell Medals', 20)]),
+        L('Txt_Wording', 770, 48, 380, 30, '', 18)])),
     # Materiale richiesto da Evolve (FUN_00cc57e0, riempito da FUN_00cc5a80): in Medal_S il
     # codice aggiunge l'icona (medalView) e lo ridimensiona; Possession e' un contenitore con
     # Label_9 (testo 101399490) e Num_Label (quantita' posseduta), entrambe con ombra
-    # (FUN_006e418c: crash se mancano).
+    # (FUN_006e418c: crash se mancano). Medal_S scalato 1,25 come nel riferimento; Held_Plate
+    # e' la targhetta scura sotto «Held N».
     'MedalInfo_Evo_Medal.json': ('build', P('Panel_Evo_Medal', 0, 0, 100, 150, [
-        P('Medal_S', 0, 30, 100, 120),
+        P('Medal_S', -10, 30, 100, 120, scale=1.25),
         P('Possession', 0, 0, 100, 26, [
-            L('Label_9', 34, 13, 70, 24, 'Owned', 16),
+            I('Held_Plate', 50, 13, 104, 26, 'Plate03.png'),
+            L('Label_9', 30, 13, 70, 24, 'Held', 16),
             L('Num_Label', 82, 13, 36, 24, '0', 16)])])),
     'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
                                                   ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
@@ -426,6 +442,8 @@ def build(s):
              actiontag=_tag[0], visible=s.get('visible', True))
     if 'scale' in s:                    # es. icone a cui il codice carica la texture
         o.update(scaleX=s['scale'], scaleY=s['scale'])
+    if 'ignoreSize' in s:               # False: la texture caricata dal codice si adatta a w x h
+        o['ignoreSize'] = s['ignoreSize']
     w['name'] = s['name']
     if s['cls'] == 'ImageView':
         o.update(fileNameData=tex(s['tex']), scale9Width=s['w'], scale9Height=s['h'])
