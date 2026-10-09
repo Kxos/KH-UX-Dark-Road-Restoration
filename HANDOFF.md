@@ -49,6 +49,34 @@ qui c'è come.
   (`SphereBoardScene_ver310`), Other e rotolo (`MenuDialog_ver300`?); vedi la tabella
   della mappatura. Poi la missione 8 (punto b).
 
+**DA FARE PRIMA DI TUTTO IL RESTO — controlli su Medal List e vendita** (chiesti
+dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spuntato qui):
+- [ ] **Frecce del dettaglio.** Nel dettaglio di una medaglia le frecce sinistra/destra
+  devono scorrere tra le medaglie possedute. Oggi la destra non fa nulla. Le frecce stanno
+  in `SlideMedalInfoScene_ver341` (generata): `FUN_00aba238` aggiunge al primo figlio di
+  `LeftUI`/`RightUI` un pulsante (`FUN_008d56f8`, dimensioni da `FUN_008d601c`, callback
+  `PTR_FUN_01f168e8`/`01f16968`). Verificare dimensioni/posizione dell'area toccabile e
+  che cosa fanno le callback (forse mancano dati, es. l'elenco delle medaglie passato).
+- [ ] **Lucchetto (protezione).** Il lucchetto nel dettaglio protegge la medaglia: nella
+  vendita deve apparire grigia/disabilitata e non selezionabile. Il client lo legge in
+  `FUN_008835a4` (byte +0x26..+0x29 della medaglia, oltre a «equipaggiata»): serve la
+  richiesta del lucchetto sul server (trovare l'azione: probabilmente `/user/medal/lock`
+  o simile, vedi `recon/out/api_responses_auto_ww431.json`) che salvi `lock` nel
+  giocatore e lo restituisca in `userMedalsData` (oggi `lock: 0` fisso). Verificare anche
+  il caso inverso (sbloccare).
+- [ ] **Stile della selezione nella vendita.** Ogni medaglia selezionata (anche piu'
+  d'una) deve mostrare un segno di selezione. Oggi nulla: il segno e' `selectView` =
+  armatura `Cursor_Anim_MedalSell` (movimento `Animation1`, `FUN_00882e10`), ora una copia
+  di `ArrowAnim` (frecce): sostituirla con un'armatura generica di selezione (cornice o
+  spunta) costruita da texture presenti (cercare in `layouts\textures.txt` e nei fogli
+  Spriters in `reference\spriters\`), resa visibile per ogni cella selezionata
+  (`FUN_00883118` ne imposta la visibilita').
+- [ ] **Spazi della griglia.** Nella vendita, sulla prima riga a destra, si vedono medaglie
+  tagliate a meta' (probabile `Scroll_Area` di larghezza sbagliata rispetto alle colonne:
+  `MedalSell_Gen` 820 px da x=70). Verificare anche in Medal List (`MedalList_Gen`,
+  `Scroll_Area` 820×440 da x=70,y=10) e confrontare con le immagini di riferimento
+  (`reference\medal_list\`): numero di colonne, margini, nessuna medaglia tagliata ai lati.
+
 ### Come riprendere il lavoro (stato all'8 ottobre 2026, notte)
 
 **Posizione (dall'8 ottobre 2026).** Tutto il lavoro sta su D: per lo spazio su C::
