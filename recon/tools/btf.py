@@ -46,6 +46,19 @@ def decode(d):
     return canvas
 
 
+def encode(im):
+    """Immagine PIL -> BTF tipo 8 (RGBA, tela = immagine). Intestazione come le originali:
+    '\\x89BTF', 00 00 01 00, zeri, +0x10 tipo, +0x16 tela, +0x1a 0 0, +0x1e dimensioni,
+    +0x22 u32 lunghezza dei dati zlib, dati da +0x26."""
+    im = im.convert('RGBA')
+    w, h = im.size
+    z = zlib.compress(im.tobytes(), 9)
+    head = b'\x89BTF' + bytes([0, 0, 1, 0]) + bytes(8) + bytes([8, 0, 0, 0, 0, 0])
+    head += struct.pack('<6HI', w, h, 0, 0, w, h, len(z))
+    assert len(head) == 0x26
+    return head + z
+
+
 if __name__ == '__main__':
     import sys
     decode(open(sys.argv[1], 'rb').read()).save(sys.argv[2])

@@ -23,6 +23,9 @@ if ($Quick) {
 } elseif (-not $Version) { throw 'serve -Version N oppure -Quick' }
 $key = python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee54:0xe6ee54+32].hex())" "$D\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so"
 python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
+# texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
+python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"
+if ($LASTEXITCODE) { throw 'make_textures fallito' }
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
 # scritti a mano: dove c'e' l'originale prevale
 python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"

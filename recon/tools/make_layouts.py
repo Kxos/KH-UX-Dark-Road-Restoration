@@ -462,6 +462,11 @@ TEXTURES = set(open(os.path.join(SRC, '..', 'textures.txt'), encoding='utf-8-sig
 #    Coin) accanto ai layout, per gli ImageView della vendita.
 COPIES = {'cocostudio/publish/' + n: 'img/incentive/' + n
           for n in ('IncentiveIcon_02.png', 'IncentiveIcon_04.png', 'IncentiveIcon_14.png')}
+# icone che il popup Sort/Filter (PopupNormal_SortButton_ver350) cerca accanto ai layout ma
+# che esistono solo sotto img/: Guilt 2-8 (img/ui/guilt) e risvegli (img/kakusei)
+COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%d.png' % i for i in range(2, 9)})
+COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
+               for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
 for _f in os.listdir(os.path.join(SRC, *PUB.split('/'))):
     if _f.startswith('But') and _f.endswith(('_On.png', '_Off.png', '_Disable.png')):
         COPIES.setdefault('img/ui/' + _f, PUB + _f)
