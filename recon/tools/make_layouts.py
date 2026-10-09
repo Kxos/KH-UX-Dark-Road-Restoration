@@ -177,12 +177,15 @@ LAYOUTS = {
     # Dettaglio medaglia da Medal List: FUN_00aba238 carica SlideMedalInfoScene_ver341 sopra
     # MedalInfoScene e aggiunge un pulsante al primo figlio di LeftUI e di RightUI (medaglia
     # precedente / successiva). Frecce come MedalInfo_Arrow01.json (Medal_Syn_Arrow01 punta a sinistra).
+    # Il pulsante (FUN_008d6230) accetta i tocchi in un rettangolo grande quanto il pannello
+    # ma centrato sulla sua origine (angolo in basso a sinistra): l'origine sta quindi al
+    # centro della freccia, e la freccia in (0,0).
     'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
                                                   ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
-    'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 10, 246, 40, 147, [
-        I('Arrow01', 20, 74, 56, 134, 'Medal_Syn_Arrow01.png')])),
-    'SlideMedalInfo_Right.json': ('build', P('Panel_Right', 910, 246, 40, 147, [
-        I('Arrow01', 20, 74, 56, 134, 'Medal_Syn_Arrow01.png', flipX=True)])),
+    'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 30, 320, 120, 220, [
+        I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png')])),
+    'SlideMedalInfo_Right.json': ('build', P('Panel_Right', 930, 320, 120, 220, [
+        I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png', flipX=True)])),
     # Popup Sort di Medal List (FUN_00a458c4, FUN_00a45fa0): la ver350 e' la ver320 originale
     # piu' la sezione Dummy_Sb (filtro Super Burst; il codice la nasconde spostando le altre
     # della sua altezza: qui alta 0) e i filtri aggiunti dopo, cloni nascosti di quelli

@@ -51,12 +51,16 @@ qui c'è come.
 
 **DA FARE PRIMA DI TUTTO IL RESTO — controlli su Medal List e vendita** (chiesti
 dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spuntato qui):
-- [ ] **Frecce del dettaglio.** Nel dettaglio di una medaglia le frecce sinistra/destra
-  devono scorrere tra le medaglie possedute. Oggi la destra non fa nulla. Le frecce stanno
-  in `SlideMedalInfoScene_ver341` (generata): `FUN_00aba238` aggiunge al primo figlio di
-  `LeftUI`/`RightUI` un pulsante (`FUN_008d56f8`, dimensioni da `FUN_008d601c`, callback
-  `PTR_FUN_01f168e8`/`01f16968`). Verificare dimensioni/posizione dell'area toccabile e
-  che cosa fanno le callback (forse mancano dati, es. l'elenco delle medaglie passato).
+- [x] **Frecce del dettaglio** (risolto il 9 ottobre, banco: Donald → Yuna → Dewey → Yuna).
+  `FUN_00aba238` fa del primo figlio di `LeftUI`/`RightUI` il bersaglio di un pulsante
+  (`FUN_008d601c`); le callback (`FUN_00abf974`/`FUN_00abfaa8`, operator() delle vtable
+  `01f168e8`/`01f16968`) chiamano `FUN_008bf3a8`/`FUN_008bef44`, lo stesso scorrimento
+  dello swipe, che funzionava gia'. Il problema era l'area toccabile: `FUN_008d6230`
+  accetta il tocco in un rettangolo grande quanto il bersaglio ma **centrato sulla sua
+  origine** (angolo in basso a sinistra, offset −0,5·w/−0,5·h). In `make_layouts.py` i
+  pannelli `Panel_Left`/`Panel_Right` hanno ora l'origine al centro della freccia
+  (30,320 e 930,320; 120×220) e la freccia in (0,0). Visto anche: nel dettaglio di una
+  medaglia equipaggiata il pulsante «取りはずし» (Unequip) e' ancora in giapponese.
 - [ ] **Lucchetto (protezione).** Il lucchetto nel dettaglio protegge la medaglia: nella
   vendita deve apparire grigia/disabilitata e non selezionabile. Il client lo legge in
   `FUN_008835a4` (byte +0x26..+0x29 della medaglia, oltre a «equipaggiata»): serve la
