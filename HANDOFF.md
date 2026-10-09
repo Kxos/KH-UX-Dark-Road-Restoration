@@ -23,19 +23,18 @@ qui c'è come.
 «Mappatura dei pulsanti», «Equipment — risolto», «Layout sostitutivi»):
 - tutorial finito dalla fase 995: menu a tendina funzionante; Equipment funzionante
   (`GET /keyblade/subslot`); Presents funzionante (layout sostitutivi + testi);
-- banco: **risorse versione 15** installate (= OBB 5.0.1 + addnl + pacchetto generato:
+- banco: **risorse versione 25** installate (= OBB 5.0.1 + addnl + pacchetto generato:
   mappe, LWF vuoti per pet/NPC, layout di `make_layouts.py`, animazioni Armature
   sostitutive, **2.332 testi `text/ui` originali** dell'IPA 4.4.0); master revisione 57;
-- una versione nuova: `tools\ldplayer\session\build-resources.ps1 -Version N` (genera
-  layout e testi, unisce) poi `update-resources.ps1` (~5 min). Il server prepara solo
-  l'ultima versione (prima le preparava tutte: minuti di avvio e «28 ERROR :251»);
-- **aperto: Medal List** va in crash dopo il layout (`MedalListScene_ver130` e
-  `MedalList_Gen.json` generati) e dopo le animazioni (`Cursor_Anim_MedalSell`,
-  `MedalSelectAnimation`): ora `strlen` su NULL in libc dentro una callback
-  (`std::function`, frame `0x715ac8`, `0x146c57c` = nativeRender), testi esclusi. Da
-  catturare con armtrace (base `0x31c0000`; la ricerca dei registri non ha trovato lo stato
-  di quel thread: provare cercando `x30` nella libreria senza vincolo su `pc`, o leggere
-  la regione dello stack di tutti i thread);
+- **prove sui layout: `tools\ldplayer\session\build-resources.ps1 -Quick`** (~2 min):
+  rigenera il pacchetto dentro l'ultima versione e lo scrive direttamente nei file del
+  guest (coda di `files/r/misc.mp4.1` + `misc.png`), poi `relogin.ps1`. Niente download.
+  Una versione nuova vera (da far scaricare): `build-resources.ps1 -Version N` poi
+  `update-resources.ps1` (~5 min). Il server prepara solo l'ultima versione;
+- **Medal List funziona (9 ottobre)**: lista, dettaglio medaglia, popup Sort/Filter.
+  Catene di crash risolte una alla volta con `armtrace\stackcap.ps1 -MenuY 697 -Taps 'x,y'`
+  (vedi «Medal List — risolto»). Restano: freccia «medaglia successiva» inerte, immagini e
+  statistiche segnaposto (dati delle tabelle medaglie), Sell Medals da provare;
 - altri pulsanti in crash per layout mancanti: Profilo (`AvatarInfoScene_A_ver131`),
   Moogle Shop (`MoogleShopScene_ver410` + `lwf/mogshop/mog_wait`), Avatar Boards
   (`SphereBoardScene_ver310`), Other e rotolo (`MenuDialog_ver300`?); vedi la tabella
@@ -1966,6 +1965,31 @@ Dei 601 layout cocostudio citati dal binario ne mancano 307 (`logs\layout_mancan
 da `asset_coverage.py`), 49 sono schermate intere. Indirizzi da `armtrace`: la base di
 `libcocos2dcpp.so` sotto houdini oggi e' `0x31c0000` (come in `tombstone.ps1`), non
 `0x3308000` come presume `capture.ps1`: sottrarre `0x148000` ai valori «Ghidra» che stampa.
+
+**Medal List — risolto (9 ottobre, sera).** Sei crash in fila, ognuno catturato con
+`stackcap.ps1 -MenuY 697 [-Taps 'x,y']` e letto con `findregs.py` (ora cerca nelle
+sottocartelle e accetta `pc` fuori dalla libreria; con `--lib-pc` il vincolo vecchio) e
+con le stringhe corte di libc++ rimaste nello stack (byte = lunghezza*2, poi il nome):
+1. `ArmatureAnimation::play` senza `Medal_Select01` (vecchia cattura `ml2`, gia' risolto);
+2. `FUN_00df2be8` prende il primo figlio di `LeftUI` della scena: vuoto → crash. Ora
+   `LeftUI` = `MedalSell_Back.json` (originale, pulsante Indietro);
+3. `Button_Sort` e' cercato dentro `Medal_Sell_Panel` = la barra in alto (non nascosta);
+4. `FUN_00760c64` (barra di ordinamento generica) vuole `Txt_Sort` (in `Button_Sort`),
+   `Txt_Sort_Label`, `Txt_Filter_On` (testo 100100012);
+5. `FUN_00df284c`: contatore `Txt_MedalGet` («Slots», 101200050), `Txt_MedalGet_Num_Label`
+   (possedute) `/` `Txt_MedalGet_All_Label` (capienza), scritti da `FUN_00df34a4`;
+6. dettaglio: `FUN_00aba238` carica `SlideMedalInfoScene_ver341` (assente) sopra
+   `MedalInfoScene_ver320`, con `LeftUI`/`RightUI` (frecce, primo figlio con pulsante);
+7. Sort: `FUN_00a458c4` carica `PopupNormal_SortButton_ver350` (assente; c'e' la ver320).
+   `FUN_00a45fa0` (troppo grande per il decompilatore: nomi presi dallo stack e dal blocco
+   di stringhe contiguo nel binario) cerca in piu' la sezione `Dummy_Sb` con ~30
+   `Filter_Sb*`, `Txt_TitleSb`, `Txt_SubTitleSb01/02`, e `Filter_Subslot`, `Filter_Trait`,
+   `Filter_Evo_Set`, `Filter_Ability_Guard/BaseAttack/BaseDefence` ecc.: cloni nascosti di
+   CheckBox vicini (`make_layouts.py`, `('clone', sorgente, nome, genitore)`); `Filter_Sb`
+   va dentro `Dummy_Sb` (genitore letto dal disassemblato, 00a482ac). Testi 1062402xx
+   assenti anche nella 4.4.0 (li' i vicini sono «[id]»): stesso segnaposto.
+
+Ciclo rapido delle prove: `build-resources.ps1 -Quick` (sopra, in «Stato»).
 
 **Memoria del PC.** Dopo diversi download da 2,3 GB `Ld9BoxHeadless` (la VM di LDPlayer)
 arrivava a 30 GB di memoria impegnata: memoria virtuale libera 0,1 GB, il file di
