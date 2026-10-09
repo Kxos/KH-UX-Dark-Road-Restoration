@@ -144,6 +144,7 @@ function route(url) {
   if (p === '/user/create') return 'usercreate';
   if (p === '/user/keyblade') return 'userkeyblade';
   if (p === '/user/deck') return 'userdeck';
+  if (p === '/keyblade/subslot') return 'kbsubslot';
   if (p === '/user/medal') return 'usermedal';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
@@ -1041,7 +1042,7 @@ function respondStageClear(res, req) {
     userDecks: userDecksData(),
     userAvatarParts: [],
     subslotMaxNum: 0,
-    userKeybladeSubslots: [],
+    userKeybladeSubslots: userKeybladeSubslotsData(),
     guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
   });
 }
@@ -1054,6 +1055,7 @@ function respondStageClear(res, req) {
 const START_STAGE_ID = Number(process.env.KHUX_START_STAGE || 1010);
 const USER_KEYBLADE_ID = 1;
 const USER_DECK_ID = 1;
+const USER_KEYBLADE_SUBSLOT_ID = 1;
 
 function masterRows(name) {
   try {
@@ -1113,7 +1115,7 @@ function userKeybladesData() {
   return [{
     userKeybladeId: USER_KEYBLADE_ID, // uint64
     userDeckId: USER_DECK_ID, // uint64
-    userKeybladeSubslotId: 0, // uint64
+    userKeybladeSubslotId: USER_KEYBLADE_SUBSLOT_ID, // uint64 (vedi /keyblade/subslot)
     category: 1,
     keybladeId: startingInventory().keybladeId,
     deckMedals: deckMedalIds(),
@@ -1135,6 +1137,20 @@ function userDecksData() {
     userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
     deckMedals: deckMedalIds(), petBaseSlotMedal: 0,
   }];
+}
+
+// GET /keyblade/subslot: subslotMaxNum (uint) e userKeybladeSubslots[], letti da
+// FUN_00798a64 (elemento FUN_00798980: keybladeSubslotId uint64, subslotRate uint,
+// subslots[] = {slotNumber 1..subslotMaxNum, userMedalId uint64}, FUN_00798750). Ogni
+// keyblade deve avere il suo subslot (userKeybladeSubslotId), anche senza slot: la
+// schermata Equipment (FUN_00c16d14) lo cerca in una mappa e, se manca, l'indice -1
+// sfora il vettore (std::out_of_range, crash).
+function userKeybladeSubslotsData() {
+  return [{ keybladeSubslotId: USER_KEYBLADE_SUBSLOT_ID, subslotRate: 10000, subslots: [] }];
+}
+
+function respondKeybladeSubslot(res) {
+  send(res, 200, { ret: ret(), subslotMaxNum: 0, userKeybladeSubslots: userKeybladeSubslotsData() });
 }
 
 function respondUserDeck(res) {
@@ -1244,6 +1260,7 @@ function handler(scheme) {
       if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
       if (kind === 'userkeyblade') return respondUserKeyblade(res);
       if (kind === 'userdeck') return respondUserDeck(res);
+      if (kind === 'kbsubslot') return respondKeybladeSubslot(res);
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
