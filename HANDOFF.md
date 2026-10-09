@@ -100,6 +100,24 @@ prezzo con i testi 101210001–003, che nelle risorse inglesi sono uno spazio (l
 versione internazionale li aveva svuotati). Da fare: conferma di un'evoluzione vera,
 poi i pulsanti in crash del menu.
 
+**Annotazioni per dopo (cose viste sul banco, non ancora affrontate):**
+- Titolo: pulsanti «Restore Resources» (2), «Save User Data», «x3 [ex tres]», «KHDR
+  START»: mai provati.
+- Detail medaglia: pulsante «Unequip» → popup di conferma (testi tradotti), azione mai
+  inviata al server; lucchetto ok.
+- Popup Sort/Filter: «Favorite», «SP Attack Bonus / No Bonus» (grigi, forse disattivati
+  dal codice), «Imitation», sezione «Special Traits» con 11 icone e «None» due volte:
+  da confrontare con l'originale (guida 2017 non mostra i Trait, aggiunti dopo).
+- Filtri Guilt 1–9 e SP Attack Bonus: il 9 usa l'icona dell'8 (MedalInfo_Guilt9 assente).
+- Grafica di quasi tutte le medaglie (segnaposto Dewey/Donald/Goofy): Cheshire Cat,
+  Merlin, Fairy Godmother, Huey/Dewey/Louie hanno tutte l'aspetto di Dewey.
+- Medaglie di supporto nella vendita: la targhetta alterna il prezzo con un testo vuoto
+  (101210001–003 sono uno spazio nelle risorse inglesi; nell'originale «FOR SYNTHESIS»).
+- Evolve: barra nera sotto il materiale corretta; «Sell Medals» da Evolve ok; mancano le
+  animazioni originali del risultato (ora quella del Level Up).
+- Avatar, Moogle Shop, Avatar Boards, Other, rotolo del menu: crash (vedi «Mappatura dei
+  pulsanti»). Missione 8 senza mappa.
+
 **Regole delle risorse scoperte (valgono per ogni schermata futura):**
 - Stile: prima si cercano online schermate e dati dell'originale, si salvano in
   `reference\<schermata>\` e ci si adegua (guide tumblr khux-guides, khuxwiki, reddit...).

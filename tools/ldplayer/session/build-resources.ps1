@@ -47,7 +47,7 @@ if ($Quick) {
   Get-ChildItem "$D\resource_data\7\data" | Where-Object Name -ne 'd0035' |
     ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
   $dataSize = 4MB
-  $mergeOpt = @('--filler', 4096)
+  $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
 $genLen = (Get-Item "$sg\gen.mp4").Length
 if ($genLen -gt $dataSize) { throw "pacchetto generato di $genLen byte oltre la riserva di ${dataSize}: serve una versione completa" }
