@@ -180,6 +180,12 @@ LAYOUTS = {
     # Il pulsante (FUN_008d6230) accetta i tocchi in un rettangolo grande quanto il pannello
     # ma centrato sulla sua origine (angolo in basso a sinistra): l'origine sta quindi al
     # centro della freccia, e la freccia in (0,0).
+    # Layout originali con i testi in giapponese: copie tradotte che sostituiscono
+    # l'originale (resource_merge.py --last-wins). Conferma di Unequip nel dettaglio di
+    # una medaglia equipaggiata (il pulsante prende il testo da text/ui/106180101).
+    'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
+                                     [('text', 'Txt_Title_Label', 'Unequip this Medal from where it is set.'),
+                                      ('text', 'Txt_Cancel', 'Cancel')]),
     'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
                                                   ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
     'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 30, 320, 120, 220, [

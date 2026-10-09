@@ -13,7 +13,9 @@ Formato del BGI (dopo lo strato esterno):
     in coda 8 byte: IV dello strato interno xor 0xc4db340f0a3574ea
 Lo strato interno copre da +0x0c fino agli 8 byte finali esclusi.
 
-A parita' di nome vince il pacchetto che compare prima negli argomenti.
+A parita' di nome vince il pacchetto che compare prima negli argomenti; con --last-wins
+vince invece l'ultimo (il pacchetto generato sostituisce i file originali che corregge,
+es. layout con testi giapponesi, senza cambiare l'ordine dei dati).
 
     python -I recon/tools/resource_merge.py [--filler N | --index-size N] recon/tools <lib 4.3.1> \\
         <chiave hex> <uscita.png> <indice1.png> <dati1a>[,<dati1b>...] [<indice2.png> <dati2>[,...] ...]
@@ -31,9 +33,12 @@ import struct
 import sys
 import tempfile
 
-filler, index_size, fast = None, None, False
+filler, index_size, fast, last_wins = None, None, False, False
 while sys.argv[1].startswith('--'):
     flag = sys.argv.pop(1)
+    if flag == '--last-wins':
+        last_wins = True
+        continue
     if flag == '--fast-md5':
         # ciclo rapido: il record md5 (32 cifre, stessa lunghezza) copre solo l'ultimo
         # pacchetto; il client non lo verifica all'avvio, risparmia la lettura di 2,3 GB
@@ -87,18 +92,24 @@ def _read_bgi(path):
     return offs, list(zip(names, recs))
 
 
-offsets, seen, entries, base, total_md5 = [], set(), [], 0, hashlib.md5()
+offsets, seen, entries, base, total_md5 = [], {}, [], 0, hashlib.md5()
 for index, datas in packs:
     offs, names = read_bgi(index)
     first = len(offsets)
     offsets.extend(base + o for o in offs)
-    kept = 0
+    kept = replaced = 0
+    last = (index, datas) == packs[-1]
     for name, rec in names:
         if name in seen:
+            if last_wins and last:
+                entries[seen[name]] = (name, first + rec)
+                replaced += 1
             continue
-        seen.add(name)
+        seen[name] = len(entries)
         entries.append((name, first + rec))
         kept += 1
+    if replaced:
+        print('%s: %d nomi sostituiscono quelli dei pacchetti precedenti' % (index, replaced))
     for d in datas:
         if fast and (index, datas) != packs[-1]:
             base += os.path.getsize(d)

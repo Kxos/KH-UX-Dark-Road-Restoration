@@ -25,7 +25,7 @@ $key = python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[0xe6ee
 python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
 # scritti a mano: dove c'e' l'originale prevale
-python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts"
+python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"
 Copy-Item "$D\layouts\ui_texts\text\ui\*" "$sg\files\text\ui\" -Force
 python -I recon\tools\resource_pack.py "$sg\files" $key "$sg\gen.mp4" "$sg\gen.png"
 if ($LASTEXITCODE) { throw 'resource_pack fallito' }
@@ -52,7 +52,7 @@ $fs = [IO.File]::Open("$sg\gen.mp4", 'Open', 'ReadWrite'); $fs.SetLength($dataSi
 # d0035 e' una copia (non un hard link): sovrascriverla non tocca le altre versioni
 Copy-Item "$sg\gen.mp4" "$v\data\d0035" -Force
 $o = "$D\obb76"
-python -I recon\tools\resource_merge.py @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$v\index\misc.png" `
+python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$v\index\misc.png" `
   "$D\apk501\ext\assets\aliud.png" "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb" `
   "$D\ipa431\addnl.png" "$D\ipa431\addnl.mp4" "$sg\gen.png" "$sg\gen.mp4"
 if ($LASTEXITCODE) { throw 'resource_merge fallito' }
