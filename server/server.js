@@ -148,6 +148,7 @@ function route(url) {
   if (p === '/user/medal') return 'usermedal';
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
+  if (p === '/user/medal/enhance') return 'medalenhance';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
@@ -904,7 +905,9 @@ function grantItem(type, id, num) {
   if (type === 3 && id) {
     player.medals = player.medals || [];
     for (let k = 0; k < num; k++) {
-      const userMedalId = 101 + player.medals.length;
+      // mai riusare un id (vendite e Level Up tolgono medaglie; medalState resta per id)
+      const used = [100, ...player.medals.map((m) => m.userMedalId), ...Object.keys(player.medalState || {}).map(Number)];
+      const userMedalId = Math.max(...used) + 1;
       player.medals.push({ userMedalId, medalId: id, level: 1, getDatetime: serverTime() });
     }
     if (!masterRows('medal').some((m) => m.medalId === id)) console.log(`  [inventario] medaglia ${id} assente dalla tabella medal`);
@@ -1087,19 +1090,120 @@ function levelHp(lv = 1) {
 // userMedals[], elemento letto da FUN_0078d608 (userSkills al massimo 2,
 // userShuffleSkills).
 // Le medaglie iniziali del deck (userMedalId 1-3) e quelle ricevute come premio
-// (player.medals, userMedalId da 101).
-function userMedalsData(now) {
-  return [...startingInventory().medals, ...(player.medals || [])].map((m) => ({
+// (player.medals, userMedalId da 101). player.medalState[userMedalId] = {medalId, level,
+// exp, removed} sovrascrive entrambe (Level Up, Evolve, materiali consumati).
+function userMedalList() {
+  const st = player.medalState || {};
+  return [...startingInventory().medals, ...(player.medals || [])]
+    .filter((m) => !st[m.userMedalId]?.removed)
+    .map((m) => ({ ...m, ...(st[m.userMedalId] || {}) }));
+}
+
+function userMedalElement(m, now) {
+  return {
     userMedalId: m.userMedalId, // uint64
     medalId: m.medalId,
     number: 1, // uint
-    level: m.level || 1, exp: 0,
+    level: m.level || 1, exp: m.exp || 0, // exp cumulativo (struttura +0x14, livello +0x10)
     attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
     lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
     upperCost: 0, guiltFactor: 0, // guiltFactor: uint
     userSkills: [], userShuffleSkills: [],
     getDatetime: m.getDatetime || now,
-  }));
+  };
+}
+
+function userMedalsData(now) {
+  return userMedalList().map((m) => userMedalElement(m, now));
+}
+
+// Curva dell'EXP delle medaglie, come il client (FUN_00722620): per expType t la riga
+// medalMisc 105+t = [N, A, P]; l'EXP cumulativo per superare il livello L e'
+// A * (L / (N-1)) ^ (P/10000), in float. Tipo 1: L1 8, L2 37, L3 88 (banco: LV1 + 70 EXP
+// = LV3, «LV Up in 18»).
+function medalMiscValue(id) {
+  return masterRows('medalMisc').find((r) => r.medalMiscId === id)?.value || [0, 0, 0];
+}
+
+function medalExpToPass(row, lv) {
+  const [n, a, p] = medalMiscValue(105 + (row.expType >= 1 && row.expType <= 6 ? row.expType : 1));
+  const f = Math.fround;
+  return Math.trunc(f(a * f(Math.pow(f(lv / f(n - 1)), f(p / 10000)))));
+}
+
+function medalLevelFor(row, lv, exp) {
+  while (lv < row.maxLv && medalExpToPass(row, lv) <= exp) lv++;
+  return lv;
+}
+
+// EXP dato da un materiale (FUN_00c82da0): materialExp + B*((lv-1)/(N-1))^(P/10000) con
+// [N, B, P] = medalMisc 112; x1,5 (113) se ha lo stesso attributo della base, x1,5 (114)
+// se condividono una fonte (source).
+function materialExpFor(baseRow, matRow, matLevel) {
+  const f = Math.fround;
+  const [n, b, p] = medalMiscValue(112);
+  let e = Math.trunc(f(matRow.materialExp + f(b * f(Math.pow(f((matLevel - 1) / f(n - 1)), f(p / 10000))))));
+  if (baseRow.attribute === matRow.attribute) e = Math.trunc(f(e * (medalMiscValue(113)[0] / 10000)));
+  const src = (r) => (r.source || []).slice(0, r.validSource || 0);
+  if (src(baseRow).some((s) => src(matRow).includes(s))) e = Math.trunc(f(e * (medalMiscValue(114)[0] / 10000)));
+  return e;
+}
+
+function setMedalState(id, patch) {
+  player.medalState = player.medalState || {};
+  player.medalState[id] = { ...(player.medalState[id] || {}), ...patch };
+}
+
+// POST /user/medal/enhance (azione 55, Level Up), corpo visto sul banco:
+// {"baseUserMedalId":1,"componentUserMedalIds":[105],"isOverwriteSkill":0,"numbers":[],
+// "isGreatSuccess":1}. Ramo 55 del dispatcher: userSkills, userData.userPoint, userMedals,
+// poi FUN_0078f990 (before/afterEnhanceUserMedal come gli elementi di userMedals,
+// enhanceEffect, overwriteSkills, successOverwrite, guiltBurstFirstLv/MaxLv) e pet
+// (facoltativo), infine FUN_0078e30c (medalResumption). Costo come FUN_00c833e4: medalMisc 115 (80) x livello x materiali.
+// Great Success: x1,5 (medalMisc 118, ipotesi: il client manda gia' l'esito).
+function respondMedalEnhance(res, body) {
+  const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
+  const list = new Map(userMedalList().map((m) => [m.userMedalId, m]));
+  const base = list.get(Number(body?.baseUserMedalId));
+  const comps = (body?.componentUserMedalIds || []).map((id) => list.get(Number(id))).filter(Boolean);
+  const now = serverTime();
+  if (!base || !rows.get(base.medalId)) {
+    console.log('  [level up] medaglia base assente:', body?.baseUserMedalId);
+    return send(res, 200, { ret: ret() });
+  }
+  const row = rows.get(base.medalId);
+  const before = userMedalElement(base, now);
+  let gain = comps.reduce((s, m) => s + (rows.get(m.medalId) ? materialExpFor(row, rows.get(m.medalId), m.level || 1) : 0), 0);
+  if (Number(body.isGreatSuccess)) gain = Math.trunc(gain * medalMiscValue(118)[0] / 10000);
+  const cost = medalMiscValue(115)[0] * (base.level || 1) * comps.length;
+  const exp = (base.exp || 0) + gain;
+  const level = medalLevelFor(row, base.level || 1, exp);
+  setMedalState(base.userMedalId, { level, exp });
+  for (const m of comps) setMedalState(m.userMedalId, { removed: true });
+  player.money = Math.max(0, (player.money || 0) - cost);
+  savePlayer();
+  console.log(`  [level up] ${base.userMedalId} (${row.name}) +${gain} EXP: LV ${base.level || 1} -> ${level}, ` +
+    `materiali ${comps.map((m) => m.userMedalId).join(',')}, -${cost} munny`);
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now) },
+    userSkills: [],
+    userMedals: userMedalsData(now),
+    beforeEnhanceUserMedal: before,
+    afterEnhanceUserMedal: userMedalElement({ ...base, level, exp }, now),
+    enhanceEffect: Number(body.isGreatSuccess) ? 1 : 0,
+    overwriteSkills: [],
+    successOverwrite: 0,
+    guiltBurstFirstLv: 0, guiltBurstMaxLv: 0,
+    // FUN_0078e30c, obbligatorio: senza, «200 ERROR :55»
+    medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
+    // FUN_007948d0 (pet.petSubslot, FUN_007949f0): senza, il ramo 55 va in errore se un
+    // flag della sessione e' acceso
+    pet: { petSubslot: { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 } },
+    // letto dal dispatcher dopo pet (0x7cec50, uint64): le medaglie consumate, che il
+    // client toglie dall'elenco; senza, «200 ERROR :55»
+    componentUserMedalIds: comps.map((m) => m.userMedalId),
+  });
 }
 
 // POST /user/medal/sell (azione 51): risposta letta da FUN_0078b230 (userData.userPoint).
@@ -1336,6 +1440,7 @@ function handler(scheme) {
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
+      if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);

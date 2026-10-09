@@ -165,6 +165,15 @@ LAYOUTS = {
                                                 {'Button_OK': 'Button_Sell', 'Txt_OK': 'Txt_Sell'}, False, [
         ('text', '4Line_Label', ''),    # la domanda la scrive il codice in Txt_Sell
         P('Alert_Area', 330, 255, 300, 40)] + obtain_panels(280, 280)),
+    # Avviso «materiali rari» del Level Up (FUN_00cc7864, anche FUN_00c83540): senza il file
+    # GUIReader restituisce un widget nullo e il client va in crash al tocco di Level Up.
+    # Cerca NormalText_Window03, Button_OK/Txt_OK, Button_Close/Txt_Cancel, Txt_Wording3
+    # (messaggio, testo 101399491) e Alert_Area (un _Panel per ogni avviso).
+    'PopupNormal_MedalMix_RareCaution.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                              {'NormalText_Window01': 'NormalText_Window03',
+                                               '4Line_Label': 'Txt_Wording3'}, False, [
+        ('text', 'Txt_Wording3', ''),
+        P('Alert_Area', 330, 255, 300, 40)]),
     'PopupNormal_MedalMix_RareCaution_Panel.json': ('build', P('Panel_Caution', 0, 0, 600, 40, [
         L('Txt_Wording1', 120, 20, 200, 36, 'Includes', 22),
         I('Star1', 240, 20, 30, 30, 'Result_LU_Win_Star.png'),
