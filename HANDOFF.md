@@ -172,9 +172,17 @@ vedi il suo README). `vmread` si ricostruisce con `build_vmread.py`.
    dei livelli scenderà a ~LV 2–3), 1.600 jewel, medaglia Dewey ★.
    **Prossimo, in ordine** (9 ottobre 2026):
    a) ✅ `stage_raw`, `enemy_raw`, `medal_raw` di thethiny decodificati
-      (`raw_master_old.py`, §2, «Ricerca online dei dati originali»); resta da usarli nelle
-      tabelle master (stage oltre la 1050, statistiche vere di nemici e medaglie, con
-      `imageId` sostitutivo per le medaglie senza grafica) e provarli sul banco;
+      (`raw_master_old.py`, §2, «Ricerca online dei dati originali»). `make-game-tables.js`
+      li usa: **522 medaglie vere** (grafica sostitutiva per attributo: 11021 Power, 12011
+      Speed, 13021 Magic, altrimenti Dewey ★; solo 21 hanno immagine) e **670 nemici**
+      (i 12 della 5.0.1 + quelli veri mancanti). La tabella stage resta quella della 5.0.1
+      (le righe vere servono con le mappe: la lista apre la mappa della missione dopo).
+      Revisione master 57. Banco (9 ottobre): rientro e home a posto con le nuove tabelle;
+      **bloccato invece il menu a tendina** (MENU si apre, ma Quests/Medal List/MENU non
+      rispondono e non partono richieste; anche Quests in basso a sinistra). Succede
+      identico con le tabelle della 53 e con quelle segnaposto (LV 15): **non dipende dai
+      master**. Da indagare (stato del tutorial della home? fumetto grigio vuoto comparso
+      all'apertura del menu);
    b) missione 8 (1050, «Dwarf's Cottage», probabilmente `DW_0003_00_00`): manca una mappa
       modello di quella stanza; nemici e tesori dalla wiki (`quests.json`);
    c) `story.ps1`: controllare lo schermo a ogni passo (i tempi fissi perdono il passo
