@@ -208,11 +208,18 @@ LAYOUTS = {
                                             ('CenterUI_Right', 'publish/MedalInfo_Evo_Right_Gen.json', 480, 0),
                                             ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
     # Statistiche prima/dopo: la ver260 originale, ma tre texture non esistono in nessuna
-    # risorsa (ImageViewReader va in crash): Medal_Evo_Win e Medal_Evo_Attribute sostituite,
-    # MD_Guilt4_On nascosta. Etichette giapponesi tradotte.
+    # risorsa (ImageViewReader va in crash): Medal_Evo_Win e Medal_Evo_Attribute sostituite
+    # con le texture dei riquadri del dettaglio medaglia, in 9-slice con gli stessi bordi di
+    # MedalInfo_InfoWindow (Medal_Detail_Field 200/90, Plate02 50/0); MD_Guilt4_On nascosta.
+    # Stile di riferimento: reference\medal_evolve\web_tumblr_evolve1.png (client 2015).
+    # Etichette giapponesi tradotte.
     'MedalInfo_Evo_Right_Gen.json': ('copy', 'MedalInfo_Evo_Right_ver260.json', {}, False, [
-        ('tex', 'Base_MedalInfo2', 'Panel04B.png'),
-        ('tex', 'Plate4', 'Plate02.png'),
+        ('tex', 'Base_MedalInfo2', 'Medal_Detail_Field.png',
+         dict(scale9Enable=True, capInsetsX=200, capInsetsY=90, capInsetsWidth=1, capInsetsHeight=1,
+              scale9Width=373, scale9Height=153)),
+        ('tex', 'Plate4', 'Plate02.png',
+         dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1,
+              scale9Width=352, scale9Height=30, height=30)),
         ('tex', 'Guilt_Icon', None),
         ('text', 'ATk', 'STR'), ('text', 'DEF', 'DEF'),
         ('text', 'Burst', 'Special Attack'), ('text', 'BurstName_Label', ''),
@@ -261,14 +268,15 @@ LAYOUTS = {
     # Materiale richiesto da Evolve (FUN_00cc57e0, riempito da FUN_00cc5a80): in Medal_S il
     # codice aggiunge l'icona (medalView) e lo ridimensiona; Possession e' un contenitore con
     # Label_9 (testo 101399490) e Num_Label (quantita' posseduta), entrambe con ombra
-    # (FUN_006e418c: crash se mancano). Medal_S scalato 1,25 come nel riferimento; Held_Plate
-    # e' la targhetta scura sotto «Held N».
-    'MedalInfo_Evo_Medal.json': ('build', P('Panel_Evo_Medal', 0, 0, 100, 150, [
-        P('Medal_S', -10, 30, 100, 120, scale=1.25),
-        P('Possession', 0, 0, 100, 26, [
-            I('Held_Plate', 50, 13, 104, 26, 'Plate03.png'),
-            L('Label_9', 30, 13, 70, 24, 'Held', 16),
-            L('Num_Label', 82, 13, 36, 24, '0', 16)])])),
+    # (FUN_006e418c: crash se mancano). Sfondo: lo slot «MEDAL» del Level Up
+    # (Medal_Syn_Select_Panel 104x119: cerchio sopra, targhetta sotto per «Held N»), come
+    # negli slot dei materiali della schermata originale.
+    'MedalInfo_Evo_Medal.json': ('build', P('Panel_Evo_Medal', 0, 0, 104, 119, [
+        I('Slot_Base', 52, 60, 104, 119, 'Medal_Syn_Select_Panel.png'),
+        P('Medal_S', 2, 22, 100, 96),
+        P('Possession', 0, 0, 104, 20, [
+            L('Label_9', 30, 10, 60, 20, 'Held', 15),
+            L('Num_Label', 84, 10, 30, 20, '0', 15)])])),
     'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
                                                   ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
     'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 30, 320, 120, 220, [
@@ -485,10 +493,12 @@ for target, spec in LAYOUTS.items():
         for extra in (spec[4] if len(spec) > 4 else ()):
             if isinstance(extra, tuple) and extra[0] == 'text':     # ('text', nome, testo)
                 find(data['widgetTree'], extra[1])['options']['text'] = extra[2]
-            elif isinstance(extra, tuple) and extra[0] == 'tex':    # ('tex', nome, texture|None)
+            elif isinstance(extra, tuple) and extra[0] == 'tex':
+                # ('tex', nome, texture|None[, {opzioni, es. scale9 come nei layout originali}])
                 o = find(data['widgetTree'], extra[1])['options']
                 if extra[2]:
                     o['fileNameData'] = tex(extra[2])
+                    o.update(extra[3] if len(extra) > 3 else {})
                 else:                       # texture assente ovunque: widget nascosto
                     o['fileNameData'] = tex('Plate01.png')
                     o['visible'] = False
