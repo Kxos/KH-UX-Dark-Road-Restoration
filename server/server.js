@@ -146,6 +146,7 @@ function route(url) {
   if (p === '/user/deck') return 'userdeck';
   if (p === '/keyblade/subslot') return 'kbsubslot';
   if (p === '/user/medal') return 'usermedal';
+  if (p === '/user/medal/sell') return 'medalsell';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
@@ -1099,6 +1100,57 @@ function userMedalsData(now) {
   }));
 }
 
+// POST /user/medal/sell (azione 51): risposta letta da FUN_0078b230 (userData.userPoint).
+// Il corpo elenca le medaglie vendute: si raccolgono tutti gli userMedalId (campi con quel
+// nome o array di id), si tolgono dal salvataggio e si accredita il campo sell della
+// tabella medal (moltiplicato per number, se c'e'). Le medaglie iniziali del deck
+// (userMedalId 1-3) non sono nel salvataggio e il client non le lascia vendere.
+function soldMedalIds(body) {
+  const ids = new Map();          // userMedalId -> number
+  // corpo visto sul banco: {"userMedalIds":[106],"numbers":[1], ...}
+  if (Array.isArray(body.userMedalIds)) {
+    body.userMedalIds.forEach((id, i) => ids.set(Number(id), Number(body.numbers?.[i]) || 1));
+    return ids;
+  }
+  (function walk(v, key) {
+    if (Array.isArray(v)) {
+      for (const x of v) {
+        if (typeof x === 'number' && /medal/i.test(key || '')) ids.set(x, (ids.get(x) || 0) + 1);
+        else walk(x, key);
+      }
+    } else if (v && typeof v === 'object') {
+      if (v.userMedalId !== undefined) ids.set(Number(v.userMedalId), Number(v.number) || 1);
+      for (const [k, x] of Object.entries(v)) if (k !== 'userMedalId') walk(x, k);
+    }
+  })(body, '');
+  return ids;
+}
+
+function respondMedalSell(res, body) {
+  const sold = soldMedalIds(body || {});
+  const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
+  let gain = 0;
+  player.medals = (player.medals || []).filter((m) => {
+    if (!sold.has(m.userMedalId)) return true;
+    gain += (rows.get(m.medalId)?.sell || 0) * sold.get(m.userMedalId);
+    return false;
+  });
+  player.money = (player.money || 0) + gain;
+  savePlayer();
+  console.log(`  [vendita] medaglie ${[...sold.keys()].join(',') || '(nessun id nel corpo)'}: +${gain} munny`);
+  // ramo 51 del dispatcher (action_case.py): FUN_0078b230 (userData.userPoint), poi
+  // FUN_0078e934 (userSkills), FUN_0078da18 (userMedals), infine sellUserMedalIds;
+  // senza i tre in radice «200 ERROR :51»
+  const now = serverTime();
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now) },
+    userSkills: [],
+    userMedals: userMedalsData(now),
+    sellUserMedalIds: [...sold.keys()],
+  });
+}
+
 function respondUserMedal(res) {
   // GET /user/medal (azione 15)
   send(res, 200, { ret: ret(), userMedals: userMedalsData(serverTime()) });
@@ -1262,6 +1314,7 @@ function handler(scheme) {
       if (kind === 'userdeck') return respondUserDeck(res);
       if (kind === 'kbsubslot') return respondKeybladeSubslot(res);
       if (kind === 'usermedal') return respondUserMedal(res);
+      if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);

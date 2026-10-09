@@ -39,8 +39,11 @@ qui c'è come.
   `update-resources.ps1` (~5 min). Il server prepara solo l'ultima versione;
 - **Medal List funziona (9 ottobre)**: lista, dettaglio medaglia, popup Sort/Filter.
   Catene di crash risolte una alla volta con `armtrace\stackcap.ps1 -MenuY 697 -Taps 'x,y'`
-  (vedi «Medal List — risolto»). Restano: freccia «medaglia successiva» inerte, immagini e
-  statistiche segnaposto (dati delle tabelle medaglie), Sell Medals da provare;
+  (vedi «Medal List — risolto»). **Sell Medals completo (9 ottobre)**: selezione, popup
+  di conferma, `POST /user/medal/sell` (server: toglie le medaglie, accredita `sell`),
+  popup «Sale complete!» e ritorno alla lista (vedi «Sell Medals — risolto»). Restano:
+  freccia «medaglia successiva» inerte, cursore di selezione invisibile (armatura
+  `Cursor_Anim_MedalSell` segnaposto), immagini e statistiche segnaposto (tabelle medaglie);
 - altri pulsanti in crash per layout mancanti: Profilo (`AvatarInfoScene_A_ver131`),
   Moogle Shop (`MoogleShopScene_ver410` + `lwf/mogshop/mog_wait`), Avatar Boards
   (`SphereBoardScene_ver310`), Other e rotolo (`MenuDialog_ver300`?); vedi la tabella
@@ -1996,6 +1999,34 @@ con le stringhe corte di libc++ rimaste nello stack (byte = lunghezza*2, poi il 
    assenti anche nella 4.4.0 (li' i vicini sono «[id]»): stesso segnaposto.
 
 Ciclo rapido delle prove: `build-resources.ps1 -Quick` (sopra, in «Stato»).
+
+**Sell Medals — risolto (9 ottobre, sera).** Tocchi sul banco: MENU `1790,45`, Medal List
+`1745,697`, Sell Medals `335,262`, una medaglia `637,600`, Sell `350,1005`, conferma
+`1220,715`, OK `960,712`. Catena:
+1. `FUN_00bf0a10` carica `MedalSellScene_ver350` (assente): scena con CenterUI
+   (`MedalSell_Gen.json`), LeftUI (`MedalSell_Back.json`) e RightUI (pannello vuoto:
+   `FUN_00bf302c` usa il primo figlio di tutti e tre);
+2. nomi dal decompilato e dalle stringhe ADRP/ADD della funzione: contatore
+   `Txt_MedalGet*` (come Medal List), `Txt_Money` + `Txt_Money_Label` (Munny posseduti,
+   `FUN_00bf25fc`), `Txt_Money_Total` (titolo) / `Txt_Money_Total_Lavel` (valore del
+   ricavo), `Txt_A_Coin(_Label)`, `Plate_A_Jewel`/`Plate_A_Ticket` (testo 106240301
+   «Tickets», assente anche nella 4.4.0), `BoxNow`, `BoxMaxLabel`, `DeckBase2`;
+3. **`Medal_Sell_Panel` non deve coprire la griglia**: il codice lo rende toccabile e, a
+   schermo intero, assorbiva i tocchi (selezione impossibile). Ora e' la sola barra in alto,
+   con i figli della barra in basso fuori dai bordi (y negativa);
+4. conferma `PopupNormal_MedalSell_Check_ver350` (`FUN_00bf3804`) e esito
+   `PopupNormal_MedalSell_Ok_ver350` (`FUN_006f4918`): copie dei popup generici originali
+   `PopupNormal_Text_34_4Line_OkCancel/Ok` con nomi rinominati; entrambi vogliono le
+   ricompense `Panel_1..4` con `Obtain_Plate_a..d` (`FUN_006f33f0`; ogni targhetta `Txt`,
+   `Txt_Label`, `Icon` ImageView); per le medaglie rare `Alert_Area` riceve
+   `PopupNormal_MedalMix_RareCaution_Panel.json` (assente, generato: `Txt_Wording1..3`,
+   `Star1`); esito: testo 106240302 «Sale complete!» (nostro);
+5. server: `POST /user/medal/sell` (azione 51), corpo `{"userMedalIds":[106],"numbers":[1]}`.
+   Ramo 51 del dispatcher (`action_case.py` sul disassemblato lineare
+   `logs\dispatcher_linear.txt`): `userData.userPoint`, poi in radice `userSkills`,
+   `userMedals`, `sellUserMedalIds` (senza: «200 ERROR :51»).
+`make_layouts.py` ha ora per il tipo copy anche `('text', nome, testo)`, e `scale` per i
+widget costruiti.
 
 **Memoria del PC.** Dopo diversi download da 2,3 GB `Ld9BoxHeadless` (la VM di LDPlayer)
 arrivava a 30 GB di memoria impegnata: memoria virtuale libera 0,1 GB, il file di

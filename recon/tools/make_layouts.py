@@ -47,6 +47,20 @@ def P(name, x, y, w, h, children=(), **kw):
     return dict(cls='Panel', name=name, x=x, y=y, w=w, h=h, children=list(children), **kw)
 
 
+def obtain_panels(x, y):
+    """Ricompense nei popup di vendita (FUN_006f33f0): Panel_1..Panel_4 con 1..4 targhette
+    Obtain_Plate_a..d (FUN_00703550: Txt titolo, Txt_Label quantita', Icon ImageView di cui
+    carica la texture). Il codice mostra solo il pannello con il numero giusto di righe."""
+    panels = []
+    for n in range(1, 5):
+        plates = [P('Obtain_Plate_' + 'abcd'[k], 0, 120 - 40 * k, 400, 36, [
+            I('Icon', 40, 18, 30, 30, 'Result_LU_Win_Star.png', scale=0.4),
+            L('Txt', 130, 18, 180, 30, '', 20),
+            L('Txt_Label', 320, 18, 140, 30, '0', 20)]) for k in range(n)]
+        panels.append(P('Panel_%d' % n, x, y, 400, 160, plates, visible=False))
+    return panels
+
+
 LAYOUTS = {
     # Presents (FUN_00d0cfbc scena, FUN_00d0b350 base, FUN_00899640 pannello): stessi
     # nomi della versione Dark Road (Txt_Wording, Scroll_Area, Txt_None, Txt_Stock*,
@@ -107,15 +121,18 @@ LAYOUTS = {
     'MedalSell_Right.json': ('build', P('Panel_Right', 0, 0, 10, 10)),
     'MedalSell_Gen.json': ('build', P('medal_sell_root', 0, 0, 960, 640, [
         P('Scroll_Area', 70, 95, 820, 355),
-        P('Medal_Sell_Panel', 0, 0, 960, 640, [
-            I('Img_Bar', 480, 485, 960, 70, 'Plate13.png'),
-            L('Txt_Sort_Label', 680, 485, 180, 30, 'Strength', 20),
-            L('Txt_Filter_On', 680, 512, 180, 20, 'Filter ON', 16),
-            B('Button_Sort', 860, 485, 180, 58, 'But17', 'Sort', 24),
-            I('Img_Bottom', 480, 45, 960, 90, 'Plate13.png'),
-            B('Button', 120, 45, 180, 64, 'But17', 'Sell', 26, label='Txt_Sell'),
-            # ricavo della vendita in Munny (riga alta della barra in basso)
-            L('Txt_Money_Total', 600, 65, 160, 28, '0', 20),
+        # Medal_Sell_Panel = barra in alto (il codice la rende toccabile: a schermo intero
+        # coprirebbe la griglia e la selezione non arriverebbe); i figli della barra in basso
+        # stanno fuori dai suoi bordi (y negativa: cocos2d non ritaglia).
+        P('Medal_Sell_Panel', 0, 450, 960, 70, [
+            I('Img_Bar', 480, 35, 960, 70, 'Plate13.png'),
+            L('Txt_Sort_Label', 680, 35, 180, 30, 'Strength', 20),
+            L('Txt_Filter_On', 680, 62, 180, 20, 'Filter ON', 16),
+            B('Button_Sort', 860, 35, 180, 58, 'But17', 'Sort', 24),
+            I('Img_Bottom', 480, -405, 960, 90, 'Plate13.png'),
+            B('Button', 120, -405, 180, 64, 'But17', 'Sell', 26, label='Txt_Sell'),
+            # riga alta della barra in basso: titolo «Munny» (il valore e' Txt_Money_Total_Lavel)
+            L('Txt_Money_Total', 380, -385, 160, 28, 'Munny', 20),
         ]),
         # in alto: contatore come in Medal List (FUN_00bf2264 / FUN_00bf5b18), poi i Munny
         # posseduti: Txt_Money (100300003 «Munny») e Txt_Money_Label (FUN_00bf25fc)
@@ -129,7 +146,7 @@ LAYOUTS = {
         L('Txt_Money', 340, 485, 90, 30, 'Munny', 20),
         L('Txt_Money_Label', 470, 485, 150, 30, '0', 20),
         # in basso: Munny e Avatar Coins ricavati
-        L('Txt_Money_Total_Lavel', 380, 65, 160, 28, 'Munny', 20),
+        L('Txt_Money_Total_Lavel', 600, 65, 160, 28, '0', 20),
         L('Txt_A_Coin', 380, 28, 160, 28, 'Avatar Coins', 20),
         L('Txt_A_Coin_Label', 600, 28, 160, 28, '0', 20),
         P('Plate_A_Jewel', 700, 51, 200, 28, [
@@ -141,6 +158,22 @@ LAYOUTS = {
             L('Txt_A_Ticket_Label', 140, 14, 100, 28, '0', 20),
         ], visible=False),
     ])),
+    # Conferma della vendita (FUN_00bf3804): dal popup generico OK/Annulla originale.
+    # Button_Sell/Txt_Sell (100100029), Button_Close/Txt_Cancel, Alert_Area (vi aggiunge un
+    # PopupNormal_MedalMix_RareCaution_Panel per ogni avviso: Txt_Wording1, Star1, ...).
+    'PopupNormal_MedalSell_Check_ver350.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                                {'Button_OK': 'Button_Sell', 'Txt_OK': 'Txt_Sell'}, False, [
+        ('text', '4Line_Label', ''),    # la domanda la scrive il codice in Txt_Sell
+        P('Alert_Area', 330, 255, 300, 40)] + obtain_panels(280, 280)),
+    'PopupNormal_MedalMix_RareCaution_Panel.json': ('build', P('Panel_Caution', 0, 0, 600, 40, [
+        L('Txt_Wording1', 120, 20, 200, 36, 'Includes', 22),
+        I('Star1', 240, 20, 30, 30, 'Result_LU_Win_Star.png'),
+        L('Txt_Wording2', 400, 20, 260, 36, 'Medals or higher.', 22),
+        L('Txt_Wording3', 300, 20, 560, 36, '', 22, visible=False)])),
+    # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1.
+    'PopupNormal_MedalSell_Ok_ver350.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                             {'4Line_Label': 'Txt_Sell_Ok1'}, False,
+                                             [('text', 'Txt_Sell_Ok1', '')] + obtain_panels(280, 260)),
     # Dettaglio medaglia da Medal List: FUN_00aba238 carica SlideMedalInfoScene_ver341 sopra
     # MedalInfoScene e aggiunge un pulsante al primo figlio di LeftUI e di RightUI (medaglia
     # precedente / successiva). Frecce come MedalInfo_Arrow01.json (Medal_Syn_Arrow01 punta a sinistra).
@@ -209,6 +242,8 @@ TEXTS = {
     100620045: 'Tap a Medal to see its details.',
     # Sell Medals (FUN_00bf0a10): titolo di Txt_A_Ticket (accanto a 106130301 «Jewels»)
     106240301: 'Tickets',
+    # esito della vendita (FUN_006f4918, Txt_Sell_Ok1; l'alternativa 100300009 e' «Complete!»)
+    106240302: 'Sale complete!',
 }
 # Popup Sort (FUN_00a45e24 nella costruzione dei filtri): testi del filtro Super Burst.
 # Nell'IPA 4.4.0 i vicini (106240205-215) sono ancora segnaposto «[id]»: stesso formato
@@ -309,6 +344,8 @@ def build(s):
     _tag[0] += 1
     o.update(name=s['name'], x=s['x'], y=s['y'], width=s['w'], height=s['h'], tag=_tag[0],
              actiontag=_tag[0], visible=s.get('visible', True))
+    if 'scale' in s:                    # es. icone a cui il codice carica la texture
+        o.update(scaleX=s['scale'], scaleY=s['scale'])
     w['name'] = s['name']
     if s['cls'] == 'ImageView':
         o.update(fileNameData=tex(s['tex']), scale9Width=s['w'], scale9Height=s['h'])
@@ -348,7 +385,9 @@ for target, spec in LAYOUTS.items():
         if len(spec) > 3 and spec[3]:
             retex(data['widgetTree'])
         for extra in (spec[4] if len(spec) > 4 else ()):
-            if isinstance(extra, tuple):            # ('clone', sorgente, nome, genitore)
+            if isinstance(extra, tuple) and extra[0] == 'text':     # ('text', nome, testo)
+                find(data['widgetTree'], extra[1])['options']['text'] = extra[2]
+            elif isinstance(extra, tuple):          # ('clone', sorgente, nome, genitore)
                 clone(data['widgetTree'], *extra[1:])
             else:
                 data['widgetTree']['children'].append(build(extra))
