@@ -1862,7 +1862,7 @@ getter seguita da `[xN,#off]`).
 | Profilo (avatar in alto) | crash | layout `AvatarInfoScene_A_ver131.json` mancante |
 | Moogle Shop | crash | layout `MoogleShopScene_ver410.json` e `lwf/mogshop/mog_wait` mancanti |
 | Avatar Boards (home e menu) | crash | layout `SphereBoardScene_ver310.json` mancante (probabile) |
-| Presents | crash | layout `PresentBOXScene.json` mancante; esistono i `dark_PresentBOX_*` di Dark Road |
+| Presents | ok (dal 9 ottobre) | layout sostitutivi dai `dark_PresentBOX_*` + 5 testi ui |
 | Medal List | crash | layout `MedalListScene_ver130.json` mancante |
 | Other | crash | layout `MenuDialog_ver300.json` mancante (probabile) |
 | Rotolo (icona sotto il livello) | crash | come Other (`0x11afb7c`), da verificare |
@@ -1885,6 +1885,31 @@ Strumenti: cattura dello stack ARM al crash (regione di `sp` copiata con
 `dumprange.sh`), backtrace euristico con base `0x31c0000`; `vmread` sulla sessione
 (`FUN_007c1dfc` = oggetto statico a `0x515e290`; tabelle con il numero di record a
 +0x34).
+
+**Layout sostitutivi — Presents funziona (9 ottobre 2026).** Catena di strumenti:
+- `recon/tools/res_get.py <nomi.tsv> <resource_data\N\data> <uscita> <nome>...`: estrae
+  file delle risorse per nome (in `D:\Progetto_Restauro_KH_UX\layouts\orig\`);
+- `layout_tree.py` (layout UI 1.6: albero dei widget, posizioni, immagini) e
+  `scene_tree.py` (scene SceneEditor `*Scene*.json`: nodi `CCNode` con `GUIComponent`
+  che caricano un layout);
+- `widget_lookup.py <lib> <file.c>`: dal C decompilato ricostruisce i nomi dei widget
+  cercati (stringhe corte libc++ composte a pezzi sullo stack) e la funzione che li usa
+  (`FUN_006e0e2c` figlio per nome, `FUN_006e6e6c` testo di un figlio);
+- `make_layouts.py`: tabella dei layout mancanti (`copy` da un layout esistente con
+  eventuali nomi cambiati, `scene` con nodi vuoti) e dei testi `text/ui/<id>.txt`
+  mancanti (letti da `FUN_00719f18`, categoria 0 = ui; senza file → crash); scrive in
+  `stage_gen\files`;
+- `tools/ldplayer/session/build-resources.ps1 -Version N`: pacchetto generato + unione
+  con OBB/addnl → `resource_data\N`; poi `update-resources.ps1`.
+Presents: `PresentBOXScene.json` = scena con `CenterUI`/`LeftUI` vuoti (la scena li
+toglie), `PresentBOX_Base_ver400`/`_Panel_ver131`/`_IconPanel_ver131` = copie dei
+`dark_PresentBOX_*` (stessi nomi di widget), testi 103500002/3/13 e 106250103/4 dalla
+schermata originale (`reference\presents`). Risorse versione 11. Sul banco: la schermata
+si apre, il codice riposiziona i widget come l'originale; cornici viola di Dark Road (da
+sostituire con le texture blu). Grafica di riferimento: 112 fogli di Spriters Resource
+in `D:\Progetto_Restauro_KH_UX\reference\spriters\` (scaricati con Edge pilotato da
+Playwright per superare la verifica Cloudflare, poi `curl_cffi` con i suoi cookie),
+67 schermate in `reference\<sezione>\` con le fonti in `SOURCES.md`.
 
 Dei 601 layout cocostudio citati dal binario ne mancano 307 (`logs\layout_mancanti.txt`,
 da `asset_coverage.py`), 49 sono schermate intere. Indirizzi da `armtrace`: la base di
