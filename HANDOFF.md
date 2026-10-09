@@ -30,7 +30,7 @@ bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000.
 **Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
 Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
 animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
-vuoto). **Prossimo, in ordine:** 1) «Sell Materials»: crash alla conferma (vedi annotazioni);
+vuoto). **Prossimo, in ordine:** 1) «Sell Materials»: stile di righe e popup dagli originali (vedi annotazioni);
 2) articoli del Moogle Shop (master `moogleshop` vuota) e acquisto; 3) fascia rossa e
 quantita' del popup di vendita; 4) Profilo, Avatar Boards, Other, rotolo del menu;
 5) missione 8.
@@ -160,10 +160,10 @@ poi i pulsanti in crash del menu.
 - «Sell Materials» (EquipSellScene, FUN_00c5e584): **si apre** (10 ottobre) con i
   materiali del giocatore e il popup della quantita' (EquipSell_Dialog_Step1). Il codice
   cerca `Panel_1` e dentro `EquipSell_Scroll_Area` (radice del layout = Panel_1), nella
-  riga `Panel_On`, nel popup `Txt_data4`. **Da fare:** toccando «Sell» il client va in
-  crash prima di inviare la richiesta (probabile EquipSell_Dialog_Step2, FUN_00c611fc:
-  catturare con stackcap -NoMenu -Taps '288,1000','1205,250','1200,430','1183,930'),
-  poi la richiesta di vendita sul server; icona del popup troppo grande (scala 1,5 pensata
+  riga `Panel_On`, nel popup `Txt_data4`. **Vendita funzionante** (10 ottobre): conferma EquipSell_Dialog_Step2 (FUN_00c611fc,
+  serviva Txt_cancel minuscolo), POST /user/material/sell {userMaterialId, number}
+  (azione 50, risposta userData.userPoint + oggetto userMaterial), popup «Complete!».
+  **Resta lo stile:** icona del popup troppo grande (scala 1,5 pensata
   per le medaglie), disposizione di prezzo/«Price» nelle righe e nel popup.
 - Popup della quantita' (vendita medaglie impilate) rifatto sul video originale
   (reference\medal_list\web_qty_368.png): da sistemare la fascia «Includes ★★★ Medals

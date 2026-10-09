@@ -312,7 +312,8 @@ LAYOUTS = {
     # Conferma (FUN_00c611fc): popup OK/Annulla con il riepilogo
     'EquipSell_Dialog_Step2.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
                                     {'Button_OK': 'Button_sell_ok', 'Txt_OK': 'Txt_sell_ok',
-                                     'Button_Close': 'Button_cancel', '4Line_Label': 'Txt_Material_Name_Dlog'},
+                                     'Button_Close': 'Button_cancel', 'Txt_Cancel': 'Txt_cancel',
+                                     '4Line_Label': 'Txt_Material_Name_Dlog'},
                                     False, [
         ('text', 'Txt_Material_Name_Dlog', ''),
         L('Txt_data1', 380, 300, 200, 26, '', 20), L('Txt_data2', 580, 300, 200, 26, '', 20),

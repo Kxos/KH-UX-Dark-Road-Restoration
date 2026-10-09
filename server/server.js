@@ -151,6 +151,7 @@ function route(url) {
   if (p === '/user/medal/enhance') return 'medalenhance';
   if (p === '/user/medal/evolve') return 'medalevolve';
   if (p === '/user/medal/remove') return 'medalremove';
+  if (p === '/user/material/sell') return 'materialsell';
   if (p === '/moogleshop/list') return 'moogleshoplist';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
@@ -1279,6 +1280,28 @@ function respondMedalEvolve(res, body) {
   });
 }
 
+// POST /user/material/sell (azione 50) {userMaterialId, number}: dalla Sell Materials del
+// Moogle Shop (EquipSellScene). Accredita il campo sell della tabella material per copia.
+// Risposta (ramo 50 del dispatcher: FUN_0078b230 userData.userPoint, poi l'oggetto
+// userMaterial letto da FUN_007a2538): userMaterialId, materialId, number = copie rimaste.
+function respondMaterialSell(res, body) {
+  const id = Number(body?.userMaterialId);
+  player.materials = player.materials || {};
+  const have = player.materials[id] || 0;
+  const n = Math.max(0, Math.min(Number(body?.number) || 0, have));
+  const row = masterRows('material').find((r) => r.materialId === id);
+  const gain = n * (row?.sell || 0);
+  player.materials[id] = have - n;
+  player.money = (player.money || 0) + gain;
+  savePlayer();
+  console.log(`  [vendita] materiale ${id} x${n}: +${gain} munny`);
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(serverTime()) },
+    userMaterial: { userMaterialId: id, materialId: id, number: have - n },
+  });
+}
+
 // POST /user/medal/sell (azione 51): risposta letta da FUN_0078b230 (userData.userPoint).
 // Il corpo elenca le medaglie vendute: si raccolgono tutti gli userMedalId (campi con quel
 // nome o array di id), si tolgono dal salvataggio e si accredita il campo sell della
@@ -1541,6 +1564,7 @@ function handler(scheme) {
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
       if (kind === 'medalevolve') return respondMedalEvolve(res, entry.bodyDecoded);
       if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
+      if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
       // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop
       if (kind === 'moogleshoplist') return send(res, 200, { ret: ret(), moogleshops: player.moogleshops || [] });
