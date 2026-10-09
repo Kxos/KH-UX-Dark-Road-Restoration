@@ -61,13 +61,14 @@ dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spunta
   pannelli `Panel_Left`/`Panel_Right` hanno ora l'origine al centro della freccia
   (30,320 e 930,320; 120×220) e la freccia in (0,0). Visto anche: nel dettaglio di una
   medaglia equipaggiata il pulsante «取りはずし» (Unequip) e' ancora in giapponese.
-- [ ] **Lucchetto (protezione).** Il lucchetto nel dettaglio protegge la medaglia: nella
-  vendita deve apparire grigia/disabilitata e non selezionabile. Il client lo legge in
-  `FUN_008835a4` (byte +0x26..+0x29 della medaglia, oltre a «equipaggiata»): serve la
-  richiesta del lucchetto sul server (trovare l'azione: probabilmente `/user/medal/lock`
-  o simile, vedi `recon/out/api_responses_auto_ww431.json`) che salvi `lock` nel
-  giocatore e lo restituisca in `userMedalsData` (oggi `lock: 0` fisso). Verificare anche
-  il caso inverso (sbloccare).
+- [x] **Lucchetto (protezione)** (risolto il 9 ottobre). `POST /user/medal/lock`
+  (azione 46), corpo `{"userMedalIds":[110],"isLocks":[1]}`; il client lo manda **solo
+  uscendo da Medal List** (nel dettaglio cambia solo l'icona: spenta = libera, accesa =
+  bloccata), e se la risposta e' sbagliata lo rimanda al rientro successivo («200 ERROR
+  :46» prima della home). Risposta: `userMedals` (`FUN_0078da18`), `deleteUserMedalIds`
+  e `isSubslotUpdate` (intero). Il server salva in `player.medalLocks` e restituisce
+  `lock`. Banco: bloccata = grigia col lucchetto in lista e in vendita, il tocco non la
+  seleziona; sbloccata = selezionabile (210 munny); di nuovo bloccata, salvata.
 - [ ] **Stile della selezione nella vendita.** Ogni medaglia selezionata (anche piu'
   d'una) deve mostrare un segno di selezione. Oggi nulla: il segno e' `selectView` =
   armatura `Cursor_Anim_MedalSell` (movimento `Animation1`, `FUN_00882e10`), ora una copia
