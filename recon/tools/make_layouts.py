@@ -285,7 +285,8 @@ LAYOUTS = {
     # Txt_MaterialStock_Fix1, Txt_Money_Fix, PanelMask.
     'EquipSellScene.json': ('scene', [('CenterUI', 'publish/EquipSell_Gen.json'),
                                       ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
-    'EquipSell_Gen.json': ('build', P('equip_sell_root', 0, 0, 960, 640, [
+    # radice «Panel_1»: il codice cerca Panel_1 e dentro EquipSell_Scroll_Area (0xc5ebd4)
+    'EquipSell_Gen.json': ('build', P('Panel_1', 0, 0, 960, 640, [
         I('Grid_Under', 480, 280, 950, 380, 'Panel04.png', opts=GRID),
         P('EquipSell_Scroll_Area', 9, 95, 942, 370),
         L('Txt_None', 480, 280, 600, 40, '', 24),
@@ -303,7 +304,10 @@ LAYOUTS = {
             L('Txt_data1 ', 230, 50, 80, 24, '', 18),
             L('Txt_Money_Fix', 160, 22, 80, 24, '', 16),
             L('Txt_data2', 230, 22, 100, 24, '', 18),
-            P('PanelMask', 0, 0, 300, 110, visible=False)])])),
+            P('PanelMask', 0, 0, 300, 110, visible=False),
+            # Panel_On: evidenza della riga scelta (cercato da FUN_00888xxx, crash se manca)
+            I('Panel_On', 150, 55, 290, 100, 'Plate02.png', opts=dict(PANEL4, colorR=120, colorG=220, colorB=255),
+              visible=False)])])),
     'EquipSell_Dialog_Step1.json': ('func', 'material_sell_popup'),
     # Conferma (FUN_00c611fc): popup OK/Annulla con il riepilogo
     'EquipSell_Dialog_Step2.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
@@ -771,6 +775,9 @@ def material_sell_popup():
         L('Txt_Material_Info_Dlog', 37, 135, 500, 40, '', 18),
         L('Txt_MoneyStock_Fix', -239, 22, 200, 26, '', 18),
         L('Txt_data1', 13, 22, 200, 26, '', 18),
+        # cercato anche qui (stack al crash); la variante con U+3000 delle medaglie per sicurezza
+        L('Txt_data4', 13, 30, 300, 24, '', 18),
+        L('Txt_data4　', 13, 30, 300, 24, '', 18),
         L('Txt_MaterialStock_Fix_2', -232, -100, 80, 24, '', 18),
         L('Txt_MaterialStock_Fix_3', 232, -100, 80, 24, '', 18)])
 

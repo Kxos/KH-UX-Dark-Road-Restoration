@@ -30,7 +30,7 @@ bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000.
 **Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
 Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
 animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
-vuoto). **Prossimo, in ordine:** 1) crash di «Sell Materials» (vedi annotazioni);
+vuoto). **Prossimo, in ordine:** 1) «Sell Materials»: crash alla conferma (vedi annotazioni);
 2) articoli del Moogle Shop (master `moogleshop` vuota) e acquisto; 3) fascia rossa e
 quantita' del popup di vendita; 4) Profilo, Avatar Boards, Other, rotolo del menu;
 5) missione 8.
@@ -157,11 +157,14 @@ poi i pulsanti in crash del menu.
   (LB_Munnies) non compare, «Sell Materials» va in crash (schermata da studiare),
   texture img/ui/Mogshop_plate1, ShopBut_Lock*, But29/30/31 assenti (righe articolo).
   Riferimenti: reference\moogle_shop\ (video JP 4.1.0 FX5Chfckqkk, EN -3Tc94iOomA).
-- «Sell Materials» (EquipSellScene, FUN_00c5e584): scena, riga EquipSell_Block e popup
-  Step1/Step2 generati (make_layouts.py), ma va ancora in crash a 0xc5ec70, subito dopo
-  la ricerca di EquipSell_Scroll_Area (nello stack anche «Panel_1», «Button_Back»): capire
-  su quale nodo la cerca (forse il primo figlio di un nodo della scena, come LeftUI in
-  Medal List) — decompilare FUN_00c5e584 attorno a 0xc5ec08.
+- «Sell Materials» (EquipSellScene, FUN_00c5e584): **si apre** (10 ottobre) con i
+  materiali del giocatore e il popup della quantita' (EquipSell_Dialog_Step1). Il codice
+  cerca `Panel_1` e dentro `EquipSell_Scroll_Area` (radice del layout = Panel_1), nella
+  riga `Panel_On`, nel popup `Txt_data4`. **Da fare:** toccando «Sell» il client va in
+  crash prima di inviare la richiesta (probabile EquipSell_Dialog_Step2, FUN_00c611fc:
+  catturare con stackcap -NoMenu -Taps '288,1000','1205,250','1200,430','1183,930'),
+  poi la richiesta di vendita sul server; icona del popup troppo grande (scala 1,5 pensata
+  per le medaglie), disposizione di prezzo/«Price» nelle righe e nel popup.
 - Popup della quantita' (vendita medaglie impilate) rifatto sul video originale
   (reference\medal_list\web_qty_368.png): da sistemare la fascia «Includes ★★★ Medals
   or higher.» (nell'originale rossa con le stelle, testo bianco; qui scura con testo
