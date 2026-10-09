@@ -1328,6 +1328,10 @@ function respondMoogleshopBuy(res, body) {
     ret: ret(),
     userData: { userPoint: userPointData(serverTime()) },
     shuffleskillUserMedals: [],
+    // FUN_007ac5f4 legge anche userMedals e userSkills (FUN_0078da18/FUN_0078e934 col nome
+    // predefinito): senza, «200 ERROR :248»
+    userMedals: userMedalsData(serverTime()),
+    userSkills: [],
     userMaterials: userMaterialsData(),
     emblemIds: [],
     guiltBurstFirstUserMedalIds: [],

@@ -289,7 +289,7 @@ LAYOUTS = {
                 L('Txt_Count', 110, 13, 210, 22, '', 16),
                 L('Txt_Count_Cus', 110, 13, 210, 22, '', 16)], visible=False)]),
         P('Jewel', 480, 34, 220, 50, [
-            I('Jewel_Icon', 30, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.7),
+            I('Jewel_Icon', 30, 25, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.45),
             L('Txt_Jewel', 140, 25, 150, 34, '0', 26)]),
         P('Munnies', 480, 34, 220, 50, [
             I('Munnies_Icon', 30, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
@@ -322,7 +322,7 @@ LAYOUTS = {
         L('Txt_Material_Name', 330, 140, 300, 36, '', 24),
         L('Txt_Material_Text', 360, 92, 360, 40, '', 18),
         P('Jewel', 520, 118, 190, 44, [
-            I('Jewel_Icon', 28, 22, 44, 46, 'Icon_Prize.png', s9=False, scale=0.7),
+            I('Jewel_Icon', 28, 22, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.45),
             L('Txt_Jewel', 130, 22, 150, 34, '0', 26)]),
         B('But_Buy', 612, 62, 177, 64, 'But01', 'Exchange', 24, label='Txt_buy', opts=BUTS, children=[
             B('ImageButton_Buy1', 0, 0, 177, 64, 'But01', None, opts=BUTS, visible=False)]),
@@ -430,6 +430,21 @@ LAYOUTS = {
         I('Star1', 240, 20, 26, 26, 'rare_star.png', s9=False),
         L('Txt_Wording2', 400, 20, 260, 36, 'Medals or higher.', 22),
         L('Txt_Wording3', 300, 20, 560, 36, '', 22, visible=False)])),
+    # Conferma dello scambio di un articolo del Moogle Shop (openItemBuyPopup, FUN_00e16a84;
+    # trovato con vtable_users.py dalle lambda; senza file crash leggendo widgetTree, stack
+    # mg10): Txt_Wording (domanda), Txt_CrownPossessed_Label/Txt_CrownPossessed (jewel
+    # posseduti), LB_Munnies con Txt_MunniesPossessed_Label/Txt_Munnies, Button_OK/Txt_OK,
+    # Button_Close/Txt_Cancel. Dal popup OK/Annulla originale.
+    'MoogleShop_Traits_AddCheck.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                        {'4Line_Label': 'Txt_Wording'}, False, [
+        ('text', 'Txt_Wording', ''),
+        ('opts', 'Txt_Wording', dict(y=75, height=100)),
+        # il codice scrive il numero in _Label e «Held» in Txt_CrownPossessed (banco)
+        L('Txt_CrownPossessed', 420, 300, 200, 28, 'Held', 22),
+        L('Txt_CrownPossessed_Label', 560, 300, 220, 28, '0', 22),
+        I('LB_Munnies', 480, 268, 360, 28, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_MunniesPossessed_Label', -90, 0, 160, 24, 'Munny', 20),
+            L('Txt_Munnies', 90, 0, 160, 24, '0', 20)])]),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
     # popup originale (reference\material_sell\complete_thumb.png): «Complete!» in alto,
     # targhe dei guadagni al centro, OK in basso.
@@ -694,6 +709,9 @@ COPIES = {'cocostudio/publish/' + n: 'img/incentive/' + n
 # icone che il popup Sort/Filter (PopupNormal_SortButton_ver350) cerca accanto ai layout ma
 # che esistono solo sotto img/: Guilt 2-8 (img/ui/guilt) e risvegli (img/kakusei)
 COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%d.png' % i for i in range(2, 9)})
+# «Exchange» del Moogle Shop: al tocco il pulsante carica img/ui/But30_On/Off (assenti:
+# crash, stack mg9); rosso come nell'originale (moogle_shop_01.png) = But01
+COPIES.update({'img/ui/But30_%s.png' % s: PUB + 'But01_%s.png' % s for s in ('Off', 'On')})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
                for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
 # Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come
