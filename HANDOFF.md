@@ -17,6 +17,36 @@ qui c'è come.
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 | **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
+### Come riprendere il lavoro (stato al 10 ottobre 2026) — LEGGERE PRIMA QUESTO
+
+**Banco ora:** risorse **versione 28** installate (riserva indice 64 KB: i cicli
+`build-resources.ps1 -Quick` funzionano senza download); master **revisione 58** (default
+degli script); server e app si riavviano con `tools\ldplayer\session\relogin.ps1 -Tag x`.
+Se LDPlayer e' spento: `ldconsole launch --index 0`, poi `ld.exe -s 0 "sh
+/mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"`. Salvataggio di prova in
+`server\save\player.json`: Donald 2★ (evoluto), pila di 3 Huey & Dewey & Louie, pila
+bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000.
+
+**Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
+Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
+animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
+vuoto). **Prossimo, in ordine:** 1) crash di «Sell Materials» (vedi annotazioni);
+2) articoli del Moogle Shop (master `moogleshop` vuota) e acquisto; 3) fascia rossa e
+quantita' del popup di vendita; 4) Profilo, Avatar Boards, Other, rotolo del menu;
+5) missione 8.
+
+**Metodo (regole dell'utente):** stile di ogni schermata dagli originali trovati online
+(screenshot/video in `reference\<schermata>\`, yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt`
+con `PYTHONPATH` e `--js-runtimes node:<node.exe>`); risorse note nel catalogo
+`D:\Progetto_Restauro_KH_UX\catalog\index.html`; annotare in questo file pulsanti,
+schermate e azioni non ancora affrontati; commit + push dopo ogni passo verificato.
+**Ciclo per una schermata mancante:** `func_strings.py` + `widget_lookup.py` (nomi
+cercati dal codice), `text_ids.py` (testi mancanti), layout in `make_layouts.py`
+(`build`/`copy`/`scene`/`func`), texture mancanti in `make_textures.py`, prova con
+`build-resources.ps1 -Quick` e `scratchpad tap.ps1`-like (bench_lib Tap/Shot), crash con
+`tools\ldplayer\tombstone.ps1` o `armtrace\stackcap.ps1 -NoMenu -Taps 'x,y'` +
+`backtrace.py` (KHUX_BASE=0x31d4000) e stringhe nello stack.
+
 ### Come riprendere il lavoro (stato al 9 ottobre 2026, pomeriggio)
 
 **Stato al 9 ottobre, in breve** (dettagli in §2, «Il menu a tendina bloccato»,
