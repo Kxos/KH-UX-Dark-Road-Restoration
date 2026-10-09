@@ -47,6 +47,11 @@ def I(name, x, y, w, h, tex, **kw):
 
 # targhetta Plate03 in 9-slice come in MedalInfo_Mix_ver340 (bordo 70)
 PLATE3 = dict(scale9Enable=True, capInsetsX=70, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
+# fondo e bordo dei riquadri come in DeckEdit_MedalForm (Win_under, Win)
+PANEL4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=50, capInsetsWidth=1, capInsetsHeight=1)
+# fondo della griglia scurito come negli screenshot originali (quasi nero, bordo blu)
+GRID = dict(PANEL4, colorR=70, colorG=85, colorB=120)
+PANEL15 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
 
 
 def P(name, x, y, w, h, children=(), **kw):
@@ -87,23 +92,27 @@ LAYOUTS = {
     # Medal_Sell_Panel e' la barra in alto: FUN_00df1c00 la rende visibile e vi cerca
     # Button_Sort (con la Label Txt_Sort, scritta dalla callback di FUN_00760c64).
     'MedalList_Gen.json': ('build', P('medal_list_root', 0, 0, 960, 640, [
-        P('Scroll_Area', 3, 10, 954, 440),
+        # dietro la griglia: fondo scuro Panel04 (9-slice 50/50) e bordo Panel15 (bordo 50),
+        # come DeckEdit_MedalForm; nell'originale va da sotto la barra fino al fondo
+        # (reference\medal_list\medal_list_yt_06.jpg, medal_list_01.jpg)
+        I('Grid_Under', 480, 220, 950, 490, 'Panel04.png', opts=GRID),
+        P('Scroll_Area', 3, 0, 954, 452),
         P('Medal_Sell_Panel', 0, 450, 960, 70, [
-            I('Img_Bar', 480, 35, 960, 70, 'Plate13.png'),
-            B('Button_Sell1', 110, 35, 160, 58, 'But17', 'Sell\nMedals', 20, label='Txt_Sell1'),
-            I('Img_Slots', 330, 35, 240, 34, 'Plate12.png'),
+            I('Img_Bar', 480, 48, 1136, 111, 'Medal_Syn_DeckBase1.png', s9=False),
+            B('Button_Sell1', 70, 32, 125, 50, 'But03', 'Sell\nMedals', 18, label='Txt_Sell1'),
+            I('Img_Slots', 250, 45, 218, 26, 'Plate03.png', opts=PLATE3),
             # contatore (FUN_00df284c): Txt_MedalGet = testo 101200050 «Slots», poi medaglie
             # possedute (Num) / capienza (All), scritte con FUN_00df34a4 (Label con ombra)
-            L('Txt_MedalGet', 265, 35, 100, 30, 'Slots', 20),
-            L('Txt_MedalGet_All_Label', 430, 35, 60, 30, '0', 20),
-            L('Txt_MedalGet_Slash', 400, 35, 20, 30, '/', 20),
-            L('Txt_MedalGet_Num_Label', 370, 35, 60, 30, '0', 20),
-            I('Img_SortType', 640, 35, 220, 34, 'Plate12.png'),
+            L('Txt_MedalGet', 180, 45, 80, 26, 'Slots', 17),
+            L('Txt_MedalGet_Num_Label', 292, 45, 50, 26, '0', 18),
+            L('Txt_MedalGet_Slash', 315, 45, 14, 26, '/', 18),
+            L('Txt_MedalGet_All_Label', 337, 45, 50, 26, '0', 18),
+            I('Img_SortType', 667, 45, 185, 26, 'Plate03.png', opts=PLATE3),
             # FUN_00760c64 (barra di ordinamento generica) cerca qui anche Txt_Sort_Label
             # (criterio) e Txt_Filter_On (testo 100100012 «Filter ON»).
-            L('Txt_Sort_Label', 640, 35, 200, 30, 'Strength', 20),
-            L('Txt_Filter_On', 640, 62, 200, 20, 'Filter ON', 16),
-            B('Button_Sort', 850, 35, 200, 58, 'But17', 'Sort', 24),
+            L('Txt_Sort_Label', 667, 45, 180, 26, 'Strength', 18),
+            L('Txt_Filter_On', 667, 22, 180, 20, 'Filter ON', 14),
+            B('Button_Sort', 857, 32, 177, 50, 'But03', 'Sort', 24),
         ]),
         P('Win_Bottom', 0, 0, 960, 90, [
             I('Img_Win_Bottom', 480, 45, 960, 90, 'Plate13.png'),
@@ -132,6 +141,7 @@ LAYOUTS = {
     # valute al centro delle targhette e valori a destra. Posizioni misurate sullo
     # screenshot di reddit (1334x750: x = 0,853·x' − 89, y = 0,853·(750 − y')).
     'MedalSell_Gen.json': ('build', P('medal_sell_root', 0, 0, 960, 640, [
+        I('Grid_Under', 480, 270, 950, 390, 'Panel04.png', opts=GRID),
         P('Scroll_Area', 9, 95, 942, 361),
         # Medal_Sell_Panel = barra in alto (il codice la rende toccabile: a schermo intero
         # coprirebbe la griglia e la selezione non arriverebbe); i figli della barra in basso
