@@ -101,7 +101,9 @@ LAYOUTS = {
         # come DeckEdit_MedalForm; nell'originale va da sotto la barra fino al fondo
         # (reference\medal_list\medal_list_yt_06.jpg, medal_list_01.jpg)
         I('Grid_Under', 480, 220, 950, 490, 'Panel04.png', opts=GRID),
-        P('Scroll_Area', 3, 0, 954, 452),
+        # in alto passa sotto la barra (disegnata dopo), come negli originali: la prima riga
+        # comincia subito sotto (medal_list_01.jpg: targhetta a 549 px su 1080)
+        P('Scroll_Area', 3, 0, 954, 519),
         P('Medal_Sell_Panel', 0, 450, 960, 70, [
             I('Img_Bar', 480, 48, 1136, 111, 'Medal_Syn_DeckBase1.png', s9=False),
             B('Button_Sell1', 75, 33, 162, 68, 'But03', 'Sell\nMedals', 24, label='Txt_Sell1', opts=BUTS),
@@ -147,7 +149,7 @@ LAYOUTS = {
     # screenshot di reddit (1334x750: x = 0,853·x' − 89, y = 0,853·(750 − y')).
     'MedalSell_Gen.json': ('build', P('medal_sell_root', 0, 0, 960, 640, [
         I('Grid_Under', 480, 270, 950, 390, 'Panel04.png', opts=GRID),
-        P('Scroll_Area', 9, 95, 942, 361),
+        P('Scroll_Area', 9, 95, 942, 428),
         # Medal_Sell_Panel = barra in alto (il codice la rende toccabile: a schermo intero
         # coprirebbe la griglia e la selezione non arriverebbe); i figli della barra in basso
         # stanno fuori dai suoi bordi (y negativa: cocos2d non ritaglia).

@@ -91,8 +91,14 @@ dall'utente il 9 ottobre; ognuno va verificato sul banco con screenshot e spunta
 piu' in crash (scena `MedalEvoScene_ver320` e layout generati, stile da
 `reference\medal_evolve\`); vendita nello stile originale (barre curve, Sort arancione,
 Sell rosso, icone delle valute, riquadro bianco di selezione); 46 pulsanti `img/ui/*_On`
-copiati (crash di «Sell Medals» da Evolve). Da fare: stile di Medal List come i
-riferimenti, conferma di un'evoluzione vera, poi i pulsanti in crash del menu.
+copiati (crash di «Sell Medals» da Evolve). Poi Medal List nello stile originale
+(pulsanti scalati 0,765, prima riga sotto la barra), medaglie di supporto impilate
+(`validPack` da thethiny `unk_1116`, badge rosso, popup della quantita'
+`EquipSell_Medal_Step1_ver131` generato; master revisione 58). La targhetta sotto la
+medaglia segue l'ordinamento (codice originale); sulle medaglie di supporto alterna il
+prezzo con i testi 101210001–003, che nelle risorse inglesi sono uno spazio (la
+versione internazionale li aveva svuotati). Da fare: conferma di un'evoluzione vera,
+poi i pulsanti in crash del menu.
 
 **Regole delle risorse scoperte (valgono per ogni schermata futura):**
 - Stile: prima si cercano online schermate e dati dell'originale, si salvano in
