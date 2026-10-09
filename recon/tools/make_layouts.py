@@ -73,11 +73,11 @@ LAYOUTS = {
             B('Button_Sell1', 110, 35, 160, 58, 'But17', 'Sell\nMedals', 20, label='Txt_Sell1'),
             I('Img_Slots', 330, 35, 240, 34, 'Plate12.png'),
             # contatore (FUN_00df284c): Txt_MedalGet = testo 101200050 «Slots», poi medaglie
-            # possedute / capienza, scritte con FUN_00df34a4 (Label con ombra)
+            # possedute (Num) / capienza (All), scritte con FUN_00df34a4 (Label con ombra)
             L('Txt_MedalGet', 265, 35, 100, 30, 'Slots', 20),
-            L('Txt_MedalGet_All_Label', 370, 35, 60, 30, '0', 20),
+            L('Txt_MedalGet_All_Label', 430, 35, 60, 30, '0', 20),
             L('Txt_MedalGet_Slash', 400, 35, 20, 30, '/', 20),
-            L('Txt_MedalGet_Num_Label', 430, 35, 60, 30, '0', 20),
+            L('Txt_MedalGet_Num_Label', 370, 35, 60, 30, '0', 20),
             I('Img_SortType', 640, 35, 220, 34, 'Plate12.png'),
             # FUN_00760c64 (barra di ordinamento generica) cerca qui anche Txt_Sort_Label
             # (criterio) e Txt_Filter_On (testo 100100012 «Filter ON»).
@@ -92,6 +92,45 @@ LAYOUTS = {
             L('Txt', 560, 45, 500, 40, '', 22),
         ], visible=False),
     ])),
+    # Dettaglio medaglia da Medal List: FUN_00aba238 carica SlideMedalInfoScene_ver341 sopra
+    # MedalInfoScene e aggiunge un pulsante al primo figlio di LeftUI e di RightUI (medaglia
+    # precedente / successiva). Frecce come MedalInfo_Arrow01.json (Medal_Syn_Arrow01 punta a sinistra).
+    'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
+                                                  ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
+    'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 10, 246, 40, 147, [
+        I('Arrow01', 20, 74, 56, 134, 'Medal_Syn_Arrow01.png')])),
+    'SlideMedalInfo_Right.json': ('build', P('Panel_Right', 910, 246, 40, 147, [
+        I('Arrow01', 20, 74, 56, 134, 'Medal_Syn_Arrow01.png', flipX=True)])),
+    # Popup Sort di Medal List (FUN_00a458c4, FUN_00a45fa0): la ver350 e' la ver320 originale
+    # piu' la sezione Dummy_Sb (filtro Super Burst; il codice la nasconde spostando le altre
+    # della sua altezza: qui alta 0) e i filtri aggiunti dopo, cloni nascosti di quelli
+    # vicini (nomi letti dallo stack al crash, dump mls2).
+    'PopupNormal_SortButton_ver350.json': ('copy', 'PopupNormal_SortButton_ver320.json', {}, False, [
+        P('Dummy_Sb', 0, 0, 0, 0),
+        ('clone', 'Panel_TitleSkill', 'Panel_TitleSb', 'Dummy_Sb'),
+        ('clone', 'Txt_TitleSkill', 'Txt_TitleSb', 'Dummy_Sb'),
+        ('clone', 'Filter_Exp', 'Filter_SbPlus', 'Dummy_Sb'),
+        ('clone', 'Filter_Exp', 'Filter_SbPlusPlus', 'Dummy_Sb'),
+        ('clone', 'Filter_Single', 'Filter_Sb_Single', 'Dummy_Sb'),
+        ('clone', 'Filter_All', 'Filter_Sb_All', 'Dummy_Sb'),
+        ('clone', 'Filter_Random', 'Filter_Sb_Random', 'Dummy_Sb'),
+    ] + [('clone', 'Filter_Ability%s' % n, 'Filter_Sb%s' % n, 'Dummy_Sb')
+         for n in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '12')]
+      + [('clone', 'Filter_Ability_Recovery', 'Filter_Sb_' + n, 'Dummy_Sb')
+         for n in ('Guard', 'BaseAttack', 'BaseDefence', 'NotSet', 'Recovery', 'Special', 'Recovery2',
+                   'AttackOnly')]
+      + [('clone', 'Filter_Ability_AtTime1', 'Filter_Sb_Timing%d' % n, 'Dummy_Sb') for n in range(1, 8)]
+      + [('clone', 'Txt_SubTitle01', 'Txt_SubTitleSb01', 'Dummy_Sb'),
+         ('clone', 'Txt_SubTitle02', 'Txt_SubTitleSb02', 'Dummy_Sb'),
+         ('clone', 'Filter_Ability_Recovery', 'Filter_Ability_BaseAttack', 'Dummy_Ability'),
+         ('clone', 'Filter_Ability_Recovery', 'Filter_Ability_BaseDefence', 'Dummy_Ability'),
+         ('clone', 'Filter_Ability_Recovery', 'Filter_Ability_Guard', 'Dummy_Ability'),
+         ('clone', 'Filter_Ability_Use6', 'Filter_Ability_Use7', 'Dummy_Ability'),
+         ('clone', 'Filter_Ability_AtTime4', 'Filter_Ability_AtTime5', 'Dummy_Ability'),
+         ('clone', 'Filter_Guilt9', 'Filter_Guilt10', 'Dummy_Guilt'),
+         ('clone', 'Filter_RareStarSet7', 'Filter_RareStarSet8', 'Dummy_Filter')]
+      + [('clone', 'Filter_Evo', 'Filter_Sb', 'Dummy_Sb')]   # cercato dentro Dummy_Sb (00a482ac)
+      + [('clone', 'Filter_Evo', n, 'Dummy_Filter') for n in ('Filter_Subslot', 'Filter_Trait', 'Filter_Evo_Set')]),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash (FUN_011843c4). Copia di ArrowAnim con armatura e movimento rinominati.
     # Cursor_Anim_MedalSell: cursore della griglia di Medal List (FUN_00882e10, movimento
@@ -120,6 +159,11 @@ TEXTS = {
     # Medal List (FUN_00df1c00: barra di aiuto in alto; FUN_00df5d98: modalita' vendita)
     100620045: 'Tap a Medal to see its details.',
 }
+# Popup Sort (FUN_00a45e24 nella costruzione dei filtri): testi del filtro Super Burst.
+# Nell'IPA 4.4.0 i vicini (106240205-215) sono ancora segnaposto «[id]»: stesso formato
+# (la sezione Dummy_Sb e' nascosta).
+TEXTS.update({i: '[%d]' % i for i in [106240220] + list(range(106240216, 106240220))
+              + list(range(106240221, 106240228))})
 
 
 def node(name, tag):
@@ -144,6 +188,25 @@ def scene(names):
                  'components': [{'__type': 'ComSceneSurrogate:#EditorCommon.JsonModel.Component',
                                  'classname': 'CCScene', 'name': 'CCScene', 'scenename': 'generated'}]})
     return root
+
+
+def find(w, name):
+    if w.get('options', {}).get('name') == name:
+        return w
+    for c in w.get('children', []):
+        hit = find(c, name)
+        if hit:
+            return hit
+    return None
+
+
+def clone(tree, src, name, parent, visible=False):
+    """Copia del widget src (con i figli) chiamata name, aggiunta a parent: per i widget che
+    il codice cerca e un layout piu' vecchio non ha (CheckBox e simili, stessa classe)."""
+    w = json.loads(json.dumps(find(tree, src)))
+    w['options']['name'] = w['name'] = name
+    w['options']['visible'] = visible
+    find(tree, parent)['children'].append(w)
 
 
 def rename(w, mapping):
@@ -198,6 +261,8 @@ def build(s):
     w['name'] = s['name']
     if s['cls'] == 'ImageView':
         o.update(fileNameData=tex(s['tex']), scale9Width=s['w'], scale9Height=s['h'])
+        if s.get('flipX'):
+            o['flipX'] = True
     elif s['cls'] == 'Button':
         base = s['tex']
         for key, suf in (('normalData', '_Off'), ('pressedData', '_On'), ('disabledData', '_Disable')):
@@ -231,6 +296,11 @@ for target, spec in LAYOUTS.items():
         rename(data['widgetTree'], spec[2])
         if len(spec) > 3 and spec[3]:
             retex(data['widgetTree'])
+        for extra in (spec[4] if len(spec) > 4 else ()):
+            if isinstance(extra, tuple):            # ('clone', sorgente, nome, genitore)
+                clone(data['widgetTree'], *extra[1:])
+            else:
+                data['widgetTree']['children'].append(build(extra))
         how = 'copia di ' + spec[1]
     path = os.path.join(OUT, *PUB.split('/'), target)
     with open(path, 'w', encoding='utf-8') as fh:
