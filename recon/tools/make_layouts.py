@@ -230,6 +230,12 @@ LAYOUTS = {
     # Layout originali con i testi in giapponese: copie tradotte che sostituiscono
     # l'originale (resource_merge.py --last-wins). Conferma di Unequip nel dettaglio di
     # una medaglia equipaggiata (il pulsante prende il testo da text/ui/106180101).
+    # Dopo Evolve il client riapre MedalInfoScene_ver320 come risultato (FUN_00cc600c) e cerca
+    # Panel_MixResult_Area nel layout R1, che l'ha solo la variante R3: crash. Si aggiungono
+    # all'R1 originale i due pannelli vuoti dell'R3 (sostituzione, --last-wins).
+    'MedalInfo_Information_R1.json': ('copy', 'MedalInfo_Information_R1.json', {}, False, [
+        P('Panel_MixResult_Area', 486, 50, 562, 300),
+        P('Tap_Screen_Area', 480, 15, 1, 1)]),
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
                                      [('text', 'Txt_Title_Label', 'Unequip this Medal from where it is set.'),
                                       ('text', 'Txt_Cancel', 'Cancel')]),
@@ -467,6 +473,16 @@ COPIES = {'cocostudio/publish/' + n: 'img/incentive/' + n
 COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%d.png' % i for i in range(2, 9)})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
                for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
+# Animazione del risultato di Evolve (FUN_00ccbad8: lwf/medal/compose/evolution/
+# card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il
+# client va in crash dopo la risposta. Copia di quella del Level Up (card_strength_result_01)
+# con LWF e texture rinominati (il nome delle texture comincia col nome del file LWF).
+_LU = 'lwf/medal/compose/strength/card_strength_result_01/'
+if os.path.isdir(os.path.join(SRC, *_LU.split('/'))):
+    for _n in range(1, 6):
+        _ev = 'card_evolution_result_%02d' % _n
+        for _f in os.listdir(os.path.join(SRC, *_LU.split('/'))):
+            COPIES['lwf/medal/compose/evolution/%s/%s' % (_ev, _f.replace('card_strength_result_01', _ev))] = _LU + _f
 for _f in os.listdir(os.path.join(SRC, *PUB.split('/'))):
     if _f.startswith('But') and _f.endswith(('_On.png', '_Off.png', '_Disable.png')):
         COPIES.setdefault('img/ui/' + _f, PUB + _f)

@@ -149,6 +149,7 @@ function route(url) {
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
   if (p === '/user/medal/enhance') return 'medalenhance';
+  if (p === '/user/medal/evolve') return 'medalevolve';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
@@ -1232,6 +1233,48 @@ function respondMedalEnhance(res, body) {
   });
 }
 
+// POST /user/medal/evolve (azione 56), corpo visto sul banco:
+// {"baseUserMedalId":1,"attachmentMedalIds":[116]}. La medaglia diventa evolveId della
+// tabella medal, torna al livello 1; materiali consumati, costo evolveMoney. Ramo 56 del
+// dispatcher: userData.userPoint, userMedals, FUN_00777670 (before/afterEvolveUserMedal
+// come gli elementi di userMedals), pet, poi attachmentMedalIds (uint64).
+function respondMedalEvolve(res, body) {
+  const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
+  const list = new Map(userMedalList().map((m) => [m.userMedalId, m]));
+  const base = list.get(Number(body?.baseUserMedalId));
+  const cells = (body?.attachmentMedalIds || []).map(Number);
+  // celle impilate: una copia per ogni volta che la cella compare nell'elenco
+  const used = new Map();
+  const comps = cells.map((id) => {
+    const copies = stackCopies(id, (used.get(id) || 0) + 1);
+    used.set(id, copies.length);
+    return list.get(copies[copies.length - 1]);
+  }).filter(Boolean);
+  const now = serverTime();
+  const row = base && rows.get(base.medalId);
+  if (!row || !row.validEvolve || !rows.get(row.evolveId)) {
+    console.log('  [evolve] non evolvibile:', body?.baseUserMedalId, row?.name);
+    return send(res, 200, { ret: ret() });
+  }
+  const before = userMedalElement(base, now);
+  setMedalState(base.userMedalId, { medalId: row.evolveId, level: 1, exp: 0 });
+  for (const m of comps) setMedalState(m.userMedalId, { removed: true });
+  player.money = Math.max(0, (player.money || 0) - (row.evolveMoney || 0));
+  savePlayer();
+  console.log(`  [evolve] ${base.userMedalId} ${row.name} ${row.medalId} -> ${row.evolveId}, ` +
+    `materiali ${comps.map((m) => m.userMedalId).join(',')}, -${row.evolveMoney} munny`);
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now) },
+    userMedals: userMedalsData(now),
+    beforeEvolveUserMedal: before,
+    afterEvolveUserMedal: userMedalElement({ ...base, medalId: row.evolveId, level: 1, exp: 0 }, now),
+    pet: { petSubslot: { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 } },
+    // solo le celle sparite (una pila con copie rimaste resta)
+    attachmentMedalIds: [...new Set(cells)].filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
+  });
+}
+
 // POST /user/medal/sell (azione 51): risposta letta da FUN_0078b230 (userData.userPoint).
 // Il corpo elenca le medaglie vendute: si raccolgono tutti gli userMedalId (campi con quel
 // nome o array di id), si tolgono dal salvataggio e si accredita il campo sell della
@@ -1470,6 +1513,7 @@ function handler(scheme) {
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
+      if (kind === 'medalevolve') return respondMedalEvolve(res, entry.bodyDecoded);
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);
