@@ -1821,6 +1821,36 @@ TARGET Nosy Mole ×2, `/stage/clear`, RESULTS, LEVEL UP. Poi:
   (`khux-5.0.1-jp`): senza `mappoi` probabilmente (le storie arrivavano dal CDN).
 - Da fare: contattare thethiny (r/ del CDN, master complete) e Roboloid; appello su
   r/KHUx per chi ha ancora `files/r/` di una 4.x.
+- Seconda ricerca (9 ottobre 2026), niente dati nuovi ma contatti: **Arena7664**
+  («Cross Road», il client 5.0.1 nel browser via Rellume/WASM; sa modificare e
+  reimpacchettare `extra_mp4`; github.com/Arena7664, IA `khux-5.0.1-ww-web`); Discord
+  **«Traverse Town»** (discord.gg/jHWEkRdjJb, comunità di conservazione attiva:
+  chiedere `files/r/` vecchi); `xlash123/khux-re-api` (protocollo 4.3.1, id dei nemici
+  evento = 5 + album + rango); **wikiwiki.jp/khux** (missioni 1–750: AP, bersaglio, Lv,
+  obiettivi, premi; utile per controllare le righe stage). Wayback: nessun contenuto
+  del CDN.
+
+**Il menu a tendina bloccato — risolto il 9 ottobre 2026.** Sintomo: MENU si apre ma
+le voci (Quests, Medal List, …) e la chiusura non rispondono, nessuna richiesta parte;
+anche la testata della schermata Quests è inerte. Funzionava solo nei passi guidati.
+Causa: `/tutorial/status` rispondeva sempre `isFinished: 0` (a fase 995) e il client
+restava nella guida per principianti. Con `isFinished: 1` (`TUTORIAL_LAST_PHASE` ora
+995) la home crea il pet e gli NPC, i cui LWF mancano: `FUN_00b3c350` /
+`FUN_00add9a0` caricano `lwf/pet/motion/<30 nomi>` e `lwf/character/npc/<id>/wait/
+wait.lwf` con `FUN_011f9fc4` (NULL se il file manca) e dereferenziano senza controllo.
+Rimedio: **risorse versione 9** = la 7 + nel pacchetto generato
+(`D:\Progetto_Restauro_KH_UX\stage_gen\files\`) un LWF vuoto (`waist_c.lwf` dei
+costumi, 492 byte, nessuna texture) per le 30 animazioni del pet e per i 74 id NPC di
+`img/stage_npc/npc_rule.bin` (tranne 4001, che c'e'). Poi il client mostrava in fila
+tutte le finestre di spiegazione (`popupFlag` restituito sempre 0), fra cui una di Dark
+Road che va in crash (`SceneDarkroadHome::darkroadPartySeclectPopup`): ora il server
+salva i bit di `popupFlag` e a tutorial finito li dà tutti per visti (2^53−1).
+Provato sul banco: home pulita (compaiono le frecce ‹ › delle pagine della home: non
+toccarle, la seconda pagina e' Dark Road), MENU → Quests funziona.
+Aperti: **Medal List va in crash** (tombstone: `0x6e0ef0`, `0xdf1de4`, `0x1299260`; da
+indagare, forse le nuove tabelle medal o le immagini mancanti); Presents va in crash
+dopo `GET /user/present`. `recon/ghidra/khux_field_readers.py`: chi legge un campo di
+un singleton (chiamata al getter seguita da `[xN,#off]`).
 
 **Memoria del PC.** Dopo diversi download da 2,3 GB `Ld9BoxHeadless` (la VM di LDPlayer)
 arrivava a 30 GB di memoria impegnata: memoria virtuale libera 0,1 GB, il file di

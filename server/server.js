@@ -533,7 +533,18 @@ function respondResourceFile(req, res) {
   fs.createReadStream(file).pipe(res);
 }
 
-const TUTORIAL_LAST_PHASE = Number(process.env.KHUX_TUTORIAL_LAST_PHASE || 999);
+// Tutorial finito dalla fase 995 (dopo il Prologue). Con isFinished 0 il client resta
+// nella guida per principianti e il menu a tendina accetta solo i passi guidati (MENU si
+// apre, le voci non rispondono). isFinished 1 fa creare alla home il pet e gli NPC
+// (lwf/pet/motion/*, lwf/character/npc/<id>/wait): assenti dalle risorse, li fornisce
+// come LWF vuoti il pacchetto generato (risorse versione 9).
+const TUTORIAL_LAST_PHASE = Number(process.env.KHUX_TUTORIAL_LAST_PHASE || 995);
+// popupFlag: un bit per finestra di spiegazione gia' vista (PUT manda il bit della
+// finestra appena chiusa, es. 2^28, 2^34, 2^35). A tutorial finito tutte risultano viste
+// (2^53 - 1, il massimo esatto in JSON): altrimenti a ogni rientro il client le mostra
+// tutte in fila, compresa quella di Dark Road, che va in crash
+// (SceneDarkroadHome::darkroadPartySeclectPopup). KHUX_POPUP_FLAG la cambia.
+const POPUP_ALL_SEEN = Number(process.env.KHUX_POPUP_FLAG || Number.MAX_SAFE_INTEGER);
 
 function respondTutorialStatus(res, req) {
   // GET/PUT /tutorial/status (azioni 69/70), letto da FUN_0079004c alla radice:
@@ -545,14 +556,15 @@ function respondTutorialStatus(res, req) {
     player.tutorialPhase = req.phase;
     savePlayer();
   }
-  // Finito solo in fondo: a fase 995 (dopo il Prologue) la home ha ancora la guida per
-  // principianti, e con isFinished 1 al rientro crea il pet (lwf/pet/motion/, assente
-  // dalle risorse): crash in FUN_011fa128.
+  if (Number.isInteger(req?.popupFlag) && req.popupFlag > 0) {
+    player.popupFlag = Number(BigInt(player.popupFlag || 0) | BigInt(req.popupFlag));
+    savePlayer();
+  }
   const finished = process.env.KHUX_TUTORIAL_FINISHED === '1' || player.tutorialPhase >= TUTORIAL_LAST_PHASE;
   send(res, 200, {
     ret: ret(),
     phase: player.tutorialPhase,
-    popupFlag: 0,
+    popupFlag: finished ? POPUP_ALL_SEEN : player.popupFlag || 0,
     isFinished: finished ? 1 : 0,
     acquireTutorialJewel: false,
   });
