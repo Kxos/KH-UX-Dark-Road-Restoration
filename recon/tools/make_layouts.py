@@ -48,6 +48,11 @@ def I(name, x, y, w, h, tex, **kw):
 # targhetta Plate03 in 9-slice come in MedalInfo_Mix_ver340 (bordo 70)
 PLATE3 = dict(scale9Enable=True, capInsetsX=70, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
 # fondo e bordo dei riquadri come in DeckEdit_MedalForm (Win_under, Win)
+# pulsanti come DeckEdit_MedalForm (Button_Sort 178x53): 9-slice orizzontale, bordo 30
+BUT9 = dict(scale9Enable=True, capInsetsX=30, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
+# il 9-slice non abbassa sotto i 68 px della texture (bordo inferiore di 67): per l'altezza
+# degli screenshot originali (52) si scala il widget intero
+BUTS = dict(BUT9, scaleX=0.765, scaleY=0.765)
 PANEL4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=50, capInsetsWidth=1, capInsetsHeight=1)
 # fondo della griglia scurito come negli screenshot originali (quasi nero, bordo blu)
 GRID = dict(PANEL4, colorR=70, colorG=85, colorB=120)
@@ -99,7 +104,7 @@ LAYOUTS = {
         P('Scroll_Area', 3, 0, 954, 452),
         P('Medal_Sell_Panel', 0, 450, 960, 70, [
             I('Img_Bar', 480, 48, 1136, 111, 'Medal_Syn_DeckBase1.png', s9=False),
-            B('Button_Sell1', 70, 32, 125, 50, 'But03', 'Sell\nMedals', 18, label='Txt_Sell1'),
+            B('Button_Sell1', 75, 33, 162, 68, 'But03', 'Sell\nMedals', 24, label='Txt_Sell1', opts=BUTS),
             I('Img_Slots', 250, 45, 218, 26, 'Plate03.png', opts=PLATE3),
             # contatore (FUN_00df284c): Txt_MedalGet = testo 101200050 «Slots», poi medaglie
             # possedute (Num) / capienza (All), scritte con FUN_00df34a4 (Label con ombra)
@@ -112,7 +117,7 @@ LAYOUTS = {
             # (criterio) e Txt_Filter_On (testo 100100012 «Filter ON»).
             L('Txt_Sort_Label', 667, 45, 180, 26, 'Strength', 18),
             L('Txt_Filter_On', 667, 22, 180, 20, 'Filter ON', 14),
-            B('Button_Sort', 857, 32, 177, 50, 'But03', 'Sort', 24),
+            B('Button_Sort', 858, 33, 233, 68, 'But03', 'Sort', 30, opts=BUTS),
         ]),
         P('Win_Bottom', 0, 0, 960, 90, [
             I('Img_Win_Bottom', 480, 45, 960, 90, 'Plate13.png'),
@@ -151,9 +156,9 @@ LAYOUTS = {
             I('Plate_Sort', 667, 45, 185, 26, 'Plate03.png', opts=PLATE3),
             L('Txt_Sort_Label', 667, 45, 180, 26, 'Strength', 18),
             L('Txt_Filter_On', 667, 22, 180, 20, 'Filter ON', 14),
-            B('Button_Sort', 857, 32, 177, 50, 'But03', 'Sort', 24),
+            B('Button_Sort', 858, 33, 233, 68, 'But03', 'Sort', 30, opts=BUTS),
             I('Img_Bottom', 480, -402, 1136, 96, 'Medal_Syn_DeckBase2.png', s9=False),
-            B('Button', 100, -401, 177, 64, 'But01', 'Sell', 30, label='Txt_Sell'),
+            B('Button', 100, -401, 177, 64, 'But01', 'Sell', 30, label='Txt_Sell', opts=BUT9),
             # riga alta della barra in basso: titolo «Munny» (il valore e' Txt_Money_Total_Lavel)
             L('Txt_Money_Total', 262, -384, 100, 24, 'Munny', 17),
         ]),
@@ -187,6 +192,8 @@ LAYOUTS = {
             L('Txt_A_Ticket_Label', 140, 14, 100, 28, '0', 20),
         ], visible=False),
     ])),
+    # Quantita' da vendere di una medaglia impilata (equip_sell_popup, piu' sotto).
+    'EquipSell_Medal_Step1_ver131.json': ('func', 'equip_sell_popup'),
     # Conferma della vendita (FUN_00bf3804): dal popup generico OK/Annulla originale.
     # Button_Sell/Txt_Sell (100100029), Button_Close/Txt_Cancel, Alert_Area (vi aggiunge un
     # PopupNormal_MedalMix_RareCaution_Panel per ogni avviso: Txt_Wording1, Star1, ...).
@@ -522,6 +529,69 @@ def build(s):
     return w
 
 
+def equip_sell_popup():
+    """EquipSell_Medal_Step1_ver131 (FUN_00883f38): quante copie vendere di una medaglia
+    impilata. Assente da ogni risorsa (toccare una pila nella vendita mandava in crash).
+    Struttura dal discendente di Dark Road dark_Shop_win_check_pop3 (stessi
+    panel_MaterialStock, Button_stock_up/down, Slider MaterialStock_bar), texture KHUX:
+    finestra Win04 come i popup PopupNormal, OK But01 rosso, Annulla But03, slider delle
+    opzioni (Opt_Vol_Gage, Scroll_bar). Il codice cerca: Txt_Medal_Name_Dlog, Txt_data2,
+    Txt_data3, Txt_data5, Icon_Prize2, MaterialStock_bar, Button_stock_down/up,
+    Button_sell_ok/Txt_sell_ok, Button_cancel/Txt_cancel, Warning_Plate/Txt_Rare1/2."""
+    d = json.load(open(os.path.join(SRC, *PUB.split('/'), 'dark_Shop_win_check_pop3.json'), encoding='utf-8-sig'))
+    t = d['widgetTree']
+    win = find(t, 'win_normaltext')
+    win['options'].update(fileNameData=tex('Win04.png'), scale9Enable=True, capInsetsX=50, capInsetsY=0,
+                          capInsetsWidth=1, capInsetsHeight=1, width=640, height=380, scale9Width=640,
+                          scale9Height=380)
+    keep = []
+    for c in win['children']:
+        n = c['options']['name']
+        if n == 'txt_wording':
+            c['options'].update(name='Txt_Medal_Name_Dlog', text='', y=150, height=40, areaHeight=40)
+            c['name'] = 'Txt_Medal_Name_Dlog'
+        elif n in ('but_ok', 'but_close'):
+            ok = n == 'but_ok'
+            o = c['options']
+            o.update(name='Button_sell_ok' if ok else 'Button_cancel', x=155 if ok else -155, y=-140,
+                     normalData=tex('But01_Off.png' if ok else 'But03_Off.png'),
+                     pressedData=tex('But01_On.png' if ok else 'But03_On.png'),
+                     disabledData=tex('But01_Disable.png' if ok else 'But03_Off.png'),
+                     width=205, height=68, scale9Width=205, scale9Height=68)
+            c['name'] = o['name']
+            lab = c['children'][0]
+            lab['options'].update(name='Txt_sell_ok' if ok else 'Txt_cancel', fontSize=26,
+                                  text='Sell' if ok else 'Cancel')
+            lab['name'] = lab['options']['name']
+        elif n == 'panel_MaterialStock':
+            c['options']['y'] = -55
+            bar = find(c, 'MaterialStock_bar')['options']
+            # barra semplice (senza le scritte MIN/MAX di Opt_Vol_Gage), pallino delle opzioni
+            bar.update(ballNormalData=tex('Scroll_bar_off.png'), ballPressedData=tex('Scroll_bar_on.png'))
+        else:
+            continue                        # But_draw, txt_possessed, assets: non usati
+        keep.append(c)
+    win['children'] = keep
+    # nomi composti a pezzi sullo stack, non trovati da widget_lookup.py: simboli s_*_01xxxxxx
+    # del decompilato (MedalSellIcon: immagine della medaglia, crash in loadTexture se manca)
+    for s in [
+            I('MedalSellIcon', -200, 70, 89, 109, 'Medal_S_00000001.png', s9=False),
+            L('Txt_data2', 0, 100, 160, 28, 'Held', 20), L('Txt_data3', 150, 100, 120, 28, '0', 20),
+            # nome con uno spazio ideografico in coda (U+3000), come lo cerca il codice
+            # (0x884688: "Txt_data" + 34 e3 80 80): senza, crash in enableShadow
+            L('Txt_data4　', 0, 70, 300, 26, 'Sell how many?', 18),
+            L('Txt_MoneyTotalStock_Fix', 0, 40, 160, 28, 'Munny', 20),
+            I('Icon_Prize2', 70, 40, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
+            L('Txt_data5', 170, 40, 140, 28, '0', 20),
+            L('Txt_MaterialStock_Fix_2', -170, -90, 80, 24, '1', 18),
+            L('Txt_MaterialStock_Fix_3', 170, -90, 80, 24, '1', 18),
+            # i figli di un ImageView stanno rispetto al suo centro
+            I('Warning_Plate', 0, -10, 560, 30, 'Plate03.png', opts=PLATE3, visible=False,
+              children=[L('Txt_Rare1', -90, 0, 220, 26, '', 18), L('Txt_Rare2', 120, 0, 220, 26, '', 18)])]:
+        win['children'].append(build(s))
+    return d
+
+
 def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):
     """Armatura (ExportJson + plist) che disegna una cornice w x h da una texture di cornice
     tsize: 4 angoli c x c e 4 lati (fette di 10 px dal centro della texture) scalati solo
@@ -577,6 +647,8 @@ os.makedirs(os.path.join(OUT, *PUB.split('/')), exist_ok=True)
 for target, spec in LAYOUTS.items():
     if spec[0] == 'scene':
         data, how = scene(spec[1]), 'scena'
+    elif spec[0] == 'func':
+        data, how = globals()[spec[1]](), 'funzione ' + spec[1]
     elif spec[0] == 'frame':
         data, plist_name, plist = frame_armature(*spec[1:])
         with open(os.path.join(OUT, *PUB.split('/'), plist_name), 'w', encoding='utf-8', newline='') as fh:

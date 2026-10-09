@@ -1099,11 +1099,33 @@ function userMedalList() {
     .map((m) => ({ ...m, ...(st[m.userMedalId] || {}) }));
 }
 
+// Medaglie impilabili (validPack, le medaglie di supporto): il salvataggio tiene le copie
+// separate, il client le vede come una cella sola con number = copie (badge rosso), con
+// userMedalId della prima copia (fino a 99 per cella, come negli screenshot originali).
+function stackedMedalList() {
+  const pack = new Set(masterRows('medal').filter((r) => r.validPack).map((r) => r.medalId));
+  const out = [], stacks = new Map();
+  for (const m of userMedalList()) {
+    const s = pack.has(m.medalId) && stacks.get(m.medalId);
+    if (s && s.number < 99) { s.number++; s.copies.push(m.userMedalId); continue; }
+    const e = { ...m, number: 1, copies: [m.userMedalId] };
+    if (pack.has(m.medalId)) stacks.set(m.medalId, e);
+    out.push(e);
+  }
+  return out;
+}
+
+// Le copie da consumare per (userMedalId della cella, numero): vendita e Level Up.
+function stackCopies(userMedalId, number) {
+  const cell = stackedMedalList().find((m) => m.userMedalId === Number(userMedalId));
+  return cell ? cell.copies.slice(0, Math.max(1, Number(number) || 1)) : [Number(userMedalId)];
+}
+
 function userMedalElement(m, now) {
   return {
     userMedalId: m.userMedalId, // uint64
     medalId: m.medalId,
-    number: 1, // uint
+    number: m.number || 1, // uint
     level: m.level || 1, exp: m.exp || 0, // exp cumulativo (struttura +0x14, livello +0x10)
     attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
     lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
@@ -1114,7 +1136,7 @@ function userMedalElement(m, now) {
 }
 
 function userMedalsData(now) {
-  return userMedalList().map((m) => userMedalElement(m, now));
+  return stackedMedalList().map((m) => userMedalElement(m, now));
 }
 
 // Curva dell'EXP delle medaglie, come il client (FUN_00722620): per expType t la riga
@@ -1165,7 +1187,10 @@ function respondMedalEnhance(res, body) {
   const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
   const list = new Map(userMedalList().map((m) => [m.userMedalId, m]));
   const base = list.get(Number(body?.baseUserMedalId));
-  const comps = (body?.componentUserMedalIds || []).map((id) => list.get(Number(id))).filter(Boolean);
+  // celle impilate: numbers[i] copie della cella componentUserMedalIds[i] (vuoto = 1)
+  const cells = (body?.componentUserMedalIds || []).map(Number);
+  const comps = cells.flatMap((id, i) => stackCopies(id, body?.numbers?.[i]))
+    .map((id) => list.get(id)).filter(Boolean);
   const now = serverTime();
   if (!base || !rows.get(base.medalId)) {
     console.log('  [level up] medaglia base assente:', body?.baseUserMedalId);
@@ -1202,7 +1227,8 @@ function respondMedalEnhance(res, body) {
     pet: { petSubslot: { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 } },
     // letto dal dispatcher dopo pet (0x7cec50, uint64): le medaglie consumate, che il
     // client toglie dall'elenco; senza, «200 ERROR :55»
-    componentUserMedalIds: comps.map((m) => m.userMedalId),
+    // solo le celle sparite: una pila con copie rimaste resta (arriva in userMedals)
+    componentUserMedalIds: cells.filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
   });
 }
 
@@ -1235,10 +1261,12 @@ function soldMedalIds(body) {
 function respondMedalSell(res, body) {
   const sold = soldMedalIds(body || {});
   const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
+  // celle impilate: si vendono le prime N copie della pila
+  const copies = new Set([...sold].flatMap(([id, n]) => stackCopies(id, n)));
   let gain = 0;
   player.medals = (player.medals || []).filter((m) => {
-    if (!sold.has(m.userMedalId)) return true;
-    gain += (rows.get(m.medalId)?.sell || 0) * sold.get(m.userMedalId);
+    if (!copies.has(m.userMedalId)) return true;
+    gain += rows.get(m.medalId)?.sell || 0;
     return false;
   });
   player.money = (player.money || 0) + gain;
@@ -1253,7 +1281,8 @@ function respondMedalSell(res, body) {
     userData: { userPoint: userPointData(now) },
     userSkills: [],
     userMedals: userMedalsData(now),
-    sellUserMedalIds: [...sold.keys()],
+    // solo le celle sparite (una pila con copie rimaste resta)
+    sellUserMedalIds: [...sold.keys()].filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
   });
 }
 
