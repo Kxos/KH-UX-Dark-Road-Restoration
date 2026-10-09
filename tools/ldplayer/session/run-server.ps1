@@ -5,7 +5,7 @@
 # -TutorialFinished: il client scarica le risorse (azione 28) solo a tutorial finito;
 # dal 9 ottobre 2026 il server lo considera finito gia' dalla fase 995 (dopo il
 # Prologue), quindi serve solo a un giocatore fermo prima.
-param([int]$Revision = 60, [switch]$TutorialFinished)
+param([int]$Revision = 63, [switch]$TutorialFinished)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null

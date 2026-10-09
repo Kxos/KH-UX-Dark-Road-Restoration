@@ -123,8 +123,8 @@ for suf in ('Off', 'On'):
 def mog_tab(active):
     """Scheda del Moogle Shop (img/ui/Mogshop_tab_Off/_On, pulsante di FUN_00e0ea2c):
     linguetta arrotondata in alto; spenta blu scuro con bordo azzurro, accesa azzurra
-    (reference\\moogle_shop\\jp410_160.png)."""
-    w, h = 175, 40
+    (reference\\moogle_shop\\jp410_160.png); 200x48 come le schede di moogle_shop_01.png."""
+    w, h = 200, 48
     im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     r = 10 * S
@@ -150,7 +150,80 @@ def save_ui(name, im):
     print('img/ui/' + name, im.size)
 
 
+def mog_plate():
+    """Riquadro dell'icona di un articolo del Moogle Shop (img/ui/Mogshop_plate1.png, Base di
+    MoogleShop_IconPanel, caricato da FUN_00aaf278): quadrato arrotondato quasi nero con
+    bordo chiaro sottile (reference\\moogle_shop\\moogle_shop_01.png)."""
+    w = 140
+    im = Image.new('RGBA', (w * S, w * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    r = 12 * S
+    d.rounded_rectangle((0, 0, w * S - 1, w * S - 1), r, fill=(190, 200, 215, 255))
+    b = 3 * S
+    inner = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    idr = ImageDraw.Draw(inner)
+    for y in range(w * S):                  # sfumatura verticale blu notte
+        t = y / (w * S)
+        idr.line((0, y, w * S, y), fill=(int(8 + 14 * t), int(14 + 24 * t), int(28 + 40 * t), 255))
+    mask = Image.new('L', im.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((b, b, w * S - 1 - b, w * S - 1 - b), r - b, fill=255)
+    im.paste(inner, (0, 0), mask)
+    return im.resize((w, w), Image.LANCZOS)
+
+
+def mog_row(gold, pressed):
+    """Righe dei trait del Moogle Shop: img/ui/But29_* (blu) e But31_* (dorata, offerte a
+    tempo), caricate da changeRowKakusei (FUN_00aaf8e4, crash in loadTexture se mancano).
+    Colori da reference\\moogle_shop\\moogle_shop_traits_yt_03.jpg: blu 30,110,200 ->
+    20,80,170 con bordo azzurro; dorata 250,175,50 -> 225,120,20 con bordo giallo chiaro.
+    Premuta un po' piu' scura."""
+    w, h = 704, 106
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    r = 10 * S
+    edge, top, bottom = (((255, 235, 150), (250, 175, 50), (225, 120, 20)) if gold
+                         else ((110, 200, 250), (30, 110, 200), (20, 80, 170)))
+    if pressed:
+        top, bottom = tuple(int(c * 0.8) for c in top), tuple(int(c * 0.8) for c in bottom)
+    d.rounded_rectangle((0, 0, w * S - 1, h * S - 1), r, fill=edge + (255,))
+    b = 3 * S
+    body = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    bd = ImageDraw.Draw(body)
+    for y in range(h * S):
+        t = y / (h * S)
+        bd.line((0, y, w * S, y), fill=tuple(int(top[k] + (bottom[k] - top[k]) * t) for k in range(3)) + (255,))
+    mask = Image.new('L', im.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((b, b, w * S - 1 - b, h * S - 1 - b), r - b, fill=255)
+    im.paste(body, (0, 0), mask)
+    return im.resize((w, h), Image.LANCZOS)
+
+
+for _name, _gold in (('But29', False), ('But31', True)):
+    save_ui(_name + '_Off.png', mog_row(_gold, False))
+    save_ui(_name + '_On.png', mog_row(_gold, True))
 save_ui('Mogshop_tab_Off.png', mog_tab(False))
 save_ui('Mogshop_tab_On.png', mog_tab(True))
+save_ui('Mogshop_plate1.png', mog_plate())
+save('Mogshop_plate1.png', mog_plate())          # Base di MoogleShop_IconPanel (riga normale)
+# Icone dei materiali assenti dalle risorse (ce ne sono 9): scaricate dalla khuxwiki con
+# fetch_material_icons.py in reference\materials, ritagliate sul contenuto e messe al centro
+# di una tela 80x90 come le originali (contenuto ~50-66 px). Servono a Sell Materials e al
+# Moogle Shop (FUN_0074bee0: img/material/material_%d.png).
+MAT = os.path.join(src, '..', '..', 'reference', 'materials')
+if os.path.isdir(MAT):
+    for fn in sorted(os.listdir(MAT)):
+        if not fn.startswith('material_') or not fn.endswith('.png'):
+            continue
+        ic = Image.open(os.path.join(MAT, fn)).convert('RGBA')
+        ic = ic.crop(ic.getbbox() or (0, 0) + ic.size)
+        k = 66 / max(ic.size)
+        ic = ic.resize((max(1, round(ic.width * k)), max(1, round(ic.height * k))), Image.LANCZOS)
+        canvas = Image.new('RGBA', (80, 90), (0, 0, 0, 0))
+        canvas.paste(ic, ((80 - ic.width) // 2, (90 - ic.height) // 2), ic)
+        p = os.path.join(out, 'img', 'material')
+        os.makedirs(p, exist_ok=True)
+        with open(os.path.join(p, fn), 'wb') as fh:
+            fh.write(btf.encode(canvas))
+    print('img/material: icone dalla khuxwiki', len(os.listdir(MAT)))
 # filtro Guilt 9 (100x100, scala 0,7): l'icona della Guilt 8, l'ultima esistente
 save('MedalInfo_Guilt9.png', fit(load('img/ui/guilt/MedalInfo_Guilt8.png'), (100, 100)))

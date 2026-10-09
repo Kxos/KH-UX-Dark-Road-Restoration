@@ -227,47 +227,76 @@ LAYOUTS = {
     'MoogleShop_Gen.json': ('build', P('moogle_shop_root', 0, 0, 960, 640, [
         # tab1/tab2 (FUN_00e0ea2c: «tab%d» da 1; testi 106220402/403) sono ImageView: il pulsante (FUN_008d5c18) vi carica img/ui/Mogshop_tab_*
         # (da Panel: crash in loadTexture); figli rispetto al centro
-        I('tab1', 172, 488, 175, 40, 'Plate01.png', s9=False, children=[
-            L('Txt_Tab', 0, 0, 170, 36, 'Traits', 22),
-            I('Icon_New', 70, 18, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
-        I('tab2', 352, 488, 175, 40, 'Plate01.png', s9=False, children=[
-            L('Txt_Tab', 0, 0, 170, 36, 'Items', 22),
-            I('Icon_New', 70, 18, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
-        B('Button_EquipSell', 626, 492, 178, 53, 'But03', 'Sell Materials', 22, label='Txt_EquipSell',
+        # Misure da reference\moogle_shop\moogle_shop_01.png (area di gioco 1764 px = 1136,
+        # scala 1,553): finestra x 2-755, y 4-466; schede ~200x48 a y 492; «Sell Materials»
+        # centrato a x 655; righe larghe 720 (FUN_00aaf278: 720x184 e 720x110)
+        I('tab1', 115, 492, 200, 48, 'Plate01.png', s9=False, children=[
+            L('Txt_Tab', 0, 0, 190, 40, 'Traits', 24),
+            I('Icon_New', 80, 22, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
+        I('tab2', 327, 492, 200, 48, 'Plate01.png', s9=False, children=[
+            L('Txt_Tab', 0, 0, 190, 40, 'Items', 24),
+            I('Icon_New', 80, 22, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
+        B('Button_EquipSell', 655, 495, 252, 63, 'But03', 'Sell Materials', 26, label='Txt_EquipSell',
           opts=BUTS),
-        P('Mshop_win', 75, 75, 640, 395, [
-            I('win_Traits', 320, 197, 640, 395, 'Panel04.png', opts=GRID),
-            I('win_Item', 320, 197, 640, 395, 'Panel04.png', opts=GRID, visible=False),
-            P('Area_Traits', 10, 10, 620, 375),
-            P('Area_Item', 10, 10, 620, 375, visible=False)]),
-        L('Txt_NoItem', 395, 272, 500, 40, 'No items available.', 24, visible=False),
-        B('Button_MedalSelect', 255, 42, 177, 64, 'But01', 'Select Medal', 22, label='Txt_MedalSelect',
+        P('Mshop_win', 2, 4, 754, 462, [
+            I('win_Traits', 377, 231, 754, 462, 'Panel04.png', opts=GRID),
+            I('win_Item', 377, 231, 754, 462, 'Panel04.png', opts=GRID, visible=False),
+            P('Area_Traits', 17, 74, 720, 380),
+            P('Area_Item', 17, 10, 720, 444, visible=False)]),
+        L('Txt_NoItem', 379, 240, 500, 40, 'No items available.', 24, visible=False),
+        B('Button_MedalSelect', 379, 40, 177, 64, 'But01', 'Select Medal', 22, label='Txt_MedalSelect',
           opts=BUTS),
-        I('LB_Munnies', 560, 42, 300, 26, 'Plate03.png', opts=PLATE3, children=[
-            L('Txt_MunniesPossessed_Label', -85, 0, 120, 24, 'Munny', 17),
-            I('Icon_Munnies', -10, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
-            L('Txt_Munnies', 80, 0, 140, 24, '0', 18)]),
-        P('Moogle_Fla', 795, 140, 10, 10),
+        I('LB_Munnies', 870, 30, 230, 26, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_MunniesPossessed_Label', -70, 0, 100, 24, 'Munny', 17),
+            I('Icon_Munnies', -5, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+            L('Txt_Munnies', 65, 0, 120, 24, '0', 18)]),
+        P('Moogle_Fla', 860, 160, 10, 10),
     ])),
     # Righe dell'elenco (FUN_00aaf278 le crea: Traits 721x110, Items 721x184; riempite da
     # FUN_00aaf8e4 e FUN_00ab175c). Nomi dal decompilato; disposizione dalle righe della 4.1.0
     # (riquadro scuro con icona del trait, nome, prezzo a destra; oggetti su targa dorata
     # con «Buy»). Panel_Disable, Caution, LockMask nascosti: li mostra il codice.
-    'MoogleShop_Traits_Panel_ver410.json': ('build', P('Panel', 0, 0, 721, 110, [
-        P('SkillPanel', 30, 15, 660, 80, [
-            I('Skill_Base', 330, 40, 660, 70, 'Plate02.png', opts=PANEL4),
-            I('kakusei_Icon', 45, 40, 60, 60, 'Plate01.png', s9=False),
-            L('Txt_KakuseiSkill', 250, 40, 330, 36, '', 22)]),
-        P('Count', 30, 82, 200, 24, [L('Txt_Count', 100, 12, 190, 22, '', 16)], visible=False),
-        P('Count_Rare', 30, 82, 200, 24, [L('Txt_Count_Cus', 100, 12, 190, 22, '', 16)], visible=False),
-        P('Jewel', 470, 30, 200, 50, [
-            I('Jewel_Icon', 20, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
-            L('Txt_Jewel', 120, 25, 150, 30, '0', 22)]),
-        P('Munnies', 470, 30, 200, 50, visible=False),
-        P('Caution', 30, 0, 660, 20, [L('Txt_Caution', 330, 10, 640, 20, '', 16)], visible=False),
-        I('Icon_New', 30, 90, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False),
-        L('Txt_Limit', 600, 95, 160, 20, '', 16),
-        P('Panel_Disable', 0, 0, 721, 110, visible=False),
+    # Ricerche di changeRowKakusei (FUN_00aaf8e4, lookups.py): dentro Panel_Disable cerca
+    # Panel, SkillPanel, SkillPanel_Rare (kakusei_Icon, Txt_KakuseiSkill), Count (Txt_Count,
+    # Txt_Count_Cus) e Plate_Count_Rare; dalla riga Jewel/Txt_Jewel, Munnies/Txt_Munnies,
+    # Caution, Icon_New, Txt_Limit, LockMask (ImageButton_LockMask, Icon_Lock). Aspetto da
+    # reference\moogle_shop\moogle_shop_traits_yt_03.jpg: riga blu (dorata per le offerte a
+    # tempo), icona tonda del trait e nome su targa scura, prezzo a destra, «Exchanges left»
+    # sotto il prezzo, «N day left» in alto a destra.
+    'MoogleShop_Traits_Panel_ver410.json': ('build', P('Traits_Root', 0, 0, 721, 110, [
+        P('Panel_Disable', 0, 0, 721, 110, [
+            # Panel e Panel_Rare sono lo sfondo della riga: ImageView in cui changeRowKakusei
+            # carica img/ui/But29_* (blu) o But31_* (dorata) secondo frameType (con un Panel:
+            # crash in loadTexture, stack mg8); texture di make_textures.py, 704x106
+            I('Panel', 360, 55, 704, 106, 'Plate01.png', s9=False),
+            I('Panel_Rare', 360, 55, 704, 106, 'Plate01.png', s9=False, visible=False),
+            P('SkillPanel', 18, 20, 440, 70, [
+                I('Skill_Base', 230, 35, 420, 56, 'Plate03.png', opts=PLATE3),
+                I('kakusei_Icon', 34, 35, 60, 60, 'Plate01.png', s9=False),
+                L('Txt_KakuseiSkill', 210, 35, 300, 36, '', 24)]),
+            P('SkillPanel_Rare', 18, 20, 440, 70, [
+                I('Skill_Base2', 230, 35, 420, 56, 'Plate03.png', opts=PLATE3),
+                I('kakusei_Icon', 34, 35, 60, 60, 'Plate01.png', s9=False),
+                L('Txt_KakuseiSkill', 210, 35, 300, 36, '', 24)], visible=False),
+            P('Count', 480, 6, 220, 26, [
+                L('Txt_Count', 110, 13, 210, 22, '', 16),
+                L('Txt_Count_Cus', 110, 13, 210, 22, '', 16)], visible=False),
+            # frameType 1: SkillPanel + Count; altrimenti SkillPanel_Rare + «Count_Rare»
+            # (stringa Plate_Count_Rare + 6; crash a 0xaafe08, stack mg5), con gli stessi testi
+            P('Count_Rare', 480, 6, 220, 26, [
+                I('Plate_Count_Rare', 110, 13, 220, 26, 'Plate03.png',
+                  opts=dict(PLATE3, colorR=255, colorG=220, colorB=90)),
+                L('Txt_Count', 110, 13, 210, 22, '', 16),
+                L('Txt_Count_Cus', 110, 13, 210, 22, '', 16)], visible=False)]),
+        P('Jewel', 480, 34, 220, 50, [
+            I('Jewel_Icon', 30, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.7),
+            L('Txt_Jewel', 140, 25, 150, 34, '0', 26)]),
+        P('Munnies', 480, 34, 220, 50, [
+            I('Munnies_Icon', 30, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
+            L('Txt_Munnies', 140, 25, 150, 34, '0', 24)], visible=False),
+        P('Caution', 30, 0, 440, 20, [L('Txt_Caution', 220, 10, 430, 20, '', 16)], visible=False),
+        I('Icon_New', 40, 98, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False),
+        L('Txt_Limit', 620, 96, 180, 20, '', 16),
         P('LockMask', 0, 0, 721, 110, [
             B('ImageButton_LockMask', 360, 55, 721, 110, 'But16', None),
             I('Icon_Lock', 650, 55, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False)])),
@@ -281,11 +310,13 @@ LAYOUTS = {
     # prezzo in jewel e «Exchange» rosso a destra.
     'MoogleShop_Item_Panel.json': ('build', P('Item_Root', 0, 0, 721, 184, [P('Item', 0, 0, 721, 184, [
         P('Panel', 0, 0, 721, 184, [
-            I('Row_Base', 360, 92, 704, 176, 'Win04.png', opts=dict(PANEL4, capInsetsY=60)),
+            # Win04 e' alta 322 e il 9-slice non scende sotto: altezza 322 scalata a 176 (senza,
+            # lo sfondo di ogni riga copre la meta' bassa della precedente)
+            I('Row_Base', 360, 92, 704, 322, 'Win04.png', opts=dict(PANEL4, capInsetsY=60, scaleY=0.547)),
             P('Panel_Item', 22, 22, 140, 140)]),
         P('Panel_Rare', 0, 0, 721, 184, [
-            I('Row_Base_Rare', 360, 92, 704, 176, 'Win04.png',
-              opts=dict(PANEL4, capInsetsY=60, colorR=255, colorG=170, colorB=40)),
+            I('Row_Base_Rare', 360, 92, 704, 322, 'Win04.png',
+              opts=dict(PANEL4, capInsetsY=60, scaleY=0.547, colorR=255, colorG=170, colorB=40)),
             P('Panel_Item', 22, 22, 140, 140)], visible=False),
         I('Name_Plate', 440, 140, 520, 44, 'Plate03.png', opts=PLATE3),
         L('Txt_Material_Name', 330, 140, 300, 36, '', 24),
@@ -314,7 +345,9 @@ LAYOUTS = {
     # Struttura come i premi di AdventureTop2_SubMission_ver131 (Incentive, Medal, KB, LuxBoard,
     # AVT); senza: crash all'apertura della scheda Items (mg2, pc 0x74d780)
     'MoogleShop_IconPanel.json': ('build', P('IconPanel', 0, 0, 140, 140, [
-        I('Base', 70, 70, 140, 140, 'Plate01.png', s9=False),
+        # Base: il codice vi carica img/ui/Mogshop_plate1 solo per Panel_Rare; stessa texture
+        # anche in cocostudio/publish per la riga normale (make_textures.py)
+        I('Base', 70, 70, 140, 140, 'Mogshop_plate1.png', s9=False),
         I('Incentive', 70, 70, 100, 100, 'Plate01.png', s9=False, visible=False),
         I('Medal', 70, 70, 89, 109, 'Medal_S_00000001.png', s9=False, visible=False),
         I('KB', 70, 70, 100, 100, 'Plate01.png', s9=False, visible=False),

@@ -152,6 +152,7 @@ function route(url) {
   if (p === '/user/medal/evolve') return 'medalevolve';
   if (p === '/user/medal/remove') return 'medalremove';
   if (p === '/user/material/sell') return 'materialsell';
+  if (p === '/moogleshop/buy') return 'moogleshopbuy';
   if (p === '/moogleshop/list') return 'moogleshoplist';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
@@ -1302,6 +1303,38 @@ function respondMaterialSell(res, body) {
   });
 }
 
+// POST /moogleshop/buy (azione 248): scambio di un articolo del Moogle Shop (tabella master
+// moogleshop, make-moogleshop.js). Corpo non ancora visto: moogleshopId e quantita' cercati
+// con piu' nomi. payType 1 = jewel (freeStone), altrimenti munny; l'articolo arriva con
+// grantItem(itemType, itemId, itemNum). Risposta (ramo 248: FUN_007ac5f4
+// shuffleskillUserMedals, userMaterials, emblemIds; FUN_007a5dec guiltBurstFirst/MaxUserMedalIds;
+// FUN_0078b230 userData.userPoint). I jewel non sono nella risposta.
+function respondMoogleshopBuy(res, body) {
+  body = body || {};
+  const id = Number(body.moogleshopId ?? body.id);
+  const n = Math.max(1, Number(body.num ?? body.number ?? body.count ?? 1) || 1);
+  const row = masterRows('moogleshop').find((r) => r.moogleshopId === id);
+  if (row) {
+    const cost = row.price * n;
+    if (row.payType === 1) player.freeStone = Math.max(0, (player.freeStone || 0) - cost);
+    else player.money = Math.max(0, (player.money || 0) - cost);
+    grantItem(row.itemType, row.itemId, row.itemNum * n);
+    player.moogleshopBought = player.moogleshopBought || {};
+    player.moogleshopBought[id] = (player.moogleshopBought[id] || 0) + n;
+    savePlayer();
+    console.log(`  [moogle shop] articolo ${id} x${n}: tipo ${row.itemType} id ${row.itemId} x${row.itemNum * n}, -${cost} ${row.payType === 1 ? 'jewel' : 'munny'}`);
+  } else console.log(`  [moogle shop] articolo ${id} assente (corpo ${JSON.stringify(body)})`);
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(serverTime()) },
+    shuffleskillUserMedals: [],
+    userMaterials: userMaterialsData(),
+    emblemIds: [],
+    guiltBurstFirstUserMedalIds: [],
+    guiltBurstMaxUserMedalIds: [],
+  });
+}
+
 // POST /user/medal/sell (azione 51): risposta letta da FUN_0078b230 (userData.userPoint).
 // Il corpo elenca le medaglie vendute: si raccolgono tutti gli userMedalId (campi con quel
 // nome o array di id), si tolgono dal salvataggio e si accredita il campo sell della
@@ -1565,6 +1598,7 @@ function handler(scheme) {
       if (kind === 'medalevolve') return respondMedalEvolve(res, entry.bodyDecoded);
       if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
+      if (kind === 'moogleshopbuy') return respondMoogleshopBuy(res, entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
       // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop
       // Prova (10 ottobre): con la tabella piena ma moogleshops vuoto il client scrive «No
