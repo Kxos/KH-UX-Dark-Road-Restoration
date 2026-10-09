@@ -51,10 +51,10 @@ server in `D:\Progetto_Restauro_KH_UX\logs\server.log`):
 ```powershell
 .\tools\ldplayer\session\relogin.ps1 -Tag x    # server + rientro del giocatore salvato: home
 .\tools\ldplayer\session\cycle.ps1 -Tag x      # da NUOVO giocatore (cancella il salvataggio)
-powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 53   # solo il server
+powershell -File .\tools\ldplayer\session\run-server.ps1 -Revision 57   # solo il server
 ```
 
-Alzare `-Revision` (default 53 negli script) dopo ogni modifica di `server/master_data/`.
+Alzare `-Revision` (default 57 negli script) dopo ogni modifica di `server/master_data/`.
 Il salvataggio del giocatore è `server/save/player.json` (escluso da git). Dopo una
 `/compact` o su un'altra macchina basta leggere questa sezione e «Dove siamo rimasti».
 
