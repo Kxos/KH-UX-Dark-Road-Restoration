@@ -268,15 +268,16 @@ LAYOUTS = {
     # Materiale richiesto da Evolve (FUN_00cc57e0, riempito da FUN_00cc5a80): in Medal_S il
     # codice aggiunge l'icona (medalView) e lo ridimensiona; Possession e' un contenitore con
     # Label_9 (testo 101399490) e Num_Label (quantita' posseduta), entrambe con ombra
-    # (FUN_006e418c: crash se mancano). Sfondo: lo slot «MEDAL» del Level Up
-    # (Medal_Syn_Select_Panel 104x119: cerchio sopra, targhetta sotto per «Held N»), come
-    # negli slot dei materiali della schermata originale.
-    'MedalInfo_Evo_Medal.json': ('build', P('Panel_Evo_Medal', 0, 0, 104, 119, [
-        I('Slot_Base', 52, 60, 104, 119, 'Medal_Syn_Select_Panel.png'),
+    # (FUN_006e418c: crash se mancano). L'icona (medalView) ha sotto la sua targhetta scura
+    # del livello, vuota: come nell'originale «Held N» ci sta sopra (centro dell'icona a
+    # (55,95) del pannello, targhetta a y=40, misurati sul banco). Dietro, il cerchio dello
+    # slot del Level Up (Medal_Syn_Panel).
+    'MedalInfo_Evo_Medal.json': ('build', P('Panel_Evo_Medal', 0, 0, 104, 150, [
+        I('Slot_Ring', 55, 95, 146, 147, 'Medal_Syn_Panel.png', scale=0.72),
         P('Medal_S', 2, 22, 100, 96),
-        P('Possession', 0, 0, 104, 20, [
-            L('Label_9', 30, 10, 60, 20, 'Held', 15),
-            L('Num_Label', 84, 10, 30, 20, '0', 15)])])),
+        P('Possession', 5, 30, 100, 20, [
+            L('Label_9', 26, 10, 60, 20, 'Held', 15),
+            L('Num_Label', 78, 10, 30, 20, '0', 15)])])),
     'SlideMedalInfoScene_ver341.json': ('scene', [('LeftUI', 'publish/SlideMedalInfo_Left.json'),
                                                   ('RightUI', 'publish/SlideMedalInfo_Right.json')]),
     'SlideMedalInfo_Left.json': ('build', P('Panel_Left', 30, 320, 120, 220, [
