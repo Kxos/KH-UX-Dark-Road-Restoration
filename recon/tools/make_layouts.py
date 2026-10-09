@@ -77,6 +77,23 @@ def obtain_panels(x, y):
     return panels
 
 
+def obtain_plates(cx, cy):
+    """Come obtain_panels, nell'aspetto del popup «Complete!» originale
+    (reference\\material_sell\\complete_thumb.png, video WiFh447niJY): una targa scura per
+    riga larga quasi quanto la finestra, «Munny» a sinistra, icona al centro, quantita'
+    gialla allineata a destra; righe centrate su (cx, cy), 40 l'una dall'altra."""
+    panels = []
+    for n in range(1, 5):
+        plates = [P('Obtain_Plate_' + 'abcd'[k], 0, 40 * (n - 1 - k), 480, 36, [
+            I('Base', 240, 18, 480, 30, 'Plate03.png', opts=PLATE3),
+            L('Txt', 15, 18, 160, 30, '', 20, opts=dict(anchorPointX=0)),
+            I('Icon', 240, 18, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+            L('Txt_Label', 465, 18, 200, 30, '0', 22,
+              opts=dict(anchorPointX=1, colorR=255, colorG=230, colorB=60))]) for k in range(n)]
+        panels.append(P('Panel_%d' % n, cx - 240, cy - 20 * n, 480, 40 * n, plates, visible=False))
+    return panels
+
+
 LAYOUTS = {
     # Presents (FUN_00d0cfbc scena, FUN_00d0b350 base, FUN_00899640 pannello): stessi
     # nomi della versione Dark Road (Txt_Wording, Scroll_Area, Txt_None, Txt_Stock*,
@@ -342,10 +359,14 @@ LAYOUTS = {
         I('Star1', 240, 20, 30, 30, 'Result_LU_Win_Star.png'),
         L('Txt_Wording2', 400, 20, 260, 36, 'Medals or higher.', 22),
         L('Txt_Wording3', 300, 20, 560, 36, '', 22, visible=False)])),
-    # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1.
+    # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
+    # popup originale (reference\material_sell\complete_thumb.png): «Complete!» in alto,
+    # targhe dei guadagni al centro, OK in basso.
     'PopupNormal_MedalSell_Ok_ver350.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                              {'4Line_Label': 'Txt_Sell_Ok1'}, False,
-                                             [('text', 'Txt_Sell_Ok1', '')] + obtain_panels(280, 260)),
+                                             [('text', 'Txt_Sell_Ok1', ''),
+                                              ('opts', 'Txt_Sell_Ok1', dict(y=112, height=40))]
+                                             + obtain_plates(480, 325)),
     # Dettaglio medaglia da Medal List: FUN_00aba238 carica SlideMedalInfoScene_ver341 sopra
     # MedalInfoScene e aggiunge un pulsante al primo figlio di LeftUI e di RightUI (medaglia
     # precedente / successiva). Frecce come MedalInfo_Arrow01.json (Medal_Syn_Arrow01 punta a sinistra).
@@ -888,6 +909,8 @@ for target, spec in LAYOUTS.items():
                 # con i figli rinominati (riquadri che una versione successiva aggiunge)
                 clone(data['widgetTree'], *extra[1:4])
                 rename(find(data['widgetTree'], extra[2]), extra[4])
+            elif isinstance(extra, tuple) and extra[0] == 'opts':   # ('opts', nome, {opzioni})
+                find(data['widgetTree'], extra[1])['options'].update(extra[2])
             elif isinstance(extra, tuple) and extra[0] == 'add':    # ('add', genitore, widget)
                 find(data['widgetTree'], extra[1])['children'].append(build(extra[2]))
             elif isinstance(extra, tuple):          # ('clone', sorgente, nome, genitore)
