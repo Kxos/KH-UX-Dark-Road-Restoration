@@ -3,7 +3,8 @@
 # Log: D:\Progetto_Restauro_KH_UX\logs\server.log (lo leggono cycle.ps1 e relogin.ps1).
 #   powershell -File run-server.ps1 [-Revision N] [-TutorialFinished]
 # -TutorialFinished: il client scarica le risorse (azione 28) solo a tutorial finito;
-# serve per un giro solo (update-resources.ps1), poi la home andrebbe in crash sul pet.
+# dal 9 ottobre 2026 il server lo considera finito gia' dalla fase 995 (dopo il
+# Prologue), quindi serve solo a un giocatore fermo prima.
 param([int]$Revision = 57, [switch]$TutorialFinished)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
