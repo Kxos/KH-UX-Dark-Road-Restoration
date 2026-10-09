@@ -33,12 +33,21 @@ bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000, 
 
 **Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
 Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
-animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Moogle Shop (si apre,
-vuoto), Sell Materials (vendita e stile), popup «Complete!», fascia rossa e «1/N» del
-popup della quantita', Moogle Shop (scheda Items con scambio funzionante, scheda Traits
-visibile). **Prossimo, in ordine:** 1) Moogle Shop: scambio dei trait (scelta della medaglia,
-vedi annotazioni); 2) Profilo,
-Avatar Boards, Other, rotolo del menu; 3) missione 8.
+animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Sell Materials
+(vendita e stile), popup «Complete!», fascia rossa e «1/N» del popup della quantita',
+Moogle Shop (scheda Items con scambio funzionante, scheda Traits con tutte le righe).
+**Prossimo, in ordine:** 1) Moogle Shop: scambio dei trait su una medaglia («Select
+Medal»: mancano MoogleShop_Traits_MedalSelect_Pop_ver410 e
+MoogleShop_Traits_OverwriteCheck_ver410; poi /moogleshop/buy con userMedalId); scalare i
+jewel solo a risposta riuscita; 2) Profilo, Avatar Boards, Other, rotolo del menu;
+3) missione 8.
+
+**Tocchi sul banco (schermo 1920x1080):** dalla home Moogle Shop `288,1000`; schede Traits
+`340,250` / Items `700,250`; «Exchange» della prima riga `1213,512`, OK `1220,712`; Sell
+Materials `1205,250`, poi materiale `1200,430`, Sell `1183,930`, conferma `1220,715`.
+Medal List: MENU `1790,45`, `1745,697`; Sell Medals `335,262`. Cattura dei crash:
+`$env:KHUX_BASE='0x31d4000'; .\tools\ldplayer\armtrace\stackcap.ps1 -Tag x -NoMenu -Taps ...`
+poi `backtrace.py` e le stringhe dello stack (vedi i commit del 10 ottobre).
 
 **Metodo (regole dell'utente):** stile di ogni schermata dagli originali trovati online
 (screenshot/video in `reference\<schermata>\`, yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt`
