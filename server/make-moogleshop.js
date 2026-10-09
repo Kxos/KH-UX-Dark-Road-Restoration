@@ -61,6 +61,8 @@ for (const id of [90078, 90146, 90056, 90066, 90084, 90083, 90082, 90081]) {
 // raidKindRate, addDamage, attack, defense.
 const traits = [];
 function trait(type, name, fields) {
+  // il client passa il nome per un formato printf: «%» va raddoppiato (senza, «DEF -60»)
+  name = name.replace(/%/g, '%%');
   traits.push(Object.assign(blank('shuffleskill'), {
     // category = numero dell'icona (changeRowKakusei formatta il campo +4 in
     // img/kakusei/Kakusei_Icon%04d.png; un'icona inesistente manda in crash loadTexture)
