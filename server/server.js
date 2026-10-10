@@ -1086,6 +1086,16 @@ function respondStageClear(res, req) {
   if (stageNumber(stageId) >= stageNumber(player.lastClearStageId)) player.lastClearStageId = stageId;
   // munny e materiali raccolti (sacchetti dei nemici, forzieri) come li riporta il client
   player.money = (player.money || 0) + (Number(req?.getPoint?.money) || 0);
+  // gauge degli attacchi speciali: resta salvata nel keyblade (userKeyblades[].burst), non
+  // riparte da 0 a ogni missione. Il campo del corpo non e' ancora verificato: si prende il
+  // primo che nomina burst/gauge e lo si annota nel log per controllarlo
+  for (const [k, v] of Object.entries(req || {})) {
+    if (/burst|gauge/i.test(k) && typeof v === 'number') {
+      player.keybladeBurst = v;
+      console.log(`[gauge] /stage/clear ${k} = ${v}: salvata nel keyblade`);
+      break;
+    }
+  }
   for (const m of req?.getMaterials || []) grantItem(5, m.materialId, m.number);
   // sacchetti dei nemici: il client riporta solo gli uid (getEnemyDropItems), il
   // contenuto e' la riga di reward del nemico nella mappa (1 se l'uid non ha record),
@@ -1588,7 +1598,7 @@ function userKeybladesData() {
     deckMedals: deckMedalIds(),
     // isFavorite: il Profilo (createLayout FUN_008d7e8c) mostra il keyblade preferito; senza
     // nessun preferito la riga del keyblade resta nulla (crash in FUN_008c19e4)
-    burst: 0, totalAttack: attack, totalDefense: defense, isFavorite: 1,
+    burst: player.keybladeBurst || 0, totalAttack: attack, totalDefense: defense, isFavorite: 1,
     skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
     skillUpperTotalDefence: 0, subslotRate: 10000, // uint
     getDatetime: serverTime(),
@@ -1651,6 +1661,18 @@ function respondStageList(res) {
     }
   }
   if (!stories.length) stories.push({ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] });
+  // Prova automatica delle missioni (tools/ldplayer/smoke_quests.ps1): se esiste
+  // save/smoke.json {"stageId": N} l'elenco contiene solo quella missione, nuova
+  const smokePath = path.join(path.dirname(SAVE_FILE), 'smoke.json');
+  if (fs.existsSync(smokePath)) {
+    const id = JSON.parse(fs.readFileSync(smokePath, 'utf8')).stageId;
+    const r = stages.find((x) => x.stageId === id);
+    if (r) {
+      stories.length = 0;
+      stories.push({ stageId: id, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] });
+      next = r;
+    }
+  }
   send(res, 200, {
     ret: ret(),
     stories,

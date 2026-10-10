@@ -243,6 +243,32 @@ for s in sorted(stages, key=lambda r: r['stageBinId']):
     report.append({'mission': num, 'stageId': sid, 'name': s['name'], 'room': first_room, 'folder': folder,
                    'exact_room': first_room in rooms, 'enemies': len(ens), 'chests': len(chests),
                    'unknown_enemies': sorted(set(missing))})
+# Missioni «zoo» per provare i nemici: tutti gli enemyId di zoo_enemies, zoo_per_stage per
+# missione, in aree da 5 nella stanza zoo_room; stageId 990001.. (righe nel master con
+# KHUX_ZOO=1 in make-game-tables.js). All'avvio il campo carica la grafica di tutti.
+if cfg.get('zoo_enemies'):
+    zoo = json.load(open(cfg['zoo_enemies'], encoding='utf-8'))
+    per = cfg.get('zoo_per_stage', 35)
+    room = cfg.get('zoo_room', 'DB_0000_00_00')
+    start, dist = walk_grid(room)
+    for n in range(0, len(zoo), per):
+        chunk = zoo[n:n + per]
+        groups = [{'members': [], 'target': False, 'room': ''}]
+        ids = {}
+        for eid in chunk:
+            nm = '#%d' % eid
+            ids[nm.lower()] = [eid]
+        by_name.update(ids)
+        for k in range(0, len(chunk), 5):
+            groups.append({'members': [('#%d' % e, 1) for e in chunk[k:k + 5]], 'target': k == 0, 'room': ''})
+        groups = [g for g in groups if g['members']]
+        part, areas, ens, chests = build_part(room, start, dist, groups, 0)
+        sid = 990001 + n // per
+        hdr = struct.pack('<16i', 4674643, 16, 1, start[0], start[1], 2, ens[0][2], 1, len(areas), len(ens),
+                          0, 1, 0, 0, 0, 0)
+        open(os.path.join(out, 'mappoi_stg%05d.bin' % sid), 'wb').write(hdr)
+        open(os.path.join(out, 'mappoi_stg%05d_00.bin' % sid), 'wb').write(part)
+        print('zoo', sid, len(ens), 'nemici')
 json.dump(report, open(cfg['report'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('missioni generate:', len(report), '| stanza esatta:', sum(r['exact_room'] for r in report),
       '| nemici sconosciuti:', len({n for r in report for n in r['unknown_enemies']}))

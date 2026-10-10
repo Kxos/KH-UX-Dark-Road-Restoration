@@ -82,6 +82,12 @@ const medals = values.medals.map((m, i) => Object.assign(blank('medal'), {
 const MEDAL_IMAGES = new Set([11012, 11021, 11031, 11041, 11052, 12011, 12022, 12031, 12041, 12051,
   13011, 13021, 13031, 13032, 13041, 13051, 33023, 33043, 90011, 90031, 90041]);
 const IMAGE_BY_ATTRIBUTE = { 1: 11021, 2: 12011, 3: 13021 };
+// grafica vera da Roboloid/khux (recon/tools/fetch_medal_images.py, pacchetto medal_gen):
+// medalId -> id Roboloid; queste medaglie usano la propria immagine
+const MEDAL_MAP_PATH = process.env.KHUX_MEDAL_MAP || 'D:\\Progetto_Restauro_KH_UX\\medal_gen\\medal_map.json';
+if (fs.existsSync(MEDAL_MAP_PATH)) {
+  for (const id of Object.keys(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))) MEDAL_IMAGES.add(Number(id));
+}
 const realMedals = realTable('medal');
 if (realMedals) {
   const byId = new Map(medals.map((m) => [m.medalId, m]));
@@ -107,6 +113,49 @@ if (realMedals) {
     }));
   }
   medals.splice(0, medals.length, ...byId.values());
+}
+
+// Medaglie di Roboloid/khux (src/search.js, 2.100 righe con evoluzioni) che il master non ha:
+// medalId = 300000 + id Roboloid. Ogni riga copia una medaglia vera con le stesse stelle e
+// lo stesso attributo e ne cambia nome, verso, STR/DEF (valori al livello massimo:
+// attack/maxAttack uguali), evoluzione (catena Reference) e attacco speciale (riga burst
+// nuova: nome, gauge, bersaglio, potenza = moltiplicatore x 10000). Immagini:
+// fetch_medal_images.py con --all. Si attivano con KHUX_MEDALS_ALL=1.
+const ROBO_DB = process.env.KHUX_ROBOLOID_DB || 'D:\\Progetto_Restauro_KH_UX\\external\\roboloid\\medal_db.json';
+const newBursts = [];
+let roboAdded = 0;
+if (process.env.KHUX_MEDALS_ALL === '1' && fs.existsSync(ROBO_DB)) {
+  const robo = JSON.parse(fs.readFileSync(ROBO_DB, 'utf8'));
+  const mapped = fs.existsSync(MEDAL_MAP_PATH) ? new Set(Object.values(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))) : new Set();
+  const ATTR = { Power: 1, Speed: 2, Magic: 3 };
+  const tpl = (rare, attr) => medals.find((m) => m.rare === rare && m.attribute === attr && m.validBurst)
+    || medals.find((m) => m.rare === Math.min(rare, 6) && m.validBurst) || medals.find((m) => m.validBurst);
+  const robo2id = (rid) => 300000 + rid;
+  for (const d of robo) {
+    if (mapped.has(d.ID) || !ATTR[d.Attribute]) continue;
+    const base = tpl(d.Rarity, ATTR[d.Attribute]);
+    if (!base) continue;
+    const id = robo2id(d.ID);
+    const chain = d.Reference || [];
+    const next = chain[chain.indexOf(d.ID) + 1];
+    const burstId = 3000000 + d.ID;
+    const ab = d.Ability || {};
+    newBursts.push(Object.assign({ _tpl: base.burstId }, {
+      burstId, name: ab.Name || 'Special Attack', description: ab.Text || '',
+      gauge: d.Gauge || 1, target: /single/i.test(d.Target || '') ? 1 : 2,
+      basePower: Math.round((d.Multi || d.HighMulti || 1) * 10000), maxEnhanceCount: 0,
+    }));
+    medals.push(Object.assign({}, base, {
+      medalId: id, imageId: id, thumbId: id, cutinId: id, artId: id, displayId: id,
+      sortId: d.AlbumNum, listSortId: d.AlbumNum, name: d.Name, flavor: ab.Text || '',
+      attribute: ATTR[d.Attribute], darklight: d.Direction === 'Reversed' ? 2 : 1, rare: d.Rarity,
+      attack: d.STR, maxAttack: d.STR, defense: d.DEF, maxDefense: d.DEF,
+      guiltValue: d.Guilt || 0, validBurst: 1, burstId,
+      validEvolve: next ? 1 : 0, evolveId: next ? robo2id(next) : 0,
+      validPack: 0, shuffleskillSlot: d.Rarity >= 6 ? 3 : 1, spShuffleskillSlot: 1,
+    }));
+    roboAdded++;
+  }
 }
 
 // Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1
@@ -322,6 +371,13 @@ for (const m of medals) {
   burstsAdded++;
 }
 
+// attacchi speciali delle medaglie di Roboloid: copia della riga del modello (animazioni,
+// effetti) con nome, gauge, bersaglio e potenza propri
+for (const nb of newBursts) {
+  const { _tpl, ...own } = nb;
+  bursts.push(Object.assign({}, burstById.get(_tpl) || bursts[0], own));
+}
+
 // stage: i filmati prima/dopo la missione (beforeDramaId/afterDramaId) sono script
 // img/light/SEQ/<id>.l o animazioni lwf/drama/<id>/. Se mancano dalle risorse il client va
 // in crash avviando la missione (FUN_00ceacd8 -> FUN_00cf050c: missione 8, filmati
@@ -362,6 +418,17 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
       'clearGetAssignSkillLv', 'clearGetItemNum']) row[a] = (r[a] || []).slice(0, r.validClearGetItem);
     stagesOut.push(row);
     storyAdded++;
+  }
+  // missioni «zoo» per provare i nemici (gen_story_maps.py, zoo_enemies): copie della 1050
+  if (process.env.KHUX_ZOO === '1') {
+    const tpl = stagesOut.find((s) => s.stageId === 1050);
+    for (let n = 1; n <= Number(process.env.KHUX_ZOO_COUNT || 4); n++) {
+      stagesOut.push(Object.assign(JSON.parse(JSON.stringify(tpl)), {
+        stageId: 990000 + n, id: 9000 + n, name: `Zoo ${n}`, mapName: 'Fountain Square', worldId: 1,
+        validBeforeDrama: 0, beforeDramaId: [], beforeDramaType: [], validAfterDrama: 0, afterDramaId: [],
+        afterDramaType: [],
+      }));
+    }
   }
   // filmati: quelli assenti dalle risorse si cercano nel theater della versione finale
   // (righe con lo stesso stageId: i filmati della storia rifatti come lwf/drama/<id>)
@@ -407,6 +474,6 @@ fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
-console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})` +
+console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva)` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
   `; stage: +${storyAdded} missioni di storia, filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
