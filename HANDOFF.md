@@ -47,6 +47,19 @@ qui c'è come.
   9-slice con zona elastica centrale WIN9, pastiglia Plate18, Unlock But06 con il grigio
   _Disable, Unlock All But16 dentro la barra: non esiste negli originali del 2017).
 - Il fiocco disegnato e' piu' semplice dell'originale dipinto.
+- **PROSSIMO PASSO (mappe, 11 ottobre sera)**: 1060 percorsa a mano sul banco (smoke.json con
+  stageId 1060): il giro lungo dell'arco e la strettoia sulle ninfee si percorrono, il bersaglio
+  e' raggiunto. Ma all'uscita verso la parte 1 (freccia blu, (2200,1760)) il client va in CRASH
+  (SIGSEGV null, fault 0x8; stack ghidra b01690 -> [fn], 12d85d0 -> [fn],
+  12d8e44, 12c1154, 1366cac; C decompilato in stage_gen\reach\crash_1060_decomp.c). E' il primo
+  passaggio tra parti provato sul banco: riguarda tutte le missioni multi-parte (86 da 2 parti,
+  9 da 3). Ipotesi da verificare: uid globali tra le parti (gen_story_maps riparte da 2 per
+  parte, vedi sopra «da rinumerare per il multi-stanza") o il formato delle uscite. Ricetta:
+  tombstone.ps1 -> decomp.ps1 -> widget_lookup.py; confrontare con un originale multi-parte.
+- 1050 corretta (agente): forziere uid 4 spostato da (2700,1450) a (2290,690), totali STG
+  (1,1,2,4); validate_maps: 0 errori su 569 stage. File fuori dal repo (stage_gen\files\stage,
+  spec_1050.json, reach\REPORT.md); server\game_data\stage_poi.json non ha la 1050 (da rigenerare).
+  Va fatto un -Quick per portarla nel guest (non ancora fatto).
 - Salvataggio: bacheche 1 e 2 complete (titoli 2001, 2002), avatarCoin 405.
 - Salvataggio di prova: bacheca 1 completa (7/7), titolo 2001, avatarCoin 450. Per riprovare
   i popup: fermare il server, `unlock` della 2100001 a [1..5], spherePoint 470,
