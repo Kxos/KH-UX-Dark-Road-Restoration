@@ -530,18 +530,32 @@ LAYOUTS = {
     # popup del nodo sbloccato ([fn] lo carica, [fn] lo centra e cerca
     # Txt_Get_Label, Panel, Button_Ok/Txt_Ok): dal popup OK originale. Nel suo Panel il codice
     # aggiunge Sphere_Incentive_ver240 (solo l'icona del premio, riempita da [fn]):
-    # come popup completo appariva una seconda finestra spostata di Panel (banco v32_unlock4a)
+    # come popup completo appariva una seconda finestra spostata di Panel (banco v32_unlock4a).
+    # Txt_Get_Label a y 45: sotto la scritta CONGRATULATIONS (LWF in Area_Point; a y 78 la
+    # copriva, banco q9_get) e sopra l'icona (Panel y 250)
     'Sphere_Popup_Get_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                      {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                     False, [('text', 'Txt_Get_Label', ''), ('opts', 'Txt_Get_Label', dict(y=78, height=60)),
+                                     False, [('text', 'Txt_Get_Label', ''), ('opts', 'Txt_Get_Label', dict(y=45, height=60)),
                                              P('Panel', 430, 250, 100, 100),
                                              P('Area_Point', 480, 420, 10, 10)]),
     'Sphere_Incentive_ver240.json': ('build', P('Sphere_Incentive_ver240', 0, 0, 100, 100, reward_icons(50, 50))),
-    # bacheca completata ([fn] / [fn]): Area_Point (vi mette le LWF
-    # SphereMap_Complete e Result_Reward), Txt_All
+    # ultimo nodo, bacheca completata ([fn]): carica questo layout, cerca Txt_All
+    # (testo 106180205 «You completed the board!», visibile solo con il flag +0x7b3) e poi
+    # chiama [fn] come per Sphere_Popup_Get: servono anche Txt_Get_Label, Panel e
+    # Button_Ok/Txt_Ok (senza, crash al tocco di OK sull'ultimo nodo, banco q10_done).
+    # [fn]: Area_Point (LWF SphereMap_Complete e Result_Reward). Una riga in piu'
+    # del Get: finestra allungata in basso (in alto resta a y 481), OK e icona piu' bassi;
+    # capInsetsY 60: con 0 (originale) si stirava la fascia chiara in cima (banco s3_comp)
     'Sphere_Popup_Comp_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
-                                      {'4Line_Label': 'Txt_All', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                      False, [('text', 'Txt_All', ''), P('Area_Point', 480, 420, 10, 10)]),
+                                      {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
+                                      False, [('text', 'Txt_Get_Label', ''),
+                                              ('opts', 'NormalText_Window01', dict(y=306, height=350, scale9Height=350,
+                                                                                    capInsetsY=60)),
+                                              ('opts', 'Txt_Get_Label', dict(y=59, height=60)),
+                                              ('opts', 'Button_Ok', dict(y=-128)),
+                                              L('Txt_All', 480, 335, 600, 40, '', 24),
+                                              P('Panel', 430, 220, 100, 100),
+                                              P('Area_Point', 480, 420, 10, 10)]),
     # Scelta della medaglia a cui dare un trait ([fn], «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Profilo (AvatarInfoDialog: open [fn] carica la scena nascosta e chiede

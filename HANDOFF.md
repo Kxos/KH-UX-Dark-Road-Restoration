@@ -19,7 +19,28 @@ qui c'è come.
 
 ### STATO AL 11 OTTOBRE 2026 (notte) — RIPRENDERE DA QUI
 
-**Sessione del 10 ottobre 2026 (sera) — RIPRENDERE DA QUI** (vale sopra tutto il resto):
+**Sessione dell'11 ottobre 2026 — RIPRENDERE DA QUI** (vale sopra il blocco del 10 sera):
+- Banco riavviato da spento: `ldconsole launch --index 0`, server con `run-server.ps1`, poi
+  OBBLIGATORIO `ld.exe -s 0 "sh /mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"` (senza, il
+  client non raggiunge il server e resta sul popup «End of Service»). Dopo il riavvio
+  dell'emulatore il client ha riscaricato tutta la versione 32 (~3 GB, qualche minuto).
+- PROVATO (risorse 32 -Quick, **revisione master 81**): elenco bacheche («No. N» sopra la
+  carta, moneta e prezzo centrati) come ab_sheet; popup Get con il testo sotto la scritta
+  CONGRATULATIONS (Txt_Get_Label y 45) e sopra l'icona; bacheca completata senza crash.
+- Crash sull'ultimo nodo RISOLTO, due cause: (1) Sphere_Popup_Comp_ver310 ([fn]) passa
+  anch'esso da [fn]: servono Txt_Get_Label, Panel, Button_Ok/Txt_Ok oltre a Txt_All
+  («You completed the board!», solo con il flag +0x7b3); (2) [fn](.., 0x16, ..) mostra
+  il premio all'indice 22 di sphereMasu (il premio di completamento): era 0 -> ricerca per id
+  0 e crash. Ora indice 22 = titolo 2000+N (rewardSelect 7) in server/tables/sphereMasu.json e in
+  `stage_gen\boards\tools\gen_boards.py`. Il popup mostra «You got a new title!» + targa «Boy».
+- Da guardare: la corona arcobaleno di bacheca completata sta al centro della carta e sotto
+  resta la barra scura vuota del prezzo (confrontare con l'originale); targa del titolo nel
+  popup Comp spezzata (pezzo a sinistra + cuori attorno a «Boy»); «Unlock All» non provato.
+- Salvataggio di prova: bacheca 1 completa (7/7), titolo 2001, avatarCoin 450. Per riprovare
+  i popup: fermare il server, `unlock` della 2100001 a [1..5], spherePoint 470,
+  sphereBonus.cost 3, togliere 2001 da titles, riavviare.
+
+**Sessione del 10 ottobre 2026 (sera)**:
 - PROVATO SUL BANCO (risorse 32 rigenerate con -Quick, revisione 80): Missioni complete. Righe
   alte 144 (la cella del codice e' 148, la riga appare 44 a sinistra: contenuto spostato di +44),
   barra come quella LUX (Gage_LUX_Base + Gage_LUX_Tip stirata), timbro World_Stage_Clear
