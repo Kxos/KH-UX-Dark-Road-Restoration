@@ -65,6 +65,12 @@ GRID = dict(PANEL4, colorR=70, colorG=85, colorB=120)
 # Panel a tinta unita (cocostudio 1.6: colorType 1), rosso della fascia di avviso
 RED_BG = dict(colorType=1, bgColorR=233, bgColorG=18, bgColorB=38, bgColorOpacity=255)
 PANEL15 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
+# riquadro blu con il bordo chiaro (Win09 100x119) dei riquadri in basso della bacheca
+# (zona elastica al centro: bordi fissi 40+40, cosi' scende fino a 80x80; con 20 e 1 il bordo
+# inferiore era di 98 px e il riquadro non si abbassava, banco z2_board)
+WIN9 = dict(scale9Enable=True, capInsetsX=40, capInsetsY=40, capInsetsWidth=20, capInsetsHeight=39)
+# But16 (218x52) stretto: zona elastica larga, bordi fissi di 30 (con BUT9 non scendeva sotto 217)
+BUT16 = dict(scale9Enable=True, capInsetsX=30, capInsetsY=0, capInsetsWidth=158, capInsetsHeight=1)
 
 
 def P(name, x, y, w, h, children=(), **kw):
@@ -576,6 +582,8 @@ LAYOUTS = {
                                               ('opts', 'Button_Ok', dict(y=-260, ZOrder=4)),
                                               L('Txt_All', 480, 300, 600, 40, '', 24),
                                               P('Panel', 430, 329, 100, 100),
+                                              # scritta fissa sull'arco (la LWF del banner qui non parte)
+                                              I('Comp_Congrats', 480, 552, 800, 81, 'Sphere_Congrats.png', s9=False, scale=1.07),
                                               P('Area_Point', 480, 550, 10, 10)]),
     # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
@@ -748,13 +756,13 @@ LAYOUTS = {
         # Txt_Coin_Label)
         # riquadro con la linguetta del titolo (Av_Panel1 di make_textures): Win04 in 9-slice non
         # scende sotto ~300 px di altezza (banco ab11)
-        I('Coin', 92, 88, 177, 80, 'Av_Panel1.png',
-          opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=30, capInsetsWidth=1, capInsetsHeight=38), children=[
+        # come in ab_ref_list_complete_01: Win09 blu con il bordo chiaro, x 3-181, y 42-122
+        I('Coin', 92, 82, 178, 80, 'Win09.png', opts=WIN9, children=[
               # icona della valuta: FUN_00cd468c -> FUN_00755ab8 (banco ab10)
-              I('SpherePointIcon', -67, 15, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3),
-              L('Txt_Coin_Name_Label', 10, 15, 130, 26, 'Avatar Coins', 18),
-              I('Coin_Base', 0, -17, 160, 24, 'Plate02.png', opts=PLATE3),
-              L('Txt_Coin_Label', 70, -17, 120, 24, '0', 22, opts=dict(anchorPointX=1, hAlignment=2))]),
+              I('SpherePointIcon', -66, 16, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3),
+              L('Txt_Coin_Name_Label', 19, 16, 130, 24, 'Avatar Coins', 18),
+              I('Coin_Base', 0, -17, 162, 30, 'Plate02.png', opts=PLATE3),
+              L('Txt_Coin_Label', 66, -17, 120, 28, '0', 24, opts=dict(anchorPointX=1, hAlignment=2))]),
         I('TitleBar', 480, 92, 583, 50, 'Plate13.png',
           opts=dict(scale9Enable=True, capInsetsX=60, capInsetsY=10, capInsetsWidth=1, capInsetsHeight=1), children=[
               L('Txt_SphereBoard_Label', 0, 0, 540, 36, '', 26)]),
@@ -825,21 +833,26 @@ LAYOUTS = {
             I('Select_Board', 120, 408, 306, 306, 'Board_0001.png', s9=False, scale=0.5),
             I('Select_Base', 120, 408, 306, 306, 'Board_0001.png', s9=False, scale=0.5),
             I('Select_Kind', 120, 408, 306, 306, 'Kind_0001.png', s9=False, scale=0.5),
-            I('Coin', 91, 47, 174, 75, 'Av_Panel1.png',
-              opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=30, capInsetsWidth=1, capInsetsHeight=38), children=[
-                  *[I(n, -62, 16, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3, visible=(n == 'SpherePointIcon'))
+            # riquadri in basso come ab_ref_node_check_01 (1080p: x = (x'-150)/1,6875,
+            # y = 640 - y'/1,6875): Win09 blu con il bordo chiaro, Avatar Coins x 3-182, barra del
+            # premio x 191-957, pastiglia del premio con il contorno azzurro (Plate18), Unlock
+            # arancione alto quanto la barra (x 836-949). «Unlock All» non c'e' negli originali (2017):
+            # pulsante blu dentro la barra, a sinistra di Unlock (sopra copriva i nodi della riga 5)
+            I('Coin', 92, 45, 180, 83, 'Win09.png', opts=WIN9, children=[
+                  *[I(n, -66, 16, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3, visible=(n == 'SpherePointIcon'))
                     for n in ('SpherePointIcon', 'SpherePointIcon_OC', 'SpherePointIcon_EV', 'SpherePointIcon_Raid',
                               'SpherePointIcon_SP')],
-                  L('Txt_Coin_Name_Label', 10, 16, 130, 24, 'Avatar Coins', 18),
-                  I('Coin_Base', 0, -19, 160, 26, 'Plate02.png', opts=PLATE3),
-                  L('Txt_Coin_Label', 70, -19, 120, 26, '0', 22, opts=dict(anchorPointX=1, hAlignment=2))]),
-            I('Incentive_Bar', 573, 46, 765, 80, 'Av_Panel1.png',
-              opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=30, capInsetsWidth=1, capInsetsHeight=38)),
-            L('Txt_Incentive_Label', 298, 44, 150, 30, '', 20),
-            I('Incentive_Name_Base', 613, 44, 435, 42, 'Plate02.png', opts=PLATE3),
-            L('Txt_Incentive_Name_Label', 613, 44, 420, 32, '', 20),
-            B('Button', 890, 45, 111, 62, 'But03', 'Unlock', 24, label='Txt_Release', opts=BUT9),
-            B('Button_All', 890, 120, 111, 52, 'But16', 'Unlock All', 20, label='Txt_Release', opts=BUT9)])])),
+                  L('Txt_Coin_Name_Label', 19, 16, 130, 24, 'Avatar Coins', 18),
+                  I('Coin_Base', 0, -18, 164, 30, 'Plate02.png', opts=PLATE3),
+                  L('Txt_Coin_Label', 66, -18, 120, 28, '0', 24, opts=dict(anchorPointX=1, hAlignment=2))]),
+            I('Incentive_Bar', 574, 45, 766, 83, 'Win09.png', opts=WIN9),
+            L('Txt_Incentive_Label', 275, 44, 160, 30, '', 22),
+            I('Incentive_Name_Base', 541, 44, 354, 40, 'Plate18.png',
+              opts=dict(scale9Enable=True, capInsetsX=20, capInsetsY=19, capInsetsWidth=1, capInsetsHeight=1)),
+            L('Txt_Incentive_Name_Label', 541, 44, 340, 32, '', 18),
+            # But06: arancione come But03 ma con la variante _Disable (grigio a bacheca completa, come ab_ref)
+            B('Button', 893, 44, 114, 64, 'But06', 'Unlock', 26, label='Txt_Release', opts=BUT9),
+            B('Button_All', 777, 44, 104, 52, 'But16', 'Unlock All', 18, label='Txt_Release', opts=BUT16)])])),
     # nodo della bacheca (FUN_00f36f18, posto a (-50,-50) sul nodo): Get (spunta, nascosta
     # all'inizio), Txt_Incentive_Label, Txt_Price_Label (costo in monete)
     'Sphere_Incentive.json': ('build', P('Sphere_Incentive', 0, 0, 100, 100, [
