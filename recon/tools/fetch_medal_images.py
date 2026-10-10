@@ -49,6 +49,7 @@ def match(row):
 
 
 def fetch(sub, name):
+    name = urllib.parse.unquote(name)   # alcuni nomi del database hanno gia' %23 al posto di #
     p = os.path.join(cache, sub, name)
     if not os.path.exists(p):
         os.makedirs(os.path.dirname(p), exist_ok=True)
