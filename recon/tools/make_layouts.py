@@ -675,6 +675,8 @@ LAYOUTS = {
         I('Select_Board', 153, 153, 306, 306, 'Board_0001.png', s9=False),
         I('Select_Kind', 153, 153, 306, 306, 'Kind_0001.png', s9=False),
         L('Count_Label', 153, 30, 200, 30, '', 22, visible=False)])),
+    # «Other» del menu (FUN_009ec518): vedi other_menu
+    'MenuDialog_ver300.json': ('func', 'other_menu'),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
     'TresCommu_CommunicationOther.json': ('build', P('commu_other', 0, 0, 200, 200)),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
@@ -1279,6 +1281,54 @@ def avatar_comment_popup():
         L('Txt_Comment', -142, 54, 200, 30, 'Message', 22, opts=dict(anchorPointX=0.5)),
         L('Txt_Limit2', 133, 54, 150, 20, 'Max 20 char.', 16),
         L('Txt_Comment_Label_U13', 0, -40, 380, 110, '', 24, visible=False))]
+    return d
+
+
+def other_menu():
+    """MenuDialog_ver300 («Other» del menu, FUN_009ec518), assente dalle risorse. Base:
+    MenuDialog_ver150 (originale KHUX: finestra Win11, griglia 3 x 5 di pulsanti con icona
+    Menu_But_NN e testo). La ver300 cerca in piu' Achievement (con Image_android, l'icona
+    Google Play al posto di quella di Game Center) e TitleButton (ritorno al titolo); non
+    cerca SerialCodeButton, Movie e i pulsanti Facebook (nascosti). Icone assenti: dalla
+    variante dark_Menu_But_NN dove esiste; Album (04) = Menu_But_18."""
+    d = json.load(open(os.path.join(SRC, *PUB.split('/'), 'MenuDialog_ver150.json'), encoding='utf-8-sig'))
+    t = d['widgetTree']
+    swap = {'Menu_But_04.png': 'Menu_But_18.png'}
+    swap.update({'Menu_But_%s.png' % n: 'dark_Menu_But_%s.png' % n for n in ('01', '08', '10', '11', '15')})
+
+    def walk(w):
+        o = w.get('options', {})
+        fd = o.get('fileNameData')
+        if isinstance(fd, dict) and fd.get('path') in swap:
+            o['fileNameData'] = tex(swap[fd['path']])
+        for c in w.get('children', []):
+            walk(c)
+    walk(t)
+    for n in ('SerialCodeButton', 'FaceBookButton', 'FaceBookButton_Logout'):
+        find(t, n)['options']['visible'] = False
+    win = find(t, 'MainMenu_Dialog')
+    # FUN_009ed888 cerca anche TwitterButton con il figlio Image (banco ot3): copia nascosta
+    # del pulsante Facebook
+    tw = json.loads(json.dumps(find(t, 'FaceBookButton')))
+    tw['options'].update(name='TwitterButton', visible=False)
+    tw['name'] = 'TwitterButton'
+    win['children'].append(tw)
+    # Achievement al posto di Serial Code, TitleButton nell'ultima riga (copie di un pulsante
+    # della griglia con icona e testo propri)
+    for name, x, y, icon, text in (('Achievement', 274, 100, 'Menu_But_16.png', 'Achievements'),
+                                   ('TitleButton', -274, -206, 'Menu_But_17.png', 'Title Screen')):
+        b = json.loads(json.dumps(find(t, 'HelpButton')))
+        b['options'].update(name=name, x=x, y=y)
+        b['name'] = name
+        img, lab = b['children']
+        img['options']['fileNameData'] = tex(icon)
+        lab['options']['text'] = text
+        if name == 'Achievement':
+            andr = json.loads(json.dumps(img))
+            andr['options'].update(name='Image_android', fileNameData=tex('Menu_But_16_a.png'), visible=False)
+            andr['name'] = 'Image_android'
+            b['children'].append(andr)
+        win['children'].append(b)
     return d
 
 
