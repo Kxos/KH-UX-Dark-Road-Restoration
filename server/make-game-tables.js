@@ -227,11 +227,74 @@ const backgrounds = [150911, 2, 3, 4, 5, 6, 99].map((id, i) => Object.assign(bla
   xPostion: [bgX, bgX], yPostion: [bgY, bgY], zSort: [0, 1],
 }));
 
+// burst: attacchi speciali. La 5.0.1 (e thethiny) ne ha 11 righe, mentre le medaglie ne
+// citano 480 in piu': senza riga il dettaglio di una medaglia va in crash (Donald 6★,
+// burst 10146). Le righe importate restano la base (burst_base.json, copiata la prima
+// volta); per ogni burstId mancante (famiglia = burstId / 10, livello = burstId % 10):
+// - se la famiglia ha una riga, la si clona: nome «+k» (k = livello - 1) e +300 di potenza
+//   per livello (come 10141 -> 10142); dal +2 maxEnhanceCount = livello - 2 e
+//   basePowerPerEnforce come 10363/10364 (+300, +900, ...);
+// - altrimenti modello per attributo della medaglia (animazione ed effetto di una riga
+//   esistente: 1 Power 10091, 2 Speed 10363, 3 Magic 10141) con nome, gauge, bersaglio,
+//   descrizione e moltiplicatore a 6★ (dmg6) dalla pagina khuxwiki della medaglia
+//   (InfoMedal), se c'e'; altrimenti nome «Special Attack» e i valori del modello.
+const burstBasePath = path.join(OUT, 'burst_base.json');
+if (!fs.existsSync(burstBasePath)) fs.copyFileSync(path.join(OUT, 'burst.json'), burstBasePath);
+const bursts = JSON.parse(fs.readFileSync(burstBasePath, 'utf8'));
+const burstById = new Map(bursts.map((b) => [b.burstId, b]));
+const wikiInfo = new Map();
+try {
+  const wiki = JSON.parse(fs.readFileSync(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json', 'utf8'));
+  for (const [title, text] of Object.entries(wiki)) {
+    for (const m of text.matchAll(/\{\{InfoMedal([\s\S]*?)\n?\}\}/g)) {
+      const f = Object.fromEntries([...m[1].matchAll(/\|(\w+)=([^|]*)/g)].map((x) => [x[1], x[2].trim()]));
+      wikiInfo.set(f.name || title, f);
+    }
+  }
+} catch { console.warn('wiki_all.json assente: attacchi speciali senza nomi'); }
+const BURST_TEMPLATE = { 1: 10091, 2: 10363, 3: 10141 };
+const tierPower = (b, p) => {
+  const enh = Math.max(0, (b % 10) - 2);
+  const per = [0, 1, 2, 3, 4].map((i) => (i < enh ? p + 300 * ((i + 1) * (i + 2) / 2) : 1));
+  return { maxEnhanceCount: enh, displayPower: p, basePower: p, displayPowerPerEnforce: per, basePowerPerEnforce: per };
+};
+let burstsAdded = 0;
+for (const m of medals) {
+  const id = m.burstId;
+  if (!m.validBurst || !id || burstById.has(id)) continue;
+  const tier = id % 10;
+  const kin = bursts.filter((b) => Math.floor(b.burstId / 10) === Math.floor(id / 10))
+    .sort((a, b) => Math.abs(a.burstId - id) - Math.abs(b.burstId - id))[0];
+  let row;
+  if (kin) {
+    const base = kin.name.replace(/ \+\d+$/, '');
+    row = Object.assign({}, kin, { burstId: id, name: tier > 1 ? `${base} +${tier - 1}` : base },
+      tierPower(id, kin.basePower + 300 * (tier - (kin.burstId % 10))));
+  } else {
+    const w = medals.filter((x) => x.burstId && Math.floor(x.burstId / 10) === Math.floor(id / 10))
+      .map((x) => wikiInfo.get(x.name)).find(Boolean);
+    const tpl = burstById.get(BURST_TEMPLATE[m.attribute] || 10141);
+    const dmg6 = w && parseFloat(w.dmg6);
+    const name = (w && w.spatk) || 'Special Attack';
+    row = Object.assign({}, tpl, {
+      burstId: id, motionId: tpl.motionId, effectId: tpl.effectId,
+      name: tier > 1 ? `${name} +${tier - 1}` : name,
+      description: (w && (w.spdesc6 || w.spdesc)) || tpl.description,
+      gauge: (w && Number(w.gauge)) || tpl.gauge,
+      target: w && /single/i.test(w.tar || '') ? 1 : tpl.target,
+    }, tierPower(id, dmg6 ? Math.round(dmg6 * 10000) - 300 * (6 - tier) : tpl.basePower + 300 * (tier - 1)));
+  }
+  bursts.push(row);
+  burstById.set(id, row);
+  burstsAdded++;
+}
+
 fs.mkdirSync(OUT, { recursive: true });
+fs.writeFileSync(path.join(OUT, 'burst.json'), JSON.stringify(bursts));
 fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgrounds));
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe` : ''));
+  (enemies ? `; enemy: ${enemies.length} righe` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})`);

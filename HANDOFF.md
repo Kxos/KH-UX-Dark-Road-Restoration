@@ -20,7 +20,7 @@ qui c'è come.
 ### Come riprendere il lavoro (stato al 10 ottobre 2026) — LEGGERE PRIMA QUESTO
 
 **Banco ora:** risorse **versione 29** installate (riserva dati 16 MiB, indice 64 KB: i
-cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 69**
+cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 70**
 (default degli script: **alzarla di 1 dopo ogni modifica di `server/master_data`**, poi
 `relogin.ps1` due volte: al primo il client scarica i master e va in crash, noto, al
 secondo entra); `server/master_data` e' fuori dal repository (ignorato): la tabella
@@ -38,9 +38,10 @@ animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Sell Material
 Moogle Shop (scheda Items con scambio funzionante, scheda Traits con tutte le righe).
 **Fatto il 10 ottobre (sera):** scambio dei trait completo (popup «Select Medal», aggiunta
 e sostituzione, costo scalato solo se lo scambio riesce; vedi «Moogle Shop — trait» nelle
-annotazioni). **Prossimo, in ordine:** 1) attacchi speciali mancanti (la tabella `burst` ha
-11 righe, 480 medaglie ne citano una assente: il dettaglio di una medaglia evoluta oltre la
-2★ va in crash); 2) Profilo, Avatar Boards, Other, rotolo del menu; 3) missione 8.
+annotazioni); attacchi speciali mancanti generati (`burst`: 11 righe vere + 321 generate da
+`make-game-tables.js`, revisione 70; il dettaglio delle medaglie evolute non va piu' in
+crash). **Prossimo, in ordine:** 1) Profilo, Avatar Boards, Other, rotolo del menu;
+2) missione 8.
 
 **Tocchi sul banco (schermo 1920x1080):** dalla home Moogle Shop `288,1000`; schede Traits
 `340,250` / Items `700,250`; «Exchange» della prima riga `1213,512`, OK `1220,712`; trait:
@@ -216,6 +217,15 @@ poi i pulsanti in crash del menu.
   («200 ERROR :248»). Risultato: il client mostra il dettaglio con «Trait 1/1». Da
   sistemare: il cursore rosso dello slot da sostituire (armatura `MedalInfo_Anim`,
   `animeCursor`) e' piu' largo della finestra; trait speciali (Spirit Training) non gestiti.
+- **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
+  thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
+  quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia
+  (burstId/10) con «+k» e +300 di potenza per livello, oppure modello per attributo con
+  nome, gauge, bersaglio, descrizione e moltiplicatore dalla khuxwiki (85 famiglie su
+  109). 63 righe restano «Special Attack» (medaglie senza pagina con lo stesso nome);
+  animazioni ed effetti sono quelli del modello (in battaglia ogni speciale senza riga
+  vera sembra Thunder Raid, Thundaga o Heaven's Sword). Banco: dettaglio della Donald 6★
+  con «Thundaga +5», x1.69, 4 potenziamenti.
 - **Strumenti nuovi** (10 ottobre): `recon/tools/vtable_users.py` (chi crea una lambda
   std::function: dalla funzione target() della vtable alle coppie ADRP+ADD/LDR che la
   usano; cosi' si trovano le funzioni come openItemBuyPopup); `recon/tools/
