@@ -464,6 +464,7 @@ def build_multi(s, q, room_names, groups):
         for a in areas:
             if struct.unpack_from('<i', a, 0x10)[0] & 1 and target_id is None:
                 target_id = ens[struct.unpack_from('<i', a, 0)[0]][2]
+        poi_add(s['stageId'], k, ens, chests)
         parts.append(part)
         tot_a += len(areas)
         tot_e += len(ens)
@@ -474,6 +475,17 @@ def build_multi(s, q, room_names, groups):
     info = {'parts': R, 'folders': folders_, 'groups_per_room': [len(g) for g in per_room],
             'chests_per_room': chests_per, 'doubts': doubts}
     return hdr, parts, info, tot_e, tot_c
+
+
+# Forzieri e nemici di ogni missione generata per il server (server/game_data/stage_poi.json,
+# stesso formato di stage_poi.py: uid, enemyId/reward, kind, parte), in cfg['poi']
+POI = {}
+
+
+def poi_add(sid, part, ens, chests):
+    d = POI.setdefault(str(sid), {'chests': [], 'enemies': []})
+    d['enemies'] += [{'uid': e[7], 'enemyId': e[2], 'reward': e[6], 'map': part} for e in ens]
+    d['chests'] += [{'uid': c[4], 'reward': c[2], 'kind': c[3], 'map': part} for c in chests]
 
 
 report = []
@@ -515,6 +527,7 @@ for s in sorted(stages, key=lambda r: r['stageBinId']):
     sid = s['stageId']
     open(os.path.join(out, 'mappoi_stg%05d.bin' % sid), 'wb').write(hdr)
     open(os.path.join(out, 'mappoi_stg%05d_00.bin' % sid), 'wb').write(part)
+    poi_add(sid, 0, ens, chests)
     missing = [n for g in groups for n, _ in g['members'] if n.lower().strip() not in by_name]
     report.append({'mission': num, 'stageId': sid, 'name': s['name'], 'room': first_room, 'folder': folder,
                    'exact_room': first_room in rooms, 'enemies': len(ens), 'chests': len(chests),
@@ -544,7 +557,14 @@ if cfg.get('zoo_enemies'):
                           0, 1, 0, 0, 0, 0)
         open(os.path.join(out, 'mappoi_stg%05d.bin' % sid), 'wb').write(hdr)
         open(os.path.join(out, 'mappoi_stg%05d_00.bin' % sid), 'wb').write(part)
+        poi_add(sid, 0, ens, chests)
         print('zoo', sid, len(ens), 'nemici')
+if cfg.get('poi'):
+    # si aggiungono a quelli delle mappe vere (stage_poi.py), che restano
+    old = json.load(open(cfg['poi'], encoding='utf-8')) if os.path.exists(cfg['poi']) else {}
+    old = {k: v for k, v in old.items() if k not in POI}
+    json.dump(dict(sorted(dict(old, **POI).items(), key=lambda kv: int(kv[0]))), open(cfg['poi'], 'w', encoding='utf-8'),
+              separators=(',', ':'))
 json.dump(report, open(cfg['report'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('missioni generate:', len(report), '| stanza esatta:', sum(r['exact_room'] for r in report),
       '| nemici sconosciuti:', len({n for r in report for n in r['unknown_enemies']}))
