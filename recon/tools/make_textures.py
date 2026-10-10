@@ -309,6 +309,195 @@ def dark_panel(w, h):
     return im.resize((w, h), Image.LANCZOS)
 
 
+# Tabelle avatar (Avatar Boards): decorazioni della scheda completata, spunta dei nodi
+# sbloccati e linguetta «No. n». Riferimenti reference\avatar_boards\ab_ref_list_complete_01
+# e ab_ref_node_check_01 (1080p: scheda ~510 px = 306 nel layout 960x640, scala 0.6).
+def _chaikin(pts, n=3):
+    """Poligono chiuso smussato (Chaikin): angoli arrotondati per fiocco e nastri."""
+    for _ in range(n):
+        q = []
+        for i in range(len(pts)):
+            (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % len(pts)]
+            q += [(x0 * .75 + x1 * .25, y0 * .75 + y1 * .25), (x0 * .25 + x1 * .75, y0 * .25 + y1 * .75)]
+        pts = q
+    return pts
+
+
+def _vgrad(size, top, bot, y0=0, y1=None):
+    """Riempimento RGBA con sfumatura verticale da top (a y0) a bot (a y1)."""
+    w, h = size
+    y1 = h if y1 is None else y1
+    g = Image.new('RGBA', (1, h))
+    for y in range(h):
+        t = min(1, max(0, (y - y0) / max(1, y1 - y0)))
+        g.putpixel((0, y), tuple(int(a + (b - a) * t) for a, b in zip(top, bot)))
+    return g.resize((w, h))
+
+
+def _erode(mask, px):
+    from PIL import ImageFilter
+    return mask.filter(ImageFilter.MinFilter(2 * px + 1)) if px > 0 else mask
+
+
+def _ribbon_piece(size, pts, top, bot, k):
+    """Pezzo di nastro rosso: bordo rosso scuro, filetto oro rientrato, interno sfumato."""
+    m = Image.new('L', size, 0)
+    ImageDraw.Draw(m).polygon(_chaikin([(x * k, y * k) for x, y in pts]), fill=255)
+    ys = [y * k for _, y in pts]
+    im = Image.new('RGBA', size, (120, 0, 0, 255))
+    e1 = _erode(m, S)
+    im.paste((245, 205, 120, 255), (0, 0), e1)                      # filetto oro
+    e2 = _erode(e1, S + S // 2)
+    im.paste(_vgrad(size, top, bot, int(min(ys)), int(max(ys))), (0, 0), e2)
+    im.putalpha(m)
+    return im, m
+
+
+def board_clear():
+    """Sphere_Board_Clear (306x306): sovrapposizione della scheda completata. Fiocco rosso
+    bordato d'oro sull'angolo in alto a sinistra con il nastro lungo il bordo superiore,
+    fascia rossa diagonale sull'angolo in basso a destra (ritagliata sulla scheda) e la
+    scritta «COMPLETE» arancione con l'alone giallo. Coordinate prese a 1080p e portate
+    a 306: (x - 705, y - 250) * 0.6; il fiocco un po' piu' grande e spostato verso l'interno."""
+    from PIL import ImageChops, ImageFilter, ImageFont
+    w = h = 306
+    W = w * S
+    im = Image.new('RGBA', (W, W), (0, 0, 0, 0))
+
+    # Fascia diagonale: tra le rette x+y=495 e x+y=549 (1080p: da (1225,555) a (1010,770)),
+    # rosso 200..240,0,0 con filetto chiaro vicino al bordo interno; ritaglio sulla scheda.
+    card = Image.new('L', (W, W), 0)
+    ImageDraw.Draw(card).rounded_rectangle((3 * S, 3 * S, W - 1 - 3 * S, W - 1 - 3 * S), 16 * S, fill=255)
+    sash = Image.new('RGBA', (W, W), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(sash)
+    a0, a1 = 495 * S, 551 * S
+    for i in range(a0 - S, a1 + S):                                # rosso piu' scuro ai bordi
+        t = (i - a0) / (a1 - a0)
+        v = int(185 + 57 * max(0, 1 - abs(t - .6) * 2))
+        sd.line((i, 0, i - 2 * W, 2 * W), fill=(v, 0, 0, 255), width=2)
+    for c, wd, col in ((a0 + 5 * S, S + S // 2, (245, 180, 140, 255)), (a1 - 5 * S, S, (250, 140, 110, 220))):
+        sd.line((c, 0, c - 2 * W, 2 * W), fill=col, width=wd)
+    smask = Image.new('L', (W, W), 0)
+    ImageDraw.Draw(smask).polygon([(a0, 0), (a1, 0), (a1 - 2 * W, 2 * W), (a0 - 2 * W, 2 * W)], fill=255)
+    smask = ImageChops.multiply(smask, card)
+    sash.putalpha(smask)
+    im.alpha_composite(sash)
+
+    # «COMPLETE»: 1080p x 860..1180, y 700..745 -> 93..285 x 270..297 (centro 0.62 della
+    # larghezza). Lettere arancioni (piu' chiare in alto), bordo arancio scuro, alone giallo.
+    font = ImageFont.truetype(os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', 'arialbd.ttf'), 60 * S)
+    tm = Image.new('L', (int(60 * S * 7), 80 * S), 0)
+    ImageDraw.Draw(tm).text((10 * S, 0), 'COMPLETE', font=font, fill=255)
+    tm = tm.crop(tm.getbbox())
+    tx0, ty0, tx1, ty1 = 93 * S, 270 * S, 285 * S, 297 * S
+    tm = tm.resize((tx1 - tx0, ty1 - ty0), Image.LANCZOS)
+    full = Image.new('L', (W, W), 0)
+    full.paste(tm, (tx0, ty0))
+    edge = full.filter(ImageFilter.MaxFilter(2 * S + 1))
+    glow = full.filter(ImageFilter.MaxFilter(4 * S + 1)).filter(ImageFilter.GaussianBlur(3 * S))
+    glow = glow.point(lambda v: min(255, v * 2))
+    layer = Image.new('RGBA', (W, W), (255, 245, 60, 0))
+    layer.putalpha(glow)
+    im.alpha_composite(layer)
+    layer = Image.new('RGBA', (W, W), (225, 75, 0, 0))
+    layer.putalpha(edge)
+    im.alpha_composite(layer)
+    fill = _vgrad((W, W), (255, 205, 40, 255), (255, 105, 0, 255), ty0, ty1)
+    fill.putalpha(full)
+    im.alpha_composite(fill)
+
+    # Fiocco (punti a 1080p sul riferimento): scala 0.6 * 1.1 attorno al nodo (762,307),
+    # che va in (54,53) cosi' asole e code restano dentro la tela.
+    def P(pts):
+        return [(54 + (x - 762) * .66, 53 + (y - 307) * .66) for x, y in pts]
+    pieces = [
+        # nastro lungo il bordo superiore, dal fiocco verso destra (taglio dritto sotto la linguetta)
+        (P([(835, 262), (902, 238), (910, 256), (850, 284)]), (235, 25, 20), (175, 0, 5)),
+        # code che pendono
+        (P([(730, 330), (700, 385), (690, 462), (718, 428), (735, 410), (757, 332)]), (215, 10, 10), (150, 0, 0)),
+        (P([(752, 332), (745, 418), (762, 404), (790, 418), (772, 330)]), (215, 10, 10), (145, 0, 0)),
+        # asola sinistra
+        (P([(746, 302), (698, 306), (678, 335), (690, 375), (722, 396), (750, 326)]), (240, 30, 25), (170, 0, 5)),
+        # asola destra / coda verso destra
+        (P([(780, 296), (875, 288), (842, 310), (872, 338), (778, 318)]), (240, 30, 25), (170, 0, 5)),
+        # asola superiore
+        (P([(760, 296), (762, 250), (790, 228), (835, 238), (860, 268), (845, 285), (788, 302)]), (250, 45, 35), (185, 5, 10)),
+        # nodo
+        (P([(748, 295), (765, 288), (782, 298), (778, 320), (760, 326), (746, 316)]), (235, 35, 30), (160, 0, 5)),
+    ]
+    bow = Image.new('RGBA', (W, W), (0, 0, 0, 0))
+    allm = Image.new('L', (W, W), 0)
+    for pts, top, bot in pieces:
+        p, m = _ribbon_piece((W, W), pts, top, bot, S)
+        bow.alpha_composite(p)
+        allm = ImageChops.lighter(allm, m)
+    # piega scura dentro le asole e riflesso lucido, solo dove c'e' nastro
+    fold = Image.new('RGBA', (W, W), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(fold)
+    for a, b, col in (((751, 312), (712, 352), (110, 0, 5, 150)), ((785, 300), (835, 262), (110, 0, 5, 150)),
+                      ((788, 308), (850, 310), (110, 0, 5, 130)), ((775, 245), (820, 242), (255, 170, 150, 110)),
+                      ((700, 330), (715, 318), (255, 170, 150, 110))):
+        (x0, y0), (x1, y1) = P([a, b])
+        fd.line((x0 * S, y0 * S, x1 * S, y1 * S), fill=col, width=2 * S)
+    fold = fold.filter(ImageFilter.GaussianBlur(S))
+    fold.putalpha(ImageChops.multiply(fold.getchannel('A'), _erode(allm, 2 * S)))
+    bow.alpha_composite(fold)
+    shadow = Image.new('RGBA', (W, W), (40, 0, 0, 0))
+    shadow.putalpha(allm.filter(ImageFilter.GaussianBlur(2 * S)).point(lambda v: v * 90 // 255))
+    im.alpha_composite(shadow, (S, 2 * S))
+    im.alpha_composite(bow)
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def node_check():
+    """Sphere_Node_Check (64x56): spunta gialla 255,228,0 dei nodi sbloccati, bordo rosso
+    240,32,0 (~4 px a 1080p) con un filo piu' scuro all'esterno e riflesso chiaro sui lati
+    alti. Punti a 1080p relativi al centro del nodo (618,317 in ab_ref_node_check_01, nodo
+    ~150 px = 90 nel layout), scala 0.6; centro della tela = centro del nodo + (0.6, -24.3)
+    (y in giu'): la punta lunga esce di ~5 px oltre il bordo del nodo in alto a destra."""
+    from PIL import ImageChops
+    w, h = 64, 56
+    W, H = w * S, h * S
+    pts = [(-50, -34), (-33, -54), (-8, -29), (30, -82), (52, -64), (-10, 1)]
+    cx, cy = 0.6, -24.3
+    poly = [((x * .6 - cx + w / 2) * S, (y * .6 - cy + h / 2) * S) for x, y in pts]
+    m = Image.new('L', (W, H), 0)
+    ImageDraw.Draw(m).polygon(poly, fill=255)
+    im = Image.new('RGBA', (W, H), (110, 15, 0, 255))
+    e1 = _erode(m, S // 2)
+    im.paste((235, 35, 0, 255), (0, 0), e1)
+    e2 = _erode(e1, 2 * S)
+    im.paste((255, 228, 0, 255), (0, 0), e2)
+    # riflesso: fascia chiara lungo i lati alti (maschera spostata in basso a destra)
+    hi = ImageChops.subtract(e2, ImageChops.offset(e2, S, 2 * S))
+    im.paste((255, 250, 170, 255), (0, 0), hi.point(lambda v: v * 3 // 4))
+    im.putalpha(m)
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def no_tab():
+    """Sphere_No_Tab (195x30): linguetta a pillola grigio-azzurra sopra la scheda («No. n»,
+    testo del gioco). 1080p 325x48: corpo 90,126,154, filo chiaro 175,200,222 in alto e
+    sui lati, ombra 59,100,129 sul bordo basso."""
+    w, h = 195, 30
+    W, H = w * S, h * S
+    r = 13 * S
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, W - 1, H - 1), r, fill=(150, 178, 204, 255))
+    d.rounded_rectangle((0, 2 * S, W - 1, H - 1), r, fill=(56, 92, 122, 255))
+    body = _vgrad((W, H), (104, 138, 168, 255), (86, 121, 150, 255))
+    m = Image.new('L', (W, H), 0)
+    b = S + S // 2
+    ImageDraw.Draw(m).rounded_rectangle((b, b, W - 1 - b, H - 1 - b), r - b, fill=255)
+    im.paste(body, (0, 0), m)
+    d.line((r, S // 2, W - r, S // 2), fill=(185, 208, 228, 255), width=S)   # riflesso in alto
+    return im.resize((w, h), Image.LANCZOS)
+
+
+save('Sphere_Board_Clear.png', board_clear())
+save('Sphere_Node_Check.png', node_check())
+save('Sphere_No_Tab.png', no_tab())
 save('Av_Panel_Colosseum.png', av_panel(280, 151, 28))
 save('Av_Panel1.png', av_panel(280, 98, 28))
 save('Ico_Param_HP.png', hp_icon())
