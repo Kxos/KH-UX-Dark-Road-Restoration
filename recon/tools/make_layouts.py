@@ -675,6 +675,50 @@ LAYOUTS = {
         I('Select_Board', 153, 153, 306, 306, 'Board_0001.png', s9=False),
         I('Select_Kind', 153, 153, 306, 306, 'Kind_0001.png', s9=False),
         L('Count_Label', 153, 30, 200, 30, '', 22, visible=False)])),
+    # Bacheca (SceneSphereBoard, FUN_00ce3e64; specifica in stage_gen\boards\LAYOUT.md): il
+    # codice cerca G11..G59 (5 righe x 9 colonne, tutte obbligatorie, riga 1 in alto; il nodo
+    # va al centro della cella), Grid/Grid_R/Info/LeftUI (animazioni di entrata e uscita, il
+    # primo figlio da' la distanza), carta (Select_*), monete, premio, Button e Button_All con
+    # il proprio Txt_Release. Misure dagli screenshot del 2017 (reference ab_29-33, bacheca 63)
+    'SphereScene_ver310.json': ('scene', [('Grid', 'publish/SphereScene_Grid.json'),
+                                          ('Grid_R', 'publish/SphereScene_GridR.json'),
+                                          ('Info', 'publish/SphereScene_Info.json'),
+                                          ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
+    'SphereScene_Grid.json': ('build', P('sphere_grid_root', 0, 0, 960, 640, [
+        P('Grid_Area', 0, 0, 960, 640, [
+            P('G%d%d' % (r + 1, c + 1), 75 + 101 * c - 50, 454 - 78 * r - 39, 101, 78)
+            for r in range(5) for c in range(9)])])),
+    'SphereScene_GridR.json': ('build', P('sphere_gridr_root', 0, 0, 960, 640, [
+        P('Grid_R_Area', 0, 0, 10, 10)])),
+    'SphereScene_Info.json': ('build', P('sphere_info_root', 0, 0, 960, 640, [
+        P('Info_Area', 0, 0, 960, 640, [
+            I('Txt_SphereBoard_Plate', 113, 505, 220, 36, 'Plate13.png',
+              opts=dict(scale9Enable=True, capInsetsX=60, capInsetsY=10, capInsetsWidth=1, capInsetsHeight=1)),
+            L('Txt_SphereBoard_Label', 113, 505, 210, 30, '', 22),
+            I('Select_Board', 120, 408, 306, 306, 'Board_0001.png', s9=False, scale=0.5),
+            I('Select_Base', 120, 408, 306, 306, 'Board_0001.png', s9=False, scale=0.5),
+            I('Select_Kind', 120, 408, 306, 306, 'Kind_0001.png', s9=False, scale=0.5),
+            I('Coin', 91, 47, 174, 75, 'Av_Panel1.png',
+              opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=30, capInsetsWidth=1, capInsetsHeight=38), children=[
+                  *[I(n, -62, 16, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3, visible=(n == 'SpherePointIcon'))
+                    for n in ('SpherePointIcon', 'SpherePointIcon_OC', 'SpherePointIcon_EV', 'SpherePointIcon_Raid',
+                              'SpherePointIcon_SP')],
+                  L('Txt_Coin_Name_Label', 10, 16, 130, 24, 'Avatar Coins', 18),
+                  I('Coin_Base', 0, -19, 160, 26, 'Plate02.png', opts=PLATE3),
+                  L('Txt_Coin_Label', 70, -19, 120, 26, '0', 22, opts=dict(anchorPointX=1, hAlignment=2))]),
+            I('Incentive_Bar', 573, 46, 765, 80, 'Av_Panel1.png',
+              opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=30, capInsetsWidth=1, capInsetsHeight=38)),
+            L('Txt_Incentive_Label', 298, 44, 150, 30, '', 20),
+            I('Incentive_Name_Base', 613, 44, 435, 42, 'Plate02.png', opts=PLATE3),
+            L('Txt_Incentive_Name_Label', 613, 44, 420, 32, '', 20),
+            B('Button', 890, 45, 111, 62, 'But03', 'Unlock', 24, label='Txt_Release', opts=BUT9),
+            B('Button_All', 890, 120, 111, 52, 'But16', 'Unlock All', 20, label='Txt_Release', opts=BUT9)])])),
+    # nodo della bacheca (FUN_00f36f18, posto a (-50,-50) sul nodo): Get (spunta, nascosta
+    # all'inizio), Txt_Incentive_Label, Txt_Price_Label (costo in monete)
+    'Sphere_Incentive.json': ('build', P('Sphere_Incentive', 0, 0, 100, 100, [
+        I('Get', 50, 55, 62, 51, 'Kind_0001.png', s9=False, scale=0.2, visible=False),
+        L('Txt_Incentive_Label', 50, 20, 100, 20, '', 14, visible=False),
+        L('Txt_Price_Label', 90, 67, 50, 24, '0', 20)])),
     # Missioni (pulsante a pergamena della home, FUN_00a8a8d8 / FUN_00a8ad3c / FUN_00a8c100):
     # nessun layout ne' riferimento visivo trovato (annotato in HANDOFF). Finestra nello stile
     # dei popup KHUX: schede tab1..tab4 in alto (MyMission_Category, GroupIcon, Icon_Crown),
