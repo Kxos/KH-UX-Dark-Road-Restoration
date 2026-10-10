@@ -527,14 +527,16 @@ LAYOUTS = {
                                                        scale=0.3)]),
                                                  L('Txt_BondsPossessed', 400, 300, 160, 28, 'Held', 22),
                                                  L('Txt_BondsPossessed_Label', 570, 300, 200, 28, '0', 22)]),
-    # premio del nodo sbloccato (FUN_00f3564c: Txt_Get_Label, Panel, Button_Ok/Txt_Ok) e popup
-    # «ottenuto» (FUN_00f363a4, nomi non decodificati: gli stessi) dal popup OK originale
-    'Sphere_Incentive_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
-                                     {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100), P('Area_Point', 480, 420, 10, 10)] + reward_icons(480, 380)),
+    # popup del nodo sbloccato (FUN_00f363a4 lo carica, FUN_00f3564c lo centra e cerca
+    # Txt_Get_Label, Panel, Button_Ok/Txt_Ok): dal popup OK originale. Nel suo Panel il codice
+    # aggiunge Sphere_Incentive_ver240 (solo l'icona del premio, riempita da FUN_0074fd90):
+    # come popup completo appariva una seconda finestra spostata di Panel (banco v32_unlock4a)
     'Sphere_Popup_Get_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                      {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100), P('Area_Point', 480, 420, 10, 10)] + reward_icons(480, 380)),
+                                     False, [('text', 'Txt_Get_Label', ''), ('opts', 'Txt_Get_Label', dict(y=78, height=60)),
+                                             P('Panel', 430, 250, 100, 100),
+                                             P('Area_Point', 480, 420, 10, 10)]),
+    'Sphere_Incentive_ver240.json': ('build', P('Sphere_Incentive_ver240', 0, 0, 100, 100, reward_icons(50, 50))),
     # bacheca completata (FUN_00f342f4 / FUN_00f39090): Area_Point (vi mette le LWF
     # SphereMap_Complete e Result_Reward), Txt_All
     'Sphere_Popup_Comp_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
@@ -700,9 +702,10 @@ LAYOUTS = {
         # con l'icona e «200» sotto la carta (x' 1200, y' 700 -> 480, 225)
         I('Img_Win_S', 480, 160, 200, 36, 'Plate02.png', opts=PLATE3, visible=False),
         I('Img_Win_L', 480, 160, 200, 36, 'Plate02.png', opts=PLATE3, children=[
-            I('Win_Coin_Icon', 20, 18, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35),
-            L('Txt_Coin_Title', 60, 18, 80, 24, '', 18, visible=False),
-            L('Txt_Coin', 180, 18, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2))]),
+            # figli di un'ImageView: coordinate dal centro (prima da 0,0: icona e numero a destra)
+            I('Win_Coin_Icon', -72, 0, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35),
+            L('Txt_Coin_Title', -20, 0, 80, 24, '', 18, visible=False),
+            L('Txt_Coin', 85, 0, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2))]),
         # riquadro «Avatar Coins» in basso a sinistra (FUN_00cd3868: Txt_Coin_Name_Label,
         # Txt_Coin_Label)
         # riquadro con la linguetta del titolo (Av_Panel1 di make_textures): Win04 in 9-slice non
@@ -755,7 +758,8 @@ LAYOUTS = {
             I('LB_Jewel', 100, 20, 200, 30, 'Plate02.png', opts=PLATE3, children=[
                 I('Icon_Jewel', -80, 0, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.3)]),
             L('Txt_Jewel_Label', 120, 20, 120, 26, '0', 22)], visible=False),
-        P('No_Panel', 53, 120, 200, 60, [L('Txt_No_Label', 100, 30, 200, 50, '', 22)], visible=False),
+        # «No. 49» sopra la carta (ab_sheet)
+        P('No_Panel', 53, 300, 200, 40, [L('Txt_No_Label', 100, 20, 200, 36, '', 20)], visible=False),
         L('Txt_Offer_Ends', 153, 60, 280, 24, '', 18, visible=False)])),
     # Bacheca (SceneSphereBoard, FUN_00ce3e64; specifica in stage_gen\boards\LAYOUT.md): il
     # codice cerca G11..G59 (5 righe x 9 colonne, tutte obbligatorie, riga 1 in alto; il nodo
@@ -839,29 +843,35 @@ LAYOUTS = {
     # porta la larghezza a numUpper/numLower di quella di Gauge_Base: 9-slice, ancora a sinistra),
     # Txt_Norma_Num_Label / Txt_Norma_Slash / Txt_Norma_All_Label, Complete. Senza il file il
     # client andava in crash all'apertura della finestra con delle missioni (banco v32)
-    'MyPageMission_Panel.json': ('build', P('MyPageMission_Panel', 0, 0, 840, 100, [
-        I('Row_Base', 420, 50, 836, 96, 'Panel04.png', opts=GRID),
-        P('Panel_Present', 14, 10, 80, 80),
-        L('Txt_Mission_Title_Label', 110, 72, 440, 30, '', 22, opts=dict(anchorPointX=0, hAlignment=0)),
-        L('Txt_Gift_Name_Label', 110, 44, 300, 24, '', 18,
+    # Le righe distano 148 (dimensione della cella fissata dal codice) e la riga, posta a
+    # (larghezza/2, 0), appare 44 a sinistra dell'area visibile (banco v32_missions4): riga alta
+    # 144 come quelle dei Presents (158) e contenuto spostato di +44
+    'MyPageMission_Panel.json': ('build', P('MyPageMission_Panel', 0, 0, 840, 144, [
+        I('Row_Base', 468, 72, 836, 138, 'Panel04.png', opts=GRID),
+        P('Panel_Present', 74, 32, 80, 80),
+        L('Txt_Mission_Title_Label', 180, 108, 480, 30, '', 20, opts=dict(anchorPointX=0, hAlignment=0)),
+        L('Txt_Gift_Name_Label', 180, 76, 300, 24, '', 18,
           opts=dict(anchorPointX=0, hAlignment=0, colorR=255, colorG=230, colorB=60)),
-        I('Gauge_Base', 290, 18, 360, 16, 'Plate02.png', opts=PLATE3, children=[
-            # stirata senza 9-slice (i bordi del 9-slice non scendono sotto ~120 px: a 0/1 la barra
-            # era gia' piena per un terzo)
-            I('Gauge', -180, 0, 360, 12, 'Plate13.png', s9=False, ignoreSize=False, opts=dict(anchorPointX=0))]),
-        L('Txt_Norma_Num_Label', 560, 18, 90, 24, '0', 20, opts=dict(anchorPointX=1, hAlignment=2)),
-        L('Txt_Norma_Slash', 570, 18, 20, 24, '/', 20),
-        L('Txt_Norma_All_Label', 580, 18, 120, 24, '0', 20, opts=dict(anchorPointX=0, hAlignment=0)),
-        L('Complete', 290, 18, 200, 26, 'Complete!', 22, visible=False,
+        # barra come quella LUX della home: fondo Gage_LUX_Base, riempimento Gage_LUX_Tip stirata
+        # senza 9-slice (i bordi del 9-slice non scendono sotto la texture: a 0/1 la barra era
+        # gia' piena per un terzo; Plate13 scura era quasi invisibile, banco m9)
+        I('Gauge_Base', 330, 36, 300, 16, 'Gage_LUX_Base.png',
+          opts=dict(scale9Enable=True, capInsetsX=8, capInsetsY=7, capInsetsWidth=1, capInsetsHeight=2), children=[
+            I('Gauge', -148, 0, 296, 12, 'Gage_LUX_Tip.png', s9=False, ignoreSize=False, opts=dict(anchorPointX=0))]),
+        L('Txt_Norma_Num_Label', 560, 36, 100, 24, '0', 20, opts=dict(anchorPointX=1, hAlignment=2)),
+        L('Txt_Norma_Slash', 570, 36, 20, 24, '/', 20),
+        L('Txt_Norma_All_Label', 580, 36, 110, 24, '0', 20, opts=dict(anchorPointX=0, hAlignment=0)),
+        L('Complete', 330, 36, 200, 26, 'Complete!', 22, visible=False,
           opts=dict(colorR=255, colorG=230, colorB=60)),
-        L('Txt_Storage_Date_Label', 600, 72, 220, 24, '', 18, opts=dict(anchorPointX=0, hAlignment=0)),
+        L('Txt_Storage_Date_Label', 870, 108, 220, 24, '', 18, opts=dict(anchorPointX=1, hAlignment=2)),
         # ChallengeButton/ReceiveButton li crea il codice attorno a Button_Challenge/Button_Receive
         # (FUN_00a964fc: se esistono gia' li prende per pulsanti suoi: crash, banco v32)
-        B('Button_Challenge', 765, 36, 233, 68, 'But03', 'Challenge', 26, label='Txt_Challenge', opts=BUTS),
-        B('Button_Receive', 765, 36, 233, 68, 'But01', 'Collect', 26, label='Txt_Receive', opts=BUTS),
-        P('Panel_Mask', 0, 0, 840, 100, visible=False,
+        B('Button_Challenge', 785, 54, 233, 68, 'But03', 'Challenge', 26, label='Txt_Challenge', opts=BUTS),
+        B('Button_Receive', 785, 54, 233, 68, 'But01', 'Collect', 26, label='Txt_Receive', opts=BUTS),
+        P('Panel_Mask', 50, 3, 836, 138, visible=False,
           opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=120)),
-        I('GetStamp', 765, 50, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, visible=False)])),
+        # riscossa: la scritta COMPLETE delle missioni completate (World_Stage_Clear) sul pulsante
+        I('GetStamp', 785, 54, 170, 34, 'World_Stage_Clear.png', s9=False, scale=0.95, visible=False)])),
     # «Other» del menu (FUN_009ec518): vedi other_menu
     'MenuDialog_ver300.json': ('func', 'other_menu'),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),

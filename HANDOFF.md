@@ -19,7 +19,38 @@ qui c'è come.
 
 ### STATO AL 11 OTTOBRE 2026 (notte) — RIPRENDERE DA QUI
 
-**Aggiornamento dopo la compattazione** (vale sopra l'elenco piu' sotto):
+**Sessione del 10 ottobre 2026 (sera) — RIPRENDERE DA QUI** (vale sopra tutto il resto):
+- PROVATO SUL BANCO (risorse 32 rigenerate con -Quick, revisione 80): Missioni complete. Righe
+  alte 144 (la cella del codice e' 148, la riga appare 44 a sinistra: contenuto spostato di +44),
+  barra come quella LUX (Gage_LUX_Base + Gage_LUX_Tip stirata), timbro World_Stage_Clear
+  («COMPLETE») sulle righe riscosse. Contatori quest/Lux giusti dopo la missione 1030; «Collect
+  All» ok (Jewel 3000 -> 3060, «All rewards have been collected», righe scurite).
+- Popup dello sblocco dei nodi CORRETTO: Sphere_Incentive_ver240 non e' un popup, ma l'icona del
+  premio che FUN_00f3564c aggiunge nel `Panel` di Sphere_Popup_Get_ver240 (ora 'build' 100x100
+  con reward_icons). Provato: una sola finestra con l'icona (guanti), monete 475 -> 470.
+  Il prezzo del nodo in alto a destra e' come l'originale (ab_31): non va spostato.
+- MODIFICATO MA NON ANCORA PROVATO (serve `build-resources.ps1 -Quick`, la 32 e' ancora l'ultima):
+  testo del popup Get alzato (y 78) e icona abbassata (Panel y 250), perche' l'icona copriva il
+  testo; elenco bacheche: figli di Img_Win_L coordinate dal centro (la moneta e «45/25» erano
+  spostati a destra), «No. N» sopra la carta (No_Panel y 300) come in ab_sheet; timbro scala 0.95.
+- DA FARE:
+  1. Spunta gialla sui nodi sbloccati (widget `Get` di Sphere_Incentive.json: ora Kind_0001
+     segnaposto, invisibile). Nessuna texture trovata finora: cercare nei LWF (risultati?) o
+     ricostruirla.
+  2. «Unlock All» e bacheca completata (titolo 2000+N) ancora da provare.
+  3. Mappe generate: nella 1060 (piu' stanze) il giocatore resta bloccato contro un tronco e non
+     raggiunge il TARGET (forziere visibile: il POI funziona). Un agente stava scrivendo in
+     `D:\Progetto_Restauro_KH_UX\stage_gen\reach\` (validatore con flood-fill, REPORT.md,
+     gen_story_maps.py corretto, uscita separata in stage_gen\reach\story e stage_poi.json):
+     se c'e' REPORT.md leggerlo, integrare gli script in recon/tools, rigenerare, copiare in
+     stage_gen\files\stage, versione risorse completa (33) e provare la 1060.
+  4. story.ps1 / bench_prologue -Seek: su mappe scure (nebbia) FindSpotlight scambia lo sfondo
+     per il cerchio del tutorial e non fa passi (0 passi); e nella 1030 non ha visto il
+     /stage/clear che c'era (#718). Da sistemare.
+  5. Riprovare 990018; Raid/PVP/Union Cross nei contatori delle missioni; Cutin mancanti; stile.
+- Salvataggio di prova: avatarCoin 470, missioni 2004/2008 riscosse.
+
+**Aggiornamento dopo la compattazione** (precedente):
 - Righe enemyAttack generate (revisione 78): i 17 nemici con validSkill 3 ora partono tutti
   (`stage_gen\zoo2_results.json`). Punto 1 chiuso.
 - Missioni giornaliere/settimanali: `server/tables/mission.json` copiata nel master da
