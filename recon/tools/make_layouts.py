@@ -117,6 +117,30 @@ def held_plates(y):
             L('Txt_Munnies', 90, 0, 160, 24, '0', 20)])]
 
 
+def reward_icons(x, y):
+    """Icona grande di un premio (FUN_0074fd90, popup dei nodi degli Avatar Boards): un widget per
+    tipo, cercati tutti dalla radice (senza uno: crash dopo lo sblocco, banco v32). Il codice
+    mostra quello del tipo e ne carica la texture."""
+    def icon(n):
+        return I(n, x, y, 90, 90, 'IncentiveIcon_02.png', s9=False, visible=False)
+    return ([icon(n) for n in ('MDL', 'SKL', 'KB', 'MTR', 'HP', 'AP', 'SG', 'COST', 'Incentive', 'Icon_Skil',
+                                'MixCircle_Plate')]
+            + [P('AVT', x - 45, y - 45, 90, 90, [
+                I('Icon_Base', 45, 45, 90, 90, 'IncentiveIcon_02.png', s9=False),
+                I('Icon_Avatar', 45, 45, 90, 90, 'IncentiveIcon_02.png', s9=False),
+                I('Gender', 75, 75, 41, 61, 'Kind_0001.png', s9=False, scale=0.4)], visible=False),
+               P('LuxBoard', x - 45, y - 45, 90, 90, [
+                   I('Select_Board', 45, 45, 306, 306, 'Board_0001.png', s9=False, scale=0.3),
+                   I('Select_Base', 45, 45, 306, 306, 'Board_0001.png', s9=False, scale=0.3),
+                   I('Select_Kind', 45, 45, 306, 306, 'Kind_0001.png', s9=False, scale=0.3)], visible=False),
+               I('RankTitle_Board', x, y, 300, 40, 'Plate02.png', opts=PLATE3, visible=False, children=[
+                   L('RankTitle_Name', 0, 0, 280, 30, '', 20)]),
+               P('Comment', x - 150, y - 30, 300, 60, [
+                   I('Icon_Comment', 20, 30, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4),
+                   L('MultiComment_txt', 160, 30, 240, 50, '', 18)], visible=False),
+               P('Area_MixCircle', x - 45, y - 45, 90, 90, visible=False)])
+
+
 LAYOUTS = {
     # Presents (FUN_00d0cfbc scena, FUN_00d0b350 base, FUN_00899640 pannello): stessi
     # nomi della versione Dark Road (Txt_Wording, Scroll_Area, Txt_None, Txt_Stock*,
@@ -124,7 +148,25 @@ LAYOUTS = {
     'PresentBOXScene.json': ('scene', ['CenterUI', 'LeftUI']),
     'PresentBOX_Base_ver400.json': ('copy', 'dark_PresentBOX_base.json', {}, True),
     'PresentBOX_Panel_ver131.json': ('copy', 'dark_PresentBOX_panel.json', {}, True),
-    'PresentBOX_IconPanel_ver131.json': ('copy', 'dark_PresentBOX_icon_panel.json', {}, True),
+    # Icona di un premio (FUN_0074d540, anche nelle righe delle Missioni): la copia di Dark Road
+    # non aveva i widget di KHUX (crash alla prima missione con premio, banco v32). Cerca dalla
+    # radice LuxBoard (bacheca: Select_Board/Select_Base/Select_Kind, FUN_0074cff8), AVT (parte
+    # dell'avatar: Icon_Avatar, Icon_Base, Gender, FUN_0074cd18), Star_Area, Incentive (icona
+    # img/incentive/IncentiveIcon_NN, materiali, emblemi...), Medal (Medal_S), KB, Stamp
+    'PresentBOX_IconPanel_ver131.json': ('build', P('PresentBOX_IconPanel', 0, 0, 80, 80, [
+        I('Incentive', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8),
+        I('Medal', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4, visible=False),
+        I('KB', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8, visible=False),
+        I('Stamp', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8, visible=False),
+        P('Star_Area', 0, 0, 80, 16),
+        P('AVT', 0, 0, 80, 80, [
+            I('Icon_Base', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8),
+            I('Icon_Avatar', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8),
+            I('Gender', 66, 66, 41, 61, 'Kind_0001.png', s9=False, scale=0.3)], visible=False),
+        P('LuxBoard', 0, 0, 80, 80, [
+            I('Select_Board', 40, 40, 306, 306, 'Board_0001.png', s9=False, scale=0.26),
+            I('Select_Base', 40, 40, 306, 306, 'Board_0001.png', s9=False, scale=0.26),
+            I('Select_Kind', 40, 40, 306, 306, 'Kind_0001.png', s9=False, scale=0.26)], visible=False)])),
 
     # Medal List (FUN_00df1c00 e vicine, FUN_006e0eb8 carica la scena e cerca i widget da
     # li', ricorsivamente). Disposizione dalle schermate di riferimento
@@ -489,10 +531,10 @@ LAYOUTS = {
     # «ottenuto» (FUN_00f363a4, nomi non decodificati: gli stessi) dal popup OK originale
     'Sphere_Incentive_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                      {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100)]),
+                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100), P('Area_Point', 480, 420, 10, 10)] + reward_icons(480, 380)),
     'Sphere_Popup_Get_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                      {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100)]),
+                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100), P('Area_Point', 480, 420, 10, 10)] + reward_icons(480, 380)),
     # bacheca completata (FUN_00f342f4 / FUN_00f39090): Area_Point (vi mette le LWF
     # SphereMap_Complete e Result_Reward), Txt_All
     'Sphere_Popup_Comp_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
@@ -641,7 +683,9 @@ LAYOUTS = {
         # avatar_boards_list_01, x' 288 e 2106 -> x -60 e 1017)
         # posti delle carte (FUN_00cd78e8 li cerca dentro SelectArea, banco ab9): centrale e
         # laterali come in avatar_boards_list_01 (x' 1200/738/1662 -> 480/206/754)
-        P('SelectArea', 0, 180, 960, 330, [
+        # y dei posti ignorata dal codice: con SelectArea a 180 le carte finivano sotto la barra in
+        # alto (banco v32, centro a y 518): abbassata di 177 per il centro a 341
+        P('SelectArea', 0, 3, 960, 330, [
             P('LeftUI', 206, 140, 10, 10),
             P('RightUI', 754, 140, 10, 10),
             P('CenterUI', 480, 161, 10, 10)]),
@@ -654,8 +698,8 @@ LAYOUTS = {
         # costo della bacheca sotto la carta centrale (grande) e le laterali (piccola): il codice
         # cerca Txt_Coin e Txt_Coin_Title dentro Img_Win_L (banco ab4); riferimento: targa scura
         # con l'icona e «200» sotto la carta (x' 1200, y' 700 -> 480, 225)
-        I('Img_Win_S', 480, 225, 200, 36, 'Plate02.png', opts=PLATE3, visible=False),
-        I('Img_Win_L', 480, 225, 200, 36, 'Plate02.png', opts=PLATE3, children=[
+        I('Img_Win_S', 480, 160, 200, 36, 'Plate02.png', opts=PLATE3, visible=False),
+        I('Img_Win_L', 480, 160, 200, 36, 'Plate02.png', opts=PLATE3, children=[
             I('Win_Coin_Icon', 20, 18, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35),
             L('Txt_Coin_Title', 60, 18, 80, 24, '', 18, visible=False),
             L('Txt_Coin', 180, 18, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2))]),
@@ -696,10 +740,23 @@ LAYOUTS = {
     # fotogrammi del 2017), Select_Board (img/sphere_board/Board_%04d) e Select_Kind
     # (img/sphere_kind/Kind_%04d, il segno del genere in alto a destra: Kind_0001)
     'SphereBoard_Select_Icon_ver130.json': ('build', P('Select_Icon', 0, 0, 306, 306, [
-        I('Select_Base', 153, 153, 306, 306, 'Board_0001.png', s9=False),
+        # Select_Board (sfondo) sotto Select_Base (costume): al contrario copriva il costume (banco v32)
         I('Select_Board', 153, 153, 306, 306, 'Board_0001.png', s9=False),
+        I('Select_Base', 153, 153, 306, 306, 'Board_0001.png', s9=False),
         I('Select_Kind', 153, 153, 306, 306, 'Kind_0001.png', s9=False),
-        L('Count_Label', 153, 30, 200, 30, '', 22, visible=False)])),
+        L('Count_Label', 153, 30, 200, 30, '', 22, visible=False),
+        # cercati anche da FUN_008894a0 (riempimento della carta; senza: crash con una bacheca
+        # nell'elenco, banco v32): New, Clear (completata), Select_On (carta scelta), costo in
+        # Jewel (Jewel_Panel, LB_Jewel, Txt_Jewel_Label), No_Panel/Txt_No_Label, Txt_Offer_Ends
+        I('New', 60, 280, 69, 30, 'Deck_Medal_New.png', s9=False, visible=False),
+        I('Clear', 153, 153, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, scale=2, visible=False),
+        I('Select_On', 153, 153, 306, 306, 'Board_0001.png', s9=False, visible=False),
+        P('Jewel_Panel', 53, 10, 200, 40, [
+            I('LB_Jewel', 100, 20, 200, 30, 'Plate02.png', opts=PLATE3, children=[
+                I('Icon_Jewel', -80, 0, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.3)]),
+            L('Txt_Jewel_Label', 120, 20, 120, 26, '0', 22)], visible=False),
+        P('No_Panel', 53, 120, 200, 60, [L('Txt_No_Label', 100, 30, 200, 50, '', 22)], visible=False),
+        L('Txt_Offer_Ends', 153, 60, 280, 24, '', 18, visible=False)])),
     # Bacheca (SceneSphereBoard, FUN_00ce3e64; specifica in stage_gen\boards\LAYOUT.md): il
     # codice cerca G11..G59 (5 righe x 9 colonne, tutte obbligatorie, riga 1 in alto; il nodo
     # va al centro della cella), Grid/Grid_R/Info/LeftUI (animazioni di entrata e uscita, il
@@ -774,6 +831,37 @@ LAYOUTS = {
             L('Txt_Warning', 450, 280, 700, 60, '', 22)], visible=False),
         P('Cautio_Panel', 30, 500, 900, 30, [L('Txt', 450, 15, 860, 26, '', 18)], visible=False),
         B('Close_Button', 920, 570, 64, 64, 'But_Close', None)])),
+    # Riga di una missione (FUN_00a96000 la carica in MissionScrollView, FUN_00a94f9c /
+    # FUN_00a964fc / FUN_00a95a90 la riempiono): Panel_Present (vi mette PresentBOX_IconPanel),
+    # Txt_Mission_Title_Label, Txt_Gift_Name_Label, Panel_Mask e GetStamp (riscossa),
+    # ChallengeButton con Button_Challenge/Txt_Challenge, ReceiveButton con Button_Receive/
+    # Txt_Receive, Txt_Storage_Date_Label (tempo rimasto), Gauge_Base con Gauge (il codice ne
+    # porta la larghezza a numUpper/numLower di quella di Gauge_Base: 9-slice, ancora a sinistra),
+    # Txt_Norma_Num_Label / Txt_Norma_Slash / Txt_Norma_All_Label, Complete. Senza il file il
+    # client andava in crash all'apertura della finestra con delle missioni (banco v32)
+    'MyPageMission_Panel.json': ('build', P('MyPageMission_Panel', 0, 0, 840, 100, [
+        I('Row_Base', 420, 50, 836, 96, 'Panel04.png', opts=GRID),
+        P('Panel_Present', 14, 10, 80, 80),
+        L('Txt_Mission_Title_Label', 110, 72, 440, 30, '', 22, opts=dict(anchorPointX=0, hAlignment=0)),
+        L('Txt_Gift_Name_Label', 110, 44, 300, 24, '', 18,
+          opts=dict(anchorPointX=0, hAlignment=0, colorR=255, colorG=230, colorB=60)),
+        I('Gauge_Base', 290, 18, 360, 16, 'Plate02.png', opts=PLATE3, children=[
+            # stirata senza 9-slice (i bordi del 9-slice non scendono sotto ~120 px: a 0/1 la barra
+            # era gia' piena per un terzo)
+            I('Gauge', -180, 0, 360, 12, 'Plate13.png', s9=False, ignoreSize=False, opts=dict(anchorPointX=0))]),
+        L('Txt_Norma_Num_Label', 560, 18, 90, 24, '0', 20, opts=dict(anchorPointX=1, hAlignment=2)),
+        L('Txt_Norma_Slash', 570, 18, 20, 24, '/', 20),
+        L('Txt_Norma_All_Label', 580, 18, 120, 24, '0', 20, opts=dict(anchorPointX=0, hAlignment=0)),
+        L('Complete', 290, 18, 200, 26, 'Complete!', 22, visible=False,
+          opts=dict(colorR=255, colorG=230, colorB=60)),
+        L('Txt_Storage_Date_Label', 600, 72, 220, 24, '', 18, opts=dict(anchorPointX=0, hAlignment=0)),
+        # ChallengeButton/ReceiveButton li crea il codice attorno a Button_Challenge/Button_Receive
+        # (FUN_00a964fc: se esistono gia' li prende per pulsanti suoi: crash, banco v32)
+        B('Button_Challenge', 765, 36, 233, 68, 'But03', 'Challenge', 26, label='Txt_Challenge', opts=BUTS),
+        B('Button_Receive', 765, 36, 233, 68, 'But01', 'Collect', 26, label='Txt_Receive', opts=BUTS),
+        P('Panel_Mask', 0, 0, 840, 100, visible=False,
+          opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=120)),
+        I('GetStamp', 765, 50, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, visible=False)])),
     # «Other» del menu (FUN_009ec518): vedi other_menu
     'MenuDialog_ver300.json': ('func', 'other_menu'),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
@@ -1053,14 +1141,19 @@ _EMPTY_LWF = os.path.join(OUT, 'lwf', 'character', 'npc', '2000', 'wait', 'wait.
 if os.path.exists(_EMPTY_LWF):
     os.makedirs(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait'), exist_ok=True)
     shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
-    # Avatar Boards: apertura del nodo (FUN_00ce8e20) e bacheca completata (FUN_00f39090), assenti
-    for _n in ('SpIcon_Open', 'SphereMap_Complete'):
-        os.makedirs(os.path.join(OUT, 'lwf', 'sphere', _n), exist_ok=True)
-        shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'sphere', _n, _n + '.lwf'))
+
 # Animazione del risultato di Evolve (FUN_00ccbad8: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il
 # client va in crash dopo la risposta. Copia di quella del Level Up (card_strength_result_01)
 # con LWF e texture rinominati (il nome delle texture comincia col nome del file LWF).
+# Avatar Boards: apertura del nodo (FUN_00ce8e20) e premio/bacheca completata (FUN_00f39090,
+# gotoAndPlay su un'etichetta: con una LWF vuota crash dopo lo sblocco, banco v32), assenti da
+# ogni risorsa: copie dell'animazione del premio dei risultati (Result_Reward), rinominate
+_RR = 'lwf/battleresult/Result_Reward/'
+if os.path.isdir(os.path.join(SRC, *_RR.split('/'))):
+    for _n in ('SpIcon_Open', 'SphereMap_Complete'):
+        for _f in os.listdir(os.path.join(SRC, *_RR.split('/'))):
+            COPIES['lwf/sphere/%s/%s' % (_n, _f.replace('Result_Reward', _n))] = _RR + _f
 _LU = 'lwf/medal/compose/strength/card_strength_result_01/'
 if os.path.isdir(os.path.join(SRC, *_LU.split('/'))):
     for _n in range(1, 6):

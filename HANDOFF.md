@@ -48,6 +48,20 @@ qui c'è come.
   Release/Target, `stage_gen\boards\ARMATURES.md`); server GET /user/sphere,
   /user/sphere/update, /user/sphere/check (`stage_gen\boards\SERVER.md`); le immagini
   sphere_incentive (37 MB) stanno in medal_gen\files (pacchetto statico: versione completa).
+- PROVATO SUL BANCO (risorse 32, revisione 80): menu Missioni (schede Daily/Weekly, righe con
+  premio, tempo, barra, Challenge: layout MyPageMission_Panel e PresentBOX_IconPanel_ver131
+  ricostruiti con i widget di KHUX; ChallengeButton/ReceiveButton li crea il codice: NON
+  metterli nel layout); Avatar Boards: elenco con le carte (costume, figura blu/rosa), bacheca
+  (griglia, START, percorsi, nodi, Unlock) e sblocco di 4 nodi con popup «Congratulations! Max
+  HP increased by 20!», monete scalate (500 -> 480; il salvataggio di prova ha 500 monete date
+  a mano). Popup: servono Area_Point e le icone per tipo (reward_icons in make_layouts);
+  SpIcon_Open/SphereMap_Complete = copie rinominate di Result_Reward (una LWF vuota non ha
+  l'etichetta: crash). DA FARE: secondo popup (Sphere_Incentive_ver240?) mostrato fuori posto
+  in alto a destra (`screenshots\v32_unlock4a.png`), prezzo del nodo sopra a destra del nodo,
+  righe delle Missioni molto distanziate, provare Collect delle missioni e «Unlock All», bacheca
+  completata (titolo), riprovare 990018 (tocco perso).
+- Mappe a piu' stanze (95 missioni) e forzieri/nemici delle missioni generate nel server
+  (gen_story_maps scrive server/game_data/stage_poi.json con "poi" nella config): da provare.
 - Texture: le originali hanno l'alpha PREMOLTIPLICATA; btf.encode ora premoltiplica, decode
   la toglie; `recon/tools/btf_fix.py` (nel build) converte PNG veri e BTF vecchi. Causa dei
   bordi bianchi sulle medaglie (Paperino). Agente di controllo visivo di tutte le medaglie:
