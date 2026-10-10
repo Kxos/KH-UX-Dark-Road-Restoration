@@ -132,6 +132,39 @@ if (realEnemies) {
   for (const r of realEnemies) if (!have.has(r.enemyId)) enemies.push(fromReal('enemy', r));
 }
 
+// Grafica dei nemici: lwf/character/enemy/<displayId>/wait/ esiste solo per 6 nemici KHUX
+// (1 Shadow, 6 Soldier, 8 Nosy Mole, 17 Armored Knight, 37 Dire Plant, 1020 Mega-Shadow)
+// e per le serie di Dark Road (5001-5086, 7001-7005, 8001-8022, nomi non noti). Un nemico
+// senza grafica fa andare in crash l'avvio della missione (missione 8, Large Body): gli si
+// da' la grafica di un sostituto. Nome, statistiche, abilita' restano i suoi. Prima la
+// tabella esplicita (sostituti somiglianti, da completare identificando le serie di Dark
+// Road), poi per taglia. Il displayId originale resta in enemy_display_orig.json, cosi' la
+// sostituzione si ricalcola quando arrivano grafiche nuove.
+const DISPLAY_SUBSTITUTE = {
+  3: 5075, // Yellow Opera -> «TopOperaY» di Dark Road (nome nelle texture)
+  7: 17, // Large Body -> Armored Knight (grande, a terra)
+};
+let displaysSubstituted = 0;
+const namesFile = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
+if (enemies && fs.existsSync(namesFile)) {
+  const drawn = new Set();
+  for (const line of fs.readFileSync(namesFile, 'utf8').split('\n')) {
+    const m = /^lwf\/character\/enemy\/(\d+)\/wait\//.exec(line);
+    if (m) drawn.add(Number(m[1]));
+  }
+  const origPath = path.join(OUT, 'enemy_display_orig.json');
+  const orig = fs.existsSync(origPath) ? JSON.parse(fs.readFileSync(origPath, 'utf8')) : {};
+  for (const e of enemies) {
+    if (!(e.enemyId in orig)) orig[e.enemyId] = e.displayId;
+    const d = orig[e.enemyId];
+    if (drawn.has(d)) { e.displayId = d; continue; }
+    const sub = DISPLAY_SUBSTITUTE[d];
+    e.displayId = sub && drawn.has(sub) ? sub : (e.height >= 200 ? 17 : 1);
+    displaysSubstituted++;
+  }
+  fs.writeFileSync(origPath, JSON.stringify(orig));
+}
+
 const players = [];
 const realPlayers = realTable('player');
 if (realPlayers) {
@@ -289,7 +322,34 @@ for (const m of medals) {
   burstsAdded++;
 }
 
+// stage: i filmati prima/dopo la missione (beforeDramaId/afterDramaId) sono script
+// img/light/SEQ/<id>.l o animazioni lwf/drama/<id>/. Se mancano dalle risorse il client va
+// in crash avviando la missione (FUN_00ceacd8 -> FUN_00cf050c: missione 8, filmati
+// 1010201/1010301): si disattivano. Base intatta in stage_base.json (copiata al primo giro).
+const stagePath = path.join(OUT, 'stage.json');
+const stageBasePath = path.join(OUT, 'stage_base.json');
+let stagesOut = null, dramasOff = 0;
+const namesPath = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
+if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
+  if (!fs.existsSync(stageBasePath)) fs.copyFileSync(stagePath, stageBasePath);
+  const dramas = new Set();
+  for (const line of fs.readFileSync(namesPath, 'utf8').split('\n')) {
+    const m = /^(?:img\/light\/SEQ\/(\d+)\.l|lwf\/drama\/(\d+)\/)/.exec(line);
+    if (m) dramas.add(Number(m[1] || m[2]));
+  }
+  stagesOut = JSON.parse(fs.readFileSync(stageBasePath, 'utf8'));
+  for (const s of stagesOut) {
+    for (const [flag, ids] of [['validBeforeDrama', 'beforeDramaId'], ['validAfterDrama', 'afterDramaId']]) {
+      if (s[flag] && (s[ids] || []).some((id) => id && !dramas.has(id))) {
+        s[flag] = 0;
+        dramasOff++;
+      }
+    }
+  }
+}
+
 fs.mkdirSync(OUT, { recursive: true });
+if (stagesOut) fs.writeFileSync(stagePath, JSON.stringify(stagesOut));
 fs.writeFileSync(path.join(OUT, 'burst.json'), JSON.stringify(bursts));
 fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgrounds));
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
@@ -297,4 +357,5 @@ fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})`);
+  (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva)` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  `; stage: ${dramasOff} filmati senza script disattivati`);
