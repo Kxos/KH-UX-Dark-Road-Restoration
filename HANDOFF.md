@@ -19,6 +19,30 @@ qui c'è come.
 
 ### STATO AL 11 OTTOBRE 2026 (notte) — RIPRENDERE DA QUI
 
+**Aggiornamento dopo la compattazione** (vale sopra l'elenco piu' sotto):
+- Righe enemyAttack generate (revisione 78): i 17 nemici con validSkill 3 ora partono tutti
+  (`stage_gen\zoo2_results.json`). Punto 1 chiuso.
+- Missioni giornaliere/settimanali: `server/tables/mission.json` copiata nel master da
+  make-game-tables; GET /user/mission/list e POST /user/mission/receive in server.js
+  (contatori per periodo in `player.missions`; contano quest e Lux, non ancora Raid/PVP/Union
+  Cross). Da provare sul banco (menu Missioni).
+- Grafica di Dark Road: make-game-tables la assegna per nome da
+  `recon/tools/enemy_display_map.json` (confidenza alta/media: 312 nemici, 51 grafiche);
+  `recon/tools/make_enemy_moves.py` (in build-resources) crea `move` copiando `wait`.
+  Missioni zoo 990001-990051 = una per grafica (`stage_gen\zoo_dr.json`, story_cfg.json
+  punta li'). Da provare con smoke_quests.ps1.
+- `recon/tools/story_rooms.json` = le 84 stanze verificate; mappe rigenerate (161 esatte) e
+  copiate da `stage_gen\story` in `stage_gen\files\stage` (a mano, dopo gen_story_maps).
+- Medaglie complete: KHUX_MEDALS_ALL=1 (2.094 medaglie) e versione risorse 31 completa con
+  il pacchetto delle medaglie; revisione master 79.
+- Agente Avatar Boards (seconda parte) FATTO: `stage_gen\boards\files\` (442 PNG: 381
+  sphere_incentive, 15 sphere_board, 42 sphere_masu_icon, Kind_0002 ricostruito, sfondi),
+  `ASSETS.md` (fonti e mancanti), `LAYOUT.md` (widget di SphereScene_ver310 letti dal codice:
+  G11..G59 = 45 celle vuote, Grid/Grid_R/Info/LeftUI obbligatori, sfondo
+  img/ui/Equip_DeckBG_01.png, overlay Sphere_Incentive.json; posizioni stimate su 960x640).
+  Da integrare: copiare i file in stage_gen\files, costruire il layout in make_layouts.py,
+  master sphere* in server/tables, server userSphere.
+
 **Banco:** risorse versione 30 (con le immagini delle 521 medaglie del master), master
 revisione 77 (alzarla dopo ogni modifica di master_data, poi relogin.ps1 due volte).
 **In corso / da riprendere, in ordine:**
