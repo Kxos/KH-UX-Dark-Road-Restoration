@@ -281,6 +281,19 @@ poi i pulsanti in crash del menu.
   `multiTimemission` vuoti e `GET /user/mission/list` (azione 189, FUN_00797eb8: missions[],
   beginnerLimitTime) risponde dallo schema; manca anche MyPageMission_Panel (riga) e le
   icone img/ui/MyMission_GroupIcon1/2.
+- **Missione 8 giocabile (10 ottobre, notte).** `recon/tools/mappoi_room.py`: parte MAP per
+  una stanza senza modello (struttura da un'altra mappa, posizioni controllate sulla
+  bitmap `map/<stanza>/<stanza>_cls.bin`: 'CLS', larghezza, altezza, byte per riga, 1 bit
+  per pixel, bit alto a sinistra, 0 = percorribile). Spec in `stage_gen\spec_1050.json`
+  (Dwarf's Cottage DW_0003_00_00, Large Body bersaglio a 3750,950, due forzieri);
+  intestazione STG 1050 con partenza 450,700 e bersaglio 10007. make-game-tables.js:
+  nemici senza grafica (lwf/character/enemy/<displayId>/ esiste solo per 1, 6, 8, 17, 37,
+  1020 e le serie Dark Road 5001-5086/7001-7005/8001-8022) -> sostituto (tabella
+  DISPLAY_SUBSTITUTE, poi per taglia), displayId veri in enemy_display_orig.json; filmati
+  prima/dopo senza `img/light/SEQ/<id>.l` ne' `lwf/drama/<id>/` disattivati (base in
+  stage_base.json; 4 casi, tra cui 1010201/1010301 della missione 8). Revisione master 72.
+  Banco: «Unexpected Visitors» fino a RESULTS (tre obiettivi), LEVEL UP. Da fare: 979
+  missioni di storia -> processo automatico (vedi «Piano per le missioni»).
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia
