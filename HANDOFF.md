@@ -29,6 +29,45 @@ revisione 77 (alzarla dopo ogni modifica di master_data, poi relogin.ps1 due vol
    enemyAttack_base.json conserva l'originale) ma NON ancora applicata al master servito.
    Dopo: rigenerare (`$env:KHUX_ZOO='1'; $env:KHUX_ZOO_COUNT='40'; node server\make-game-tables.js
    D:\Progetto_Restauro_KH_UX\wiki\medals.json`), revisione 78, riprovare solo i falliti.
+   ESITO del test singolo (finito): 17 nemici su 40 in crash, TUTTI con validSkill 3; nessun
+   nemico con 3 abilita' funziona, quelli con 2 o 4 si (elenco degli indici falliti in
+   `stage_gen\zoo_single_failed.txt`). Se le righe enemyAttack generate non bastano, seconda
+   ipotesi: portare validSkill 3 a 4 duplicando l'ultima abilita' (skillId/Require/Arg/Odds).
+   Agente nemici FATTO: `stage_gen\enemy_display_map.json` (61 nemici -> grafica Dark Road, 47
+   alta confidenza; nessuna grafica Dark Road ha `move`; dettagli e provini in
+   scratchpad\enemymap\). Da integrare in make-game-tables (DISPLAY_SUBSTITUTE per nome) e da
+   provare con le missioni zoo.
+   Agente uscite FATTO: `stage_gen\exits\NOTE.md`. Le uscite tra stanze sono il blocco a +0x34
+   di ogni parte MAP (u32 n + n record da 9 interi: x, y, angolo freccia, distanza, avanti/
+   indietro, x/y di arrivo, parte di destinazione, verso; X = 4 + 36n), scattano entro 96
+   unita'; STG [2] = parti | (parte di partenza << 16), [5] verso iniziale, [10] enemyId della
+   scheda bersaglio, [11] bonus di livello; uid di aree, nemici e forzieri GLOBALI tra le parti
+   (gen_story_maps/mappoi_gen ripartono da 2 per parte: da rinumerare per il multi-stanza);
+   la sezione C sono attori evento (tipo 0xb), non uscite. Ricetta in NOTE.md.
+   Agente Avatar Boards FATTO: `stage_gen\boards\` (sphere/sphereArray/sphereMasu, 118
+   bacheche standard e 874 nodi, conformi allo schema; NOTE.md con significato dei campi e
+   dubbi; tools\gen_boards.py li rigenera). Da integrare: copiare in master_data (revisione
+   nuova); il server deve elencare le bacheche sbloccate in userSphere.userSphereDatas
+   (POST /user/sphere/check) e dare il titolo 2000+N al completamento; immagini da Roboloid
+   (images/assets/board/sphere_incentive-<id>.png -> img/sphere_incentive/<id>.png,
+   other/sphere_board-Board_0001.png, other/sphere_masu_icon-*); da creare Kind_0002 (figura
+   rosa) e la scena SphereScene_ver310 della bacheca (layout mancante).
+   Agente missioni FATTO: `stage_gen\missions\mission.json` (20 righe: 10 giornaliere 30 jewel,
+   10 settimanali di party 100 jewel, conformi) + NOTE.md. Da integrare: master `mission`;
+   GET /user/mission/list -> missions[] {id, status 0/1/2, numUpper progresso, numLower
+   obiettivo} SOLO con id del master (altrimenti crash); POST /user/mission/receive
+   {receiveMissionIds} -> userData + missions + inventario completo come /stage/clear; il
+   server deve contare i progressi e azzerarli (giorno: ora di startDate, 08:00 UTC).
+   Agente stanze FATTO: `stage_gen\story_rooms_full.json` (84 voci verificate confrontando gli
+   sfondi ricostruiti con le immagini khwiki <Stanza>_KHX.png). CORREZIONE: DW_0003_00_00 e'
+   «Path to the Mine», NON Dwarf's Cottage (la cartella del Cottage non e' nelle risorse):
+   rifare la missione 8 (spec_1050) e rigenerare le mappe con questo file al posto di
+   recon/tools/story_rooms.json. «2nd District» = DB_0004_01_00. Copertura: 18 delle 86 stanze
+   delle missioni 1-525, 154 missioni su 525 con tutte le stanze esatte; mancano dalle risorse
+   West Wing, Boardwalk, Market, Dwarf's Cottage, Waterfront Park, Avenue, Morning Dew Grove,
+   Garden Maze... Prefissi: CS Game Central Station, HD Cy-Bug Sector, NL Niceland, SR Candy
+   Kingdom, DG_0200 Corridor of Darkness. Schema: XX_NNNN_VV_00 = Roboloid <Mondo>_NNNN_VV
+   (VV = variante giorno/notte).
 2. Medaglie complete: `fetch_medal_images.py --all` FATTO (1.918 medaglie con immagini in
    `medal_gen\files`, 712 MB; 199 download falliti per i nomi con «#», es.
    «569_6Star_Key_Art_#2.png»: da riprovare con un'altra codifica). Poi: KHUX_MEDALS_ALL=1
