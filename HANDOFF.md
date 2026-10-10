@@ -40,9 +40,10 @@ qui c'è come.
   (Sphere_Node_Check nel widget Get, +1/+24 dal centro del nodo), cursore Z_SpCursor con
   rotazione rigida a fotogrammi (kX/kY lo deformavano), targa del titolo RankTitle_Board come
   AvatarTitle_PanelButton_Big (610x82 intera, scala 0,8). «Unlock All» provato e funzionante.
-- Aperti: nell'originale dopo il completamento compare il popup arancione CONGRATULATIONS con
-  la targa del titolo e «You got a new title!» in un riquadro arancione (ab_ref_title_popup_01);
-  il nostro e' il popup blu. Il fiocco disegnato e' piu' semplice dell'originale dipinto.
+- Popup del titolo rifatto arancione come ab_ref_title_popup_01 (Result_Reward_Win). Aperti:
+  manca la scritta CONGRATULATIONS sull'arco (il codice non avvia la LWF in Area_Point in questo
+  popup: forse va un'immagine fissa); il fiocco disegnato e' piu' semplice dell'originale dipinto.
+- Salvataggio: bacheche 1 e 2 complete (titoli 2001, 2002), avatarCoin 405.
 - Salvataggio di prova: bacheca 1 completa (7/7), titolo 2001, avatarCoin 450. Per riprovare
   i popup: fermare il server, `unlock` della 2100001 a [1..5], spherePoint 470,
   sphereBonus.cost 3, togliere 2001 da titles, riavviare.
