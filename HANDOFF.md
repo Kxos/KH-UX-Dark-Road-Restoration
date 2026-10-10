@@ -325,6 +325,22 @@ poi i pulsanti in crash del menu.
   medaglie mancanti (medalId 300000 + id Roboloid). Roboloid ha anche
   `images/assets/board/sphere_incentive-<id>.png` (381 premi delle bacheche) e
   `images/map` (379 anteprime di stanze, solo riferimento).
+- **Test dei nemici con le missioni «zoo» (11 ottobre, idea dell'utente).** Con
+  KHUX_ZOO=1 (KHUX_ZOO_COUNT) make-game-tables aggiunge gli stage 990001.. (copie della
+  1050, «Zoo N»); gen_story_maps.py con zoo_enemies (stage_gen\story_enemies.json: i 139
+  nemici delle mappe di storia) e zoo_per_stage li riempie in aree da 5 nella Fountain
+  Square: all'avvio il campo carica la grafica di tutti, quindi un avvio verifica decine di
+  nemici. Trovati e corretti: effetto di comparsa `lwf/character/enemy/show_effect_fla/
+  show_effect<showSwf>/` presente solo per 1-4, 100, 501-506, 1000 (55 nemici -> quello
+  dello Shadow; era il crash della 2100); obiettivi «Defeat <nemico>» su enemyId assenti
+  (99 nella 2170, 138 nella 2090) -> Shadow. Ancora in crash alcuni gruppi (FUN_00e37014,
+  riga del nemico tramite FUN_00ef58e0): bisezione con zoo da 5 in corso. Provino dei
+  nemici Dark Road: scratchpad enemies.png (5002 = Large Body ma senza animazione move;
+  5075 TopOperaY = Yellow Opera; 5054 Ifrit, 5063 Yeti, 5070 Shiva, 8001 Flame Core).
+- **Gauge degli attacchi speciali**: l'utente ricorda che resta salvata nel keyblade (non
+  riparte da 0). server.js salva in player.keybladeBurst il primo campo numerico di
+  /stage/clear che nomina burst/gauge e lo rimanda in userKeyblades[].burst: il nome vero
+  del campo e' da verificare sul primo completamento (log «[gauge]»).
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia

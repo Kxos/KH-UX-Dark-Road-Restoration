@@ -190,10 +190,12 @@ if (realEnemies) {
 // Road), poi per taglia. Il displayId originale resta in enemy_display_orig.json, cosi' la
 // sostituzione si ricalcola quando arrivano grafiche nuove.
 const DISPLAY_SUBSTITUTE = {
-  3: 5075, // Yellow Opera -> «TopOperaY» di Dark Road (nome nelle texture)
+  // Yellow Opera: la grafica di Dark Road 5075 («TopOperaY») non ha l'animazione move e il campo
+  // va in crash (missioni zoo); il Soldier come nella missione 7
+  3: 6,
   7: 17, // Large Body -> Armored Knight (grande, a terra)
 };
-let displaysSubstituted = 0;
+let displaysSubstituted = 0, showsSubstituted = 0;
 const namesFile = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (enemies && fs.existsSync(namesFile)) {
   const drawn = new Set();
@@ -206,12 +208,28 @@ if (enemies && fs.existsSync(namesFile)) {
   for (const e of enemies) {
     if (!(e.enemyId in orig)) orig[e.enemyId] = e.displayId;
     const d = orig[e.enemyId];
-    if (drawn.has(d)) { e.displayId = d; continue; }
+    // solo la grafica dei nemici KHUX: le serie di Dark Road (5001+) hanno altre animazioni
+    if (drawn.has(d) && d < 5000) { e.displayId = d; continue; }
     const sub = DISPLAY_SUBSTITUTE[d];
     e.displayId = sub && drawn.has(sub) ? sub : (e.height >= 200 ? 17 : 1);
     displaysSubstituted++;
   }
   fs.writeFileSync(origPath, JSON.stringify(orig));
+  // effetto di comparsa: lwf/character/enemy/show_effect_fla/show_effect<showSwf>/ (nelle
+  // risorse 1-4, 100, 501-506, 1000). Se manca (es. 5, 8, 15, 103) il campo va in crash
+  // all'avvio della missione (missioni zoo): quello dello Shadow (show, showSwf, frame)
+  const shows = new Set();
+  for (const line of fs.readFileSync(namesFile, 'utf8').split('\n')) {
+    const m = /^lwf\/character\/enemy\/show_effect_fla\/show_effect(\d+)\//.exec(line);
+    if (m) shows.add(Number(m[1]));
+  }
+  const shadow = enemies.find((e) => e.enemyId === 80001);
+  for (const e of enemies) {
+    if (!shows.has(e.showSwf) && shadow) {
+      Object.assign(e, { show: shadow.show, showSwf: shadow.showSwf, showFrame: shadow.showFrame, hideFrame: shadow.hideFrame });
+      showsSubstituted++;
+    }
+  }
 }
 
 const players = [];
@@ -384,7 +402,7 @@ for (const nb of newBursts) {
 // 1010201/1010301): si disattivano. Base intatta in stage_base.json (copiata al primo giro).
 const stagePath = path.join(OUT, 'stage.json');
 const stageBasePath = path.join(OUT, 'stage_base.json');
-let stagesOut = null, dramasOff = 0, dramasTheater = 0, storyAdded = 0;
+let stagesOut = null, dramasOff = 0, dramasTheater = 0, storyAdded = 0, submissionsFixed = 0;
 const namesPath = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
   if (!fs.existsSync(stageBasePath)) fs.copyFileSync(stagePath, stageBasePath);
@@ -416,6 +434,16 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
     }
     for (const a of ['clearGetItemType', 'clearGetItemId', 'clearGetAssignSkillType', 'clearGetAssignSkillId',
       'clearGetAssignSkillLv', 'clearGetItemNum']) row[a] = (r[a] || []).slice(0, r.validClearGetItem);
+    // obiettivi «Defeat <nemico>» (submissionIdType 1) su nemici assenti dalla tabella enemy
+    // (es. 99 nella 2170, 138 nella 2090): il client cerca la riga e va in crash (FUN_00eba490).
+    // Si ripuntano sullo Shadow (id 1) finche' quei nemici non si ricostruiscono
+    if (enemies) {
+      const known = new Set(enemies.map((e) => e.enemyId));
+      row.submissionId = row.submissionId.map((id, i) => {
+        if (row.submissionIdType[i] === 1 && id && !known.has(id)) { submissionsFixed++; return 1; }
+        return id;
+      });
+    }
     stagesOut.push(row);
     storyAdded++;
   }
@@ -475,5 +503,5 @@ fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva)` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
-  `; stage: +${storyAdded} missioni di storia, filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
+  (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo)` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
