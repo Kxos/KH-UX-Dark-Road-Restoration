@@ -40,9 +40,13 @@ qui c'è come.
   (Sphere_Node_Check nel widget Get, +1/+24 dal centro del nodo), cursore Z_SpCursor con
   rotazione rigida a fotogrammi (kX/kY lo deformavano), targa del titolo RankTitle_Board come
   AvatarTitle_PanelButton_Big (610x82 intera, scala 0,8). «Unlock All» provato e funzionante.
-- Popup del titolo rifatto arancione come ab_ref_title_popup_01 (Result_Reward_Win). Aperti:
-  manca la scritta CONGRATULATIONS sull'arco (il codice non avvia la LWF in Area_Point in questo
-  popup: forse va un'immagine fissa); il fiocco disegnato e' piu' semplice dell'originale dipinto.
+- Popup del titolo rifatto arancione come ab_ref_title_popup_01 (Result_Reward_Win), con la
+  scritta CONGRATULATIONS fissa sull'arco (Sphere_Congrats di make_textures, lettere della LWF
+  Result_Reward: il popup Comp e' aperto con param_4 0 e [fn] non avvia il banner).
+- Riquadri in basso della bacheca e Avatar Coins dell'elenco come gli originali (Win09 in
+  9-slice con zona elastica centrale WIN9, pastiglia Plate18, Unlock But06 con il grigio
+  _Disable, Unlock All But16 dentro la barra: non esiste negli originali del 2017).
+- Il fiocco disegnato e' piu' semplice dell'originale dipinto.
 - Salvataggio: bacheche 1 e 2 complete (titoli 2001, 2002), avatarCoin 405.
 - Salvataggio di prova: bacheca 1 completa (7/7), titolo 2001, avatarCoin 450. Per riprovare
   i popup: fermare il server, `unlock` della 2100001 a [1..5], spherePoint 470,

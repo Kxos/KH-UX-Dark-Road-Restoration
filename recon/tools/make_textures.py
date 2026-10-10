@@ -495,9 +495,53 @@ def no_tab():
     return im.resize((w, h), Image.LANCZOS)
 
 
+def sphere_congrats():
+    """Sphere_Congrats: scritta «CONGRATULATIONS!» con le stelle ai lati, fissa, per il popup del
+    titolo (Sphere_Popup_Comp: aperto con param_4 0, [fn] non avvia la LWF del banner).
+    Lettere e stella dalla LWF Result_Reward (layouts\\orig: «重複したアイテムのフォルダー_1..10»
+    = C O N G R A T U L A, 11..16 = T I O N S !), C piu' grande come in ab_ref_title_popup_01
+    (1080p: banner x 290-1640, y 70-235 -> circa 800x98 nel layout 960x640)."""
+    rr = os.path.join(src, '..', '..', 'layouts', 'orig', 'lwf', 'battleresult', 'Result_Reward')
+
+    def piece(name):
+        fn = 'Result_Reward_' + name.encode('utf-8').hex() + '.png'
+        im = btf.decode(open(os.path.join(rr, fn), 'rb').read()).convert('RGBA')
+        return im.crop(im.getbbox())
+
+    names = ['重複したアイテムのフォルダー_%d.png' % i for i in range(1, 11)] + \
+            ['%d.png' % i for i in range(11, 17)]
+    glyphs = [piece(n) for n in names]
+    big = glyphs[0].resize((int(glyphs[0].width * 1.3), int(glyphs[0].height * 1.3)), Image.LANCZOS)
+    glyphs[0] = big
+    gh = max(g.height for g in glyphs)
+    star = piece('star01.png')
+    spark = piece('png_ef02.png')
+    star = star.resize((int(star.width * 0.8), int(star.height * 0.8)), Image.LANCZOS)
+    pad = int(star.width * 1.25)
+    W = pad * 2 + sum(g.width - 2 for g in glyphs) + 2
+    H = gh + 40
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    x = pad
+    for g in glyphs:                             # allineate in basso, leggermente sovrapposte
+        im.alpha_composite(g, (x, H - 20 - g.height))
+        x += g.width - 2
+    for sx, sc, dy in ((0, 1.0, 0), (int(pad * 0.5), 0.65, -12)):           # stelle a sinistra
+        s = star.resize((int(star.width * sc), int(star.height * sc)), Image.LANCZOS)
+        im.alpha_composite(s, (sx, (H - s.height) // 2 + dy))
+    for sx, sc, dy in ((W - star.width, 1.0, 0), (W - pad, 0.65, -12)):
+        s = star.resize((int(star.width * sc), int(star.height * sc)), Image.LANCZOS)
+        im.alpha_composite(s, (sx, (H - s.height) // 2 + dy))
+    sp = spark.resize((spark.width // 2, spark.height // 2), Image.LANCZOS)
+    im.alpha_composite(sp, (pad + big.width, 0))
+    im.alpha_composite(sp, (W - pad - sp.width * 2, 0))
+    w = 800
+    return im.resize((w, int(H * w / W)), Image.LANCZOS)
+
+
 save('Sphere_Board_Clear.png', board_clear())
 save('Sphere_Node_Check.png', node_check())
 save('Sphere_No_Tab.png', no_tab())
+save('Sphere_Congrats.png', sphere_congrats())
 save('Av_Panel_Colosseum.png', av_panel(280, 151, 28))
 save('Av_Panel1.png', av_panel(280, 98, 28))
 save('Ico_Param_HP.png', hp_icon())
