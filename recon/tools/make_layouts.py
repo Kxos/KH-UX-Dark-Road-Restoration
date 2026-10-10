@@ -473,6 +473,31 @@ LAYOUTS = {
                                                       ('opts', 'Txt_Wording', dict(y=30, height=50)),
                                                       L('Txt_Wording2', 480, 430, 600, 70, '', 22)]
                                                      + held_plates(290)),
+    # Avatar Boards, «Unlock All» (FUN_00ce7194): Txt_Wording (domanda, anche Xml_Txt_Wording),
+    # Txt_BondsPossessed/_Label (monete possedute), Coin_Icon, Button_OK/Txt_OK,
+    # Button_Close/Txt_Cancel. Come le conferme del Moogle Shop (dal popup OK/Annulla originale)
+    'PopupNormal_SphereCoinCheck_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                                {'4Line_Label': 'Txt_Wording'}, False,
+                                                [('text', 'Txt_Wording', ''), ('opts', 'Txt_Wording', dict(y=75, height=100)),
+                                                 L('Xml_Txt_Wording', 480, 395, 600, 100, '', 22, visible=False),
+                                                 I('LB_Coin', 480, 300, 360, 28, 'Plate03.png', opts=PLATE3, children=[
+                                                     I('Coin_Icon', 15, 0, 90, 90, 'IncentiveIcon_14.png', s9=False,
+                                                       scale=0.3)]),
+                                                 L('Txt_BondsPossessed', 400, 300, 160, 28, 'Held', 22),
+                                                 L('Txt_BondsPossessed_Label', 570, 300, 200, 28, '0', 22)]),
+    # premio del nodo sbloccato (FUN_00f3564c: Txt_Get_Label, Panel, Button_Ok/Txt_Ok) e popup
+    # «ottenuto» (FUN_00f363a4, nomi non decodificati: gli stessi) dal popup OK originale
+    'Sphere_Incentive_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                     {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
+                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100)]),
+    'Sphere_Popup_Get_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                     {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
+                                     False, [('text', 'Txt_Get_Label', ''), P('Panel', 430, 330, 100, 100)]),
+    # bacheca completata (FUN_00f342f4 / FUN_00f39090): Area_Point (vi mette le LWF
+    # SphereMap_Complete e Result_Reward), Txt_All
+    'Sphere_Popup_Comp_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                      {'4Line_Label': 'Txt_All', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
+                                      False, [('text', 'Txt_All', ''), P('Area_Point', 480, 420, 10, 10)]),
     # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Profilo (AvatarInfoDialog: open FUN_008d785c carica la scena nascosta e chiede
@@ -1028,6 +1053,10 @@ _EMPTY_LWF = os.path.join(OUT, 'lwf', 'character', 'npc', '2000', 'wait', 'wait.
 if os.path.exists(_EMPTY_LWF):
     os.makedirs(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait'), exist_ok=True)
     shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
+    # Avatar Boards: apertura del nodo (FUN_00ce8e20) e bacheca completata (FUN_00f39090), assenti
+    for _n in ('SpIcon_Open', 'SphereMap_Complete'):
+        os.makedirs(os.path.join(OUT, 'lwf', 'sphere', _n), exist_ok=True)
+        shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'sphere', _n, _n + '.lwf'))
 # Animazione del risultato di Evolve (FUN_00ccbad8: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il
 # client va in crash dopo la risposta. Copia di quella del Level Up (card_strength_result_01)
