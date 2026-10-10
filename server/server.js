@@ -169,6 +169,10 @@ function route(url) {
   if (p === '/user/avatar' || p === '/user/avatar/all' || p === '/user/avatar/parts') return 'useravatar';
   if (p === '/user') return 'user';
   if (p === '/user/profile') return 'userprofile';
+  if (p === '/user/birthday') return 'userbirthday';
+  if (p === '/user/title') return 'usertitle';
+  if (p === '/user/update') return 'userupdate';
+  if (p === '/user/playstyle/update' || p === '/user/title/update') return 'userdetailupdate';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
   if (p.includes('session')) return 'session';
@@ -874,23 +878,28 @@ function respondStageStart(res, req) {
   });
 }
 
+// userData.user (FUN_0078ade0): GET /user, /user/profile, POST /user/update
+function userObject(now) {
+  return {
+    userId: 1, // uint64
+    nativeUserId: 1, // uint64
+    platformId: 0,
+    userName: player.name, // max 32 byte
+    gender: player.gender,
+    comment: player.comment || '', // max 256 byte (messaggio del Profilo, fumetto)
+    deviceType: 2,
+    continueLoginCount: 1,
+    isFleeze: 0,
+    fleezedDatetime: now,
+    isAdult: 1,
+    nativeTagName: '', // max 14 byte; letto solo da GET /user (modo 1)
+  };
+}
+
 function respondUser(res) {
   const now = serverTime();
   const userData = {
-    user: {
-      userId: 1, // uint64
-      nativeUserId: 1, // uint64
-      platformId: 0,
-      userName: player.name, // max 32 byte
-      gender: player.gender,
-      comment: '', // max 256 byte
-      deviceType: 2,
-      continueLoginCount: 1,
-      isFleeze: 0,
-      fleezedDatetime: now,
-      isAdult: 1,
-      nativeTagName: '', // max 14 byte; letto solo da GET /user (modo 1)
-    },
+    user: userObject(now),
     userPoint: userPointData(now),
     userDetail: userDetailData(),
     stageResumption: stageResumptionData(),
@@ -918,6 +927,26 @@ const USER_RECORD_KEYS = ['login', 'continueLogin', 'getMoney', 'getSpherePoint'
   'getMaterial', 'openAllSphere', 'openGrid', 'unionPersonalRankingHighest', 'unionPartyRankingHighest',
   'totalPersonalRankingHighest', 'colosseumRankingHighest', 'pvpRankingRankHighest', 'pvpRankingClassHighest'];
 
+// POST /user/update (azione 38, Name/Message del Profilo): {name, comment}; il ramo del
+// dispatcher rilegge userData.user (FUN_0078ade0)
+function respondUserUpdate(res, body) {
+  if (typeof body?.name === 'string' && body.name) player.name = body.name;
+  if (typeof body?.comment === 'string') player.comment = body.comment;
+  savePlayer();
+  send(res, 200, { ret: ret(), userData: { user: userObject(serverTime()) } });
+}
+
+// POST /user/playstyle/update (azione 40) e /user/title/update (azione 41): il ramo rilegge
+// userData.userDetail (FUN_0078babc). I campi del corpo che userDetail conosce si salvano
+// nel giocatore (playTimezones, playFrequently, titleLeftId/RightId/PlateId).
+const USER_DETAIL_EDITABLE = ['playTimezones', 'playFrequently', 'titleLeftId', 'titleRightId', 'titlePlateId'];
+function respondUserDetailUpdate(res, apiPath, body) {
+  for (const k of USER_DETAIL_EDITABLE) if (body && k in body) player[k] = body[k];
+  console.log(`[profilo] ${apiPath}: ${JSON.stringify(body)}`);
+  savePlayer();
+  send(res, 200, { ret: ret(), userData: { userDetail: userDetailData() } });
+}
+
 function respondUserProfile(res) {
   const now = serverTime();
   const userRecord = Object.fromEntries(USER_RECORD_KEYS.map((k) => [k, 0]));
@@ -926,11 +955,7 @@ function respondUserProfile(res) {
   send(res, 200, {
     ret: ret(),
     userData: {
-      user: {
-        userId: 1, nativeUserId: 1, platformId: 0, userName: player.name, gender: player.gender,
-        comment: player.comment || '', deviceType: 2, continueLoginCount: 1, isFleeze: 0,
-        fleezedDatetime: now, isAdult: 1, nativeTagName: '',
-      },
+      user: userObject(now),
       userPoint: userPointData(now),
       userDetail: userDetailData(),
       lastActionDatetime: now,
@@ -1015,8 +1040,8 @@ function userDetailData() {
     // assente dalle risorse): crash. Dal campo cost della tabella player.
     ...playerTitleIds(),
     maxDeckCost: masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.cost ?? 10,
-    playTimezones: [], // int[], al massimo 6
-    playFrequently: 0,
+    playTimezones: player.playTimezones || [], // int[], al massimo 6 (Play Style del Profilo)
+    playFrequently: player.playFrequently || 0,
     partyId: 0, // uint64
     // maxMedal: medaglie possedibili. Con 0 (e 3 medaglie) «Begin» apre il popup di
     // limite superato (PopupNormal_MedalOver.json, assente dalle risorse): crash.
@@ -1713,6 +1738,8 @@ function handler(scheme) {
       if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
       if (kind === 'moogleshopbuy') return respondMoogleshopBuy(res, entry.bodyDecoded);
+      if (kind === 'userupdate') return respondUserUpdate(res, entry.bodyDecoded);
+      if (kind === 'userdetailupdate') return respondUserDetailUpdate(res, req.url.split('?')[0], entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
       // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop
       // Prova (10 ottobre): con la tabella piena ma moogleshops vuoto il client scrive «No
@@ -1802,6 +1829,21 @@ function handler(scheme) {
       if (kind === 'usermaterial') return send(res, 200, { ret: ret(), userMaterials: userMaterialsData() });
       if (kind === 'user') return respondUser(res);
       if (kind === 'userprofile') return respondUserProfile(res);
+      // GET /user/birthday (azione 9, FUN_007789e8): birthday = AAAAMM (anno = /100, mese =
+      // %100), dalla data di POST /user/create. Con 0 il client tratta il giocatore come minore
+      // di 13 anni: popup Name/Message senza messaggio (AvatarInfo_Comment_U13, FUN_008dcf1c)
+      // GET /user/title (azione 18, FUN_007a2ed0): userTitles[] {userTitleId uint64, titleId}.
+      // Titoli posseduti: quelli di categoria 1 («Default Title», li ha ogni giocatore) e quelli
+      // guadagnati (player.titles). Li elenca il popup Titles del Profilo (Edit, Nameplate).
+      if (kind === 'usertitle') {
+        const ids = [...new Set([...masterRows('title').filter((r) => r.category === 1).map((r) => r.titleId),
+          ...(player.titles || [])])];
+        return send(res, 200, { ret: ret(), userTitles: ids.map((titleId, i) => ({ userTitleId: i + 1, titleId })) });
+      }
+      if (kind === 'userbirthday') {
+        const m = /^(\d{4})-(\d{2})/.exec(player.birthday || '');
+        return send(res, 200, { ret: ret(), birthday: m ? Number(m[1]) * 100 + Number(m[2]) : 0 });
+      }
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 

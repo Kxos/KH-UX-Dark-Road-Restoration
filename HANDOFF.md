@@ -40,8 +40,10 @@ Moogle Shop (scheda Items con scambio funzionante, scheda Traits con tutte le ri
 e sostituzione, costo scalato solo se lo scambio riesce; vedi «Moogle Shop — trait» nelle
 annotazioni); attacchi speciali mancanti generati (`burst`: 11 righe vere + 321 generate da
 `make-game-tables.js`, revisione 70; il dettaglio delle medaglie evolute non va piu' in
-crash). **Prossimo, in ordine:** 1) Profilo, Avatar Boards, Other, rotolo del menu;
-2) missione 8.
+crash). **Fatto il 10 ottobre (notte):** Profilo (schermata, Titles, Name/Message, Play
+Style; vedi «Profilo — fatto» nelle annotazioni). **Prossimo, in ordine:** 1) Outfits del
+Profilo, Avatar Boards, Other, rotolo del menu; 2) missione 8. Profilo: avatar `260,95`;
+Titles `330,1030`, Name/Message `808,1030`, Play Style `1155,1030`, Outfits `1590,1030`.
 
 **Tocchi sul banco (schermo 1920x1080):** dalla home Moogle Shop `288,1000`; schede Traits
 `340,250` / Items `700,250`; «Exchange» della prima riga `1213,512`, OK `1220,712`; trait:
@@ -217,28 +219,39 @@ poi i pulsanti in crash del menu.
   («200 ERROR :248»). Risultato: il client mostra il dettaglio con «Trait 1/1». Da
   sistemare: il cursore rosso dello slot da sostituire (armatura `MedalInfo_Anim`,
   `animeCursor`) e' piu' largo della finestra; trait speciali (Spirit Training) non gestiti.
-- **Profilo — analisi (10 ottobre, sera, non ancora costruito).** Riferimenti:
-  reference\profile\ (video 7-R0jhyzlso «Ultimate KHux Beginners Guide», 1:52-3:07;
-  profile_06 schermata, profile_11 popup Titles con Title Preview/Title A/Title B/Edit/
-  Nameplate, profile_13 popup Name/Message, profile_16 popup Play Style). Layout mancanti
-  (tabella dei percorsi a 0x20850a0): AvatarInfoScene_A_ver131 (caricata nascosta da
-  FUN_008d785c, AvatarInfoDialog::open, poi richiesta al server FUN_007df510),
-  AvatarInfo_Oneself_ver131 + AvatarInfo_User_ver260 (contenitore di FUN_008f3bf0, classe
-  registrata nella tabella di fabbrica a 0x1dd76c8; «User» sopra con zorder 2),
-  AvatarInfo_Txt2 (FUN_008eb9a8), AvatarInfo_Comment_ver132 / _U13_ver132 (popup
-  Name/Message, FUN_008dcf1c: Txt_Name, Txt_Limit1, Txt_Caution, Txt_Comment, Txt_Limit2,
-  Txt_Comment_Label_U13, Button_Close, Button_Ok, Txt_OK, Txt_Cancel), AvatarInfo_PlayStyle
-  (FUN_008deb84: Txt_PlayTime, _A.._F, Button_PlayTime_A.._F, Txt_Select, Txt_Setting,
-  Txt_Num_Lavel, Txt_Style, _A.._C, Button_Style_A.._C, Button_Ok, Txt_Cancel,
-  Button_Close). Esistono AvatarInfo_Txt_ver340 e Offline_AvatarInfo_Comment. Riempimento:
-  FUN_008f3f40 (Button_PetInfo, Txt_Pet_Name/Rank, Communication_Area con Button_Follow/
-  Button_Room, Base_LUX_Weekly, Base_Colosseum_Rank, Button_Change, Button_Passive,
-  Button_Emblem, Close_Button, User, Party_Button) e FUN_008e8ab4 (TxtLayer1/2,
-  AtlasLabel_NumL, revolverView in Area_Revolver, Area_RevolverPet, Button_PowerUp,
-  Avatar_Area/Avatar, Pet_Area/Pet/Pet2, Balloon con Txt_Comment_Label, Txt_Burst_Label,
-  Av_Guiltbonus, AtlasLabel_LUX, Base_LUX, Txt_Weekly, Txt_ID/_Label, Txt_Enemy,
-  Txt_No_Record, Txt_PvP_*, Button_FB_Share, Scroll_Area/RecordScrollView, Txt_Money).
-  Il profilo si apre toccando l'avatar in alto a sinistra della home.
+- **Profilo — fatto (10 ottobre, notte).** Si apre toccando l'avatar della home
+  (AvatarInfoDialog::open FUN_008d785c: scena nascosta + `GET /user/profile`, azione 5,
+  parser FUN_00792148; poi createLayout FUN_008d7e8c). Riferimenti reference\profile\
+  (video 7-R0jhyzlso del 2017, 640x360: profile_06 schermata, _11 Titles, _13 Name/Message,
+  _16 Play Style). Layout generati in make_layouts.py: scena AvatarInfoScene_A_ver131
+  (UnderUI = Titles/Name/Message/Play Style/Outfits = Button_A..D; LeftUI/RightUI = frecce
+  ‹ ›, il loro primo figlio diventa un pulsante), AvatarInfo_Oneself_ver131 (cornice) +
+  AvatarInfo_User_ver260 (FUN_008e68d0: RankTitle_Board/RankTitle_Name del titolo,
+  Base_User con Union_Symbol e My_Name, Txt_Party/Party_Name, MVP_Crown/MVP_Trophy;
+  FUN_008e7d58: FaceBook_PhotoPanel/FaceBook_Photo), pagina 1 = AvatarInfo_Txt_ver340
+  (originale; le sue 6 texture mancanti disegnate in make_textures.py dai colori di
+  profile_06), pagina 2 = AvatarInfo_Txt2 (record, FUN_008eb9a8: copia della pagina 1
+  senza l'anello + Scroll_Area/Txt_Money/MoguPoint/LastLogin/Timezone/Style),
+  TresCommu_CommunicationUser/Other vuoti. Server: titolo di default Budding Newbie (con
+  titleLeft/Right/PlateId 0 crash in FUN_006e9bbc), keyblade iniziale `isFavorite` 1
+  (createLayout mostra il preferito: senza, riga nulla e crash in FUN_008c19e4),
+  img/union/Union_%02d e Union_L_* (stemma nell'anello). Popup: **Titles** (Button_A,
+  FUN_008db068) = copia di Offline_AvatarTitle_Base (Ok e separatore nascosti), `GET
+  /user/title` (azione 18) elenca i titoli di categoria 1 + `player.titles`, la scelta
+  manda `POST /user/title/update` {titleLeftId, titleRightId, titlePlateId} (azione 41,
+  risposta userData.userDetail) — banco: «Wielder Newbie» salvato. **Name/Message**
+  (Button_B, FUN_008dcf1c) = funzione avatar_comment_popup da Offline_AvatarInfo_Comment
+  (Cancel = Button_Close/Txt_Cancel), `POST /user/update` {name, comment} (azione 38,
+  risposta userData.user): il nome si salva; **il messaggio parte vuoto** sul banco (testo
+  scritto con `adb input text`; FUN_006e467c sostituisce il TextField Txt_Comment_Label con
+  il campo vero e la callback FUN_008de654 copia il testo solo a fine modifica: da
+  riprovare con una tastiera vera; la variante U13 si sceglie se l'eta' di sessione +1000,
+  da `GET /user/birthday` azione 9 = AAAAMM, e' <= 12: il client non la chiede mai, oggetto
+  nullo = adulto). **Play Style** (Button_C, FUN_008deb84): CheckBox But16 come i filtri del
+  popup Sort (con Button crash in FUN_0125068c), `POST /user/playstyle/update`
+  {playTimezones, playFrequently} (azione 40), salvato in userDetail. Da fare: Outfits
+  (Button_D), Boosters/Passive, pagina 2 (Button_Change), frecce ‹ › (non compaiono con un
+  solo profilo), fumetto vuoto finche' non si salva un messaggio.
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia

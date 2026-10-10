@@ -38,6 +38,11 @@ def B(name, x, y, w, h, tex, text=None, size=24, **kw):
     return dict(cls='Button', name=name, x=x, y=y, w=w, h=h, tex=tex, children=ch, **kw)
 
 
+def C(name, x, y, w, h, tex, children=(), **kw):
+    """CheckBox (texture <tex>_Off/_On come i filtri del popup Sort)."""
+    return dict(cls='CheckBox', name=name, x=x, y=y, w=w, h=h, tex=tex, children=list(children), **kw)
+
+
 def L(name, x, y, w, h, text='', size=22, **kw):
     return dict(cls='Label', name=name, x=x, y=y, w=w, h=h, text=text, size=size, **kw)
 
@@ -561,6 +566,39 @@ LAYOUTS = {
             L('Txt_Timezone_3_Label', 280, 264, 160, 24, '', 18, opts=dict(anchorPointX=1)),
             L('Txt_Style', 20, 236, 130, 24, 'Play Style', 18, opts=dict(anchorPointX=0)),
             L('Txt_Style_Label', 280, 236, 160, 24, '', 18, opts=dict(anchorPointX=1))]))]),
+    # Name/Message (Button_B): stesso layout per la variante U13 (il codice usa
+    # Txt_Comment_Label_U13 al posto del TextField)
+    'AvatarInfo_Comment_ver132.json': ('func', 'avatar_comment_popup'),
+    'AvatarInfo_Comment_U13_ver132.json': ('func', 'avatar_comment_popup'),
+    # Play Style (Button_C, FUN_008deb84), assente dalle risorse. Aspetto da
+    # reference\profile\profile_16.png (finestra x' 110-530, y' 10-355): «Play Time (Pacific
+    # Time)», 6 fasce orarie su due righe, «Select up to 3.» giallo, «Play Style» con
+    # Hardcore/Core/Casual, Cancel arancione (Button_Close/Txt_Cancel) e OK rosso. I pulsanti
+    # sono But16 (218x52, blu; premuto = azzurro, la scelta): il codice non carica texture.
+    'AvatarInfo_PlayStyle.json': ('build', P('PlayStyle_root', 0, 0, 960, 640, [
+        I('Win_PlayStyle', 480, 315, 747, 613, 'Win04.png',
+          opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        L('Txt_PlayTime', 146, 592, 400, 30, 'Play Time', 24, opts=dict(anchorPointX=0, hAlignment=0)),
+        # CheckBox (FUN_0125068c ne registra l'evento: con Button crash, banco ps2)
+        *[C('Button_PlayTime_' + c, 258 + 222 * (k % 3), 519 - 94 * (k // 3), 218, 52, 'But16',
+            [L('Txt_PlayTime_' + c, 0, 0, 208, 44, '', 22)]) for k, c in enumerate('ABCDEF')],
+        L('Txt_Select', 480, 356, 500, 28, '', 22, opts=dict(colorR=255, colorG=230, colorB=60)),
+        L('Txt_Setting', 700, 592, 200, 24, '', 18, visible=False),
+        L('Txt_Num_Lavel', 820, 592, 80, 24, '', 18, visible=False),
+        L('Txt_Style', 146, 254, 300, 30, 'Play Style', 24, opts=dict(anchorPointX=0, hAlignment=0)),
+        *[C('Button_Style_' + c, 258 + 222 * k, 183, 218, 52, 'But16',
+            [L('Txt_Style_' + c, 0, 0, 208, 44, '', 22)]) for k, c in enumerate('ABC')],
+        B('Button_Close', 325, 66, 205, 62, 'But03', 'Cancel', 28, label='Txt_Cancel', opts=BUT9),
+        B('Button_Ok', 633, 66, 205, 62, 'But01', 'OK', 28, label='Txt_OK', opts=BUT9)])),
+    # Titles (Button_A, FUN_008db068): stessi nomi della versione offline originale
+    # (Pre_Area per l'anteprima, AvTitleWin con Title A/B, Plate1/2, Button_Plate «Nameplate»)
+    # Button_Ok e il separatore non li usa il codice (nessuna ricerca): nascosti, finestra
+    # accorciata come in reference\profile\profile_11.png (finisce sotto «Nameplate»)
+    'AvatarTitle_Base.json': ('copy', 'Offline_AvatarTitle_Base.json', {}, False, [
+        ('opts', 'Button_Ok', dict(visible=False)),
+        ('opts', 'Img_Separator', dict(visible=False)),
+        ('opts', 'PopupNormal_04', dict(height=580, scale9Height=580)),
+        ('opts', 'Close_Button', dict(y=279))]),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
     'TresCommu_CommunicationOther.json': ('build', P('commu_other', 0, 0, 200, 200)),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
@@ -880,6 +918,9 @@ def _collect(w):
 
 
 _collect(_tmpl['widgetTree'])
+# CheckBox: dal popup Sort originale (filtri: But16 con la croce But16_On)
+_collect(json.load(open(os.path.join(SRC, *PUB.split('/'), 'PopupNormal_SortButton_ver320.json'),
+                        encoding='utf-8-sig'))['widgetTree'])
 _tag = [1000]
 
 
@@ -914,6 +955,15 @@ def build(s):
             p = base + suf + '.png'
             o[key] = tex(p) if p in TEXTURES else (tex(base + '_Off.png') if key != 'normalData' else tex(p))
         o.update(scale9Width=s['w'], scale9Height=s['h'], text='')
+    elif s['cls'] == 'CheckBox':
+        # come i filtri del popup Sort: sfondo <base>_Off, scelta <base>_On (sfondo e croce)
+        base = s['tex']
+        dis = base + '_Disable.png'
+        o.update(backGroundBoxData=tex(base + '_Off.png'), backGroundBoxSelectedData=tex(base + '_On.png'),
+                 frontCrossData=tex(base + '_On.png'),
+                 backGroundBoxDisabledData=tex(dis if dis in TEXTURES else base + '_Off.png'),
+                 frontCrossDisabledData={'path': None, 'plistFile': None, 'resourceType': 0},
+                 selectedState=False)
     elif s['cls'] == 'Label':
         o.update(text=s.get('text', ''), fontSize=s.get('size', 22), areaWidth=s['w'], areaHeight=s['h'])
     elif s['cls'] == 'Panel':
@@ -1103,6 +1153,57 @@ def trait_medal_select_popup():
     data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}
     data['widgetTree'] = root
     return data
+
+
+def avatar_comment_popup():
+    """AvatarInfo_Comment_ver132 e _U13_ver132 (popup Name/Message del Profilo, FUN_008dcf1c;
+    conferma FUN_008de654), assenti dalle risorse. Base: Offline_AvatarInfo_Comment
+    (originale: finestra, AV_Name con il TextField Txt_Name_Label, Txt_Limit1, Txt_Caution,
+    Button_Ok, Button_Close). Il codice cerca anche Txt_Comment, Txt_Limit2, il TextField
+    Txt_Comment_Label (e TextField_Comment nella conferma), Txt_Comment_Label_U13, Txt_OK e
+    Txt_Cancel: «Cancel» e' Button_Close. Aspetto da reference\\profile\\profile_13.png
+    (finestra x' 105-535, y' 45-310; nome e messaggio in riquadri scuri; Cancel arancione e
+    OK rosso in basso)."""
+    d = json.load(open(os.path.join(SRC, *PUB.split('/'), 'Offline_AvatarInfo_Comment.json'), encoding='utf-8-sig'))
+    t = d['widgetTree']
+    win = find(t, 'NormalText_Window03')['options']
+    win.update(y=324, width=764, height=471, scale9Width=764, scale9Height=471, scale9Enable=True,
+               capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
+    name_box = find(t, 'AV_Name')['options']
+    name_box.update(x=0, y=145, width=405, height=85, scale9Width=405, scale9Height=85, **GRID)
+    # area grande quanto il riquadro, testo al centro come nel riferimento
+    center = dict(hAlignment=1, vAlignment=1)
+    find(t, 'Txt_Name_Label')['options'].update(width=380, height=40, areaWidth=380, areaHeight=40, fontSize=26, **center)
+    # Txt_Name e Txt_Comment sono i titoli dei due riquadri (il codice scrive «Message» nel
+    # secondo); FUN_006e4c08 crea accanto a Txt_Name_Label e Txt_Comment_Label una Text con
+    # le stesse proprieta' in cui la callback dei campi (FUN_008de654) copia il testo
+    find(t, 'Txt_Name')['options'].update(x=-196, y=204, text='')
+    find(t, 'Txt_Limit1')['options'].update(x=133, y=204)
+    find(t, 'Txt_Caution')['options'].update(x=0, y=88, fontSize=18)
+    # riquadro del messaggio: copia di AV_Name col TextField Txt_Comment_Label (FUN_006e467c
+    # lo sostituisce con il campo vero e nasconde l'originale)
+    clone(t, 'AV_Name', 'AV_Comment', 'NormalText_Window03', visible=True)
+    box = find(t, 'AV_Comment')
+    box['options'].update(y=-40, height=133, scale9Height=133)
+    tf = box['children'][0]
+    tf['options']['name'] = tf['name'] = 'Txt_Comment_Label'
+    tf['options'].update(height=110, areaWidth=380, areaHeight=110, fontSize=24, maxLength=20, **center)
+    ok = find(t, 'Button_Ok')['options']
+    ok.update(x=153, y=-182, width=205, height=62, scale9Width=205, scale9Height=62,
+              normalData=tex('But01_Off.png'), pressedData=tex('But01_On.png'), disabledData=tex('But01_Disable.png'),
+              **BUT9)
+    cancel = find(t, 'Button_Close')
+    cancel['options'].update(x=-155, y=-182, width=205, height=62, scale9Width=205, scale9Height=62,
+                             normalData=tex('But03_Off.png'), pressedData=tex('But03_On.png'),
+                             disabledData=tex('But03_Off.png'), **BUT9)
+    find(t, 'Txt_OK')['options'].update(text='OK', fontSize=28)
+    winw = find(t, 'NormalText_Window03')
+    cancel['children'] = [build(L('Txt_Cancel', 0, 3, 170, 50, 'Cancel', 28))]
+    winw['children'] += [build(s) for s in (
+        L('Txt_Comment', -142, 54, 200, 30, 'Message', 22, opts=dict(anchorPointX=0.5)),
+        L('Txt_Limit2', 133, 54, 150, 20, 'Max 20 char.', 16),
+        L('Txt_Comment_Label_U13', 0, -40, 380, 110, '', 24, visible=False))]
+    return d
 
 
 def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):
