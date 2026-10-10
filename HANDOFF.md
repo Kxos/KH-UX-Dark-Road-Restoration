@@ -33,9 +33,16 @@ qui c'è come.
   il premio all'indice 22 di sphereMasu (il premio di completamento): era 0 -> ricerca per id
   0 e crash. Ora indice 22 = titolo 2000+N (rewardSelect 7) in server/tables/sphereMasu.json e in
   `stage_gen\boards\tools\gen_boards.py`. Il popup mostra «You got a new title!» + targa «Boy».
-- Da guardare: la corona arcobaleno di bacheca completata sta al centro della carta e sotto
-  resta la barra scura vuota del prezzo (confrontare con l'originale); targa del titolo nel
-  popup Comp spezzata (pezzo a sinistra + cuori attorno a «Boy»); «Unlock All» non provato.
+- FATTO dopo (stesso giorno, riferimenti reference\avatar_boards\ab_ref_*): carta completata con
+  fiocco rosso e fascia «COMPLETE» (Sphere_Board_Clear di make_textures nel widget Clear),
+  linguetta grigio-azzurra di «No. N» (Sphere_No_Tab), nessuna barra sotto la carta (Img_Win_L
+  e Img_Win_S con opacity 0: il codice le rimostra), spunta gialla sui nodi sbloccati
+  (Sphere_Node_Check nel widget Get, +1/+24 dal centro del nodo), cursore Z_SpCursor con
+  rotazione rigida a fotogrammi (kX/kY lo deformavano), targa del titolo RankTitle_Board come
+  AvatarTitle_PanelButton_Big (610x82 intera, scala 0,8). «Unlock All» provato e funzionante.
+- Aperti: nell'originale dopo il completamento compare il popup arancione CONGRATULATIONS con
+  la targa del titolo e «You got a new title!» in un riquadro arancione (ab_ref_title_popup_01);
+  il nostro e' il popup blu. Il fiocco disegnato e' piu' semplice dell'originale dipinto.
 - Salvataggio di prova: bacheca 1 completa (7/7), titolo 2001, avatarCoin 450. Per riprovare
   i popup: fermare il server, `unlock` della 2100001 a [1..5], spherePoint 470,
   sphereBonus.cost 3, togliere 2001 da titles, riavviare.

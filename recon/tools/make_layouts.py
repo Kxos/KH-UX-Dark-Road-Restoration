@@ -717,12 +717,15 @@ LAYOUTS = {
         # costo della bacheca sotto la carta centrale (grande) e le laterali (piccola): il codice
         # cerca Txt_Coin e Txt_Coin_Title dentro Img_Win_L (banco ab4); riferimento: targa scura
         # con l'icona e «200» sotto la carta (x' 1200, y' 700 -> 480, 225)
-        I('Img_Win_S', 480, 160, 200, 36, 'Plate02.png', opts=PLATE3, visible=False),
-        I('Img_Win_L', 480, 160, 200, 36, 'Plate02.png', opts=PLATE3, children=[
+        I('Img_Win_S', 480, 160, 200, 36, 'Plate02.png', opts=dict(PLATE3, opacity=0), visible=False),
+        # trasparente: sotto le carte standard l'originale non mostra nulla (ab_ref_list_complete_01;
+        # il «200» di avatar_boards_list_01 e' il prezzo in jewel dentro la carta, Jewel_Panel).
+        # Con visible=False il codice la rimostrava (banco w1_list): opacity 0 su lei e i figli
+        I('Img_Win_L', 480, 160, 200, 36, 'Plate02.png', opts=dict(PLATE3, opacity=0), children=[
             # figli di un'ImageView: coordinate dal centro (prima da 0,0: icona e numero a destra)
-            I('Win_Coin_Icon', -72, 0, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35),
+            I('Win_Coin_Icon', -72, 0, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35, opts=dict(opacity=0)),
             L('Txt_Coin_Title', -20, 0, 80, 24, '', 18, visible=False),
-            L('Txt_Coin', 85, 0, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2))]),
+            L('Txt_Coin', 85, 0, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2, opacity=0))]),
         # riquadro «Avatar Coins» in basso a sinistra (FUN_00cd3868: Txt_Coin_Name_Label,
         # Txt_Coin_Label)
         # riquadro con la linguetta del titolo (Av_Panel1 di make_textures): Win04 in 9-slice non
@@ -769,14 +772,17 @@ LAYOUTS = {
         # nell'elenco, banco v32): New, Clear (completata), Select_On (carta scelta), costo in
         # Jewel (Jewel_Panel, LB_Jewel, Txt_Jewel_Label), No_Panel/Txt_No_Label, Txt_Offer_Ends
         I('New', 60, 280, 69, 30, 'Deck_Medal_New.png', s9=False, visible=False),
-        I('Clear', 153, 153, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, scale=2, visible=False),
+        # bacheca completata: fiocco rosso in alto a sinistra e fascia «COMPLETE» in basso a destra
+        # (ab_ref_list_complete_01; Sphere_Board_Clear di make_textures, 306x306 come la carta)
+        I('Clear', 153, 153, 306, 306, 'Sphere_Board_Clear.png', s9=False, visible=False),
         I('Select_On', 153, 153, 306, 306, 'Board_0001.png', s9=False, visible=False),
         P('Jewel_Panel', 53, 10, 200, 40, [
             I('LB_Jewel', 100, 20, 200, 30, 'Plate02.png', opts=PLATE3, children=[
                 I('Icon_Jewel', -80, 0, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.3)]),
             L('Txt_Jewel_Label', 120, 20, 120, 26, '0', 22)], visible=False),
-        # «No. 49» sopra la carta (ab_sheet)
-        P('No_Panel', 53, 300, 200, 40, [L('Txt_No_Label', 100, 20, 200, 36, '', 20)], visible=False),
+        # «No. 49» sopra la carta (ab_sheet) nella linguetta grigio-azzurra (Sphere_No_Tab)
+        P('No_Panel', 53, 300, 200, 40, [I('No_Tab', 100, 20, 195, 30, 'Sphere_No_Tab.png', s9=False),
+                                         L('Txt_No_Label', 100, 20, 200, 36, '', 20)], visible=False),
         L('Txt_Offer_Ends', 153, 60, 280, 24, '', 18, visible=False)])),
     # Bacheca (SceneSphereBoard, FUN_00ce3e64; specifica in stage_gen\boards\LAYOUT.md): il
     # codice cerca G11..G59 (5 righe x 9 colonne, tutte obbligatorie, riga 1 in alto; il nodo
@@ -819,7 +825,9 @@ LAYOUTS = {
     # nodo della bacheca (FUN_00f36f18, posto a (-50,-50) sul nodo): Get (spunta, nascosta
     # all'inizio), Txt_Incentive_Label, Txt_Price_Label (costo in monete)
     'Sphere_Incentive.json': ('build', P('Sphere_Incentive', 0, 0, 100, 100, [
-        I('Get', 50, 55, 62, 51, 'Kind_0001.png', s9=False, scale=0.2, visible=False),
+        # spunta gialla dei nodi sbloccati (ab_ref_node_check_01; Sphere_Node_Check di make_textures):
+        # centro a (+1, +24) dal centro del nodo (50,50), punta lunga oltre il bordo in alto a destra
+        I('Get', 51, 74, 64, 56, 'Sphere_Node_Check.png', s9=False, visible=False),
         L('Txt_Incentive_Label', 50, 20, 100, 20, '', 14, visible=False),
         L('Txt_Price_Label', 90, 67, 50, 24, '0', 20)])),
     # Missioni (pulsante a pergamena della home, FUN_00a8a8d8 / FUN_00a8ad3c / FUN_00a8c100):
