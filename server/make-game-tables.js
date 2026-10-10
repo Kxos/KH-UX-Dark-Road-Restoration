@@ -328,7 +328,7 @@ for (const m of medals) {
 // 1010201/1010301): si disattivano. Base intatta in stage_base.json (copiata al primo giro).
 const stagePath = path.join(OUT, 'stage.json');
 const stageBasePath = path.join(OUT, 'stage_base.json');
-let stagesOut = null, dramasOff = 0;
+let stagesOut = null, dramasOff = 0, dramasTheater = 0, storyAdded = 0;
 const namesPath = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
   if (!fs.existsSync(stageBasePath)) fs.copyFileSync(stagePath, stageBasePath);
@@ -338,11 +338,62 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
     if (m) dramas.add(Number(m[1] || m[2]));
   }
   stagesOut = JSON.parse(fs.readFileSync(stageBasePath, 'utf8'));
+  // Missioni di storia di thethiny (stageBinId 1..525 = numero della missione) che la
+  // 5.0.1 non ha. Campi assenti dal formato vecchio: id = numero, stageKind 1, gli altri
+  // come le righe vere (hardmodeName strDummy, hardmodeComparison 1). Gli array a lunghezza
+  // valida come nelle righe 5.0.1; stageBinId 0 come quelle. Mappe: gen_story_maps.py.
+  const realStages = realTable('stage') || [];
+  const have = new Set(stagesOut.map((s) => s.stageId));
+  const theater = fs.existsSync(path.join(OUT, 'theater.json'))
+    ? JSON.parse(fs.readFileSync(path.join(OUT, 'theater.json'), 'utf8')) : [];
+  const maxMission = Number(process.env.KHUX_STORY_MAX || 525);
+  for (const r of realStages) {
+    if (!(r.stageBinId >= 1 && r.stageBinId <= maxMission) || r.stageId >= 100000 || have.has(r.stageId)) continue;
+    const row = Object.assign(fromReal('stage', r), {
+      id: r.stageBinId, stageBinId: 0, stageKind: 1, onlyDrama: 0, showIcon: 0, hideIcon: 0, noPartner: 0,
+      validStopStage: 0, branchType: 0, disableContinue: 0, addLevel: 0, holdKeyblade: 0, hardmodeRequire: 0,
+      hardmodeName: 'strDummy', hardmodeComparison: 1, hardmodeNum: 0, combinedSubmissionFlag: 0,
+    });
+    for (const [n, arrs] of [['validBeforeDrama', ['beforeDramaId', 'beforeDramaType']],
+      ['validAfterDrama', ['afterDramaId', 'afterDramaType']]]) {
+      for (const a of arrs) row[a] = (r[a] || []).slice(0, r[n]);
+    }
+    for (const a of ['clearGetItemType', 'clearGetItemId', 'clearGetAssignSkillType', 'clearGetAssignSkillId',
+      'clearGetAssignSkillLv', 'clearGetItemNum']) row[a] = (r[a] || []).slice(0, r.validClearGetItem);
+    stagesOut.push(row);
+    storyAdded++;
+  }
+  // filmati: quelli assenti dalle risorse si cercano nel theater della versione finale
+  // (righe con lo stesso stageId: i filmati della storia rifatti come lwf/drama/<id>)
+  const theaterBy = new Map();
+  for (const t of theater) {
+    if (!t.validTheater || !t.stageId) continue;
+    if (!theaterBy.has(t.stageId)) theaterBy.set(t.stageId, []);
+    theaterBy.get(t.stageId).push(t);
+  }
   for (const s of stagesOut) {
     for (const [flag, ids] of [['validBeforeDrama', 'beforeDramaId'], ['validAfterDrama', 'afterDramaId']]) {
       if (s[flag] && (s[ids] || []).some((id) => id && !dramas.has(id))) {
-        s[flag] = 0;
-        dramasOff++;
+        // si tolgono solo gli id assenti: di solito i dialoghi (script SEQ 1xxxxxx), mentre i
+        // filmati veri (lwf/drama 2xxxxxx, le missioni con la pellicola) ci sono quasi tutti
+        const types = ids.replace('Id', 'Type');
+        const keep = s[ids].map((id, i) => [id, (s[types] || [])[i] || 0]).filter(([id]) => id && dramas.has(id));
+        const rows = flag === 'validBeforeDrama' && !keep.length
+          ? (theaterBy.get(s.stageId) || []).filter((t) => t.dramaId.every((d) => dramas.has(d))) : [];
+        if (keep.length) {
+          s[ids] = keep.map((k) => k[0]);
+          s[types] = keep.map((k) => k[1]);
+          s[flag] = keep.length;
+          dramasOff++;
+        } else if (rows.length) {
+          s[ids] = rows.flatMap((t) => t.dramaId);
+          s[types] = rows.flatMap((t) => t.dramaType);
+          s[flag] = s[ids].length;
+          dramasTheater++;
+        } else {
+          s[flag] = 0;
+          dramasOff++;
+        }
       }
     }
   }
@@ -358,4 +409,4 @@ fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 console.log(`medal: ${medals.length} righe; player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva)` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
-  `; stage: ${dramasOff} filmati senza script disattivati`);
+  `; stage: +${storyAdded} missioni di storia, filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
