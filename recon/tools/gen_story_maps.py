@@ -30,6 +30,10 @@ collegate da uscite (blocco a 0x34 di ogni parte, vedi stage_gen/exits/NOTE.md):
 - uid globali in ordine di file (area u, nemici u+1..u+n, poi i forzieri della parte);
 - STG [2] = parti (partenza parte 0), [12] = parte del bersaglio, totali sommati.
 Le missioni a una stanza escono identiche byte per byte alla versione senza multiroom.
+Raggiungibilita': i punti della griglia sono collegati solo se stanno nella stessa componente di
+pixel percorribili (spazio libero > "reach_radius", default 16; aggancio entro "reach_tol", default
+48), cosi' tutto cio' che si piazza e' raggiungibile dalla partenza / dagli arrivi; controllo con
+stage_gen/reach/validate_maps.py. Richiede numpy e scipy.
 """
 import collections
 import hashlib
@@ -102,7 +106,41 @@ def room_folder(name, world):
 
 
 GRID, MARGIN = 40, 40
+# Raggiungibilita' a livello di pixel (come validate_maps.py di stage_gen/reach): la bitmap CLS ha
+# 1 bit per unita'; componenti 4-connesse dei pixel con spazio libero > REACH_R (gli originali
+# 1010-1040 passano fino a 20), ogni punto della griglia agganciato al pixel piu' vicino entro
+# REACH_TOL. Due punti della griglia sono vicini solo se stanno nella stessa componente: la visita
+# sulla griglia di 40 px non puo' piu' «saltare» un muro sottile (tronco, staccionata) fra due
+# campioni, e tutto quello che si piazza (partenza, uscite, arrivi, nemici, forzieri, bersaglio)
+# sta nella componente della partenza. Dove la griglia non scavalcava muri il risultato e' identico.
+REACH_R = float(cfg.get('reach_radius', 16))
+REACH_TOL = int(cfg.get('reach_tol', 48))
 _cls_cache = {}
+
+
+def pixel_comp(cls, W, H, stride):
+    """Funzione (x, y) -> etichetta della componente percorribile piu' vicina entro REACH_TOL (0 = nessuna)."""
+    import numpy as np
+    from scipy import ndimage
+    bits = np.unpackbits(np.frombuffer(cls, np.uint8, stride * H, 16).reshape(H, stride), axis=1)[:, :W]
+    free = bits == 0
+    if REACH_R > 0:
+        free = ndimage.distance_transform_edt(free) > REACH_R
+    lab = ndimage.label(free)[0]
+    T = REACH_TOL
+
+    def comp(x, y):
+        x0, x1, y0, y1 = max(0, x - T), min(W, x + T + 1), max(0, y - T), min(H, y + T + 1)
+        if x0 >= x1 or y0 >= y1:
+            return 0
+        win = lab[y0:y1, x0:x1]
+        ys, xs = np.nonzero(win)
+        if not len(xs):
+            return 0
+        d2 = (xs + x0 - x) ** 2 + (ys + y0 - y) ** 2
+        k = int(np.argmin(d2))
+        return int(win[ys[k], xs[k]]) if d2[k] <= T * T else 0
+    return comp
 
 
 def walk_grid(folder):
@@ -119,6 +157,10 @@ def walk_grid(folder):
         for x in range(MARGIN, W - MARGIN, GRID):
             if all(free(x + dx, y + dy) for dx in (-MARGIN, 0, MARGIN) for dy in (-MARGIN, 0, MARGIN)):
                 ok.add((x, y))
+    # componente dei pixel di ogni punto; senza componente (troppo stretto) il punto si scarta
+    pc = pixel_comp(cls, W, H, stride)
+    lab = {p: pc(*p) for p in ok}
+    ok = {p for p in ok if lab[p]}
     # componente piu' grande, distanze dalla partenza (punto libero piu' a sinistra)
     seen, comps = set(), []
     for p in sorted(ok):
@@ -131,7 +173,7 @@ def walk_grid(folder):
             comp.append(c)
             for d in ((GRID, 0), (-GRID, 0), (0, GRID), (0, -GRID)):
                 n = (c[0] + d[0], c[1] + d[1])
-                if n in ok and n not in seen:
+                if n in ok and n not in seen and lab[n] == lab[c]:
                     seen.add(n)
                     q.append(n)
         comps.append(comp)
