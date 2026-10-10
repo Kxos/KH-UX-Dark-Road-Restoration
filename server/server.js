@@ -171,6 +171,8 @@ function route(url) {
   if (p === '/user/profile') return 'userprofile';
   if (p === '/user/birthday') return 'userbirthday';
   if (p === '/user/title') return 'usertitle';
+  if (p === '/user/mission/list') return 'missionlist';
+  if (p === '/user/mission/receive') return 'missionreceive';
   if (p === '/user/update') return 'userupdate';
   if (p === '/user/playstyle/update' || p === '/user/title/update') return 'userdetailupdate';
   if (p.includes('system/master')) return 'master';
@@ -1116,6 +1118,8 @@ function respondStageClear(res, req) {
   // restituisce in getLux (la barra Lux di RESULTS).
   const lux = Number(req?.getPoint?.lux) || 0;
   player.lux += lux; // userPoint.lux/totalLux e luxRank nella risposta: dopo lo stage
+  missionCount('quest', 1);
+  missionCount('lux', lux);
   const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
   (stage?.submissionRequire || []).forEach((kind, i) => {
     if (kind === 29 && lux >= (stage.submissionNum?.[i] ?? Infinity) && !cleared.includes(i + 1)) cleared.push(i + 1);
@@ -1179,6 +1183,84 @@ function masterRows(name) {
   } catch {
     return [];
   }
+}
+
+// ---------------------------------------------------------------------------
+// Missioni giornaliere e settimanali (master `mission`, server/tables/mission.json; formato
+// in stage_gen/missions/NOTE.md). missionType = scheda (2 Daily, 3 Weekly); il periodo
+// riparte da startDate + k giorni (giornaliere) o k settimane (settimanali). conditionId:
+// 1 quest completate, 3/6 Raid Boss, 4/9 Lux, 12 Union Cross, 28 PVP (6, 9 e 12 sono del
+// party: senza party si contano quelli del giocatore).
+// ---------------------------------------------------------------------------
+const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp' };
+
+function missionPeriod(row, nowMs) {
+  const span = row.missionType === 3 ? 7 * 86400000 : 86400000;
+  return Math.floor((nowMs - Date.parse(row.startDate.replace(' ', 'T') + 'Z')) / span);
+}
+
+// contatori del periodo corrente di ogni missione: player.missions[id] = {period, count, received}
+function missionState(row, nowMs) {
+  player.missions = player.missions || {};
+  const period = missionPeriod(row, nowMs);
+  let s = player.missions[row.id];
+  if (!s || s.period !== period) s = player.missions[row.id] = { period, count: 0, received: false };
+  return s;
+}
+
+function missionCount(counter, n) {
+  if (!n) return;
+  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  for (const row of masterRows('mission')) {
+    if (MISSION_COUNTER[row.conditionId] === counter) missionState(row, nowMs).count += n;
+  }
+}
+
+// missions[] di /user/mission/list e /user/mission/receive: solo id del master (altrimenti il
+// client va in crash), status 0 in corso, 1 da riscuotere, 2 riscossa
+function missionsData() {
+  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  return masterRows('mission').filter((r) => r.missionType === 2 || r.missionType === 3).map((r) => {
+    const s = missionState(r, nowMs);
+    const goal = r.targetNum?.[0] || 1;
+    const done = s.count >= goal;
+    return { id: r.id, status: s.received ? 2 : done ? 1 : 0, numUpper: Math.min(s.count, goal), numLower: goal };
+  });
+}
+
+// POST /user/mission/receive (azione 190): {receiveMissionIds}; premio rewardType/itemId/itemNum,
+// poi la lista aggiornata e l'inventario completo, come /stage/clear
+function respondMissionReceive(res, req) {
+  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  const rows = new Map(masterRows('mission').map((r) => [r.id, r]));
+  for (const id of req?.receiveMissionIds || []) {
+    const r = rows.get(id);
+    if (!r) continue;
+    const s = missionState(r, nowMs);
+    if (s.received || s.count < (r.targetNum?.[0] || 1)) continue;
+    s.received = true;
+    grantItem(r.rewardType, r.itemId, r.itemNum);
+  }
+  savePlayer();
+  const now = serverTime();
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now), userDetail: userDetailData() },
+    missions: missionsData(), beginnerLimitTime: null,
+    userSphere: { userSphereDatas: [], notChargedSphereBoardIds: [] },
+    userMaterials: userMaterialsData(),
+    userMedals: userMedalsData(now),
+    userSkills: [],
+    userKeyblades: userKeybladesData(),
+    userDecks: userDecksData(),
+    userAvatarParts: [],
+    userTitles: [],
+    pet: { userPetParts: [] },
+    emblemIds: [],
+    subslotMaxNum: 0,
+    userKeybladeSubslots: userKeybladeSubslotsData(),
+    guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+  });
 }
 
 // Inventario iniziale da initItem: categoria 3 = medaglie del deck (equipType 3,
@@ -1761,6 +1843,9 @@ function handler(scheme) {
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
       if (kind === 'moogleshopbuy') return respondMoogleshopBuy(res, entry.bodyDecoded);
       if (kind === 'userupdate') return respondUserUpdate(res, entry.bodyDecoded);
+      // GET /user/mission/list (azione 189): missions[] e beginnerLimitTime
+      if (kind === 'missionlist') { const missions = missionsData(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: null }); }
+      if (kind === 'missionreceive') return respondMissionReceive(res, entry.bodyDecoded);
       if (kind === 'userdetailupdate') return respondUserDetailUpdate(res, req.url.split('?')[0], entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
       // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop

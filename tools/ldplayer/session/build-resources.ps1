@@ -26,6 +26,10 @@ python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
 python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_textures fallito' }
+# animazione move delle grafiche di Dark Road usate dai nemici (copia di wait)
+$env:BGAD_KEY = $key
+python -I recon\tools\make_enemy_moves.py server\master_data\enemy.json "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" "$D\catalog\enemy_wait" "$sg\files"
+if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
 # scritti a mano: dove c'e' l'originale prevale
 python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"
