@@ -42,6 +42,16 @@ qui c'è come.
   img/ui/Equip_DeckBG_01.png, overlay Sphere_Incentive.json; posizioni stimate su 960x640).
   Da integrare: copiare i file in stage_gen\files, costruire il layout in make_layouts.py,
   master sphere* in server/tables, server userSphere.
+- Avatar Boards integrati (da provare sul banco, serve revisione master 80 e risorse 32):
+  layout SphereScene_ver310 + Sphere_Incentive + 4 popup in make_layouts; armature
+  (recon/tools/gen_sphere_armatures.py; i movimenti si scelgono per indice 0/1/2 = Lock/
+  Release/Target, `stage_gen\boards\ARMATURES.md`); server GET /user/sphere,
+  /user/sphere/update, /user/sphere/check (`stage_gen\boards\SERVER.md`); le immagini
+  sphere_incentive (37 MB) stanno in medal_gen\files (pacchetto statico: versione completa).
+- Texture: le originali hanno l'alpha PREMOLTIPLICATA; btf.encode ora premoltiplica, decode
+  la toglie; `recon/tools/btf_fix.py` (nel build) converte PNG veri e BTF vecchi. Causa dei
+  bordi bianchi sulle medaglie (Paperino). Agente di controllo visivo di tutte le medaglie:
+  risultati in `stage_gen\medal_check\REPORT.md`.
 
 **Banco:** risorse versione 30 (con le immagini delle 521 medaglie del master), master
 revisione 77 (alzarla dopo ogni modifica di master_data, poi relogin.ps1 due volte).
