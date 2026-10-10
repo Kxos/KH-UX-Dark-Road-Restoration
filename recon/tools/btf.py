@@ -42,15 +42,35 @@ def decode(d):
         im.putdata([pal[b] if b < n else (0, 0, 0, 0) for b in raw[n * 4:n * 4 + w * h]])
     else:
         return canvas
-    canvas.paste(im, i['offset'])
+    canvas.paste(_unpremultiply(im), i['offset'])
     return canvas
+
+
+# Le texture originali hanno l'alpha premoltiplicata (colore <= alpha in ogni pixel: verificato su
+# Z_SpIcon_Eff0, 240.379 pixel semitrasparenti). Senza premoltiplicare, i bordi semitrasparenti
+# delle nostre immagini uscivano schiariti (bianco sul cappello e sulla mano di Paperino):
+# encode premoltiplica, decode restituisce colori normali.
+def _premultiply(im):
+    from PIL import Image, ImageChops
+    r, g, b, a = im.split()
+    return Image.merge('RGBA', [ImageChops.multiply(c, a) for c in (r, g, b)] + [a])
+
+
+def _unpremultiply(im):
+    import numpy as np
+    from PIL import Image
+    px = np.asarray(im, dtype=np.uint16).copy()
+    a = px[..., 3:4]
+    rgb = np.where(a > 0, np.minimum(255, (px[..., :3] * 255 + a // 2) // np.maximum(a, 1)), 0)
+    px[..., :3] = rgb
+    return Image.fromarray(px.astype(np.uint8), 'RGBA')
 
 
 def encode(im):
     """Immagine PIL -> BTF tipo 8 (RGBA, tela = immagine). Intestazione come le originali:
     '\\x89BTF', 00 00 01 00, zeri, +0x10 tipo, +0x16 tela, +0x1a 0 0, +0x1e dimensioni,
     +0x22 u32 lunghezza dei dati zlib, dati da +0x26."""
-    im = im.convert('RGBA')
+    im = _premultiply(im.convert('RGBA'))
     w, h = im.size
     z = zlib.compress(im.tobytes(), 9)
     head = b'\x89BTF' + bytes([0, 0, 1, 0]) + bytes(8) + bytes([8, 0, 0, 0, 0, 0])

@@ -172,6 +172,9 @@ function route(url) {
   if (p === '/user/birthday') return 'userbirthday';
   if (p === '/user/title') return 'usertitle';
   if (p === '/user/mission/list') return 'missionlist';
+  if (p === '/user/sphere') return 'spherelist';
+  if (p === '/user/sphere/update') return 'sphereupdate';
+  if (p.startsWith('/user/sphere/check')) return 'spherecheck';
   if (p === '/user/mission/receive') return 'missionreceive';
   if (p === '/user/update') return 'userupdate';
   if (p === '/user/playstyle/update' || p === '/user/title/update') return 'userdetailupdate';
@@ -693,8 +696,9 @@ function userAvatarData() {
 // Parti possedute: quelle indossate (tipo dalla tabella avatarParts).
 function userAvatarPartsData() {
   const a = userAvatarData();
-  const ids = [a.hairPartsId, a.hairColorPartsId, a.facePartsId, a.bodyPartsId, a.skinPartsId, ...a.accessoriesPartsIds]
-    .filter(Boolean);
+  // indossate e guadagnate (premi degli Avatar Boards, player.avatarParts)
+  const ids = [a.hairPartsId, a.hairColorPartsId, a.facePartsId, a.bodyPartsId, a.skinPartsId, ...a.accessoriesPartsIds,
+    ...(player.avatarParts || [])].filter(Boolean);
   const rows = masterRows('avatarParts');
   return [...new Set(ids)].map((id, i) => ({
     userAvatarPartsId: i + 1, // uint64
@@ -816,6 +820,10 @@ function stageEnemyDrops(stageId) {
 // FUN_006ea1b4) usa userDetail.luxRank come livello e userPoint.lux come valore,
 // contro le soglie cumulative needExp della tabella player (righe lv e lv+1). Con
 // luxRank 0 la soglia del livello 1 e' 0: «LEVEL UP!» e barra piena a ogni stage.
+function sphereBonus() {
+  return player.sphereBonus || { hp: 0, ap: 0, cost: 0 };
+}
+
 function luxRankFor(lux) {
   const rows = masterRows('player').filter((r) => r.lv >= 1 && r.needExp <= lux);
   return Math.max(1, ...rows.map((r) => r.lv));
@@ -834,7 +842,9 @@ function userPointData(now) {
     // giocatore non ha difesa: nel Prologue moriva in un turno, e nel tutorial non si
     // poteva morire.
     ...deckStats(),
-    baseHp: levelHp(1), hp: levelHp(1), ap: 10, maxHp: levelHp(1), maxAp: 10,
+    // + i bonus dei nodi degli Avatar Boards (player.sphereBonus)
+    baseHp: levelHp(1) + sphereBonus().hp, hp: levelHp(1) + sphereBonus().hp, ap: 10 + sphereBonus().ap,
+    maxHp: levelHp(1) + sphereBonus().hp, maxAp: 10 + sphereBonus().ap,
     lastApDatetime: now,
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
@@ -1041,7 +1051,7 @@ function userDetailData() {
     // maxDeckCost: con 0 «Begin» apre il popup di costo superato (PopupNormal_Cost_Over,
     // assente dalle risorse): crash. Dal campo cost della tabella player.
     ...playerTitleIds(),
-    maxDeckCost: masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.cost ?? 10,
+    maxDeckCost: (masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.cost ?? 10) + sphereBonus().cost,
     playTimezones: player.playTimezones || [], // int[], al massimo 6 (Play Style del Profilo)
     playFrequently: player.playFrequently || 0,
     partyId: 0, // uint64
@@ -1186,6 +1196,114 @@ function masterRows(name) {
 }
 
 // ---------------------------------------------------------------------------
+// Avatar Boards (le «sphere» del client; master sphere/sphereArray/sphereMasu in server/tables,
+// protocollo in stage_gen/boards/SERVER.md). player.sphere[sphereBoardId] = {id, unlock[],
+// getDatetime}: le bacheche si aprono col livello (openParam <= rango Lux); unlock = numeri
+// dei nodi 1..23 (indice negli array di sphereMasu, valore della cella in spCol0..4).
+// ---------------------------------------------------------------------------
+function sphereNodes(board) {
+  const arr = masterRows('sphereArray').find((r) => r.arryId === board.arryId);
+  const nodes = new Set();
+  for (const k of ['spCol0', 'spCol1', 'spCol2', 'spCol3', 'spCol4']) {
+    for (const v of arr?.[k] || []) if (v >= 1 && v <= 23) nodes.add(v);
+  }
+  return [...nodes].sort((a, b) => a - b);
+}
+
+function sphereBoards() {
+  player.sphere = player.sphere || {};
+  const level = luxRankFor(player.lux);
+  for (const b of masterRows('sphere')) {
+    if (b.price || b.openParam > level || player.sphere[b.sphereBoardId]) continue;
+    const id = Math.max(0, ...Object.values(player.sphere).map((s) => s.id)) + 1;
+    player.sphere[b.sphereBoardId] = { id, unlock: [], getDatetime: serverTime() };
+  }
+  return player.sphere;
+}
+
+function userSphereData(sphereBoardId) {
+  const s = sphereBoards()[sphereBoardId];
+  const board = masterRows('sphere').find((r) => r.sphereBoardId === Number(sphereBoardId));
+  const done = board && sphereNodes(board).every((n) => s.unlock.includes(n));
+  return { userSphereBoardId: s.id, sphereBoardId: Number(sphereBoardId), isBuy: 1, status: done ? 3 : 1,
+    unlockMasuIds: s.unlock.slice(0, 23), getDatetime: s.getDatetime };
+}
+
+function userSphereAll() {
+  return { userSphereDatas: Object.keys(sphereBoards()).map(userSphereData), notChargedSphereBoardIds: [] };
+}
+
+// premio di un nodo (rewardSelect di sphereMasu): 12 HP, 21 AP, 22 costo del deck (bonus sommati
+// in userPointData/userDetailData), 3 medaglia, 19/20/23 parti dell'avatar
+function grantSphereReward(masu, i) {
+  const sel = masu.rewardSelect[i], id = masu.rewardId[i], val = masu.rewardValue[i] || 1;
+  const bonus = player.sphereBonus = player.sphereBonus || { hp: 0, ap: 0, cost: 0 };
+  if (sel === 12) bonus.hp += val;
+  else if (sel === 21) bonus.ap += val;
+  else if (sel === 22) bonus.cost += val;
+  else if (sel === 3) grantItem(3, id, 1);
+  else if (sel === 19 || sel === 20 || sel === 23) player.avatarParts = [...new Set([...(player.avatarParts || []), id])];
+  else if (sel === 2) grantItem(2, 0, val);
+  else console.log(`  [sphere] premio rewardSelect ${sel} (id ${id}) non gestito`);
+}
+
+// POST /user/sphere/update (azione 44): {sphereBoardId, releaseMasuId} o {releaseMasuId 0, allOpen 1}.
+// Si scalano gli Avatar Coin, si danno i premi e, a bacheca completa, il titolo 2000+N
+function respondSphereUpdate(res, req) {
+  const boardId = Number(req?.sphereBoardId);
+  const board = masterRows('sphere').find((r) => r.sphereBoardId === boardId);
+  const s = sphereBoards()[boardId];
+  if (board && s) {
+    const masu = masterRows('sphereMasu').find((r) => r.masuId === board.masuId);
+    const todo = req?.allOpen ? sphereNodes(board).filter((n) => !s.unlock.includes(n))
+      : [Number(req?.releaseMasuId)].filter((n) => n >= 1 && n <= 23 && !s.unlock.includes(n));
+    const cost = todo.reduce((t, n) => t + (masu?.spherePoint[n - 1] || 0), 0);
+    if (masu && todo.length && cost <= (player.spherePoint || 0)) {
+      player.spherePoint -= cost;
+      for (const n of todo) { s.unlock.push(n); grantSphereReward(masu, n - 1); }
+      if (sphereNodes(board).every((n) => s.unlock.includes(n))) {
+        const title = 2000 + (boardId - 2100000);
+        if (masterRows('title').some((t) => t.titleId === title)) player.titles = [...new Set([...(player.titles || []), title])];
+      }
+      console.log(`[sphere] bacheca ${boardId}: nodi ${todo.join(',')} (-${cost} Avatar Coin)`);
+    } else console.log(`[sphere] sblocco rifiutato: bacheca ${boardId}, nodi ${todo.join(',') || '-'}, costo ${cost}`);
+  }
+  savePlayer();
+  const now = serverTime();
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now), userDetail: userDetailData() },
+    userSphere: { userSphereDatas: s ? [userSphereData(boardId)] : [], notChargedSphereBoardIds: [] },
+    ...inventoryBlocks(now),
+  });
+}
+
+// liste dell'inventario che le risposte 44/182/190 rimandano complete (il client le sostituisce)
+function inventoryBlocks(now) {
+  return {
+    userMaterials: userMaterialsData(),
+    userMedals: userMedalsData(now),
+    userSkills: [],
+    userKeyblades: userKeybladesData(),
+    userDecks: userDecksData(),
+    userAvatarParts: userAvatarPartsData(),
+    userTitles: userTitlesData(),
+    pet: { userPetParts: [] },
+    emblemIds: [],
+    subslotMaxNum: 0,
+    userKeybladeSubslots: userKeybladeSubslotsData(),
+    guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+  };
+}
+
+// userTitles[] {userTitleId uint64, titleId}: categoria 1 («Default Title») e titoli guadagnati
+function userTitlesData() {
+  const ids = [...new Set([...masterRows('title').filter((r) => r.category === 1).map((r) => r.titleId),
+    ...(player.titles || [])])];
+  return ids.map((titleId, i) => ({ userTitleId: i + 1, titleId }));
+}
+
+// ---------------------------------------------------------------------------
 // Missioni giornaliere e settimanali (master `mission`, server/tables/mission.json; formato
 // in stage_gen/missions/NOTE.md). missionType = scheda (2 Daily, 3 Weekly); il periodo
 // riparte da startDate + k giorni (giornaliere) o k settimane (settimanali). conditionId:
@@ -1247,19 +1365,8 @@ function respondMissionReceive(res, req) {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData() },
     missions: missionsData(), beginnerLimitTime: null,
-    userSphere: { userSphereDatas: [], notChargedSphereBoardIds: [] },
-    userMaterials: userMaterialsData(),
-    userMedals: userMedalsData(now),
-    userSkills: [],
-    userKeyblades: userKeybladesData(),
-    userDecks: userDecksData(),
-    userAvatarParts: [],
-    userTitles: [],
-    pet: { userPetParts: [] },
-    emblemIds: [],
-    subslotMaxNum: 0,
-    userKeybladeSubslots: userKeybladeSubslotsData(),
-    guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+    userSphere: userSphereAll(),
+    ...inventoryBlocks(now),
   });
 }
 
@@ -1845,6 +1952,11 @@ function handler(scheme) {
       if (kind === 'userupdate') return respondUserUpdate(res, entry.bodyDecoded);
       // GET /user/mission/list (azione 189): missions[] e beginnerLimitTime
       if (kind === 'missionlist') { const missions = missionsData(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: null }); }
+      // Avatar Boards: GET /user/sphere (azione 10, sostituisce l'elenco), POST /user/sphere/check e
+      // /check/170119 (azioni 60/61: userSphere in merge, closeEventSphereBoardIds se checkTypes ha 3)
+      if (kind === 'spherelist') { const userSphere = userSphereAll(); savePlayer(); return send(res, 200, { ret: ret(), userSphere }); }
+      if (kind === 'sphereupdate') return respondSphereUpdate(res, entry.bodyDecoded);
+      if (kind === 'spherecheck') { const userSphere = userSphereAll(); savePlayer(); return send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [] }); }
       if (kind === 'missionreceive') return respondMissionReceive(res, entry.bodyDecoded);
       if (kind === 'userdetailupdate') return respondUserDetailUpdate(res, req.url.split('?')[0], entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
@@ -1943,9 +2055,8 @@ function handler(scheme) {
       // Titoli posseduti: quelli di categoria 1 («Default Title», li ha ogni giocatore) e quelli
       // guadagnati (player.titles). Li elenca il popup Titles del Profilo (Edit, Nameplate).
       if (kind === 'usertitle') {
-        const ids = [...new Set([...masterRows('title').filter((r) => r.category === 1).map((r) => r.titleId),
-          ...(player.titles || [])])];
-        return send(res, 200, { ret: ret(), userTitles: ids.map((titleId, i) => ({ userTitleId: i + 1, titleId })) });
+        return send(res, 200, { ret: ret(), userTitles: userTitlesData() });
+
       }
       if (kind === 'userbirthday') {
         const m = /^(\d{4})-(\d{2})/.exec(player.birthday || '');
