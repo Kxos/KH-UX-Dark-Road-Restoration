@@ -294,6 +294,37 @@ poi i pulsanti in crash del menu.
   stage_base.json; 4 casi, tra cui 1010201/1010301 della missione 8). Revisione master 72.
   Banco: «Unexpected Visitors» fino a RESULTS (tre obiettivi), LEVEL UP. Da fare: 979
   missioni di storia -> processo automatico (vedi «Piano per le missioni»).
+- **Missioni di storia in automatico (10-11 ottobre, notte).** thethiny stage_dec: 1.140
+  stage, missioni di storia = stageBinId 1..525 (numero della missione, nessun buco; la
+  versione finale arrivava a 979, i dati oltre la 525 non ci sono). make-game-tables.js le
+  unisce al master stage (campi assenti derivati, revisione 73). `recon/tools/
+  gen_story_maps.py` (config `stage_gen\story_cfg.json`, ~3 s): per ogni missione stanza da
+  `recon/tools/story_rooms.json` (5 stanze note: DB_0000 Fountain Square, DB_0004 1st
+  District, DW_0000 Flower Glade, DW_0001 Dark Forest: Entrance, DW_0003 Dwarf's Cottage) o
+  una dello stesso mondo (le stanze vere arrivavano dal CDN: nelle risorse 86), nemici e
+  tesori dalla wiki, posizioni sulla bitmap delle collisioni, intestazione STG come le vere
+  ([2] parti, [3,4] partenza, [6] bersaglio, [8] aree, [9] nemici, [14] forzieri, [15]
+  oggetti). Un'unica parte per missione: le uscite tra stanze (sezione C?) non sono
+  ricavate. Uscita in `stage_gen\story`, copiata in `stage_gen\files\stage` (non sovrascrive
+  1010-1050). Prova sul banco: `server\save\smoke.json` {stageId} fa proporre dal server solo
+  quella missione; `tools\ldplayer\smoke_quests.ps1 -Stages ...` la avvia e controlla l'app
+  (~75 s a missione), `recon/tools/smoke_pick.py` sceglie le 76 missioni che coprono tutte
+  le stanze e i nemici. Filmati: dei 116 filmati lwf (2xxxxxx, le missioni con la pellicola)
+  ne mancano 5 (tutti 2999951); i 175 dialoghi (script SEQ 1xxxxxx) quasi tutti assenti: si
+  tolgono solo gli id assenti. Nemici: grafica solo per 6 KHUX + serie Dark Road senza nome
+  (5001-5086, 7001-7005, 8001-8022): sostituzioni in DISPLAY_SUBSTITUTE, da completare
+  identificando le serie Dark Road (nomi delle texture: TopOperaY, Ifrit, Yeti, ...).
+- **Medaglie da Roboloid/khux (11 ottobre).** `src/search.js` ha `medalDatabase` (2.100
+  medaglie con evoluzioni: nome, stelle, attributo, verso, guilt, STR/DEF, moltiplicatore,
+  gauge, bersaglio, attacco speciale, immagini): estratto in `external\roboloid\
+  medal_db.json`. Le immagini del sito sono i file del gioco (stessa tela e posizione).
+  `recon/tools/fetch_medal_images.py` associa le medaglie del master per nome e stelle e
+  scrive Medal_L/Medal_S/Cutin in `medal_gen\files`; build-resources.ps1 le impacchetta come
+  penultimo pezzo nelle versioni complete (-Quick riscrive solo l'ultimo). make-game-tables
+  usa `medal_gen\medal_map.json` per le immagini e, con KHUX_MEDALS_ALL=1, aggiunge le
+  medaglie mancanti (medalId 300000 + id Roboloid). Roboloid ha anche
+  `images/assets/board/sphere_incentive-<id>.png` (381 premi delle bacheche) e
+  `images/map` (379 anteprime di stanze, solo riferimento).
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia

@@ -1,7 +1,7 @@
 # Rientro di un giocatore ESISTENTE: riavvia il server tenendo il salvataggio
 # (server\save\player.json), rilancia l'app e attende la home.
 #   .\relogin.ps1 -Tag <prefisso screenshot> [-Revision N]
-param([string]$Tag = 'rl', [int]$Revision = 73)
+param([string]$Tag = 'rl', [int]$Revision = 74)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $log = 'D:\Progetto_Restauro_KH_UX\logs\server.log'
 Set-Location $repo
