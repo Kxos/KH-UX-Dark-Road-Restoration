@@ -126,7 +126,9 @@ const newBursts = [];
 let roboAdded = 0;
 if (process.env.KHUX_MEDALS_ALL === '1' && fs.existsSync(ROBO_DB)) {
   const robo = JSON.parse(fs.readFileSync(ROBO_DB, 'utf8'));
-  const mapped = fs.existsSync(MEDAL_MAP_PATH) ? new Set(Object.values(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))) : new Set();
+  // id Roboloid gia' associati a una medaglia del master (le chiavi 300000+ sono le aggiunte)
+  const mapped = new Set(fs.existsSync(MEDAL_MAP_PATH) ? Object.entries(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))
+    .filter(([k]) => Number(k) < 300000).map(([, v]) => v) : []);
   const ATTR = { Power: 1, Speed: 2, Magic: 3 };
   const tpl = (rare, attr) => medals.find((m) => m.rare === rare && m.attribute === attr && m.validBurst)
     || medals.find((m) => m.rare === Math.min(rare, 6) && m.validBurst) || medals.find((m) => m.validBurst);
@@ -149,7 +151,9 @@ if (process.env.KHUX_MEDALS_ALL === '1' && fs.existsSync(ROBO_DB)) {
       medalId: id, imageId: id, thumbId: id, cutinId: id, artId: id, displayId: id,
       sortId: d.AlbumNum, listSortId: d.AlbumNum, name: d.Name, flavor: ab.Text || '',
       attribute: ATTR[d.Attribute], darklight: d.Direction === 'Reversed' ? 2 : 1, rare: d.Rarity,
-      attack: d.STR, maxAttack: d.STR, defense: d.DEF, maxDefense: d.DEF,
+      // STR/DEF assenti su Roboloid per alcune medaglie (supporto): quelli del modello
+      attack: d.STR ?? base.attack, maxAttack: d.STR ?? base.maxAttack, defense: d.DEF ?? base.defense,
+      maxDefense: d.DEF ?? base.maxDefense,
       guiltValue: d.Guilt || 0, validBurst: 1, burstId,
       validEvolve: next ? 1 : 0, evolveId: next ? robo2id(next) : 0,
       validPack: 0, shuffleskillSlot: d.Rarity >= 6 ? 3 : 1, spShuffleskillSlot: 1,
@@ -195,7 +199,7 @@ const DISPLAY_SUBSTITUTE = {
   3: 6,
   7: 17, // Large Body -> Armored Knight (grande, a terra)
 };
-let displaysSubstituted = 0, showsSubstituted = 0;
+let displaysSubstituted = 0, showsSubstituted = 0, attacksAdded = 0;
 const namesFile = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (enemies && fs.existsSync(namesFile)) {
   const drawn = new Set();
@@ -215,6 +219,27 @@ if (enemies && fs.existsSync(namesFile)) {
     displaysSubstituted++;
   }
   fs.writeFileSync(origPath, JSON.stringify(orig));
+  // abilita' dei nemici: enemyAttack della 5.0.1 ha 13 righe, i nemici veri ne citano
+  // centinaia (skillId). Le mancanti si copiano dagli attacchi veri: prima abilita' =
+  // «Attack» (1), seconda = «Moderate Attack» (101), le altre «Powerful Attack» (601). I nemici
+  // con 3 abilita' andavano in crash all'avvio della missione (missioni zoo singole)
+  const attPath = path.join(OUT, 'enemyAttack.json');
+  const attBasePath = path.join(OUT, 'enemyAttack_base.json');
+  if (fs.existsSync(attPath)) {
+    if (!fs.existsSync(attBasePath)) fs.copyFileSync(attPath, attBasePath);
+    const atts = JSON.parse(fs.readFileSync(attBasePath, 'utf8'));
+    const have = new Set(atts.map((a) => a.enemyAttackId));
+    const tplAtt = (i) => atts.find((a) => a.enemyAttackId === [1, 101, 601][Math.min(i, 2)]) || atts[0];
+    for (const e of enemies) {
+      (e.skillId || []).forEach((sid, i) => {
+        if (!sid || have.has(sid)) return;
+        atts.push(Object.assign(JSON.parse(JSON.stringify(tplAtt(i))), { enemyAttackId: sid }));
+        have.add(sid);
+        attacksAdded++;
+      });
+    }
+    fs.writeFileSync(attPath, JSON.stringify(atts));
+  }
   // effetto di comparsa: lwf/character/enemy/show_effect_fla/show_effect<showSwf>/ (nelle
   // risorse 1-4, 100, 501-506, 1000). Se manca (es. 5, 8, 15, 103) il campo va in crash
   // all'avvio della missione (missioni zoo): quello dello Shadow (show, showSwf, frame)
@@ -393,7 +418,9 @@ for (const m of medals) {
 // effetti) con nome, gauge, bersaglio e potenza propri
 for (const nb of newBursts) {
   const { _tpl, ...own } = nb;
-  bursts.push(Object.assign({}, burstById.get(_tpl) || bursts[0], own));
+  const row = Object.assign({}, burstById.get(_tpl) || bursts[0], own);
+  const at = bursts.findIndex((b) => b.burstId === own.burstId);   // gia' generata sopra: si sostituisce
+  if (at >= 0) bursts[at] = row; else bursts.push(row);
 }
 
 // stage: i filmati prima/dopo la missione (beforeDramaId/afterDramaId) sono script
@@ -503,5 +530,5 @@ fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo)` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);

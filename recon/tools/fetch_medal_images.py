@@ -66,12 +66,19 @@ def save(rel, im):
 
 
 mapping, missing, failed = {}, [], []
+jobs = []
 for row in master:
     d = match(row)
     if not d:
         missing.append('%s %s %s★' % (row['medalId'], row['name'], row['rare']))
         continue
-    mid = row['medalId']
+    jobs.append((row['medalId'], d))
+# --all: anche le medaglie di Roboloid che il master non ha (medalId 300000 + id Roboloid,
+# come le righe aggiunte da make-game-tables.js con KHUX_MEDALS_ALL=1)
+if '--all' in sys.argv:
+    taken = {d['ID'] for _, d in jobs}
+    jobs += [(300000 + d['ID'], d) for d in db if d['ID'] not in taken]
+for mid, d in jobs:
     try:
         big = Image.open(fetch('medals', d['MedalImage'])).convert('RGBA')
         if big.size != (640, 640):

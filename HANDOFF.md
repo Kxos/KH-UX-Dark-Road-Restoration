@@ -17,7 +17,37 @@ qui c'è come.
 | C · Campi `master::` | ✅ completata — vedi [PHASE-C.md](PHASE-C.md) |
 | **OBB** | ✅ 5.0.1 (`main.76`, `patch.87`) scaricati, verificati e **serviti come risorse KHUX**; il client 4.3.1 li monta. Con `addnl` dell'IPA iOS 4.3.1 unito agli OBB (risorse versione 3) **l'editor avatar funziona** e il nuovo giocatore arriva, dopo Union e `/user/create`, alla **prima battaglia** (Prologue), con `avatarParts` e `initItem` dalle tabelle master della 5.0.1 offline. Vedi §2, «Gli OBB 5.0.1 serviti al client 4.3.1» |
 
-### Come riprendere il lavoro (stato al 10 ottobre 2026) — LEGGERE PRIMA QUESTO
+### STATO AL 11 OTTOBRE 2026 (notte) — RIPRENDERE DA QUI
+
+**Banco:** risorse versione 30 (con le immagini delle 521 medaglie del master), master
+revisione 77 (alzarla dopo ogni modifica di master_data, poi relogin.ps1 due volte).
+**In corso / da riprendere, in ordine:**
+1. Test singolo dei nemici (missioni zoo 990001-990040 = i 40 nemici dei gruppi falliti,
+   elenco in `stage_gen\zoo_single.json`; risultati in `stage_gen\zoo1_results.json`).
+   Causa trovata: i nemici con `validSkill` 3 vanno in crash all'avvio; correzione gia' nel
+   codice (make-game-tables: righe enemyAttack generate per tutti gli skillId, +276;
+   enemyAttack_base.json conserva l'originale) ma NON ancora applicata al master servito.
+   Dopo: rigenerare (`$env:KHUX_ZOO='1'; $env:KHUX_ZOO_COUNT='40'; node server\make-game-tables.js
+   D:\Progetto_Restauro_KH_UX\wiki\medals.json`), revisione 78, riprovare solo i falliti.
+2. Medaglie complete: `fetch_medal_images.py --all` FATTO (1.918 medaglie con immagini in
+   `medal_gen\files`, 712 MB; 199 download falliti per i nomi con «#», es.
+   «569_6Star_Key_Art_#2.png»: da riprovare con un'altra codifica). Poi: KHUX_MEDALS_ALL=1
+   in make-game-tables (2.094 medaglie, 1.904 burst, tipi verificati), versione risorse 31
+   completa (`build-resources.ps1 -Version 31`; ATTENZIONE: il server annuncia subito
+   l'ultima versione e il client la scarica, quindi farlo a test finiti, poi
+   `update-resources.ps1`). Per vederle in gioco servira' darle al giocatore (premi/gacha).
+3. Due agenti lanciati (risultati attesi in file): `stage_gen\enemy_display_map.json`
+   (nemico KHUX -> grafica Dark Road equivalente, con animazioni) e
+   `stage_gen\story_rooms_full.json` (stanza -> cartella di mappa). Applicarli:
+   DISPLAY_SUBSTITUTE in make-game-tables.js (togliendo il limite `d < 5000` se le grafiche
+   Dark Road funzionano: il crash del gruppo 1 era Fat Bandit, non Yellow Opera/5075) e
+   `recon/tools/story_rooms.json` per gen_story_maps.py; provare con le missioni zoo.
+4. Prova delle missioni di storia: `smoke_pick.py` (76 missioni) + `smoke_quests.ps1`.
+5. Poi: uscite tra stanze (missioni a piu' stanze), gauge del keyblade (nome del campo di
+   /stage/clear dal log «[gauge]»), Avatar Boards (icone premi su Roboloid
+   images/assets/board), barra rossa del trait, messaggio del Profilo.
+
+### Come riprendere il lavoro (stato al 10 ottobre 2026)
 
 **Banco ora:** risorse **versione 29** installate (riserva dati 16 MiB, indice 64 KB: i
 cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 70**
