@@ -133,8 +133,11 @@ def reward_icons(x, y):
                    I('Select_Board', 45, 45, 306, 306, 'Board_0001.png', s9=False, scale=0.3),
                    I('Select_Base', 45, 45, 306, 306, 'Board_0001.png', s9=False, scale=0.3),
                    I('Select_Kind', 45, 45, 306, 306, 'Kind_0001.png', s9=False, scale=0.3)], visible=False),
-               I('RankTitle_Board', x, y, 300, 40, 'Plate02.png', opts=PLATE3, visible=False, children=[
-                   L('RankTitle_Name', 0, 0, 280, 30, '', 20)]),
+               # targa del titolo come AvatarTitle_PanelButton_Big: title_NNNN 610x82 intera (il
+               # codice vi carica img/userTitle/title_<label>; in 9-slice si spezzava), nome
+               # ancorato a sinistra; scala 0,8 per stare nella finestra dei popup
+               I('RankTitle_Board', x, y, 610, 82, 'title_1000.png', s9=False, scale=0.8, visible=False,
+                 children=[L('RankTitle_Name', -226, 0, 530, 42, '', 22, opts=dict(anchorPointX=0))]),
                P('Comment', x - 150, y - 30, 300, 60, [
                    I('Icon_Comment', 20, 30, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4),
                    L('MultiComment_txt', 160, 30, 240, 50, '', 18)], visible=False),

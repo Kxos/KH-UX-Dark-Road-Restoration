@@ -113,9 +113,9 @@ def draw_dots(kind):
 
 
 def draw_cursor():
-    S = 168
+    S = 232            # 66 * sqrt(2) + spessore e alone: ci sta anche ruotato di 45 gradi
     img = Image.new('RGBA', (S * SS, S * SS), (0, 0, 0, 0))
-    half = 66          # semilato del quadrato (esterno ~140 px)
+    half = 56          # semilato del quadrato: stretto attorno al nodo come in ab_32
     arm = 30
     th = 17
     c = S / 2
@@ -340,9 +340,15 @@ def main():
     movs = [mov(n, 61, [('Glow', glow), ('Start', still)]) for n in ('Lock', 'Release', 'Target')]
     write('SphereAnimation', [bone('Glow', ['SpStart_Glow'], 1), bone('Start', ['SpStart'], 2)], movs, imgs)
 
-    imgs = {'SpCursor': draw_cursor()}
-    rot = [frame(0, 0, kX=0.0), frame(60, 0, kX=math.pi / 2)]
-    write('Z_SpCursor', [bone('Cursor', ['SpCursor'], 1)], [mov('Loop', 61, [('Cursor', rot)])], imgs)
+    # cursore: rotazione rigida (riferimenti ab_29..32) fatta con fotogrammi gia' ruotati e
+    # cambio di dI, come Z_SpIcon_Eff. Con kX/kY interpolati il client deformava l'immagine
+    # (staffe schiacciate in scie diagonali a meta' giro). Simmetrico a 90 gradi: 12 passi
+    # da 7,5 gradi, 5 fotogrammi l'uno, chiudono il giro senza scatti
+    cur = draw_cursor()
+    steps = 12
+    imgs = {f'SpCursor_{i:02d}': cur.rotate(-90 * i / steps, resample=Image.BICUBIC) for i in range(steps)}
+    rot = [frame(5 * i, i) for i in range(steps)] + [frame(5 * steps, 0)]
+    write('Z_SpCursor', [bone('Cursor', list(imgs), 1)], [mov('Loop', 5 * steps + 1, [('Cursor', rot)])], imgs)
 
 
 if __name__ == '__main__':
