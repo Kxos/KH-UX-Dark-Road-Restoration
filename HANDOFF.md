@@ -217,6 +217,28 @@ poi i pulsanti in crash del menu.
   («200 ERROR :248»). Risultato: il client mostra il dettaglio con «Trait 1/1». Da
   sistemare: il cursore rosso dello slot da sostituire (armatura `MedalInfo_Anim`,
   `animeCursor`) e' piu' largo della finestra; trait speciali (Spirit Training) non gestiti.
+- **Profilo — analisi (10 ottobre, sera, non ancora costruito).** Riferimenti:
+  reference\profile\ (video 7-R0jhyzlso «Ultimate KHux Beginners Guide», 1:52-3:07;
+  profile_06 schermata, profile_11 popup Titles con Title Preview/Title A/Title B/Edit/
+  Nameplate, profile_13 popup Name/Message, profile_16 popup Play Style). Layout mancanti
+  (tabella dei percorsi a 0x20850a0): AvatarInfoScene_A_ver131 (caricata nascosta da
+  FUN_008d785c, AvatarInfoDialog::open, poi richiesta al server FUN_007df510),
+  AvatarInfo_Oneself_ver131 + AvatarInfo_User_ver260 (contenitore di FUN_008f3bf0, classe
+  registrata nella tabella di fabbrica a 0x1dd76c8; «User» sopra con zorder 2),
+  AvatarInfo_Txt2 (FUN_008eb9a8), AvatarInfo_Comment_ver132 / _U13_ver132 (popup
+  Name/Message, FUN_008dcf1c: Txt_Name, Txt_Limit1, Txt_Caution, Txt_Comment, Txt_Limit2,
+  Txt_Comment_Label_U13, Button_Close, Button_Ok, Txt_OK, Txt_Cancel), AvatarInfo_PlayStyle
+  (FUN_008deb84: Txt_PlayTime, _A.._F, Button_PlayTime_A.._F, Txt_Select, Txt_Setting,
+  Txt_Num_Lavel, Txt_Style, _A.._C, Button_Style_A.._C, Button_Ok, Txt_Cancel,
+  Button_Close). Esistono AvatarInfo_Txt_ver340 e Offline_AvatarInfo_Comment. Riempimento:
+  FUN_008f3f40 (Button_PetInfo, Txt_Pet_Name/Rank, Communication_Area con Button_Follow/
+  Button_Room, Base_LUX_Weekly, Base_Colosseum_Rank, Button_Change, Button_Passive,
+  Button_Emblem, Close_Button, User, Party_Button) e FUN_008e8ab4 (TxtLayer1/2,
+  AtlasLabel_NumL, revolverView in Area_Revolver, Area_RevolverPet, Button_PowerUp,
+  Avatar_Area/Avatar, Pet_Area/Pet/Pet2, Balloon con Txt_Comment_Label, Txt_Burst_Label,
+  Av_Guiltbonus, AtlasLabel_LUX, Base_LUX, Txt_Weekly, Txt_ID/_Label, Txt_Enemy,
+  Txt_No_Record, Txt_PvP_*, Button_FB_Share, Scroll_Area/RecordScrollView, Txt_Money).
+  Il profilo si apre toccando l'avatar in alto a sinistra della home.
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia
