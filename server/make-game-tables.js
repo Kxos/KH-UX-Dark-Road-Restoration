@@ -199,7 +199,9 @@ const DISPLAY_SUBSTITUTE = {
   3: 6,
   7: 17, // Large Body -> Armored Knight (grande, a terra)
 };
-let displaysSubstituted = 0, showsSubstituted = 0, attacksAdded = 0;
+let displaysSubstituted = 0, showsSubstituted = 0, attacksAdded = 0, displaysDarkRoad = 0;
+const DR_MAP_PATH = path.join(ROOT, 'recon', 'tools', 'enemy_display_map.json');
+const DR_MAP = process.env.KHUX_NO_DARKROAD || !fs.existsSync(DR_MAP_PATH) ? {} : JSON.parse(fs.readFileSync(DR_MAP_PATH, 'utf8'));
 const namesFile = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (enemies && fs.existsSync(namesFile)) {
   const drawn = new Set();
@@ -214,6 +216,11 @@ if (enemies && fs.existsSync(namesFile)) {
     const d = orig[e.enemyId];
     // solo la grafica dei nemici KHUX: le serie di Dark Road (5001+) hanno altre animazioni
     if (drawn.has(d) && d < 5000) { e.displayId = d; continue; }
+    // grafica equivalente di Dark Road riconosciuta per nome (recon/tools/enemy_display_map.json,
+    // confronto visivo; confidenza alta o media). Dark Road non ha l'animazione move: la
+    // ricostruisce make_enemy_moves.py (copia di wait) nel pacchetto generato
+    const dr = DR_MAP[e.name];
+    if (dr && dr.confidence !== 'bassa' && drawn.has(dr.displayId)) { e.displayId = dr.displayId; displaysDarkRoad++; continue; }
     const sub = DISPLAY_SUBSTITUTE[d];
     e.displayId = sub && drawn.has(sub) ? sub : (e.height >= 200 ? 17 : 1);
     displaysSubstituted++;
@@ -529,6 +536,12 @@ fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
+// tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
+// khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
+const TABLES = path.join(__dirname, 'tables');
+for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
+  if (f.endsWith('.json')) fs.copyFileSync(path.join(TABLES, f), path.join(OUT, f));
+}
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe (${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  (enemies ? `; enemy: ${enemies.length} righe (${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
