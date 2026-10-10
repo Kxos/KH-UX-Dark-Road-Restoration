@@ -1137,9 +1137,16 @@ function userMedalElement(m, now) {
     attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
     lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
     upperCost: 0, guiltFactor: 0, // guiltFactor: uint
-    userSkills: [], userShuffleSkills: [],
+    userSkills: [], userShuffleSkills: medalTraits(m.userMedalId),
     getDatetime: m.getDatetime || now,
   };
+}
+
+// Trait di una medaglia (Moogle Shop): player.medalTraits[userMedalId] = [{userShuffleSkillId,
+// shuffleSkillId, type, getDatetime}]. Elemento letto da FUN_0078d4b4: userShuffleSkillId
+// (uint64), shuffleSkillId, userMedalId (uint64), getDatetime, type (al massimo 6 per medaglia).
+function medalTraits(userMedalId) {
+  return (player.medalTraits?.[userMedalId] || []).map((t) => ({ ...t, userMedalId }));
 }
 
 function userMedalsData(now) {
@@ -1309,25 +1316,57 @@ function respondMaterialSell(res, body) {
 // grantItem(itemType, itemId, itemNum). Risposta (ramo 248: FUN_007ac5f4
 // shuffleskillUserMedals, userMaterials, emblemIds; FUN_007a5dec guiltBurstFirst/MaxUserMedalIds;
 // FUN_0078b230 userData.userPoint). I jewel non sono nella risposta.
+// Trait (scheda Traits, type 1): corpo {moogleshopId, userMedalId, userShuffleSkillId} dal
+// popup «Select Medal»; userShuffleSkillId = trait da sostituire (0 = slot libero). Il trait
+// e' shuffleSkillId della riga; la medaglia aggiornata torna in shuffleskillUserMedals (stesso
+// formato di userMedals, FUN_0078da18). Il costo si scala solo se lo scambio riesce.
 function respondMoogleshopBuy(res, body) {
   body = body || {};
   const id = Number(body.moogleshopId ?? body.id);
   const n = Math.max(1, Number(body.num ?? body.number ?? body.count ?? 1) || 1);
   const row = masterRows('moogleshop').find((r) => r.moogleshopId === id);
-  if (row) {
-    const cost = row.price * n;
-    if (row.payType === 1) player.freeStone = Math.max(0, (player.freeStone || 0) - cost);
-    else player.money = Math.max(0, (player.money || 0) - cost);
-    grantItem(row.itemType, row.itemId, row.itemNum * n);
-    player.moogleshopBought = player.moogleshopBought || {};
-    player.moogleshopBought[id] = (player.moogleshopBought[id] || 0) + n;
-    savePlayer();
-    console.log(`  [moogle shop] articolo ${id} x${n}: tipo ${row.itemType} id ${row.itemId} x${row.itemNum * n}, -${cost} ${row.payType === 1 ? 'jewel' : 'munny'}`);
-  } else console.log(`  [moogle shop] articolo ${id} assente (corpo ${JSON.stringify(body)})`);
+  const now = serverTime();
+  const changed = [];
+  const fail = (why) => {
+    console.log(`  [moogle shop] articolo ${id} rifiutato: ${why} (corpo ${JSON.stringify(body)})`);
+    // codice d'errore del server ignoto: senza i campi della risposta il client mostra
+    // «200 ERROR :248» e non tocca i saldi
+    send(res, 200, { ret: ret() });
+  };
+  if (!row) return fail('assente');
+  const cost = row.price * n;
+  const wallet = row.payType === 1 ? 'freeStone' : 'money';
+  if ((player[wallet] || 0) < cost) return fail(`${wallet} insufficienti (${player[wallet] || 0} < ${cost})`);
+  if (row.count && (player.moogleshopBought?.[id] || 0) + n > row.count) return fail('scambi esauriti');
+  if (row.type === 1) {
+    const medal = userMedalList().find((m) => m.userMedalId === Number(body.userMedalId));
+    const mrow = medal && masterRows('medal').find((r) => r.medalId === medal.medalId);
+    if (!mrow) return fail('medaglia assente');
+    player.medalTraits = player.medalTraits || {};
+    const list = player.medalTraits[medal.userMedalId] || [];
+    const replace = Number(body.userShuffleSkillId) || 0;
+    const at = replace ? list.findIndex((x) => x.userShuffleSkillId === replace) : list.length;
+    if (at < 0) return fail(`trait ${replace} assente dalla medaglia ${medal.userMedalId}`);
+    if (!replace && list.length >= (mrow.shuffleskillSlot || 0)) {
+      return fail(`slot pieni (${list.length}/${mrow.shuffleskillSlot})`);
+    }
+    player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
+    list[at] = { userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,
+      getDatetime: now };
+    player.medalTraits[medal.userMedalId] = list;
+    changed.push(medal);
+    console.log(`  [moogle shop] trait ${row.shuffleSkillId} sulla medaglia ${medal.userMedalId} (${mrow.name})` +
+      `${replace ? `, sostituisce ${replace}` : ''}: ${list.length}/${mrow.shuffleskillSlot}`);
+  } else grantItem(row.itemType, row.itemId, row.itemNum * n);
+  player[wallet] = player[wallet] - cost;
+  player.moogleshopBought = player.moogleshopBought || {};
+  player.moogleshopBought[id] = (player.moogleshopBought[id] || 0) + n;
+  savePlayer();
+  console.log(`  [moogle shop] articolo ${id} x${n}: tipo ${row.itemType} id ${row.itemId} x${row.itemNum * n}, -${cost} ${row.payType === 1 ? 'jewel' : 'munny'}`);
   send(res, 200, {
     ret: ret(),
-    userData: { userPoint: userPointData(serverTime()) },
-    shuffleskillUserMedals: [],
+    userData: { userPoint: userPointData(now) },
+    shuffleskillUserMedals: changed.map((m) => userMedalElement(m, now)),
     // FUN_007ac5f4 legge anche userMedals e userSkills (FUN_0078da18/FUN_0078e934 col nome
     // predefinito): senza, «200 ERROR :248»
     userMedals: userMedalsData(serverTime()),

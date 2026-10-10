@@ -94,6 +94,16 @@ if (realMedals) {
       // di supporto (EXP, evoluzione): e' validPack, le medaglie che si impilano in una cella
       // con il numero di copie (badge rosso Minfo_Eco_Panel negli screenshot originali)
       validPack: r.unk_1116 ? 1 : 0,
+      // slot dei trait (Moogle Shop, fusione): il formato vecchio non li ha. khwiki «Trait»:
+      // ogni medaglia ne ha da 1 a 5, senza legame con le stelle; il numero esatto c'e' solo
+      // per le medaglie recenti (campo trait= della khuxwiki, nessuna delle nostre). Ipotesi:
+      // 1 per le medaglie d'attacco, 3 sulle 6★ («HD Xion ... only two ... instead of
+      // three»), nessuno per quelle di supporto (EXP, evoluzione: validPack).
+      shuffleskillSlot: r.unk_1116 ? 0 : r.rare >= 6 ? 3 : 1,
+      // slot del trait speciale (khwiki: «Each Medal also has one Special Trait Slot»). La
+      // griglia del popup «Select Medal» (FUN_0088020c con il flag +0xb29) vela e disattiva
+      // le medaglie con spShuffleskillSlot 0 e quelle di supporto (tipo 9/10)
+      spShuffleskillSlot: r.unk_1116 ? 0 : 1,
     }));
   }
   medals.splice(0, medals.length, ...byId.values());

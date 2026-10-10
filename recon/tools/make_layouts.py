@@ -97,6 +97,21 @@ def obtain_plates(cx, cy):
     return panels
 
 
+def held_plates(y):
+    """Possesso mostrato nelle conferme del Moogle Shop (FUN_00e16a84, FUN_00e13b3c): jewel
+    (LB_Jewel con «Held» in Txt_CrownPossessed e il numero in _Label, scritti dal codice) o
+    Munny (LB_Munnies, Txt_MunniesPossessed_Label, Txt_Munnies), uno solo visibile secondo
+    payType. Targhe centrate in x=480 della radice (finestra del popup OK/Annulla)."""
+    return [
+        I('LB_Jewel', 480, y, 360, 28, 'Plate03.png', opts=PLATE3, children=[
+            I('Icon_Jewel', 15, 0, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.3)]),
+        L('Txt_CrownPossessed', 400, y, 160, 28, 'Held', 22),
+        L('Txt_CrownPossessed_Label', 570, y, 200, 28, '0', 22),
+        I('LB_Munnies', 480, y - 32, 360, 28, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_MunniesPossessed_Label', -90, 0, 160, 24, 'Munny', 20),
+            L('Txt_Munnies', 90, 0, 160, 24, '0', 20)])]
+
+
 LAYOUTS = {
     # Presents (FUN_00d0cfbc scena, FUN_00d0b350 base, FUN_00899640 pannello): stessi
     # nomi della versione Dark Road (Txt_Wording, Scroll_Area, Txt_None, Txt_Stock*,
@@ -434,16 +449,27 @@ LAYOUTS = {
     # mg10): Txt_Wording (domanda), Txt_CrownPossessed_Label/Txt_CrownPossessed (jewel
     # posseduti), LB_Munnies con Txt_MunniesPossessed_Label/Txt_Munnies, Button_OK/Txt_OK,
     # Button_Close/Txt_Cancel. Dal popup OK/Annulla originale.
+    # Anche conferma del trait (FUN_00e13b3c), che cerca in piu' LB_Jewel (targa dei jewel,
+    # visibile con payType 1 come Txt_CrownPossessed/_Label).
     'MoogleShop_Traits_AddCheck.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
-                                        {'4Line_Label': 'Txt_Wording'}, False, [
-        ('text', 'Txt_Wording', ''),
-        ('opts', 'Txt_Wording', dict(y=75, height=100)),
-        # il codice scrive il numero in _Label e «Held» in Txt_CrownPossessed (banco)
-        L('Txt_CrownPossessed', 420, 300, 200, 28, 'Held', 22),
-        L('Txt_CrownPossessed_Label', 560, 300, 220, 28, '0', 22),
-        I('LB_Munnies', 480, 268, 360, 28, 'Plate03.png', opts=PLATE3, children=[
-            L('Txt_MunniesPossessed_Label', -90, 0, 160, 24, 'Munny', 20),
-            L('Txt_Munnies', 90, 0, 160, 24, '0', 20)])]),
+                                        {'4Line_Label': 'Txt_Wording'}, False,
+                                        [('text', 'Txt_Wording', ''), ('opts', 'Txt_Wording', dict(y=75, height=100))]
+                                        + held_plates(300)),
+    # Conferma del trait su una medaglia senza slot liberi (FUN_00e13b3c con lo slot da
+    # sostituire scelto nel popup): come AddCheck, ma l'OK si chiama Button_Draw (etichetta
+    # Txt_Draw: con Txt_OK crash al tocco di «Set Trait», banco ts10) e sopra il
+    # costo c'e' Txt_Wording2 (testo 106220410 «Replace X with Y?», CustomRichText creato dal
+    # codice, come Txt_Wording).
+    'MoogleShop_Traits_OverwriteCheck_ver410.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                                     {'4Line_Label': 'Txt_Wording', 'Button_OK': 'Button_Draw',
+                                                      'Txt_OK': 'Txt_Draw'},
+                                                     False,
+                                                     [('text', 'Txt_Wording', ''),
+                                                      ('opts', 'Txt_Wording', dict(y=30, height=50)),
+                                                      L('Txt_Wording2', 480, 430, 600, 70, '', 22)]
+                                                     + held_plates(290)),
+    # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
+    'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
     # popup originale (reference\material_sell\complete_thumb.png): «Complete!» in alto,
     # targhe dei guadagni al centro, OK in basso.
@@ -909,6 +935,81 @@ def material_sell_popup():
         # cercato anche qui (stack al crash); la variante con U+3000 delle medaglie per sicurezza
         L('Txt_data4', 13, 30, 300, 24, '', 18),
         L('Txt_data4　', 13, 30, 300, 24, '', 18)])
+
+
+def trait_medal_select_popup():
+    """MoogleShop_Traits_MedalSelect_Pop_ver410 (FUN_00e103f4), assente da ogni risorsa.
+    Disposizione dal video della 4.1.0 giapponese (reference\\moogle_shop\\jp410_136.png,
+    1280x720: x = x'/1,127 - 88, y = (720 - y')/1,127): a sinistra la targa del trait
+    (SkillPanel: kakusei_Icon, Txt_KakuseiSkill), la medaglia scelta (MedalArea: il codice
+    vi aggiunge la medaglia grande, FUN_00ab5454), i trait della medaglia
+    (KakuseiSkill_Window, riempita da FUN_00e12838) o, senza medaglia, Win_Base con
+    Txt_Traits_Text (testo 106220418), in basso il prezzo (Jewel/Txt_Jewel o
+    Munnies/Txt_Munnies secondo payType) e Button_OK/Txt_OK (106220407 «Set Trait»); a
+    destra Win_under: Scroll_Area (griglia delle medaglie, FUN_0091d10c), Txt_Possession
+    (101510001 «Slots»), Txt_Cost_Label/Txt_Slash_Label/Txt_CostMax_Label e la barra di
+    ordinamento (FUN_00760c64: Button_Sort, Txt_Sort_Label, Txt_Filter_On); Arrow01 tra le
+    due finestre e Close_Button in alto a destra."""
+    win = dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
+    root = build(P('Panel_MedalSelect', 0, 0, 960, 640, [
+        I('Win_Left', 283, 314, 556, 614, 'Win04.png', opts=win),
+        I('Win_Right', 758, 314, 390, 614, 'Win04.png', opts=win),
+        I('SkillPanel', 180, 584, 330, 36, 'Plate25.png',
+          opts=dict(scale9Enable=True, capInsetsX=32, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1), children=[
+              I('kakusei_Icon', -140, 0, 48, 48, 'Kakusei_Icon0010.png', s9=False, scale=0.75),
+              L('Txt_KakuseiSkill', -110, 0, 260, 24, '', 20, opts=dict(anchorPointX=0))]),
+        # FUN_00ab567c cerca Medal1 dentro MedalArea e vi aggiunge la medaglia (FUN_008cead4)
+        # senza controlli: senza, crash al tocco di «Select Medal» (stack ts3). La medaglia
+        # vuota (nessuna scelta) ha il centro 88 px sopra e a destra di Medal1 (banco): la
+        # medaglia e' 176x176 con l'angolo in basso a sinistra sull'origine di Medal1, e
+        # Medal1 ha la stessa misura (bersaglio del trascinamento, FUN_00ab60c0)
+        P('MedalArea', 115, 272, 160, 180, [P('Medal1', 80, 90, 176, 176)]),
+        # stessa cornice e misura di KakuseiSkill_Window a uno slot (bordo superiore a 372),
+        # che la copre del tutto quando si sceglie una medaglia (il codice non la nasconde)
+        I('Win_Base', 282, 315, 464, 114, 'Medal_Detail_Field2.png',
+          opts=dict(scale9Enable=True, capInsetsX=240, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=1),
+          children=[L('Txt_Traits_Text', 0, -14, 420, 50, '', 22)]),
+        P('Jewel', 25, 24, 230, 36, [
+            I('Plate_Jewel', 115, 18, 230, 32, 'Plate03.png', opts=PLATE3),
+            I('Icon_Jewel', 28, 18, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4),
+            L('Txt_Jewel', 215, 18, 160, 30, '0', 24, opts=dict(anchorPointX=1))]),
+        P('Munnies', 25, 24, 230, 36, [
+            I('Plate_Munnies', 115, 18, 230, 32, 'Plate03.png', opts=PLATE3),
+            I('Icon_Munnies', 28, 18, 56, 57, 'IncentiveIcon_04.png', s9=False, scale=0.6),
+            L('Txt_Munnies', 215, 18, 160, 30, '0', 24, opts=dict(anchorPointX=1))], visible=False),
+        B('Button_OK', 410, 42, 330, 68, 'But01', 'Set Trait', 30, label='Txt_OK', opts=BUTS),
+        P('Win_under', 564, 7, 390, 614, [
+            L('Txt_Medal_Title', 55, 588, 110, 30, 'MEDAL', 26, opts=dict(colorR=255, colorG=230, colorB=120)),
+            # targa a sinistra di Close_Button (che sta sull'angolo della finestra)
+            I('Plate_Possession', 242, 588, 220, 26, 'Plate03.png', opts=PLATE3),
+            L('Txt_Possession', 172, 588, 90, 24, 'Slots', 17),
+            L('Txt_Cost_Label', 262, 588, 60, 24, '0', 18),
+            L('Txt_Slash_Label', 290, 588, 14, 24, '/', 18),
+            L('Txt_CostMax_Label', 320, 588, 60, 24, '0', 18),
+            I('Grid_Under', 195, 312, 380, 492, 'Panel04.png', opts=GRID),
+            P('Scroll_Area', 8, 72, 374, 482),
+            I('Img_SortType', 100, 34, 185, 26, 'Plate03.png', opts=PLATE3),
+            L('Txt_Sort_Label', 100, 34, 180, 26, 'Strength', 18),
+            L('Txt_Filter_On', 100, 12, 180, 20, 'Filter ON', 14),
+            B('Button_Sort', 290, 34, 233, 68, 'But03', 'Sort', 30, opts=BUTS)]),
+        I('Arrow01', 562, 330, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.6),
+        B('Close_Button', 944, 614, 64, 64, 'But01', None)]))
+    # chiusura: X tonda del dettaglio (But_CloseA/B, senza le varianti _Off/_On)
+    o = find(root, 'Close_Button')['options']
+    o.update(normalData=tex('But_CloseA.png'), pressedData=tex('But_CloseB.png'),
+             disabledData=tex('But_CloseA.png'), scale9Enable=False)
+    # KakuseiSkill_Window dalla finestra dei trait del dettaglio medaglia originale (stessi
+    # nomi: Txt_SkillTitle, Txt_Skill_Num, Panel; ImageView ancorata in alto, alta per uno
+    # slot): FUN_00e12838 l'allunga di 52 per ogni slot oltre il primo e vi aggiunge le righe
+    # MedalInfo_KakuseiInfo_ver150 («infoPanel%d») 52 px l'una sotto l'altra.
+    src = json.load(open(os.path.join(SRC, *PUB.split('/'), 'MedalInfo_KakuseiInfoWindow_ver150.json'),
+                         encoding='utf-8-sig'))
+    ksw = find(src['widgetTree'], 'KakuseiSkill_Window')
+    ksw['options'].update(x=282, y=372, visible=False)
+    root['children'].insert(5, ksw)
+    data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}
+    data['widgetTree'] = root
+    return data
 
 
 def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):

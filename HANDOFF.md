@@ -20,30 +20,32 @@ qui c'è come.
 ### Come riprendere il lavoro (stato al 10 ottobre 2026) — LEGGERE PRIMA QUESTO
 
 **Banco ora:** risorse **versione 29** installate (riserva dati 16 MiB, indice 64 KB: i
-cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 66**
+cicli `build-resources.ps1 -Quick` funzionano senza download); master **revisione 69**
 (default degli script: **alzarla di 1 dopo ogni modifica di `server/master_data`**, poi
 `relogin.ps1` due volte: al primo il client scarica i master e va in crash, noto, al
 secondo entra); `server/master_data` e' fuori dal repository (ignorato): la tabella
 del Moogle Shop la rigenera `node server/make-moogleshop.js`; server e app si riavviano con `tools\ldplayer\session\relogin.ps1 -Tag x`.
 Se LDPlayer e' spento: `ldconsole launch --index 0`, poi `ld.exe -s 0 "sh
 /mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"`. Salvataggio di prova in
-`server\save\player.json`: Donald 2★ (evoluto), pila di 3 Huey & Dewey & Louie, pila
-bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), munny ~31.000, jewel
-1.400, 10 Rainbow Gem comprate al Moogle Shop.
+`server\save\player.json`: Donald 2★ (evoluto, trait STR +1000), pila di 3 Huey & Dewey &
+Louie, pila bloccata di 4 Dewey, Goofy tolto dal deck (`player.deck` 1,0,3), Donald Ver. A
+6★ (userMedalId 120, per le prove dei trait), munny ~31.000, jewel 4.000, 10 Rainbow Gem.
 
 **Fatto il 9–10 ottobre** (dettagli nelle «Annotazioni per dopo» sotto e nei commit):
 Medal List, vendita (pile, popup quantita', icone valute, cornice di selezione
 animata), Level Up, Evolve, lucchetto, Unequip, popup Sort/Filter, Sell Materials
 (vendita e stile), popup «Complete!», fascia rossa e «1/N» del popup della quantita',
 Moogle Shop (scheda Items con scambio funzionante, scheda Traits con tutte le righe).
-**Prossimo, in ordine:** 1) Moogle Shop: scambio dei trait su una medaglia («Select
-Medal»: mancano MoogleShop_Traits_MedalSelect_Pop_ver410 e
-MoogleShop_Traits_OverwriteCheck_ver410; poi /moogleshop/buy con userMedalId); scalare i
-jewel solo a risposta riuscita; 2) Profilo, Avatar Boards, Other, rotolo del menu;
-3) missione 8.
+**Fatto il 10 ottobre (sera):** scambio dei trait completo (popup «Select Medal», aggiunta
+e sostituzione, costo scalato solo se lo scambio riesce; vedi «Moogle Shop — trait» nelle
+annotazioni). **Prossimo, in ordine:** 1) attacchi speciali mancanti (la tabella `burst` ha
+11 righe, 480 medaglie ne citano una assente: il dettaglio di una medaglia evoluta oltre la
+2★ va in crash); 2) Profilo, Avatar Boards, Other, rotolo del menu; 3) missione 8.
 
 **Tocchi sul banco (schermo 1920x1080):** dalla home Moogle Shop `288,1000`; schede Traits
-`340,250` / Items `700,250`; «Exchange» della prima riga `1213,512`, OK `1220,712`; Sell
+`340,250` / Items `700,250`; «Exchange» della prima riga `1213,512`, OK `1220,712`; trait:
+riga STR +1000 `600,400`, «Select Medal» `788,1012`, poi **trascinare** la medaglia sullo
+slot (`Swipe 1640 290 630 330 900`: il tocco apre il dettaglio), «Set Trait» `840,1010`; Sell
 Materials `1205,250`, poi materiale `1200,430`, Sell `1183,930`, conferma `1220,715`.
 Medal List: MENU `1790,45`, `1745,697`; Sell Medals `335,262`. Cattura dei crash:
 `$env:KHUX_BASE='0x31d4000'; .\tools\ldplayer\armtrace\stackcap.ps1 -Tag x -NoMenu -Taps ...`
@@ -184,10 +186,36 @@ poi i pulsanti in crash del menu.
   Traits: tutte le 13 righe come l'originale (shuffleskill.type deve essere 1, altrimenti la
   riga non compare; nei layout niente Label Txt_Count_Cus: il codice crea da Txt_Count un
   CustomRichText con quel nome, FUN_006e436c; nei nomi «%» raddoppiato, passano da un
-  formato printf). **Da fare:** nomi lunghi dei trait che toccano l'icona; scambio dei trait (Select Medal,
-  MoogleShop_Traits_MedalSelect_Pop_ver410 e _OverwriteCheck_ver410 mancanti); moogle
-  (lwf/mogshop/mog_wait) LWF vuoto; targa LB_Munnies della scena non compare; se una
-  risposta va in errore il server ha gia' scalato i jewel (rendere atomico).
+  formato printf). **Da fare:** nomi lunghi dei trait che toccano l'icona; moogle
+  (lwf/mogshop/mog_wait) LWF vuoto; targa LB_Munnies della scena non compare; «N days
+  left» mostra 1980 giorni (orologio del guest al 2021, endDate generate sul 2026).
+- **Moogle Shop — trait (10 ottobre, sera; banco ts9-ts11).** Flusso: tocco della riga
+  (controlla gia' il prezzo: «You don't have enough Jewels»), «Select Medal» (grigio senza
+  riga scelta) apre `MoogleShop_Traits_MedalSelect_Pop_ver410` (FUN_00e103f4, layout
+  generato da `trait_medal_select_popup` in make_layouts.py, aspetto da
+  reference\moogle_shop\jp410_136.png). Griglia MiniMedalScrollView (FUN_0091d10c): il
+  **tocco** apre il dettaglio (callback +0x930, FUN_00739350); la **scelta si fa
+  trascinando** la medaglia sullo slot a sinistra (swipe lento orizzontale; +0x990
+  FUN_00e1ba9c controlla il rilascio dentro `MedalArea` > `Medal1`, che deve avere la misura
+  della medaglia, 176x176; +0x960 FUN_00e1bc5c la imposta e riempie `KakuseiSkill_Window`
+  con FUN_00e12838). **Medaglie velate** (grigio 100,100,100, non trascinabili):
+  FUN_0088020c con il flag +0xb29 della griglia = tipo 9/10 (supporto) oppure
+  `spShuffleskillSlot` 0 (master +0x4b8; +0x4b4 = `shuffleskillSlot`, slot normali: con 0
+  la finestra dei trait resta nascosta). Il formato vecchio delle medaglie non ha questi
+  campi: `make-game-tables.js` mette 1 slot speciale a tutte le medaglie d'attacco
+  (khwiki «Trait»: ogni medaglia ne ha uno) e slot normali 1, 3 sulle 6★ (ipotesi: la
+  khwiki dice solo «da 1 a 5», il numero esatto c'e' solo per le medaglie recenti).
+  Conferma: `MoogleShop_Traits_AddCheck` (ora anche con `LB_Jewel`) o, se gli slot sono
+  pieni, `MoogleShop_Traits_OverwriteCheck_ver410` (OK = `Button_Draw`/`Txt_Draw`,
+  `Txt_Wording2` «Replace X with Y?»; lo slot da sostituire si sceglie toccando la riga del
+  trait nel popup). `POST /moogleshop/buy` {moogleshopId, userMedalId, userShuffleSkillId
+  (0 = slot libero)}: il server salva in `player.medalTraits[userMedalId]`, rimanda la
+  medaglia in `shuffleskillUserMedals` e in ogni elemento di userMedals `userShuffleSkills`
+  (FUN_0078d4b4: userShuffleSkillId, shuffleSkillId, userMedalId, getDatetime, type 0);
+  costo e conteggio scalati solo se lo scambio riesce, altrimenti risposta con solo `ret`
+  («200 ERROR :248»). Risultato: il client mostra il dettaglio con «Trait 1/1». Da
+  sistemare: il cursore rosso dello slot da sostituire (armatura `MedalInfo_Anim`,
+  `animeCursor`) e' piu' largo della finestra; trait speciali (Spirit Training) non gestiti.
 - **Strumenti nuovi** (10 ottobre): `recon/tools/vtable_users.py` (chi crea una lambda
   std::function: dalla funzione target() della vtable alle coppie ADRP+ADD/LDR che la
   usano; cosi' si trovano le funzioni come openItemBuyPopup); `recon/tools/
