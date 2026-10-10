@@ -29,7 +29,10 @@ New-Item -ItemType Directory -Force "$OUT\houdini" | Out-Null
 Get-ChildItem (Join-Path $SHARED 'armtrace_h') | Move-Item -Destination "$OUT\houdini" -Force
 $regs = python -I "$sp0\findregs.py" "$OUT\houdini"
 $regs
-$first = ($regs | Select-String 'sp ([0-9a-f]+)' | Select-Object -First 1).Matches[0].Groups[1].Value
+# il primo blocco col pc dentro la libreria (pc G...): gli altri sono thread di houdini
+$hit = $regs | Select-String 'pc G[0-9a-f]+ .*sp ([0-9a-f]+)' | Select-Object -First 1
+if (-not $hit) { $hit = $regs | Select-String 'sp ([0-9a-f]+)' | Select-Object -First 1 }
+$first = $hit.Matches[0].Groups[1].Value
 $spv = [Convert]::ToUInt64($first, 16)
 $maps = Sh "cat /proc/$p/maps"
 $r = $maps | Where-Object { $_ -match '^([0-9a-f]+)-([0-9a-f]+) ' -and [Convert]::ToUInt64($matches[1], 16) -le $spv -and $spv -lt [Convert]::ToUInt64($matches[2], 16) } | Select-Object -First 1

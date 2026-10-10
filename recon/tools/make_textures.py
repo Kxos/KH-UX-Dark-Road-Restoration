@@ -9,6 +9,7 @@
 Riferimento: reference\\medal_list\\sort_filter\\ (guida khux-guides 2017).
 """
 import os
+import shutil
 import sys
 
 from PIL import Image, ImageDraw
@@ -227,3 +228,104 @@ if os.path.isdir(MAT):
     print('img/material: icone dalla khuxwiki', len(os.listdir(MAT)))
 # filtro Guilt 9 (100x100, scala 0,7): l'icona della Guilt 8, l'ultima esistente
 save('MedalInfo_Guilt9.png', fit(load('img/ui/guilt/MedalInfo_Guilt8.png'), (100, 100)))
+
+
+# Profilo: texture di AvatarInfo_Txt_ver340 (layout originale nelle risorse) che non esistono
+# in nessuna risorsa servita. Colori da reference\profile\profile_06.png (video 7-R0jhyzlso):
+# riquadri blu notte 0,48,87 con bordo 8,76,150 e linguetta azzurra 0,126,208 (riflesso
+# 105,183,224) col titolo; «HP» verde 56,195,107; fumetto bianco.
+def av_panel(w, h, head):
+    """Av_Panel_Colosseum (280x151) e Av_Panel1 (280x98): riquadro con la linguetta del titolo
+    in alto a sinistra (lato destro obliquo) e una riga chiara sotto la linguetta."""
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    r = 8 * S
+    d.rounded_rectangle((0, 0, w * S - 1, h * S - 1), r, fill=(8, 76, 150, 255))
+    b = 2 * S
+    d.rounded_rectangle((b, b, w * S - 1 - b, h * S - 1 - b), r - b, fill=(0, 48, 87, 255))
+    tab = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    td = ImageDraw.Draw(tab)
+    for y in range(head * S):
+        t = y / (head * S)
+        td.line((0, y, w * S, y), fill=(int(40 - 40 * t), int(160 - 40 * t), int(230 - 25 * t), 255))
+    mask = Image.new('L', im.size, 0)
+    md = ImageDraw.Draw(mask)
+    tw = int(w * 0.72) * S
+    md.polygon([(b, b), (tw, b), (tw - head * S, head * S), (b, head * S)], fill=255)
+    md.rounded_rectangle((b, b, tw, head * S), r - b, fill=255)
+    md.polygon([(tw - r, b), (tw, b), (tw - head * S, head * S), (tw - r - head * S, head * S)], fill=255)
+    im.paste(tab, (0, 0), mask)
+    d.line((b, head * S, w * S - 1 - b, head * S), fill=(0, 126, 208, 255), width=S)
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def hp_icon():
+    """Ico_Param_HP (36x14): «HP» verde in corsivo con il bordo scuro (Ico_Param_Offense e
+    _Defense, le altre due, esistono)."""
+    from PIL import ImageFont
+    w, h = 36, 14
+    im = Image.new('RGBA', (w * S * 2, h * S), (0, 0, 0, 0))
+    font = ImageFont.truetype(os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', 'arialbi.ttf'), 15 * S)
+    d = ImageDraw.Draw(im)
+    d.text((3 * S, -2 * S), 'HP', font=font, fill=(56, 195, 107, 255), stroke_width=S, stroke_fill=(0, 40, 30, 255))
+    im = im.crop(im.getbbox())
+    return fit(im.resize((max(1, im.width // S), max(1, im.height // S)), Image.LANCZOS), (w, h))
+
+
+def guilt_plate():
+    """Av_Guiltbonus (132x102): targa scura arrotondata della Nova (attacco speciale) con
+    «LV n» (Txt_Burst_Label) sotto il logo, come nel riferimento."""
+    w, h = 132, 102
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    y0, y1 = 30 * S, 80 * S
+    d.rounded_rectangle((0, y0, w * S - 1, y1), (y1 - y0) // 2, fill=(70, 100, 140, 255))
+    b = 2 * S
+    d.rounded_rectangle((b, y0 + b, w * S - 1 - b, y1 - b), (y1 - y0) // 2 - b, fill=(15, 42, 68, 255))
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def balloon():
+    """Av_Panel2 (236x86): fumetto bianco del commento con la punta in basso a destra, verso
+    l'avatar (reference\\profile\\profile_06.png)."""
+    w, h = 236, 86
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    body = 70 * S
+    d.rounded_rectangle((0, 0, w * S - 1, body), 14 * S, fill=(120, 130, 150, 255))
+    b = 2 * S
+    d.rounded_rectangle((b, b, w * S - 1 - b, body - b), 14 * S - b, fill=(253, 253, 253, 255))
+    d.polygon([(150 * S, body - b), (178 * S, body - b), (184 * S, h * S - 1)], fill=(253, 253, 253, 255))
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def dark_panel(w, h):
+    """AvInfo_PetInfoPanel (244x80): riquadro scuro arrotondato col bordo chiaro."""
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, w * S - 1, h * S - 1), 10 * S, fill=(8, 76, 150, 255))
+    b = 2 * S
+    d.rounded_rectangle((b, b, w * S - 1 - b, h * S - 1 - b), 10 * S - b, fill=(0, 30, 60, 235))
+    return im.resize((w, h), Image.LANCZOS)
+
+
+save('Av_Panel_Colosseum.png', av_panel(280, 151, 28))
+save('Av_Panel1.png', av_panel(280, 98, 28))
+save('Ico_Param_HP.png', hp_icon())
+save('Av_Guiltbonus.png', guilt_plate())
+save('Av_Panel2.png', balloon())
+save('AvInfo_PetInfoPanel.png', dark_panel(244, 80))
+# Stemma della Union nell'anello delle medaglie del Profilo (FUN_008c19e4: Revolver >
+# Revolver_Center, «img/union/Union_%02d.png»; crash in loadTexture se manca). Nelle risorse
+# c'e' solo cocostudio/publish/Union_03 (128x128): le altre dalle Union_L_%02d (330x330).
+_up = os.path.join(out, 'img', 'union')
+os.makedirs(_up, exist_ok=True)
+for _n in range(1, 6):
+    _im = (load('cocostudio/publish/Union_03.png') if _n == 3 else
+           load('cocostudio/publish/Union_L_%02d.png' % _n).resize((128, 128), Image.LANCZOS))
+    with open(os.path.join(_up, 'Union_%02d.png' % _n), 'wb') as _fh:
+        _fh.write(btf.encode(_im))
+    for _s in ('', '_on'):                  # «img/union/Union_L_%02d[_on].png»: copie
+        shutil.copyfile(os.path.join(src, 'cocostudio', 'publish', 'Union_L_%02d%s.png' % (_n, _s)),
+                        os.path.join(_up, 'Union_L_%02d%s.png' % (_n, _s)))
+print('img/union/Union_01..05, Union_L_01..05')

@@ -470,6 +470,99 @@ LAYOUTS = {
                                                      + held_plates(290)),
     # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
+    # Profilo (AvatarInfoDialog: open FUN_008d785c carica la scena nascosta e chiede
+    # GET /user/profile, azione 5; createLayout FUN_008d7e8c). La scena ha UnderUI (Button_A..D
+    # con Txt_A..D, Button_Invitation, Txt) e LeftUI. Il contenitore (lambda $_17,
+    # FUN_008f3bf0) = AvatarInfo_Oneself_ver131 con sopra AvatarInfo_User_ver260 («User»,
+    # zorder 2); FUN_008f3f40 vi aggiunge le pagine TxtLayer1 = AvatarInfo_Txt_ver340
+    # (originale: statistiche, LUX, ranking, Share, Close_Button, Button_Change) e TxtLayer2 =
+    # AvatarInfo_Txt2. Aspetto da reference\profile\profile_06.png (fotogramma 640x360, area
+    # di gioco 540x360 da x=50: x = (x'-50)/0,5625, y = (360-y')/0,5625): barra in basso con
+    # Titles / Name/Message / Play Style / Outfits rossi.
+    # LeftUI/RightUI: createLayout fa del loro primo figlio il bersaglio di un pulsante (profilo
+    # precedente/successivo): le frecce ‹ › ai bordi dello schermo in profile_06 (x' 10 e 628,
+    # y' 175 -> x -71 e 1028, y 329), area toccabile centrata sulla freccia come in
+    # SlideMedalInfo_Left/Right
+    'AvatarInfoScene_A_ver131.json': ('scene', [('UnderUI', 'publish/AvatarInfo_Under_Gen.json'),
+                                                ('LeftUI', 'publish/AvatarInfo_Left_Gen.json'),
+                                                ('RightUI', 'publish/AvatarInfo_Right_Gen.json')]),
+    'AvatarInfo_Left_Gen.json': ('build', P('Panel_Left', -71, 329, 90, 160, [
+        I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.55)])),
+    'AvatarInfo_Right_Gen.json': ('build', P('Panel_Right', 1028, 329, 90, 160, [
+        I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.55, flipX=True)])),
+    'AvatarInfo_Under_Gen.json': ('build', P('avatar_under_root', 0, 0, 960, 64, [
+        B('Button_A', 107, 30, 230, 64, 'But01', 'Titles', 28, label='Txt_A', opts=BUTS),
+        B('Button_B', 391, 30, 230, 64, 'But01', 'Name/Message', 28, label='Txt_B', opts=BUTS),
+        B('Button_C', 596, 30, 230, 64, 'But01', 'Play Style', 28, label='Txt_C', opts=BUTS),
+        B('Button_D', 853, 30, 230, 64, 'But01', 'Outfits', 28, label='Txt_D', opts=BUTS),
+        B('Button_Invitation', 480, 100, 230, 64, 'But01', '', 28, label='Txt', opts=BUTS, visible=False)])),
+    'AvatarInfo_Oneself_ver131.json': ('build', P('Oneself', 0, 0, 960, 640, [
+        I('Win', 487, 350, 946, 570, 'Win04.png',
+          opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200))])),
+    # «User» (FUN_008e68d0): Base_User (il codice vi carica Plate10) con Union_Symbol
+    # (img/union/Union_%02d), Txt_Party/Party_Name, Txt_LV/Txt_LV_Label, MVP_Crown
+    # (CrownIcon_Img img/ui/AvtInfo_CrownIcon%d, Crown_Label, CrownNum_Label) e MVP_Trophy
+    # (Trophy_Img, Trophy_Label, TrophyNum_Label); FUN_008f3f40: Party_Button/Txt_PartyButton.
+    # Struttura come Offline_Record_Left (versione offline: user_name, union_symbol,
+    # mvp_crown, mvp_trophy); posizioni da profile_06 (targa del nome x 27-418, y 547; Party
+    # y 500).
+    'AvatarInfo_User_ver260.json': ('build', P('User_root', 0, 0, 960, 640, [
+        I('Base_User', 222, 547, 390, 52, 'Plate10.png',
+          opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=20, capInsetsWidth=1, capInsetsHeight=1), children=[
+              I('Union_Symbol', -150, 0, 128, 128, 'Union_03.png', s9=False, scale=0.5),
+              # nome del giocatore (stringa composta sullo stack, banco pf10)
+              L('My_Name', 20, 0, 280, 34, '', 26)]),
+        # miniatura dell'account collegato (FUN_008e7d58) a destra della targa del nome,
+        # come in profile_06 (x' 272, y' 52); la mostra il codice secondo isLinkThumbnail
+        I('FaceBook_PhotoPanel', 390, 547, 60, 60, 'FaceBook_PhotoPanel01.png', s9=False, scale=0.85,
+          visible=False, children=[I('FaceBook_Photo', 30, 30, 50, 50, 'FaceBook_Photo.png', s9=False)]),
+        # titolo (FUN_006e9bbc): targa img/userTitle/title_%04d caricata dal codice, testo
+        # «sinistra destra» in RankTitle_Name; come AvatarTitle_PanelButton_Big2 (610x82) ma
+        # alto quanto la riga del titolo del riferimento (y 613)
+        I('RankTitle_Board', 222, 610, 406, 54, 'title_1000.png', s9=False, children=[
+            L('RankTitle_Name', 0, 0, 380, 34, '', 22)]),
+        I('Party_Plate', 222, 500, 390, 26, 'Plate03.png', opts=PLATE3),
+        L('Txt_Party', 90, 500, 110, 24, 'Party', 18),
+        L('Party_Name', 300, 500, 230, 24, '', 20, opts=dict(anchorPointX=0.5)),
+        L('Txt_LV', 40, 470, 40, 20, '', 16, visible=False),
+        L('Txt_LV_Label', 80, 470, 60, 20, '', 16, visible=False),
+        P('MVP_Crown', 30, 230, 171, 42, [
+            I('CrownIcon_Img', 33, 18, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False),
+            L('Crown_Label', 83, 12, 26, 26, '', 18),
+            L('CrownNum_Label', 120, 15, 80, 33, '', 22)], visible=False),
+        P('MVP_Trophy', 30, 100, 171, 42, [
+            I('Trophy_Img', 27, 12, 56, 40, 'AvtInfo_trophyIcon4.png', s9=False),
+            L('Trophy_Label', 71, 5, 23, 23, '', 18),
+            L('TrophyNum_Label', 110, 8, 80, 33, '', 22)], visible=False),
+        B('Party_Button', 120, 500, 230, 40, 'But01', 'Party', 20, label='Txt_PartyButton', opts=BUTS,
+          visible=False)])),
+    # Pagina 2 (Button_Change, FUN_008eb9a8): record del giocatore. Copia della pagina 1
+    # (stesso avatar e anello) con il riquadro dei record: Scroll_Area (vi crea
+    # RecordScrollView), Txt_Money/_Label, Txt_MoguPoint/_Label, Txt_LastLogin/_Label,
+    # Txt_Timezone con _1/_2/_3_Label, Txt_Style/_Label.
+    # Senza l'anello delle medaglie: con Area_Revolver anche qui FUN_008c19e4 riusa l'anello
+    # della pagina 1 prima che abbia caricato DeckEdit_Revolver (crash, banco pf15)
+    'AvatarInfo_Txt2.json': ('copy', 'AvatarInfo_Txt_ver340.json',
+                             {'Area_Revolver': 'Area_Revolver_None', 'Area_RevolverPet': 'Area_RevolverPet_None'},
+                             False, [
+        ('add', 'Dummy', P('Record_Area', 20, 70, 300, 420, [
+            I('Record_Base', 150, 210, 300, 420, 'Av_Panel1.png',
+              opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=40, capInsetsWidth=1, capInsetsHeight=1)),
+            P('Scroll_Area', 10, 10, 280, 200),
+            L('Txt_Money', 20, 400, 130, 24, 'Munny', 18, opts=dict(anchorPointX=0)),
+            L('Txt_Money_Label', 280, 400, 140, 24, '0', 18, opts=dict(anchorPointX=1)),
+            L('Txt_MoguPoint', 20, 372, 130, 24, 'Moogle Points', 18, opts=dict(anchorPointX=0)),
+            L('Txt_MoguPoint_Label', 280, 372, 140, 24, '0', 18, opts=dict(anchorPointX=1)),
+            L('Txt_LastLogin', 20, 344, 130, 24, 'Last Login', 18, opts=dict(anchorPointX=0)),
+            L('Txt_LastLogin_Label', 280, 344, 160, 24, '', 18, opts=dict(anchorPointX=1)),
+            L('Txt_Timezone', 20, 316, 130, 24, 'Play Time', 18, opts=dict(anchorPointX=0)),
+            L('Txt_Timezone_1_Label', 280, 316, 160, 24, '', 18, opts=dict(anchorPointX=1)),
+            L('Txt_Timezone_2_Label', 280, 290, 160, 24, '', 18, opts=dict(anchorPointX=1)),
+            L('Txt_Timezone_3_Label', 280, 264, 160, 24, '', 18, opts=dict(anchorPointX=1)),
+            L('Txt_Style', 20, 236, 130, 24, 'Play Style', 18, opts=dict(anchorPointX=0)),
+            L('Txt_Style_Label', 280, 236, 160, 24, '', 18, opts=dict(anchorPointX=1))]))]),
+    'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
+    'TresCommu_CommunicationOther.json': ('build', P('commu_other', 0, 0, 200, 200)),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
     # popup originale (reference\material_sell\complete_thumb.png): «Complete!» in alto,
     # targhe dei guadagni al centro, OK in basso.

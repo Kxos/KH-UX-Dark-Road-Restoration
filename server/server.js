@@ -168,6 +168,7 @@ function route(url) {
   if (p === '/stage/support/list') return 'supportlist';
   if (p === '/user/avatar' || p === '/user/avatar/all' || p === '/user/avatar/parts') return 'useravatar';
   if (p === '/user') return 'user';
+  if (p === '/user/profile') return 'userprofile';
   if (p.includes('system/master')) return 'master';
   if (p.startsWith('/master/')) return 'masterfile';
   if (p.includes('session')) return 'session';
@@ -898,6 +899,66 @@ function respondUser(res) {
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
 }
 
+// GET /user/profile (azione 5, AvatarInfoDialog::open FUN_008d785c; corpo userId e
+// platformType). Parser FUN_00792148, tutto obbligatorio: userData.user/userDetail/
+// userPoint (FUN_0078ade0/0078babc/0078b230, come GET /user) e
+// userData.lastActionDatetime; userMedals (FUN_0078da18), userSkills (FUN_0078e934),
+// userAvatar (FUN_0078c740); userKeyblade (oggetto, FUN_0078c904), userRecord
+// (FUN_00791650: 55 contatori uint64), userRanking (FUN_00786968), party (FUN_0078284c),
+// linkPlatformId, isLinkThumbnail, userColosseumRanking (FUN_00791ff8), petBaseSlotMedal,
+// userPvpRanking (FUN_0079a134), followerNum, isFollow. Solo il profilo del giocatore.
+const USER_RECORD_KEYS = ['login', 'continueLogin', 'getMoney', 'getSpherePoint', 'useMoney', 'sellMedal',
+  'sellMedalCount', 'sellMaterial', 'sellMaterialCount', 'getKizunaPoint', 'useKizunaPoint', 'zukanMedal',
+  'yamiSpeedZukan', 'yamiPowerZukan', 'yamiMagicZukan', 'hikariSpeedZukan', 'hikariPowerZukan',
+  'hikariMagicZukan', 'getMedal', 'medalEnhanceSuccess', 'medalEnhanceBigSuccess', 'medalEnhanceGreatSuccess',
+  'medalEvolveSuccess', 'keybladeEnhance', 'useMaterial', 'kizunaDraw', 'raiseDraw', 'getStar1Medal',
+  'getStar2Medal', 'getStar3Medal', 'getStar4Medal', 'getStar5Medal', 'getStar6Medal', 'getStar7Medal',
+  'stageClear', 'challengeClear', 'dropEnemy', 'dropMimic', 'dropRareEnemy', 'bossBattleJoinMe',
+  'bossBattleJoinOther', 'dropBoss', 'getLux', 'getLuxMax', 'dropParts', 'maxDamageOneTurn', 'openTreasure',
+  'getMaterial', 'openAllSphere', 'openGrid', 'unionPersonalRankingHighest', 'unionPartyRankingHighest',
+  'totalPersonalRankingHighest', 'colosseumRankingHighest', 'pvpRankingRankHighest', 'pvpRankingClassHighest'];
+
+function respondUserProfile(res) {
+  const now = serverTime();
+  const userRecord = Object.fromEntries(USER_RECORD_KEYS.map((k) => [k, 0]));
+  userRecord.login = 1;
+  userRecord.getLux = player.lux || 0;
+  send(res, 200, {
+    ret: ret(),
+    userData: {
+      user: {
+        userId: 1, nativeUserId: 1, platformId: 0, userName: player.name, gender: player.gender,
+        comment: player.comment || '', deviceType: 2, continueLoginCount: 1, isFleeze: 0,
+        fleezedDatetime: now, isAdult: 1, nativeTagName: '',
+      },
+      userPoint: userPointData(now),
+      userDetail: userDetailData(),
+      lastActionDatetime: now,
+    },
+    userMedals: userMedalsData(now),
+    userSkills: [],
+    userAvatar: userAvatarData(),
+    userKeyblade: userKeybladesData()[0],
+    userRecord,
+    userRanking: { lux: 0, rank: 0 },
+    party: {
+      partyId: 0, unionId: player.unionId || 0, rank: 0, name: '', playStyle: 0, agreeType: 0, message: '',
+      memberCount: 0, leaderUserId: 0, adminUserIds: [], leaderAppointDate: now, newcomerDate: now, chatId: 0,
+      chatEndpointUrl: '',
+    },
+    linkPlatformId: '',
+    isLinkThumbnail: 0,
+    userColosseumRanking: {
+      colosseumStageId: 0, colosseumStatus: 0, rank: 0,
+      userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
+    },
+    petBaseSlotMedal: 0,
+    userPvpRanking: { rank: 0, class: 0, point: 0 },
+    followerNum: 0,
+    isFollow: 0,
+  });
+}
+
 // Inventario del giocatore per tipo di oggetto, come lo usano le tabelle master
 // (clearGetItemType, submissionRewardType, reward.type): 2 jewel (userStone.freeStone),
 // 4 munny (userPoint.money), 5 materiale (userMaterials, id della tabella material),
@@ -938,13 +999,21 @@ function stageNumber(stageId) {
   return masterRows('stage').find((r) => r.stageId === stageId)?.id ?? 0;
 }
 
+// Titolo del giocatore (tabella title: due parole + targa, il cui label sceglie
+// img/userTitle/title_%04d). Con 0 il Profilo va in crash (FUN_006e9bbc). Di default i
+// titoli di categoria 1 («Default Title»): «Budding Newbie» sulla targa di Budding.
+function playerTitleIds() {
+  return { titleLeftId: player.titleLeftId || 1001, titleRightId: player.titleRightId || 1002,
+    titlePlateId: player.titlePlateId || 1001 };
+}
+
 // userData.userDetail (FUN_0078babc), in GET /user e POST /stage/clear.
 function userDetailData() {
   return {
     level: luxRankFor(player.lux), exp: 0, luxRank: luxRankFor(player.lux), luxGetRatio: 0,
     // maxDeckCost: con 0 «Begin» apre il popup di costo superato (PopupNormal_Cost_Over,
     // assente dalle risorse): crash. Dal campo cost della tabella player.
-    titleLeftId: 0, titleRightId: 0, titlePlateId: 0,
+    ...playerTitleIds(),
     maxDeckCost: masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.cost ?? 10,
     playTimezones: [], // int[], al massimo 6
     playFrequently: 0,
@@ -1492,7 +1561,9 @@ function userKeybladesData() {
     category: 1,
     keybladeId: startingInventory().keybladeId,
     deckMedals: deckMedalIds(),
-    burst: 0, totalAttack: attack, totalDefense: defense, isFavorite: 0,
+    // isFavorite: il Profilo (createLayout FUN_008d7e8c) mostra il keyblade preferito; senza
+    // nessun preferito la riga del keyblade resta nulla (crash in FUN_008c19e4)
+    burst: 0, totalAttack: attack, totalDefense: defense, isFavorite: 1,
     skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
     skillUpperTotalDefence: 0, subslotRate: 10000, // uint
     getDatetime: serverTime(),
@@ -1681,7 +1752,7 @@ function handler(scheme) {
           ret: ret(),
           supportUser: {
             supportUserId: 1, userName: player.name, level: luxRankFor(player.lux),
-            titleLeftId: 0, titleRightId: 0, titlePlateId: 0, partyId: 0,
+            ...playerTitleIds(), partyId: 0,
             userKeybladeId: USER_KEYBLADE_ID, keybladeId: startingInventory().keybladeId,
             userMedalId: m.userMedalId, medalId: m.medalId, lastActionDatetime: serverTime(),
           },
@@ -1697,7 +1768,7 @@ function handler(scheme) {
         const medal = userMedalsData(now)[0];
         const supportUsers = medal ? [{
           supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
-          titleLeftId: 0, titleRightId: 0, titlePlateId: 0, addKizunaPoint: 0,
+          ...playerTitleIds(), addKizunaPoint: 0,
           keybladeId: startingInventory().keybladeId, partyId: 0, isParty: 0, isGuilt: 0, isLinkThumbnail: 0,
           userMedal: medal, userSkills: [], userAvatar: userAvatarData(),
           lastActionDatetime: now, earnLuxRank: 0,
@@ -1730,6 +1801,7 @@ function handler(scheme) {
       // GET /user/material (azione 16): userMaterials[]
       if (kind === 'usermaterial') return send(res, 200, { ret: ret(), userMaterials: userMaterialsData() });
       if (kind === 'user') return respondUser(res);
+      if (kind === 'userprofile') return respondUserProfile(res);
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
 
