@@ -34,13 +34,16 @@ if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }
 # scritti a mano: dove c'e' l'originale prevale
 python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"
 Copy-Item "$D\layouts\ui_texts\text\ui\*" "$sg\files\text\ui\" -Force
+# PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
+python recon\tools\btf_fix.py "$sg\files"
+if ($LASTEXITCODE) { throw 'btf_fix fallito' }
 python -I recon\tools\resource_pack.py "$sg\files" $key "$sg\gen.mp4" "$sg\gen.png"
 # pacchetto delle immagini delle medaglie (fetch_medal_images.py, ~150 MB): solo nelle
 # versioni complete, come penultimo pezzo; -Quick riscrive solo l'ultimo (quello generato)
 $mg = "$D\medal_gen"
 $medalPack = @()
 if (Test-Path "$mg\files") {
-  if (-not $Quick) { python -I recon\tools\resource_pack.py "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
+  if (-not $Quick) { python recon\tools\btf_fix.py "$mg\files"; python -I recon\tools\resource_pack.py "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
   if (Test-Path "$mg\gen.png") { $medalPack = @("$mg\gen.png", "$mg\gen.mp4") }
 }
 if ($LASTEXITCODE) { throw 'resource_pack fallito' }
