@@ -549,16 +549,34 @@ LAYOUTS = {
     # FUN_00f39090: Area_Point (LWF SphereMap_Complete e Result_Reward). Una riga in piu'
     # del Get: finestra allungata in basso (in alto resta a y 481), OK e icona piu' bassi;
     # capInsetsY 60: con 0 (originale) si stirava la fascia chiara in cima (banco s3_comp)
+    # Aspetto da ab_ref_title_popup_01 (1080p: x = (x'-150)/1,6875, y = 640 - y'/1,6875): cornice
+    # arancione a strisce con l'arco (Result_Reward_Win, nessun layout originale la usa piu'),
+    # fondo marrone #3A2410, targa del titolo in alto (Panel), «You got a new title!» in un
+    # riquadro arancione con il bordo giallo, OK sul bordo in basso; CONGRATULATIONS (LWF in
+    # Area_Point) sull'arco. Txt_All (solo con «Unlock All») tra la targa e il riquadro
     'Sphere_Popup_Comp_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                       {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
                                       False, [('text', 'Txt_Get_Label', ''),
-                                              ('opts', 'NormalText_Window01', dict(y=306, height=350, scale9Height=350,
-                                                                                    capInsetsY=60)),
-                                              ('opts', 'Txt_Get_Label', dict(y=59, height=60)),
-                                              ('opts', 'Button_Ok', dict(y=-128)),
-                                              L('Txt_All', 480, 335, 600, 40, '', 24),
-                                              P('Panel', 430, 220, 100, 100),
-                                              P('Area_Point', 480, 420, 10, 10)]),
+                                              ('tex', 'NormalText_Window01', 'Result_Reward_Win.png',
+                                               dict(scale9Enable=True, capInsetsX=40, capInsetsY=110,
+                                                    capInsetsWidth=1, capInsetsHeight=1)),
+                                              ('opts', 'NormalText_Window01', dict(y=324, width=746, height=595,
+                                                                                    scale9Width=746, scale9Height=595)),
+                                              # figli dell'ImageView: coordinate dal centro (480, 324)
+                                              ('add', 'NormalText_Window01', P('Comp_Brown', -348, -225, 696, 401,
+                                                                               opts=dict(colorType=1, bgColorR=58, bgColorG=36,
+                                                                                         bgColorB=16, bgColorOpacity=255, ZOrder=1))),
+                                              ('add', 'NormalText_Window01', P('Comp_Box_Rim', -313, -190, 626, 136,
+                                                                               opts=dict(colorType=1, bgColorR=255, bgColorG=205,
+                                                                                         bgColorB=45, bgColorOpacity=255, ZOrder=2))),
+                                              ('add', 'NormalText_Window01', P('Comp_Box', -310, -187, 620, 130,
+                                                                               opts=dict(colorType=1, bgColorR=250, bgColorG=145,
+                                                                                         bgColorB=30, bgColorOpacity=255, ZOrder=3))),
+                                              ('opts', 'Txt_Get_Label', dict(y=-122, width=600, height=60, ZOrder=4)),
+                                              ('opts', 'Button_Ok', dict(y=-260, ZOrder=4)),
+                                              L('Txt_All', 480, 300, 600, 40, '', 24),
+                                              P('Panel', 430, 329, 100, 100),
+                                              P('Area_Point', 480, 550, 10, 10)]),
     # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Profilo (AvatarInfoDialog: open FUN_008d785c carica la scena nascosta e chiede
