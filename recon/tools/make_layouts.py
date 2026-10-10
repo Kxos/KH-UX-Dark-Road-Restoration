@@ -599,6 +599,82 @@ LAYOUTS = {
         ('opts', 'Img_Separator', dict(visible=False)),
         ('opts', 'PopupNormal_04', dict(height=580, scale9Height=580)),
         ('opts', 'Close_Button', dict(y=279))]),
+    # Avatar Boards, elenco (FUN_00cd1bb8): nessun layout Sphere* nelle risorse. Aspetto da
+    # reference\avatar_boards\avatar_boards_list_01.jpg (2400x1080: x = (x'-390)/1,6875,
+    # y = (1080-y')/1,6875) e ab_29-32.png (video 2017): carosello delle bacheche al centro,
+    # in basso «Avatar Coins» (Coin, Txt_Coin_Title, Txt_Coin), nome della bacheca
+    # (TitleBar, Txt_SphereBoard_Label), «Nodes 0 / 19» (Txt_Open con Txt_Num_Label e
+    # Txt_Total_Label, stile della riga Lux del Profilo), Filter arancione (Button_Filter,
+    # Txt_Filter) con il conteggio (Bar_Filter), avviso a destra (Txt_Caution). Il codice
+    # cerca anche BG, BoardNone_txt, Img_Win_L/S, BoardDetail/DetailButton/Txt_Detail.
+    'SphereBoardScene_ver310.json': ('scene', [('CenterUI', 'publish/SphereBoard_Gen.json'),
+                                               ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
+    'SphereBoard_Gen.json': ('build', P('sphere_board_root', 0, 0, 960, 640, [
+        P('BG', 0, 0, 960, 640),
+        L('BoardNone_txt', 480, 341, 600, 40, '', 26, visible=False),
+        # carosello (FUN_00cd3868: SelectArea, frecce LeftUI_Arrow/RightUI_Arrow ai bordi come in
+        # avatar_boards_list_01, x' 288 e 2106 -> x -60 e 1017)
+        # posti delle carte (FUN_00cd78e8 li cerca dentro SelectArea, banco ab9): centrale e
+        # laterali come in avatar_boards_list_01 (x' 1200/738/1662 -> 480/206/754)
+        P('SelectArea', 0, 180, 960, 330, [
+            P('LeftUI', 206, 140, 10, 10),
+            P('RightUI', 754, 140, 10, 10),
+            P('CenterUI', 480, 161, 10, 10)]),
+        # il primo figlio diventa il bersaglio del pulsante (banco ab8): Panel con la freccia,
+        # origine al centro come in SlideMedalInfo_Left/Right
+        P('LeftUI_Arrow', -60, 341, 90, 160, [
+            I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.7)]),
+        P('RightUI_Arrow', 1017, 341, 90, 160, [
+            I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.7, flipX=True)]),
+        # costo della bacheca sotto la carta centrale (grande) e le laterali (piccola): il codice
+        # cerca Txt_Coin e Txt_Coin_Title dentro Img_Win_L (banco ab4); riferimento: targa scura
+        # con l'icona e «200» sotto la carta (x' 1200, y' 700 -> 480, 225)
+        I('Img_Win_S', 480, 225, 200, 36, 'Plate02.png', opts=PLATE3, visible=False),
+        I('Img_Win_L', 480, 225, 200, 36, 'Plate02.png', opts=PLATE3, children=[
+            I('Win_Coin_Icon', 20, 18, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35),
+            L('Txt_Coin_Title', 60, 18, 80, 24, '', 18, visible=False),
+            L('Txt_Coin', 180, 18, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2))]),
+        # riquadro «Avatar Coins» in basso a sinistra (FUN_00cd3868: Txt_Coin_Name_Label,
+        # Txt_Coin_Label)
+        # riquadro con la linguetta del titolo (Av_Panel1 di make_textures): Win04 in 9-slice non
+        # scende sotto ~300 px di altezza (banco ab11)
+        I('Coin', 92, 88, 177, 80, 'Av_Panel1.png',
+          opts=dict(scale9Enable=True, capInsetsX=40, capInsetsY=30, capInsetsWidth=1, capInsetsHeight=38), children=[
+              # icona della valuta: FUN_00cd468c -> FUN_00755ab8 (banco ab10)
+              I('SpherePointIcon', -67, 15, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3),
+              L('Txt_Coin_Name_Label', 10, 15, 130, 26, 'Avatar Coins', 18),
+              I('Coin_Base', 0, -17, 160, 24, 'Plate02.png', opts=PLATE3),
+              L('Txt_Coin_Label', 70, -17, 120, 24, '0', 22, opts=dict(anchorPointX=1, hAlignment=2))]),
+        I('TitleBar', 480, 92, 583, 50, 'Plate13.png',
+          opts=dict(scale9Enable=True, capInsetsX=60, capInsetsY=10, capInsetsWidth=1, capInsetsHeight=1), children=[
+              L('Txt_SphereBoard_Label', 0, 0, 540, 36, '', 26)]),
+        I('Nodes_Base', 480, 32, 278, 30, 'Plate02.png', opts=PLATE3, children=[
+            I('Nodes_Tab', -84, 0, 110, 26, 'Plate01.png', s9=False)]),
+        L('Txt_Open', 396, 32, 100, 26, 'Nodes', 20, children=[
+            L('Txt_Num_Label', 130, 0, 60, 30, '0', 26, opts=dict(colorR=255, colorG=230, colorB=60)),
+            L('Txt_Slash', 165, 0, 20, 30, '/', 24),
+            L('Txt_Total_Label', 200, 0, 60, 30, '0', 26)]),
+        P('Bar_Filter', 810, 30, 115, 30, [
+            # «54/54» (bacheche mostrate / totali): stessi nomi della riga Nodes (banco ab5)
+            I('Bar_Filter_Base', 57, 15, 115, 28, 'Plate02.png', opts=PLATE3),
+            L('Txt_Num_Label', 40, 15, 50, 28, '0', 24, opts=dict(anchorPointX=1, hAlignment=2, colorR=255,
+                                                                     colorG=230, colorB=60)),
+            L('Txt_Filter_Slash', 48, 15, 16, 28, '/', 22),
+            L('Txt_Total_Label', 56, 15, 50, 28, '0', 22, opts=dict(anchorPointX=0, hAlignment=0))]),
+        B('Button_Filter', 864, 96, 233, 68, 'But03', 'Filter', 30, label='Txt_Filter', opts=BUTS),
+        L('Txt_Caution', 950, 168, 400, 26, '', 18, opts=dict(anchorPointX=1, hAlignment=2)),
+        P('BoardDetail', 0, 0, 10, 10, [
+            B('DetailButton', 480, 180, 200, 52, 'But16', 'Details', 22, label='Txt_Detail', opts=BUT9,
+              visible=False)])])),
+    # Carta del carosello (FUN_0088ab7c la carica, FUN_00cd7f78 la riempie): Select_Base
+    # (fondo, Board_0001 306x306: l'unica carta rimasta nelle risorse, grigio-azzurra come nei
+    # fotogrammi del 2017), Select_Board (img/sphere_board/Board_%04d) e Select_Kind
+    # (img/sphere_kind/Kind_%04d, il segno del genere in alto a destra: Kind_0001)
+    'SphereBoard_Select_Icon_ver130.json': ('build', P('Select_Icon', 0, 0, 306, 306, [
+        I('Select_Base', 153, 153, 306, 306, 'Board_0001.png', s9=False),
+        I('Select_Board', 153, 153, 306, 306, 'Board_0001.png', s9=False),
+        I('Select_Kind', 153, 153, 306, 306, 'Kind_0001.png', s9=False),
+        L('Count_Label', 153, 30, 200, 30, '', 22, visible=False)])),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
     'TresCommu_CommunicationOther.json': ('build', P('commu_other', 0, 0, 200, 200)),
     # Esito (FUN_006f4918): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel

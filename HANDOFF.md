@@ -252,6 +252,25 @@ poi i pulsanti in crash del menu.
   {playTimezones, playFrequently} (azione 40), salvato in userDetail. Da fare: Outfits
   (Button_D), Boosters/Passive, pagina 2 (Button_Change), frecce ‹ › (non compaiono con un
   solo profilo), fumetto vuoto finche' non si salva un messaggio.
+- **Avatar Boards — elenco (10 ottobre, notte).** Si apre senza crash ma e' vuoto: i master
+  `sphere`, `sphereArray`, `sphereMasu` sono vuoti (non esistono dump pubblici: nemmeno
+  thethiny/KHUx-Server `data/` li ha) e mancano tutte le immagini `img/sphere_board/
+  Board_%04d`, `img/sphere_kind/Kind_%04d`, `img/sphere_incentive/%d` (nelle risorse solo i
+  segnaposto cocostudio/publish/Board_0001 e Kind_0001). Generati in make_layouts.py:
+  SphereBoardScene_ver310 (CenterUI = SphereBoard_Gen, LeftUI = MedalSell_Back) e
+  SphereBoard_Select_Icon_ver130 (carta: Select_Base/Select_Board/Select_Kind). Nomi dal
+  codice (FUN_00cd1bb8, FUN_00cd3868, FUN_00cd468c, FUN_00cd78e8, FUN_00cd7f78): Img_Win_L/S
+  (targa del costo con Txt_Coin/Txt_Coin_Title), Coin (Avatar Coins: SpherePointIcon,
+  Txt_Coin_Name_Label, Txt_Coin_Label), TitleBar/Txt_SphereBoard_Label, Txt_Open con
+  Txt_Num_Label/Txt_Total_Label (Nodes), Bar_Filter con gli stessi due nomi (conteggio),
+  Button_Filter/Txt_Filter, Txt_Caution, BoardDetail/DetailButton/Txt_Detail, SelectArea con
+  i posti LeftUI/RightUI/CenterUI, LeftUI_Arrow/RightUI_Arrow (Panel: il primo figlio diventa
+  il pulsante). Aspetto da reference\avatar_boards\avatar_boards_list_01.jpg (2400x1080) e
+  ab_29-33.png (video 7-R0jhyzlso, 556-686 s). Mancano ancora (da missing_layouts.txt):
+  SphereScene_ver310 (la bacheca), SphereBoard_Filter_ver120, SphereBoard_Account_ver120,
+  PopupNormal_SphereCoinCheck_ver310, Sphere_Incentive(_ver240), Sphere_Popup_Comp_ver310,
+  Sphere_Popup_Get_ver240. Per renderli utili servono i dati delle bacheche (ricostruibili
+  dalla khuxwiki, pagine «Avatar Board»: nodi, costi, premi) e le immagini delle carte.
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia
