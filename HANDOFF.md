@@ -38,12 +38,15 @@ qui c'è come.
      segnaposto, invisibile). Nessuna texture trovata finora: cercare nei LWF (risultati?) o
      ricostruirla.
   2. «Unlock All» e bacheca completata (titolo 2000+N) ancora da provare.
-  3. Mappe generate: nella 1060 (piu' stanze) il giocatore resta bloccato contro un tronco e non
-     raggiunge il TARGET (forziere visibile: il POI funziona). Un agente stava scrivendo in
-     `D:\Progetto_Restauro_KH_UX\stage_gen\reach\` (validatore con flood-fill, REPORT.md,
-     gen_story_maps.py corretto, uscita separata in stage_gen\reach\story e stage_poi.json):
-     se c'e' REPORT.md leggerlo, integrare gli script in recon/tools, rigenerare, copiare in
-     stage_gen\files\stage, versione risorse completa (33) e provare la 1060.
+  3. Mappe generate, controllo di raggiungibilita' FATTO e integrato (recon/tools/validate_maps.py
+     con flood-fill, servono numpy/scipy; gen_story_maps.py collega solo punti della stessa area
+     calpestabile, uscita identica a prima: niente da rigenerare). Esito in
+     `D:\Progetto_Restauro_KH_UX\stage_gen\reach\REPORT.md`: 0 errori nelle generate (solo la
+     1050 fatta a mano: forziere uid 4 irraggiungibile, totali STG). La 1060 NON e' bloccata: il
+     bersaglio (2200,1760) si raggiunge con il giro lungo dell'arco (su per il braccio sinistro,
+     in alto, giu' a destra, strettoia di ~180); il banco va dritto verso la freccia. DA FARE:
+     percorrerla a mano sul banco per confermare la strettoia (stesso punto in 3200, 6220,
+     10010, 10100, 10400); eventuale opzione del generatore per giri <= 1,2x; correggere la 1050.
   4. story.ps1 / bench_prologue -Seek: su mappe scure (nebbia) FindSpotlight scambia lo sfondo
      per il cerchio del tutorial e non fa passi (0 passi); e nella 1030 non ha visto il
      /stage/clear che c'era (#718). Da sistemare.
