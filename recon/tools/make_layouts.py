@@ -675,6 +675,36 @@ LAYOUTS = {
         I('Select_Board', 153, 153, 306, 306, 'Board_0001.png', s9=False),
         I('Select_Kind', 153, 153, 306, 306, 'Kind_0001.png', s9=False),
         L('Count_Label', 153, 30, 200, 30, '', 22, visible=False)])),
+    # Missioni (pulsante a pergamena della home, FUN_00a8a8d8 / FUN_00a8ad3c / FUN_00a8c100):
+    # nessun layout ne' riferimento visivo trovato (annotato in HANDOFF). Finestra nello stile
+    # dei popup KHUX: schede tab1..tab4 in alto (MyMission_Category, GroupIcon, Icon_Crown),
+    # elenco Scroll_Area, «Stock» (Txt_Stock con Txt_Stock_Num_Label / Txt_Stock_All_Label),
+    # «Receive All» (Button/Txt_ReceiveAll), Mask_Area/Mask/Txt_Warning, Txt_None,
+    # Cautio_Panel/Txt, Close_Button
+    'MyPageMission_Base_ver320.json': ('build', P('mission_root', 0, 0, 960, 640, [
+        I('Win_Mission', 480, 300, 900, 560, 'Win04.png',
+          opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        *[I('tab%d' % k, 150 + 170 * (k - 1), 555, 160, 48, 'Plate01.png', s9=False, children=[
+            L('Txt_Tab', 0, 0, 150, 40, '', 20),
+            L('MyMission_Category', 0, 0, 150, 40, '', 20, visible=False),
+            I('GroupIcon', -60, 0, 40, 40, 'Plate01.png', s9=False, visible=False),
+            I('Icon_Crown', 60, 18, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, scale=0.6, visible=False),
+            I('Icon_New', 60, 22, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)])
+          for k in range(1, 5)],
+        I('Grid_Mission', 480, 290, 860, 410, 'Panel04.png', opts=GRID),
+        P('Scroll_Area', 55, 90, 850, 400),
+        L('Txt_None', 480, 290, 600, 40, '', 24, visible=False),
+        P('Stock', 60, 40, 300, 40, [
+            L('Txt_Stock', 0, 20, 140, 30, '', 20, opts=dict(anchorPointX=0, hAlignment=0)),
+            L('Txt_Stock_Num_Label', 180, 20, 50, 30, '0', 22, opts=dict(anchorPointX=1, hAlignment=2)),
+            L('Txt_Stock_Slash', 190, 20, 20, 30, '/', 22),
+            L('Txt_Stock_All_Label', 200, 20, 60, 30, '0', 22, opts=dict(anchorPointX=0, hAlignment=0))]),
+        B('Button', 760, 60, 233, 68, 'But01', '', 28, label='Txt_ReceiveAll', opts=BUTS),
+        P('Mask_Area', 30, 20, 900, 560, [
+            P('Mask', 0, 0, 900, 560),
+            L('Txt_Warning', 450, 280, 700, 60, '', 22)], visible=False),
+        P('Cautio_Panel', 30, 500, 900, 30, [L('Txt', 450, 15, 860, 26, '', 18)], visible=False),
+        B('Close_Button', 920, 570, 64, 64, 'But_Close', None)])),
     # «Other» del menu (FUN_009ec518): vedi other_menu
     'MenuDialog_ver300.json': ('func', 'other_menu'),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
@@ -1027,6 +1057,10 @@ def build(s):
         o.update(fileNameData=tex(s['tex']), scale9Width=s['w'], scale9Height=s['h'])
         if s.get('flipX'):
             o['flipX'] = True
+    elif s['cls'] == 'Button' and s['tex'] == 'But_Close':
+        # X tonda di chiusura (But_CloseA/B, senza le varianti _Off/_On)
+        o.update(normalData=tex('But_CloseA.png'), pressedData=tex('But_CloseB.png'),
+                 disabledData=tex('But_CloseA.png'), scale9Enable=False, text='')
     elif s['cls'] == 'Button':
         base = s['tex']
         for key, suf in (('normalData', '_Off'), ('pressedData', '_On'), ('disabledData', '_Disable')):

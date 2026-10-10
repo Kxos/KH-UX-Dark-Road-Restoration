@@ -271,6 +271,16 @@ poi i pulsanti in crash del menu.
   PopupNormal_SphereCoinCheck_ver310, Sphere_Incentive(_ver240), Sphere_Popup_Comp_ver310,
   Sphere_Popup_Get_ver240. Per renderli utili servono i dati delle bacheche (ricostruibili
   dalla khuxwiki, pagine «Avatar Board»: nodi, costi, premi) e le immagini delle carte.
+- **Menu Other e Missioni (10 ottobre, notte).** «Other» (MENU, `1740,963`) =
+  MenuDialog_ver300 da MenuDialog_ver150 originale (other_menu in make_layouts.py; il codice
+  scrive i testi e nasconde Support/Transfer/Movie; TwitterButton nascosto cercato da
+  FUN_009ed888). Pulsanti di Other mai provati. Il pulsante a pergamena sotto l'avatar della
+  home (`425,130`) apre le **Missioni**: MyPageMission_Base_ver320 generato (nomi da
+  FUN_00a8ad3c/FUN_00a8c100; nessun riferimento visivo trovato online: aspetto dei popup KHUX,
+  da rivedere se si trova un video). L'elenco e' vuoto: master `mission`,
+  `multiTimemission` vuoti e `GET /user/mission/list` (azione 189, FUN_00797eb8: missions[],
+  beginnerLimitTime) risponde dallo schema; manca anche MyPageMission_Panel (riga) e le
+  icone img/ui/MyMission_GroupIcon1/2.
 - **Attacchi speciali generati (10 ottobre, sera).** La tabella `burst` vera (5.0.1 e
   thethiny/KHUx-Server `data/burst.json`) ha solo 11 righe. `make-game-tables.js` tiene
   quelle in `master_data/burst_base.json` e genera le altre: clone della famiglia
