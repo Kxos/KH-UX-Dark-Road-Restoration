@@ -128,7 +128,13 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
   l'uscita indietro sulla porta verso k-1; nelle stanze sostitute una porta qualsiasi (la piu' lontana
   dall'altra uscita). Porte agganciate al pixel percorribile (la griglia di 40 non entra nei corridoi
   stretti), arrivi a ~240 unita' a piedi dalla porta e a piu' di 160 dalle altre uscite, freccia con
-  l'angolo verso la porta. Senza `world_links` l'uscita e' identica byte per byte a prima. Rapporto
+  l'angolo verso l'esterno della zona percorribile (media dei pixel bloccati entro 160). Banco
+  991001: l'uscita «Moogle Shop» sul bordo della fontana non scattava: la freccia (disegnata ~100
+  unita' oltre l'uscita) cadeva sulla fontana, toccandola il giocatore saltava sulla cima della fontana
+  (isola libera della CLS staccata dalla piazza) e restava fuori dal raggio di 96. Ora le uscite stanno
+  a >= 240 dalle isole libere da >= 1000 pixel e la punta della freccia a > 200 (angolo ruotato fino a
+  90 gradi); la porta del negozio e' sul bordo alto della piazza a sinistra della fontana (la porta vera
+  sta dietro la fontana, fuori dalla CLS). Senza `world_links` l'uscita e' identica byte per byte a prima. Rapporto
   delle coppie in `stage_gen\world_links_story.json` (relazione nel grafo, note delle porte); 205
   uscite spostate, 55 sulla porta giusta (37 di piu' di 300 unita').
 - **Missioni Tour** (config `"worldtour": true`): una per mondo, tutte le stanze del mondo nelle

@@ -27,6 +27,8 @@ const { startDns } = require('./dns');
 const { makeMulti, routeMulti } = require('./multi');
 const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
+// Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
+const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
 
 // ---------------------------------------------------------------------------
 // Configurazione
@@ -150,6 +152,7 @@ function route(url) {
   if (p === '/user/deck') return 'userdeck';
   if (p === '/keyblade/subslot') return 'kbsubslot';
   if (routeKeybladeEvo(p)) return routeKeybladeEvo(p);
+  if (routePet(p)) return routePet(p);
   if (p === '/user/medal') return 'usermedal';
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
@@ -1097,7 +1100,9 @@ function respondUserProfile(res) {
       colosseumStageId: 0, colosseumStatus: 0, rank: 0,
       userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
     },
-    petBaseSlotMedal: 0,
+    // 6° slot del keyblade preferito (server/pet.js; 0 con KHUX_PET spento)
+    petBaseSlotMedal: petBaseSlotMedal(player, favoriteKeyblade().userKeybladeId,
+      new Set(userMedalList().map((m) => m.userMedalId))),
     userPvpRanking: { rank: 0, class: 0, point: 0 },
     followerNum: 0,
     isFollow: 0,
@@ -1176,7 +1181,8 @@ function userDetailData() {
     // sbloccare il quarto pulsante, e da sbloccato cerca un testo che non c'e' (crash).
     lastClearStageId: stageNumber(player.lastClearStageId),
     // isGuilt (+0x44): con 0 niente pulsante del Burst ([fn] -> [fn])
-    isGuilt: guiltBurst().isGuilt(), isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
+    // isPet (+0x45): 1 = pet sbloccato (6° slot, catena /pet/profile all'avvio): server/pet.js
+    isGuilt: guiltBurst().isGuilt(), isPet: PET_ENABLED ? 1 : 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
 }
 
@@ -1717,9 +1723,9 @@ function respondMedalEnhance(res, body) {
     guiltBurstFirstLv: 0, guiltBurstMaxLv: 0,
     // [fn], obbligatorio: senza, «200 ERROR :55»
     medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
-    // [fn] (pet.petSubslot, [fn]): senza, il ramo 55 va in errore se un
-    // flag della sessione e' acceso
-    pet: { petSubslot: { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 } },
+    // [fn] (pet.petSubslot, [fn]): senza, il ramo 55 va in errore se isPet
+    // (+0x45) e' acceso; il ramo lo copia nel pet della sessione solo se esiste (0x7ce17c)
+    pet: { petSubslot: petSubslotNow() },
     // letto dal dispatcher dopo pet (0x7cec50, uint64): le medaglie consumate, che il
     // client toglie dall'elenco; senza, «200 ERROR :55»
     // solo le celle sparite: una pila con copie rimaste resta (arriva in userMedals)
@@ -1763,7 +1769,7 @@ function respondMedalEvolve(res, body) {
     userMedals: userMedalsData(now),
     beforeEvolveUserMedal: before,
     afterEvolveUserMedal: userMedalElement({ ...base, medalId: row.evolveId, level: 1, exp: 0 }, now),
-    pet: { petSubslot: { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 } },
+    pet: { petSubslot: petSubslotNow() }, // come il ramo 55 (copia solo se il pet c'e', 0x7ceeac)
     // solo le celle sparite (una pila con copie rimaste resta)
     attachmentMedalIds: [...new Set(cells)].filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
   });
@@ -1972,16 +1978,18 @@ function respondMedalRemove(res, body) {
   player.deck = deckMedalIds().map((x) => (x === id ? 0 : x));
   // anche dai deck degli altri keyblade (il corpo non dice quale: la si toglie da tutti)
   for (const d of Object.values(player.keybladeDecks || {})) d.forEach((x, i) => { if (x === id) d[i] = 0; });
+  if (PET_ENABLED) pet().onMedalRemoved(id); // Gear del pet e 6° slot dei deck
   savePlayer();
   console.log(`  [unequip] ${id}: deck ${player.deck.join(',')}`);
   send(res, 200, {
     ret: ret(),
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
-    // array (il primo elemento sarebbe letto come petSubslot, [fn] modo 1): vuoto,
-    // perche' con un elemento il dispatcher lo copia nell'oggetto pet della sessione (+0x7c0),
-    // creato solo dall'azione 170 (pet), e senza pet va in crash (0x7c8d40)
-    petSubslots: [],
+    // array (il primo elemento sarebbe letto come petSubslot, [fn] modo 1): con un
+    // elemento il dispatcher lo copia nell'oggetto pet della sessione (+0x7c0) senza controllo
+    // del null (0x7c8d40, il crash di I-005): il pet lo crea solo l'azione 170 (/pet/profile),
+    // che il client chiede all'avvio solo con isPet 1. Quindi l'elemento solo con KHUX_PET=1.
+    petSubslots: PET_ENABLED ? [pet().petSubslotData()] : [],
     subslotMaxNum: kbEvo().subslotMaxNum(), userKeybladeSubslots: userKeybladeSubslotsData(),
   });
 }
@@ -2103,10 +2111,14 @@ function respondUserKeyblade(res) {
 }
 
 // userDecks[], elemento letto da [fn]: un deck per keyblade.
+// petBaseSlotMedal (uint64, deck +0x40, obbligatorio) = il 6° slot, quello del pet: 0 se
+// KHUX_PET e' spento o lo slot e' vuoto (server/pet.js)
 function userDecksData() {
+  const ownedMedals = new Set(userMedalList().map((m) => m.userMedalId));
   return ownedKeyblades().map((k) => ({
     userDeckId: k.userKeybladeId, userKeybladeId: k.userKeybladeId, // uint64
-    deckMedals: sentKeybladeDeck(k.userKeybladeId), petBaseSlotMedal: 0,
+    deckMedals: sentKeybladeDeck(k.userKeybladeId),
+    petBaseSlotMedal: petBaseSlotMedal(player, k.userKeybladeId, ownedMedals),
   }));
 }
 
@@ -2126,7 +2138,8 @@ function respondKeybladeUpdate(res, body) {
     const medals = d.medals.map(Number).slice(0, 5);
     if (id === USER_KEYBLADE_ID) player.deck = medals;
     else (player.keybladeDecks = player.keybladeDecks || {})[id] = medals;
-    console.log(`  [keyblade] deck ${id}: ${medals.join(',')}`);
+    setPetBaseSlotMedal(player, id, d.petBaseSlotMedal); // 6° slot (solo con KHUX_PET=1)
+    console.log(`  [keyblade] deck ${id}: ${medals.join(',')}` + (PET_ENABLED ? ` + pet ${d.petBaseSlotMedal || 0}` : ''));
   }
   savePlayer();
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userDecks: userDecksData() });
@@ -2302,6 +2315,14 @@ function handler(scheme) {
       if (kind === 'kbenhance') return kbEvo().respondEnhance(res, entry.bodyDecoded);
       if (kind === 'kbburstmax') return kbEvo().respondBurstMax(res, entry.bodyDecoded);
       if (kind === 'passivelist') return kbEvo().respondPassiveList(res, entry.bodyDecoded); // PUT /passive/list (249), I-065
+      // Pet (server/pet.js, solo con KHUX_PET=1): 170-175 e 236
+      if (kind === 'petprofile') return pet().respondProfile(res);
+      if (kind === 'petparts') return pet().respondParts(res);
+      if (kind === 'petcoordall') return pet().respondCoordinateAll(res);
+      if (kind === 'petcoordupdate') return pet().respondCoordinateUpdate(res, entry.bodyDecoded);
+      if (kind === 'petname') return pet().respondName(res, entry.bodyDecoded);
+      if (kind === 'petsubslot') return pet().respondSubslot(res, entry.bodyDecoded);
+      if (kind === 'medalpreremove') return pet().respondPreremove(res, '/user/medal/preremove', entry.bodyDecoded);
       // GET /stage/pickup (azione 250, dopo ogni clear): missioni in evidenza, elemento
       // [fn]; la chiave e' scritta cosi' nel binario. Nessuna in evidenza: []
       if (kind === 'stagepickup') return send(res, 200, { ret: ret(), pisckupStages: [] });
@@ -2461,6 +2482,19 @@ function kbEvo() {
 var guiltBurstInstance = null;
 function guiltBurst() {
   return guiltBurstInstance ??= makeGuiltBurst({ getPlayer: () => player, userMedalList, masterRows });
+}
+
+// Pet / 6° slot (server/pet.js, KHUX_PET=1)
+var petInstance = null;
+function pet() {
+  return petInstance ??= makePet({
+    ret, send, serverTime, masterRows, player, savePlayer, userMedalList, userMedalElement, schemaResponse,
+  });
+}
+// petSubslot per i rami 55/56: spento = il segnaposto di prima (tutto a 0)
+function petSubslotNow() {
+  return PET_ENABLED ? pet().petSubslotData()
+    : { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 };
 }
 
 let multiInstance = null;

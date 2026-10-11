@@ -104,10 +104,51 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
 
 - Riferimenti `D:\Progetto_Restauro_KH_UX\reference\pet\` (NOTE.md + 14 screenshot): sbloccato dopo
   la Story Quest 14, dialog con rango, 6 medaglie, Name/Outfits/Gear/Tricks.
-- L'oggetto pet della sessione (+0x7c0) nasce solo dall'azione 170 (`pet`,
-  `pet.userPetCoordinate`, `petName`, `initCoordinate`), che il client non chiede mai (isPet 0); ogni
-  risposta che porta un `petSubslot` va in crash (0x7c8d40). Mancano `PetInfoScene_ver320`,
-  `PetInfoAnim` e tutte le `lwf/pet` (ISSUES I-005).
+- **6° slot = slot del pet** (verificato, `reference\pet\NOTE.md` §8): ogni deck ha 5 `deckMedals`
+  ([fn], al massimo 5) + `petBaseSlotMedal` (uint64, deck +0x40); il revolver di Equipment
+  crea 6 celle «Medal1..6» ([fn]). Il moltiplicatore della sesta cella = `partnerRate` del
+  keyblade + `magnification` del pet ([fn] -> [fn] -> cella [fn] +0x498;
+  in pet-mode la cella carica `img/ui/Minfo_Pet01.png`, assente come `Minfo_Def09`).
+- Tutto si accende con `userData.userDetail.isPet` ([fn], byte +0x45). Con isPet 1:
+  - avvio ([fn]): dopo `GET /user/option` (149) il client chiede `GET /pet/profile` (170),
+    `GET /pet/coordinate/parts` (171), `GET /pet/coordinate/all` (172), poi prosegue;
+  - Equipment ([fn] / DeckRevolverView [fn]): `DeckEdit_PetMedal_ver230` (c'e':
+    cornice `DeckEdit_Pet1`, `Button_PowerUp` «スピリット強化» -> PetInfoDialog) in
+    `Area_PetMedal`/`Area_RevolverPet`, e lettura SENZA controllo di pet(+0x7c0)->petSubslot(+0x38)
+    ->magnification(+0x74): il pet della sessione deve esistere.
+- L'oggetto pet della sessione (+0x7c0) nasce solo dall'azione 170, parser [fn], tutto
+  obbligatorio: `pet.petSubslot` ([fn]: `subslotUserMedalIds` uint64 <= 6, `openSkillIds`
+  <= 15, `rank`, `pt`, `magnification`), `pet.userPetCoordinate` (12 int, [fn]),
+  `pet.petName`, `pet.userSkills`, `pet.userMedals`, `pet.initCoordinate` (0 = la scena PetEdit
+  [fn] carica `Tutorial_Pet01.json`, assente: si manda 1) e sulla radice `recoverDatetime`,
+  `recoverStoneNum`, `expeditionTotalNum`, `expeditionMonthlyNum` ([fn]).
+- Crash 0x7c8d40 spiegato: il ramo 237 (`/user/medal/remove`) copia `petSubslots[0]` in
+  pet(+0x7c0)+0x38 senza controllare il pet; idem 175 (`/pet/subslot`, 0x7c66dc) e 174
+  (`/pet/name`, 0x7cd630). I rami 55/56 controllano (0x7ce17c, 0x7ceeac). Con isPet 0 il pet non
+  esiste mai, quindi `petSubslots` deve restare [].
+- Azioni: 170 GET `/pet/profile`, 171 GET `/pet/coordinate/parts` (`pet.userPetParts[]`), 172 GET
+  `/pet/coordinate/all` (`pet.userPetCoordinates[]`), 173 POST `/pet/coordinate/update` (risposta
+  `pet.equipCoordinateNo` + `pet.userPetCoordinates`), 174 POST `/pet/name` (`pet.petName`), 175
+  POST `/pet/subslot` (corpo `subslotUserMedalIds`, risposta `pet.petSubslot`), 176 POST
+  `/gacha/petdraw`, 177 GET `/pet/coordinate/members`, 236 GET `/user/medal/preremove` (corpo
+  `removeUserMedalId`; `isPetSlot`, `petRank`, `updatePetRank`).
+- Server: `server/pet.js`, acceso con **`KHUX_PET=1`** (default spento = comportamento di prima).
+  Stato in `player.pet` ({name, subslot, coordinateNo, coordinates}) e `player.petBaseSlots`
+  [userKeybladeId]. Tabelle `server/make-pet-tables.js` (petRank 17 ranghi, magnification
+  22000+1000·rango = Rank 5 ×2.7 / 15 ×3.7 / 16 ×3.8 come negli screenshot; petSkill = i Tricks
+  della khwiki; `medal.addPetPt` stimato da rarita' + tier), chiamato anche da make-game-tables.js.
+  Valori NOSTRI (nessun dump: petRank/petSkill tolte nella 5.0.1).
+- Dialog del pet (`PetInfoDialog`, open [fn], createLayout [fn]): mancano
+  `PetInfoScene_ver320` e le sotto-schermate (`PetInfo_PetSkill_Panel_ver230`, `_Rename_ver230`,
+  `_Training*`, `PetEditScene_ver230`, `PetEdit_Panel/Check2_ver230`, `Tutorial_Pet01`), l'armatura
+  `PetInfoAnim.ExportJson` e tutte le `lwf/pet/part`. Widget cercati da createLayout: Pet_LvUp,
+  Panel_img, Button_A/B (Txt_A/B), PowerUp_Button, PetSkill_Button, PetTraing, PetTraing_But,
+  PetTraing_ChargButton, PetTraing_Slot, Txt_TotalTitle, TotalNum_Label, Txt_MonthTitle,
+  MonthNum_Label, Txt_PetSkill, Txt_Training, Txt_TrainingCharg, Icon_New, Txt_PowerUP, Txt_Time,
+  Pet_Info (Txt_Pet_Name, Txt_Pet_Rank, Txt_Pet_Rank_Num, Txt_5), Pop_MedalForm,
+  Pop_PetSkill_Info, PetInfo_Medal, Area_Arrow1/2, AtlasLabel_EXP, Close_Button, Dummy, MedalArea,
+  Win_under. Non ancora generato: i figli di PetInfo_Medal/Pet_LvUp vanno ricavati dalle lambda.
+  Finche' manca, `Button_PowerUp` di Equipment e l'icona pet della home vanno in crash.
 - Con `isFinished` 1 a fase 995 la home creava il pet (`lwf/pet/motion/...`) e andava in crash in
   `[fn]`: risolto con i LWF vuoti.
 

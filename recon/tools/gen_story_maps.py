@@ -539,13 +539,78 @@ def room_comp(folder, pts):
     return _room_pc[folder]
 
 
+_raw = {}
+ISLAND_KEEP = 240     # distanza minima di un'uscita da zone libere staccate (cima della fontana...)
+
+
+def room_raw(folder, pts):
+    """(libero grezzo, distanza dalle «isole»): pixel liberi della CLS non collegati alla zona della
+    stanza (es. la cima della fontana della Fountain Square, DB_0000: ellisse libera dentro il buco).
+    Il client ci salta sopra (salti `_jmp`) se la freccia dell'uscita ci cade vicino: il giocatore resta
+    sull'isola, fuori dal raggio di 96 dell'uscita, e il cambio di stanza non scatta (banco 991001)."""
+    import numpy as np
+    from scipy import ndimage
+    if folder not in _raw:
+        pc, L, xs, ys = room_comp(folder, pts)
+        cls = open(os.path.join(cfg['cls_dir'], 'map', folder, folder + '_cls.bin'), 'rb').read()
+        W, H, stride = struct.unpack_from('<3i', cls, 4)
+        free = np.unpackbits(np.frombuffer(cls, np.uint8, stride * H, 16).reshape(H, stride), axis=1)[:, :W] == 0
+        lab = ndimage.label(free)[0]
+        main = int(lab[ys[0], xs[0]])
+        # solo isole dove si puo' stare (>= 1000 pixel): i quadratini da 15x15 sparsi nelle CLS no
+        sizes = np.bincount(lab.ravel())
+        big = np.nonzero(sizes >= 1000)[0]
+        F = 4
+        Hc, Wc = -(-H // F), -(-W // F)
+        m = np.zeros((Hc * F, Wc * F), bool)
+        m[:H, :W] = free & (lab != main) & np.isin(lab, big[big != 0])
+        isl = m.reshape(Hc, F, Wc, F).any(axis=(1, 3))
+        dist = ndimage.distance_transform_edt(~isl) * F if isl.any() else np.full((Hc, Wc), 1e9)
+        _raw[folder] = (free, dist, F)
+    return _raw[folder]
+
+
 def door_px(folder, xy, pts):
     """Porta agganciata al pixel percorribile piu' vicino della componente della stanza (non alla griglia
-    di 40: i corridoi stretti in fondo ai quali stanno le porte non hanno punti della griglia)."""
+    di 40: i corridoi stretti in fondo ai quali stanno le porte non hanno punti della griglia), lontano
+    almeno ISLAND_KEEP dalle isole libere staccate (vedi room_raw)."""
     import numpy as np
     pc, L, xs, ys = room_comp(folder, pts)
-    k = int(np.argmin((xs - xy[0]) ** 2 + (ys - xy[1]) ** 2))
+    free, dist, F = room_raw(folder, pts)
+    d2 = (xs - xy[0]) ** 2 + (ys - xy[1]) ** 2
+    ok = dist[ys // F, xs // F] > ISLAND_KEEP
+    if ok.any():
+        d2 = np.where(ok, d2, d2.max() + 1)
+    k = int(np.argmin(d2))
     return int(xs[k]), int(ys[k])
+
+
+def exit_angle(folder, pts, p, cent):
+    """Angolo della freccia verso l'esterno della zona percorribile nel punto dell'uscita (media dei
+    pixel bloccati entro 160): la freccia, disegnata ~100 unita' oltre l'uscita in quella direzione, cade
+    sul muro/sulla scala e non su un ostacolo interno. Senza pixel bloccati vicini: dal centro."""
+    import math
+    import numpy as np
+    free, dist, F = room_raw(folder, pts)
+    H, W = free.shape
+    r = 160
+    x0, x1, y0, y1 = max(0, p[0] - r), min(W, p[0] + r + 1), max(0, p[1] - r), min(H, p[1] + r + 1)
+    yy, xx = np.nonzero(~free[y0:y1, x0:x1])
+    xx, yy = xx + x0 - p[0], yy + y0 - p[1]
+    k = xx ** 2 + yy ** 2 <= r * r
+    if not k.any():
+        return door_angle(cent, p)
+    vx, vy = float(xx[k].mean()), float(yy[k].mean())
+    a0 = int(round(math.degrees(math.atan2(vx, -vy)))) % 360
+    # punta della freccia (~100 oltre l'uscita) lontana dalle isole: altrimenti si ruota fino a 90 gradi
+    Hc, Wc = dist.shape
+    for da in (0, 15, -15, 30, -30, 45, -45, 60, -60, 75, -75, 90, -90):
+        a = (a0 + da) % 360
+        tx = int(p[0] + 100 * math.sin(math.radians(a)))
+        ty = int(p[1] - 100 * math.cos(math.radians(a)))
+        if not (0 <= ty // F < Hc and 0 <= tx // F < Wc) or dist[ty // F, tx // F] > 200:
+            return a
+    return a0
 
 
 def arrival_px(folder, door, pts, avoid=()):
@@ -733,7 +798,7 @@ def build_multi(s, q, room_names, groups):
         arr_back = [arrival_near(fars[k], pts[k], folders_[k]) for k in range(R - 1)] + [None]  # tornando indietro
     face = lambda k, p: 1 if cents[k][0] < p[0] else 2                              # noqa: E731
     if WLINKS:
-        angle = lambda k, p: door_angle(cents[k], p)                                # noqa: E731
+        angle = lambda k, p: exit_angle(folders_[k], pts[k], p, cents[k])            # noqa: E731
     else:
         angle = lambda k, p: 35 if p[0] >= cents[k][0] else 220                     # noqa: E731
     # le posizioni dei nemici dipendono solo dai punti delle uscite, non dai loro campi: una prima
@@ -969,7 +1034,7 @@ def build_tour(world, wd, sid):
         out_ = []
         for p, e in ex[k]:
             j, a = idx[e['to']], arr[id(e)]
-            out_.append((p[0], p[1], door_angle(cents[k], p), rem.get(id(e), 0), 1 if hops.get(j, 0) > hops.get(k, 0)
+            out_.append((p[0], p[1], exit_angle(folders_[k], pts[k], p, cents[k]), rem.get(id(e), 0), 1 if hops.get(j, 0) > hops.get(k, 0)
                          else 2, a[0], a[1], j, 1 if cents[j][0] < a[0] else 2))
         return out_
     probe = build_part_mr(folders_[tpart], grids[tpart][1], tgroup, 0, exits_of(tpart, {}), 1, True)

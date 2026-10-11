@@ -594,6 +594,8 @@ fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 // Burst: medal 2, burst 11, shuffleskill 901/902 (make-guilt-burst.js)
 require('./make-guilt-burst').patch(OUT);
+// Pet: petRank, petSkill, medal.addPetPt (make-pet-tables.js)
+require('./make-pet-tables').patch(OUT);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
 // khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
 const TABLES = path.join(__dirname, 'tables');
