@@ -116,6 +116,14 @@ qui c'è come.
   (non troncare l'output con Select-Object -First: interrompe lo script prima del -Release).
   Riavviare il SOLO server senza rifare il login rompe la decifratura dei corpi (stageId perso):
   usare sempre relogin.ps1. Il Seek della 1070 (bosco) si blocca sull'albero: giocarla a mano.
+- **SCONFITTA IN SOLO: ANCORA CRASH (11 ottobre, IN CORSO)**. Riprodotta in modo affidabile con
+  `player.sphereBonus.hp = -2950` nel salvataggio (HP 50; PROVVISORIO, rimettere 40 a prova finita)
+  sulla missione 12 (No Way In): HP 0, animazione del KO, crash entro 1 s, nessun popup e nessuna
+  richiesta al server (niente /stage/continue). Cattura ARM: init di una scena (FUN_00be1b74, create
+  FUN_00906a14) che carica `PartyTopScene` (mancante, come tutti i PartyTop_*) -> addChild(null).
+  Chi la chiede al KO: agente su stage_gen\ko_party. LDPlayer si e' bloccato una volta (ld.exe
+  appesi): `ldconsole quit/launch` + phaseb-guest.sh; dopo il riavvio la base della libreria era
+  0x3314000 (stackcap la stampa: usarla anche per backtrace.py).
 - **Messaggio del Profilo**: anche con Invio o Indietro dopo `adb input text` il client manda
   `comment: ""` (l'EditBox nativo non riceve il testo): il fumetto della home resta vuoto.
 - **1050 corretta provata**: -Seek fino a /stage/clear (solo il bersaglio).
