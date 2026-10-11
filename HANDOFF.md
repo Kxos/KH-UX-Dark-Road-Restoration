@@ -77,8 +77,21 @@ qui c'è come.
   partenze spostate per la prova (ripristinate): parte 0 -> 1 e 1 -> 2 senza crash. Problema del
   generatore: in alcune stanze (AG_0002, DB_0001, AG_0021 come ultima stanza) bersaglio, nemici e
   forziere finiscono nella sacca d'ingresso (1240 parte 2: bersaglio a 179 dall'arrivo; 9 missioni
-  con distanza residua < 270). Correzione affidata a un agente (stage_gen\reach\REPORT.md).
-  ATTENZIONE: nel guest la 1240 ha ancora l'intestazione di prova finche' non si rifa' un -Quick.
+  con distanza residua < 270). CORRETTO (agente, stage_gen\reach\REPORT.md): `walk_grid` teneva
+  solo punti con 80x80 libere, i corridoi da 33-80 spezzavano la griglia e si prendeva il pezzo
+  piu' grande (la sacca). Ora, se il pezzo arriva a meno di 0,4 della componente, distanze a
+  piedi sui pixel (`geodesic`). 132 file / 88 stage rigenerati (elenco in
+  stage_gen\reach\pocket\file_da_copiare.txt), copiati in files\stage; stage_poi.json del server
+  aggiornato (cambia solo la 5040); validate_maps 0 errori. Banco: 1240 parte 2 percorsa
+  dall'arrivo su per la scalinata e sui tetti fino al gruppo di meta' strada; intestazione
+  della 1240 ripristinata e -Quick rifatto.
+- **CRASH APERTO: sconfitta**. 1240 parte 2: Bandit + Red Nocturne (id 9 e 4, grafiche Dark Road
+  5008/5004) azzerano 3040 HP (giocatore LV3 con 2 medaglie in una missione da 27:
+  bilanciamento, non errore); alla sconfitta schermo nero e crash, pc G11fdc74 in [fn],
+  stessa funzione del crash del pet ([fn] compone «<nome>.plist»). Registri in
+  dumps\armtrace\bandit. Analisi in corso insieme a quella del pet (stage_gen\pet_crash).
+- **Messaggio del Profilo**: anche con Invio o Indietro dopo `adb input text` il client manda
+  `comment: ""` (l'EditBox nativo non riceve il testo): il fumetto della home resta vuoto.
 - **1050 corretta provata**: -Seek fino a /stage/clear (solo il bersaglio).
 - **Pet (riferimenti)**: `D:\Progetto_Restauro_KH_UX\reference\pet\` (NOTE.md + 14 screenshot): pet =
   «Spirit», sbloccato dopo la Story Quest 14, dialog con rango, 6 medaglie, Name/Outfits/Gear/
