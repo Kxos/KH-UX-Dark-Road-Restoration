@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-061**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-062**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -18,6 +18,7 @@ Ultima revisione: 11 ottobre 2026.
 |---|---|---|---|---|
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
 | I-061 | APERTO | Burst (Guilt Burst, pulsante rosso in battaglia, 1 volta per missione): il server manda `guiltBurstLv` (salvataggio a 10) ma il pulsante non appare; flag +0x18/+0x1c e livello di `FUN_00b10044` in analisi | [battaglia](notes/battaglia.md) | `FUN_00aee878`, `FUN_00b0fbd0` |
+| I-062 | APERTO | «Max Out Gauge» prima della battaglia: «server error» e gauge del keyblade selezionato non al massimo; il client manda `POST /keyblade/burst/max` {userKeybladeId, kind: 1} (non gestito, schema automatico) | [battaglia](notes/battaglia.md) | log #99 |
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
 | I-032 | APERTO | Valori segnaposto: HP iniziale 3000, CP/HP dei forzieri (10.000/5.000/500) | [battaglia](notes/battaglia.md#hp) | 10-08/09 |
 | I-033 | APERTO | Attacchi speciali generati: 63 righe «Special Attack», animazioni del modello | [medaglie](notes/medaglie.md#burst) | 7da38e3 |
