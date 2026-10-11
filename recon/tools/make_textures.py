@@ -12,7 +12,7 @@ import os
 import shutil
 import sys
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import btf  # noqa: E402
@@ -226,8 +226,253 @@ if os.path.isdir(MAT):
         with open(os.path.join(p, fn), 'wb') as fh:
             fh.write(btf.encode(canvas))
     print('img/material: icone dalla khuxwiki', len(os.listdir(MAT)))
-# filtro Guilt 9 (100x100, scala 0,7): l'icona della Guilt 8, l'ultima esistente
-save('MedalInfo_Guilt9.png', fit(load('img/ui/guilt/MedalInfo_Guilt8.png'), (100, 100)))
+# Icone del tier (SP Attack Bonus, guiltValue 1-10; docs/notes/medaglie.md#tier). Nelle risorse ci
+# sono solo le tier 1-8: MedalInfo_Guilt (100x100, sagoma blu notte con la cifra: dettaglio e
+# filtro), Guilt_draw / Guilt_num_draw (57x53), Guilt_Err (36x36 rossa), Guilt4_On (e Guilt5_On in
+# publish). Il client 4.3.1 conosce le tier 9-10 (filtro Filter_Guilt1..10) e carica anche
+# Guilt%d_On/_Off/_num e MD_Guilt%d_On/_Off/_Num (FUN_0072b80c, icone del keyblade). Riferimento:
+# le icone della khuxwiki (pagina «Special Attack Bonus», scaricate in reference\medal_tier: attive
+# = Guilt_On 34x34 per le tier 1-8 e 42x42 per 9-10, inattive 42x42 = Guilt_Off). Sagome delle tier
+# 9-10 dalle icone inattive della wiki; cifre «9» = «6» ruotato di 180 gradi, «0» = «8» senza la
+# barra centrale (stesso carattere delle originali).
+TIER = os.path.join(src, '..', '..', 'reference', 'medal_tier')
+
+
+def save_guilt(name, im):
+    p = os.path.join(out, 'img', 'ui', 'guilt')
+    os.makedirs(p, exist_ok=True)
+    with open(os.path.join(p, name), 'wb') as fh:
+        fh.write(btf.encode(im))
+    print('img/ui/guilt/' + name, im.size)
+
+
+def wiki_tier(n, inactive=False):
+    return Image.open(os.path.join(TIER, 'Special_Attack_Bonus_Level_%d_%sKHUX.png'
+                                   % (n, 'Inactive_' if inactive else ''))).convert('RGBA')
+
+
+def tier_mask(n):
+    """Sagoma della tier n (L, 34x34): i pixel viola dell'icona inattiva della wiki, dentro la
+    cornice quadrata (3 px)."""
+    im = wiki_tier(n, True).crop((4, 4, 38, 38))
+    px = im.load()
+    m = Image.new('L', im.size, 0)
+    mp = m.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = px[x, y]
+            mp[x, y] = max(0, min(255, int((min(r, b) - g - 20) * 3))) if a else 0
+    if n >= 9:
+        # le sagome 9-10 riempiono il quadrato: tagliate a cerchio come le 6-8 originali
+        c = Image.new('L', (m.width * 4, m.height * 4), 0)
+        ImageDraw.Draw(c).ellipse((2, 2, c.width - 3, c.height - 3), fill=255)
+        m = ImageChops.multiply(m, c.resize(m.size, Image.LANCZOS))
+    return m
+
+
+def big_mask(n, size):
+    """Sagoma a size x size (ingrandita a 4x, sfocata e ridotta: bordi morbidi)."""
+    from PIL import ImageFilter
+    m = tier_mask(n).resize((size * S, size * S), Image.BICUBIC).filter(ImageFilter.GaussianBlur(S))
+    m = m.point(lambda v: 0 if v < 100 else 255 if v > 155 else (v - 100) * 255 // 55)
+    return m.resize((size, size), Image.LANCZOS)
+
+
+def digit_layer(im, test, core):
+    """Cifra di un'icona originale: i pixel del colore pieno della cifra (core(r, g, b)) nel
+    riquadro centrale e, entro 2 px da questi, i pixel con alpha test(r, g, b) (bordo
+    sfumato); il resto (sagoma e suoi riflessi) trasparente. Ritagliata."""
+    px = im.load()
+    out_ = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    op = out_.load()
+    cx, cy = im.width // 2, im.height // 2
+    rx, ry = im.width * 3 // 10, im.height // 4
+    strong = {(x, y) for y in range(cy - ry, cy + ry) for x in range(cx - rx, cx + rx)
+              if px[x, y][3] >= 200 and core(*px[x, y][:3])}
+    near = {(x + i, y + j) for x, y in strong for i in range(-2, 3) for j in range(-2, 3)}
+    for x, y in near:
+        # alpha >= 200: fuori dalla sagoma ci sono pixel bianchi quasi trasparenti (alone)
+        if 0 <= x < im.width and 0 <= y < im.height and px[x, y][3] >= 200:
+            a = 255 if (x, y) in strong else test(*px[x, y][:3])
+            if a:
+                op[x, y] = px[x, y][:3] + (min(px[x, y][3], a),)
+    return out_.crop(out_.getbbox())
+
+
+def hole_fill(dg, digit, color):
+    """«8» -> «0»: riempie l'inviluppo convesso dei buchi (pixel non della cifra chiusi da
+    pixel della cifra a sinistra, destra, sopra e sotto) col colore dei buchi: i due fori
+    diventano uno solo."""
+    a = digit.getchannel('A').load()
+    W, H = digit.size
+    on = lambda x, y: a[x, y] >= 128
+    pts = [(x, y) for y in range(H) for x in range(W) if not on(x, y)
+           and any(on(i, y) for i in range(x)) and any(on(i, y) for i in range(x + 1, W))
+           and any(on(x, j) for j in range(y)) and any(on(x, j) for j in range(y + 1, H))]
+    if not pts:
+        return dg
+    pts = sorted(set(pts))
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo, hi = [], []
+    for p in pts:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], p) <= 0:
+            lo.pop()
+        lo.append(p)
+    for p in reversed(pts):
+        while len(hi) >= 2 and cross(hi[-2], hi[-1], p) <= 0:
+            hi.pop()
+        hi.append(p)
+    ImageDraw.Draw(dg).polygon(lo[:-1] + hi[:-1], fill=color)
+    return dg
+
+
+def two_digits(a, b, gap):
+    w = a.width + b.width - gap
+    h = max(a.height, b.height)
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    im.alpha_composite(a, (0, h - a.height))
+    im.alpha_composite(b, (a.width - gap, h - b.height))
+    return im
+
+
+def glyphs(style):
+    """Cifre «9» e «10» nello stile delle originali: 'info' (MedalInfo_Guilt, azzurre) o 'num'
+    (Guilt_num_draw, bianche)."""
+    if style == 'info':
+        fn, test = 'img/ui/guilt/MedalInfo_Guilt%d.png', lambda r, g, b: max(0, min(255, (b - 100) * 255 // 100))
+        core = lambda r, g, b: r >= 140 and b >= 240
+        hole = (2, 39, 63, 255)
+    else:
+        fn, test = 'img/ui/guilt/Guilt%d_num_draw.png', lambda r, g, b: max(0, min(255, (g - 110) * 255 // 100))
+        core = lambda r, g, b: r >= 235 and g >= 225
+        hole = (90, 0, 124, 255)
+    d6 = digit_layer(load(fn % 6), test, core)
+    d8 = digit_layer(load(fn % 8), test, core)
+    d1 = digit_layer(load(fn % 1), test, core)
+    plate = lambda d: _plate(d, hole)
+    nine = plate(d6.rotate(180))
+    zero = hole_fill(plate(d8), d8, hole)
+    return nine, two_digits(plate(d1), zero, 2)
+
+
+def _plate(d, hole):
+    """Cifra su un rettangolo del colore dei buchi (i fori della cifra restano visibili)."""
+    im = Image.new('RGBA', d.size, (0, 0, 0, 0))
+    m = d.getchannel('A')
+    from PIL import ImageFilter
+    filled = m.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(5))
+    im.paste(hole, (0, 0), filled)
+    im.alpha_composite(d)
+    return im
+
+
+def medalinfo_icon(n, digit):
+    """MedalInfo_Guilt9/10 (100x100): sagoma blu notte 2,39,63 con un filo chiaro, cifra
+    azzurra 154,202,255 al centro con alone (come MedalInfo_Guilt1-8)."""
+    from PIL import ImageFilter
+    m = big_mask(n, 92)
+    im = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+    edge = Image.new('L', (100, 100), 0)
+    edge.paste(m.filter(ImageFilter.MaxFilter(3)), (4, 4))
+    im.paste((70, 108, 150, 255), (0, 0), edge)      # filo chiaro del bordo, come le originali
+    body = Image.new('L', (100, 100), 0)
+    body.paste(m, (4, 4))
+    im.paste((2, 39, 63, 255), (0, 0), body)
+    # fondo pieno sotto la cifra (nelle originali il centro e' sempre pieno); cifre gia' alla
+    # dimensione delle originali, «10» ridotto a 52 px
+    glow = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+    k = min(1.0, 52 / digit.width)
+    dg = digit.resize((round(digit.width * k), round(digit.height * k)), Image.LANCZOS)
+    x0, y0 = (100 - dg.width) // 2, (100 - dg.height) // 2
+    ImageDraw.Draw(glow).ellipse((x0 - 8, y0 - 6, x0 + dg.width + 7, y0 + dg.height + 5), fill=(2, 39, 63, 255))
+    im.alpha_composite(glow)
+    halo = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+    halo.paste((40, 110, 200, 255), (x0, y0), dg.getchannel('A'))
+    im.alpha_composite(Image.blend(Image.new('RGBA', (100, 100), (0, 0, 0, 0)),
+                                   halo.filter(ImageFilter.GaussianBlur(2.5)), 0.9))
+    im.alpha_composite(dg, (x0, y0))
+    return im
+
+
+def square_icon(n, active):
+    """Guilt%d_On (attiva) / _Off (inattiva), 36x36: icone della wiki. Le attive 1-8 sono le
+    originali ritagliate di 1 px (34x34): rimesse su una tela 36x36; le altre (42x42) ridotte."""
+    w = wiki_tier(n, not active)
+    if w.size == (34, 34):
+        im = Image.new('RGBA', (36, 36), (0, 0, 0, 0))
+        im.alpha_composite(w, (1, 1))
+        return im
+    return w.resize((36, 36), Image.LANCZOS)
+
+
+def err_icon(n):
+    """Guilt%d_Err (36x36): cornice e fondo di Guilt8_Err con la sagoma rossa 180,17,28."""
+    base = load('img/ui/guilt/Guilt8_Err.png')
+    bg = base.getpixel((6, 6))
+    d = ImageDraw.Draw(base)
+    d.rectangle((4, 4, 31, 31), fill=bg)
+    m = tier_mask(n).resize((30, 30), Image.LANCZOS)
+    base.paste((180, 17, 28, 245), (3, 3), m)
+    return base
+
+
+def draw_icon(n):
+    """Guilt%d_draw (57x53): sagoma bianca con alone magenta 198,0,255 (come Guilt1-8_draw)."""
+    from PIL import ImageFilter
+    m = big_mask(n, 46)
+    im = Image.new('RGBA', (57, 53), (0, 0, 0, 0))
+    a = Image.new('L', (57, 53), 0)
+    a.paste(m, (5, 3))
+    glow = Image.new('RGBA', (57, 53), (198, 0, 255, 0))
+    glow.putalpha(a.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(2.5)))
+    im.alpha_composite(glow)
+    im.paste((255, 255, 255, 255), (0, 0), a)
+    return im
+
+
+def num_draw_icon(n, digit):
+    """Guilt%d_num_draw (57x53): sagoma viola 199,102,255 con bordo 90,0,124 e cifra bianca
+    su targa viola scura (come Guilt1-8_num_draw)."""
+    from PIL import ImageFilter
+    m = big_mask(n, 46)
+    im = Image.new('RGBA', (57, 53), (0, 0, 0, 0))
+    a = Image.new('L', (57, 53), 0)
+    a.paste(m, (5, 3))
+    im.paste((90, 0, 124, 255), (0, 0), a.filter(ImageFilter.MaxFilter(3)))
+    im.paste((199, 102, 255, 255), (0, 0), a.filter(ImageFilter.MinFilter(3)))
+    k = min(1.0, 34 / digit.width, 24 / digit.height)
+    dg = digit.resize((round(digit.width * k), round(digit.height * k)), Image.LANCZOS)
+    x0, y0 = (57 - dg.width) // 2, (53 - dg.height) // 2
+    ImageDraw.Draw(im).rounded_rectangle((x0 - 3, y0 - 2, x0 + dg.width + 2, y0 + dg.height + 1), 4,
+                                         fill=(90, 0, 124, 255))
+    im.alpha_composite(dg, (x0, y0))
+    return im
+
+
+if os.path.isdir(TIER):
+    info9, info10 = glyphs('info')
+    num9, num10 = glyphs('num')
+    for n, gi, gn in ((9, info9, num9), (10, info10, num10)):
+        save_guilt('MedalInfo_Guilt%d.png' % n, medalinfo_icon(n, gi))
+        save_guilt('Guilt%d_draw.png' % n, draw_icon(n))
+        save_guilt('Guilt%d_num_draw.png' % n, num_draw_icon(n, gn))
+        save_guilt('Guilt%d_Err.png' % n, err_icon(n))
+    # filtro (Logo_01 dei Filter_Guilt, cercati accanto ai layout; 2-8 copiati da make_layouts)
+    save('MedalInfo_Guilt9.png', medalinfo_icon(9, info9))
+    save('MedalInfo_Guilt10.png', medalinfo_icon(10, info10))
+    for n in range(1, 11):
+        on = load('img/ui/guilt/Guilt4_On.png') if n == 4 else \
+            load('cocostudio/publish/Guilt5_On.png') if n == 5 else square_icon(n, True)
+        off = square_icon(n, False)
+        if n not in (4, ):
+            save_guilt('Guilt%d_On.png' % n, on)
+        save_guilt('Guilt%d_Off.png' % n, off)
+        # _num e MD_*: nessun originale ne' riferimento; copie dell'icona attiva/inattiva
+        save_guilt('Guilt%d_num.png' % n, on)
+        save_guilt('MD_Guilt%d_On.png' % n, on)
+        save_guilt('MD_Guilt%d_Num.png' % n, on)
+        save_guilt('MD_Guilt%d_Off.png' % n, off)
 
 
 # Profilo: texture di AvatarInfo_Txt_ver340 (layout originale nelle risorse) che non esistono

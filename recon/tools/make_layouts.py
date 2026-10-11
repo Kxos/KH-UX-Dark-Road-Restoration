@@ -1232,7 +1232,10 @@ LAYOUTS = {
          ('clone', 'Filter_Ability_Recovery', 'Filter_Ability_Guard', 'Dummy_Ability'),
          ('clone', 'Filter_Ability_Use6', 'Filter_Ability_Use7', 'Dummy_Ability'),
          ('clone', 'Filter_Ability_AtTime4', 'Filter_Ability_AtTime5', 'Dummy_Ability'),
+         # tier 10 (182 medaglie): accanto al 9 (passo 109), visibile, icona MedalInfo_Guilt10
          ('clone', 'Filter_Guilt9', 'Filter_Guilt10', 'Dummy_Guilt'),
+         ('opts', 'Filter_Guilt10', {'x': 185, 'visible': True}),
+         ('tex', 'Filter_Guilt10/Logo_01', 'MedalInfo_Guilt10.png'),
          ('clone', 'Filter_RareStarSet7', 'Filter_RareStarSet8', 'Dummy_Filter')]
       + [('clone', 'Filter_Evo', 'Filter_Sb', 'Dummy_Sb')]   # cercato dentro Dummy_Sb (00a482ac)
       + [('clone', 'Filter_Evo', n, 'Dummy_Filter') for n in ('Filter_Subslot', 'Filter_Trait', 'Filter_Evo_Set')]),
@@ -1315,6 +1318,9 @@ def scene(names):
 
 
 def find(w, name):
+    if '/' in name:                     # 'Padre/Figlio': il figlio dentro quel widget
+        head, rest = name.split('/', 1)
+        return find(find(w, head), rest)
     if w.get('options', {}).get('name') == name:
         return w
     for c in w.get('children', []):
