@@ -86,7 +86,7 @@ if ($Quick) {
   Get-ChildItem "$D\resource_data\7\data" | Where-Object Name -ne 'd0035' |
     ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
   if ($medalPack) { Copy-Item "$mg\gen.mp4" "$v\data\d0035" }
-  $dataSize = 16MB   # 4 MiB finiti con le icone dei materiali della khuxwiki (10 ottobre)
+  $dataSize = 32MB   # 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
 $genLen = (Get-Item "$sg\gen.mp4").Length

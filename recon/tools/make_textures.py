@@ -1081,3 +1081,50 @@ def slot_num(d):
 
 for _d in (4, 5):
     save_ui('Deck_Slot_Num_%d.png' % _d, slot_num(_d))
+
+
+# Schermata dei sub-slot (I-066, DeckEditSubSlotScene_ver340 di make_layouts.py). Riferimento:
+# reference\subslot\subslot_JP_1.png e subslot_JP_3.png (khux-guides, JP 2018): ogni slot e' un
+# disco blu notte con due anelli blu-viola, «SLOT n» grigio al centro, linee rosa fra gli slot.
+def subslot_disc():
+    """Subslot_MedalSlot (128x128, MedalBase delle celle DeckEdit_SubSlotMedal_ver260; il codice,
+    FUN_00aa2190, carica «img/ui/Subslot_MedalSlot%03d.png» con la category del keyblade: 001,
+    201 ... 1901, assenti da ogni risorsa). Disco 14,22,48 con anello esterno 70,90,170 sfumato
+    e anello interno sottile 40,55,110."""
+    def f(r):
+        if r > 63.5:
+            return (0, 0, 0, 0)
+        a = int(255 * min(1, 63.5 - r))                     # bordo esterno antialias
+        ring = max(0.0, 1 - abs(r - 57) / 4.5)                # anello esterno
+        inner = max(0.0, 1 - abs(r - 45) / 1.5) * 0.8        # anello interno
+        glow = max(0.0, 1 - abs(r - 57) / 12) * 0.35          # alone dell'anello
+        k = min(1.0, ring + inner * 0.6 + glow)
+        base, hi = (14, 22, 48), (70, 90, 170) if inner <= ring else (40, 55, 110)
+        return tuple(int(b + (h - b) * k) for b, h in zip(base, hi)) + (a,)
+    return _radial(128, f)
+
+
+def subslot_route():
+    """Subslot_Route (64x12, SubSlot_Route_LR/UD delle celle: linea fra due slot vicini, UD =
+    ruotata di 90 gradi): barra bianca con i bordi sfumati, colorata dal layout (grigio-blu =
+    da riempire, rosa = slot pieni)."""
+    w, h = 64, 12
+    im = Image.new('RGBA', (w, h))
+    im.putdata([(255, 255, 255, int(255 * max(0.0, 1 - abs(y - (h - 1) / 2) / (h / 2)) ** 0.7))
+                for y in range(h) for x in range(w)])
+    return im
+
+
+save('Subslot_MedalSlot001.png', subslot_disc())
+save('Subslot_Route.png', subslot_route())
+for _c in (1, 201, 301, 401, 501, 701, 901, 1101, 1201, 1301, 1401, 1501, 1601, 1701, 1801, 1901):
+    save_ui('Subslot_MedalSlot%03d.png' % _c, subslot_disc())
+# Contrassegni e bagliore dell'attributo delle celle (FUN_00aa2190): il codice li carica da img/ui,
+# le risorse li hanno solo in cocostudio/publish (Deck_Mark_Uplight/Reverse, Deck_Medal1) o non li
+# hanno (Deck_Medal2: il verde della Speed, tinta di Deck_Medal1 rossa; Deck_Medal3 c'e')
+for _n in ('Deck_Mark_Uplight', 'Deck_Mark_Reverse', 'Deck_Medal1'):
+    shutil.copyfile(os.path.join(src, 'cocostudio', 'publish', _n + '.png'), os.path.join(out, 'img', 'ui', _n + '.png'))
+_r = load('cocostudio/publish/Deck_Medal1.png').convert('RGBA')
+_ch = _r.split()
+save_ui('Deck_Medal2.png', Image.merge('RGBA', (_ch[2], _ch[0], _ch[1], _ch[3])))   # rosso -> verde
+print('img/ui/Deck_Mark_Uplight, Deck_Mark_Reverse, Deck_Medal1')

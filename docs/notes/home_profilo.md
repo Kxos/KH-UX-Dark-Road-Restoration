@@ -18,8 +18,20 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
   party (`userParty.isJoin` 0) vede Chirithy con la nuvoletta `MyPage_ChirishiBaloon.json`
   (`Txt_Name`, testo 101000022, «Join a party and make new friends!»), generata da
   `MyPage_AvatarBaloon_ver240`.
-- Il fumetto sopra il personaggio e' vuoto finche' non si salva un messaggio del Profilo (ISSUES
-  I-015).
+- Fumetto bianco sopra l'avatar (ISSUES I-071): `MyPage_MpBaloon.json` (Panel_1 > Balloon >
+  `Txt_Comment_Label`), due copie `avatarFukidashi_0/1` create da `FUN_00bb1610`. L'azione casuale
+  dell'avatar `FUN_00bbbb3c` (10% dei casi) ci scrive il **messaggio del Profilo**: per il proprio
+  avatar `userData.user.comment` (record utente della sessione +0xd8, campo +0x3c, 0x101 byte), per
+  gli altri quello del loro record; nessun controllo sul vuoto. Con `comment` "" il fumetto
+  compariva vuoto. Il server ora manda `DEFAULT_COMMENT` («Nice to meet you!», o
+  `KHUX_DEFAULT_COMMENT`) quando il messaggio salvato e' vuoto. Negli originali li' c'era il
+  messaggio dei giocatori (`reference\home_bubble\`). Non c'entra con la nuvoletta rossa di
+  Chirithy qui sopra. Da provare sul banco.
+- `GET /mypage` (azione 59, parser `FUN_0077ae10`) ha ora la sua rotta (`respondMyPage`):
+  stessi campi dello schema (`backgroundId` 150911). `adminMypageTexts[]` {type, priority, text}
+  resta vuoto: forse e' la striscia scorrevole sotto la barra in alto (originale «Tap the face icon
+  to customize your avatar. Tap the screen to view party members' progress.»), ma il lettore
+  non e' trovato; da provare con `KHUX_MYPAGE_TICKER=1` (type da `KHUX_MYPAGE_TICKER_TYPE`, 1).
 - Mappatura dei pulsanti (`sweep.ps1`, 9 ottobre): Quests, Shop, Chat («You need to be in a party»),
   Presents, Equipment ok; Beginner's Guide si apre vuota; gli altri risolti dopo. Mai provati:
   Beginner's Guide (contenuto), Shop jewel, frecce ‹ ›, pulsanti di Other, Share della medaglia, titolo

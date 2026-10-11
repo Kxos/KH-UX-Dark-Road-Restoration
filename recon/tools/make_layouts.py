@@ -51,6 +51,13 @@ def I(name, x, y, w, h, tex, **kw):
     return dict(cls='ImageView', name=name, x=x, y=y, w=w, h=h, tex=tex, **kw)
 
 
+def A(name, x, y, tex, item_w, item_h, text='0', start='0', **kw):
+    """LabelAtlas (TextAtlas: cifre prese da una texture a celle item_w x item_h, la prima e'
+    il carattere start), come AtlasLabel_NumL di AvatarInfo_Txt_ver340."""
+    return dict(cls='LabelAtlas', name=name, x=x, y=y, w=item_w * len(text), h=item_h, tex=tex,
+                item=(item_w, item_h), start=start, text=text, **kw)
+
+
 # targhetta Plate03 in 9-slice come in MedalInfo_Mix_ver340 (bordo 70)
 PLATE3 = dict(scale9Enable=True, capInsetsX=70, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
 # fondo e bordo dei riquadri come in DeckEdit_MedalForm (Win_under, Win)
@@ -1320,6 +1327,104 @@ LAYOUTS = {
          ('clone', 'Filter_RareStarSet7', 'Filter_RareStarSet8', 'Dummy_Filter')]
       + [('clone', 'Filter_Evo', 'Filter_Sb', 'Dummy_Sb')]   # cercato dentro Dummy_Sb (00a482ac)
       + [('clone', 'Filter_Evo', n, 'Dummy_Filter') for n in ('Filter_Subslot', 'Filter_Trait', 'Filter_Evo_Set')]),
+    # Sub-slot del keyblade (I-066: Equipment > «Subslot», SceneDeckEdit::openSubslotPanel =
+    # FUN_00c12a98). La scena ver340 non esiste: copia della ver310 originale (subslot_scene) con
+    # Set_Medal nuovo. Il codice cerca dalla radice (ricorsivo): DeckEdit_SubSlot_Select_Medal (nodo)
+    # > Win_under > Scroll_Area (vi crea MiniMedalScrollView), DeckEdit_SubSlot_Set_Medal (nodo) >
+    # Win_under > Scroll_Area (vi crea KeybladeSubslotMedalView, celle DeckEdit_SubSlotMedal_ver260),
+    # SubSlot_UpArrowEff (nodo armatura della scena), BestButton > Txt_Best (testo 106180100
+    # «Optimize»), Txt_NotExist (106140376 «No available Medals.»), Close_Button, Panel_34 >
+    # Txt_Subslot_Caution_Label (106140377); nel nodo Set_Medal Txt_KeyBlade_Label (nome del
+    # keyblade), Txt_SubSlot_Rate (106140371 «Multipliers»), Txt_SubSlot_Num (106140374 «Equipped
+    # Slots»), Txt_KeyBlade_Lv_Rate_Label («x%01.1f» = subslotRate del keyblade). Ad ogni cambio
+    # FUN_00c27228 scrive Txt_SubSlot_Rate_Label («+%01.3f») e Txt_SubSlot_Num_Label (106140352,
+    # «n/120») nel Set_Medal, mette l'armatura EFFECT (freccia su) in Win_under > panel quando il
+    # moltiplicatore sale e fa lampeggiare Panel_34 se gli slot non sono riempiti in ordine.
+    # Disposizione da reference\subslot (JP 2018): a sinistra «SUBSLOT», keyblade, moltiplicatore
+    # e «Slot» n/120 sopra la griglia a 3 colonne; a destra «SUBSLOT MEDALS» con le medaglie 7★.
+    'DeckEditSubSlotScene_ver340.json': ('func', 'subslot_scene'),
+    'DeckEdit_SubSlot_Set_Medal_ver340.json': ('build', P('Panel_1', 0, 0, 525, 640, [
+        I('Win', 262, 572, 515, 130, 'Panel04.png', opts=GRID),
+        L('Txt_Title', 18, 612, 250, 36, 'SUBSLOT', 32, opts=dict(anchorPointX=0)),
+        I('Img_KeyBlade', 155, 568, 290, 30, 'Plate03.png', opts=PLATE3),
+        L('Txt_KeyBlade_Label', 22, 568, 220, 28, '', 20, opts=dict(anchorPointX=0)),
+        L('Txt_KeyBlade_Lv_Rate_Label', 292, 568, 60, 28, 'x1.0', 18, opts=dict(anchorPointX=1)),
+        L('Txt_SubSlot_Rate', 420, 605, 170, 24, 'Multipliers', 18),
+        L('Txt_SubSlot_Rate_Label', 420, 570, 170, 34, '+0.000', 30,
+          opts=dict(colorR=255, colorG=230, colorB=60)),
+        I('Img_SubSlot_Num', 262, 522, 505, 28, 'Plate03.png', opts=PLATE3),
+        L('Txt_SubSlot_Num', 30, 522, 240, 26, 'Equipped Slots', 18, opts=dict(anchorPointX=0)),
+        L('Txt_SubSlot_Num_Label', 495, 522, 140, 26, '0/120', 20, opts=dict(anchorPointX=1)),
+        # griglia: figli di un ImageView relativi al centro (abs. 12..512 x 7..497)
+        I('Win_under', 262, 252, 515, 500, 'Panel04.png', opts=GRID, children=[
+            P('Scroll_Area', -250, -245, 500, 490),
+            P('panel', 158, 318, 10, 10)])])),
+    # Pannello delle medaglie 7★ (nome della scena ver310, assente dalle risorse; la ver260 servita
+    # ha un 9-slice su Panel20 che non esiste). Close_Button e BestButton cercati dalla radice.
+    'DeckEdit_SubSlot_Select_Medal_ver310.json': ('build', P('Panel_1', 0, 0, 430, 640, [
+        I('Win_under', 215, 320, 420, 630, 'Panel04.png', opts=GRID, children=[
+            P('Scroll_Area', -200, -235, 400, 495),
+            L('Txt_Title', -195, 288, 300, 30, 'SUBSLOT MEDALS', 24, opts=dict(anchorPointX=0)),
+            B('Close_Button', 180, 288, 70, 70, 'But_Close')]),
+        B('BestButton', 215, 45, 220, 68, 'But06', 'Optimize', 24, label='Txt_Best', opts=BUTS),
+        L('Txt_NotExist', 215, 340, 380, 60, 'No available Medals.', 22, visible=False)])),
+    # Avviso «Medals must be set in order.» (nodo SubSlot_Caution della scena, centrato in 379,470):
+    # Panel_34 nascosto, il codice lo fa comparire e svanire
+    'DeckEdit_Subslot_Caution_ver260.json': ('build', P('Panel_Caution', 0, 0, 10, 10, [
+        P('Panel_34', -170, -26, 340, 52, [
+            I('Img_Caution', 170, 26, 340, 50, 'Plate03.png', opts=PLATE3),
+            L('Txt_Subslot_Caution_Label', 170, 26, 320, 48, 'Medals must be set\nin order.', 18)],
+          visible=False)])),
+    # Cella di un sub-slot (KeybladeSubslotMedalView: FUN_00aa19d4 la carica, 164x154; FUN_00aa1b3c
+    # e FUN_00aa2190 la riempiono). Cerca (ricorsivo, tutti obbligatori tranne MatchSlotLWF):
+    # Medale (tocco spento, visibile), SubSlot_Route_LR/LR1/LR2 (linea verso la cella a destra:
+    # base, slot dopo vuoto, slot dopo pieno) e UD/UD1/UD2 (verso la riga sotto, righe a serpentina),
+    # MedalBase (ImageView: «img/ui/Subslot_MedalSlot%03d.png» con la category del keyblade; vi
+    # aggiunge la LWF MatchSlotLWF), Slot, SlotNum (TextAtlas: numero dello slot), InfoPanel, TYpe
+    # (img/ui/Deck_Medal%d, bagliore dell'attributo), Icon_Type (KeyBlade_type_%02d), Icon_Type_1
+    # (Deck_Mark_Uplight/Reverse), Medal_S (immagine della medaglia), Txt_Mag_Label («+%01.3f» =
+    # bonus del tier), Guilt_Icon (img/ui/guilt/Guilt%d_num_draw), Cursor (vi crea l'armatura
+    # Z_SpCursor, cursor_anim, sullo slot da riempire). Aspetto da reference\subslot\subslot_JP_3.
+    'DeckEdit_SubSlotMedal_ver260.json': ('build', P('Panel_SubSlotMedal', 0, 0, 164, 154, [
+        I('SubSlot_Route_LR', 164, 92, 64, 12, 'Subslot_Route.png', s9=False,
+          opts=dict(colorR=90, colorG=100, colorB=150)),
+        I('SubSlot_Route_LR1', 164, 92, 64, 12, 'Subslot_Route.png', s9=False,
+          opts=dict(colorR=200, colorG=140, colorB=210)),
+        I('SubSlot_Route_LR2', 164, 92, 64, 12, 'Subslot_Route.png', s9=False,
+          opts=dict(colorR=255, colorG=70, colorB=160)),
+        I('SubSlot_Route_UD', 82, 0, 64, 12, 'Subslot_Route.png', s9=False,
+          opts=dict(rotation=90, colorR=90, colorG=100, colorB=150)),
+        I('SubSlot_Route_UD1', 82, 0, 64, 12, 'Subslot_Route.png', s9=False,
+          opts=dict(rotation=90, colorR=200, colorG=140, colorB=210)),
+        I('SubSlot_Route_UD2', 82, 0, 64, 12, 'Subslot_Route.png', s9=False,
+          opts=dict(rotation=90, colorR=255, colorG=70, colorB=160)),
+        P('Medale', 0, 0, 164, 154),
+        I('MedalBase', 82, 90, 128, 128, 'Subslot_MedalSlot001.png', s9=False),
+        I('TYpe', 82, 90, 179, 179, 'Deck_Medal1.png', s9=False, scale=0.72),
+        I('Slot', 82, 102, 74, 24, 'Deck_Slot.png', s9=False, opts=dict(colorR=170, colorG=175, colorB=190)),
+        A('SlotNum', 82, 78, 'Mu_Num_Slot.png', 44, 29, '1', scale=0.7,
+          opts=dict(colorR=190, colorG=195, colorB=210)),
+        I('Medal_S', 82, 96, 89, 109, 'Medal_S_00000001.png', s9=False, scale=1.05, visible=False),
+        P('InfoPanel', 12, 2, 140, 30, [
+            I('base_Type', 70, 15, 90, 26, 'Deck_KeyBlade_Type_Panel.png', s9=False,
+              opts=dict(scaleX=1.55, scaleY=1.1)),
+            I('Guilt_Icon', 12, 15, 57, 53, 'Guilt5_On.png', s9=False, scale=0.55, visible=False),
+            L('Txt_Mag_Label', 68, 15, 80, 22, '+0.000', 18),
+            I('Icon_Type', 126, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.7),
+            I('Icon_Type_1', 126, 40, 42, 44, 'Deck_Mark_Uplight.png', s9=False, scale=0.6,
+              visible=False)]),
+        P('Cursor', 82, 90, 1, 1)])),
+    # Riquadro del moltiplicatore sotto una medaglia del revolver in modalita' sub-slot (DeckRevolverView,
+    # 0x8c9f0c in FUN_008c8904: se la cella non ha SubslotInfoPanel carica questo layout, lo clona e lo
+    # aggiunge ad Area_MedalInfo, 108x31, col nome SubslotInfoPanel; poi Icon_Type carica
+    # KeyBlade_type_%02d e Txt_Mag_Label riceve il moltiplicatore). Come Dummy_Mag di
+    # DeckEdit_RevolverMedal_ver330. Guilt_Icon: 0x8ca35c ci carica img/ui/guilt/Guilt%d_num_draw
+    # (tier della medaglia) senza controllo del null: senza, crash al tocco di «Subslot» (banco v33).
+    'DeckEdit_SubSlot_MedalInfo_ver260.json': ('build', P('SubslotInfoPanel', 0, 0, 108, 31, [
+        I('base_Type', 59, 15, 90, 26, 'Deck_KeyBlade_Type_Panel.png', s9=False, opts=dict(scaleX=1.2)),
+        I('Guilt_Icon', -8, 15, 57, 53, 'Guilt5_On.png', s9=False, scale=0.5, visible=False),
+        I('Icon_Type', 16, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.8),
+        L('Txt_Mag_Label', 66, 15, 67, 16, 'x1.0', 16)])),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash (FUN_011843c4). Copia di ArrowAnim con armatura e movimento rinominati.
     # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita (FUN_00882e10,
@@ -1530,6 +1635,9 @@ _collect(_tmpl['widgetTree'])
 # CheckBox: dal popup Sort originale (filtri: But16 con la croce But16_On)
 _collect(json.load(open(os.path.join(SRC, *PUB.split('/'), 'PopupNormal_SortButton_ver320.json'),
                         encoding='utf-8-sig'))['widgetTree'])
+# LabelAtlas: dal Profilo originale (AtlasLabel_NumL)
+_collect(json.load(open(os.path.join(SRC, *PUB.split('/'), 'AvatarInfo_Txt_ver340.json'),
+                        encoding='utf-8-sig'))['widgetTree'])
 _tag = [1000]
 
 
@@ -1579,6 +1687,9 @@ def build(s):
                  selectedState=False)
     elif s['cls'] == 'Label':
         o.update(text=s.get('text', ''), fontSize=s.get('size', 22), areaWidth=s['w'], areaHeight=s['h'])
+    elif s['cls'] == 'LabelAtlas':
+        o.update(charMapFileData=tex(s['tex']), itemWidth=s['item'][0], itemHeight=s['item'][1],
+                 startCharMap=s['start'], stringValue=s['text'])
     elif s['cls'] == 'Panel':
         o.update(touchAble=False)
     return w
@@ -1865,6 +1976,20 @@ def other_menu():
             b['children'].append(andr)
         win['children'].append(b)
     return d
+
+
+def subslot_scene():
+    """DeckEditSubSlotScene_ver340 (FUN_00c12a98): la ver310 originale (nodi Set_Medal x=0,
+    Select_Medal x=530 con la freccia Arrow01, SubSlot_UpArrowEff = armatura
+    DeckEdit_KBStrength_ResultArrow_Animation, SubSlot_Caution) con il Set_Medal ver340 generato
+    (la ver260 servita non ha i testi che il codice cerca)."""
+    data = json.load(open(os.path.join(SRC, *PUB.split('/'), 'DeckEditSubSlotScene_ver310.json'),
+                          encoding='utf-8-sig'))
+    for g in data['gameobjects']:
+        if g['name'] == 'DeckEdit_SubSlot_Set_Medal':
+            g['components'][0]['fileData']['path'] = 'publish/DeckEdit_SubSlot_Set_Medal_ver340.json'
+    data['components'][0]['scenename'] = 'DeckEditSubSlotScene_ver340'
+    return data
 
 
 def frame_armature(name, png, tsize, c, w, h, off, plist_name=None):

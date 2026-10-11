@@ -126,6 +126,7 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json
 node server\make-moogleshop.js
 node server\make-multi-tables.js                # Union Cross: multi, multiStage
 node server\make-keyblade-levels.js             # keyblade +0..+35 e keybladeSubslot (dopo import-master)
+node server\make-passives.js                    # passive e passiveSetting (dopo make-keyblade-levels)
 ```
 
 - `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (da
@@ -334,26 +335,68 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `Txt_KeyBlade_Lv_Rate_Label` = subslotRate della riga /10000. `KHUX_SUBSLOT_MAX=0` spegne i
   sub-slot, `KHUX_SUBSLOT_SCALE` cambia l'unita'.
 - Schermata dei sub-slot (I-066, crash al tocco di «Subslot»): `FUN_00c17394` -> `FUN_00c12a98`
-  carica `DeckEditSubSlotScene_ver340` (assente; servite solo `_ver260`/`_ver310`). Il codice cerca:
-  `DeckEdit_SubSlot_Select_Medal` > `Win_under` > `EquipSell_Scroll_Area` (MiniMedalScrollView),
-  `DeckEdit_SubSlot_Set_Medal` > `Win_under` > `EquipSell_Scroll_Area` (KeybladeSubslotMedalView,
-  celle `DeckEdit_SubSlotMedal_ver260` con `SubSlot_Route_LR/LR1/LR2/UD/UD1/UD2`, `MedalBase`,
-  `InfoPanel`, `Icon_Type_1`, `Icon_Type`, `Txt_Mag_Label`, `Guilt_Icon`, `MatchSlotLWF`,
-  `img/ui/Subslot_MedalSlot%03d.png`, cursore `Z_SpCursor`), `SubSlot_UpArrowEff`,
-  `BestButton`/`Txt_Best`, `Txt_NotExist`, `Close_Button`, nel Set_Medal `Txt_KeyBlade_Label`,
-  `Txt_SubSlot_Rate`, `Txt_SubSlot_Num`, `Txt_KeyBlade_Lv_Rate_Label`, `Panel_34` >
-  `Txt_Subslot_Caution_Label`; la cella del revolver usa anche `DeckEdit_SubSlot_MedalInfo_ver260`
-  (`SubslotInfoPanel`). Assenti: la scena ver340, `DeckEdit_SubSlot_Select_Medal_ver310`,
-  `DeckEdit_Subslot_Caution_ver260`, `DeckEdit_SubSlotMedal_ver260`, `DeckEdit_SubSlot_MedalInfo_ver260`,
-  `Subslot_MedalSlot%03d`. Da ricostruire in `make_layouts.py` partendo da ver310/ver260 (attenzione:
-  `DeckEdit_SubSlot_Select_Medal_ver260` ha un 9-slice su texture assente).
-- Passive Effects (I-065): `PassiveDialog` (`Passive_Base_ver341`, `PassiveScrollView`,
-  `Passive_Panel`) elenca `passiveSettingIds` di `PUT /passive/list` (249, corpo `FUN_007dc8a0`
-  `{userId, isList}`; parser `FUN_007accd4`: `isList` 1 -> `passiveSettingIds`, 0 ->
-  `newPassiveSettingIds`, int[]) con le master `passiveSetting` (`passiveSettingId, sortId,
-  passiveConditions, passiveValue1/2, description, passiveId`) e `passive`, entrambe vuote nella
-  5.0.1: lista vuota. Le passive dei keyblade (khuxwiki: da +35.5, «Upright P Medal STR +50» ogni
-  0.5, +200 a 40/50/60) stanno oltre il +35 a cui arriviamo.
+  (SceneDeckEdit::openSubslotPanel) carica `DeckEditSubSlotScene_ver340` (assente; servite solo
+  `_ver260`/`_ver310`). Cerca dalla radice (ricorsivo): `DeckEdit_SubSlot_Select_Medal` (nodo) >
+  `Win_under` > `Scroll_Area` (vi crea MiniMedalScrollView), `DeckEdit_SubSlot_Set_Medal` (nodo) >
+  `Win_under` > `Scroll_Area` (vi crea KeybladeSubslotMedalView), `SubSlot_UpArrowEff` (nodo
+  armatura), `BestButton` > `Txt_Best` (106180100 «Optimize»), `Txt_NotExist` (106140376),
+  `Close_Button`, `Panel_34` > `Txt_Subslot_Caution_Label` (106140377); nel Set_Medal
+  `Txt_KeyBlade_Label`, `Txt_SubSlot_Rate` (106140371), `Txt_SubSlot_Num` (106140374),
+  `Txt_KeyBlade_Lv_Rate_Label` («x%01.1f»). Ad ogni cambio `FUN_00c27228` scrive
+  `Txt_SubSlot_Rate_Label` («+%01.3f») e `Txt_SubSlot_Num_Label` (106140352) nel Set_Medal, crea
+  l'armatura `EFFECT` in Win_under > `panel` quando il moltiplicatore sale, fa lampeggiare
+  `Panel_34` se gli slot non sono in ordine. Cella `DeckEdit_SubSlotMedal_ver260` 164x154
+  (`FUN_00aa19d4`/`FUN_00aa1b3c`/`FUN_00aa2190`): `Medale`, `SubSlot_Route_LR/LR1/LR2/UD/UD1/UD2`,
+  `MedalBase` (ImageView, `img/ui/Subslot_MedalSlot%03d.png` con la category del keyblade = 1,
+  201 ... 1901, offset 0xd0 del master), `Slot`, `SlotNum` (TextAtlas), `InfoPanel`, `TYpe`
+  (`img/ui/Deck_Medal%d`), `Icon_Type`, `Icon_Type_1` (`img/ui/Deck_Mark_*`), `Medal_S`,
+  `Txt_Mag_Label`, `Guilt_Icon`, `Cursor` (vi crea l'armatura `Z_SpCursor`); `MatchSlotLWF`
+  facoltativo. Il revolver in modalita' sub-slot (DeckRevolverView, 0x8c9f0c) clona
+  `DeckEdit_SubSlot_MedalInfo_ver260` in `Area_MedalInfo` col nome `SubslotInfoPanel` (`Icon_Type`,
+  `Txt_Mag_Label`). Layout generati in `make_layouts.py` (11 ottobre, aspetto da
+  `reference\subslot`): scena ver340 = ver310 originale con `DeckEdit_SubSlot_Set_Medal_ver340`
+  nuovo, `DeckEdit_SubSlot_Select_Medal_ver310` (la ver260 servita ha un 9-slice su Panel20,
+  assente), `DeckEdit_Subslot_Caution_ver260`, `DeckEdit_SubSlotMedal_ver260`,
+  `DeckEdit_SubSlot_MedalInfo_ver260`; texture in `make_textures.py`: `Subslot_MedalSlot%03d` (16
+  category), `Subslot_Route`, copie in img/ui di `Deck_Mark_Uplight/Reverse`, `Deck_Medal1` e
+  `Deck_Medal2` (verde, dalla 1). Da provare sul banco.
+<a id="passive"></a>
+- Passive Effects (I-065). Il pulsante di Equipment manda `PUT /passive/list` (249, corpo
+  `FUN_007dc8a0`, sul banco solo `{isList}`), e la callback `FUN_008f86a4` apre
+  `PassiveDialog::open` (`FUN_00a862ec`) solo se la risposta è valida. Il ramo 249 (0x7c670c) legge
+  `isList` e poi `FUN_007accd4`: con `isList` 1 legge `passiveSettingIds`, con 0 legge
+  `newPassiveSettingIds` (uint[]). Se l'array manca il parser rende nullo, il ramo fallisce e
+  non si apre niente: era il difetto (prima il server rispondeva solo `ret`). Con `isList` 1 si
+  legge anche `userId`: se manca la lista è la propria (singleton +0xab8), se c'è è di un altro
+  giocatore (+0xad8). `isList` 0 mette le nuove in +0xac8 e le aggiunge a +0xab8 (`FUN_007acf08`).
+  Il popup `PassiveResult` (`FUN_00c54f84`) mostra nome e `description`.
+  - Schermata: `Passive_Base_ver341` con `Scroll_Area`, `Txt_None`, `Total_Area`, `Total_Score_01..15`,
+    `Panel_TotalSwitch`, `Button_PassiveInfo` (apre l'URL `passiveSettingList` di /system/url);
+    celle `Passive_Panel` (`Txt_Passive_Label` = `name` della riga passive, `Icon_New`), ordinate per
+    `sortId`. Con la lista vuota compare «There are no passive effects.» (106220507), come
+    nell'originale. Il riquadro Total (`FUN_00a87334`) mostra HP, SP ATK Gauge, STR e DEF
+    (`FUN_0076a2f0`) e la STR per tipo di medaglia (categorie di `FUN_0076b5c8`: U, R, P/S/M,
+    Upright P/S/M, Reversed P/S/M; testi 106230203..217). Tutti i layout ci sono già nelle
+    risorse servite: niente da aggiungere a `make_layouts.py`.
+  - Master (vuote nella 5.0.1), generate da `server/make-passives.js` (dopo
+    `make-keyblade-levels.js`; copia ridotta in `server/tables/passives.json`).
+    - `passive` (`FUN_00f1f070`): `passiveId, name, validPassive, type[], value[], hp,
+      abilitygauge, attack, defense, attribute`. type 3 = filtro medaglie, value = maschera
+      1 P, 2 S, 4 M, 8 Upright, 16 Reversed. Senza type la passiva vale per tutto.
+    - `passiveSetting` (`FUN_00f1f880`): `passiveSettingId, sortId, passiveConditions,
+      passiveValue1/2, description, passiveId`.
+    - Dati della khuxwiki «Passives» (`reference\passives\`): Lux LV 350..999 (520 righe) e
+      keyblade +35..+60 (791 righe, 23 passive distinte).
+    - Il client non valuta le condizioni. Le nostre: 1 = livello Lux >= value1; 2 = serie value1
+      con livello*10 >= value2.
+    - Id: Lux 10000+LV; keyblade 100000 + category*1000 + lv*10.
+  - Server (`keyblade-evo.js`, `respondPassiveList`): calcola le passive dal livello Lux
+    (`luxRankFor`) e dal livello più alto di ogni serie posseduta. Con `isList` 1 risponde con tutte,
+    con 0 solo quelle non ancora comunicate (`player.passiveSettingIds`), così il client non le
+    aggiunge due volte. Si raggiungono solo le passive di +35 (una per keyblade, per esempio
+    Starlight +35 «Upright S Medal STR +50») e quelle Lux da LV 350: oltre +35 la tabella keyblade
+    non va. Le passive valgono in battaglia lato client (`FUN_0076a2f0` per medaglia). Da provare
+    sul banco.
 <a id="colosseo"></a>
 ## Colosseo
 

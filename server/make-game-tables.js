@@ -524,6 +524,30 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
       }));
     }
   }
+  // missioni «giro del mondo» (gen_story_maps.py, worldtour + recon/tools/world_links.json): una per
+  // mondo con tutte le stanze del mondo nelle risorse collegate come nel grafo, stage 991000 + worldId.
+  // Copie della 1050 (come le zoo); mondo, miniatura e musica dalla prima missione di storia del
+  // mondo, se c'e'. Si avviano con save/smoke.json {"stageId": 99100N} (docs/notes/mappe_storia.md).
+  if (process.env.KHUX_WORLDTOUR === '1') {
+    const tpl = stagesOut.find((s) => s.stageId === 1050);
+    const tours = [[1, 'Daybreak Town', 'Fountain Square'], [2, 'Dwarf Woodlands', 'Flower Glade'],
+      [3, 'Wonderland', 'Fork in the Road'], [4, 'Agrabah', 'Bazaar'], [5, 'Olympus Coliseum', 'Coliseum Entrance'],
+      [6, "Beast's Castle", 'Library: 1st Floor'], [7, 'Castle of Dreams', 'Path to the Chateau'],
+      [8, 'Enchanted Dominion', 'Forest Depths']];
+    for (const [w, name, mapName] of tours) {
+      const ref = stagesOut.filter((s) => s.stageKind === 1 && s.worldId === w && s.stageId < 100000)
+        .sort((a, b) => a.id - b.id)[0];
+      const row = Object.assign(JSON.parse(JSON.stringify(tpl)), {
+        stageId: 991000 + w, id: 9100 + w, name: `Tour ${name}`, mapName, useAp: 0,
+        validBeforeDrama: 0, beforeDramaId: [], beforeDramaType: [], validAfterDrama: 0, afterDramaId: [],
+        afterDramaType: [],
+      });
+      if (ref) {
+        for (const k of ['worldId', 'thumbId', 'bgmField', 'bgmBattle', 'bgmBoss']) if (k in ref) row[k] = ref[k];
+      }
+      stagesOut.push(row);
+    }
+  }
   // filmati: quelli assenti dalle risorse si cercano nel theater della versione finale
   // (righe con lo stesso stageId: i filmati della storia rifatti come lwf/drama/<id>)
   const theaterBy = new Map();
