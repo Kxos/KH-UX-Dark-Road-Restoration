@@ -1057,8 +1057,10 @@ function userDetailData() {
     partyId: 0, // uint64
     // maxMedal: medaglie possedibili. Con 0 (e 3 medaglie) «Begin» apre il popup di
     // limite superato (PopupNormal_MedalOver.json, assente dalle risorse): crash.
-    // 300 e' un segnaposto, il valore iniziale vero non e' noto.
-    unionId: player.unionId, maxMedal: Number(process.env.KHUX_MAX_MEDAL || 300), mvpCount: 0,
+    // 300 e' un segnaposto, il valore iniziale vero non e' noto; sempre sopra le medaglie
+    // possedute (prova con tutte le medaglie: server/grant-all-medals.js)
+    unionId: player.unionId,
+    maxMedal: Math.max(Number(process.env.KHUX_MAX_MEDAL || 300), player.medals.length + 50), mvpCount: 0,
     equipCoordinateNo: player.avatar ? AVATAR_COORDINATE : 0, // coordinato indossato (userAvatars)
     // numero della missione (campo id della tabella stage: Prologue = 1), non lo stageId
     // (1010): la schermata Quests ([fn]) lo confronta con misc 106 (130) per
