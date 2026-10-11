@@ -34,6 +34,9 @@ Raggiungibilita': i punti della griglia sono collegati solo se stanno nella stes
 pixel percorribili (spazio libero > "reach_radius", default 16; aggancio entro "reach_tol", default
 48), cosi' tutto cio' che si piazza e' raggiungibile dalla partenza / dagli arrivi; controllo con
 stage_gen/reach/validate_maps.py. Richiede numpy e scipy.
+Sacca d'ingresso: se il pezzo di griglia piu' grande arriva a piedi a meno di "pocket_ratio" (default
+0.4) della portata della componente di pixel piu' grande (corridoi larghi 33-80 unita' spezzano la
+griglia), si usano tutti i punti della componente con distanze geodetiche (vedi walk_grid).
 """
 import collections
 import hashlib
@@ -140,6 +143,15 @@ def pixel_comp(cls, W, H, stride):
         d2 = (xs + x0 - x) ** 2 + (ys + y0 - y) ** 2
         k = int(np.argmin(d2))
         return int(win[ys[k], xs[k]]) if d2[k] <= T * T else 0
+
+    def snap(x, y):
+        """(y, x) del pixel con componente piu' vicino entro REACH_TOL (come comp)."""
+        x0, y0 = max(0, x - T), max(0, y - T)
+        win = lab[y0:min(H, y + T + 1), x0:min(W, x + T + 1)]
+        ys, xs = np.nonzero(win)
+        k = int(np.argmin((xs + x0 - x) ** 2 + (ys + y0 - y) ** 2))
+        return int(ys[k] + y0), int(xs[k] + x0)
+    comp.lab, comp.snap = lab, snap
     return comp
 
 
@@ -187,8 +199,76 @@ def walk_grid(folder):
             if n in comp and n not in dist:
                 dist[n] = dist[c] + 1
                 q.append(n)
+    _old_size[folder] = (len(dist), max(dist.values()))
+    # Sacca d'ingresso (11 ottobre 2026): la griglia vuole 80x80 liberi intorno a ogni punto, quindi
+    # un corridoio largo 33-80 unita' (percorribile per la componente di pixel, e per validate_maps)
+    # la spezza in pezzi staccati, e il pezzo piu' grande puo' essere una sacca vicino all'ingresso
+    # (AG_0002_00_00: 35 punti su 78 della stessa area, bersaglio a 179 unita' dall'arrivo). Se la
+    # componente di pixel con piu' punti della griglia arriva a piedi molto piu' lontano del pezzo
+    # scelto (portata geodetica del pezzo < POCKET volte quella della componente), si usano tutti i
+    # punti della componente con le distanze geodetiche sui pixel (in passi di griglia, decimali).
+    # Altrimenti tutto resta come prima, byte per byte.
+    by_lab = collections.Counter(lab[p] for p in ok)
+    big = max(sorted(by_lab), key=by_lab.get)
+    info = {'old': len(comp), 'label': by_lab[big]}
+    if by_lab[big] > len(comp):
+        allp = {p for p in ok if lab[p] == big}
+        nstart = min(allp, key=lambda p: (p[0], p[1]))
+        ndist = geodesic(pc, allp, nstart)
+        same = {p for p in ok if lab[p] == lab[start]}
+        reach_old = max(v for p, v in geodesic(pc, same, start).items() if p in comp)
+        info.update(reach_old=reach_old, reach_new=max(ndist.values()))
+        if reach_old < POCKET * info['reach_new']:
+            start, dist = nstart, ndist
+            info['fixed'] = True
+            _geo_pc[folder] = pc
+    _walk_info[folder] = info
     _cls_cache[folder] = (start, dist)
     return start, dist
+
+
+_old_size, _walk_info, _geo_pc = {}, {}, {}
+POCKET = float(cfg.get('pocket_ratio', 0.4))
+
+
+GEO_F = 4    # lato in unita' delle celle per le distanze geodetiche
+
+
+def geodesic(pc, pts, src):
+    """Distanza a piedi (in passi di griglia, decimali) da src a ogni punto di pts, dentro la componente
+    di pixel di src (celle di GEO_F unita', 8-connesse)."""
+    import numpy as np
+    from scipy import sparse
+    from scipy.sparse import csgraph
+    lab, L = pc.lab, pc(*src)
+    H, W = lab.shape
+    F = GEO_F
+    Hc, Wc = -(-H // F), -(-W // F)
+    m = np.zeros((Hc * F, Wc * F), bool)
+    m[:H, :W] = lab == L
+    cell = m.reshape(Hc, F, Wc, F).any(axis=(1, 3))
+    idx = -np.ones(cell.shape, np.int64)
+    idx[cell] = np.arange(int(cell.sum()))
+    rows, cols, ws = [], [], []
+    for dy, dx, w in ((0, 1, 1.0), (1, 0, 1.0), (1, 1, 2 ** 0.5), (1, -1, 2 ** 0.5)):
+        a = idx[max(0, -dy):Hc - max(0, dy), max(0, -dx):Wc - max(0, dx)]
+        b = idx[dy:dy + a.shape[0], max(0, dx):max(0, dx) + a.shape[1]]
+        k = (a >= 0) & (b >= 0)
+        rows.append(a[k])
+        cols.append(b[k])
+        ws.append(np.full(int(k.sum()), w))
+    n = int(cell.sum())
+    g = sparse.coo_matrix((np.concatenate(ws), (np.concatenate(rows), np.concatenate(cols))), shape=(n, n)).tocsr()
+    sy, sx = pc.snap(*src)
+    d = csgraph.dijkstra(g, directed=False, indices=int(idx[sy // F, sx // F]))
+    out = {}
+    for p in pts:
+        y, x = pc.snap(*p)
+        v = d[idx[y // F, x // F]]
+        if np.isfinite(v):
+            out[p] = round(float(v) * F / GRID, 3)
+    out[src] = 0
+    return out
 
 
 u32 = lambda b, o: struct.unpack_from('<i', b, o)[0]  # noqa: E731
@@ -289,9 +369,13 @@ def bfs(src, pts):
     return dist
 
 
-def arrival_near(exit_pt, pts):
-    """Punto percorribile ~STEP_IN passi dentro dall'uscita e a piu' di 96 (meglio 200) da essa."""
+def arrival_near(exit_pt, pts, folder=None):
+    """Punto percorribile ~STEP_IN passi dentro dall'uscita e a piu' di 96 (meglio 200) da essa.
+    Nelle stanze corrette per la sacca d'ingresso (_geo_pc) il pezzo di griglia dell'uscita puo' essere
+    tutto entro 120 unita': allora si misura a piedi su tutta la componente di pixel."""
     d = bfs(exit_pt, pts)
+    if folder in _geo_pc and not any(dd(p, exit_pt) > 120 for p in d):
+        d = geodesic(_geo_pc[folder], pts, exit_pt)
     cand = [p for p in d if dd(p, exit_pt) >= 200] or [p for p in d if dd(p, exit_pt) > 120] or list(d)
     return min(cand, key=lambda p: (abs(d[p] - STEP_IN), -dd(p, exit_pt), p))
 
@@ -406,8 +490,9 @@ def room_folder_mr(name, world, avoid=None):
     first = None
     for i in range(len(base)):
         f = base[(h + i) % len(base)]
-        st, d = walk_grid(f)
-        if len(d) >= MIN_PTS and max(d.values()) >= MIN_STEPS:
+        walk_grid(f)
+        n_old, steps_old = _old_size[f]     # misura di prima: stesse stanze scelte
+        if n_old >= MIN_PTS and steps_old >= MIN_STEPS:
             if f != avoid:
                 return f
             first = first or f
@@ -461,8 +546,8 @@ def build_multi(s, q, room_names, groups):
     fars = [max(d, key=lambda p: (d[p], -p[1])) for _, d in grids]
     cents = [centroid(p) for p in pts]
     # punti: uscita avanti fwd[k] (k < R-1) = fars[k]; uscita indietro back[k] (k > 0) = starts[k]
-    arr_in = [None] + [arrival_near(starts[k], pts[k]) for k in range(1, R)]        # entrando da avanti
-    arr_back = [arrival_near(fars[k], pts[k]) for k in range(R - 1)] + [None]       # tornando indietro
+    arr_in = [None] + [arrival_near(starts[k], pts[k], folders_[k]) for k in range(1, R)]        # entrando da avanti
+    arr_back = [arrival_near(fars[k], pts[k], folders_[k]) for k in range(R - 1)] + [None]       # tornando indietro
     face = lambda k, p: 1 if cents[k][0] < p[0] else 2                              # noqa: E731
     angle = lambda k, p: 35 if p[0] >= cents[k][0] else 220                         # noqa: E731
     # le posizioni dei nemici dipendono solo dai punti delle uscite, non dai loro campi: una prima
