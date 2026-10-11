@@ -58,6 +58,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-073 | CHIUSO | Vendita medaglie: lenta (server: `masterRows` rileggeva medal.json per ogni medaglia; ora in cache, risposta ~1 s; resta ~2-3 s del client per rileggere `userMedals` con le 2090 medaglie del salvataggio di prova), icona dei Munny schiacciata nella conferma (ora targhe come «Sale complete!»), medaglie iniziali non vendute (+90 invece di 180), cella vuota = riga segnaposto 1 «空き» data da `grant-all-medals.js` (ora esclusa e tolta dal salvataggio) | [medaglie](notes/medaglie.md) | banco ms_7, ms_9 |
 | I-071 | IN CORSO | Home: fumetto bianco vuoto sopra l'avatar = messaggio del Profilo vuoto (`MyPage_MpBaloon`, `[fn]`); il server manda «Nice to meet you!» se il messaggio e' vuoto, `GET /mypage` con rotta propria; da provare sul banco | [home_profilo](notes/home_profilo.md#home) | banco mg_ap1 |
 | I-005 | APERTO | Pet: risposte con `petSubslot` in crash; mancano `PetInfoScene`, `PetInfoAnim`, `lwf/pet` | [home_profilo](notes/home_profilo.md#pet) | 640d345 |
 | I-015 | APERTO | Messaggio del Profilo vuoto con `adb input text`; fumetto della home vuoto | [home_profilo](notes/home_profilo.md#profilo) | 63e716e |
