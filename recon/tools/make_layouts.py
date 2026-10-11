@@ -150,6 +150,13 @@ def reward_icons(x, y):
                P('Area_MixCircle', x - 45, y - 45, 90, 90, visible=False)])
 
 
+# Un ImageView in 9-slice con una texture assente da ogni risorsa manda in crash GUIReader
+# (setScale9Enabled -> Scale9Sprite sul file mancante, SIGSEGV a 0x2c: pc 1372748, lr 12db038,
+# 126f988, 1251ac8 loadTexture, 1251d94 setScale9Enabled, 11cfd88 lettore ImageView; banco
+# absmax). Se il 9-slice e' spento la texture mancante e' tollerata. Plate21 (Countdown_panel di
+# PopupNormal_Continue_Multi) non esiste nella 4.3.1: Plate18 (servita), senza 9-slice, nascosto.
+NO_PLATE21 = ('tex', 'Countdown_panel', 'Plate18.png', dict(scale9Enable=False, visible=False))
+
 LAYOUTS = {
     # Presents ([fn] scena, [fn] base, [fn] pannello): stessi
     # nomi della versione Dark Road (Txt_Wording, Scroll_Area, Txt_None, Txt_Stock*,
@@ -673,7 +680,7 @@ LAYOUTS = {
     # Button_Close/Txt_Cancel. Stessi widget e stile di PopupNormal_Continue_Multi (originale),
     # piu' la riga del tempo; niente conto alla rovescia.
     'PopupNormal_AP_Recovery.json': ('copy', 'PopupNormal_Continue_Multi.json', {}, False, [
-        ('opts', 'Countdown_panel', dict(visible=False)),
+        NO_PLATE21,
         ('opts', 'NormalText_Window03', dict(height=380, scale9Height=380)),
         ('opts', 'Txt_Wording', dict(y=118)),
         ('opts', 'Txt_Wording2', dict(y=52)),
@@ -690,7 +697,7 @@ LAYOUTS = {
     # Txt_CrownPossessed (100310002 «Held»), Txt_CrownPossessed_Label, Button_OK/Txt_OK,
     # Button_Close/Txt_Cancel: PopupNormal_Continue_Multi senza la seconda riga e il conto.
     'PopupNormal_Ability_MAX.json': ('copy', 'PopupNormal_Continue_Multi.json', {}, False, [
-        ('opts', 'Countdown_panel', dict(visible=False)),
+        NO_PLATE21,
         ('text', 'Txt_Wording2', ''),
         ('opts', 'Txt_Wording2', dict(visible=False)),
         ('opts', 'Txt_Wording', dict(y=80, height=90))]),
@@ -806,7 +813,7 @@ LAYOUTS = {
     # Button_OK/Txt_OK, Button_Close/Txt_Cancel, Txt_Countdown); il conto alla rovescia e'
     # del multigiocatore.
     'PopupNormal_Continue.json': ('copy', 'PopupNormal_Continue_Multi.json', {}, False, [
-        ('opts', 'Countdown_panel', dict(visible=False))]),
+        NO_PLATE21]),
     'AvatarInfo_Txt2.json': ('copy', 'AvatarInfo_Txt_ver340.json',
                              {'Area_Revolver': 'Area_Revolver_None', 'Area_RevolverPet': 'Area_RevolverPet_None'},
                              False, [
@@ -1104,7 +1111,11 @@ LAYOUTS = {
         P('Panel_MixResult_Area', 486, 50, 562, 300),
         P('Tap_Screen_Area', 480, 15, 1, 1)]),
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
-                                     [('text', 'Txt_Title_Label', 'Unequip this Medal from where it is set.'),
+                                     [# Win_Over (9-slice) usa Panel07, assente da ogni risorsa: stesso
+                                      # crash di Plate21 (vedi NO_PLATE21); finestra blu Win04
+                                      ('tex', 'Win_Over', 'Win04.png', dict(capInsetsX=50, capInsetsY=60,
+                                                                            capInsetsWidth=1, capInsetsHeight=200)),
+                                      ('text', 'Txt_Title_Label', 'Unequip this Medal from where it is set.'),
                                       ('text', 'Txt_Cancel', 'Cancel')]),
     # Evolve ([fn]): senza MedalEvoScene_ver320 [fn] restituisce null e il
     # client va in crash all'addChild. Nodi come nella ver260 (UnderUI, CenterUI_Left,
