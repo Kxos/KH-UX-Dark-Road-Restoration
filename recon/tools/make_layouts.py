@@ -1091,30 +1091,38 @@ LAYOUTS = {
     # elenco Scroll_Area, «Stock» (Txt_Stock con Txt_Stock_Num_Label / Txt_Stock_All_Label),
     # «Receive All» (Button/Txt_ReceiveAll), Mask_Area/Mask/Txt_Warning, Txt_None,
     # Cautio_Panel/Txt, Close_Button
+    # Disposizione da reference\other_menu\missions_list_01.jpg (Limited aperta): schede
+    # 176x50 sopra la finestra (il codice vi carica img/ui/MyMission_Category_On/_Off e
+    # MyMission_GroupIcon1/2), omini a sinistra, corona in alto a destra; elenco di 3 righe;
+    # in basso «Missions Cleared n/m» in una pillola scura e «Collect All» a destra; X sull'angolo.
+    # Mask_Area (avviso «Join a party...» delle settimanali senza party) copre solo l'elenco:
+    # stesa su tutta la finestra copriva anche le schede e dopo Weekly Daily non si toccava piu'
     'MyPageMission_Base_ver320.json': ('build', P('mission_root', 0, 0, 960, 640, [
-        I('Win_Mission', 480, 300, 900, 560, 'Win04.png',
+        I('Win_Mission', 480, 312, 884, 540, 'Win04.png',
           opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
-        *[I('tab%d' % k, 150 + 170 * (k - 1), 555, 160, 48, 'Plate01.png', s9=False, children=[
-            L('Txt_Tab', 0, 0, 150, 40, '', 20),
+        *[I('tab%d' % k, 133 + 181 * (k - 1), 606, 176, 50, 'MyMission_Category_Off.png', s9=False, children=[
+            L('Txt_Tab', 18, -2, 120, 40, '', 22),
             L('MyMission_Category', 0, 0, 150, 40, '', 20, visible=False),
-            I('GroupIcon', -60, 0, 40, 40, 'Plate01.png', s9=False, visible=False),
-            I('Icon_Crown', 60, 18, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, scale=0.6, visible=False),
-            I('Icon_New', 60, 22, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)])
+            I('GroupIcon', -58, -2, 28, 38, 'MyMission_GroupIcon1.png', s9=False),
+            P('UpArrow', 70, 0, 10, 10),
+            I('Icon_Crown', 78, 20, 56, 40, 'AvtInfo_CrownIcon4.png', s9=False, scale=0.6, visible=False),
+            I('Icon_New', -60, 26, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)])
           for k in range(1, 5)],
-        I('Grid_Mission', 480, 290, 860, 410, 'Panel04.png', opts=GRID),
-        P('Scroll_Area', 55, 90, 850, 400),
-        L('Txt_None', 480, 290, 600, 40, '', 24, visible=False),
-        P('Stock', 60, 40, 300, 40, [
-            L('Txt_Stock', 0, 20, 140, 30, '', 20, opts=dict(anchorPointX=0, hAlignment=0)),
-            L('Txt_Stock_Num_Label', 180, 20, 50, 30, '0', 22, opts=dict(anchorPointX=1, hAlignment=2)),
-            L('Txt_Stock_Slash', 190, 20, 20, 30, '/', 22),
-            L('Txt_Stock_All_Label', 200, 20, 60, 30, '0', 22, opts=dict(anchorPointX=0, hAlignment=0))]),
-        B('Button', 760, 60, 233, 68, 'But01', '', 28, label='Txt_ReceiveAll', opts=BUTS),
-        P('Mask_Area', 30, 20, 900, 560, [
-            P('Mask', 0, 0, 900, 560),
-            L('Txt_Warning', 450, 280, 700, 60, '', 22)], visible=False),
-        P('Cautio_Panel', 30, 500, 900, 30, [L('Txt', 450, 15, 860, 26, '', 18)], visible=False),
-        B('Close_Button', 920, 570, 64, 64, 'But_Close', None)])),
+        I('Grid_Mission', 480, 333, 860, 452, 'Panel04.png', opts=GRID),
+        P('Scroll_Area', 55, 111, 850, 444),
+        L('Txt_None', 480, 333, 600, 40, '', 24, visible=False),
+        I('Stock_Base', 262, 74, 426, 28, 'MyMission_Stock.png', s9=False),
+        P('Stock', 66, 54, 400, 40, [
+            L('Txt_Stock', 0, 20, 240, 30, '', 20, opts=dict(anchorPointX=0, hAlignment=0)),
+            L('Txt_Stock_Num_Label', 340, 20, 50, 30, '0', 20, opts=dict(anchorPointX=1, hAlignment=2)),
+            L('Txt_Stock_Slash', 348, 20, 16, 30, '/', 20),
+            L('Txt_Stock_All_Label', 356, 20, 50, 30, '0', 20, opts=dict(anchorPointX=0, hAlignment=0))]),
+        B('Button', 805, 74, 190, 58, 'But01', '', 24, label='Txt_ReceiveAll', opts=BUTS),
+        P('Mask_Area', 50, 107, 860, 452, [
+            P('Mask', 0, 0, 860, 452, opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=110)),
+            L('Txt_Warning', 430, 226, 700, 80, '', 24)], visible=False),
+        P('Cautio_Panel', 50, 520, 860, 30, [L('Txt', 430, 15, 840, 26, '', 18)], visible=False),
+        B('Close_Button', 912, 582, 64, 64, 'But_Close', None)])),
     # Riga di una missione ([fn] la carica in MissionScrollView, [fn] /
     # [fn] / [fn] la riempiono): Panel_Present (vi mette PresentBOX_IconPanel),
     # Txt_Mission_Title_Label, Txt_Gift_Name_Label, Panel_Mask e GetStamp (riscossa),
