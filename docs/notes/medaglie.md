@@ -27,6 +27,11 @@ ottobre). Tocchi in [banco.md](banco.md#tocchi).
   guida dell'utente si ferma alla 8, scritta prima delle tier 9-10). Il moltiplicatore dei
   subslot dipende dal tier (calcolato dal client; subslot non ancora serviti: `subslotMaxNum` 0).
   `userMedal.guiltFactor` (bonus sbloccato della copia) resta 0; `guiltProb` vuota.
+  Icone (`reference\medal_tier\NOTE.md`): dettaglio e filtro = `MedalInfo_Guilt1-8` originali
+  (tondo blu con la cifra, non segnaposto) + 9-10 generate; le icone quadrate della guida
+  dell'utente sono le `Guilt<n>_On` delle schermate keyblade (`[fn]`, che carica anche
+  `_Off`, `_Err`, `_num`, `MD_Guilt<n>_*`): nelle risorse solo `Guilt4_On`, `Guilt5_On` e
+  `Guilt1-8_Err`; `make_textures.py` genera le altre (On/Off dalla khuxwiki; `_num` e `MD_*` copie).
 - Shuffleskill/trait: `shuffleskillSlot` (+0x4b4) e `spShuffleskillSlot` (+0x4b8) non esistono nel
   formato vecchio. `make-game-tables.js` (`traitSlots`, khuxwiki «Trait Slots»): tier 1-3 -> 1,
   4-5 -> 2, 6-10 -> 3, SN/Supernova e Prime 7★ -> 5, Prime 6★ -> 3, supporto 0; 1 slot speciale a
@@ -88,8 +93,15 @@ Raid, Thundaga, Heaven's Sword) (ISSUES I-033).
 `Filter_Evo_Set`, `Filter_Ability_*`: cloni nascosti di CheckBox (`Filter_Sb` dentro `Dummy_Sb`,
 genitore letto a 00a482ac). Texture ricostruite in `make_textures.py` (riferimenti
 `reference\medal_list\sort_filter\`). Da confrontare con l'originale: «Favorite», «SP Attack Bonus /
-No Bonus» grigi, «Imitation», «Special Traits» con 11 icone e «None» due volte; il filtro Guilt 9 usa
-l'icona dell'8 (`MedalInfo_Guilt9` assente) (ISSUES I-023).
+No Bonus» grigi, «Imitation», «Special Traits» con 11 icone e «None» due volte (ISSUES I-023).
+
+Riga «SP Attack Bonus» (tier): il layout originale ver320 ha `Filter_Guilt1..9` (8 in alto, il 9
+sotto a sinistra) con `Logo_01` = `MedalInfo_Guilt<n>.png`; il codice (`[fn]`) cerca
+`Filter_Guilt%d` da 1 finche' li trova, e la ver350 ne vuole 10 (clone di `make_layouts.py`). Prima
+il 10 era nascosto sotto il 9 e `MedalInfo_Guilt9` era una copia dell'8; ora 9 e 10 sono disegnate
+(`make_textures.py`, stile delle 1-8 originali) e il 10 sta accanto al 9 (x 185). Le tier 9-10
+esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone e confronti:
+`D:\Progetto_Restauro_KH_UX\reference\medal_tier\NOTE.md` ([tier](#tier)).
 
 <a id="vendita"></a>
 ## Vendita (Sell Medals) e lucchetto
