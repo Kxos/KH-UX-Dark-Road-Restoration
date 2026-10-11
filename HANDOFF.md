@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 32**, **revisione master 81** (default degli script di sessione).
+Stato del banco: **risorse 32**, **revisione master 82** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
