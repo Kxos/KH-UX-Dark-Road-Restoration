@@ -72,17 +72,15 @@ L'utente ricorda che la gauge resta salvata nel keyblade. `server.js` salva in
 in `userKeyblades[].burst`: il nome vero del campo e' da verificare sul log «[gauge]» (ISSUES I-030).
 
 <a id="sconfitta"></a>
-## Sconfitta in solo (IN CORSO)
+## Sconfitta in solo
 
-- Riproduzione: `player.sphereBonus.hp = -2950` nel salvataggio (HP 50; PROVVISORIO, rimettere 40)
-  sulla missione 12 (No Way In): HP 0, animazione del KO, crash entro 1 s, nessun popup e nessuna
-  richiesta (niente `/stage/continue`).
-- Cattura ARM: init di una scena (`[fn]`, create `[fn]`) che carica `PartyTopScene`
-  (mancante, come tutti i `PartyTop_*`) -> `addChild(null)`. Chi la chiede al KO: lavoro dell'agente in
-  `stage_gen\ko_party` (ISSUES I-001).
-- Il popup di continuazione in solo e' `PopupNormal_Continue.json` (`[fn]`; esisteva solo
-  `_Multi`): ora generato da `make_layouts.py`, mai visto sul banco perche' il crash arriva prima
-  (ISSUES I-004). Prima, alla sconfitta nella 1240 parte 2 (Bandit + Red Nocturne, grafiche 5008/5004,
-  3040 HP azzerati a LV3 con 2 medaglie in una missione da 27: bilanciamento, ISSUES I-013) il crash
-  era in GUIReader per quel layout.
+- Funziona (banco 11-10): KO -> «Spend 100 Jewels to continue?» (`PopupNormal_Continue`, Held =
+  jewel posseduti). OK -> `POST /stage/continue`: il server scala `CONTINUE_STONE` (100) da
+  `freeStone`, HP pieni e gauge speciale MAX (3660 -> 3560 su server e HUD). Cancel -> «Give up
+  anyway?» -> OK -> `POST /stage/retire` e ritorno alla lista delle missioni.
+- Riproduzione: `player.sphereBonus.hp = -2950` nel salvataggio (HP 50) e relogin; Quest 130
+  (Armored Knight) basta. Rimettere `hp = 40` a prova finita.
+- Il vecchio «crash in PartyTopScene» era una cattura falsata (i tocchi di avvio di stackcap
+  aprivano Party: usare `-NoStart`); le cause vere erano layout mancanti e il 9-slice su Plate21.
+- Bilanciamento: Bandit + Red Nocturne (1240 parte 2) azzerano 3040 HP a LV3 (ISSUES I-013).
 - Nel tutorial la morte mostra un avviso, mai catturato (ISSUES I-031).

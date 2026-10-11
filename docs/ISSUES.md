@@ -16,9 +16,6 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
-| I-001 | IN CORSO | Crash alla sconfitta in solo: init di una scena che carica `PartyTopScene` (mancante) | [battaglia](notes/battaglia.md#sconfitta) | ab62db9; `stage_gen\ko_party` |
-| I-004 | DA VERIFICARE | Popup Continue in solo (`PopupNormal_Continue`) generato, mai visto (il crash I-001 arriva prima) | [battaglia](notes/battaglia.md#sconfitta) | f10ea90 |
-| I-028 | APERTO | Salvataggio con `sphereBonus.hp = -2950` per provare la sconfitta: rimettere 40 a prova finita | [server](notes/server.md#salvataggio) | ab62db9; `server/save/player.json` |
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
 | I-030 | DA VERIFICARE | Gauge degli speciali salvata nel keyblade: nome del campo di `/stage/clear` da leggere nel log «[gauge]» | [battaglia](notes/battaglia.md#gauge) | 631ab31 |
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
@@ -107,6 +104,9 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-001 | Battaglia | Crash alla sconfitta in solo: non era `PartyTopScene` (cattura falsata dai tocchi di stackcap) ma layout mancanti/9-slice su Plate21; ora animazione KO, popup Continue/Give up | banco 11-10, ko_b2..ko_b5 |
+| I-004 | Battaglia | Popup Continue in solo: «Spend 100 Jewels to continue?», OK -> `/stage/continue` scala 100 jewel (3660 -> 3560 su server e client, HP e gauge MAX), Cancel -> Give up -> `/stage/retire` e lista | banco ko_cont, ko_b5 |
+| I-028 | Server | Salvataggio di prova della sconfitta: `sphereBonus.hp` rimesso a 40 | `server/save/player.json` |
 | I-007 | Bacheche | Avatar Boards: layout, popup, immagini, master `sphere*`; elenco, sblocco, Unlock All, bacheca completata provati | ae832fe, 0d82e57, 6b10bab, 30974b0, b37597b (banco 11-10, ris. 32 rev. 81) |
 | I-010 | Mappe | Uscite fra stanze ricavate, missioni multi-parte (1060 e 1240 percorse) | 05cfba5, fdcfa7e, 2d13a5c, 98b31d1 |
 | I-011 | Mappe | Nemici senza grafica: grafica Dark Road per nome (312 nemici, 51 grafiche), zoo 50/51 | 2c57c06, 6a116c6 |
