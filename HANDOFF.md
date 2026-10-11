@@ -100,7 +100,23 @@ qui c'è come.
   conclusa). Altri 254 layout in catalog\missing_layouts.txt sono trappole uguali: con pc/lr
   fra 0x11ad000 e 0x11b2000 cercare il percorso del layout nei registri.
   ATTENZIONE armtrace: dopo `capture.ps1 -Arm` lanciare sempre `-Release`, altrimenti i
-  tombstone restano spenti.- **Messaggio del Profilo**: anche con Invio o Indietro dopo `adb input text` il client manda
+  tombstone restano spenti.- **CRASH DOPO IL LEVEL UP E IN HOME: popup della bacheca sbloccata (11 ottobre, provato)**. Dopo
+  «Level Up!» (LV3 -> 4, 1070) e poi a ogni login il client apriva `BattleResult_LB_ver120.json`
+  ([fn], mancante -> GUIReader). Causa vera: `/user/sphere/check` rispondeva con TUTTE le
+  bacheche e ogni voce di userSphereDatas e' per il client «bacheca appena sbloccata» (elenco
+  [fn]()+0x6a8, letto da home [fn], risultati [fn], elenco bacheche;
+  analisi in stage_gen\lb_popup, vedi rapporto dell'agente nel commit f1b4c0b). Ora il server manda
+  solo le bacheche non ancora annunciate (`player.sphereNotified`; array vuoto, non chiave mancante:
+  la chiave mancante lascia l'elenco com'e'). Layout ricavato da PopupNormal_Text_34_4Line_Ok
+  (Txt, Select_Base/Board/Kind, Txt_Title_Label, Button_Ok/Txt_OK, Area_Point). Banco: popup
+  «CONGRATULATIONS / Unlocked an Avatar Board! / Expert Explorer / OK» in home, OK lo chiude;
+  missione 11 con Level Up 3 -> 4 e ritorno all'elenco senza crash; Give Up (/stage/retire) ok.
+  Originale del popup non trovato online (reference\lb_popup: stile da «Purchased Avatar Board!»).
+  `stackcap.ps1 -NoStart -WaitSec N` arma la cattura mentre un altro script provoca il crash
+  (non troncare l'output con Select-Object -First: interrompe lo script prima del -Release).
+  Riavviare il SOLO server senza rifare il login rompe la decifratura dei corpi (stageId perso):
+  usare sempre relogin.ps1. Il Seek della 1070 (bosco) si blocca sull'albero: giocarla a mano.
+- **Messaggio del Profilo**: anche con Invio o Indietro dopo `adb input text` il client manda
   `comment: ""` (l'EditBox nativo non riceve il testo): il fumetto della home resta vuoto.
 - **1050 corretta provata**: -Seek fino a /stage/clear (solo il bersaglio).
 - **Pet (riferimenti)**: `D:\Progetto_Restauro_KH_UX\reference\pet\` (NOTE.md + 14 screenshot): pet =
