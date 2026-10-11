@@ -632,6 +632,67 @@ LAYOUTS = {
         # Panel: il codice ne cambia solo una proprieta' (vtable +0x428); trasparente, sotto la finestra
         ('add', 'Panel_8', P('Panel', 0, 0, 10, 10)),
         P('Area_Point', 480, 560, 10, 10)]),
+    # Costo del deck superato su «Begin» (FUN_0098d7a4/FUN_0098df84, StartDeckEditDialog: da
+    # FUN_00991fac e FUN_00994c0c quando FUN_0098ce50 trova il costo > maxDeckCost; anche
+    # FUN_00cf8e58, FUN_00dab0e4, FUN_00995490). Cerca: 4Line_Label (103000020 «Exceeds
+    # equipment cost. Please change your Medals.»), Button_Equip con Txt_Equip (100100006
+    # «Equipment», porta al deck), Close_Button. Dal popup OK originale con la X tonda.
+    'PopupNormal_Cost_Over.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                   {'Button_OK': 'Button_Equip', 'Txt_OK': 'Txt_Equip'}, False, [
+        ('text', '4Line_Label', ''),
+        ('add', 'NormalText_Window01', B('Close_Button', 300, 141, 64, 64, 'But_Close', None))]),
+    # Uscita dal Deck con deck oltre il costo (FUN_00c0ff20, da FUN_00c0f7dc; param_3 = deck 1-3
+    # oltre il costo). Cerca: 4Line_Label (101200022 «Exceeds equipment cost of %s.», scritto con
+    # FUN_006e98dc), Button_Equip con Txt_Equip (100100001 «OK»), DeckBut_Area (Panel: il codice
+    # vi aggiunge un'icona Deck_But0N_On per deck, 125 px l'una dall'altra, centrate).
+    'DeckEdit_Cost_Over_ver131.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                       {'Button_OK': 'Button_Equip', 'Txt_OK': 'Txt_Equip'}, False, [
+        ('text', '4Line_Label', ''),
+        ('opts', 'NormalText_Window01', dict(height=380, scale9Height=380, scale9Enable=True, capInsetsX=50,
+                                             capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        ('opts', '4Line_Label', dict(y=105, height=100, areaHeight=100, hAlignment=1, vAlignment=1)),
+        ('opts', 'Button_Equip', dict(y=-134)),
+        ('add', 'NormalText_Window01', P('DeckBut_Area', -250, -70, 500, 100))]),
+    # AP insufficiente (FUN_006e5d10, da FUN_006e5a7c): ricarica con jewel. Cerca: Txt_Wording
+    # (102600018 «Not enough AP. Spend %d Jewels to fully restore AP?», resa XML), Txt_Wording2
+    # (102600047), Txt_AP_Recovery (102600051 «1 AP restored in %02d:%02d.»),
+    # Txt_CrownPossessed (100310002 «Held»), Txt_CrownPossessed_Label, Button_OK/Txt_OK,
+    # Button_Close/Txt_Cancel. Stessi widget e stile di PopupNormal_Continue_Multi (originale),
+    # piu' la riga del tempo; niente conto alla rovescia.
+    'PopupNormal_AP_Recovery.json': ('copy', 'PopupNormal_Continue_Multi.json', {}, False, [
+        ('opts', 'Countdown_panel', dict(visible=False)),
+        ('opts', 'NormalText_Window03', dict(height=380, scale9Height=380)),
+        ('opts', 'Txt_Wording', dict(y=118)),
+        ('opts', 'Txt_Wording2', dict(y=52)),
+        ('opts', 'Txt_CrownPossessed', dict(y=-38)),
+        ('opts', 'LB_Jewel', dict(y=-38)),
+        ('opts', 'Txt_CrownPossessed_Label', dict(y=-37)),
+        ('opts', 'Button_OK', dict(y=-128)),
+        ('opts', 'Button_Close', dict(y=-128)),
+        ('add', 'NormalText_Window03', L('Txt_AP_Recovery', 0, 12, 612, 34, '', 22,
+                                         opts=dict(hAlignment=1, vAlignment=1)))]),
+    # Medaglie oltre il limite (FUN_00b9dd2c; da Begin, Medal List, negozio, ...: possedute >=
+    # userDetail.maxMedal). Cerca: NormalText_Window01, 4Line_Label (102610002/3 + 102610008,
+    # resa XML), Button_Extension/Txt_Extension (102610007 «Increase Storage»), Button_Mix/Txt_Mix
+    # (101300001 «Level Up»), Button_Sell/Txt_Sell (100100029 «Sell»); nomi letti dalle stringhe
+    # (widget_lookup.py non li decodifica tutti). Dal popup OK/Annulla originale, tre pulsanti.
+    'PopupNormal_MedalOver.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
+                                   {'Button_OK': 'Button_Mix', 'Txt_OK': 'Txt_Mix',
+                                    'Button_Close': 'Button_Sell', 'Txt_Cancel': 'Txt_Sell'}, False, [
+        ('text', '4Line_Label', ''),
+        ('text', 'Txt_Mix', 'Level Up'),
+        ('text', 'Txt_Sell', 'Sell'),
+        ('opts', 'NormalText_Window01', dict(width=700, scale9Width=700, height=380, scale9Height=380,
+                                             scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1,
+                                             capInsetsHeight=200)),
+        ('opts', '4Line_Label', dict(y=55, width=640, areaWidth=640, height=200, areaHeight=200)),
+        ('clone_r', 'Button_Mix', 'Button_Extension', 'NormalText_Window01', {'Txt_Mix': 'Txt_Extension'}),
+        ('opts', 'Button_Extension', dict(x=-215, y=-130, visible=True)),
+        ('text', 'Txt_Extension', 'Increase\nStorage'),
+        ('opts', 'Txt_Extension', dict(fontSize=22)),
+        ('opts', 'Button_Mix', dict(x=0, y=-130, normalData={'path': 'But03_Off.png', 'plistFile': '', 'resourceType': 0},
+                                    pressedData={'path': 'But03_On.png', 'plistFile': '', 'resourceType': 0})),
+        ('opts', 'Button_Sell', dict(x=215, y=-130))]),
     # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Profilo (AvatarInfoDialog: open FUN_008d785c carica la scena nascosta e chiede
