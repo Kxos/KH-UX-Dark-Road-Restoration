@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-052**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-054**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -30,13 +30,15 @@ Ultima revisione: 11 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-002 | IN CORSO | 254 layout citati dal binario e assenti (`catalog\missing_layouts.txt`): triage | [risorse_layout](notes/risorse_layout.md#mancanti) | 10-11 |
+| I-053 | DA VERIFICARE | Crash del menu Quests dopo la Quest 130: testo ui 102850008 assente (Txt_Title4, FUN_00d97410 a 0xd98c94) | [risorse_layout](notes/risorse_layout.md#regole) | 3b6bbb3 |
+| I-054 | APERTO | Colosseo: layout AdventureTop2_Colosseum_Button/_Panel/_Target, Colosseum_MainPanel e GET /colosseum da fare | [server](notes/server.md#colosseo) | stage_gen\layout_triage |
 | I-048 | DA VERIFICARE | Scheda Events (dopo la Quest 14): `AdventureTop2_EV_Banner_ver220`/`_EV_Button`/`_Raid_Button` generati, `GET /stage/event` con `events: []` | [server](notes/server.md#eventi) | stage_gen\layout_triage |
 | I-049 | DA VERIFICARE | Crash 0x2c in GUIReader: 9-slice su texture assente (Plate21 in Continue/AP_Recovery/Ability_MAX, Panel07 in ReleaseWindow) | [risorse_layout](notes/risorse_layout.md#regole) | 0603a9c |
 | I-050 | DA VERIFICARE | Keyblade posseduti: premio di tipo 13 (Treasure Trove dalla Quest 14) mai dato, popup con l'immagine di Olympia; ora proprieta' nel salvataggio, `/user/keyblade/update/170516`, `img/keyBlade/KeyBlade_%06d.png` generate | [server](notes/server.md#keyblade) | 30549ba |
 | I-051 | DA VERIFICARE | Crash di Optimize su Treasure Trove: la cella della medaglia (`FUN_008c8904`) carica `lwf/medal/medaltype/MedalType%d` per la medaglia del tipo dello slot (Power 1, Speed 2), servito solo MedalType3: copie ricolorate MedalType1/2/01 | [server](notes/server.md#keyblade) | make_medaltype_lwf.py |
 | I-052 | APERTO | «Select a Keyblade»: Treasure Trove spostato a destra/in alto e tagliato (Starlight centrato): geometria del LWF keyblade_0201_01 o ofsX/ofsY della tabella keyblade, da distinguere sul banco | [server](notes/server.md#keyblade) | screenshots\kb2_sel.png |
 | I-006 | APERTO | Party: tutti i layout `PartyTop_*` mancanti (legato a I-001) | [risorse_layout](notes/risorse_layout.md#mancanti) | ab62db9 |
-| I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008, 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
+| I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008 ora «Available quests!», 3b6bbb3; 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
 | I-035 | APERTO | Presents: cornici viola di Dark Road da sostituire con le texture blu | [home_profilo](notes/home_profilo.md#presents) | 081b0cb |
 
 ### Mappe e missioni di storia

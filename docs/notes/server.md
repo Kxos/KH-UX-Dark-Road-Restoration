@@ -240,3 +240,22 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   keyblade (`FUN_00acdfa8`, `lwf/avatar/keyblade/...`), con `rotation`/`scaling`/`ofsX`/`ofsY`
   della tabella keyblade. Non e' chiaro se il riquadro usa quei campi: prova sul banco cambiando
   `ofsX[0]`/`ofsY[0]` della riga 2000 (revisione dei master +1) prima di toccare LWF o dati.
+
+<a id="colosseo"></a>
+## Colosseo (da fare)
+
+- Il menu Quests (`FUN_00d97410`) dopo la Quest 130 scrive il testo ui 102850008 in `Txt_Title4`:
+  mancava ovunque, crash a 0x8 (ora in `make_layouts.py` TEXTS).
+- Il tocco su una tessera chiama `FUN_00d9b3ac(scena, 0x10)` -> `GET /multi/status` (azione 158,
+  `FUN_007fe614`, parser `FUN_0077ff44`; endpoint di un altro agente) -> `FUN_00d95508(scena, 10)`.
+  Da verificare quale tessera (Union Cross o Colosseo) apre quale modo.
+- `GET /colosseum` (azione 124, parser `FUN_0079b184`): `colosseumInfo {colosseumStageId int,
+  status int}`, `colosseumStages[]` (elemento `FUN_0079affc`: `stageId`, `useAp`, `rank`,
+  `stageCount`, tutti int), `colosseumRank` uint, `userColosseum {userRank, userStageCount,
+  userStageTotalCount}` int. Altre azioni: 125 `/colosseum/reward/list`, 126 start, 127 retire,
+  128 clear, 139/140/180 classifiche.
+- Layout mancanti: `AdventureTop2_Colosseum_Button` (`FUN_00da13b0`: ColosseumInfo, Button_Start/
+  Txt_Start, ImageButton_QuestStart, Button_Ranking/Txt, Button_Reward, Button_Colosseum_Board/
+  Txt_Description; testi 0x6222151-153, 0x6283bb5-7), `AdventureTop2_Colosseum_Panel`
+  (`FUN_00973538`), `_Target` (`FUN_00975afc`), `Colosseum_MainPanel` (`FUN_0092fc18`),
+  `BattleResultColosseumScene`, `RankingColosseumScene_ver1301`.
