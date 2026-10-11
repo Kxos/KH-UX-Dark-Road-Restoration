@@ -40,20 +40,19 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato all'11 ottobre 2026 e prossimo passo
+## Stato all'11 ottobre 2026 (sera) e prossimo passo
 
-- **In corso (agenti):** I-001 crash alla sconfitta in solo (init di una scena che carica
-  `PartyTopScene`, mancante: chi la chiede al KO, `stage_gen\ko_party`), I-002 triage dei 254
-  layout mancanti, I-003 miniature dell'elenco Story sfalsate.
-- **Prossimo passo:** chiudere I-001 (generare la scena o il layout richiesto, poi riprodurre la
-  sconfitta sulla missione 12 «No Way In» e verificare il popup Continue di I-004).
-- **Da rimettere a posto a prova finita (I-028):** in `server/save/player.json`
-  `sphereBonus.hp` e' **-2950** (HP 50, solo per la prova della sconfitta): rimettere **40**. Il
-  salvataggio ha anche `deck` [1,0,3] di prova (slot vuoto) e bacheche 1-2 complete.
-- Fatto l'11 ottobre (vedi ISSUES, sezione Chiusi): Avatar Boards completi, uscite multi-parte
-  (tendine `wipe_N`), 1060/1240 percorse, generatore senza sacche d'ingresso, slot vuoto del
-  Keyblade, nuvoletta di Chirithy, popup «Unlocked an Avatar Board!».
-
+- Fatto e verificato oggi: Missioni (schede come l'originale, Daily dopo Weekly, I-058),
+  popup del Colosseo senza fasce, sconfitta + Continue a 100 jewel (I-001/I-004), gauge degli
+  speciali conservata (I-030), AP consumati/ricaricati (I-060). Salvataggio: hp bonus 40,
+  `guiltBurstLv` 10 (prova del Burst), giocatore LV5, AP 29/20.
+- **In corso (agenti, lavoro offline, niente commit):** keyblade (livelli con materiali, slot
+  «Unlock +N», subslot, evoluzione/design, moltiplicatori; modulo `server/keyblade-evo.js`,
+  `keybladeSubslot.json` vuoto, I-057) e Burst (I-061: pulsante assente, flag +0x18/+0x1c di
+  `FUN_00b0fbd0`). Al loro rapporto: rivedere il diff, `node --check`, relogin, prova sul banco
+  (Equipment -> Keyblade LV UP -> Strengthen; battaglia: pulsante Burst), commit.
+- Da provare: `POST /shop/ap/recover` (popup AP con AP insufficienti), `GET /stage/pickup` non
+  gestito (log `[?]` dopo ogni clear).
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
