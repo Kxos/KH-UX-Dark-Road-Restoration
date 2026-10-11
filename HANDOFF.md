@@ -42,23 +42,20 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 ## Stato all'11 ottobre 2026 (notte) e prossimo passo
 
-- Fatto e verificato oggi: Max Out Gauge (I-062), Give Up azzera la gauge, recupero AP riempie le
-  gauge, popup AP (I-063), miniature Story (I-064/I-003), SLOT 4/5/6 (I-068), /stage/pickup,
-  Subslot (I-066: schermata, Optimize salvato, aspetto come l'originale), Passive Effects si apre
-  (I-065, vuota senza passive), vendita medaglie (I-073), keyblade fino a +17 (I-067), pet e 6o
-  slot con `relogin.ps1 -Pet` (I-005: Equipment ok, battaglia da provare su una mappa chiara).
-- Da fare: trascinamento sub-slot senza medaglia che segue il dito (I-066); Tour 991001-991008
-  (`server\save\smoke.json` {"stageId": 99100N}; uscita Moogle Shop corretta, da riprovare; poi
-  gli altri mondi, I-072); pet in battaglia e dialog del pet (layout assenti: non toccare Swap Gear
-  ne' l'icona del pet in home); fumetto della home «Nice to meet you!» da vedere (I-071);
-  «There are no passive effects.» non mostrato (I-065).
-- Il server sul banco gira con `-Pet`; il salvataggio ha 2090 medaglie (prova), sub-slot 120/120.
-- Sera dell'11 ([diario](docs/journal/2026-10-11-sera.md)): con `-Pet` la battaglia si blocca dopo
-  il primo attacco (senza `-Pet` va). Causa: LWF `lwf/pet/motion` vuote senza evento `end`;
-  generate da `make_pet_motions.py`, da provare con `-Quick` + `relogin.ps1 -Pet` + missione 1010 (I-005). Uscite «giro lungo»
-  spostate dal generatore (15 stage, validatore pulito): prima `build-resources.ps1 -Quick`, poi
-  `smoke.json` {"stageId": 991001} e provare l'uscita Underground Waterway del 2nd District (I-072).
-  Il banco ora gira **senza** `-Pet`.
+- Fatto e verificato l'11 ([diario della sera](docs/journal/2026-10-11-sera.md)): Max Out Gauge
+  (I-062), popup AP (I-063), miniature Story (I-064), SLOT 4/5/6 (I-068), Subslot (I-066), Passive
+  Effects si apre (I-065), vendita medaglie (I-073), keyblade fino a +17 (I-067); pet (I-005):
+  visibile in home e in battaglia (gattino Kitstar, parti `lwf/pet/part/001` animate da
+  `make_pet_motions.py`), la medaglia del 6o slot attacca col balzo del pet, la sua speciale la fa
+  l'avatar; uscite «giro lungo» spostate (I-072) e stanze incomplete escluse (I-074 chiuso).
+- **Prossimo passo (richiesta dell'utente): I-075, Optimize** da confrontare col funzionamento
+  dell'originale (deck, Subslot, Gear del pet): prima fonti/video in `reference\`, poi banco.
+- Poi: trascinamento sub-slot (I-066); resto dei Tour 991001-991008 (991008 parte 12 da vedere,
+  I-072); dialog del pet (layout assenti: non toccare Swap Gear); fumetto «Nice to meet you!»
+  (I-071); «There are no passive effects.» (I-065); danni Burst esagerati (I-070).
+- Banco: server con `-Pet`, `server\save\smoke.json` = {"stageId": 1010}; salvataggio con 2090
+  medaglie (prova), sub-slot 120/120. Video delle battaglie: `screenrecord` nel guest, copia in
+  `/mnt/shared/Misc` (= `Documents\XuanZhi9\Misc`), fotogrammi con ffmpeg (`D:\Programmi\ffmpeg`).
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
