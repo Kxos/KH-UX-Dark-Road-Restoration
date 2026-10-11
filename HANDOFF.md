@@ -54,6 +54,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - Da fare: «Max Out Gauge» -> `POST /keyblade/burst/max` non gestito (server error, gauge non al massimo, I-062).
 - Da verificare: popup del tocco sull'AP in alto, se i tempi di ricarica si aggiornano da soli (I-063).
 - Da fare: elenco Story, frecce indietro mostrano «?» su missioni completate; miniature da controllare contro il mondo della missione (I-064).
+- Da fare: Equipment, «Passive Effects» vuoto (I-065, ``PUT /passive/list`` non gestito) e «Subslot» 0/0 con crash al tocco (I-066).
 - Da provare: `POST /shop/ap/recover` (popup AP con AP insufficienti), `GET /stage/pickup` non
   gestito (log `[?]` dopo ogni clear).
 ## Regole del lavoro (dell'utente)
