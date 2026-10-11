@@ -360,6 +360,28 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `DeckEdit_SubSlot_MedalInfo_ver260`; texture in `make_textures.py`: `Subslot_MedalSlot%03d` (16
   category), `Subslot_Route`, copie in img/ui di `Deck_Mark_Uplight/Reverse`, `Deck_Medal1` e
   `Deck_Medal2` (verde, dalla 1). Da provare sul banco.
+- Sub-slot, aspetto e trascinamento (banco sb_2..sb_5, 11 ottobre). Lista «SUBSLOT MEDALS»:
+  MiniMedalScrollView = MedalScrollView (`FUN_0091d10c`, vtable come Swap Medals) con celle fisse
+  120x164 (`FUN_0087fa88`), colonne = larghezza di `Scroll_Area` / 120 (400 -> 3, come la 380 della
+  ver260); `+0xb26` = 1 (sub-slot) e modo 10 (`FUN_00880c9c`). Ogni cella = DeckRevolverView piccolo
+  (`FUN_0087fb7c(1)` -> `FUN_008cec04`: `DeckEdit_SmallMedal_ver330` originale, `Medal` = Medal_S
+  190x190 naturale, piu' `DeckEdit_Deck_MedalInfo_ver260` in `Area_MedalInfo`); il modo 10 di
+  `FUN_008c8904` mette `img/ui/Minfo_Pet01.png` (assente) in `Icon_1` e «×%01.3f» (106140350) in
+  `Txt_1`, poi aggiunge `SubslotInfoPanel` («+%01.3f», 106140372, tier in `Guilt_Icon`, attributo in
+  `Icon_Type`): il pannello deve coprire tutto `Area_MedalInfo`, da qui la targhetta opaca
+  `Subslot_InfoPlate` (sb_2 «×+0.030», tier tagliato a x -8). Grandezza delle medaglie e
+  sovrapposizione delle ali come in subslot_JP_1 (stessa cella, non si cambia senza codice). Slot:
+  `FUN_00aa2190` carica in `Medal_S` la Medal_S (`FUN_00eb5dec`) senza toccarne la misura (layout:
+  190x190 ignoreSize, prima 89x109 stirata). Trascinamento slot -> lista (`FUN_00aa4f30`): copia
+  della cella con `FUN_00aa1b3c(0)` (nasconde Route, MedalBase, Slot, SlotNum, InfoPanel, TYpe),
+  medaglia in `Medal_S`, scala 1.5, aggiunta al livello di `FUN_00b99b60`, ma `Medal_S` non viene
+  reso visibile: era nascosto nel layout (sb_4). Lista -> slot (`FUN_00881654`): copia
+  `FUN_0087fb7c(0)` = `DeckEdit_RevolverMedal_ver330` originale, opacita' 200; parte solo con un
+  primo spostamento orizzontale (>= 30) su una medaglia non velata, uno verticale (>= 20) fa
+  scorrere la lista. `Panel_34` (avviso): `FUN_00c27228` lo fa solo comparire/svanire, posizione
+  dal layout, ora sulla barra «Equipped Slots». Regole del client (`FUN_00c27228`,
+  `FUN_00aa46dc`): «Equipped Slots» = slot pieni consecutivi dal primo, il moltiplicatore somma i
+  bonus solo fino al primo slot vuoto: con lo slot 1 vuoto 0/120 e +0.000 sono corretti.
 <a id="passive"></a>
 - Passive Effects (I-065). Il pulsante di Equipment manda `PUT /passive/list` (249, corpo
   `FUN_007dc8a0`, sul banco solo `{isList}`), e la callback `FUN_008f86a4` apre

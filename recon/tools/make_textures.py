@@ -1115,8 +1115,25 @@ def subslot_route():
     return im
 
 
+def subslot_info_plate():
+    """Subslot_InfoPlate (116x26, base_Type di DeckEdit_SubSlot_MedalInfo_ver260 = SubslotInfoPanel):
+    pillola blu notte 6,32,66 con il filo azzurro 70,170,235 sopra e sotto, come la targhetta tier /
+    «+0,005» / attributo sotto le medaglie di subslot_JP_1. Opaca: copre Icon_1/Txt_1 «×0.030» di
+    DeckEdit_Deck_MedalInfo_ver260, che il modo 10 di FUN_008c8904 mostra nello stesso Area_MedalInfo
+    con img/ui/Minfo_Pet01.png (assente da ogni risorsa)."""
+    w, h = 116, 26
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    r = h * S // 2
+    d.rounded_rectangle((0, 0, w * S - 1, h * S - 1), r, fill=(70, 170, 235, 255))
+    b = 2 * S
+    d.rounded_rectangle((b, b, w * S - 1 - b, h * S - 1 - b), r - b, fill=(6, 32, 66, 255))
+    return im.resize((w, h), Image.LANCZOS)
+
+
 save('Subslot_MedalSlot001.png', subslot_disc())
 save('Subslot_Route.png', subslot_route())
+save('Subslot_InfoPlate.png', subslot_info_plate())
 for _c in (1, 201, 301, 401, 501, 701, 901, 1101, 1201, 1301, 1401, 1501, 1601, 1701, 1801, 1901):
     save_ui('Subslot_MedalSlot%03d.png' % _c, subslot_disc())
 # Contrassegni e bagliore dell'attributo delle celle (FUN_00aa2190): il codice li carica da img/ui,
