@@ -59,6 +59,8 @@ BUT9 = dict(scale9Enable=True, capInsetsX=30, capInsetsY=0, capInsetsWidth=1, ca
 # il 9-slice non abbassa sotto i 68 px della texture (bordo inferiore di 67): per l'altezza
 # degli screenshot originali (52) si scala il widget intero
 BUTS = dict(BUT9, scaleX=0.765, scaleY=0.765)
+# pulsanti piu' alti della texture (68): stiramento verticale al centro
+TALL9 = dict(BUT9, capInsetsY=32, capInsetsHeight=4)
 PANEL4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=50, capInsetsWidth=1, capInsetsHeight=1)
 # fondo della griglia scurito come negli screenshot originali (quasi nero, bordo blu)
 GRID = dict(PANEL4, colorR=70, colorG=85, colorB=120)
@@ -703,8 +705,10 @@ LAYOUTS = {
         I('Win', 480, 320, 640, 400, 'Win04.png',
           opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
         I('Panel', 480, 470, 560, 40, 'Plate18.png', s9=False, children=[L('Txt', 0, 0, 540, 34, '', 24)]),
-        B('Colosseum_But', 340, 320, 230, 120, 'But01', 'Coliseum', 30, label='Txt_Colosseum', opts=BUT9),
-        B('PvP_But', 620, 320, 230, 120, 'But01', 'PVP', 30, label='Txt_PvP', opts=BUT9),
+        # pulsanti alti 120: 9-slice anche in verticale a meta' della texture (con capInsetsY=0 la
+        # prima riga, quasi trasparente, si stirava in una fascia chiara sopra il pulsante)
+        B('Colosseum_But', 340, 320, 230, 120, 'But01', 'Coliseum', 30, label='Txt_Colosseum', opts=TALL9),
+        B('PvP_But', 620, 320, 230, 120, 'But01', 'PVP', 30, label='Txt_PvP', opts=TALL9),
         I('Title2', 620, 392, 70, 56, 'Deck_Medal_New.png', s9=False, visible=False),
         L('Txt_PvP_off', 620, 220, 260, 60, '', 18, opts=dict(hAlignment=1, vAlignment=1)),
         B('Close_Button', 790, 510, 64, 64, 'But_Close', None)])),
