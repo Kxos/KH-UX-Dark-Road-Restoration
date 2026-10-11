@@ -143,6 +143,7 @@ function route(url) {
   if (p.includes('khux/login')) return 'khuxlogin';
   if (p === '/user/create') return 'usercreate';
   if (p === '/user/keyblade') return 'userkeyblade';
+  if (p.startsWith('/user/keyblade/update')) return 'keybladeupdate';
   if (p === '/user/deck') return 'userdeck';
   if (p === '/keyblade/subslot') return 'kbsubslot';
   if (p === '/user/medal') return 'usermedal';
@@ -869,6 +870,7 @@ function respondStageStart(res, req) {
   const now = serverTime();
   // /stage/clear non riporta lo stage: vale quello avviato qui
   player.currentStageId = req?.stageId ?? START_STAGE_ID;
+  player.currentUserKeybladeId = Number(req?.userKeybladeId) || USER_KEYBLADE_ID; // gauge: setKeybladeBurst
   savePlayer();
   send(res, 200, {
     ret: ret(),
@@ -976,7 +978,7 @@ function respondUserProfile(res) {
     userMedals: userMedalsData(now),
     userSkills: [],
     userAvatar: userAvatarData(),
-    userKeyblade: userKeybladesData()[0],
+    userKeyblade: userKeybladeData(favoriteKeyblade()), // il preferito
     userRecord,
     userRanking: { lux: 0, rank: 0 },
     party: {
@@ -1023,7 +1025,8 @@ function grantItem(type, id, num) {
   else if (type === 5 && id) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
-  } else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
+  } else if (type === 13 && id) grantKeyblade(id); // keyblade (tabella keyblade)
+  else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
 }
 
 // userMaterials[] ([fn]): userMaterialId uint64, materialId, number
@@ -1106,7 +1109,7 @@ function respondStageClear(res, req) {
   // primo che nomina burst/gauge e lo si annota nel log per controllarlo
   for (const [k, v] of Object.entries(req || {})) {
     if (/burst|gauge/i.test(k) && typeof v === 'number') {
-      player.keybladeBurst = v;
+      setKeybladeBurst(v);
       console.log(`[gauge] /stage/clear ${k} = ${v}: salvata nel keyblade`);
       break;
     }
@@ -1786,6 +1789,8 @@ function sentDeckMedalIds() {
 function respondMedalRemove(res, body) {
   const id = Number(body?.removeUserMedalId);
   player.deck = deckMedalIds().map((x) => (x === id ? 0 : x));
+  // anche dai deck degli altri keyblade (il corpo non dice quale: la si toglie da tutti)
+  for (const d of Object.values(player.keybladeDecks || {})) d.forEach((x, i) => { if (x === id) d[i] = 0; });
   savePlayer();
   console.log(`  [unequip] ${id}: deck ${player.deck.join(',')}`);
   send(res, 200, {
@@ -1800,24 +1805,102 @@ function respondMedalRemove(res, body) {
   });
 }
 
+// Keyblade posseduti. Starlight (initItem categoria 13) e' userKeybladeId 1, con il deck
+// player.deck; gli altri arrivano come premio di tipo 13 (grantItem: es. Treasure Trove 2000
+// dalla Quest 14, stage 1110) e stanno in player.keyblades [{userKeybladeId, keybladeId,
+// getDatetime, burst}], con il deck in player.keybladeDecks[userKeybladeId] (0 = slot vuoto,
+// come player.deck). Ogni keyblade ha userDeckId e userKeybladeSubslotId uguali al suo
+// userKeybladeId. Preferito (isFavorite, Profilo): player.favoriteKeybladeId, di default 1.
+function ownedKeyblades() {
+  return [
+    { userKeybladeId: USER_KEYBLADE_ID, keybladeId: startingInventory().keybladeId, burst: player.keybladeBurst || 0,
+      getDatetime: serverTime() },
+    ...(player.keyblades || []).map((k) => ({ ...k, burst: k.burst || 0 })),
+  ];
+}
+
+function keybladeDeckIds(userKeybladeId) {
+  if (userKeybladeId === USER_KEYBLADE_ID) return deckMedalIds();
+  return (player.keybladeDecks || {})[userKeybladeId] || [];
+}
+
+// deckMedals da mandare: senza slot vuoti (vedi sentDeckMedalIds) e senza medaglie non piu'
+// possedute (vendute, usate come materiale): un id sconosciuto il client lo cerca e non lo trova
+function sentKeybladeDeck(userKeybladeId) {
+  if (userKeybladeId === USER_KEYBLADE_ID) return sentDeckMedalIds();
+  const owned = new Set(userMedalList().map((m) => m.userMedalId));
+  return keybladeDeckIds(userKeybladeId).filter((id) => id > 0 && owned.has(id)).slice(0, 5);
+}
+
+function keybladeDeckStats(userKeybladeId) {
+  if (userKeybladeId === USER_KEYBLADE_ID) return deckStats();
+  const medals = masterRows('medal');
+  const byId = new Map(userMedalList().map((m) => [m.userMedalId, m]));
+  let attack = 0;
+  let defense = 0;
+  for (const id of sentKeybladeDeck(userKeybladeId)) {
+    const row = medals.find((r) => r.medalId === byId.get(id)?.medalId);
+    if (row) { attack += row.attack; defense += row.defense; }
+  }
+  return { attack, defense };
+}
+
+function favoriteKeybladeId() {
+  const fav = player.favoriteKeybladeId;
+  return ownedKeyblades().some((k) => k.userKeybladeId === fav) ? fav : USER_KEYBLADE_ID;
+}
+
+function favoriteKeyblade() {
+  return ownedKeyblades().find((k) => k.userKeybladeId === favoriteKeybladeId());
+}
+
+// Premio di tipo 13 (keyblade): un keyblade per serie (category della tabella keyblade: le
+// evoluzioni +N hanno la stessa), una copia gia' posseduta non si duplica.
+function grantKeyblade(keybladeId) {
+  const row = masterRows('keyblade').find((r) => r.keybladeId === keybladeId);
+  if (!row) { console.log(`  [keyblade] ${keybladeId} assente dalla tabella keyblade`); return; }
+  const cat = (id) => masterRows('keyblade').find((r) => r.keybladeId === id)?.category;
+  if (ownedKeyblades().some((k) => cat(k.keybladeId) === row.category)) {
+    console.log(`  [keyblade] ${row.name} (${keybladeId}) gia' posseduto`);
+    return;
+  }
+  player.keyblades = player.keyblades || [];
+  const userKeybladeId = Math.max(...ownedKeyblades().map((k) => k.userKeybladeId)) + 1;
+  player.keyblades.push({ userKeybladeId, keybladeId, getDatetime: serverTime(), burst: 0 });
+  console.log(`  [keyblade] ottenuto ${row.name} (${keybladeId}): userKeybladeId ${userKeybladeId}`);
+}
+
+// Gauge degli attacchi speciali salvata nel keyblade usato (userKeybladeId di /stage/start)
+function setKeybladeBurst(v) {
+  const k = (player.keyblades || []).find((x) => x.userKeybladeId === player.currentUserKeybladeId);
+  if (k) k.burst = v;
+  else player.keybladeBurst = v;
+}
+
 // userKeyblades[], elemento letto da [fn] (deckMedals: al massimo 5 uint64).
-// totalAttack/totalDefense = somma del deck, come userPoint.attack/defense.
-function userKeybladesData() {
-  const { attack, defense } = deckStats();
-  return [{
-    userKeybladeId: USER_KEYBLADE_ID, // uint64
-    userDeckId: USER_DECK_ID, // uint64
-    userKeybladeSubslotId: USER_KEYBLADE_SUBSLOT_ID, // uint64 (vedi /keyblade/subslot)
-    category: 1,
-    keybladeId: startingInventory().keybladeId,
-    deckMedals: sentDeckMedalIds(),
+// totalAttack/totalDefense = somma del deck, come userPoint.attack/defense. category =
+// quella della tabella keyblade (Starlight 1, Treasure Trove 201, ...).
+function userKeybladeData(k) {
+  const { attack, defense } = keybladeDeckStats(k.userKeybladeId);
+  return {
+    userKeybladeId: k.userKeybladeId, // uint64
+    userDeckId: k.userKeybladeId, // uint64
+    userKeybladeSubslotId: k.userKeybladeId, // uint64 (vedi /keyblade/subslot)
+    category: masterRows('keyblade').find((r) => r.keybladeId === k.keybladeId)?.category ?? 1,
+    keybladeId: k.keybladeId,
+    deckMedals: sentKeybladeDeck(k.userKeybladeId),
     // isFavorite: il Profilo (createLayout [fn]) mostra il keyblade preferito; senza
     // nessun preferito la riga del keyblade resta nulla (crash in [fn])
-    burst: player.keybladeBurst || 0, totalAttack: attack, totalDefense: defense, isFavorite: 1,
+    burst: k.burst, totalAttack: attack, totalDefense: defense,
+    isFavorite: k.userKeybladeId === favoriteKeybladeId() ? 1 : 0,
     skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
     skillUpperTotalDefence: 0, subslotRate: 10000, // uint
-    getDatetime: serverTime(),
-  }];
+    getDatetime: k.getDatetime || serverTime(),
+  };
+}
+
+function userKeybladesData() {
+  return ownedKeyblades().map(userKeybladeData);
 }
 
 function respondUserKeyblade(res) {
@@ -1825,12 +1908,34 @@ function respondUserKeyblade(res) {
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData() });
 }
 
-// userDecks[], elemento letto da [fn].
+// userDecks[], elemento letto da [fn]: un deck per keyblade.
 function userDecksData() {
-  return [{
-    userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
-    deckMedals: sentDeckMedalIds(), petBaseSlotMedal: 0,
-  }];
+  return ownedKeyblades().map((k) => ({
+    userDeckId: k.userKeybladeId, userKeybladeId: k.userKeybladeId, // uint64
+    deckMedals: sentKeybladeDeck(k.userKeybladeId), petBaseSlotMedal: 0,
+  }));
+}
+
+// POST /user/keyblade/update/170516 (azione 45): il client salva i deck e il preferito.
+// Corpo ([fn]): userKeyblades [{userKeybladeId, userDeckId, isFavorite}] e
+// userDecks [{userDeckId, medals (userMedalId[]), petBaseSlotMedal}]. Risposta: userKeyblades
+// ([fn]) e userDecks ([fn]), gli elenchi completi.
+function respondKeybladeUpdate(res, body) {
+  const owned = new Set(ownedKeyblades().map((k) => k.userKeybladeId));
+  for (const k of body?.userKeyblades || []) {
+    const id = Number(k.userKeybladeId);
+    if (owned.has(id) && Number(k.isFavorite)) player.favoriteKeybladeId = id;
+  }
+  for (const d of body?.userDecks || []) {
+    const id = Number(d.userDeckId); // userDeckId = userKeybladeId
+    if (!owned.has(id) || !Array.isArray(d.medals)) continue;
+    const medals = d.medals.map(Number).slice(0, 5);
+    if (id === USER_KEYBLADE_ID) player.deck = medals;
+    else (player.keybladeDecks = player.keybladeDecks || {})[id] = medals;
+    console.log(`  [keyblade] deck ${id}: ${medals.join(',')}`);
+  }
+  savePlayer();
+  send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userDecks: userDecksData() });
 }
 
 // GET /keyblade/subslot: subslotMaxNum (uint) e userKeybladeSubslots[], letti da
@@ -1840,7 +1945,7 @@ function userDecksData() {
 // schermata Equipment ([fn]) lo cerca in una mappa e, se manca, l'indice -1
 // sfora il vettore (std::out_of_range, crash).
 function userKeybladeSubslotsData() {
-  return [{ keybladeSubslotId: USER_KEYBLADE_SUBSLOT_ID, subslotRate: 10000, subslots: [] }];
+  return ownedKeyblades().map((k) => ({ keybladeSubslotId: k.userKeybladeId, subslotRate: 10000, subslots: [] }));
 }
 
 function respondKeybladeSubslot(res) {
@@ -1980,6 +2085,7 @@ function handler(scheme) {
       if (kind === 'khuxlogin') return respondKhuxLogin(res);
       if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
       if (kind === 'userkeyblade') return respondUserKeyblade(res);
+      if (kind === 'keybladeupdate') return respondKeybladeUpdate(res, entry.bodyDecoded);
       if (kind === 'userdeck') return respondUserDeck(res);
       if (kind === 'kbsubslot') return respondKeybladeSubslot(res);
       if (kind === 'usermedal') return respondUserMedal(res);
@@ -2041,7 +2147,7 @@ function handler(scheme) {
           supportUser: {
             supportUserId: 1, userName: player.name, level: luxRankFor(player.lux),
             ...playerTitleIds(), partyId: 0,
-            userKeybladeId: USER_KEYBLADE_ID, keybladeId: startingInventory().keybladeId,
+            userKeybladeId: favoriteKeybladeId(), keybladeId: favoriteKeyblade().keybladeId,
             userMedalId: m.userMedalId, medalId: m.medalId, lastActionDatetime: serverTime(),
           },
         });
@@ -2057,7 +2163,7 @@ function handler(scheme) {
         const supportUsers = medal ? [{
           supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
           ...playerTitleIds(), addKizunaPoint: 0,
-          keybladeId: startingInventory().keybladeId, partyId: 0, isParty: 0, isGuilt: 0, isLinkThumbnail: 0,
+          keybladeId: favoriteKeyblade().keybladeId, partyId: 0, isParty: 0, isGuilt: 0, isLinkThumbnail: 0,
           userMedal: medal, userSkills: [], userAvatar: userAvatarData(),
           lastActionDatetime: now, earnLuxRank: 0,
         }] : [];
@@ -2180,6 +2286,23 @@ function start() {
       startDns({ ip, hijack: HIJACK, upstream: DNS_UPSTREAM, port: DNS_PORT, logFile: DNS_LOG_FILE });
     }
   }
+}
+
+// Salvataggi di prima dei keyblade (11 ottobre): si danno una volta i keyblade dei premi gia'
+// ricevuti, cioe' primo completamento (clearGetItemType 13, es. stage 1110 -> Treasure Trove)
+// e obiettivi compiuti (submissionRewardType 13). Qui in fondo: usa le costanti dei keyblade.
+if (player.created && player.keyblades === undefined) {
+  player.keyblades = [];
+  for (const st of masterRows('stage')) {
+    if (st.validClearGetItem && st.stageId in (player.stageScores || {})) {
+      (st.clearGetItemType || []).forEach((t, i) => { if (t === 13) grantKeyblade(st.clearGetItemId[i]); });
+    }
+    for (const n of (player.clearMissions || {})[st.stageId] || []) {
+      if (st.submissionRewardType?.[n - 1] === 13) grantKeyblade(st.submissionItemId[n - 1]);
+    }
+  }
+  savePlayer();
+  console.log(`[save] keyblade dei premi gia' ricevuti: ${player.keyblades.map((k) => k.keybladeId).join(', ') || 'nessuno'}`);
 }
 
 if (require.main === module) start();

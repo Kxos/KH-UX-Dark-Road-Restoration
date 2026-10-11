@@ -159,7 +159,7 @@ node server\make-moogleshop.js
 - Si salva a ogni modifica: nome, avatar, Union, Lux (`luxRank` = livello, soglie `needExp` di
   `player`), `money`, `freeStone`, `materials`, `medals` (`userMedalId` da 101), `medalLocks`,
   `medalTraits`, `deck` (tiene gli zeri di posizione), `stageScores`, `missions`, `titles`,
-  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `keybladeBurst`, fase e `popupFlag` del tutorial.
+  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId` ([keyblade](#keyblade)), fase e `popupFlag` del tutorial.
 - «Nuovo» finche' non ha fatto `/user/create`. Per ricominciare: cancellare il file (o `cycle.ps1`).
 - **Stato provvisorio all'11 ottobre**: `sphereBonus.hp = -2950` (HP 50) per provocare la sconfitta
   (ISSUES I-028): rimettere **40** a prova finita. `deck` [1,0,3] di prova.
@@ -195,3 +195,31 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   "eventStageId":<id evento>,"showIcon":1,"bannerUrl":"","eventType":1,"status":1,
   "endTime":"2026-12-31 23:59:59","newStageId":<id>,"isLock":0,"complete":0}]`.
   `eventStageId` e gli stage devono esistere nelle tabelle master (id a 0 = crash): da verificare.
+
+<a id="keyblade"></a>
+## Keyblade posseduti (I-050)
+
+- Starlight (initItem categoria 13) = `userKeybladeId` 1, deck `player.deck`. Gli altri: premio di
+  tipo 13 (`grantItem` -> `grantKeyblade`, uno per serie = `category` della tabella keyblade), in
+  `player.keyblades` [{userKeybladeId 2.., keybladeId, getDatetime, burst}], deck in
+  `player.keybladeDecks[id]` (0 = slot vuoto). `userDeckId` = `userKeybladeSubslotId` =
+  `userKeybladeId`. Preferito: `player.favoriteKeybladeId` (default 1; il Profilo manda quello).
+- Premi di tipo 13 nelle tabelle: primo completamento (`clearGetItemType`: stage 1110 Quest 14 ->
+  Treasure Trove 2000, poi 1210, 1310, ...) e obiettivi (`submissionRewardType`). I salvataggi di
+  prima li ricevono una volta all'avvio del server (blocco in fondo a `server.js`).
+- Elenchi completi a ogni risposta: `userKeyblades` (`[fn]`/`[fn]`; `category`
+  dalla tabella: Starlight 1, Treasure Trove 201), `userDecks` (uno per keyblade),
+  `userKeybladeSubslots` (uno per keyblade: senza, Equipment va in crash).
+- `POST /user/keyblade/update/170516` (azione 45, corpo da `[fn]`): `userKeyblades`
+  [{userKeybladeId, userDeckId, isFavorite}] + `userDecks` [{userDeckId, medals[], petBaseSlotMedal}]:
+  il server salva i deck e il preferito e risponde `userKeyblades` + `userDecks`. Prima finiva nello
+  schema automatico (elenchi vuoti). Da vedere sul banco il corpo vero (log `[keyblade] deck`).
+- `/stage/start` salva `userKeybladeId` (`player.currentUserKeybladeId`): la gauge di `/stage/clear`
+  va in quel keyblade. Unequip (`/user/medal/remove`) toglie la medaglia da tutti i deck.
+- Immagini: il popup del keyblade ottenuto (`BattleResult_KB`, `[fn]`) e le icone dei premi
+  (`[fn]`, tipo 13) caricano `img/keyBlade/KeyBlade_%06d.png` con il `displayId` della
+  tabella keyblade (campo +0xcc): assenti da tutte le risorse (restava `Deck_KeyBlade_0701_05` =
+  Olympia). `recon/tools/make_keyblade_images.py` le genera (64) dalla bitmap del LWF
+  `lwf/avatar/keyblade/keyblade_%04d_%02d` (displayId/100, displayId%100), nella posa di
+  Deck_KeyBlade_0701_05, BTF a palette; `build-resources.ps1` (anche `-Quick`). Equipment e la
+  scelta del keyblade usano i LWF, che ci sono tutti. Riferimenti: `reference\keyblades\`.
