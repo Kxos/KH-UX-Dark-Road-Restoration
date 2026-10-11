@@ -1603,6 +1603,12 @@ if os.path.exists(_EMPTY_LWF):
                ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
         os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
         shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
+# Movimenti del pet (lwf/pet/motion/*): LWF nostri, invisibili, con l'evento «end» dove la
+# battaglia aspetta la fine del movimento (I-005: con i vuoti la battaglia col pet si bloccava
+# dopo il primo attacco). Vedi make_pet_motions.py.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import make_pet_motions  # noqa: E402
+make_pet_motions.write_all(OUT)
 
 # Animazione del risultato di Evolve ([fn]: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il

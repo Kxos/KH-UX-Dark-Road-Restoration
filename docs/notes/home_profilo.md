@@ -12,7 +12,8 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
   sfondo con grafica (`lwf/home/{2..6,99,150911}`).
 - Con tutorial finito la home crea pet e NPC: `[fn]`/`[fn]` caricano
   `lwf/pet/motion/<30 nomi>` e `lwf/character/npc/<id>/wait/wait.lwf` (`[fn]`, NULL se manca)
-  senza controllo: nel pacchetto ci sono LWF vuoti per le 30 animazioni e i 74 id NPC di
+  senza controllo: nel pacchetto ci sono LWF vuoti per le 30 animazioni (ora LWF nostri con
+  «end», `make_pet_motions.py`, vedi [pet](#pet)) e i 74 id NPC di
   `img/stage_npc/npc_rule.bin` (tranne 4001). Quindi Chirithy (NPC 999) e' invisibile (ISSUES I-016).
 - Tocco sulla piazza (`SceneMyPage::init` $_10 -> `[fn]` -> `[fn]`): chi non e' in
   party (`userParty.isJoin` 0) vede Chirithy con la nuvoletta `MyPage_ChirishiBaloon.json`
@@ -141,7 +142,8 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
 - Dialog del pet (`PetInfoDialog`, open [fn], createLayout [fn]): mancano
   `PetInfoScene_ver320` e le sotto-schermate (`PetInfo_PetSkill_Panel_ver230`, `_Rename_ver230`,
   `_Training*`, `PetEditScene_ver230`, `PetEdit_Panel/Check2_ver230`, `Tutorial_Pet01`), l'armatura
-  `PetInfoAnim.ExportJson` e tutte le `lwf/pet/part`. Widget cercati da createLayout: Pet_LvUp,
+  `PetInfoAnim.ExportJson`; di `lwf/pet/part` ci sono solo le 9 parti di `001` (names_v4 e
+  names440), nessun `lwf/pet/motion` ne' `lwf/ability/hit_effect/pet_eff_*`. Widget cercati da createLayout: Pet_LvUp,
   Panel_img, Button_A/B (Txt_A/B), PowerUp_Button, PetSkill_Button, PetTraing, PetTraing_But,
   PetTraing_ChargButton, PetTraing_Slot, Txt_TotalTitle, TotalNum_Label, Txt_MonthTitle,
   MonthNum_Label, Txt_PetSkill, Txt_Training, Txt_TrainingCharg, Icon_New, Txt_PowerUP, Txt_Time,
@@ -151,6 +153,37 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   Finche' manca, `Button_PowerUp` di Equipment e l'icona pet della home vanno in crash.
 - Con `isFinished` 1 a fase 995 la home creava il pet (`lwf/pet/motion/...`) e andava in crash in
   `[fn]`: risolto con i LWF vuoti.
+- **Battaglia** (blocco del banco 11 ottobre, 1010 con `-Pet`: primo attacco, avatar fermo in
+  posa, nemico immobile, AUTO e medaglie morti, nessun crash). Il PetActor nasce solo da
+  `userDetail.isPet` ([fn] 0xb6d134, [fn] 0xb7fb78/0xb7fc44 -> avatar
+  [fn] -> [fn], init [fn], update [fn]): nessun campo di
+  `/stage/start` lo spegne. Il pet si muove con Pet::playMotion [fn] (tabella dei 30 nomi
+  a 0x1f32138: 0 wait, 1 bwait, 7 battle_normal, 8 battle_all, 9 deathblow_normal, 0xb
+  battle_skill, 0xc recovery_skill, 0xd jump2, 0x12-0x14 rolling1-3...; [fn] carica il
+  LWF e gli aggancia il dispatcher [fn]) e cambia stato **solo sull'evento LWF «end»**
+  ([fn] -> gestore +0x140 -> [fn] mette 4 nella coda +0x818; la consumano
+  [fn] e [fn] -> [fn] -> [fn], che dopo 7/8/0xb/0xc/0xd/0x14-0x17
+  torna a bwait e dopo 9/0xe lancia l'attacco del pet [fn]). La sequenza d'attacco
+  [fn]: stato 0x14 aspetta [fn] = avatar fermo (0xb) **e** pet pronto
+  ([fn]: bwait/recovery_skill/rolling1-3 o +0x851); 0x38/0x39 aspettano [fn] ->
+  [fn] (wait/bwait/waitb/rolling). L'avatar mette il pet in jump2 (comando 2,
+  [fn] -> [fn] -> [fn]) e a fine colpi in battle_normal/battle_all
+  ([fn] -> [fn]): i nostri LWF vuoti non mandavano mai «end» = attesa infinita.
+  Correzione: `recon/tools/make_pet_motions.py` (chiamato da make_layouts.py) scrive 30 LWF
+  NOSTRI (formato 0x121010 ricostruito; la variante senza evento e' identica byte per byte al
+  vuoto originale), invisibili: 15 fotogrammi con EVENT «end» (controllo ANIMATION tipo 4,
+  opcode 8, come «end_1» di lwf/character/enemy/1/dead) per i 19 movimenti di cui [fn]
+  gestisce la fine; wait/bwait/walk/run/win/waitb/rolling1-2/training restano a 1 fotogramma senza
+  evento. Servono le risorse rigenerate (build-resources).
+- Trick in battaglia: [fn] -> [fn] mette ogni `petSubslot.openSkillIds` nel posto
+  `invokeType` (riga petSkill +0x2dc; 4 = per skillValue3 0..5 -> posti 0/11..15, tabella
+  0x188a950) dei 16 del PetActor (+0x388 + 0x48*i), +0x850 = 1. Posti: 1 alla morte di un nemico
+  ([fn] -> recovery_skill), 3 Blast ([fn], [fn]: battle_skill al posto
+  del segnale 0x3e dell'avatar, [fn]), 6 HP Recovery ([fn]), 7-9 potenziamenti
+  ([fn]), 10 Combo ([fn]: skillValue2/10000, poi [fn] -> rolling1 e
+  +0x8f8 = 2), 11-15 Steal per tipo di drop ([fn]). La nostra petSkill ha invokeType 1
+  per tutti: `server/pet.js` manda `openSkillIds` [] salvo `KHUX_PET_SKILLS=1` (pet che segue e
+  basta) finche' la mappa trick -> posto/valori non e' verificata.
 
 <a id="presents"></a>
 ## Presents ed Equipment

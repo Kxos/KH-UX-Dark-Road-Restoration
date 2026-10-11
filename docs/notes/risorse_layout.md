@@ -107,7 +107,9 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   DeckEdit_Cost_Over_ver131, scheda Events (AdventureTop2_EV_Banner_ver220, _EV_Button, _Raid_Button)
   e altri. Triage dei 254 in `stage_gen\layout_triage\REPORT.md`.
 - Mancano ancora tutti i `PartyTop_*` (scena `PartyTopScene` richiesta anche al KO in solo: ISSUES
-  I-001/I-006), `PetInfoScene_ver320`, `PetInfoAnim`, tutte le `lwf/pet`.
+  I-001/I-006), `PetInfoScene_ver320`, `PetInfoAnim`, `lwf/pet/motion` (generati da
+  `make_pet_motions.py`, LWF nostri con «end»: [home_profilo](home_profilo.md#pet)); di
+  `lwf/pet/part` c'e' solo `001`.
 
 <a id="wipe"></a>
 ## Tendine dei cambi di parte

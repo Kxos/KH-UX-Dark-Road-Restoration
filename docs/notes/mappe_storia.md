@@ -76,7 +76,8 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
   piedi sui pixel (`geodesic`). 132 file / 88 stage rigenerati.
 - `recon/tools/validate_maps.py <cartella stage> D:\Progetto_Restauro_KH_UX\maps_x --json r.json`
   (numpy/scipy): flood-fill sulla collisione (gioco 16, aggancio 48, avviso giri oltre 1,5x e 800
-  unita'). 0 errori all'11 ottobre. 46 stage con giro >= 1,25 (`detour125.json`).
+  unita'). 0 errori all'11 ottobre. 46 stage con giro >= 1,25 (`detour125.json`); 0 avvisi «giro
+  lungo» dopo la regola `short_exit` ([collegamenti](#collegamenti)).
 - Altri: `mappoi_gen.py <modello> <spec.json> <uscita>`, `mappoi_room.py` (stanza senza modello,
   spec es. `stage_gen\spec_1050.json`), `stage_poi.py` (POI delle mappe vere ->
   `server/game_data/stage_poi.json`), `server/check-stage-data.js [--verbose]` (controllo offline di
@@ -137,6 +138,22 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
   sta dietro la fontana, fuori dalla CLS). Senza `world_links` l'uscita e' identica byte per byte a prima. Rapporto
   delle coppie in `stage_gen\world_links_story.json` (relazione nel grafo, note delle porte); 205
   uscite spostate, 55 sulla porta giusta (37 di piu' di 300 unita').
+- **Giro lungo** (banco 991001, parte 2 «2nd District»): l'uscita «Underground Waterway Entrance» in
+  (2020,2068), sul camminamento basso fra i canali, dall'arrivo da Fountain Square (820,2100) si
+  raggiungeva solo con ~4500 unita' a piedi contro 1200 in linea d'aria (su per la scala, porta a
+  destra, giu' dietro un edificio coperto dagli occlusori): il giocatore non la trova, il bot resta
+  contro la ringhiera. Regola (`short_exit`): con la stessa misura del giro lungo di
+  `validate_maps.detour` (celle da 8, Dijkstra), se dall'ingresso principale della parte (partenza o
+  primo arrivo, nell'ordine del validatore) il percorso verso un'uscita e' > 1,5 volte la linea d'aria
+  e > 800, l'uscita va sul punto della componente con percorso <= 1,5 volte la linea d'aria piu'
+  vicino alla porta, a >= 300 dall'ingresso e dalle altre uscite, a >= 240 dagli altri arrivi e a >
+  240 dalle isole libere (freccia ricalcolata). Si ricalcola solo l'arrivo di ritorno accanto a
+  quella porta; le distanze residue [3] delle uscite della missione cambiano di conseguenza. Se non
+  c'e' un punto buono la porta resta e la nota va nel rapporto (`doubts` / `notes`). Spostamenti in
+  `worldtour_report.json` (`moved_exits`) e `story_report.json` (`doubts`). Esito: 991001 parte 2
+  (2020,2068) -> (1616,1640), in cima alla ringhiera sopra il camminamento (percorso 988, linea
+  d'aria 919); 991008 parti 6, 12, 15 (4 uscite); 13 missioni di storia (stanze WL_0004, DB_0001,
+  DW_0001). Validatore: avvisi «giro lungo» da 15 stage a 0, errori 0.
 - **Missioni Tour** (config `"worldtour": true`): una per mondo, tutte le stanze del mondo nelle
   risorse (varianti escluse), una parte per stanza; ogni porta porta alla stanza delle risorse piu'
   vicina nel grafo attraversando le aree assenti (es. Fountain Square, grande porta a sinistra ->
