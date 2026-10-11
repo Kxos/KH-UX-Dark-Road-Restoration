@@ -608,6 +608,30 @@ LAYOUTS = {
         ('add', 'NormalText_Window01', I('Title_Plate', 0, -105, 420, 36, 'Plate03.png', opts=PLATE3)),
         ('add', 'NormalText_Window01', L('Txt_Title_Label', 0, -105, 400, 32, '', 24)),
         P('Area_Point', 480, 560, 10, 10)]),
+    # Keyblade ottenuto nei risultati (FUN_00c5261c, da FUN_00c50e74 / FUN_00c50910 quando la
+    # lista dei premi +0x448 ha voci di tipo 13 = keyblade, FUN_00c546f8/FUN_00c54494): premio di
+    # prima conclusione (clearGetItemType 13: stage 1110 «The Mine Pt. 2» -> Treasure Trove 2000,
+    # 1210, 1310) o delle missioni. Cerca: Txt (Label, nome del keyblade), KB (ImageView, il
+    # codice vi carica l'immagine), Panel (Panel), Txt_Title_Label (101910002 «Set Medals in your
+    # new Keyblade!»), Txt_KB_Label (103010011 «Quest Completion Reward» / 103010012 / 103010001
+    # / 103010002), Button_Ok con Txt_OK (100100001) e, aperto il popup (FUN_00c5ca98),
+    # Area_Point (LWF Result_Reward). Stessa famiglia di BattleResult_LB_ver120: stessa finestra.
+    'BattleResult_KB.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                             {'4Line_Label': 'Txt_KB_Label', 'Button_OK': 'Button_Ok'}, False, [
+        ('text', 'Txt_KB_Label', ''),
+        ('opts', 'NormalText_Window01', dict(y=320, height=480, scale9Height=480, scale9Enable=True, capInsetsX=50,
+                                             capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        ('opts', 'Txt_KB_Label', dict(y=195, height=44, areaHeight=44, fontSize=28, hAlignment=1, vAlignment=1)),
+        ('opts', 'Button_Ok', dict(y=-188)),
+        # figli dell'ImageView: coordinate dal centro della finestra
+        ('add', 'NormalText_Window01', I('KB', 0, 60, 200, 200, 'KeyBlade_0101.png', s9=False)),
+        ('add', 'NormalText_Window01', I('Name_Plate', 0, -62, 420, 36, 'Plate03.png', opts=PLATE3)),
+        ('add', 'NormalText_Window01', L('Txt', 0, -62, 400, 32, '', 24)),
+        ('add', 'NormalText_Window01', L('Txt_Title_Label', 0, -115, 600, 60, '', 22,
+                                         opts=dict(hAlignment=1, vAlignment=1))),
+        # Panel: il codice ne cambia solo una proprieta' (vtable +0x428); trasparente, sotto la finestra
+        ('add', 'Panel_8', P('Panel', 0, 0, 10, 10)),
+        P('Area_Point', 480, 560, 10, 10)]),
     # Scelta della medaglia a cui dare un trait (FUN_00e103f4, «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Profilo (AvatarInfoDialog: open FUN_008d785c carica la scena nascosta e chiede
