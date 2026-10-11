@@ -18,7 +18,7 @@ Ultima revisione: 11 ottobre 2026.
 |---|---|---|---|---|
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
 | I-062 | CHIUSO | «Max Out Gauge» prima della battaglia: `POST /keyblade/burst/max` (azione 53) gestito in `keyblade-evo.js`: -30 jewel (misc 120), gauge = maxBurstGauge, risposta `{userKeyblade}`; banco: 7/12 -> 12/12, «Gauge filled.», pulsante spento | [battaglia](notes/battaglia.md) | banco mg_g3 |
-| I-063 | DA VERIFICARE | Tocco sull'AP in alto: popup con le informazioni sull'AP (`BalloonNomal_AP_Recovery`, `FUN_00b8ee90`: tempo al prossimo AP / al pieno). Verificare che si aggiorni da solo col nuovo AP (ricarica 1 ogni 3 min, I-060) o se va sistemato | [server](notes/server.md#ap) | - |
+| I-063 | CHIUSO | Tocco sull'AP in alto: fumetto `BalloonNomal_AP_Recovery` (`FUN_00b8ee90`, si chiude da solo dopo ~2 s) con tempo al prossimo AP / al pieno; i valori seguono il tempo reale (banco: 19/20, 01:41 -> 01:16 dopo ~25 s, «Recover all» coerente con 1 AP mancante) | [server](notes/server.md#ap) | banco mg_ap3/mg_ap5 |
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
 | I-032 | APERTO | Valori segnaposto: HP iniziale 3000, CP/HP dei forzieri (10.000/5.000/500) | [battaglia](notes/battaglia.md#hp) | 10-08/09 |
 | I-033 | APERTO | Attacchi speciali generati: 63 righe «Special Attack», animazioni del modello | [medaglie](notes/medaglie.md#burst) | 7da38e3 |
@@ -57,6 +57,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-071 | APERTO | Home: dopo il tocco sull'AP compare sopra l'avatar un fumetto bianco vuoto (testo del personaggio assente?) | [home_profilo](notes/home_profilo.md) | banco mg_ap1 |
 | I-005 | APERTO | Pet: risposte con `petSubslot` in crash; mancano `PetInfoScene`, `PetInfoAnim`, `lwf/pet` | [home_profilo](notes/home_profilo.md#pet) | 640d345 |
 | I-015 | APERTO | Messaggio del Profilo vuoto con `adb input text`; fumetto della home vuoto | [home_profilo](notes/home_profilo.md#profilo) | 63e716e |
 | I-016 | APERTO | Chirithy invisibile (LWF dell'NPC 999 vuota) | [home_profilo](notes/home_profilo.md#home) | f10ea90 |
