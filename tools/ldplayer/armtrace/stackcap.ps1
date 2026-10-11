@@ -27,6 +27,10 @@ Sh "rm -rf /sdcard/Pictures/armtrace_h; cp -r $G/houdini /sdcard/Pictures/armtra
 Start-Sleep 1
 New-Item -ItemType Directory -Force "$OUT\houdini" | Out-Null
 Get-ChildItem (Join-Path $SHARED 'armtrace_h') | Move-Item -Destination "$OUT\houdini" -Force
+# base reale della libreria (cambia fra un avvio e l'altro: 0x31c0000, 0x320c000...): con la
+# base sbagliata i frame cadono in funzioni a caso (11 ottobre: falso «PetInfoDialog»)
+$lib = Sh "grep -m1 libcocos2dcpp /proc/$p/maps"
+if ("$lib" -match '^([0-9a-f]+)-') { $env:KHUX_BASE = '0x' + $matches[1]; "base libcocos2dcpp: $env:KHUX_BASE" }
 $regs = python -I "$sp0\findregs.py" "$OUT\houdini"
 $regs
 # il primo blocco col pc dentro la libreria (pc G...): gli altri sono thread di houdini
