@@ -15,9 +15,23 @@ ottobre). Tocchi in [banco.md](banco.md#tocchi).
 - Medaglia mancante -> ripiego sulla **medaglia 1** (`FUN_00eb577c`): `make-game-tables.js`
   aggiunge la riga 1 (master 1 = Paperino blu senza costo).
 - Medaglie di supporto impilate: `validPack` (thethiny `unk_1116`), badge rosso.
+- <a id="tier"></a>**Tier** (SP Attack Bonus, «SAB Tier» della khuxwiki, 1-10) = `guiltValue`
+  (+0x4c0). Il dettaglio carica `img/ui/guilt/MedalInfo_Guilt<guiltValue>.png` (`FUN_0072ed74` ->
+  `FUN_0072ef08`: 0 = icona nascosta; se 0 e `validEvolve` segue `evolveId`); un file assente lascia
+  la texture del layout, cioe' l'**1** (per questo tutte le tier 9-10 sembravano tier 1). Fonte:
+  campo `Guilt` di Roboloid, identico alla khuxwiki (controllate SN++ - MoM Kairi 10, Illustrated
+  Leon 6★ 5, KH CoM Naminé 6★ 3). Le righe di thethiny avevano 0: ora prese da Roboloid via
+  `medal_map.json` (480 medaglie cambiate, rev. 82). Distribuzione: 0 (supporto) 186, 1:146,
+  2:274, 3:461, 4:127, 5:163, 6:58, 7:131, 8:241, 9:125, 10:182. Il bonus per tier (khuxwiki):
+  1 +25%, 2 +50%, 3 +100%, 4 +130%, 5 +150%, 6 +180%, 7 +200%, 8 +230%, 9 +280%, 10 +320% (la
+  guida dell'utente si ferma alla 8, scritta prima delle tier 9-10). Il moltiplicatore dei
+  subslot dipende dal tier (calcolato dal client; subslot non ancora serviti: `subslotMaxNum` 0).
+  `userMedal.guiltFactor` (bonus sbloccato della copia) resta 0; `guiltProb` vuota.
 - Shuffleskill/trait: `shuffleskillSlot` (+0x4b4) e `spShuffleskillSlot` (+0x4b8) non esistono nel
-  formato vecchio: `make-game-tables.js` mette 1 slot speciale a tutte le medaglie d'attacco e slot
-  normali 1, 3 sulle 6★ (ipotesi).
+  formato vecchio. `make-game-tables.js` (`traitSlots`, khuxwiki «Trait Slots»): tier 1-3 -> 1,
+  4-5 -> 2, 6-10 -> 3, SN/Supernova e Prime 7★ -> 5, Prime 6★ -> 3, supporto 0; 1 slot speciale a
+  tutte le medaglie d'attacco. Eccezioni della wiki (alcune 6★) non applicate. Le «7★» di Roboloid
+  senza prefisso (561, es. Wakka) hanno una rarita' sospetta: non usata per gli slot.
 - Elemento `userMedal` (`FUN_0078d608`): `userMedalId` uint64, `medalId`, `number`, `level`, `exp`,
   `attack/defense/burstUpperNumber`, `lock`, `upperCost`, `guiltFactor`, `userSkills` <= 2,
   `userShuffleSkills`, `getDatetime`.

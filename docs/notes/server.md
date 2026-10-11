@@ -10,7 +10,7 @@ Di solito si usa `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` ([banco
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "81"                     # revisione dei master: alzarla a ogni modifica
+$env:KHUX_REVISION      = "82"                     # revisione dei master: alzarla a ogni modifica
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # vedi sotto
 # KHUX_NEWCOMER=0/1 forza giocatore esistente/nuovo; KHUX_SAVE = file del salvataggio
