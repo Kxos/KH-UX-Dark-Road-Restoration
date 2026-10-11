@@ -1079,9 +1079,18 @@ function stageResumptionData() {
   return { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 };
 }
 
-function respondStageContinue(res) {
+// prezzo del Continue in jewel: misc 113 (100), letto dal popup PopupNormal_Continue
+const CONTINUE_STONE = 100;
+
+function respondStageContinue(res, path) {
   // POST /stage/continue (azione 115, dopo il KO) e /stage/retire (114): il ramo
   // rilegge userKeyblades ([fn]); retire anche userData.stageResumption.
+  // Il Continue costa CONTINUE_STONE jewel (provato l'11 ottobre: prima restavano invariati);
+  // il client li rilegge con GET /user/stone subito dopo.
+  if (String(path).toLowerCase() === '/stage/continue') {
+    player.freeStone = Math.max(0, (player.freeStone || 0) - CONTINUE_STONE);
+    savePlayer();
+  }
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userData: { stageResumption: stageResumptionData() } });
 }
 
@@ -2117,7 +2126,7 @@ function handler(scheme) {
       }
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
-      if (kind === 'stagecontinue') return respondStageContinue(res);
+      if (kind === 'stagecontinue') return respondStageContinue(res, req.url.split('?')[0]);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
   if (kind === 'stageevent') return respondStageEvent(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
