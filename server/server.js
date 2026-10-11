@@ -1837,10 +1837,23 @@ function keybladeDeckIds(userKeybladeId) {
 
 // deckMedals da mandare: senza slot vuoti (vedi sentDeckMedalIds) e senza medaglie non piu'
 // possedute (vendute, usate come materiale): un id sconosciuto il client lo cerca e non lo trova
+// Deck tutto vuoto: tanti 0 quanti gli slot (validConsist della riga keyblade). Il client usa
+// la lunghezza di deckMedals come numero di slot: Optimize ([fn] -> [fn])
+// riempie solo quelli, e [fn] segna il deck come cambiato (quindi lo manda in
+// /user/keyblade/update/170516) confrontando solo quelle voci. Con [] Optimize non salvava
+// nulla (banco 11 ottobre, Treasure Trove). Gli 0 di un deck in parte pieno restano tolti
+// (battaglia: uno 0 diventa una medaglia finta, vedi sentDeckMedalIds).
 function sentKeybladeDeck(userKeybladeId) {
-  if (userKeybladeId === USER_KEYBLADE_ID) return sentDeckMedalIds();
-  const owned = new Set(userMedalList().map((m) => m.userMedalId));
-  return keybladeDeckIds(userKeybladeId).filter((id) => id > 0 && owned.has(id)).slice(0, 5);
+  let ids;
+  if (userKeybladeId === USER_KEYBLADE_ID) ids = sentDeckMedalIds();
+  else {
+    const owned = new Set(userMedalList().map((m) => m.userMedalId));
+    ids = keybladeDeckIds(userKeybladeId).filter((id) => id > 0 && owned.has(id)).slice(0, 5);
+  }
+  if (ids.length) return ids;
+  const k = ownedKeyblades().find((x) => x.userKeybladeId === userKeybladeId);
+  const slots = masterRows('keyblade').find((r) => r.keybladeId === k?.keybladeId)?.validConsist || 3;
+  return Array(Math.min(5, slots)).fill(0);
 }
 
 function keybladeDeckStats(userKeybladeId) {
