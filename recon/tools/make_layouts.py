@@ -585,6 +585,29 @@ LAYOUTS = {
                                               # scritta fissa sull'arco (la LWF del banner qui non parte)
                                               I('Comp_Congrats', 480, 552, 800, 81, 'Sphere_Congrats.png', s9=False, scale=1.07),
                                               P('Area_Point', 480, 550, 10, 10)]),
+    # Bacheca sbloccata dal level up ([fn], dopo «Level Up!» nei risultati e alla home;
+    # specifica in stage_gen\lb_popup\REPORT.md). Cerca ([fn], ricorsivo dalla radice):
+    # Txt (Label, «Unlocked an Avatar Board!» 103400060 e varianti per tipo di bacheca),
+    # Select_Base/Select_Board/Select_Kind (ImageView: costume img/sphere_incentive/%d, sfondo
+    # img/sphere_board/Board_%04d, genere img/sphere_kind/Kind_%04d), Txt_Title_Label (Label,
+    # nome della bacheca), Button_Ok (Button) con Txt_OK (Label, 100100001 «OK») e, finita
+    # l'apertura ([fn]), Area_Point (Panel: vi aggiunge la LWF Result_Reward).
+    # Senza il layout: crash in GUIReader. Dal popup OK originale, carta come
+    # SphereBoard_Select_Icon_ver130 (Select_Board sotto Select_Base)
+    'BattleResult_LB_ver120.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
+                                    {'4Line_Label': 'Txt', 'Button_OK': 'Button_Ok'}, False, [
+        ('text', 'Txt', ''),
+        ('opts', 'NormalText_Window01', dict(y=320, height=480, scale9Height=480, scale9Enable=True, capInsetsX=50,
+                                             capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        ('opts', 'Txt', dict(y=195, height=44, areaHeight=44, fontSize=28, hAlignment=1, vAlignment=1)),
+        ('opts', 'Button_Ok', dict(y=-188)),
+        # figli dell'ImageView: coordinate dal centro della finestra
+        ('add', 'NormalText_Window01', I('Select_Board', 0, 40, 306, 306, 'Board_0001.png', s9=False, scale=0.62)),
+        ('add', 'NormalText_Window01', I('Select_Base', 0, 40, 306, 306, 'Board_0001.png', s9=False, scale=0.62)),
+        ('add', 'NormalText_Window01', I('Select_Kind', 0, 40, 306, 306, 'Kind_0001.png', s9=False, scale=0.62)),
+        ('add', 'NormalText_Window01', I('Title_Plate', 0, -105, 420, 36, 'Plate03.png', opts=PLATE3)),
+        ('add', 'NormalText_Window01', L('Txt_Title_Label', 0, -105, 400, 32, '', 24)),
+        P('Area_Point', 480, 560, 10, 10)]),
     # Scelta della medaglia a cui dare un trait ([fn], «Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
     # Profilo (AvatarInfoDialog: open [fn] carica la scena nascosta e chiede
