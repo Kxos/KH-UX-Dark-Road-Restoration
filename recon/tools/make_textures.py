@@ -1079,7 +1079,7 @@ def slot_num(d):
     return im
 
 
-for _d in (4, 5):
+for _d in (4, 5, 6):   # 6 = slot del pet (Spirit, KHUX_PET)
     save_ui('Deck_Slot_Num_%d.png' % _d, slot_num(_d))
 
 

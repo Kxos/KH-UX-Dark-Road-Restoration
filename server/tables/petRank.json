@@ -1,0 +1,279 @@
+[
+ {
+  "rank": 1,
+  "needPt": 0,
+  "magnification": 23000,
+  "rankUpSkill": 0,
+  "validOpenSkill": 0,
+  "openSkillIds": []
+ },
+ {
+  "rank": 2,
+  "needPt": 50,
+  "magnification": 24000,
+  "rankUpSkill": 1,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   1
+  ]
+ },
+ {
+  "rank": 3,
+  "needPt": 100,
+  "magnification": 25000,
+  "rankUpSkill": 11,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   1,
+   11
+  ]
+ },
+ {
+  "rank": 4,
+  "needPt": 150,
+  "magnification": 26000,
+  "rankUpSkill": 21,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   1,
+   11,
+   21
+  ]
+ },
+ {
+  "rank": 5,
+  "needPt": 200,
+  "magnification": 27000,
+  "rankUpSkill": 31,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   1,
+   11,
+   21,
+   31
+  ]
+ },
+ {
+  "rank": 6,
+  "needPt": 300,
+  "magnification": 28000,
+  "rankUpSkill": 2,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   2,
+   11,
+   21,
+   31
+  ]
+ },
+ {
+  "rank": 7,
+  "needPt": 400,
+  "magnification": 29000,
+  "rankUpSkill": 41,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   2,
+   11,
+   21,
+   31,
+   41,
+   42,
+   43
+  ]
+ },
+ {
+  "rank": 8,
+  "needPt": 500,
+  "magnification": 30000,
+  "rankUpSkill": 12,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   2,
+   12,
+   21,
+   31,
+   41,
+   42,
+   43
+  ]
+ },
+ {
+  "rank": 9,
+  "needPt": 650,
+  "magnification": 31000,
+  "rankUpSkill": 51,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   2,
+   12,
+   21,
+   31,
+   41,
+   42,
+   43,
+   51,
+   52,
+   53
+  ]
+ },
+ {
+  "rank": 10,
+  "needPt": 800,
+  "magnification": 32000,
+  "rankUpSkill": 3,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   12,
+   21,
+   31,
+   41,
+   42,
+   43,
+   51,
+   52,
+   53
+  ]
+ },
+ {
+  "rank": 11,
+  "needPt": 1000,
+  "magnification": 33000,
+  "rankUpSkill": 61,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   12,
+   21,
+   31,
+   41,
+   42,
+   43,
+   51,
+   52,
+   53,
+   61
+  ]
+ },
+ {
+  "rank": 12,
+  "needPt": 1100,
+  "magnification": 34000,
+  "rankUpSkill": 13,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   13,
+   21,
+   31,
+   41,
+   42,
+   43,
+   51,
+   52,
+   53,
+   61
+  ]
+ },
+ {
+  "rank": 13,
+  "needPt": 1300,
+  "magnification": 35000,
+  "rankUpSkill": 54,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   13,
+   21,
+   31,
+   41,
+   42,
+   43,
+   54,
+   55,
+   56,
+   61
+  ]
+ },
+ {
+  "rank": 14,
+  "needPt": 1500,
+  "magnification": 36000,
+  "rankUpSkill": 14,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   14,
+   21,
+   31,
+   41,
+   42,
+   43,
+   54,
+   55,
+   56,
+   61
+  ]
+ },
+ {
+  "rank": 15,
+  "needPt": 1750,
+  "magnification": 37000,
+  "rankUpSkill": 62,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   14,
+   21,
+   31,
+   41,
+   42,
+   43,
+   54,
+   55,
+   56,
+   62
+  ]
+ },
+ {
+  "rank": 16,
+  "needPt": 2000,
+  "magnification": 38000,
+  "rankUpSkill": 15,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   15,
+   21,
+   31,
+   41,
+   42,
+   43,
+   54,
+   55,
+   56,
+   62
+  ]
+ },
+ {
+  "rank": 17,
+  "needPt": 2300,
+  "magnification": 39000,
+  "rankUpSkill": 63,
+  "validOpenSkill": 1,
+  "openSkillIds": [
+   3,
+   15,
+   21,
+   31,
+   41,
+   42,
+   43,
+   54,
+   55,
+   56,
+   63
+  ]
+ }
+]

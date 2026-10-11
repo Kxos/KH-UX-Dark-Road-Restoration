@@ -5,7 +5,7 @@
    "name": "Daybreak Town", "prefix": "DB", "start": "Fountain Square",
    "areas": [
     {"name": "Fountain Square", "code": "DB_0000_00_00", "res": true,
-     "doors": {"1st District": [500, 2388], "2nd District": [2388, 1564], "Moogle Shop": [1547, 1640], "Market": [548, 1900], "Corridor of Darkness": [2708, 2132]}},
+     "doors": {"1st District": [500, 2388], "2nd District": [2388, 1564], "Moogle Shop": [1150, 1700], "Market": [548, 1900], "Corridor of Darkness": [2708, 2132]}},
     {"name": "Moogle Shop", "code": "DB_0001_00_00", "res": true,
      "doors": {"Fountain Square": [2212, 948], "Attic": [580, 332]}},
     {"name": "Attic", "code": "DB_0002_00_00", "res": false},
@@ -44,7 +44,7 @@
    "links": [
     {"from": "Fountain Square", "to": "1st District", "side": "basso a sinistra (scale) -> alto a destra", "conf": "high", "src": "uscite originali 1013/1016 (FS (548,2383) <-> 1st (2481,576)) + wiki «stairs in the lower left corner»"},
     {"from": "Fountain Square", "to": "2nd District", "side": "destra in alto (scale) -> basso a sinistra", "conf": "high", "src": "uscita originale 1010 (FS (2405,1550) <-> 2nd (644,2169)) + wiki «stairs on the right side»"},
-    {"from": "Fountain Square", "to": "Moogle Shop", "side": "porta al centro -> scala in basso a destra", "conf": "medium", "src": "wiki «The door in the center leads to the Moogle Shop»; lato nel negozio scelto sulla grafica"},
+    {"from": "Fountain Square", "to": "Moogle Shop", "side": "porta al centro (dietro la fontana, non raggiungibile nella CLS: uscita sul bordo alto della piazza a sinistra della fontana) -> scala in basso a destra", "conf": "medium", "src": "wiki «The door in the center leads to the Moogle Shop»; lato nel negozio scelto sulla grafica; banco 991001: l'uscita sulla fontana faceva saltare il giocatore sulla cima della fontana (isola libera) senza cambio di stanza"},
     {"from": "Moogle Shop", "to": "Attic", "side": "in cima alla scala", "conf": "high", "src": "wiki «Up the stairs is the Attic»"},
     {"from": "Attic", "to": "Rooftop", "conf": "high", "src": "wiki «Beyond the window lies the Rooftop»"},
     {"from": "Fountain Square", "to": "Market", "side": "grande porta a sinistra", "conf": "medium", "src": "wiki «through the large gate on the left leads to Market»"},
