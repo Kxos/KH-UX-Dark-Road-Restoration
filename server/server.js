@@ -1118,14 +1118,11 @@ function respondStageClear(res, req) {
   // munny e materiali raccolti (sacchetti dei nemici, forzieri) come li riporta il client
   player.money = (player.money || 0) + (Number(req?.getPoint?.money) || 0);
   // gauge degli attacchi speciali: resta salvata nel keyblade (userKeyblades[].burst), non
-  // riparte da 0 a ogni missione. Il campo del corpo non e' ancora verificato: si prende il
-  // primo che nomina burst/gauge e lo si annota nel log per controllarlo
-  for (const [k, v] of Object.entries(req || {})) {
-    if (/burst|gauge/i.test(k) && typeof v === 'number') {
-      setKeybladeBurst(v);
-      console.log(`[gauge] /stage/clear ${k} = ${v}: salvata nel keyblade`);
-      break;
-    }
+  // riparte da 0 a ogni missione. Campo `burst` del corpo (banco: "burst":24000; prima si
+  // prendeva il primo campo con burst nel nome, guiltBurstMaximumDamage = 0, e la gauge si azzerava)
+  if (typeof req?.burst === 'number') {
+    setKeybladeBurst(req.burst);
+    console.log(`[gauge] /stage/clear burst = ${req.burst}: salvata nel keyblade`);
   }
   for (const m of req?.getMaterials || []) grantItem(5, m.materialId, m.number);
   // sacchetti dei nemici: il client riporta solo gli uid (getEnemyDropItems), il
