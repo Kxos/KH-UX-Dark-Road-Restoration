@@ -51,6 +51,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `keybladeSubslot.json` vuoto, I-057) e Burst (I-061: pulsante assente, flag +0x18/+0x1c di
   `[fn]`). Al loro rapporto: rivedere il diff, `node --check`, relogin, prova sul banco
   (Equipment -> Keyblade LV UP -> Strengthen; battaglia: pulsante Burst), commit.
+- Da fare: «Max Out Gauge» -> `POST /keyblade/burst/max` non gestito (server error, gauge non al massimo, I-062).
 - Da provare: `POST /shop/ap/recover` (popup AP con AP insufficienti), `GET /stage/pickup` non
   gestito (log `[?]` dopo ogni clear).
 ## Regole del lavoro (dell'utente)
