@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 33**, **revisione master 89** (default degli script di sessione).
+Stato del banco: **risorse 33**, **revisione master 90** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
@@ -53,6 +53,12 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   ne' l'icona del pet in home); fumetto della home «Nice to meet you!» da vedere (I-071);
   «There are no passive effects.» non mostrato (I-065).
 - Il server sul banco gira con `-Pet`; il salvataggio ha 2090 medaglie (prova), sub-slot 120/120.
+- Sera dell'11 ([diario](docs/journal/2026-10-11-sera.md)): con `-Pet` la battaglia si blocca dopo
+  il primo attacco (senza `-Pet` va). Causa: LWF `lwf/pet/motion` vuote senza evento `end`;
+  generate da `make_pet_motions.py`, da provare con `-Quick` + `relogin.ps1 -Pet` + missione 1010 (I-005). Uscite «giro lungo»
+  spostate dal generatore (15 stage, validatore pulito): prima `build-resources.ps1 -Quick`, poi
+  `smoke.json` {"stageId": 991001} e provare l'uscita Underground Waterway del 2nd District (I-072).
+  Il banco ora gira **senza** `-Pet`.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push

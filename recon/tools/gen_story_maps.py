@@ -629,6 +629,113 @@ def arrival_px(folder, door, pts, avoid=()):
     return min(best, key=lambda p: (abs(d[p] - STEP_IN), -dd(p, door), p))
 
 
+# Giro lungo (I-072, banco 991001 parte 2): l'uscita sulla porta puo' essere raggiungibile solo con un
+# giro enorme (2nd District: «Underground Waterway Entrance» sul camminamento basso fra i canali, 4500
+# unita' a piedi contro 1200 in linea d'aria, passando dietro un edificio). Stessa misura del giro lungo
+# di validate_maps.detour (pixel con spazio libero > REACH_R campionati ogni DET_CELL, 8-connessi,
+# Dijkstra, aggancio entro REACH_TOL): se dall'ingresso principale della parte (partenza o primo arrivo)
+# il percorso e' > DET_RATIO volte la linea d'aria e > DET_MIN, l'uscita va sul punto della componente
+# della stanza con percorso <= DET_RATIO volte la linea d'aria piu' vicino alla porta.
+DET_CELL, DET_RATIO, DET_MIN = 8, 1.5, 800
+_det = {}
+
+
+def det_graph(folder):
+    import numpy as np
+    from scipy import sparse
+    if folder not in _det:
+        walk_grid(folder)
+        labc = _pc_all[folder].lab[::DET_CELL, ::DET_CELL]
+        m = labc > 0
+        h_, w_ = m.shape
+        idx = -np.ones(m.shape, np.int64)
+        idx[m] = np.arange(int(m.sum()))
+        rows, cols, wts = [], [], []
+        for dy, dx, wt in ((0, 1, 1.0), (1, 0, 1.0), (1, 1, 2 ** 0.5), (1, -1, 2 ** 0.5)):
+            A = idx[0:h_ - dy, max(0, -dx):w_ - max(0, dx)]
+            B = idx[dy:h_, max(0, dx):w_ + min(0, dx)]
+            ok = (A >= 0) & (B >= 0)
+            rows.append(A[ok])
+            cols.append(B[ok])
+            wts.append(np.full(int(ok.sum()), wt))
+        n = int(m.sum())
+        g = sparse.coo_matrix((np.concatenate(wts), (np.concatenate(rows), np.concatenate(cols))),
+                              shape=(n, n)).tocsr()
+        _det[folder] = (m, idx, g, labc, {})
+    return _det[folder]
+
+
+def det_from(folder, src):
+    """(distanze Dijkstra in celle da src, cella di src) come validate_maps.detour; None se src non aggancia."""
+    import numpy as np
+    from scipy.sparse.csgraph import dijkstra
+    m, idx, g, labc, dc = det_graph(folder)
+    h_, w_ = m.shape
+    x, y = min(w_ - 1, max(0, src[0] // DET_CELL)), min(h_ - 1, max(0, src[1] // DET_CELL))
+    r = REACH_TOL // DET_CELL
+    ys, xs = np.nonzero(m[max(0, y - r):y + r + 1, max(0, x - r):x + r + 1])
+    if not len(xs):
+        return None
+    k = int(np.argmin((xs + max(0, x - r) - x) ** 2 + (ys + max(0, y - r) - y) ** 2))
+    ia = int(idx[ys[k] + max(0, y - r), xs[k] + max(0, x - r)])
+    if ia not in dc:
+        dc[ia] = dijkstra(g, directed=False, indices=ia)
+    return dc[ia]
+
+
+def det_path(folder, src, dst):
+    """(linea d'aria, percorso) come validate_maps.detour, None se non collegati."""
+    import numpy as np
+    d = det_from(folder, src)
+    if d is None:
+        return None
+    m, idx = det_graph(folder)[:2]
+    h_, w_ = m.shape
+    x, y = min(w_ - 1, max(0, dst[0] // DET_CELL)), min(h_ - 1, max(0, dst[1] // DET_CELL))
+    r = REACH_TOL // DET_CELL
+    ys, xs = np.nonzero(m[max(0, y - r):y + r + 1, max(0, x - r):x + r + 1])
+    if not len(xs):
+        return None
+    k = int(np.argmin((xs + max(0, x - r) - x) ** 2 + (ys + max(0, y - r) - y) ** 2))
+    v = d[idx[ys[k] + max(0, y - r), xs[k] + max(0, x - r)]]
+    if not np.isfinite(v):
+        return None
+    return dd(src, dst), int(v * DET_CELL)
+
+
+def short_exit(folder, pts, entry, door, avoid_exits=(), avoid_arr=()):
+    """Uscita `door` della stanza vista dall'ingresso `entry`: (punto, nota). Se il percorso a piedi e' un
+    giro lungo (> DET_RATIO volte la linea d'aria e > DET_MIN) si sceglie il punto della componente della
+    stanza piu' vicino alla porta con percorso <= DET_RATIO volte la linea d'aria, a >= 300 dall'ingresso e
+    dalle altre uscite, a >= 240 dagli arrivi nella stanza e a > ISLAND_KEEP dalle isole libere; se non
+    ce n'e', la porta resta e la nota lo dice. Senza giro lungo: (door, None)."""
+    import numpy as np
+    r = det_path(folder, entry, door)
+    if not r or not (r[1] > DET_RATIO * r[0] and r[1] > DET_MIN):
+        return door, None
+    m, idx, g, labc, _ = det_graph(folder)
+    d = det_from(folder, entry)
+    pc, L, xs, ys = room_comp(folder, pts)
+    free, idist, F = room_raw(folder, pts)
+    cy, cx = np.nonzero(labc == L)
+    px, py = cx * DET_CELL, cy * DET_CELL
+    path = np.floor(d[idx[cy, cx]] * DET_CELL)
+    air = np.hypot(px - entry[0], py - entry[1])
+    ok = np.isfinite(path) & (path <= DET_RATIO * air) & (air >= 300) & (idist[py // F, px // F] > ISLAND_KEEP)
+    for e in avoid_exits:
+        ok &= np.hypot(px - e[0], py - e[1]) >= 300
+    for a in avoid_arr:
+        ok &= np.hypot(px - a[0], py - a[1]) >= 240
+    old = 'giro lungo da %s verso l\'uscita %s: linea d\'aria %.0f, percorso %d' % (tuple(entry), tuple(door), r[0], r[1])
+    if not ok.any():
+        return door, old + ': nessun punto con percorso breve, uscita lasciata sulla porta'
+    k = int(np.argmin(np.where(ok, (px - door[0]) ** 2 + (py - door[1]) ** 2, np.inf)))
+    p = (int(px[k]), int(py[k]))
+    r2 = det_path(folder, entry, p)
+    return p, old + ' -> uscita spostata in %s (%.0f dalla porta): linea d\'aria %.0f, percorso %d' % (
+        p, dd(p, door), r2[0], r2[1])
+
+
 def door_angle(cent, p):
     """Angolo della freccia (gradi, 0 = su, in senso orario: 35 in alto a destra, 220 in basso a
     sinistra come nelle 1010-1016) dal centro della zona percorribile verso la porta."""
@@ -793,6 +900,18 @@ def build_multi(s, q, room_names, groups):
                            for k in range(1, R)]
         arr_back = [arrival_px(folders_[k], fars[k], pts[k], [starts[k]] if k > 0 else ())
                     for k in range(R - 1)] + [None]
+        # giro lungo (short_exit): ingresso principale della parte k = partenza (k = 0) o arrivo dalla
+        # parte k-1 (accanto all'uscita indietro, che quindi non fa mai un giro lungo); si controlla
+        # l'uscita avanti e, se si sposta, si ricalcola solo l'arrivo di ritorno accanto a lei
+        for k in range(R - 1):
+            entry = starts[0] if k == 0 else arr_in[k]
+            p, note = short_exit(folders_[k], pts[k], entry, fars[k], [starts[k]] if k > 0 else (),
+                                 [arr_in[k]] if k > 0 else ())
+            if note:
+                doubts.append('stanza %d: %s' % (k, note))
+            if p != fars[k]:
+                fars[k] = p
+                arr_back[k] = arrival_px(folders_[k], p, pts[k], [starts[k]] if k > 0 else ())
     else:
         arr_in = [None] + [arrival_near(starts[k], pts[k], folders_[k]) for k in range(1, R)]   # entrando da avanti
         arr_back = [arrival_near(fars[k], pts[k], folders_[k]) for k in range(R - 1)] + [None]  # tornando indietro
@@ -1017,6 +1136,38 @@ def build_tour(world, wd, sid):
                 arr[id(e)] = arrival_px(folders_[j], door_j, pts[j], [q for q in others if q != door_j])
             else:
                 arr[id(e)] = safe_start(pts[j], others)
+    # giro lungo (short_exit): ingresso principale di ogni parte come in validate_maps (partenza, poi il
+    # primo arrivo seguendo le uscite in ordine di parte); l'uscita spostata si porta dietro solo gli arrivi
+    # di ritorno accanto alla sua porta, gli altri arrivi restano (l'uscita nuova sta a >= 240 da loro)
+    entry, changed = {0: st0}, True
+    while changed:
+        changed = False
+        for k in range(R):
+            if k not in entry:
+                continue
+            for p, e in ex[k]:
+                j = idx[e['to']]
+                if j != k and j not in entry:
+                    entry[j] = arr[id(e)]
+                    changed = True
+    moved = []
+    for k in range(R):
+        if k not in entry:
+            continue
+        for i, (p, e) in enumerate(ex[k]):
+            rev = [e2 for kk in range(R) for _, e2 in ex[kk] if idx[e2['to']] == k and e2['to_xy']
+                   and door_px(folders_[k], e2['to_xy'], pts[k]) == p]
+            rid = {id(e2) for e2 in rev}
+            arr_k = [arr[id(e2)] for kk in range(R) for _, e2 in ex[kk] if idx[e2['to']] == k and id(e2) not in rid]
+            np_, note = short_exit(folders_[k], pts[k], entry[k], p, [q for q, _ in ex[k] if q != p], arr_k)
+            if note:
+                notes.append('parte %d (%s), porta «%s»: %s' % (k, order[k], e['door'], note))
+            if np_ != p:
+                ex[k][i] = (np_, e)
+                for e2 in rev:
+                    arr[id(e2)] = arrival_px(folders_[k], np_, pts[k], [q for q, _ in ex[k] if q != np_])
+                moved.append({'part': k, 'door': e['door'], 'from': list(p), 'to': list(np_),
+                              'arrivals_back': [list(arr[id(e2)]) for e2 in rev]})
     # bersaglio: la stanza piu' lontana (passi nel grafo) dalla partenza
     hops = {0: 0}
     q = collections.deque([0])
@@ -1085,7 +1236,7 @@ def build_tour(world, wd, sid):
                        'exits': [{'door': e['door'], 'at': list(p), 'to_part': idx[e['to']], 'to': e['to'],
                                   'via': e['via'], 'arrive': list(arr[id(e)]), 'rem': rem[id(e)]}
                                  for p, e in ex[k]]} for k, n in enumerate(order)],
-            'notes': notes}
+            'moved_exits': moved, 'notes': notes}
 
 
 if cfg.get('worldtour') and WLINKS:

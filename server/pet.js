@@ -32,6 +32,11 @@
 // petBaseSlotMedal uint64 a +0x40, obbligatorio) e corpo di POST /user/keyblade/update/170516
 // (FUN_007e1320: userDecks[].petBaseSlotMedal). Qui player.petBaseSlots[userKeybladeId].
 //
+// In battaglia (solo da isPet, nessun campo del server lo spegne: FUN_00b6cba4/FUN_00b7f890 ->
+// FUN_00e26540) il PetActor aspetta la fine dei LWF lwf/pet/motion/* (evento «end»): li genera
+// recon/tools/make_pet_motions.py (da make_layouts.py). Con i LWF vuoti la battaglia si bloccava
+// dopo il primo attacco (I-005). I trick restano spenti: SKILLS_ENABLED qui sotto.
+//
 // Il dialog del pet (PetInfoDialog, PetInfoScene_ver320.json) e le sue sotto-schermate mancano da
 // ogni risorsa (catalog\missing_layouts.txt): Button_PowerUp e l'icona pet della home lo aprono
 // -> crash in GUIReader finche' non ci sono (ISSUES I-005).
@@ -39,6 +44,17 @@
 
 const ENABLED = process.env.KHUX_PET === '1';
 const PET_NAME = process.env.KHUX_PET_NAME || 'Spirit';
+// Tricks in battaglia (petSubslot.openSkillIds), spenti salvo KHUX_PET_SKILLS=1. A inizio
+// battaglia FUN_00e2790c -> FUN_00e461bc mette ogni id aperto (riga petSkill, FUN_00f146f4) in
+// uno dei 16 posti del PetActor (+0x388 + 0x48*i) scelto da invokeType (riga +0x2dc; 4 = per
+// skillValue3 0..5 -> posti 0/11..15, tabella 0x188a950). Posti visti: 1 = alla morte di un
+// nemico (FUN_00e26764, recovery_skill), 3 = Blast (FUN_00e47914/FUN_00e47b2c: battle_skill al
+// posto del colpo dell'avatar), 6 = HP Recovery (FUN_00e47720), 7-9 = potenziamenti di stato
+// (FUN_00e46e7c), 10 = Combo (FUN_00e47d7c: probabilita' skillValue2/10000 -> rolling1-3),
+// 11-15 = Steal per tipo di drop (FUN_00e46a64). La nostra petSkill (make-pet-tables.js) ha
+// invokeType 1 per tutti e valori stimati: finche' la corrispondenza trick -> posto non e'
+// verificata, il pet in battaglia segue solo l'avatar (niente trick).
+const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS === '1';
 
 function routePet(p) {
   if (!ENABLED) return null; // spento: risposte generiche dagli schemi, come prima
@@ -102,7 +118,8 @@ function makePet(ctx) {
     const r = rankFor(pt);
     return {
       subslotUserMedalIds: ids, // uint64, <= 6
-      openSkillIds: (r.openSkillIds || []).filter((x) => x > 0).slice(0, 15), // uint, <= 15
+      // uint, <= 15; vuoto = nessun trick in battaglia (vedi SKILLS_ENABLED)
+      openSkillIds: SKILLS_ENABLED ? (r.openSkillIds || []).filter((x) => x > 0).slice(0, 15) : [],
       rank: r.rank, pt, magnification: r.magnification, // uint
     };
   }
