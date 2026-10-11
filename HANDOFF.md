@@ -59,8 +59,19 @@ qui c'è come.
   tombstone: le coppie fp/lr sotto rsp sono la catena ARM vera (b01690 <- 12d85d0 <- 12d8e44
   <- 12c1154: init fallito -> delete -> distruttore). Nuovo script ghidra `khux_refs.py`
   (riferimenti a un indirizzo). Con lo stesso -Quick e' entrata nel guest anche la 1050 corretta.
-  PROSSIMO: percorrere la 1060 intera (strettoia, bersaglio nella parte 1) e un'altra
-  multi-parte di un altro mondo.
+- **1060 GIOCATA INTERA SUL BANCO (11 ottobre)**: partenza originale, forziere, Soldier, 3
+  Shadow in alto, 2 Shadow, strettoia sulle ninfee (si percorre), uscita -> parte 1 (Nosy Mole x3,
+  bersaglio Nosy Mole 10008 sulle ninfee), QUEST COMPLETE, `/stage/clear`, RESULTS (10 nemici,
+  «Defeat 9 or more» spuntato). Rigiocata una seconda volta con `tools\ldplayer\route_1060.ps1`
+  (tocchi misurati; scala ~1,7 px per unita' di mappa, il personaggio sta a ~(770,600)).
+- **CRASH APERTO (gia' presente prima, non legato alla 1060)**: in home, toccando il personaggio
+  nella piazza (es. (950,850)) il client va in crash subito, prima di ogni richiesta. Backtrace ARM
+  (`armtrace\stackcap.ps1 -Tag avtap -NoMenu -Taps '950,850'`): `PetInfoDialog::createLayout`
+  ($_11) -> caricamento LWF con particella `.plist` (FUN_011fc54c) -> distruttore. Nello stack
+  `lwf/character/npc/999/wait/wait.lwf` (il nostro LWF vuoto da 492 byte) e
+  `lwf/avatar/body/30001/...`. Probabile: il pet invisibile (LWF vuoto) sta sul personaggio e il
+  tocco apre la sua scheda. Il Profilo si apre invece dal ritratto in alto a sinistra e funziona.
+  Anche il fumetto vuoto sopra il personaggio resta da fare.
 - (storico) 1060 percorsa a mano sul banco (smoke.json con
   stageId 1060): il giro lungo dell'arco e la strettoia sulle ninfee si percorrono, il bersaglio
   e' raggiunto. Ma all'uscita verso la parte 1 (freccia blu, (2200,1760)) il client va in CRASH
