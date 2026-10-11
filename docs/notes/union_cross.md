@@ -84,3 +84,43 @@ Sezione «Union Cross» della schermata Quest, sbloccata dopo la Quest 24. Serve
    vuoto).
 3. Start -> deck -> conferma: `/multi/create` nel log, poi righe `[photon]` (il client prova la
    porta 5055) e dopo il timeout il popup di errore di collegamento.
+
+<a id="layout"></a>
+## Layout e texture del percorso Union Cross
+
+Controllo su `catalog\layouts.tsv`/`textures.tsv` (68 layout, sotto-layout compresi, partendo da
+`AdventureTop2Scene_ver350`, `AdventureTop2_Multi_Button`, `PartyTop_MultiMemberList_Scene_ver150`,
+`StartDeckMultiScene_ver260`, `StartDeckMulti_*`, `StartDeckEdit2_MultiConnectionError`,
+`BattleResultMultiScene_ver150`, `ActionMap_*Multi*`): **tutti presenti** nelle risorse; nessun
+layout da generare per pannello, deck, matching ed errore di collegamento.
+
+- Texture assenti (solo dopo l'ingresso nella stanza o in battaglia, quindi non raggiungibili
+  offline): `ActionMap_MultiBoss_EnemyCount` (MultiBoss_EnemyCount01, TimeAttack_num1),
+  `ActionMap_MultiBoss_EntryGauge` (MultiBoss_EntryGauge01/02), `BattleResult_MultiBattle_Win_ver150`
+  (Result_Clear_Raid), `StartDeckEdit2_FieldMenu_Multi_ver350` (But32_*, Multi_Info_title,
+  Multi_Member_Panel0), `PartyTop_MultiMemberList_ver150` (Bg_Shade_Top, Conpane_Top3).
+- **Crash certo se raggiunto**: `PopupNormal_Continue_Multi` ha `Countdown_panel` con 9-slice su
+  Plate21, assente (crash 0x2c, I-049): da sostituire come `NO_PLATE21` di `make_layouts.py`
+  (ma tenendo il conto alla rovescia visibile) quando la battaglia multi sara' possibile.
+- In `catalog\missing_layouts.txt`: `PopupNormal_Party_General`/`_JoinRequest` (richiesta di
+  ingresso toccando un membro in `SceneMultiJoinList`, `FUN_00df73b0`: con elenco vuoto non si
+  apre), `PopupNormal_Invitation_NotJoin`/`_Invitation_Jewel`/`PopupNormal_Party_Jewel`
+  (`FUN_00d8aa04`/`d8b180`/`d8b908`, inviti), `BattleResultMultiRankUP(Lock)Scene_ver220`,
+  `BattleResult_GetItemMulti_ver220`, `BattleResult_MultiMember_Panel_ver220` (risultato multi),
+  tutti i `PartyTop_*` (I-006).
+
+<a id="originale"></a>
+## Com'era l'originale (`D:\Progetto_Restauro_KH_UX\reference\union_cross\NOTE.md`)
+
+- Pannello Union Cross della schermata Quest: banner dell'evento, pillola AP, «Details», grande
+  «Begin» rosso; a destra «Cross Board» e «Previous Members» (= `Button_Mu_Board`,
+  `Button_Last_Member`).
+- Fino a 6 giocatori della stessa Union; «Start with Party» con «Lock Party»; altrimenti matching
+  pubblico. Lobby: host + 5 colonne, conto alla rovescia. Se nessuno entra l'host puo' partire da
+  solo (ma sempre in una stanza Photon); nessun riempimento con NPC.
+- Cross Coins (premi: completamento 150, «No Support Needed» 100, MVP 150, missione 75) spesi nelle
+  Cross Board dell'evento: `coinId` della master `multi` e' probabilmente la moneta dell'evento.
+- Nessuna riga pubblica delle master `multi*` e nessun esempio JSON di `/multi/*` (thethiny non
+  implementa il multigiocatore); elenco degli eventi 2017-2021 in
+  `reference\union_cross\data\khuxwiki_Union_Cross_Quests_wikitext.txt`. Banner ufficiali
+  900x200 e 640x140 (`bannerUrl`) nella stessa cartella.
