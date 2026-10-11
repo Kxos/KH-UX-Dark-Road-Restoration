@@ -451,6 +451,17 @@ for (const nb of newBursts) {
   if (at >= 0) bursts[at] = row; else bursts.push(row);
 }
 
+// burst 0: le medaglie senza attacco speciale (supporto: Dewey, Fata Smemorina, validBurst 0)
+// hanno burstId 0, e Optimize (FUN_0075de5c, valore di ogni medaglia posseduta per gli slot del
+// keyblade) cerca la riga burst del burstId senza guardare validBurst: riga nulla, crash a 0x10
+// (banco 11 ottobre, Optimize su Treasure Trove). Riga vuota, tutti i campi a 0.
+if (!burstById.has(0)) {
+  const zero = (v) => (Array.isArray(v) ? v.map(zero) : typeof v === 'string' ? '' : 0);
+  const row = Object.fromEntries(Object.entries(bursts[0]).map(([k, v]) => [k, zero(v)]));
+  bursts.push(row);
+  burstById.set(0, row);
+}
+
 // stage: i filmati prima/dopo la missione (beforeDramaId/afterDramaId) sono script
 // img/light/SEQ/<id>.l o animazioni lwf/drama/<id>/. Se mancano dalle risorse il client va
 // in crash avviando la missione (FUN_00ceacd8 -> FUN_00cf050c: missione 8, filmati

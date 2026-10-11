@@ -242,7 +242,14 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `[0, 0, 0]` (`validConsist` della riga keyblade); gli 0 di un deck in parte pieno restano tolti
   (battaglia, [battaglia.md](battaglia.md#slot-vuoto)): su quei deck Optimize considera solo gli
   slot pieni.
-- Posa del keyblade nei riquadri dei menu (I-052): `FUN_00eb6f38` (chiamato da `FUN_00990130`,
+- Optimize, terza parte (I-051): con gli slot `[0,0,0]` Optimize valuta ogni medaglia posseduta
+  (`FUN_0097add0` -> `FUN_0075de5c`): legge la riga burst del `burstId` della medaglia (riga medal
+  `+0x4fc`, tabella burst = id 0x26 di `FUN_00ef0310`) senza guardare `validBurst`. Le 42 medaglie di
+  supporto (Dewey, Fata Smemorina, ...) hanno `burstId` 0 e nessuna riga: crash a 0x10.
+  `make-game-tables.js` aggiunge una riga burst 0 vuota (tutti i campi a 0; aggiunta anche a mano a
+  `master_data/burst.json`, revisione dei master +1). Effetto collaterale da tenere d'occhio: con
+  il deck `[0,0,0]` il riquadro mostra STR/DEF 150/150 (gli 0 contano come la medaglia finta) e una
+  quest avviata con quel deck vuoto avrebbe tre medaglie finte.- Posa del keyblade nei riquadri dei menu (I-052): `FUN_00eb6f38` (chiamato da `FUN_00990130`,
   «Select a Keyblade», modo 3, e da `FUN_00c04188`) carica il LWF `keyblade_%04d_%02d` (se manca,
   `img/keyBlade/KeyBlade_%06d.png`) e prende rotazione, scala e posizione da
   `rule/keyblade_rule.bin` (`FUN_00eb72e4`: record di 0x44 byte, keybladeId + 4 modi x (rot x10000,
