@@ -88,24 +88,46 @@ const MEDAL_MAP_PATH = process.env.KHUX_MEDAL_MAP || 'D:\\Progetto_Restauro_KH_U
 if (fs.existsSync(MEDAL_MAP_PATH)) {
   for (const id of Object.keys(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))) MEDAL_IMAGES.add(Number(id));
 }
+// Tier (SP Attack Bonus, «SAB Tier» della khuxwiki) = guiltValue (+0x4c0): il dettaglio carica
+// img/ui/guilt/MedalInfo_Guilt<guiltValue>.png ([fn]/[fn]; 0 = icona nascosta),
+// le icone delle schermate keyblade Guilt<n>_On/_Off/_Err ([fn]), il filtro
+// Filter_Guilt1..10. Fonte: campo Guilt di Roboloid (1-10, uguale alla khuxwiki: SN++ - MoM
+// Kairi = 10); le medaglie di supporto non ne hanno (0). Le righe di thethiny (formato vecchio)
+// hanno guiltValue 0: si prende quello della medaglia di Roboloid associata (medal_map.json).
+const ROBO_DB = process.env.KHUX_ROBOLOID_DB || 'D:\\Progetto_Restauro_KH_UX\\external\\roboloid\\medal_db.json';
+const ROBO = fs.existsSync(ROBO_DB) ? JSON.parse(fs.readFileSync(ROBO_DB, 'utf8')) : [];
+const ROBO_BY_ID = new Map(ROBO.map((d) => [d.ID, d]));
+const MEDAL_MAP = fs.existsSync(MEDAL_MAP_PATH) ? JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')) : {};
+// slot dei trait (khuxwiki, «Special Attack Bonus», Trait Slots): tier 1-3 -> 1, 4-5 -> 2,
+// 6-8 -> 3 (9-10 non elencati: 3); Supernova (SN, SN+, SN++, Supernova, Supernova+) e Prime 7★
+// -> 5, Prime 6★ -> 3; supporto (EXP, evoluzione) -> 0. Non le «7★» di Roboloid senza prefisso
+// (561, es. Wakka: rarita' non affidabile). La tabella delle eccezioni della wiki (alcune 6★)
+// non e' applicata.
+const traitSlots = (tier, rare, name, support) => {
+  if (support) return 0;
+  if (/^(SN\+*|Supernova\+*) - /.test(name || '')) return 5;
+  if (/^Prime - /.test(name || '')) return rare >= 7 ? 5 : 3;
+  return tier >= 6 ? 3 : tier >= 4 ? 2 : 1;
+};
+let tiersFromRobo = 0;
 const realMedals = realTable('medal');
 if (realMedals) {
   const byId = new Map(medals.map((m) => [m.medalId, m]));
   for (const r of realMedals) {
     const img = MEDAL_IMAGES.has(r.imageId) ? r.imageId : IMAGE_BY_ATTRIBUTE[r.attribute] || 90041;
+    const rd = ROBO_BY_ID.get(MEDAL_MAP[r.medalId]);
+    const tier = rd ? rd.Guilt || 0 : r.guiltValue || 0;
+    if (rd && tier !== (r.guiltValue || 0)) tiersFromRobo++;
     byId.set(r.medalId, Object.assign(fromReal('medal', r), {
+      guiltValue: tier,
       imageId: img, thumbId: img, cutinId: img, artId: img, displayId: img,
       listSortId: r.sortId, burstEnhanceCategory: [0, 0], groupId: 0,
       // unk_1116 (tra advantage e type nel formato vecchio) vale 1 esattamente sulle medaglie
       // di supporto (EXP, evoluzione): e' validPack, le medaglie che si impilano in una cella
       // con il numero di copie (badge rosso Minfo_Eco_Panel negli screenshot originali)
       validPack: r.unk_1116 ? 1 : 0,
-      // slot dei trait (Moogle Shop, fusione): il formato vecchio non li ha. khwiki «Trait»:
-      // ogni medaglia ne ha da 1 a 5, senza legame con le stelle; il numero esatto c'e' solo
-      // per le medaglie recenti (campo trait= della khuxwiki, nessuna delle nostre). Ipotesi:
-      // 1 per le medaglie d'attacco, 3 sulle 6★ («HD Xion ... only two ... instead of
-      // three»), nessuno per quelle di supporto (EXP, evoluzione: validPack).
-      shuffleskillSlot: r.unk_1116 ? 0 : r.rare >= 6 ? 3 : 1,
+      // slot dei trait (Moogle Shop, fusione): il formato vecchio non li ha; dal tier (sopra)
+      shuffleskillSlot: traitSlots(tier, r.rare, r.name, r.unk_1116),
       // slot del trait speciale (khwiki: «Each Medal also has one Special Trait Slot»). La
       // griglia del popup «Select Medal» ([fn] con il flag +0xb29) vela e disattiva
       // le medaglie con spShuffleskillSlot 0 e quelle di supporto (tipo 9/10)
@@ -121,11 +143,10 @@ if (realMedals) {
 // attack/maxAttack uguali), evoluzione (catena Reference) e attacco speciale (riga burst
 // nuova: nome, gauge, bersaglio, potenza = moltiplicatore x 10000). Immagini:
 // fetch_medal_images.py con --all. Si attivano con KHUX_MEDALS_ALL=1.
-const ROBO_DB = process.env.KHUX_ROBOLOID_DB || 'D:\\Progetto_Restauro_KH_UX\\external\\roboloid\\medal_db.json';
 const newBursts = [];
 let roboAdded = 0;
-if (process.env.KHUX_MEDALS_ALL === '1' && fs.existsSync(ROBO_DB)) {
-  const robo = JSON.parse(fs.readFileSync(ROBO_DB, 'utf8'));
+if (process.env.KHUX_MEDALS_ALL === '1' && ROBO.length) {
+  const robo = ROBO;
   // id Roboloid gia' associati a una medaglia del master (le chiavi 300000+ sono le aggiunte)
   const mapped = new Set(fs.existsSync(MEDAL_MAP_PATH) ? Object.entries(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))
     .filter(([k]) => Number(k) < 300000).map(([, v]) => v) : []);
@@ -156,7 +177,7 @@ if (process.env.KHUX_MEDALS_ALL === '1' && fs.existsSync(ROBO_DB)) {
       maxDefense: d.DEF ?? base.maxDefense,
       guiltValue: d.Guilt || 0, validBurst: 1, burstId,
       validEvolve: next ? 1 : 0, evolveId: next ? robo2id(next) : 0,
-      validPack: 0, shuffleskillSlot: d.Rarity >= 6 ? 3 : 1, spShuffleskillSlot: 1,
+      validPack: 0, shuffleskillSlot: traitSlots(d.Guilt || 0, d.Rarity, d.Name, false), spShuffleskillSlot: 1,
     }));
     roboAdded++;
   }
@@ -542,6 +563,6 @@ const TABLES = path.join(__dirname, 'tables');
 for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
   if (f.endsWith('.json')) fs.copyFileSync(path.join(TABLES, f), path.join(OUT, f));
 }
-console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
+console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
