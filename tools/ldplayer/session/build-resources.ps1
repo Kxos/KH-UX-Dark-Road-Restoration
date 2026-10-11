@@ -31,7 +31,11 @@ $env:BGAD_KEY = $key
 # immagini dei keyblade img/keyBlade/KeyBlade_%06d.png (popup del keyblade ottenuto), dalle
 # bitmap dei LWF lwf/avatar/keyblade (estratte una volta in catalog\keyblade_lwf)
 $kl = "$D\catalog\keyblade_lwf"
-if (-not (Test-Path "$kl\rule\keyblade_rule.bin")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $kl lwf/avatar/keyblade/ lwf/medal/medaltype/ rule/ cocostudio/publish/Deck_KeyBlade_0701_05.png }
+if (-not (Test-Path "$kl\img\carouselDeck")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $kl lwf/avatar/keyblade/ lwf/medal/medaltype/ lwf/medal/medaldeck/ img/carouselDeck/ rule/ cocostudio/publish/Deck_KeyBlade_0701_05.png }
+# deck per keyblade (img/carouselDeck/Deck%03d...) e bagliore dell'attributo nel deck
+# (MedalDeck_Type1/2/11/21/31/01): servite solo 001 e Type3, crash di «Select a Keyblade»
+python recon\tools\make_keyblade_decks.py server\master_data\keyblade.json $kl "$sg\files"
+if ($LASTEXITCODE) { throw 'make_keyblade_decks fallito' }
 # posa del keyblade nei riquadri dei menu (rule/keyblade_rule.bin, una riga per keyblade, centrata
 # come Starlight: Treasure Trove era a destra e tagliato in «Select a Keyblade»)
 python -I recon\tools\keyblade_rule.py server\master_data\keyblade.json "$kl\rule\keyblade_rule.bin" "$kl\lwf\avatar\keyblade" "$sg\files"
