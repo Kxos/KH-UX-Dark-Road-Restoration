@@ -692,6 +692,35 @@ LAYOUTS = {
     'AdventureTop2_Raid_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
                                        {'Button_Mu_Board': 'Button_EV_Board'}, False, [
         ('opts', 'Button_Last_Member', dict(visible=False))]),
+    # Colosseo: tessera del menu Quests ([fn]) -> [fn], popup di scelta del modo.
+    # Cerca: Txt_PvP_off (Label: 106140105 «No event is being held.» / 106140106 / 106140107,
+    # visibile se il PVP non e' disponibile), Panel con Txt (106140108 «Select a mode.»), Title2
+    # (visibile se il PVP e' disponibile), Colosseum_But e PvP_But (pulsanti: Colosseum ->
+    # +0x440 = 6 -> [fn](0x11): GET /user/notice, poi GET /colosseum; PvP spento se non
+    # disponibile, [fn]), Close_Button. Finestra blu Win04 come i popup originali, due
+    # pulsanti grandi con il nome del modo (testo fisso: il codice non lo scrive).
+    'PvP_SelectWindow.json': ('build', P('PvP_SelectWindow', 0, 0, 960, 640, [
+        I('Win', 480, 320, 640, 400, 'Win04.png',
+          opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        I('Panel', 480, 470, 560, 40, 'Plate18.png', s9=False, children=[L('Txt', 0, 0, 540, 34, '', 24)]),
+        B('Colosseum_But', 340, 320, 230, 120, 'But01', 'Coliseum', 30, label='Txt_Colosseum', opts=BUT9),
+        B('PvP_But', 620, 320, 230, 120, 'But01', 'PVP', 30, label='Txt_PvP', opts=BUT9),
+        I('Title2', 620, 392, 70, 56, 'Deck_Medal_New.png', s9=False, visible=False),
+        L('Txt_PvP_off', 620, 220, 260, 60, '', 18, opts=dict(hAlignment=1, vAlignment=1)),
+        B('Close_Button', 790, 510, 64, 64, 'But_Close', None)])),
+    # Pulsanti laterali del Colosseo ([fn], dopo GET /colosseum; posizione da +0xa8):
+    # Button_Ranking/Txt (103300021 «Ranking»), Button_Reward/Txt (103300022 «Tier Rewards»),
+    # Button_Colosseum_Board/Txt (103300023 «Coliseum Boards»); tocchi con [fn]. Dal
+    # pulsante laterale originale AdventureTop2_Multi_Button, terzo pulsante clonato.
+    'AdventureTop2_Colosseum_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
+                                            {'Button_Mu_Board': 'Button_Colosseum_Board',
+                                             'Button_Last_Member': 'Button_Ranking'}, False, [
+        ('clone', 'Button_Ranking', 'Button_Reward', 'Panel_1'),
+        ('opts', 'Button_Reward', dict(y=248, visible=True))]),
+    # Celle della mappa del Colosseo ([fn], tipo 3 della vista dei pannelli: Cursor,
+    # FaceBook_PhotoPanel facoltativo): stessi widget della cella delle quest
+    # AdventureTop2_Adv_Panel_ver120 (originale).
+    'AdventureTop2_Colosseum_Panel.json': ('copy', 'AdventureTop2_Adv_Panel_ver120.json', {}, False, []),
     # Costo del deck superato su «Begin» ([fn]/[fn], StartDeckEditDialog: da
     # [fn] e [fn] quando [fn] trova il costo > maxDeckCost; anche
     # [fn], [fn], [fn]). Cerca: 4Line_Label (103000020 «Exceeds

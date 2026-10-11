@@ -254,7 +254,7 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   della serie. Il modello torna con i valori di Square Enix per quasi tutte le serie (Lady Luck,
   Three Wishes, Divine Rose, Olympia entro 2 unita'). L'avatar non e' toccato (stesse LWF).
 <a id="colosseo"></a>
-## Colosseo (da fare)
+## Colosseo
 
 - Il menu Quests (`[fn]`) dopo la Quest 130 scrive il testo ui 102850008 in `Txt_Title4`:
   mancava ovunque, crash a 0x8 (ora in `make_layouts.py` TEXTS).
@@ -271,3 +271,13 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   Txt_Description; testi 0x6222151-153, 0x6283bb5-7), `AdventureTop2_Colosseum_Panel`
   (`[fn]`), `_Target` (`[fn]`), `Colosseum_MainPanel` (`[fn]`),
   `BattleResultColosseumScene`, `RankingColosseumScene_ver1301`.
+- Percorso verificato nel codice: tessera del menu Quests (`[fn]`) -> popup
+  `PvP_SelectWindow` (`[fn]`) -> «Coliseum» (+0x440 = 6) -> `[fn](0x11)` ->
+  `GET /user/notice` (241, `raidNotice {isSelfRaid, isOthersRaid}` uint obbligatori) -> modo 6 ->
+  `GET /colosseum` (124, builder `[fn]`) -> `[fn]` -> `[fn](6)` (mappa,
+  `[fn]`: stage solo con status 1) + `[fn]` (`AdventureTop2_Colosseum_Button`;
+  status 2 = «This event is unavailable.»). Il «PVP» (+0x440 = 0xb) va a `[fn](0x17)`.
+- **Tabelle master `colosseum` e `colosseumStage` vuote** (5.0.1 offline): il client non ha righe per
+  gli stage del Colosseo, quindi il server risponde status 2 e nessuno stage (`respondColosseum`).
+  Per giocarlo servono le righe master (da ricostruire) e `stage/cl_stg%05d_%02d.bin` (nessuno
+  servito) per la mappa `AdventureTop2_Colosseum_Target`, poi 126 start / 128 clear.

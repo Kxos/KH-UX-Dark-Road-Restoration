@@ -161,6 +161,8 @@ function route(url) {
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
   if (p === '/stage/event') return 'stageevent';
+  if (p === '/user/notice') return 'usernotice';
+  if (p === '/colosseum') return 'colosseum';
   if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
   if (p === '/user/stone') return 'userstone';
   if (p === '/user/material') return 'usermaterial';
@@ -1996,6 +1998,23 @@ function respondStageEvent(res) {
   }
   send(res, 200, { ret: ret(), events, highScoreRank: 0 });
 }
+// GET /user/notice (azione 241, [fn]): raidNotice {isSelfRaid, isOthersRaid} uint,
+// obbligatori. Il client lo chiede scegliendo «Coliseum» nel popup PvP_SelectWindow.
+// GET /colosseum (azione 124, [fn]): colosseumInfo {colosseumStageId int, status int},
+// colosseumStages[] ({stageId, useAp, rank, stageCount} int, [fn]), colosseumRank uint,
+// userColosseum {userRank, userStageCount, userStageTotalCount} int. status 1 = in corso
+// ([fn] riempie la mappa con colosseumStages), 2 = «This event is unavailable.»
+// ([fn], Txt_Description). Le tabelle master colosseum/colosseumStage della 5.0.1 sono
+// vuote: senza righe il Colosseo non si puo' giocare, quindi status 2 e nessuno stage.
+function respondColosseum(res) {
+  send(res, 200, {
+    ret: ret(),
+    colosseumInfo: { colosseumStageId: 0, status: 2 },
+    colosseumStages: [],
+    colosseumRank: 0,
+    userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
+  });
+}
 const STAGE_CLEARED = Number(process.env.KHUX_STAGE_CLEARED || 2);
 
 function respondStageList(res) {
@@ -2144,6 +2163,8 @@ function handler(scheme) {
       if (kind === 'stagecontinue') return respondStageContinue(res, req.url.split('?')[0]);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
   if (kind === 'stageevent') return respondStageEvent(res);
+  if (kind === 'usernotice') return send(res, 200, { ret: ret(), raidNotice: { isSelfRaid: 0, isOthersRaid: 0 } });
+  if (kind === 'colosseum') return respondColosseum(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: [] });
       // GET /raid/list/181221 (azione 240, [fn]): selfRaid ([fn] modo 0:

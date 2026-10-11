@@ -30,10 +30,10 @@ Ultima revisione: 11 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-002 | IN CORSO | 254 layout citati dal binario e assenti (`catalog\missing_layouts.txt`): triage | [risorse_layout](notes/risorse_layout.md#mancanti) | 10-11 |
-| I-053 | DA VERIFICARE | Crash del menu Quests dopo la Quest 130: testo ui 102850008 assente (Txt_Title4, [fn] a 0xd98c94) | [risorse_layout](notes/risorse_layout.md#regole) | 3b6bbb3 |
-| I-054 | APERTO | Colosseo: layout AdventureTop2_Colosseum_Button/_Panel/_Target, Colosseum_MainPanel e GET /colosseum da fare | [server](notes/server.md#colosseo) | stage_gen\layout_triage |
-| I-048 | DA VERIFICARE | Scheda Events (dopo la Quest 14): `AdventureTop2_EV_Banner_ver220`/`_EV_Button`/`_Raid_Button` generati, `GET /stage/event` con `events: []` | [server](notes/server.md#eventi) | stage_gen\layout_triage |
-| I-049 | DA VERIFICARE | Crash 0x2c in GUIReader: 9-slice su texture assente (Plate21 in Continue/AP_Recovery/Ability_MAX, Panel07 in ReleaseWindow) | [risorse_layout](notes/risorse_layout.md#regole) | 0603a9c |
+| I-053 | CHIUSO | Crash del menu Quests dopo la Quest 130: testo ui 102850008 assente (Txt_Title4, [fn] a 0xd98c94) | [risorse_layout](notes/risorse_layout.md#regole) | 3b6bbb3 |
+| I-054 | DA VERIFICARE | Colosseo: PvP_SelectWindow, AdventureTop2_Colosseum_Button/_Panel, GET /user/notice e GET /colosseum (status 2 «unavailable»: tabelle master colosseum/colosseumStage della 5.0.1 vuote, Colosseo non giocabile) | [server](notes/server.md#colosseo) | stage_gen\layout_triage |
+| I-048 | CHIUSO | Scheda Events (dopo la Quest 14): `AdventureTop2_EV_Banner_ver220`/`_EV_Button`/`_Raid_Button` generati, `GET /stage/event` con `events: []` | [server](notes/server.md#eventi) | stage_gen\layout_triage |
+| I-049 | CHIUSO | Crash 0x2c in GUIReader: 9-slice su texture assente (Plate21 in Continue/AP_Recovery/Ability_MAX, Panel07 in ReleaseWindow) | [risorse_layout](notes/risorse_layout.md#regole) | 0603a9c |
 | I-050 | DA VERIFICARE | Keyblade posseduti: premio di tipo 13 (Treasure Trove dalla Quest 14) mai dato, popup con l'immagine di Olympia; ora proprieta' nel salvataggio, `/user/keyblade/update/170516`, `img/keyBlade/KeyBlade_%06d.png` generate | [server](notes/server.md#keyblade) | 30549ba |
 | I-051 | DA VERIFICARE | Optimize su Treasure Trove: crash (LWF `MedalType%d` mancanti: copie ricolorate MedalType1/2/01; banco: niente crash) e deck rimasto vuoto (deck vuoto ora `[0 x slot]`) | [server](notes/server.md#keyblade) | 0503105, 9d670ca |
 | I-052 | DA VERIFICARE | «Select a Keyblade»: Treasure Trove spostato a destra e tagliato: posa da `rule/keyblade_rule.bin` (non da ofsX/ofsY, provato), riscritta con una riga per keyblade centrata come Starlight | [server](notes/server.md#keyblade) | keyblade_rule.py |
