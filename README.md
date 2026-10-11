@@ -20,8 +20,10 @@ Stato aggiornato al 9 ottobre 2026. Le schermate che il client 4.3.1 non trova p
 risorse (layout CocoStudio, testi, animazioni) vengono **ricostruite**: dagli originali
 vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'epoca.
 
-**[HANDOFF.md](HANDOFF.md)** — il diario del lavoro: come riprendere, lo stato del banco, i
-controlli da fare per primi e ogni problema risolto con la sua causa.
+**[HANDOFF.md](HANDOFF.md)** — come riprendere: stato del banco e prossimo passo.
+**[docs/ISSUES.md](docs/ISSUES.md)** — i problemi aperti e chiusi; note tecniche per area in
+[docs/notes/](docs/notes/), diario completo del lavoro (ogni problema risolto con la sua causa) in
+[docs/journal/](docs/journal/).
 **[REPORT.md](REPORT.md)** — risultati della ricognizione. **[PHASE-A.md](PHASE-A.md)** — analisi statica.
 **[PHASE-C.md](PHASE-C.md)** — i campi delle tabelle `master::`, ricavati senza Ghidra.
 
@@ -44,7 +46,8 @@ controlli da fare per primi e ogni problema risolto con la sua causa.
 
 ```
 REPORT.md, PHASE-*.md   Ricognizione e analisi
-HANDOFF.md              Come riprendere il lavoro, stato e cronologia dei problemi risolti
+HANDOFF.md              Come riprendere il lavoro (stato e prossimo passo)
+docs/                   ISSUES.md (problemi), notes/ (note tecniche per area), journal/ (diario)
 server/                 Server Node.js: API REST, DNS, tabelle master e di gioco generate
                         (server/README.md)
 tools/ldplayer/         Banco su LDPlayer: avvio, sessioni (session/), cattura dei crash
