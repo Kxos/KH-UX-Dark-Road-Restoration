@@ -165,6 +165,7 @@ function route(url) {
   if (p === '/stage/clear') return 'stageclear';
   if (p === '/shop/ap/recover') return 'aprecover';
   if (p === '/stage/event') return 'stageevent';
+  if (p === '/stage/pickup') return 'stagepickup';
   if (p === '/user/notice') return 'usernotice';
   if (p === '/colosseum') return 'colosseum';
   if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
@@ -2234,6 +2235,9 @@ function handler(scheme) {
       if (kind === 'kbsubslot') return kbEvo().respondSubslot(res, req.method, entry.bodyDecoded);
       if (kind === 'kbenhance') return kbEvo().respondEnhance(res, entry.bodyDecoded);
       if (kind === 'kbburstmax') return kbEvo().respondBurstMax(res, entry.bodyDecoded);
+      // GET /stage/pickup (azione 250, dopo ogni clear): missioni in evidenza, elemento
+      // FUN_007ad4c0; la chiave e' scritta cosi' nel binario. Nessuna in evidenza: []
+      if (kind === 'stagepickup') return send(res, 200, { ret: ret(), pisckupStages: [] });
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
