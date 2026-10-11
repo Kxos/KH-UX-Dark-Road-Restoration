@@ -86,7 +86,9 @@ function makeKeybladeEvo(ctx) {
       player.keybladeEnhanceCount = (player.keybladeEnhanceCount || 0) + 1;
       // gauge degli attacchi speciali: non oltre il massimo della riga nuova
       const kk = (player.keyblades || []).find((x) => x.userKeybladeId === id);
-      if (kk && kk.burst > next.maxBurstGauge) kk.burst = next.maxBurstGauge;
+      // burst in unita' interne, 10000 per tacca (banco: 24000 = 2, 48068 = 4); confrontato
+      // con maxBurstGauge in tacche la gauge finiva a 9 = 0 tacche
+      if (kk && kk.burst > next.maxBurstGauge * 10000) kk.burst = next.maxBurstGauge * 10000;
       if (id === ctx.USER_KEYBLADE_ID && player.keybladeBurst > next.maxBurstGauge) player.keybladeBurst = next.maxBurstGauge;
       ctx.savePlayer();
       console.log(`  [keyblade] enhance ${row.name} (${row.keybladeId}) -> ${next.name} (${next.keybladeId})`
