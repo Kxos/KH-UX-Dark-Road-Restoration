@@ -420,12 +420,32 @@ def medalinfo_icon(n, digit):
     # misure delle originali: sagoma 70-88 px (riquadro), centrata; corpo 2,39,63 opaco con
     # antialias di 1 px; fuori e nei fori un alone bianco semitrasparente (il «filo chiaro»);
     # cifra azzurra col contorno scuro alla dimensione originale (l'8: 31x20 a 34,40)
-    body = Image.new('L', (100, 100), 0)
-    body.paste(big_mask(n, 80), (10, 10))
+    # Sagoma: quella vera del gioco, ricavata dai fotogrammi dei video del dettaglio medaglia
+    # (recon/tools/tier_from_video.py -> reference\medal_tier\sagoma_tierN_video.png, 400x400 =
+    # la texture 100x100 a 4x); senza, la vecchia ricostruzione dall'icona della wiki.
+    vid = os.path.join(TIER, 'sagoma_tier%d_video.png' % n)
+    if os.path.exists(vid):
+        body = Image.open(vid).convert('L').resize((100, 100), Image.LANCZOS)
+    else:
+        body = Image.new('L', (100, 100), 0)
+        body.paste(big_mask(n, 80), (10, 10))
     im = white_glow(body)
     navy = Image.new('RGBA', (100, 100), (2, 39, 63, 255))
     navy.putalpha(body)
     im.alpha_composite(navy)
+    cif = os.path.join(TIER, 'cifra_tier%d_video.png' % n)
+    if os.path.exists(vid) and os.path.exists(cif):
+        # cifra vera dagli stessi fotogrammi (copertura 0-255 a 4x, al suo posto nella texture):
+        # targa blu notte sotto, contorno 0,49,98 di ~1 px e cifra 154,202,255 come le 1-8
+        from PIL import ImageFilter
+        c4 = Image.open(cif).convert('L')
+        x0, y0, x1, y1 = [v / 4 for v in c4.point(lambda v: 255 if v >= 128 else 0).getbbox()]
+        plate = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+        ImageDraw.Draw(plate).ellipse((x0 - 5, y0 - 4, x1 + 4, y1 + 3), fill=(2, 39, 63, 255))
+        im.alpha_composite(plate)
+        im.paste((0, 49, 98, 255), (0, 0), c4.filter(ImageFilter.MaxFilter(9)).resize((100, 100), Image.LANCZOS))
+        im.paste((154, 202, 255, 255), (0, 0), c4.resize((100, 100), Image.LANCZOS))
+        return im
     # «10»: stessa altezza delle altre cifre, stretto in larghezza fino a 44 px
     dg = digit if digit.width <= 44 else digit.resize((44, digit.height), Image.LANCZOS)
     x0, y0 = (100 - dg.width) // 2, 50 - dg.height // 2
