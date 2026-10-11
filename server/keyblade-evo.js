@@ -35,6 +35,7 @@ const SUBSLOT_SCALE = Number(process.env.KHUX_SUBSLOT_SCALE || 1);
 
 function routeKeybladeEvo(p) {
   if (p === '/keyblade/enhance') return 'kbenhance';
+  if (p === '/keyblade/burst/max') return 'kbburstmax';
   return null;
 }
 
@@ -89,7 +90,7 @@ function makeKeybladeEvo(ctx) {
       // burst in unita' interne, 10000 per tacca (banco: 24000 = 2, 48068 = 4); confrontato
       // con maxBurstGauge in tacche la gauge finiva a 9 = 0 tacche
       if (kk && kk.burst > next.maxBurstGauge * 10000) kk.burst = next.maxBurstGauge * 10000;
-      if (id === ctx.USER_KEYBLADE_ID && player.keybladeBurst > next.maxBurstGauge) player.keybladeBurst = next.maxBurstGauge;
+      if (id === ctx.USER_KEYBLADE_ID && player.keybladeBurst > next.maxBurstGauge * 10000) player.keybladeBurst = next.maxBurstGauge * 10000;
       ctx.savePlayer();
       console.log(`  [keyblade] enhance ${row.name} (${row.keybladeId}) -> ${next.name} (${next.keybladeId})`
         + `${next.displayId !== row.displayId ? ', evoluzione (design ' + next.displayId + ')' : ''}`
@@ -105,6 +106,29 @@ function makeKeybladeEvo(ctx) {
       // l'elenco completo comparivano tutti, banco 11-10), come /stage/clear
       userTitles: [],
     });
+  }
+
+  // POST /keyblade/burst/max (azione 53) {userKeybladeId, kind}: «Max Out Gauge» dal riquadro
+  // del keyblade prima della quest (popup PopupNormal_Ability_MAX, [fn]: costo = misc
+  // 120, 30 jewel). Il ramo del dispatcher legge solo userKeyblade ([fn]).
+  function respondBurstMax(res, body) {
+    const id = Number(body?.userKeybladeId);
+    const k = ctx.ownedKeyblades().find((x) => x.userKeybladeId === id);
+    const row = k && rowOf(k.keybladeId);
+    const cost = ctx.masterRows('misc').find((r) => r.miscId === 120)?.value ?? 30;
+    if (!row) console.log(`  [keyblade] burst/max ${id}: keyblade sconosciuto`);
+    else if ((player.freeStone || 0) < cost) console.log(`  [keyblade] burst/max: jewel insufficienti (${player.freeStone || 0} < ${cost})`);
+    else {
+      player.freeStone -= cost;
+      const full = row.maxBurstGauge * 10000;
+      const kk = (player.keyblades || []).find((x) => x.userKeybladeId === id);
+      if (kk) kk.burst = full;
+      else if (id === ctx.USER_KEYBLADE_ID) player.keybladeBurst = full;
+      ctx.savePlayer();
+      console.log(`  [keyblade] burst/max ${row.name}: gauge ${row.maxBurstGauge} tacche (${full}), -${cost} jewel`);
+    }
+    const out = ctx.userKeybladesData().find((x) => x.userKeybladeId === id);
+    ctx.send(res, 200, { ret: ctx.ret(), userKeyblade: out || ctx.userKeybladesData()[0] });
   }
 
   // ---- sub-slot ---------------------------------------------------------------------------
@@ -197,7 +221,7 @@ function makeKeybladeEvo(ctx) {
   }
 
   return {
-    respondEnhance, respondSubslot, userKeybladeSubslotsData, subslotMaxNum, keybladeSubslotRate,
+    respondEnhance, respondBurstMax, respondSubslot, userKeybladeSubslotsData, subslotMaxNum, keybladeSubslotRate,
     starlightKeybladeId, removeMedal,
   };
 }

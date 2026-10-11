@@ -2217,6 +2217,7 @@ function handler(scheme) {
       if (kind === 'userdeck') return respondUserDeck(res);
       if (kind === 'kbsubslot') return kbEvo().respondSubslot(res, req.method, entry.bodyDecoded);
       if (kind === 'kbenhance') return kbEvo().respondEnhance(res, entry.bodyDecoded);
+      if (kind === 'kbburstmax') return kbEvo().respondBurstMax(res, entry.bodyDecoded);
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
