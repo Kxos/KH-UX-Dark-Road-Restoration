@@ -252,34 +252,63 @@ def wiki_tier(n, inactive=False):
 
 
 def tier_mask(n):
-    """Sagoma della tier n (L, 34x34): i pixel viola dell'icona inattiva della wiki, dentro la
-    cornice quadrata (3 px)."""
-    im = wiki_tier(n, True).crop((4, 4, 38, 38))
+    """Sagoma della tier n (L, 34x34). Tier 1-8: i pixel viola dell'icona inattiva della wiki,
+    dentro la cornice. Tier 9-10: i tratti rossi, bianchi e gialli dell'icona ATTIVA (l'inattiva
+    e' una macchia piena: dava sagome tozze, poi tagliate a cerchio, «tagliate» sul banco)."""
+    if n < 9:
+        im = wiki_tier(n, True).crop((4, 4, 38, 38))
+        px = im.load()
+        m = Image.new('L', im.size, 0)
+        mp = m.load()
+        for y in range(im.height):
+            for x in range(im.width):
+                r, g, b, a = px[x, y]
+                mp[x, y] = max(0, min(255, int((min(r, b) - g - 20) * 3))) if a else 0
+        return m
+    im = wiki_tier(n).crop((4, 4, 38, 38))
     px = im.load()
     m = Image.new('L', im.size, 0)
     mp = m.load()
     for y in range(im.height):
         for x in range(im.width):
             r, g, b, a = px[x, y]
-            mp[x, y] = max(0, min(255, int((min(r, b) - g - 20) * 3))) if a else 0
-    if n >= 9:
-        # le sagome 9-10 riempiono il quadrato: tagliate a cerchio come le 6-8 originali
-        c = Image.new('L', (m.width * 4, m.height * 4), 0)
-        ImageDraw.Draw(c).ellipse((2, 2, c.width - 3, c.height - 3), fill=255)
-        m = ImageChops.multiply(m, c.resize(m.size, Image.LANCZOS))
+            red = r > 110 and b < r * 0.75
+            white = r > 180 and g > 150 and b > 150 and b <= g + 40
+            yellow = r > 180 and g > 150 and b < 120
+            mp[x, y] = 255 if a >= 128 and (red or white or yellow) else 0
     return m
 
 
 def big_mask(n, size):
     """Sagoma pulita a size x size: la maschera 34x34 ingrandita a 8x la dimensione finale,
     sfocata (contorno liscio, come vettorializzato), soglia netta, poi ridotta con LANCZOS
-    (antialias di 1 px come le originali)."""
+    (antialias di 1 px come le originali). Tier 9-10: verso il bordo della cornice la maschera
+    si attenua (dall'88% del raggio), cosi' le punte che la cornice della wiki taglia diventano
+    punte affilate invece di tagli dritti."""
+    import math
     from PIL import ImageFilter
     big = size * 8
-    m = tier_mask(n).resize((big, big), Image.BICUBIC).filter(ImageFilter.GaussianBlur(big / 34 * 0.6))
-    m = m.point(lambda v: 255 if v >= 128 else 0)
+    m = tier_mask(n).resize((big, big), Image.BICUBIC).filter(ImageFilter.GaussianBlur(big / 34 * (0.38 if n >= 9 else 0.6)))
+    if n < 9:
+        return m.point(lambda v: 255 if v >= 128 else 0).resize((size, size), Image.LANCZOS)
+    # simmetria di rotazione dei disegni della wiki (misurata: la 9 a 7 bracci, la 10 a 5): la
+    # media delle k rotazioni toglie il rumore della sorgente a 34 px e ridà tratti netti
+    k = {9: 7, 10: 5}[n]
+    c = (big - 1) / 2
+    acc = m
+    for j in range(1, k):
+        acc = Image.blend(acc, m.rotate(360 / k * j, resample=Image.BICUBIC, center=(c, c)), 1 / (j + 1))
+    m = acc
+    fall = Image.new('L', (big, big), 0)
+    fp = fall.load()
+    for y in range(big):
+        for x in range(big):
+            r = math.hypot(x - c, y - c) / c
+            f = 1.0 if r < 0.88 else max(0.0, 1 - (r - 0.88) / 0.12)
+            fp[x, y] = int(255 * (0.35 + 0.65 * f)) if f > 0 else 0
+    m = ImageChops.multiply(m, fall).point(lambda v: 255 if v >= 150 else 0)
+    m = m.filter(ImageFilter.MinFilter(9)).filter(ImageFilter.MaxFilter(9))   # via i granelli
     return m.resize((size, size), Image.LANCZOS)
-
 
 def white_glow(m, cap=110):
     """Alone bianco semitrasparente fuori dalla sagoma e nei suoi fori, come le MedalInfo_Guilt
