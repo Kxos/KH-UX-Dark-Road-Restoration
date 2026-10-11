@@ -624,7 +624,8 @@ LAYOUTS = {
         ('opts', 'Txt_KB_Label', dict(y=195, height=44, areaHeight=44, fontSize=28, hAlignment=1, vAlignment=1)),
         ('opts', 'Button_Ok', dict(y=-188)),
         # figli dell'ImageView: coordinate dal centro della finestra
-        ('add', 'NormalText_Window01', I('KB', 0, 60, 200, 200, 'KeyBlade_0101.png', s9=False)),
+        # immagine del keyblade 440x340 come KB di BattleResult_GetItem_ver131 (li' scala 0,35)
+        ('add', 'NormalText_Window01', I('KB', 0, 60, 440, 340, 'Deck_KeyBlade_0701_05.png', s9=False, scale=0.55)),
         ('add', 'NormalText_Window01', I('Name_Plate', 0, -62, 420, 36, 'Plate03.png', opts=PLATE3)),
         ('add', 'NormalText_Window01', L('Txt', 0, -62, 400, 32, '', 24)),
         ('add', 'NormalText_Window01', L('Txt_Title_Label', 0, -115, 600, 60, '', 22,
@@ -632,6 +633,18 @@ LAYOUTS = {
         # Panel: il codice ne cambia solo una proprieta' (vtable +0x428); trasparente, sotto la finestra
         ('add', 'Panel_8', P('Panel', 0, 0, 10, 10)),
         P('Area_Point', 480, 560, 10, 10)]),
+    # Riga «abilita' salita di livello» nei risultati (FUN_009b701c, da FUN_009acbd8 in ogni
+    # scena dei risultati: FUN_009ab300 normale, raid, Colosseo, ...): per ogni medaglia del deck
+    # la cui abilita' (userSkills, al massimo 2) ha un livello piu' alto dopo la quest
+    # (FUN_009b74a8). Il codice la aggiunge a Scroll_Area della scena dei risultati e cerca solo
+    # Txt_GetItem_Label (100451005 «%s's %s leveled up!»). Dalla riga sorella originale
+    # BattleResult_GetItem_ver131 (targa Result_GetItem_Panel), tolte icone e quantita'.
+    'BattleResult_Skill_ver130.json': ('copy', 'BattleResult_GetItem_ver131.json', {}, False, [
+        ('text', 'Txt_GetItem_Label', ''),
+        ('opts', 'Txt_GetItem_Label', dict(x=-310, width=620, areaWidth=620)),
+        ('text', 'Txt_GetItem_Num_Label', ''),
+        ('text', 'Txt_Wording', '')] + [('opts', n, dict(visible=False)) for n in (
+            'UnderPanel', 'Txt_GetItem_Num_Label', 'New', 'GetItem', 'KB', 'LuxBoard', 'AVT', 'Base')]),
     # Costo del deck superato su «Begin» (FUN_0098d7a4/FUN_0098df84, StartDeckEditDialog: da
     # FUN_00991fac e FUN_00994c0c quando FUN_0098ce50 trova il costo > maxDeckCost; anche
     # FUN_00cf8e58, FUN_00dab0e4, FUN_00995490). Cerca: 4Line_Label (103000020 «Exceeds
@@ -671,6 +684,16 @@ LAYOUTS = {
         ('opts', 'Button_Close', dict(y=-128)),
         ('add', 'NormalText_Window03', L('Txt_AP_Recovery', 0, 12, 612, 34, '', 22,
                                          opts=dict(hAlignment=1, vAlignment=1)))]),
+    # Gauge del keyblade al massimo con jewel, dal riquadro del keyblade prima della quest
+    # (FUN_0098bb78, tocco gestito da FUN_00998468 in StartDeckEditDialog). Cerca: Txt_Wording
+    # (103000012 «Spend %d Jewels to max out this Keyblade's special attack gauge?», XML),
+    # Txt_CrownPossessed (100310002 «Held»), Txt_CrownPossessed_Label, Button_OK/Txt_OK,
+    # Button_Close/Txt_Cancel: PopupNormal_Continue_Multi senza la seconda riga e il conto.
+    'PopupNormal_Ability_MAX.json': ('copy', 'PopupNormal_Continue_Multi.json', {}, False, [
+        ('opts', 'Countdown_panel', dict(visible=False)),
+        ('text', 'Txt_Wording2', ''),
+        ('opts', 'Txt_Wording2', dict(visible=False)),
+        ('opts', 'Txt_Wording', dict(y=80, height=90))]),
     # Medaglie oltre il limite (FUN_00b9dd2c; da Begin, Medal List, negozio, ...: possedute >=
     # userDetail.maxMedal). Cerca: NormalText_Window01, 4Line_Label (102610002/3 + 102610008,
     # resa XML), Button_Extension/Txt_Extension (102610007 «Increase Storage»), Button_Mix/Txt_Mix
