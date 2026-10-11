@@ -36,6 +36,10 @@
 // [fn]) il PetActor aspetta la fine dei LWF lwf/pet/motion/* (evento «end»): li genera
 // recon/tools/make_pet_motions.py (da make_layouts.py). Con i LWF vuoti la battaglia si bloccava
 // dopo il primo attacco (I-005). I trick restano spenti: SKILLS_ENABLED qui sotto.
+// La medaglia di petBaseSlotMedal non chiede altro al server: il client la mette dopo quelle del
+// deck ([fn] -> [fn], x pet.petSubslot.magnification) e al suo turno attacca il
+// pet; il colpo parte dagli eventi «knockback_2»/«effectStart_1» di battle_normal/all/skill e
+// dagli effetti lwf/ability/hit_effect/pet_eff_000N, generati anch'essi da make_pet_motions.py.
 //
 // Il dialog del pet (PetInfoDialog, PetInfoScene_ver320.json) e le sue sotto-schermate mancano da
 // ogni risorsa (catalog\missing_layouts.txt): Button_PowerUp e l'icona pet della home lo aprono

@@ -1605,7 +1605,8 @@ if os.path.exists(_EMPTY_LWF):
         shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
 # Movimenti del pet (lwf/pet/motion/*): LWF nostri, invisibili, con l'evento «end» dove la
 # battaglia aspetta la fine del movimento (I-005: con i vuoti la battaglia col pet si bloccava
-# dopo il primo attacco). Vedi make_pet_motions.py.
+# dopo il primo attacco), con il colpo in battle_normal/all/skill (turno della medaglia del pet),
+# e gli effetti lwf/ability/hit_effect/pet_eff_0001-0003. Vedi make_pet_motions.py.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_pet_motions  # noqa: E402
 make_pet_motions.write_all(OUT)
