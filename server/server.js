@@ -1233,6 +1233,22 @@ function userSphereAll() {
   return { userSphereDatas: Object.keys(sphereBoards()).map(userSphereData), notChargedSphereBoardIds: [] };
 }
 
+// POST /user/sphere/check (azioni 60/61): ogni voce di userSphereDatas e' per il client una
+// bacheca appena sbloccata e finisce nell'elenco (FUN_007c1dfc()+0x6a8) da cui la home, i
+// risultati e l'elenco delle bacheche aprono il popup BattleResult_LB_ver120 (FUN_006ecd6c),
+// una volta per voce. Si mandano solo le bacheche non ancora annunciate (player.sphereNotified);
+// l'array vuoto svuota l'elenco, la chiave mancante lo lascerebbe com'e'. L'elenco completo
+// arriva da GET /user/sphere. Salvataggi di prima: le bacheche gia' possedute contano come annunciate.
+function respondSphereCheck(res) {
+  const owned = Object.keys(sphereBoards());
+  if (!player.sphereNotified) player.sphereNotified = owned.map(Number);
+  const fresh = owned.filter((id) => !player.sphereNotified.includes(Number(id)));
+  player.sphereNotified.push(...fresh.map(Number));
+  savePlayer();
+  const userSphere = { userSphereDatas: fresh.map(userSphereData), notChargedSphereBoardIds: [] };
+  send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [] });
+}
+
 // premio di un nodo (rewardSelect di sphereMasu): 12 HP, 21 AP, 22 costo del deck (bonus sommati
 // in userPointData/userDetailData), 3 medaglia, 19/20/23 parti dell'avatar
 function grantSphereReward(masu, i) {
@@ -1963,7 +1979,7 @@ function handler(scheme) {
       // /check/170119 (azioni 60/61: userSphere in merge, closeEventSphereBoardIds se checkTypes ha 3)
       if (kind === 'spherelist') { const userSphere = userSphereAll(); savePlayer(); return send(res, 200, { ret: ret(), userSphere }); }
       if (kind === 'sphereupdate') return respondSphereUpdate(res, entry.bodyDecoded);
-      if (kind === 'spherecheck') { const userSphere = userSphereAll(); savePlayer(); return send(res, 200, { ret: ret(), userSphere, closeEventSphereBoardIds: [] }); }
+      if (kind === 'spherecheck') return respondSphereCheck(res);
       if (kind === 'missionreceive') return respondMissionReceive(res, entry.bodyDecoded);
       if (kind === 'userdetailupdate') return respondUserDetailUpdate(res, req.url.split('?')[0], entry.bodyDecoded);
       // GET /moogleshop/list: FUN_007ac3f0, moogleshops[] = {moogleshopId, limitCount} (acquisti
