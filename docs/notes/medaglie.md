@@ -83,6 +83,16 @@ Raid, Thundaga, Heaven's Sword) (ISSUES I-033).
 - Targhetta sotto la medaglia: segue l'ordinamento; sulle medaglie di supporto alterna il prezzo con
   i testi 101210001-003, che nelle risorse inglesi sono uno spazio (originale «FOR SYNTHESIS»)
   (ISSUES I-022).
+- Animazione della targhetta (ISSUES I-047): nessun ciclo STR -> DEF -> costo, ne' nell'originale
+  ne' nel codice. Un solo valore per modalita' di ordinamento (`+0x470`, switch in `[fn]`);
+  le medaglie con uno stato alternano valore ed etichetta: `[fn]` (ogni frame da
+  `[fn]`) tiene 2 s il valore, 1 s di dissolvenza, 2 s l'etichetta, 1 s di dissolvenza
+  (periodo 6 s; `[fn]` applica le opacita'). Etichetta da `[fn]`: medaglia in un
+  deck di `userDecks` (`[fn]`) -> «Equipped» (101210004); Spirit 106110305; Subslot
+  101210010. Video originale (2019): stessi tempi misurati al decimo di secondo
+  (`reference\medal_list_plate\`). Sul banco il deck e' [1, 0, 3] (medaglie iniziali, in fondo
+  alla lista per Strength): le medaglie in vista non sono equipaggiate e restano ferme, come
+  nell'originale.
 
 <a id="sort"></a>
 ## Popup Sort/Filter

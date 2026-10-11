@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-046**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-047**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -63,6 +63,7 @@ Ultima revisione: 11 ottobre 2026.
 | I-022 | APERTO | Vendita: la targhetta delle medaglie di supporto alterna il prezzo con un testo vuoto (orig. «FOR SYNTHESIS») | [medaglie](notes/medaglie.md#medal-list) | 9b83a55 |
 | I-023 | APERTO | Popup Sort/Filter da confrontare con l'originale (Favorite, SP Attack Bonus/No Bonus grigi, Imitation, Special Traits); riga tier ora 1-10 con le icone 9-10 (da vedere sul banco) | [medaglie](notes/medaglie.md#sort) | dbcf6c6, b19a74c |
 | I-046 | DA VERIFICARE | Tier (SP Attack Bonus) delle medaglie: 480 a 0 presi da Roboloid/khuxwiki, icone 9-10 (prima mostravano l'1), slot dei trait dal tier (1.126 cambiati); rev. 82 | [medaglie](notes/medaglie.md#tier) | 2030f79, b19a74c |
+| I-047 | DA VERIFICARE | Medal List: la targhetta non cicla STR/DEF/costo nemmeno nell'originale; alterna (2 s + 1 s di dissolvenza) valore e «Equipped» solo sulle medaglie nel deck. Codice e dati gia' corretti: da vedere sul banco sulle medaglie 1 e 3 | [medaglie](notes/medaglie.md#medal-list) | reference\medal_list_plate |
 | I-024 | APERTO | Evolve: animazione del risultato originale (ora quella del Level Up) | [medaglie](notes/medaglie.md#level-evolve) | dd25fb8 |
 | I-038 | APERTO | Unequip: `GET /user/medal/preremove` ha una risposta generica, da studiare | [medaglie](notes/medaglie.md#level-evolve) | 8cfac80 |
 | I-039 | APERTO | Grafica medaglie, limiti della fonte: 185 Cutin assenti, 419 Medal_L condivise, Cutin senza bagliore | [medaglie](notes/medaglie.md#grafica) | `stage_gen\medal_check\REPORT.md` |
