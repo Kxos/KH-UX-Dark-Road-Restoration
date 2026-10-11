@@ -59,6 +59,9 @@ const PET_NAME = process.env.KHUX_PET_NAME || 'Spirit';
 // invokeType 1 per tutti e valori stimati: finche' la corrispondenza trick -> posto non e'
 // verificata, il pet in battaglia segue solo l'avatar (niente trick).
 const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS === '1';
+// Parti della serie 001 per il pet visibile (default). KHUX_PET_PARTS=0 = ripiego: id 0, pet
+// invisibile come prima (i movimenti mandano comunque gli eventi e i pet_eff restano visibili).
+const DEFAULT_PART = process.env.KHUX_PET_PARTS === '0' ? 0 : 1;
 
 function routePet(p) {
   if (!ENABLED) return null; // spento: risposte generiche dagli schemi, come prima
@@ -84,15 +87,20 @@ function makePet(ctx) {
     return player.pet;
   }
 
-  // coordinato: 12 int ([fn]). Parti 0 = nessuna parte scelta (petParts e' vuota).
+  // coordinato: 12 int ([fn]). Il pet si disegna attaccando lwf/pet/part/%03d/<parte>
+  // (id % 1000, [fn]/[fn]) ai movie omonimi dei nostri lwf/pet/motion
+  // (make_pet_motions.py): le risorse hanno solo la serie 001 (orecchie, muso, zampe, corpo,
+  // coda), quindi quelle parti valgono 1 se il giocatore non ne ha scelte altre; accessori 0
+  // (nessun movie per loro, nessun file cercato). Con 0 ovunque il pet restava invisibile.
   function coordinate(no) {
     const c = state().coordinates[no] || {};
+    const part = (v) => (v === undefined ? DEFAULT_PART : Number(v) || 0);
     return {
       myCoordinateNo: no, accessoryMask: c.accessoryMask || 0, accessoryHat: c.accessoryHat || 0,
-      earPartsId: c.earPartsId || 0, facePartsId: c.facePartsId || 0,
-      accessoryNecklace: c.accessoryNecklace || 0, legPartsId: c.legPartsId || 0,
-      accessoryBackpack: c.accessoryBackpack || 0, bodyPartsId: c.bodyPartsId || 0,
-      tailPartsId: c.tailPartsId || 0, accessorySpecial: c.accessorySpecial || 0,
+      earPartsId: part(c.earPartsId), facePartsId: part(c.facePartsId),
+      accessoryNecklace: c.accessoryNecklace || 0, legPartsId: part(c.legPartsId),
+      accessoryBackpack: c.accessoryBackpack || 0, bodyPartsId: part(c.bodyPartsId),
+      tailPartsId: part(c.tailPartsId), accessorySpecial: c.accessorySpecial || 0,
       accessoryMouth: c.accessoryMouth || 0,
     };
   }
