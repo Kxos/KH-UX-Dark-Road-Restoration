@@ -37,7 +37,8 @@ if ("$lib" -match '^([0-9a-f]+)-') { $env:KHUX_BASE = '0x' + $matches[1]; "base 
 $regs = python -I "$sp0\findregs.py" "$OUT\houdini"
 $regs
 # il primo blocco col pc dentro la libreria (pc G...): gli altri sono thread di houdini
-$hit = $regs | Select-String 'pc G[0-9a-f]+ .*sp ([0-9a-f]+)' | Select-Object -First 1
+# (sp a 12 cifre: i blocchi con sp piccolo sono copie spurie dei registri, 11 ottobre)
+$hit = $regs | Select-String 'pc G[0-9a-f]+ .*sp ([0-9a-f]{12})\b' | Select-Object -First 1
 if (-not $hit) { $hit = $regs | Select-String 'sp ([0-9a-f]+)' | Select-Object -First 1 }
 $first = $hit.Matches[0].Groups[1].Value
 $spv = [Convert]::ToUInt64($first, 16)
