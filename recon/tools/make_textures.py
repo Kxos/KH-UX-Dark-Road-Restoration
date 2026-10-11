@@ -271,14 +271,30 @@ def tier_mask(n):
 
 
 def big_mask(n, size):
-    """Sagoma a size x size (ingrandita a 4x, sfocata e ridotta: bordi morbidi)."""
+    """Sagoma pulita a size x size: la maschera 34x34 ingrandita a 8x la dimensione finale,
+    sfocata (contorno liscio, come vettorializzato), soglia netta, poi ridotta con LANCZOS
+    (antialias di 1 px come le originali)."""
     from PIL import ImageFilter
-    m = tier_mask(n).resize((size * S, size * S), Image.BICUBIC).filter(ImageFilter.GaussianBlur(S))
-    m = m.point(lambda v: 0 if v < 100 else 255 if v > 155 else (v - 100) * 255 // 55)
+    big = size * 8
+    m = tier_mask(n).resize((big, big), Image.BICUBIC).filter(ImageFilter.GaussianBlur(big / 34 * 0.6))
+    m = m.point(lambda v: 255 if v >= 128 else 0)
     return m.resize((size, size), Image.LANCZOS)
 
 
-def digit_layer(im, test, core):
+def white_glow(m, cap=110):
+    """Alone bianco semitrasparente fuori dalla sagoma e nei suoi fori, come le MedalInfo_Guilt
+    originali (misurato sull'8: ~110 a 1 px dal bordo, ~45 a 3 px, 0 a 6 px)."""
+    from PIL import ImageFilter
+    g1 = m.filter(ImageFilter.GaussianBlur(1.0))
+    g2 = m.filter(ImageFilter.GaussianBlur(3.0))
+    a = ImageChops.add(g1.point(lambda v: v * 7 // 10), g2.point(lambda v: v * 30 // 100))
+    a = a.point(lambda v: min(cap, v))
+    im = Image.new('RGBA', m.size, (255, 255, 255, 0))
+    im.putalpha(a)
+    return im
+
+
+def digit_layer(im, test, core, keep=lambda r, g, b: True):
     """Cifra di un'icona originale: i pixel del colore pieno della cifra (core(r, g, b)) nel
     riquadro centrale e, entro 2 px da questi, i pixel con alpha test(r, g, b) (bordo
     sfumato); il resto (sagoma e suoi riflessi) trasparente. Ritagliata."""
@@ -289,23 +305,23 @@ def digit_layer(im, test, core):
     rx, ry = im.width * 3 // 10, im.height // 4
     strong = {(x, y) for y in range(cy - ry, cy + ry) for x in range(cx - rx, cx + rx)
               if px[x, y][3] >= 200 and core(*px[x, y][:3])}
-    near = {(x + i, y + j) for x, y in strong for i in range(-2, 3) for j in range(-2, 3)}
+    # entro 3 px dalla cifra tutti i pixel opachi: anche il contorno scuro della cifra (0,49,98
+    # sulle MedalInfo) e il fondo della sagoma, che sta comunque sotto la cifra
+    near = {(x + i, y + j) for x, y in strong for i in range(-3, 4) for j in range(-3, 4)}
     for x, y in near:
         # alpha >= 200: fuori dalla sagoma ci sono pixel bianchi quasi trasparenti (alone)
-        if 0 <= x < im.width and 0 <= y < im.height and px[x, y][3] >= 200:
-            a = 255 if (x, y) in strong else test(*px[x, y][:3])
-            if a:
-                op[x, y] = px[x, y][:3] + (min(px[x, y][3], a),)
+        if 0 <= x < im.width and 0 <= y < im.height and px[x, y][3] >= 200 and keep(*px[x, y][:3]):
+            op[x, y] = px[x, y]
     return out_.crop(out_.getbbox())
 
 
-def hole_fill(dg, digit, color):
+def hole_fill(dg, digit, color, test):
     """«8» -> «0»: riempie l'inviluppo convesso dei buchi (pixel non della cifra chiusi da
     pixel della cifra a sinistra, destra, sopra e sotto) col colore dei buchi: i due fori
     diventano uno solo."""
-    a = digit.getchannel('A').load()
+    a = digit.load()
     W, H = digit.size
-    on = lambda x, y: a[x, y] >= 128
+    on = lambda x, y: a[x, y][3] >= 128 and test(*a[x, y][:3]) >= 128
     pts = [(x, y) for y in range(H) for x in range(W) if not on(x, y)
            and any(on(i, y) for i in range(x)) and any(on(i, y) for i in range(x + 1, W))
            and any(on(x, j) for j in range(y)) and any(on(x, j) for j in range(y + 1, H))]
@@ -342,17 +358,19 @@ def glyphs(style):
     if style == 'info':
         fn, test = 'img/ui/guilt/MedalInfo_Guilt%d.png', lambda r, g, b: max(0, min(255, (b - 100) * 255 // 100))
         core = lambda r, g, b: r >= 140 and b >= 240
+        keep = lambda r, g, b: True
         hole = (2, 39, 63, 255)
     else:
         fn, test = 'img/ui/guilt/Guilt%d_num_draw.png', lambda r, g, b: max(0, min(255, (g - 110) * 255 // 100))
         core = lambda r, g, b: r >= 235 and g >= 225
+        keep = lambda r, g, b: g >= 150 or b < 180     # cifra bianca e contorno viola scuro
         hole = (90, 0, 124, 255)
-    d6 = digit_layer(load(fn % 6), test, core)
-    d8 = digit_layer(load(fn % 8), test, core)
-    d1 = digit_layer(load(fn % 1), test, core)
+    d6 = digit_layer(load(fn % 6), test, core, keep)
+    d8 = digit_layer(load(fn % 8), test, core, keep)
+    d1 = digit_layer(load(fn % 1), test, core, keep)
     plate = lambda d: _plate(d, hole)
     nine = plate(d6.rotate(180))
-    zero = hole_fill(plate(d8), d8, hole)
+    zero = hole_fill(plate(d8), d8, hole, test)
     return nine, two_digits(plate(d1), zero, 2)
 
 
@@ -370,27 +388,21 @@ def _plate(d, hole):
 def medalinfo_icon(n, digit):
     """MedalInfo_Guilt9/10 (100x100): sagoma blu notte 2,39,63 con un filo chiaro, cifra
     azzurra 154,202,255 al centro con alone (come MedalInfo_Guilt1-8)."""
-    from PIL import ImageFilter
-    m = big_mask(n, 92)
-    im = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
-    edge = Image.new('L', (100, 100), 0)
-    edge.paste(m.filter(ImageFilter.MaxFilter(3)), (4, 4))
-    im.paste((70, 108, 150, 255), (0, 0), edge)      # filo chiaro del bordo, come le originali
+    # misure delle originali: sagoma 70-88 px (riquadro), centrata; corpo 2,39,63 opaco con
+    # antialias di 1 px; fuori e nei fori un alone bianco semitrasparente (il «filo chiaro»);
+    # cifra azzurra col contorno scuro alla dimensione originale (l'8: 31x20 a 34,40)
     body = Image.new('L', (100, 100), 0)
-    body.paste(m, (4, 4))
-    im.paste((2, 39, 63, 255), (0, 0), body)
-    # fondo pieno sotto la cifra (nelle originali il centro e' sempre pieno); cifre gia' alla
-    # dimensione delle originali, «10» ridotto a 52 px
-    glow = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
-    k = min(1.0, 52 / digit.width)
-    dg = digit.resize((round(digit.width * k), round(digit.height * k)), Image.LANCZOS)
-    x0, y0 = (100 - dg.width) // 2, (100 - dg.height) // 2
-    ImageDraw.Draw(glow).ellipse((x0 - 8, y0 - 6, x0 + dg.width + 7, y0 + dg.height + 5), fill=(2, 39, 63, 255))
-    im.alpha_composite(glow)
-    halo = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
-    halo.paste((40, 110, 200, 255), (x0, y0), dg.getchannel('A'))
-    im.alpha_composite(Image.blend(Image.new('RGBA', (100, 100), (0, 0, 0, 0)),
-                                   halo.filter(ImageFilter.GaussianBlur(2.5)), 0.9))
+    body.paste(big_mask(n, 80), (10, 10))
+    im = white_glow(body)
+    navy = Image.new('RGBA', (100, 100), (2, 39, 63, 255))
+    navy.putalpha(body)
+    im.alpha_composite(navy)
+    # «10»: stessa altezza delle altre cifre, stretto in larghezza fino a 44 px
+    dg = digit if digit.width <= 44 else digit.resize((44, digit.height), Image.LANCZOS)
+    x0, y0 = (100 - dg.width) // 2, 50 - dg.height // 2
+    plate = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+    ImageDraw.Draw(plate).ellipse((x0 - 5, y0 - 4, x0 + dg.width + 4, y0 + dg.height + 3), fill=(2, 39, 63, 255))
+    im.alpha_composite(plate)
     im.alpha_composite(dg, (x0, y0))
     return im
 
@@ -420,10 +432,10 @@ def err_icon(n):
 def draw_icon(n):
     """Guilt%d_draw (57x53): sagoma bianca con alone magenta 198,0,255 (come Guilt1-8_draw)."""
     from PIL import ImageFilter
-    m = big_mask(n, 46)
+    m = big_mask(n, 42)                 # come l'8 (46x40 con le punte)
     im = Image.new('RGBA', (57, 53), (0, 0, 0, 0))
     a = Image.new('L', (57, 53), 0)
-    a.paste(m, (5, 3))
+    a.paste(m, (7, 5))
     glow = Image.new('RGBA', (57, 53), (198, 0, 255, 0))
     glow.putalpha(a.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(2.5)))
     im.alpha_composite(glow)
@@ -435,17 +447,15 @@ def num_draw_icon(n, digit):
     """Guilt%d_num_draw (57x53): sagoma viola 199,102,255 con bordo 90,0,124 e cifra bianca
     su targa viola scura (come Guilt1-8_num_draw)."""
     from PIL import ImageFilter
-    m = big_mask(n, 46)
+    m = big_mask(n, 42)                 # come l'8 (46x40 con le punte)
     im = Image.new('RGBA', (57, 53), (0, 0, 0, 0))
     a = Image.new('L', (57, 53), 0)
-    a.paste(m, (5, 3))
+    a.paste(m, (7, 5))
     im.paste((90, 0, 124, 255), (0, 0), a.filter(ImageFilter.MaxFilter(3)))
     im.paste((199, 102, 255, 255), (0, 0), a.filter(ImageFilter.MinFilter(3)))
-    k = min(1.0, 34 / digit.width, 24 / digit.height)
-    dg = digit.resize((round(digit.width * k), round(digit.height * k)), Image.LANCZOS)
+    # cifra alla dimensione originale (contorno viola scuro compreso); «10» stretto a 38 px
+    dg = digit if digit.width <= 38 else digit.resize((38, digit.height), Image.LANCZOS)
     x0, y0 = (57 - dg.width) // 2, (53 - dg.height) // 2
-    ImageDraw.Draw(im).rounded_rectangle((x0 - 3, y0 - 2, x0 + dg.width + 2, y0 + dg.height + 1), 4,
-                                         fill=(90, 0, 124, 255))
     im.alpha_composite(dg, (x0, y0))
     return im
 
