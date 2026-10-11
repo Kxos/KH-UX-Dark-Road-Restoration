@@ -1323,6 +1323,10 @@ TEXTS = {
     106240301: 'Tickets',
     # esito della vendita (FUN_006f4918, Txt_Sell_Ok1; l'alternativa 100300009 e' «Complete!»)
     106240302: 'Sale complete!',
+    # Menu Quests (FUN_00d97410): sbloccato il Colosseo (Quest 130, stage 4100) scrive questo testo
+    # in Txt_Title4 (poi nascosta) con FUN_006e6e6c: assente ovunque (anche nell'IPA 4.4.0) ->
+    # FUN_00719f18 restituisce NULL e crash a 0x8 (banco colmenu). Testo come 102850010 di Union Cross.
+    102850008: 'Available quests!',
 }
 # Popup Sort (FUN_00a45e24 nella costruzione dei filtri): testi del filtro Super Burst.
 # Nell'IPA 4.4.0 i vicini (106240205-215) sono ancora segnaposto «[id]»: stesso formato
