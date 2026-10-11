@@ -1603,7 +1603,8 @@ if os.path.exists(_EMPTY_LWF):
                ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
         os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
         shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
-# Movimenti del pet (lwf/pet/motion/*): LWF nostri, invisibili, con l'evento «end» dove la
+# Movimenti del pet (lwf/pet/motion/*): LWF nostri che animano le 9 parti servite di
+# lwf/pet/part/001 (attaccate dal client ai movie omonimi), con l'evento «end» dove la
 # battaglia aspetta la fine del movimento (I-005: con i vuoti la battaglia col pet si bloccava
 # dopo il primo attacco), con il colpo in battle_normal/all/skill (turno della medaglia del pet),
 # e gli effetti lwf/ability/hit_effect/pet_eff_0001-0003. Vedi make_pet_motions.py.

@@ -170,11 +170,58 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   FUN_00e26a08 -> FUN_00e48910 -> FUN_00e45814) e a fine colpi in battle_normal/battle_all
   (FUN_00e26e80 -> FUN_00e48730): i nostri LWF vuoti non mandavano mai «end» = attesa infinita.
   Correzione: `recon/tools/make_pet_motions.py` (chiamato da make_layouts.py) scrive 30 LWF
-  NOSTRI (formato 0x121010 ricostruito; la variante senza evento e' identica byte per byte al
-  vuoto originale), invisibili: 15 fotogrammi con EVENT «end» (controllo ANIMATION tipo 4,
-  opcode 8, come «end_1» di lwf/character/enemy/1/dead) per i 19 movimenti di cui FUN_00e44e84
-  gestisce la fine; wait/bwait/walk/run/win/waitb/rolling1-2/training restano a 1 fotogramma senza
-  evento. Servono le risorse rigenerate (build-resources).
+  NOSTRI (formato 0x121010 ricostruito) con STOP + EVENT «end_1» all'ultimo fotogramma (come
+  atk2) per i 19 movimenti di cui FUN_00e44e84 gestisce la fine; wait/bwait/walk/run/win/waitb/
+  rolling1-2/training sono cicli senza evento. Prima erano invisibili, ora animano le parti
+  (vedi «Come si disegna il pet» sotto). Servono le risorse rigenerate (build-resources).
+- **Come si disegna il pet** (decompilato 11 ottobre sera). Il LWF del movimento non ha grafica:
+  FUN_00b3c350 lo carica, poi FUN_00b3c70c (vtable +0x4d8) registra con FUN_01220490 i gestori
+  «load»/«enterFrame» dei movie il cui NOME DI ISTANZA e' uno dei 23 della tabella 0x1f32080
+  (ac_mask, ac_hat1-4, ear_front1_am, ear_front2_am, ear_back_am, face_sp, ac_necklace1-3,
+  left_front_leg, left_back_leg, right_front_leg, right_back_leg, bag_front, bag_back,
+  body_main, tail_front, tail_back, ac_special, ac_mouth). Al «load» FUN_00b3ed40 carica e
+  attacca nel movie (vtable +0x5c8 / attachLWF FUN_01230c68) `lwf/pet/part/%03d/<nome>/<nome>.lwf`
+  con %03d = id % 1000 (se < 400000); «enterFrame» (FUN_00b3f3fc) lo riattacca se l'outfit
+  cambia. Gli id: coordinato della sessione (pet +0x7c0 +0x24 = `userPetCoordinate`,
+  FUN_00749af0 -> Pet FUN_00b38f10 -> FUN_00b397cc; campo -> parti in FUN_00b3a248):
+  accessoryMask, accessoryHat (hat1-4), earPartsId (3 orecchie), facePartsId, accessoryNecklace
+  (1-3), legPartsId (4 zampe), accessoryBackpack (bag_*), bodyPartsId, tailPartsId (2),
+  accessorySpecial, accessoryMouth. Facoltativi: `body_sp` (+0x890, FUN_00b3f98c), `spt_shadow`
+  (ombra che si rimpicciolisce col salto, FUN_00b3fb14/FUN_00b3fc94), `head_sp`, `pet_center`
+  (dentro face_sp), `<parte>_top` (FUN_00b3d270), `spirit`. Posizioni/altezze extra dalle tabelle
+  master 0xb (FUN_00b3ae70/FUN_00b3b940/FUN_00b3d7ec, NULL = valori di riposo). Il nodo lo muove
+  il codice (jump2 FUN_00e45814 salta accanto all'avatar) e lo gira con setScaleX +-1 come
+  l'avatar; le parti 001 guardano a sinistra (avanti = -x). Nelle risorse c'e' solo la serie
+  001 (9 parti, Kitstar rosa): niente `lwf/pet/motion`, niente accessori, niente ear_front2/
+  tail_front/bag. `lwf/ability/hit_effect` ha solo eff_0001/eff_0002 (names_v4 e names_addnl).
+- **Pet visibile** (11 ottobre sera, da provare al banco): `make_pet_motions.py` scrive ogni
+  movimento come radice con 9 movie vuoti chiamati come le parti di 001 (solo quelle: nessun
+  load verso file assenti) e una posa per fotogramma (PLACE al primo, MOVEM dopo; stringhe,
+  istanze, eventi e linkage in ordine alfabetico come negli originali): respiro in wait/bwait,
+  zampe in walk/run, saltello in jump*/win/recovery_skill, capriola in rolling*, balzo con
+  testata in avanti di 80 in battle_normal (colpo al fotogramma 10 di 24), salto con giro e
+  tonfo in battle_all (14 di 26), scatto lungo con capriola in battle_skill (12 di 28).
+  `pet_eff_0001-0003` ora sono visibili: scintilla a 4 punte + scia (0001), anello + stella
+  (0002), anello + scia + stella dorate (0003), texture disegnate nel codice (BTF tipo 8
+  premoltiplicato, nome che comincia col nome del LWF), 11-15 fotogrammi. `server/pet.js` manda
+  ear/face/leg/body/tailPartsId = 1 se non scelti (con 0 il percorso e' .../000/..., assente).
+  Verificato con un lettore nostro (fuori dal repo): i LWF si rileggono, le parti si attaccano per
+  nome di istanza e gli eventi cadono nei fotogrammi previsti.
+- **Crash della home con il pet visibile** (banco 11-10 notte, -Quick + -Pet, id parti 1: due
+  crash di fila dopo /system/push/regist, SIGSEGV a 0xf0 in FUN_01232c34 durante nativeRender).
+  FUN_01232c34 / FUN_01232c94 = Movie::getX / getY (movie +0xf0 = blocco delle proprieta': +0x44
+  flag, +0x18/+0x1c x/y). La home costruisce il ritratto del pet (FUN_00b40234: Pet FUN_00b38f10
+  + wait, poi FUN_00b4030c in una render texture) centrato sulla testa FUN_00b3e2c4 =
+  getX/getY(head_sp, pet +0x898) + getX/getY(pet_center, +0x8a0), che controlla SOLO +0x8a0.
+  +0x8a0 lo scrive il «load» di pet_center (FUN_00b3f350/FUN_00b3f8f0), registrato sul LWF della
+  parte face_sp appena questa si carica (FUN_00b3ed40, indice 8); +0x898 solo il «load» di un
+  movie chiamato `head_sp` (FUN_00b3fdfc), che il nostro scheletro non aveva -> NULL. Con id 0 il
+  muso non si caricava e +0x8a0 restava 0. Nella classe Pet solo FUN_00b3e2c4 legge +0x898
+  (scansione di ldr #0x890/#0x898/#0x8a0); +0x890 (body_sp) e' sempre controllato; FUN_00b3c350
+  azzera +0x890..+0x8a0 a ogni cambio di movimento. Correzione: `head_sp` vuoto a profondita' 0
+  (si carica prima di face_sp) con la stessa matrice del muso in tutti i 30 movimenti. Ripiego
+  senza ricostruire: `KHUX_PET_PARTS=0` sul server = id 0, pet invisibile come prima (movimenti
+  con gli eventi e pet_eff visibili restano).
 - **Medaglia del 6° slot in battaglia** (banco 11 ottobre: «non fa nulla»). Il turno c'e' gia':
   MedalDeck::setup FUN_00b0b398 riceve da AvatarActor::setupMedalDeck FUN_00e27de8 il flag
   «PetActor presente» (avatar +0x530) e chiama FUN_00b0ba14: trova il deck del keyblade della
@@ -198,14 +245,21 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   FUN_00afe8f0, effetto FUN_00e27224 -> FUN_00e489a4 = 0xb/0xc/0xd (pet in battle_normal/all/
   skill) -> `lwf/ability/hit_effect/pet_eff_0001..0003` (codice - 10). I nostri LWF avevano solo
   «end»: il turno passava senza colpo. Correzione (`make_pet_motions.py`): «knockback_2» +
-  «effectStart_1» al fotogramma 5 di battle_normal/battle_all/battle_skill e tre `pet_eff_000N`
-  NOSTRI invisibili di un fotogramma (FUN_00b26928 restituisce NULL se il file manca e
-  FUN_00afe8f0 non controlla: crash; FUN_00aff1e4 chiude l'effetto all'ultimo fotogramma di
-  _root). Gli altri 27 movimenti restano identici byte per byte. Nessuna modifica al server ne'
-  al master; servono le risorse rigenerate. Da verificare al banco: numero di danno al 4° turno
-  e nessun colpo in piu' negli altri turni. Se il colpo non arriva: l'aggiornamento del pet
-  FUN_00e44c68 scarta dalla coda gli eventi diversi da «end» quando avatar +0x540 != 1
-  (FUN_00e227f8), prima che la sequenza li legga.
+  «effectStart_1» nel fotogramma d'impatto di battle_normal/battle_all/battle_skill e tre
+  `pet_eff_000N` NOSTRI (FUN_00b26928 restituisce NULL se il file manca e FUN_00afe8f0 non
+  controlla: crash; FUN_00aff1e4 chiude l'effetto all'ultimo fotogramma di _root). Banco 11-10
+  sera: il colpo arriva al 4° turno, senza grafica (poi resa visibile, vedi sopra). Se il colpo
+  non arriva: l'aggiornamento del pet FUN_00e44c68 scarta dalla coda gli eventi diversi da
+  «end» quando avatar +0x540 != 1 (FUN_00e227f8), prima che la sequenza li legga.
+- **Chi si muove nel turno del 6° slot** (FUN_00e26e80, tipo d'attacco avatar +0x668): 1
+  (singolo) / 2 (tutti) con FUN_00b0ef5c vero -> il PET gioca battle_normal / battle_all
+  (FUN_00e48730) e l'avatar resta fermo; 3 (speciale) -> sempre l'avatar (FUN_00aced60 0x3e),
+  anche nel turno del pet. Nell'originale (video 2017, `reference\pet\NOTE.md` §9) la speciale
+  della medaglia nello slot Spirit la fa l'avatar con il suo cut-in e la sua animazione, con
+  l'etichetta arancione «SPIRIT» a sinistra; il Blast (Trick) e' il pet che si rannicchia e
+  scatta sul nemico con una scia dorata e una raffica di stelle. In FUN_00e26a08 i comandi 0/1
+  nel turno del pet chiamano FUN_00e48398 (deathblow_normal2 + movimento) / FUN_00e483ec
+  (deathblow_normal_after2, il pet torna accanto all'avatar).
 - Trick in battaglia: FUN_00e2790c -> FUN_00e461bc mette ogni `petSubslot.openSkillIds` nel posto
   `invokeType` (riga petSkill +0x2dc; 4 = per skillValue3 0..5 -> posti 0/11..15, tabella
   0x188a950) dei 16 del PetActor (+0x388 + 0x48*i), +0x850 = 1. Posti: 1 alla morte di un nemico
