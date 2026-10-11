@@ -1753,6 +1753,13 @@ function deckMedalIds() {
   return player.deck || startingInventory().medals.map((m) => m.userMedalId);
 }
 
+// deckMedals da mandare al client: senza gli slot vuoti. La battaglia (FUN_00b0b87c) fa un
+// turno per voce e non salta mai: uno 0 diventa una medaglia finta (master 1, Paperino blu)
+// che attacca; i negativi fanno rifiutare tutto userDecks. Vedi stage_gen\deck_empty_slot.
+function sentDeckMedalIds() {
+  return deckMedalIds().filter((id) => id > 0);
+}
+
 // POST /user/medal/remove (azione 237, Unequip dal dettaglio), corpo visto sul banco:
 // {"removeUserMedalId":2}. Lo slot del deck torna vuoto (0). Ramo 237: FUN_007aa8c0 =
 // userKeyblades, userDecks, petSubslots (pet di FUN_007948d0 sulla radice di quel campo),
@@ -1784,7 +1791,7 @@ function userKeybladesData() {
     userKeybladeSubslotId: USER_KEYBLADE_SUBSLOT_ID, // uint64 (vedi /keyblade/subslot)
     category: 1,
     keybladeId: startingInventory().keybladeId,
-    deckMedals: deckMedalIds(),
+    deckMedals: sentDeckMedalIds(),
     // isFavorite: il Profilo (createLayout FUN_008d7e8c) mostra il keyblade preferito; senza
     // nessun preferito la riga del keyblade resta nulla (crash in FUN_008c19e4)
     burst: player.keybladeBurst || 0, totalAttack: attack, totalDefense: defense, isFavorite: 1,
@@ -1803,7 +1810,7 @@ function respondUserKeyblade(res) {
 function userDecksData() {
   return [{
     userDeckId: USER_DECK_ID, userKeybladeId: USER_KEYBLADE_ID, // uint64
-    deckMedals: deckMedalIds(), petBaseSlotMedal: 0,
+    deckMedals: sentDeckMedalIds(), petBaseSlotMedal: 0,
   }];
 }
 

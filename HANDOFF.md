@@ -64,6 +64,25 @@ qui c'è come.
   bersaglio Nosy Mole 10008 sulle ninfee), QUEST COMPLETE, `/stage/clear`, RESULTS (10 nemici,
   «Defeat 9 or more» spuntato). Rigiocata una seconda volta con `tools\ldplayer\route_1060.ps1`
   (tocchi misurati; scala ~1,7 px per unita' di mappa, il personaggio sta a ~(770,600)).
+- **Slot vuoti del Keyblade (11 ottobre, provato sul banco)**: con `player.deck` [1,0,3] il server
+  mandava deckMedals con lo 0 e la battaglia faceva comunque 3 turni: lo 0 diventa una medaglia
+  finta (master 1, Paperino blu senza costo) che attacca (FUN_00b0b87c/FUN_00b0c08c; analisi in
+  `stage_gen\deck_empty_slot\REPORT.md`). Ora `sentDeckMedalIds()` toglie gli zeri da
+  userDecks/userKeyblades (player.deck li tiene): banco 2/2 -> 1/2 -> ENEMY TURN, Donald -> Yuna;
+  Profilo con Yuna nello slot 2 e «SLOT 3» vuoto, STR 8564 -> 7265. Limite del client 4.3.1: il
+  moltiplicatore segue la posizione nell'array (Yuna prende quello dello slot 2), il «turno
+  saltato con moltiplicatore sprecato» degli originali non si riproduce senza patch del client.
+  Salvataggio di prova lasciato con deck [1,0,3].
+- **Mappe multi-parte di altri mondi (11 ottobre)**: 1240 (Agrabah, 3 stanze, wipe_4) provata con
+  partenze spostate per la prova (ripristinate): parte 0 -> 1 e 1 -> 2 senza crash. Problema del
+  generatore: in alcune stanze (AG_0002, DB_0001, AG_0021 come ultima stanza) bersaglio, nemici e
+  forziere finiscono nella sacca d'ingresso (1240 parte 2: bersaglio a 179 dall'arrivo; 9 missioni
+  con distanza residua < 270). Correzione affidata a un agente (stage_gen\reach\REPORT.md).
+  ATTENZIONE: nel guest la 1240 ha ancora l'intestazione di prova finche' non si rifa' un -Quick.
+- **1050 corretta provata**: -Seek fino a /stage/clear (solo il bersaglio).
+- **Pet (riferimenti)**: `D:\Progetto_Restauro_KH_UX\reference\pet\` (NOTE.md + 14 screenshot): pet =
+  «Spirit», sbloccato dopo la Story Quest 14, dialog con rango, 6 medaglie, Name/Outfits/Gear/
+  Tricks; nelle risorse mancano PetInfoScene_ver320, PetInfoAnim e tutte le lwf/pet.
 - **CRASH APERTO (gia' presente prima, non legato alla 1060)**: in home, toccando il personaggio
   nella piazza (es. (950,850)) il client va in crash subito, prima di ogni richiesta. Backtrace ARM
   (`armtrace\stackcap.ps1 -Tag avtap -NoMenu -Taps '950,850'`): `PetInfoDialog::createLayout`
