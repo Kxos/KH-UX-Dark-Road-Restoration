@@ -125,6 +125,7 @@ node server\import-master.js D:\Progetto_Restauro_KH_UX\apk501\extra_files `
 node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json
 node server\make-moogleshop.js
 node server\make-multi-tables.js                # Union Cross: multi, multiStage
+node server\make-keyblade-levels.js             # keyblade +0..+35 e keybladeSubslot (dopo import-master)
 ```
 
 - `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (da
@@ -160,7 +161,7 @@ node server\make-multi-tables.js                # Union Cross: multi, multiStage
 - Si salva a ogni modifica: nome, avatar, Union, Lux (`luxRank` = livello, soglie `needExp` di
   `player`), `money`, `freeStone`, `materials`, `medals` (`userMedalId` da 101), `medalLocks`,
   `medalTraits`, `deck` (tiene gli zeri di posizione), `stageScores`, `missions`, `titles`,
-  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `ap`/`apTime` ([AP](#ap)), `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId` ([keyblade](#keyblade)), fase e `popupFlag` del tutorial.
+  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `ap`/`apTime` ([AP](#ap)), `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId`, `starlightKeybladeId`, `keybladeSubslots`, `keybladeEnhanceCount` ([keyblade](#keyblade)), fase e `popupFlag` del tutorial.
 - «Nuovo» finche' non ha fatto `/user/create`. Per ricominciare: cancellare il file (o `cycle.ps1`).
 - **Stato provvisorio all'11 ottobre**: `sphereBonus.hp = -2950` (HP 50) per provocare la sconfitta
   (ISSUES I-028): rimettere **40** a prova finita. `deck` [1,0,3] di prova.
@@ -293,6 +294,66 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   keyblade (64) con la posizione che lo porta sul centro di Starlight, rotazione e scala originali
   della serie. Il modello torna con i valori di Square Enix per quasi tutte le serie (Lady Luck,
   Three Wishes, Divine Rose, Olympia entro 2 unita'). L'avatar non e' toccato (stesse LWF).
+- Livelli (I-067): il livello e' la riga della tabella keyblade (un keybladeId per livello:
+  serie*1000 + lv*10 fino a +20, poi serie*1000 + 200 + lv-20; Bad Guy Breaker lv*10). La riga dice
+  i materiali per il livello dopo (`validNeedMaterial`, `needMaterialId/Num`: la finestra KEYBLADE
+  li mostra come Needed/Held) e `evolveId` = riga dopo (0 = massimo). La 5.0.1 ha solo i livelli col
+  cambio di design (64 righe): `server/make-keyblade-levels.js` rigenera +0..+35 di ogni serie (576
+  righe, quelle nuove con `"generated": true`) dalla khuxwiki (`reference\keyblades\keyblade_levels.json`,
+  copia ridotta in `server/tables/keyblade_levels.json`): slot, attributi, Upright/Reversed
+  (`darklight` 1/2, 3 = nessuno), `accord`/`dlaccord`, gauge, `partnerRate`, materiali post 2.6.0;
+  design, passiva e posa dalla riga 5.0.1 precedente. Confronto con le 64 righe 5.0.1: tutto uguale
+  tranne 3 campi (accord di Stroke of Midnight +0, dlaccord di Missing Ache, partnerRate di Bad Guy
+  Breaker +35: tenute quelle 5.0.1). Tolti i Trophy NI/CS/CK di Bad Guy Breaker (assenti da
+  `material`). Oltre +35 (+35.1..+60 dell'ultima versione, con le passive) no: `lv` intero, la 5.0.1
+  chiude a +35.
+- `POST /keyblade/enhance` (azione 54, «Strengthen»; corpo `[fn]` = `{userKeybladeId}`;
+  chiamato da `[fn]`/`[fn]`): `server/keyblade-evo.js` toglie i materiali della riga,
+  passa a `evolveId` (Starlight in `player.starlightKeybladeId`, gli altri in `player.keyblades`),
+  niente munny. Risposta (ramo 54): `userKeyblades`, `userDecks`, `userMaterials`, `userTitles`.
+  Materiali mancanti o livello massimo: nessuna modifica (log `[keyblade] enhance`);
+  `KHUX_KB_FREE=1` = senza materiali. Dopo, il client manda `PUT /passive/list` (249, `isList` 0 ->
+  `newPassiveSettingIds`).
+- Dopo la risposta `[fn]` confronta il `displayId` (+0xcc) di prima e dopo: uguale ->
+  risultato `[fn]` (`DeckEdit_KBStrength_Result_ver210`, `lwf/result/KeyEvo_LevelUp`, frecce
+  slot per slot su accord +0x114 / dlaccord +0x128); diverso -> `lwf/memudemo/KeyBlade_Evolution`
+  (`[fn]`: movie `keyblade_previous`/`keyblade` caricano i LWF del keyblade, va avanti quando
+  `_root` arriva all'ultimo fotogramma) e poi il risultato. Slot nuovo: `KeyEvo_Medal_01B`,
+  `KeyEvo_eff`, `medal_blank_slot1-3` (attributo 3/1/2) in `lwf/keyblade/KeyEvo/`. Nessuno di questi
+  LWF esiste nelle risorse (nullo = crash): `make_layouts.py` mette LWF vuoti (si salta l'animazione).
+- Sub-slot: `GET /keyblade/subslot` (191) e `POST /keyblade/subslot` (192, corpo `[fn]`:
+  `{updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: {"<n>": userMedalId}}]}`; risposta
+  `subslotMaxNum`, `userKeybladeSubslots`, `userKeyblades`). Master `keybladeSubslot` (vuota nella
+  5.0.1) rigenerata: 120 sub-slot per serie `{subslotId, category, slotNumber, attribute,
+  darklight}` dall'albero della khuxwiki; `subslots[]` di ogni keyblade = 120 voci (0 = vuoto),
+  Equipment (`[fn]`) scrive «Subslot n/120» (come lo screenshot giapponese).
+  `subslotRate` = somma dei bonus per tier (`guiltValue`) delle medaglie: 1..10 = 1, 2, 5, 8, 12, 16,
+  20, 25, 30, 35 millesimi (guida dell'utente pag. 11, khuxwiki per 9-10); `userKeyblades[].subslotRate`
+  = `subslotRate` della riga (16000/12000/10000 = x1.6/1.2/1.0 per 1/2/3 attributi). Testi:
+  `Txt_SubSlot_Rate` «+%01.3f» = (k * subslotRate / 100) / 1000 (`[fn]`, k da verificare),
+  `Txt_KeyBlade_Lv_Rate_Label` = subslotRate della riga /10000. `KHUX_SUBSLOT_MAX=0` spegne i
+  sub-slot, `KHUX_SUBSLOT_SCALE` cambia l'unita'.
+- Schermata dei sub-slot (I-066, crash al tocco di «Subslot»): `[fn]` -> `[fn]`
+  carica `DeckEditSubSlotScene_ver340` (assente; servite solo `_ver260`/`_ver310`). Il codice cerca:
+  `DeckEdit_SubSlot_Select_Medal` > `Win_under` > `EquipSell_Scroll_Area` (MiniMedalScrollView),
+  `DeckEdit_SubSlot_Set_Medal` > `Win_under` > `EquipSell_Scroll_Area` (KeybladeSubslotMedalView,
+  celle `DeckEdit_SubSlotMedal_ver260` con `SubSlot_Route_LR/LR1/LR2/UD/UD1/UD2`, `MedalBase`,
+  `InfoPanel`, `Icon_Type_1`, `Icon_Type`, `Txt_Mag_Label`, `Guilt_Icon`, `MatchSlotLWF`,
+  `img/ui/Subslot_MedalSlot%03d.png`, cursore `Z_SpCursor`), `SubSlot_UpArrowEff`,
+  `BestButton`/`Txt_Best`, `Txt_NotExist`, `Close_Button`, nel Set_Medal `Txt_KeyBlade_Label`,
+  `Txt_SubSlot_Rate`, `Txt_SubSlot_Num`, `Txt_KeyBlade_Lv_Rate_Label`, `Panel_34` >
+  `Txt_Subslot_Caution_Label`; la cella del revolver usa anche `DeckEdit_SubSlot_MedalInfo_ver260`
+  (`SubslotInfoPanel`). Assenti: la scena ver340, `DeckEdit_SubSlot_Select_Medal_ver310`,
+  `DeckEdit_Subslot_Caution_ver260`, `DeckEdit_SubSlotMedal_ver260`, `DeckEdit_SubSlot_MedalInfo_ver260`,
+  `Subslot_MedalSlot%03d`. Da ricostruire in `make_layouts.py` partendo da ver310/ver260 (attenzione:
+  `DeckEdit_SubSlot_Select_Medal_ver260` ha un 9-slice su texture assente).
+- Passive Effects (I-065): `PassiveDialog` (`Passive_Base_ver341`, `PassiveScrollView`,
+  `Passive_Panel`) elenca `passiveSettingIds` di `PUT /passive/list` (249, corpo `[fn]`
+  `{userId, isList}`; parser `[fn]`: `isList` 1 -> `passiveSettingIds`, 0 ->
+  `newPassiveSettingIds`, int[]) con le master `passiveSetting` (`passiveSettingId, sortId,
+  passiveConditions, passiveValue1/2, description, passiveId`) e `passive`, entrambe vuote nella
+  5.0.1: lista vuota. Le passive dei keyblade (khuxwiki: da +35.5, «Upright P Medal STR +50» ogni
+  0.5, +200 a 40/50/60) stanno oltre il +35 a cui arriviamo.
 <a id="colosseo"></a>
 ## Colosseo
 
