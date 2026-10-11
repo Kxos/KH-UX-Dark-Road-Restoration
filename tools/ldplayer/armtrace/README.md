@@ -5,8 +5,10 @@ i registri x86 e un backtrace di `libhoudini.so`, inutili. Questi strumenti ferm
 processo nell'istante del crash e leggono lo **stato della CPU ARM emulata**: `x0..x30`,
 `sp`, `pc`. Con `x30` (indirizzo di ritorno) si arriva al chiamante.
 
-Usato l'8 ottobre 2026 per il crash dopo l'aggiornamento dei master (vedi HANDOFF,
-«Il crash dopo l'aggiornamento dei master»): `pc` = `0x12c1ee4`, `x30` = `0xcfb310`
+Usato l'8 ottobre 2026 per il crash dopo l'aggiornamento dei master (vedi
+[docs/journal/fino-al-2026-10-11.md](../../../docs/journal/fino-al-2026-10-11.md),
+«Il crash dopo l'aggiornamento dei master»; ricetta attuale in
+[docs/notes/banco.md](../../../docs/notes/banco.md#crash)): `pc` = `0x12c1ee4`, `x30` = `0xcfb310`
 (`SceneDownload`), causa la voce 116 di `misc` in `/system/coppa`.
 
 ## Uso

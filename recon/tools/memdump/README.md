@@ -4,7 +4,8 @@ Strumenti per copiare la memoria del client KHUX nell'istante tra il rapporto de
 protector (`ErrorCode = 90`) e l'`abort`, e cercarci le sue stringhe in chiaro. Pensati
 per un emulatore Android **con root** dove il protector gira davvero — provati su **MuMu
 Player 6.8**, istanza Android 12. Vedi la sezione «Dump della memoria del protector» in
-[HANDOFF.md](../../../HANDOFF.md) per il contesto e i risultati.
+[docs/journal/fino-al-2026-10-11.md](../../../docs/journal/fino-al-2026-10-11.md) per il
+contesto e i risultati (sintesi in [docs/notes/protector.md](../../../docs/notes/protector.md)).
 
 I dump e i file di master data non stanno nel repo: vanno in una cartella fuori, per
 esempio `D:\Progetto_Restauro_KH_UX\dumps`.
