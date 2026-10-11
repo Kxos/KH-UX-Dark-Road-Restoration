@@ -151,6 +151,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 <a id="ldplayer"></a>
 ## LDPlayer: inciampi
+- **Errore «g_pPipeMemHead->arBufHead[i].usingPipeId != nPipeId» e crash di LDPlayer** (11 ottobre, due volte): piu' ld.exe insieme (missione in background + cattura o screenshot ogni secondo) o un ld.exe ucciso a meta' corrompono la memoria condivisa delle pipe. Ora Sh di bench_lib.ps1 (e tombstone.ps1) passa da un mutex di sistema Global\khux_ld_exe: un ld.exe alla volta anche fra script diversi. Mai Stop-Process su ld.exe: se resta appeso, ldconsole quit e launch.
 
 - adb non si apre su questa versione: si usa `ld.exe -s 0 "<comando>"` (shell root nel guest) e
   `ldconsole installapp --index 0 --filename <apk>`. `ldconsole quit` puo' non bastare:

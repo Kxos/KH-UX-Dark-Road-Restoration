@@ -13,7 +13,16 @@ $SHARED = "$env:USERPROFILE\Documents\XuanZhi9\Pictures"
 $SHOTS = 'D:\Progetto_Restauro_KH_UX\screenshots'
 New-Item -ItemType Directory -Force $SHOTS | Out-Null
 
-function Sh([string]$cmd) { & "$LD\ld.exe" -s 0 $cmd }
+# Un solo ld.exe alla volta, anche fra script diversi (mutex di sistema): con piu' ld.exe
+# insieme, o uccidendone uno a meta', LDPlayer va in errore «g_pPipeMemHead->arBufHead[i].
+# usingPipeId != nPipeId» e crasha (11 ottobre). Mai Stop-Process su ld.exe.
+$LD_MUTEX = New-Object System.Threading.Mutex($false, 'Global\khux_ld_exe')
+function Sh([string]$cmd) {
+    $own = $false
+    try { $own = $LD_MUTEX.WaitOne(120000) } catch [System.Threading.AbandonedMutexException] { $own = $true }
+    if (-not $own) { throw "ld.exe occupato da piu' di 120 s: $cmd" }
+    try { & "$LD\ld.exe" -s 0 $cmd } finally { $LD_MUTEX.ReleaseMutex() }
+}
 
 function Tap([int]$x, [int]$y) { Sh "input tap $x $y" | Out-Null }
 

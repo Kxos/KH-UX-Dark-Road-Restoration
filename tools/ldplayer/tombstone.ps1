@@ -1,6 +1,6 @@
 # Ultimo tombstone del guest: registri e puntatori nel codice di libcocos2dcpp (indirizzi Ghidra)
-$ld = 'D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9'
-& "$ld\ld.exe" -s 0 "cp `$(ls -t /data/tombstones/tombstone_* | head -1) /sdcard/Pictures/tomb.txt"
+. "$PSScriptRoot\bench_lib.ps1"   # Sh: un ld.exe alla volta
+Sh "cp `$(ls -t /data/tombstones/tombstone_* | head -1) /sdcard/Pictures/tomb.txt" | Out-Null
 # passa dalla cartella condivisa e finisce in D:\Progetto_Restauro_KH_UX\screenshots
 $tomb = "D:\Progetto_Restauro_KH_UX\screenshots\tombstone_$(Get-Date -Format yyyyMMdd_HHmmss).txt"
 Start-Sleep -Milliseconds 300
