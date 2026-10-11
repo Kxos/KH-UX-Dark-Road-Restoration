@@ -79,6 +79,27 @@ def encode(im):
     return head + z
 
 
+def encode_palette(im, colors=256):
+    """Immagine PIL -> BTF tipo 9 (palette RGBA premoltiplicata, un byte per pixel), circa un
+    quarto del tipo 8: per le texture grandi nel pacchetto generato (riserva di 16 MiB).
+    Intestazione come le originali (es. keyblade_0001_06_a): +0x22 u16 numero di colori,
+    +0x24 u32 lunghezza dei dati zlib, dati da +0x28. La tela resta quella dell'immagine; si
+    salva solo il riquadro opaco (offset +0x1a)."""
+    from PIL import Image
+    im = im.convert('RGBA')
+    cw, ch = im.size
+    box = im.getbbox() or (0, 0, 1, 1)
+    q = _premultiply(im.crop(box)).quantize(colors, method=Image.FASTOCTREE)
+    pal = q.getpalette('RGBA') or []
+    n = len(pal) // 4
+    w, h = q.size
+    z = zlib.compress(bytes(pal[:n * 4]) + q.tobytes(), 9)
+    head = b'\x89BTF' + bytes([0, 0, 1, 0]) + bytes(8) + bytes([9, 0, 0, 0, 0, 0])
+    head += struct.pack('<6HHI', cw, ch, box[0], box[1], w, h, n, len(z))
+    assert len(head) == 0x28
+    return head + z
+
+
 if __name__ == '__main__':
     import sys
     decode(open(sys.argv[1], 'rb').read()).save(sys.argv[2])
