@@ -175,6 +175,37 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   opcode 8, come «end_1» di lwf/character/enemy/1/dead) per i 19 movimenti di cui FUN_00e44e84
   gestisce la fine; wait/bwait/walk/run/win/waitb/rolling1-2/training restano a 1 fotogramma senza
   evento. Servono le risorse rigenerate (build-resources).
+- **Medaglia del 6° slot in battaglia** (banco 11 ottobre: «non fa nulla»). Il turno c'e' gia':
+  MedalDeck::setup FUN_00b0b398 riceve da AvatarActor::setupMedalDeck FUN_00e27de8 il flag
+  «PetActor presente» (avatar +0x530) e chiama FUN_00b0ba14: trova il deck del keyblade della
+  battaglia (FUN_00b13204: `startStageData.userKeybladeId`, sessione +0xd30+0x10 -> userDeckId;
+  FUN_00b0beb0 nella tabella userDecks, sessione +0x1f8), prende `petBaseSlotMedal` (deck +0x40)
+  e lo aggiunge DOPO le medaglie del deck (indice +0x420 + +0x424, salvato in +0x42c; medaglia
+  non trovata -> master 1 come gli slot vuoti). Nessun altro campo del server: niente rango,
+  `petSubslot` o `openSkillIds`. Il moltiplicatore (FUN_00b0d95c modo 1 -> FUN_00722320) e'
+  `pet.petSubslot.magnification` (pet +0x7c0 -> +0x38 -> +0x74; x1 con medalId 1). Il contatore
+  dei turni (FUN_00e64660: tutti gli slot meno quello di supporto) lo conta: 4/4 al banco con 3
+  medaglie (screenshots\pet2_*.png); la ruota (CarouselDeck FUN_00ae2d30 -> FUN_00ae6dc4, fino a
+  7 celle, +0x4d4 = cella del pet) ne mostra due alla volta. (FUN_00b0bb98 + FUN_007228e8 sono
+  invece lo slot del supporto, `supportUsers` di /stage/start: oggi [] quindi assente.)
+- Al turno del pet (FUN_00b0ef5c: turno +0x438 == +0x42c) l'avatar resta fermo e attacca il pet:
+  FUN_00e26e80 -> FUN_00e48730 battle_normal (7) o battle_all (8). Il danno viene SOLO dagli
+  eventi del LWF del movimento, come per l'avatar (lwf/avatar/motion/atk2: «knockback_2» +
+  «effectStart_1» nello stesso fotogramma, poi «end_1»): dispatcher FUN_00870a68 (gestori dalla
+  base +0x330, registrati da FUN_00ac9c1c) -> «effectStart» FUN_00accc2c = 1 nella coda +0x818,
+  «knockback_N» FUN_00acb428 = 2/3 nelle code +0x818 e +0x7e8. La sequenza FUN_00b5a338 (stato
+  0x14) legge la coda del pet con FUN_00e26f7c -> FUN_00e45334 e con 1 crea il colpo
+  FUN_00afe8f0, effetto FUN_00e27224 -> FUN_00e489a4 = 0xb/0xc/0xd (pet in battle_normal/all/
+  skill) -> `lwf/ability/hit_effect/pet_eff_0001..0003` (codice - 10). I nostri LWF avevano solo
+  «end»: il turno passava senza colpo. Correzione (`make_pet_motions.py`): «knockback_2» +
+  «effectStart_1» al fotogramma 5 di battle_normal/battle_all/battle_skill e tre `pet_eff_000N`
+  NOSTRI invisibili di un fotogramma (FUN_00b26928 restituisce NULL se il file manca e
+  FUN_00afe8f0 non controlla: crash; FUN_00aff1e4 chiude l'effetto all'ultimo fotogramma di
+  _root). Gli altri 27 movimenti restano identici byte per byte. Nessuna modifica al server ne'
+  al master; servono le risorse rigenerate. Da verificare al banco: numero di danno al 4° turno
+  e nessun colpo in piu' negli altri turni. Se il colpo non arriva: l'aggiornamento del pet
+  FUN_00e44c68 scarta dalla coda gli eventi diversi da «end» quando avatar +0x540 != 1
+  (FUN_00e227f8), prima che la sequenza li legga.
 - Trick in battaglia: FUN_00e2790c -> FUN_00e461bc mette ogni `petSubslot.openSkillIds` nel posto
   `invokeType` (riga petSkill +0x2dc; 4 = per skillValue3 0..5 -> posti 0/11..15, tabella
   0x188a950) dei 16 del PetActor (+0x388 + 0x48*i), +0x850 = 1. Posti: 1 alla morte di un nemico
