@@ -1050,3 +1050,34 @@ _wids = (2, 3, 4, 5, 6, 7, 8, 9, 10, 10000, 10001)
 for _n in _wids:
     shutil.copyfile(os.path.join(src, 'img', 'wipe', 'wipe_1.png'), os.path.join(_wp, 'wipe_%d.png' % _n))
 print('img/wipe/wipe_%s' % ','.join(map(str, _wids)))
+
+
+def slot_num(d):
+    """Deck_Slot_Num_4/5 (34x26, cifra accanto a Deck_Slot «SLOT» sugli slot vuoti del keyblade:
+    FUN_... carica «img/ui/Deck_Slot_Num_%d.png» con il numero dello slot; le risorse hanno solo
+    1-3, lo slot 4 sbloccato all'evoluzione restava con l'«1» del layout, I-068). Forma della cifra
+    dal foglio Mu_Num_Slot (stesso carattere, 44 px per cifra); colori come Deck_Slot_Num_2:
+    riempimento bianco e contorno nero ad alfa 128, alone bianco tenue."""
+    from PIL import ImageFilter
+    ref = load('img/ui/Deck_Slot_Num_2.png').convert('RGBA')
+    fill = Image.new('L', ref.size, 0)
+    fill.putdata([255 if (p[0] > 200 and p[3] >= 100) else 0 for p in ref.get_flattened_data()])
+    fx0, fy0, fx1, fy1 = fill.getbbox()
+    sheet = load('cocostudio/publish/Mu_Num_Slot.png').convert('RGBA')
+    g = sheet.crop((d * 44, 0, d * 44 + 44, sheet.height)).getchannel('A')
+    g = g.crop(g.getbbox()).filter(ImageFilter.MaxFilter(3))   # tratto pieno come 1-3
+    h = fy1 - fy0
+    w = max(1, round(g.width * h / g.height))
+    m = Image.new('L', ref.size, 0)
+    m.paste(g.resize((w, h), Image.LANCZOS), ((fx0 + fx1 - w) // 2, fy0))
+    outline = m.filter(ImageFilter.MaxFilter(5))
+    glow = outline.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(1.2))
+    im = Image.new('RGBA', ref.size, (255, 255, 255, 0))
+    im.putalpha(glow.point(lambda v: v * 60 // 255))
+    im.paste((0, 0, 0, 128), (0, 0), outline)
+    im.paste((255, 255, 255, 128), (0, 0), m)
+    return im
+
+
+for _d in (4, 5):
+    save_ui('Deck_Slot_Num_%d.png' % _d, slot_num(_d))

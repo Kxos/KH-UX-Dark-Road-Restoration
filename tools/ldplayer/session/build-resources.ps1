@@ -26,6 +26,10 @@ python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
 python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_textures fallito' }
+# miniature dell'elenco Story stage_select_ico_<mondo>_<thumbId> (95 assenti: il carosello
+# mostrava miniature di altre missioni o il «?», I-064), dalle anteprime di Roboloid in cache
+python recon\tools\make_quest_thumbs.py server\master_data\stage.json "$D\catalog\files\img\adventure\stage" "$D\external\roboloid\cache\map" "$sg\files" --report "$sg\quest_thumbs\report.json"
+if ($LASTEXITCODE) { throw 'make_quest_thumbs fallito' }
 # animazione move delle grafiche di Dark Road usate dai nemici (copia di wait)
 $env:BGAD_KEY = $key
 # immagini dei keyblade img/keyBlade/KeyBlade_%06d.png (popup del keyblade ottenuto), dalle

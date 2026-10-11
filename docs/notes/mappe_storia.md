@@ -18,7 +18,26 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
   `playStatus`, `clearMissionIds` <= 3), `newStageId`, `luxRank`, `openRankingId`. Tornando alla
   lista `[fn]` apre l'intestazione STG della **missione successiva** e cerca il suo
   bersaglio nella tabella `enemy`: un'intestazione mancante = crash.
-- Miniature dell'elenco Story sfalsate: lavoro in corso (`stage_gen\quest_thumbs`, ISSUES I-003).
+- Miniature dell'elenco Story (ISSUES I-003, I-064): il riquadro «Panel» di ogni missione
+  (`[fn]`/`[fn]`) carica `img/adventure/stage/stage_select_ico_%d_%d.png` con
+  `worldId` (+0x118) e `thumbId` (+0x11c) della riga master `stage`; le missioni non sbloccate
+  (`[fn]`) `stage_select_ico_Blank` («?») o, con il flag 1, `stage_select_ico_Soon`.
+  `thumbId` = stanza*10000 + variante*100 + sottovariante della mappa `<XX>_<stanza>_<var>_<sub>`
+  (1_40000 = DB_0004_00_00 1st District): i valori sono quelli veri (thethiny), non serve toccare
+  il master. Le risorse avevano solo 1_0, 1_40000, 2_0, 2_10000 (+ Blank) delle 99 coppie delle
+  missioni 1-525. Con il file assente `ImageView::loadTexture` (`[fn]`, initWithFile)
+  fallisce e il riquadro **tiene la texture di prima**: il carosello ricicla i riquadri, quindi
+  scorrendo con le frecce le missioni mostrano la miniatura di un'altra missione (Agrabah con
+  Daybreak Town) o il «?» rimasto da una missione non sbloccata. Nessun campo del server c'entra.
+- `recon/tools/make_quest_thumbs.py` (nel build delle risorse, dopo `make_textures.py`) genera le
+  95 assenti in `stage_gen\files\img\adventure\stage` (BTF a palette, ~630 KB in tutto) dalle
+  anteprime delle stanze di Roboloid (`images/map`, cache in `external\roboloid\cache\map`):
+  ritaglio di 1200 px della stanza scelto dove e' piena, 145x132 con alpha e bordo delle
+  originali; `CROP` nello script per correggere a mano. 87 stanze esatte, 8 dalla stessa stanza
+  in un'altra variante (Corridor of Darkness 0100 per le 5 varianti, Waterfront Park 0008_01,
+  Dwarf's Cottage 1F 0006_01, Frozen Forest 0012_01). `stage_select_ico_Soon` = copia di Blank.
+  Fogli di controllo e `report.json` in `stage_gen\quest_thumbs`, nota in
+  `reference\story_thumbs`.
 
 <a id="formato"></a>
 ## Formato STG e MAP
