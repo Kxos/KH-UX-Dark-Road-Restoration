@@ -60,6 +60,7 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   manda in crash; un Panel toccabile a schermo intero assorbe i tocchi.
 - Un LWF vuoto (`waist_c.lwf` dei costumi, 492 byte) evita i crash dei LWF mancanti, ma un LWF che
   deve avere un'etichetta (es. `SpIcon_Open`) va copiato da uno con l'etichetta (Result_Reward).
+- Pulsanti But01 piu' alti di 68: 9-slice verticale a meta' (`TALL9`, capInsetsY 32); con`n  capInsetsY 0 la prima riga quasi trasparente si stira in una fascia chiara (PvP_SelectWindow).
 - Testi: `FUN_00719f18` legge `text/<categoria>/<id>.txt` (ui/drama/audio); un id mancante =
   crash. 856 id costanti citati (`ui_text_ids.py`, `layouts\ui_text_ids.tsv`); 2.332 originali
   importati dal `misc` dell'IPA 4.4.0 (`import_ui_texts.py`). Mancano anche li': 102850008,
