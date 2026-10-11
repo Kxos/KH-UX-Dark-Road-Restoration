@@ -1899,8 +1899,16 @@ function respondMedalSell(res, body) {
   player.medals = (player.medals || []).filter((m) => {
     if (!copies.has(m.userMedalId)) return true;
     gain += rows.get(m.medalId)?.sell || 0;
+    copies.delete(m.userMedalId);
     return false;
   });
+  // medaglie iniziali (1-3, startingInventory): non stanno in player.medals, si segnano
+  // rimosse come dopo un Level Up (banco v33: Goofy venduto restava, +90 invece di 180)
+  for (const m of startingInventory().medals) {
+    if (!copies.has(m.userMedalId)) continue;
+    gain += rows.get(m.medalId)?.sell || 0;
+    setMedalState(m.userMedalId, { removed: true });
+  }
   player.money = (player.money || 0) + gain;
   savePlayer();
   console.log(`  [vendita] medaglie ${[...sold.keys()].join(',') || '(nessun id nel corpo)'}: +${gain} munny`);

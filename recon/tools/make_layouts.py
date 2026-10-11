@@ -501,7 +501,9 @@ LAYOUTS = {
     'PopupNormal_MedalSell_Check_ver350.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
                                                 {'Button_OK': 'Button_Sell', 'Txt_OK': 'Txt_Sell'}, False, [
         ('text', '4Line_Label', ''),    # la domanda la scrive il codice in Txt_Sell
-        P('Alert_Area', 330, 255, 300, 40)] + obtain_panels(280, 280)),
+        # targhe come il popup «Complete!» (obtain_plates): con obtain_panels l'icona dei Munny
+        # finiva schiacciata (9-slice 30x30) e lontana dal testo (banco v33)
+        P('Alert_Area', 330, 255, 300, 40)] + obtain_plates(480, 420)),
     # Avviso «materiali rari» del Level Up (FUN_00cc7864, anche FUN_00c83540): senza il file
     # GUIReader restituisce un widget nullo e il client va in crash al tocco di Level Up.
     # Cerca NormalText_Window03, Button_OK/Txt_OK, Button_Close/Txt_Cancel, Txt_Wording3

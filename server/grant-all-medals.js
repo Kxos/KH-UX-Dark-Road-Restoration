@@ -28,6 +28,9 @@ const now = '2021-05-15 12:00:00';
 let added = 0;
 for (const m of medals) {
   if (owned.has(m.medalId)) continue;
+  // righe interne senza prezzo: 1 = «空き» (segnaposto, cella senza immagine nella vendita),
+  // 2 = medaglia del Burst (make-guilt-burst.js)
+  if (!m.sell) continue;
   player.medals.push({ userMedalId: next++, medalId: m.medalId, level: 1, getDatetime: now });
   owned.add(m.medalId);
   added++;
