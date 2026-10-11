@@ -652,6 +652,46 @@ LAYOUTS = {
         ('text', 'Txt_GetItem_Num_Label', ''),
         ('text', 'Txt_Wording', '')] + [('opts', n, dict(visible=False)) for n in (
             'UnderPanel', 'Txt_GetItem_Num_Label', 'New', 'GetItem', 'KB', 'LuxBoard', 'AVT', 'Base')]),
+    # Scheda «Events» dell'elenco Story (sbloccata dopo la Quest 14; FUN_00d95fb0 crea
+    # AdvEventBannerScrollView, FUN_009c1180 -> FUN_009c2968; risposta GET /stage/event).
+    # FUN_009c2968 carica il modello di una cella (800x172) e prende la texture di Image_3
+    # (vtable +0x598 renderer, +0x4e8 texture): Image_3 deve essere un ImageView SENZA 9-slice
+    # con una texture servita, altrimenti crash anche senza eventi. Per ogni evento la cella
+    # (clone, FUN_009c1374 / FUN_009c2584 / FUN_009c2ea0) cerca: Mask e Icon_Lock (visibili se
+    # isLock 1; Icon_Lock carica img/ui/QuestBut_Lock o ShopBut_Lock_Disable), Icon_Complete
+    # (img/ui/Complete_icon1/2 secondo complete), Image_3 (il banner scaricato da bannerUrl,
+    # FUN_009c1258), ImageButton_Check (facoltativo: senza, il codice crea un ImageButton
+    # trasparente sopra Image_3), Plate con Txt_Limit (scadenza, se < 100 giorni), Plate_Unlock
+    # con Txt_Unlock (102900040 «Available»), EV_DetailButton (contenitore: il codice vi aggiunge un
+    # ImageButton But15 e toglie EV_DetailButton_Draw se c'e'), Txt_EV_Detail (102900044 «Details»),
+    # Panel_Eff (facoltativo). Senza eventi: Txt_NoEvent di AdventureTop2_EV_Banner_Area_ver120
+    # (102900026 «No available events.»). Stile: banner Event_Banner1 (640x140, come in
+    # AdventureTop2_EV_Title_ver103) con la targa Plate09 della scadenza (AdventureTop2_EV_Lock_ver130).
+    'AdventureTop2_EV_Banner_ver220.json': ('build', P('EV_Banner', 0, 0, 800, 172, [
+        I('Image_3', 400, 98, 640, 140, 'Event_Banner1.png', s9=False),
+        P('Mask', 80, 28, 640, 140, visible=False,
+          opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=150)),
+        I('Icon_Lock', 400, 98, 80, 80, 'QuestBut_Lock.png', s9=False, visible=False),
+        I('Icon_Complete', 680, 140, 80, 80, 'AchievedComplete.png', s9=False, scale=0.8, visible=False),
+        I('Plate', 400, 14, 590, 30, 'Plate09.png', s9=False, visible=False, children=[
+            L('Txt_Limit', 0, 0, 560, 28, '', 20)]),
+        I('Plate_Unlock', 400, 14, 590, 30, 'Plate09.png', s9=False, visible=False, children=[
+            L('Txt_Unlock', 0, 0, 560, 28, '', 20)]),
+        P('EV_DetailButton', 640, 8, 140, 44),
+        L('Txt_EV_Detail', 710, 30, 130, 30, '', 20),
+        P('Panel_Eff', 80, 28, 640, 140, visible=False)])),
+    # Pulsanti laterali della mappa di un evento (FUN_00d9e3d8, aperto dal tocco su un banner):
+    # AdventureTop2_EV_Button cerca Button_EV_Board_0 (facoltativo, nascosto) e Button_EV_Board
+    # con Txt (102920005 «Event Boards» / 102920007 «Special Boards»); AdventureTop2_Raid_Button
+    # Button_EV_Board con Txt (102920006 «Raid Boards»). Dal pulsante laterale originale
+    # AdventureTop2_Multi_Button (Button_Mu_Board «Multi Board», World_Ico10A/B).
+    'AdventureTop2_EV_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
+                                     {'Button_Mu_Board': 'Button_EV_Board',
+                                      'Button_Last_Member': 'Button_EV_Board_0'}, False, [
+        ('opts', 'Button_EV_Board_0', dict(visible=False))]),
+    'AdventureTop2_Raid_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
+                                       {'Button_Mu_Board': 'Button_EV_Board'}, False, [
+        ('opts', 'Button_Last_Member', dict(visible=False))]),
     # Costo del deck superato su «Begin» (FUN_0098d7a4/FUN_0098df84, StartDeckEditDialog: da
     # FUN_00991fac e FUN_00994c0c quando FUN_0098ce50 trova il costo > maxDeckCost; anche
     # FUN_00cf8e58, FUN_00dab0e4, FUN_00995490). Cerca: 4Line_Label (103000020 «Exceeds
@@ -1364,6 +1404,13 @@ COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%
 # «Exchange» del Moogle Shop: al tocco il pulsante carica img/ui/But30_On/Off (assenti:
 # crash, stack mg9); rosso come nell'originale (moogle_shop_01.png) = But01
 COPIES.update({'img/ui/But30_%s.png' % s: PUB + 'But01_%s.png' % s for s in ('Off', 'On')})
+# Banner della scheda Events (FUN_009c1374): ImageButton But15 di «Details» (al tocco carica
+# img/ui/But15_On, che esiste solo come dark_But15_On), lucchetto e icona di completamento
+# caricati da img/ui (assenti: dal lucchetto di cocostudio e da AchievedComplete)
+COPIES.update({'img/ui/But15_On.png': PUB + 'dark_But15_On.png', 'img/ui/QuestBut_Lock.png': PUB + 'QuestBut_Lock.png',
+               'img/ui/ShopBut_Lock_Disable.png': PUB + 'QuestBut_Lock.png',
+               'img/ui/Complete_icon1.png': PUB + 'AchievedComplete.png',
+               'img/ui/Complete_icon2.png': PUB + 'AchievedComplete.png'})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
                for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
 # Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come

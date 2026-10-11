@@ -175,3 +175,23 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
 ([medaglie.md](medaglie.md)), Moogle Shop ([moogle_shop.md](moogle_shop.md)), bacheche
 ([bacheche.md](bacheche.md)), profilo e missioni ([home_profilo.md](home_profilo.md)), stage
 ([battaglia.md](battaglia.md)).
+
+<a id="eventi"></a>
+## Eventi (`GET /stage/event`, azione 109)
+
+- Tasto «Events» dell'elenco Story (sbloccato dopo la Quest 14). Ramo del dispatcher a `0x7c5e98`:
+  parser `FUN_0079f62c` (risultato a +0x278 del gestore, letto da `FUN_009c1374`), poi
+  `eventCategory` (int, **facoltativo**, alla radice -> +0x71).
+- Radice: `events[]` (array, obbligatorio) e `highScoreRank` (uint, obbligatorio). Senza eventi:
+  `{"events": [], "highScoreRank": 0}` -> il client mostra «No available events.» (Txt_NoEvent).
+- Elemento (`FUN_0079f578` -> `FUN_0079e924`), tutti obbligatori:
+  `stages[]` (come `stories[]` di `/stage/160310`: `stageId` int, `useAp` int, `score` uint64,
+  `playStatus` int, `clearMissionIds` int[]), `eventStageId` int, `showIcon` int, `bannerUrl` string,
+  `eventType` int, `status` int (2 = mostra Txt_Description invece del tempo), `endTime`
+  "YYYY-MM-DD HH:MM:SS", poi `newStageId` int, `isLock` uint (1 = lucchetto e maschera),
+  `complete` int (icona di completamento).
+- Esempio di un evento (in `server/save/event.json`, letto da `respondStageEvent`):
+  `[{"stages":[{"stageId":<id>,"useAp":0,"score":0,"playStatus":0,"clearMissionIds":[]}],
+  "eventStageId":<id evento>,"showIcon":1,"bannerUrl":"","eventType":1,"status":1,
+  "endTime":"2026-12-31 23:59:59","newStageId":<id>,"isLock":0,"complete":0}]`.
+  `eventStageId` e gli stage devono esistere nelle tabelle master (id a 0 = crash): da verificare.

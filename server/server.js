@@ -158,6 +158,7 @@ function route(url) {
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
+  if (p === '/stage/event') return 'stageevent';
   if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
   if (p === '/user/stone') return 'userstone';
   if (p === '/user/material') return 'usermaterial';
@@ -1851,6 +1852,21 @@ function respondUserDeck(res) {
   send(res, 200, { ret: ret(), userDecks: userDecksData() });
 }
 
+// GET /stage/event (azione 109, tasto «Events» dell'elenco Story, FUN_0079f62c):
+// events[] obbligatorio (elemento FUN_0079f578 -> FUN_0079e924: stages[] come in
+// /stage/160310, eventStageId int, showIcon int, bannerUrl string, eventType int, status int,
+// endTime "YYYY-MM-DD HH:MM:SS"; poi newStageId int, isLock uint, complete int),
+// highScoreRank uint obbligatorio; eventCategory int facoltativo (radice, +0x71).
+// Senza eventi il client mostra Txt_NoEvent. Per provare un evento: save/event.json con
+// l'array events (forma in docs/notes/server.md).
+function respondStageEvent(res) {
+  let events = [];
+  const evPath = path.join(path.dirname(SAVE_FILE), 'event.json');
+  if (fs.existsSync(evPath)) {
+    try { events = JSON.parse(fs.readFileSync(evPath, 'utf8')); } catch (e) { console.log('[event] event.json non valido:', e.message); }
+  }
+  send(res, 200, { ret: ret(), events, highScoreRank: 0 });
+}
 const STAGE_CLEARED = Number(process.env.KHUX_STAGE_CLEARED || 2);
 
 function respondStageList(res) {
@@ -1997,6 +2013,7 @@ function handler(scheme) {
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
+  if (kind === 'stageevent') return respondStageEvent(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: [] });
       // GET /raid/list/181221 (azione 240, FUN_007aadc0): selfRaid (FUN_0079c07c modo 0:

@@ -47,6 +47,13 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
 - `ArmatureAnimation::play` (`FUN_01188fac`) con un movimento assente = crash.
 - I pulsanti di `FUN_008d56f8` caricano `img/ui/<nome>_On.png` al tocco: senza, crash (46 copiati).
 - Gli ImageView del modello hanno il 9-slice (bordo 50): per icone a dimensione naturale `s9=False`.
+- **9-slice + texture assente = crash** in GUIReader (setScale9Enabled ricrea lo Scale9Sprite sul file
+  mancante, SIGSEGV a 0x2c, banco absmax). Senza 9-slice la texture mancante e' tollerata. Era il
+  `Countdown_panel` (Plate21) di `PopupNormal_Continue_Multi` (Continue, AP_Recovery, Ability_MAX)
+  e `Win_Over` (Panel07) di `MedalInfo_ReleaseWindow`; stessa trappola negli originali serviti
+  `PassiveResult`, `DeckEdit_SubSlot_Select_Medal_ver260`, `StartDeckProud_*`, `ActionMap_Multi*`.
+- Un ImageView di cui il codice prende la texture (renderer +0x598, texture +0x4e8, es. `Image_3`
+  del banner Events) deve essere senza 9-slice e con una texture servita.
 - `FUN_008d6230` accetta il tocco in un rettangolo grande quanto il bersaglio ma **centrato sulla
   sua origine**: i pannelli-pulsante vanno con l'origine al centro della freccia.
 - Quando il codice prende «il primo figlio» di `LeftUI`/`RightUI`/`CenterUI`, un pannello vuoto
@@ -94,7 +101,10 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   arrivavano dal CDN (`r/misc`), di cui non risulta una copia pubblica.
 - Generati finora (vedi `make_layouts.py`): Presents, Medal List/dettaglio/Sort/vendita, Evolve,
   Sell Materials, Moogle Shop, Profilo, Avatar Boards, Other (MenuDialog_ver300), Missioni,
-  MyPage_ChirishiBaloon, PopupNormal_Continue, BattleResult_LB_ver120 e altri.
+  MyPage_ChirishiBaloon, PopupNormal_Continue, BattleResult_LB_ver120, BattleResult_KB,
+  BattleResult_Skill_ver130, PopupNormal_Cost_Over/AP_Recovery/MedalOver/Ability_MAX,
+  DeckEdit_Cost_Over_ver131, scheda Events (AdventureTop2_EV_Banner_ver220, _EV_Button, _Raid_Button)
+  e altri. Triage dei 254 in `stage_gen\layout_triage\REPORT.md`.
 - Mancano ancora tutti i `PartyTop_*` (scena `PartyTopScene` richiesta anche al KO in solo: ISSUES
   I-001/I-006), `PetInfoScene_ver320`, `PetInfoAnim`, tutte le `lwf/pet`.
 
