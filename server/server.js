@@ -25,6 +25,8 @@ const zlib = require('zlib');
 const codec = require('./khux-codec');
 const { startDns } = require('./dns');
 const { makeMulti, routeMulti } = require('./multi');
+const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
+const { makeGuiltBurst } = require('./guilt-burst');
 
 // ---------------------------------------------------------------------------
 // Configurazione
@@ -147,6 +149,7 @@ function route(url) {
   if (p.startsWith('/user/keyblade/update')) return 'keybladeupdate';
   if (p === '/user/deck') return 'userdeck';
   if (p === '/keyblade/subslot') return 'kbsubslot';
+  if (routeKeybladeEvo(p)) return routeKeybladeEvo(p);
   if (p === '/user/medal') return 'usermedal';
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
@@ -905,7 +908,7 @@ function userPointData(now) {
     specialPoint: 0, stageSkipTicket: 0, superSkipTicket: 0, vipPoint: 0,
     // livello del Burst (pulsante rosso in battaglia, una volta per missione; FUN_00aee878 non
     // lo crea a 0): +1 alla prima guilt di ogni medaglia, +5 alla prima guilt massima
-    guiltBurstLv: player.guiltBurstLv || 0, multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
+    guiltBurstLv: guiltBurst().level(), multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
     drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
     limitedDrawTicket1: 0, limitedDrawTicket2: 0, limitedDrawTicket3: 0,
   };
@@ -1132,7 +1135,8 @@ function userDetailData() {
     // (1010): la schermata Quests (FUN_00d97410) lo confronta con misc 106 (130) per
     // sbloccare il quarto pulsante, e da sbloccato cerca un testo che non c'e' (crash).
     lastClearStageId: stageNumber(player.lastClearStageId),
-    isGuilt: 0, isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
+    // isGuilt (+0x44): con 0 niente pulsante del Burst (FUN_00b12e84 -> FUN_00b0fbd0)
+    isGuilt: guiltBurst().isGuilt(), isPet: 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
 }
 
@@ -1272,9 +1276,9 @@ function respondStageClear(res, req) {
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
     userAvatarParts: [],
-    subslotMaxNum: 0,
+    subslotMaxNum: kbEvo().subslotMaxNum(),
     userKeybladeSubslots: userKeybladeSubslotsData(),
-    guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+    ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
   });
 }
 
@@ -1407,9 +1411,9 @@ function inventoryBlocks(now) {
     userTitles: userTitlesData(),
     pet: { userPetParts: [] },
     emblemIds: [],
-    subslotMaxNum: 0,
+    subslotMaxNum: kbEvo().subslotMaxNum(),
     userKeybladeSubslots: userKeybladeSubslotsData(),
-    guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+    ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
   };
 }
 
@@ -1783,8 +1787,7 @@ function respondMoogleshopBuy(res, body) {
     userSkills: [],
     userMaterials: userMaterialsData(),
     emblemIds: [],
-    guiltBurstFirstUserMedalIds: [],
-    guiltBurstMaxUserMedalIds: [],
+    ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
   });
 }
 
@@ -1896,7 +1899,7 @@ function respondMedalRemove(res, body) {
     // perche' con un elemento il dispatcher lo copia nell'oggetto pet della sessione (+0x7c0),
     // creato solo dall'azione 170 (pet), e senza pet va in crash (0x7c8d40)
     petSubslots: [],
-    subslotMaxNum: 0, userKeybladeSubslots: userKeybladeSubslotsData(),
+    subslotMaxNum: kbEvo().subslotMaxNum(), userKeybladeSubslots: userKeybladeSubslotsData(),
   });
 }
 
@@ -1908,7 +1911,7 @@ function respondMedalRemove(res, body) {
 // userKeybladeId. Preferito (isFavorite, Profilo): player.favoriteKeybladeId, di default 1.
 function ownedKeyblades() {
   return [
-    { userKeybladeId: USER_KEYBLADE_ID, keybladeId: startingInventory().keybladeId, burst: player.keybladeBurst || 0,
+    { userKeybladeId: USER_KEYBLADE_ID, keybladeId: kbEvo().starlightKeybladeId(startingInventory().keybladeId), burst: player.keybladeBurst || 0,
       getDatetime: serverTime() },
     ...(player.keyblades || []).map((k) => ({ ...k, burst: k.burst || 0 })),
   ];
@@ -2002,7 +2005,7 @@ function userKeybladeData(k) {
     burst: k.burst, totalAttack: attack, totalDefense: defense,
     isFavorite: k.userKeybladeId === favoriteKeybladeId() ? 1 : 0,
     skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
-    skillUpperTotalDefence: 0, subslotRate: 10000, // uint
+    skillUpperTotalDefence: 0, subslotRate: kbEvo().keybladeSubslotRate(k.keybladeId), // uint
     getDatetime: k.getDatetime || serverTime(),
   };
 }
@@ -2053,11 +2056,11 @@ function respondKeybladeUpdate(res, body) {
 // schermata Equipment (FUN_00c16d14) lo cerca in una mappa e, se manca, l'indice -1
 // sfora il vettore (std::out_of_range, crash).
 function userKeybladeSubslotsData() {
-  return ownedKeyblades().map((k) => ({ keybladeSubslotId: k.userKeybladeId, subslotRate: 10000, subslots: [] }));
+  return kbEvo().userKeybladeSubslotsData(); // server/keyblade-evo.js
 }
 
 function respondKeybladeSubslot(res) {
-  send(res, 200, { ret: ret(), subslotMaxNum: 0, userKeybladeSubslots: userKeybladeSubslotsData() });
+  send(res, 200, { ret: ret(), subslotMaxNum: kbEvo().subslotMaxNum(), userKeybladeSubslots: userKeybladeSubslotsData() });
 }
 
 function respondUserDeck(res) {
@@ -2212,7 +2215,8 @@ function handler(scheme) {
       if (kind === 'userkeyblade') return respondUserKeyblade(res);
       if (kind === 'keybladeupdate') return respondKeybladeUpdate(res, entry.bodyDecoded);
       if (kind === 'userdeck') return respondUserDeck(res);
-      if (kind === 'kbsubslot') return respondKeybladeSubslot(res);
+      if (kind === 'kbsubslot') return kbEvo().respondSubslot(res, req.method, entry.bodyDecoded);
+      if (kind === 'kbenhance') return kbEvo().respondEnhance(res, entry.bodyDecoded);
       if (kind === 'usermedal') return respondUserMedal(res);
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
@@ -2311,7 +2315,7 @@ function handler(scheme) {
           ret: ret(),
           userData: { userPoint: userPointData(serverTime()) },
           raidRewards: [],
-          guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [],
+          ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
         });
       }
       // GET /user/point (azione 2) e POST /user/sphere/reset (azione 62): solo
@@ -2354,6 +2358,21 @@ function handler(scheme) {
 }
 
 // Union Cross (server/multi.js): le funzioni del giocatore che gli servono
+// Potenziamento/evoluzione dei keyblade e sub-slot (server/keyblade-evo.js)
+var kbEvoInstance = null; // var: ownedKeyblades() puo' servire prima di questa riga
+function kbEvo() {
+  return kbEvoInstance ??= makeKeybladeEvo({
+    ret, send, serverTime, masterRows, player, savePlayer, ownedKeyblades, userMedalList,
+    userKeybladesData, userDecksData, userMaterialsData, userTitlesData, USER_KEYBLADE_ID,
+  });
+}
+
+// Burst: livello, isGuilt e liste di FUN_007a5dec (server/guilt-burst.js)
+var guiltBurstInstance = null;
+function guiltBurst() {
+  return guiltBurstInstance ??= makeGuiltBurst({ getPlayer: () => player, userMedalList, masterRows });
+}
+
 let multiInstance = null;
 function multi() {
   return multiInstance ??= makeMulti({

@@ -1464,6 +1464,18 @@ _EMPTY_LWF = os.path.join(OUT, 'lwf', 'character', 'npc', '2000', 'wait', 'wait.
 if os.path.exists(_EMPTY_LWF):
     os.makedirs(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait'), exist_ok=True)
     shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
+    # Potenziamento del keyblade (POST /keyblade/enhance, server/keyblade-evo.js), LWF assenti da
+    # ogni risorsa (FUN_00b26928 -> nullo -> crash): risultato con slot nuovo (FUN_00c05ef0:
+    # KeyEvo_Medal_01B col gestore enterFrame di _root, KeyEvo_eff, e sul movie
+    # «medal_blank_slot» medal_blank_slot1-3 = attributo 3/1/2, tabella 0x1825aa0), evoluzione
+    # del design (FUN_00c0eebc: KeyBlade_Evolution, movie «keyblade_previous»/«keyblade», va
+    # avanti quando _root arriva all'ultimo fotogramma) e KeyBlade_StepUp (FUN_00c0e774).
+    # LWF vuoti: niente animazione ma il flusso prosegue (un fotogramma = subito alla fine).
+    for _p in [['memudemo', 'KeyBlade_Evolution'], ['memudemo', 'KeyBlade_StepUp'],
+               ['keyblade', 'KeyEvo', 'KeyEvo_Medal_01B'], ['keyblade', 'KeyEvo', 'KeyEvo_Medal_02'],
+               ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
+        os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
+        shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
 
 # Animazione del risultato di Evolve (FUN_00ccbad8: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il

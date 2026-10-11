@@ -108,4 +108,6 @@ for (const k of ['ground60', 'aerial60', 'extra40', 'raid40']) {
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'moogleshop.json'), JSON.stringify(rows));
 fs.writeFileSync(path.join(OUT, 'shuffleskill.json'), JSON.stringify(traits));
+// righe 901/902 del Burst (FUN_00b10790 le legge senza controllo del null)
+require('./make-guilt-burst').patch(OUT);
 console.log(`moogleshop: ${rows.length} righe (Traits ${rows.filter((r) => r.type === TAB_TRAITS).length})`);

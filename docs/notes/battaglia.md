@@ -84,3 +84,53 @@ in `userKeyblades[].burst`: il nome vero del campo e' da verificare sul log «[g
   aprivano Party: usare `-NoStart`); le cause vere erano layout mancanti e il 9-slice su Plate21.
 - Bilanciamento: Bandit + Red Nocturne (1240 parte 2) azzerano 3040 HP a LV3 (ISSUES I-013).
 - Nel tutorial la morte mostra un avviso, mai catturato (ISSUES I-031).
+
+<a id="burst"></a>
+## Burst (GuiltBurst)
+
+Pulsante rosso in alto a destra, una volta per missione (anche raid e Colosseo), attacco a tutti
+i nemici con potenza dal livello Burst (introdotto in 1.40; khux-guides.tumblr.com/post/152649620061).
+Codice: `CarouselGuiltBurst`, setup `FUN_00b0fbd0` (battaglia) -> `FUN_00aee878` (UI).
+
+- **Condizioni del pulsante** (oggetto cifrato della battaglia, `FUN_006e02d4`):
+  - `+0x1c` = 1 dall'init (`FUN_00b0b218`), azzerato dopo il primo setup: e' il «solo la prima volta»;
+  - `+0x18` = `FUN_00b12e84` = **`userData.userDetail.isGuilt`** (riga userDetail +0x44,
+    singleton `FUN_007c1dfc` +0x128; in multi/raid, `+0x2c` = 2, quella del leader a +0x8b0 -> +0x60).
+    Il server mandava 0: **causa del pulsante assente**;
+  - livello `FUN_00b10044` = **`userPoint.guiltBurstLv`** (riga userPoint +100, singleton +0x118;
+    in multi +0x8b0 +4) != 0;
+  - non PvP (`FUN_00ae6608`: CarouselDeck +0x300 = 1 fuori dal PvP).
+- **Attacco** (`FUN_00b1019c`, slot battaglia +0x358): riga **medal 2** (tabella 0x55 = medal,
+  `FUN_00efcc8c`): STR +0x4e0, DEF +0x4ec, +0x4d4; potenza = `Lv / 100 x battleMisc 134 / 10000 x
+  10000` = **Lv x 400** (battleMisc 134 = 40000; `DAT_01768770` = 100, `DAT_01763f00` = 10000).
+  Senza riga medal 2 l'attacco non si prepara. Poi `FUN_00b10790` legge **shuffleskill 901 e 902**
+  (enemyKind/enemyKindRate, +0xac/+0xb0) **senza controllo del null**: senza righe, crash
+  all'avvio della battaglia. Il pulsante: `Guiltburst_UI`, `Guiltburst_but`, `Guilt_Lv_Num` di
+  `ActionMap_Guiltburst.json` (servito); usabile se i flag +0x19/!+0x1a/!+0x1b (`FUN_00b14544`).
+- **Righe master** (`server/make-guilt-burst.js`, idempotente, chiamato anche da
+  `make-game-tables.js` e `make-moogleshop.js`): medal 2 «Burst» (copia della 1, STR/DEF 5000
+  segnaposto `KHUX_GUILT_BURST_STR`, burstId 11); burst 11 = «11:ギルトボム» (Guilt Bomb, tutti i
+  nemici) della 5.0.1, con animazioni `abl_00011`/`eff_00011` assenti -> quelle di Thundaga
+  (10145/110145); shuffleskill 901/902 (enemyKind 1/2, bonus 0, icone 60/61). Rev. master +1.
+- **Livello** (`server/guilt-burst.js`): +`addGuiltBurstLv` (riga medal +0x4c4; nelle tabelle 0 ->
+  1) alla prima guilt di ogni medaglia, +`addGuiltBurstLvMax` (+0x4c8; 0 -> 5) alla prima guilt
+  massima. Qui la guilt e' il tier (`guiltValue`, fisso, niente `guiltFactor`): prima guilt = prima
+  medaglia (medalId) posseduta con tier > 0; guilt massima = prima copia al `maxLv` (scelta nostra).
+  Registro che non scende in `player.guiltBurst {first, max}` (il vecchio `player.guiltBurstLv` non
+  si usa piu'). `isGuilt` = 1 se il livello > 0. `KHUX_GUILT_BURST_LV=<n>` fissa il livello per le
+  prove (il salvataggio con tutte le medaglie da' Lv 1908 = potenza 763.200).
+- **Popup di livello**: `guiltBurstFirstUserMedalIds`/`guiltBurstMaxUserMedalIds` (`FUN_007a5dec`:
+  `/stage/clear`, draw, Moogle Shop, raid reward) e `guiltBurstFirstLv`/`MaxLv` del Level Up
+  (`FUN_0078f990`) aprono `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` (`FUN_00b430bc`, clip
+  `FromLv`/`ToLv`, evento `enterFrame` su `_root`) e `GuiltBonus_BurstLvup_num` (`FUN_00b45dc0`),
+  **assenti** (LWF nullo = crash). Le liste partono solo con `KHUX_GUILT_BURST_POPUP=1`; il Level Up
+  manda 0. Per generarli: copia di un LWF con clip omonime (stile `make_medaltype_lwf.py`).
+  `MedalInfo_Burst_Info.json` (`FUN_00b466cc`, dettaglio medaglia) e' nei layout mancanti.
+- **Super Burst** (`setupSuperGuiltBurst` `FUN_00aef124`, sempre chiamato): per ogni medaglia del
+  deck con `validSuperBurst` (+0x500) e `superBurstId` (+0x504) != 0 (`FUN_00af14e0`) aggiunge un
+  pannello a `ActionMap_SuperBurst_SelectWindow/SelectPanel` (serviti). Nessuna medaglia delle
+  nostre tabelle ce l'ha: spento. Per accenderlo servono `superBurstId` sulle medaglie, righe burst
+  dedicate (`superburstTiming`; animazioni `abl_50xx1`/`eff_50xx1` servite),
+  `lwf/battle/Sburst/Sburst.lwf`, `SBurst_Revival.lwf` e `img/ui/SBurst_Icon1..3[R].png` (assenti).
+- Da verificare: `abl_15031` (tabella delle mosse dell'avatar, accanto a `fburst_1/2`) assente; altri
+  lettori di `isGuilt` (es. `PopupNormal_Guilt_ver130`, layout mancante) non cercati a fondo.

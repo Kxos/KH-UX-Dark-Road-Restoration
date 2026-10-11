@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-066**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-069**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -17,7 +17,6 @@ Ultima revisione: 11 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
-| I-061 | APERTO | Burst (Guilt Burst, pulsante rosso in battaglia, 1 volta per missione): il server manda `guiltBurstLv` (salvataggio a 10) ma il pulsante non appare; flag +0x18/+0x1c e livello di `FUN_00b10044` in analisi | [battaglia](notes/battaglia.md) | `FUN_00aee878`, `FUN_00b0fbd0` |
 | I-062 | APERTO | «Max Out Gauge» prima della battaglia: «server error» e gauge del keyblade selezionato non al massimo; il client manda `POST /keyblade/burst/max` {userKeybladeId, kind: 1} (non gestito, schema automatico) | [battaglia](notes/battaglia.md) | log #99 |
 | I-063 | DA VERIFICARE | Tocco sull'AP in alto: popup con le informazioni sull'AP (`BalloonNomal_AP_Recovery`, `FUN_00b8ee90`: tempo al prossimo AP / al pieno). Verificare che si aggiorni da solo col nuovo AP (ricarica 1 ogni 3 min, I-060) o se va sistemato | [server](notes/server.md#ap) | - |
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
@@ -32,8 +31,11 @@ Ultima revisione: 11 ottobre 2026.
 | I-048 | CHIUSO | Scheda Events (dopo la Quest 14): `AdventureTop2_EV_Banner_ver220`/`_EV_Button`/`_Raid_Button` generati, `GET /stage/event` con `events: []` | [server](notes/server.md#eventi) | stage_gen\layout_triage |
 | I-049 | CHIUSO | Crash 0x2c in GUIReader: 9-slice su texture assente (Plate21 in Continue/AP_Recovery/Ability_MAX, Panel07 in ReleaseWindow) | [risorse_layout](notes/risorse_layout.md#regole) | 0603a9c |
 | I-057 | APERTO | Risorse per keyblade/attributo: crash di «Select a Keyblade» risolto (MedalDeck_Type1/2/11/21/31/01 e deck 201..1901 generati, tinta dall'arte, verificato). Mancano ancora per intero `lwf/keyblade/KeyEvo/*`, `lwf/memudemo/KeyBlade_StepUp`/`_Evolution`, `lwf/medal/guilt_bonus/*` (evoluzione keyblade, subslot, guilt: non ancora raggiungibili) | [server](notes/server.md#keyblade) | make_keyblade_decks.py |
-| I-065 | APERTO | Equipment, «Passive Effects»: non mostra nulla. Verificare le passive del keyblade/medaglie; nel log `PUT /passive/list` non gestito (`[?]`), master `passiveSetting.json` vuoto | [server](notes/server.md#keyblade) | segnalazione utente 11-10 |
-| I-066 | APERTO | Equipment, pulsante «Subslot»: sempre 0/0 e crash al tocco (subslot del keyblade: `keybladeSubslot.json` vuoto, `userKeybladeSubslots`; lavoro dell'agente keyblade) | [server](notes/server.md#keyblade) | segnalazione utente 11-10 |
+| I-067 | DA VERIFICARE | Keyblade +0..+35 (576 righe, `make-keyblade-levels.js`, `keyblade-evo.js`), `POST /keyblade/enhance`: banco Treasure Trove +0 -> +5 ok (materiali scalati, moltiplicatori, evoluzione a +5 con nuovo design e 4 slot). Da vedere: +6..+35, Starlight, altri keyblade; animazioni KeyEvo/KeyBlade_Evolution vuote (saltate) | [server](notes/server.md#keyblade) | banco kv_res, kv_evo0, kv_equip5b |
+| I-068 | APERTO | Keyblade: lo slot sbloccato all'evoluzione mostra «SLOT 1» invece di «SLOT 4»; la gauge del keyblade dopo l'enhance si azzera (salvataggio `burst` 9 = unita' sbagliata?) | [server](notes/server.md#keyblade) | banco kv_evo0, kv_lv4 |
+| I-069 | DA VERIFICARE | Burst: `userDetail.isGuilt` (flag +0x18), `guiltBurstLv` calcolato (`guilt-burst.js`), medal 2 + burst 11 + shuffleskill 901/902 (`make-guilt-burst.js`, senza crash al via); provare il pulsante in battaglia | [battaglia](notes/battaglia.md#burst) | rapporto agente Burst |
+| I-065 | APERTO | Equipment, «Passive Effects» vuoto: `passiveSetting`/`passive` vuote nella 5.0.1; le passive dei keyblade iniziano oltre +35 (35.5..60), livelli decimali non rappresentati | [server](notes/server.md#keyblade) | rapporto agente keyblade |
+| I-066 | IN CORSO | Equipment, «Subslot»: ora n/120 (`keybladeSubslot` rigenerata, `POST /keyblade/subslot`); crash al tocco = `DeckEditSubSlotScene_ver340` e 4 layout assenti (elenco widget in server.md) | [server](notes/server.md#keyblade) | banco kv_equip2 |
 | I-006 | APERTO | Party: tutti i layout `PartyTop_*` mancanti (legato a I-001) | [risorse_layout](notes/risorse_layout.md#mancanti) | ab62db9 |
 | I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008 ora «Available quests!», 3b6bbb3; 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
 | I-035 | APERTO | Presents: cornici viola di Dark Road da sostituire con le texture blu | [home_profilo](notes/home_profilo.md#presents) | 081b0cb |
