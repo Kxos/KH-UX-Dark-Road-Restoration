@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-063**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-064**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -41,6 +41,7 @@ Ultima revisione: 11 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-003 | IN CORSO | Miniature dell'elenco Story sfalsate | [mappe_storia](notes/mappe_storia.md#dati) | `stage_gen\quest_thumbs` |
+| I-064 | APERTO | Elenco Story: tornando indietro con le frecce, missioni gia' completate/disponibili mostrano «?» al posto della miniatura (devono restare); verificare anche che ogni miniatura corrisponda al mondo/mappa della missione (legato a I-003 e alle 95 miniature mancanti) | [mappe_storia](notes/mappe_storia.md#dati) | segnalazione utente 11-10 |
 | I-008 | APERTO | `-Seek`/`FindSpotlight` fermi sulle mappe scure (1070 bloccata sull'albero; 1030 `/stage/clear` non visto) | [banco](notes/banco.md#script) | befacc0 |
 | I-009 | APERTO | Missioni di storia oltre la 525 senza dati | [mappe_storia](notes/mappe_storia.md#dati) | fc0aefa |
 | I-014 | APERTO | Filmati mancanti (5, id 2999951), 175 dialoghi quasi assenti, Cutin, contatori Raid/PVP/Union Cross delle missioni, zoo 990018 (tocco perso) | [mappe_storia](notes/mappe_storia.md#filmati) | 6a116c6 |
