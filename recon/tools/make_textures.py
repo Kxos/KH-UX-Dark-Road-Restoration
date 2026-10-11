@@ -562,3 +562,12 @@ for _n in range(1, 6):
         shutil.copyfile(os.path.join(src, 'cocostudio', 'publish', 'Union_L_%02d%s.png' % (_n, _s)),
                         os.path.join(_up, 'Union_L_%02d%s.png' % (_n, _s)))
 print('img/union/Union_01..05, Union_L_01..05')
+# Tendina del passaggio fra le parti di una missione ([fn]: «img/wipe/wipe_%d.png», %d =
+# worldId della tabella world il cui worldName e' il prefisso della stanza, [fn]; Sprite
+# che non si carica -> crash nel distruttore). Nelle risorse c'e' solo wipe_1 (DB): copie per gli altri.
+_wp = os.path.join(out, 'img', 'wipe')
+os.makedirs(_wp, exist_ok=True)
+_wids = (2, 3, 4, 5, 6, 7, 8, 9, 10, 10000, 10001)
+for _n in _wids:
+    shutil.copyfile(os.path.join(src, 'img', 'wipe', 'wipe_1.png'), os.path.join(_wp, 'wipe_%d.png' % _n))
+print('img/wipe/wipe_%s' % ','.join(map(str, _wids)))

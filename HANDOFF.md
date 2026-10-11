@@ -47,7 +47,21 @@ qui c'è come.
   9-slice con zona elastica centrale WIN9, pastiglia Plate18, Unlock But06 con il grigio
   _Disable, Unlock All But16 dentro la barra: non esiste negli originali del 2017).
 - Il fiocco disegnato e' piu' semplice dell'originale dipinto.
-- **PROSSIMO PASSO (mappe, 11 ottobre sera)**: 1060 percorsa a mano sul banco (smoke.json con
+- **CRASH DEL PASSAGGIO DI PARTE RISOLTO (11 ottobre, provato sul banco)**: non erano uid ne'
+  uscite. All'uscita `[fn]` mostra la tendina `img/wipe/wipe_%d.png` con %d = worldId
+  della tabella `world` il cui worldName e' il prefisso della stanza (`[fn]`, tabella
+  master 0x22; nessuna corrispondenza -> 1). Nelle risorse c'e' solo wipe_1 (DB): per DW serviva
+  wipe_2, `Sprite::initWithFile` falliva (`[fn]`) e il distruttore cocos crashava (il
+  tombstone mostrava wipe_2.png nello stack). make_textures.py ora copia wipe_1 in wipe_2..10,
+  10000, 10001. Provato sulla 1060 con la partenza spostata per la prova vicino all'uscita
+  (ripristinata): parte 0 -> parte 1 e ritorno, client vivo. Gli originali per mondo
+  (sagome diverse?) non si trovano online: miglioria possibile. Nota per la lettura dei
+  tombstone: le coppie fp/lr sotto rsp sono la catena ARM vera (b01690 <- 12d85d0 <- 12d8e44
+  <- 12c1154: init fallito -> delete -> distruttore). Nuovo script ghidra `khux_refs.py`
+  (riferimenti a un indirizzo). Con lo stesso -Quick e' entrata nel guest anche la 1050 corretta.
+  PROSSIMO: percorrere la 1060 intera (strettoia, bersaglio nella parte 1) e un'altra
+  multi-parte di un altro mondo.
+- (storico) 1060 percorsa a mano sul banco (smoke.json con
   stageId 1060): il giro lungo dell'arco e la strettoia sulle ninfee si percorrono, il bersaglio
   e' raggiunto. Ma all'uscita verso la parte 1 (freccia blu, (2200,1760)) il client va in CRASH
   (SIGSEGV null, fault 0x8; stack ghidra b01690 -> [fn], 12d85d0 -> [fn],
