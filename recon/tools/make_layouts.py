@@ -1370,12 +1370,16 @@ LAYOUTS = {
             B('Close_Button', 180, 288, 70, 70, 'But_Close')]),
         B('BestButton', 215, 45, 220, 68, 'But06', 'Optimize', 24, label='Txt_Best', opts=BUTS),
         L('Txt_NotExist', 215, 340, 380, 60, 'No available Medals.', 22, visible=False)])),
-    # Avviso «Medals must be set in order.» (nodo SubSlot_Caution della scena, centrato in 379,470):
-    # Panel_34 nascosto, il codice lo fa comparire e svanire
+    # Avviso «Medals must be set in order.» (nodo SubSlot_Caution della scena in 379,470): Panel_34
+    # nascosto; [fn] (se uno slot vuoto precede uno pieno) gli mette opacita' 0, lo mostra e
+    # lo fa comparire e svanire (FadeIn, attesa, FadeOut) senza spostarlo: la posizione e' quella del
+    # layout. Nella ver310 originale la griglia occupava tutta l'altezza; qui (Set_Medal ver340 con
+    # l'intestazione) va sulla barra «Equipped Slots» (assoluto 262,526, 500x40: y 506..546, sopra il
+    # bordo di Win_under a 502), cosi' non copre la prima riga di slot (banco sb_3).
     'DeckEdit_Subslot_Caution_ver260.json': ('build', P('Panel_Caution', 0, 0, 10, 10, [
-        P('Panel_34', -170, -26, 340, 52, [
-            I('Img_Caution', 170, 26, 340, 50, 'Plate03.png', opts=PLATE3),
-            L('Txt_Subslot_Caution_Label', 170, 26, 320, 48, 'Medals must be set\nin order.', 18)],
+        P('Panel_34', -367, 36, 500, 40, [
+            I('Img_Caution', 250, 20, 500, 40, 'Plate03.png', opts=PLATE3),
+            L('Txt_Subslot_Caution_Label', 250, 20, 480, 36, 'Medals must be set in order.', 20)],
           visible=False)])),
     # Cella di un sub-slot (KeybladeSubslotMedalView: [fn] la carica, 164x154; [fn]
     # e [fn] la riempiono). Cerca (ricorsivo, tutti obbligatori tranne MatchSlotLWF):
@@ -1387,6 +1391,14 @@ LAYOUTS = {
     # (Deck_Mark_Uplight/Reverse), Medal_S (immagine della medaglia), Txt_Mag_Label («+%01.3f» =
     # bonus del tier), Guilt_Icon (img/ui/guilt/Guilt%d_num_draw), Cursor (vi crea l'armatura
     # Z_SpCursor, cursor_anim, sullo slot da riempire). Aspetto da reference\subslot\subslot_JP_3.
+    # Medal_S: [fn] vi carica la Medal_S della medaglia ([fn], 190x190 come Medal
+    # di DeckEdit_SmallMedal_ver330) senza cambiarne la misura: ignoreSize, scala 1 = medaglia
+    # intera che esce dal disco come in subslot_JP_1 (con 89x109 non ignorati era rimpicciolita).
+    # Visibile nel layout: il trascinamento da uno slot ([fn]) crea con [fn](0) una
+    # copia della cella (nasconde Route, MedalBase, Slot, SlotNum, InfoPanel, TYpe), carica la
+    # medaglia in Medal_S, la scala 1.5 e la mette sopra la scena, ma non chiama setVisible su
+    # Medal_S: nascosto dal layout, nessuna medaglia seguiva il dito (banco sb_4). Gli slot vuoti
+    # lo nascondono da se' ([fn], setVisible 0 se l'id e' 0).
     'DeckEdit_SubSlotMedal_ver260.json': ('build', P('Panel_SubSlotMedal', 0, 0, 164, 154, [
         I('SubSlot_Route_LR', 164, 92, 64, 12, 'Subslot_Route.png', s9=False,
           opts=dict(colorR=90, colorG=100, colorB=150)),
@@ -1406,10 +1418,9 @@ LAYOUTS = {
         I('Slot', 82, 102, 74, 24, 'Deck_Slot.png', s9=False, opts=dict(colorR=170, colorG=175, colorB=190)),
         A('SlotNum', 82, 78, 'Mu_Num_Slot.png', 44, 29, '1', scale=0.7,
           opts=dict(colorR=190, colorG=195, colorB=210)),
-        I('Medal_S', 82, 96, 89, 109, 'Medal_S_00000001.png', s9=False, scale=1.05, visible=False),
+        I('Medal_S', 82, 88, 190, 190, 'Medal_S_00000001.png', s9=False, ignoreSize=True, scale=0.78),   # 1.0 copriva le targhe della riga sopra (banco sc_1)
         P('InfoPanel', 12, 2, 140, 30, [
-            I('base_Type', 70, 15, 90, 26, 'Deck_KeyBlade_Type_Panel.png', s9=False,
-              opts=dict(scaleX=1.55, scaleY=1.1)),
+            I('base_Type', 70, 15, 116, 26, 'Subslot_InfoPlate.png', s9=False, opts=dict(scaleX=1.2)),
             I('Guilt_Icon', 12, 15, 57, 53, 'Guilt5_On.png', s9=False, scale=0.55, visible=False),
             L('Txt_Mag_Label', 68, 15, 80, 22, '+0.000', 18),
             I('Icon_Type', 126, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.7),
@@ -1422,11 +1433,20 @@ LAYOUTS = {
     # KeyBlade_type_%02d e Txt_Mag_Label riceve il moltiplicatore). Come Dummy_Mag di
     # DeckEdit_RevolverMedal_ver330. Guilt_Icon: 0x8ca35c ci carica img/ui/guilt/Guilt%d_num_draw
     # (tier della medaglia) senza controllo del null: senza, crash al tocco di «Subslot» (banco v33).
+    # Lo stesso pannello va nelle celle della lista SUBSLOT MEDALS: MiniMedalScrollView ([fn]
+    # = MedalScrollView, celle 120x164 fisse in [fn]) con +0xb26 = 1 e modo 10 ([fn])
+    # crea per ogni cella un DeckRevolverView piccolo ([fn](1) -> [fn]:
+    # DeckEdit_SmallMedal_ver330 originale + DeckEdit_Deck_MedalInfo_ver260 in Area_MedalInfo); il
+    # modo 10 di [fn] (switch su +0x470) carica img/ui/Minfo_Pet01.png (assente) in Icon_1 e
+    # scrive in Txt_1 «×%01.3f» (106140350), poi aggiunge SubslotInfoPanel con «+%01.3f» (106140372):
+    # SubslotInfoPanel deve coprire tutto Area_MedalInfo (108x31) con una targhetta opaca, altrimenti
+    # si leggeva «×+0.030» (banco sb_2). Disposizione come subslot_JP_1: tier a sinistra (dentro la
+    # cella: a x -8 era tagliato dal bordo della lista), «+0,005» al centro, attributo a destra.
     'DeckEdit_SubSlot_MedalInfo_ver260.json': ('build', P('SubslotInfoPanel', 0, 0, 108, 31, [
-        I('base_Type', 59, 15, 90, 26, 'Deck_KeyBlade_Type_Panel.png', s9=False, opts=dict(scaleX=1.2)),
-        I('Guilt_Icon', -8, 15, 57, 53, 'Guilt5_On.png', s9=False, scale=0.5, visible=False),
-        I('Icon_Type', 16, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.8),
-        L('Txt_Mag_Label', 66, 15, 67, 16, 'x1.0', 16)])),
+        I('base_Type', 54, 15, 116, 26, 'Subslot_InfoPlate.png', s9=False),
+        I('Guilt_Icon', 9, 15, 57, 53, 'Guilt5_On.png', s9=False, scale=0.55, visible=False),
+        L('Txt_Mag_Label', 56, 15, 64, 22, '+0.000', 17),
+        I('Icon_Type', 98, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.6)])),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash ([fn]). Copia di ArrowAnim con armatura e movimento rinominati.
     # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita ([fn],

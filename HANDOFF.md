@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 32**, **revisione master 89** (default degli script di sessione).
+Stato del banco: **risorse 33**, **revisione master 89** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
@@ -40,23 +40,19 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato all'11 ottobre 2026 (sera) e prossimo passo
+## Stato all'11 ottobre 2026 (notte) e prossimo passo
 
-- Fatto e verificato oggi: Missioni (schede come l'originale, Daily dopo Weekly, I-058),
-  popup del Colosseo senza fasce, sconfitta + Continue a 100 jewel (I-001/I-004), gauge degli
-  speciali conservata (I-030), AP consumati/ricaricati (I-060). Salvataggio: hp bonus 40,
-  `guiltBurstLv` 10 (prova del Burst), giocatore LV5, AP 29/20.
-- **In corso (agenti, lavoro offline, niente commit):** keyblade (livelli con materiali, slot
-  «Unlock +N», subslot, evoluzione/design, moltiplicatori; modulo `server/keyblade-evo.js`,
-  `keybladeSubslot.json` vuoto, I-057) e Burst (I-061: pulsante assente, flag +0x18/+0x1c di
-  `[fn]`). Al loro rapporto: rivedere il diff, `node --check`, relogin, prova sul banco
-  (Equipment -> Keyblade LV UP -> Strengthen; battaglia: pulsante Burst), commit.
-- Da fare: «Max Out Gauge» -> `POST /keyblade/burst/max` non gestito (server error, gauge non al massimo, I-062).
-- Da verificare: popup del tocco sull'AP in alto, se i tempi di ricarica si aggiornano da soli (I-063).
-- Da fare: elenco Story, frecce indietro mostrano «?» su missioni completate; miniature da controllare contro il mondo della missione (I-064).
-- Da fare: Equipment, «Passive Effects» vuoto (I-065, ``PUT /passive/list`` non gestito) e «Subslot» 0/0 con crash al tocco (I-066).
-- Da provare: `POST /shop/ap/recover` (popup AP con AP insufficienti), `GET /stage/pickup` non
-  gestito (log `[?]` dopo ogni clear).
+- Fatto e verificato oggi: Max Out Gauge (I-062), Give Up azzera la gauge, recupero AP riempie le
+  gauge, popup AP (I-063), miniature Story (I-064/I-003), SLOT 4/5/6 (I-068), /stage/pickup,
+  Subslot (I-066: schermata, Optimize salvato, aspetto come l'originale), Passive Effects si apre
+  (I-065, vuota senza passive), vendita medaglie (I-073), keyblade fino a +17 (I-067), pet e 6o
+  slot con `relogin.ps1 -Pet` (I-005: Equipment ok, battaglia da provare su una mappa chiara).
+- Da fare: trascinamento sub-slot senza medaglia che segue il dito (I-066); Tour 991001-991008
+  (`server\save\smoke.json` {"stageId": 99100N}; uscita Moogle Shop corretta, da riprovare; poi
+  gli altri mondi, I-072); pet in battaglia e dialog del pet (layout assenti: non toccare Swap Gear
+  ne' l'icona del pet in home); fumetto della home «Nice to meet you!» da vedere (I-071);
+  «There are no passive effects.» non mostrato (I-065).
+- Il server sul banco gira con `-Pet`; il salvataggio ha 2090 medaglie (prova), sub-slot 120/120.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
