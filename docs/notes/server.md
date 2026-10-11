@@ -223,3 +223,20 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `lwf/avatar/keyblade/keyblade_%04d_%02d` (displayId/100, displayId%100), nella posa di
   Deck_KeyBlade_0701_05, BTF a palette; `build-resources.ps1` (anche `-Quick`). Equipment e la
   scelta del keyblade usano i LWF, che ci sono tutti. Riferimenti: `reference\keyblades\`.
+- Optimize (I-051, banco 11 ottobre): `POST /user/keyblade/update/170516` con `userDecks` vuoto e
+  `isFavorite` 1 sul keyblade scelto. Il corpo lo costruisce `FUN_0098b6d8`: manda tutti i keyblade
+  (`isFavorite` = il keyblade selezionato, `+0x8cc`) e solo i deck cambiati (maschera `+0x4d8`):
+  vuoto perche' Optimize non aveva ancora salvato nulla. Il crash dopo (pc `0x8cb92c`, ARM `kbopt`) e'
+  nella cella della medaglia `FUN_008c8904` (DeckEdit_RevolverMedal_ver330, via `FUN_008cf048`): se
+  l'attributo della medaglia (riga medal `+0x494`) e' quello dello slot (`attribute[]` del keyblade,
+  4 = qualsiasi) crea `lwf/medal/medaltype/MedalType%d` (nei modi di cella 2/4/5/6/7
+  `MedalType01`); servito solo MedalType3 (Magic), quindi nodo LWF nullo. Starlight ha slot 3/4/4
+  (mai visto), Treasure Trove 4/4/1 (Power). `recon/tools/make_medaltype_lwf.py` scrive MedalType1
+  (rosso), MedalType2 (verde), MedalType01 come copie ricolorate di MedalType3, con le texture sia
+  col nome originale sia `<nome LWF>_<hex>.png`.
+- Keyblade non centrato in «Select a Keyblade» (I-052, aperto): nel LWF keyblade_0201_01 (matrice
+  di rotazione + scala 1,1, frammento 303x1103) l'arte e' piu' grande e spostata rispetto a
+  keyblade_0001_01 (solo traslazione, 119x54); gli stessi LWF li usa l'avatar che impugna il
+  keyblade (`FUN_00acdfa8`, `lwf/avatar/keyblade/...`), con `rotation`/`scaling`/`ofsX`/`ofsY`
+  della tabella keyblade. Non e' chiaro se il riquadro usa quei campi: prova sul banco cambiando
+  `ofsX[0]`/`ofsY[0]` della riga 2000 (revisione dei master +1) prima di toccare LWF o dati.

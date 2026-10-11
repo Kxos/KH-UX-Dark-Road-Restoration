@@ -31,9 +31,13 @@ $env:BGAD_KEY = $key
 # immagini dei keyblade img/keyBlade/KeyBlade_%06d.png (popup del keyblade ottenuto), dalle
 # bitmap dei LWF lwf/avatar/keyblade (estratte una volta in catalog\keyblade_lwf)
 $kl = "$D\catalog\keyblade_lwf"
-if (-not (Test-Path "$kl\lwf")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $kl lwf/avatar/keyblade/ cocostudio/publish/Deck_KeyBlade_0701_05.png }
+if (-not (Test-Path "$kl\lwf\medal\medaltype")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $kl lwf/avatar/keyblade/ lwf/medal/medaltype/ cocostudio/publish/Deck_KeyBlade_0701_05.png }
 python recon\tools\make_keyblade_images.py server\master_data\keyblade.json $kl "$sg\files"
 if ($LASTEXITCODE) { throw 'make_keyblade_images fallito' }
+# bagliore «medaglia del tipo dello slot» MedalType1/2/01 (solo MedalType3 servito: crash di
+# Optimize su Treasure Trove, slot Power)
+python recon\tools\make_medaltype_lwf.py $kl "$sg\files"
+if ($LASTEXITCODE) { throw 'make_medaltype_lwf fallito' }
 python -I recon\tools\make_enemy_moves.py server\master_data\enemy.json "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" "$D\catalog\enemy_wait" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
