@@ -659,6 +659,23 @@ LAYOUTS = {
     # Txt_Timezone con _1/_2/_3_Label, Txt_Style/_Label.
     # Senza l'anello delle medaglie: con Area_Revolver anche qui FUN_008c19e4 riusa l'anello
     # della pagina 1 prima che abbia caricato DeckEdit_Revolver (crash, banco pf15)
+    # Home: un tocco sulla piazza nasconde i menu e, per chi non e' in party (userParty.isJoin
+    # 0), mostra Chirithy (NPC 999) con una nuvoletta (FUN_00bc1028): il codice usa solo
+    # Txt_Name (Text::setString «Join a party and make new friends!», 101000022). Mancava in
+    # ogni risorsa: crash in GUIReader (stage_gen\pet_crash). Copia della nuvoletta dell'avatar,
+    # testo su due righe.
+    'MyPage_ChirishiBaloon.json': ('copy', 'MyPage_AvatarBaloon_ver240.json', {}, False, [
+        ('opts', 'Txt_Name', dict(y=4, width=150, height=60, areaWidth=150, areaHeight=60,
+                                  ignoreSize=False, fontSize=15, hAlignment=1, vAlignment=1)),
+        ('opts', 'Txt_Wording', dict(visible=False)),
+        ('opts', 'LoginTime_Icon', dict(visible=False)),
+        ('opts', 'FaceBook_PhotoPanel', dict(visible=False))]),
+    # Sconfitta in solo: popup «Continue» (FUN_00e72dd4, param_2 & 1 = multi). Esisteva solo
+    # PopupNormal_Continue_Multi (stessi widget: Txt_Wording/2, Txt_CrownPossessed/_Label,
+    # Button_OK/Txt_OK, Button_Close/Txt_Cancel, Txt_Countdown); il conto alla rovescia e'
+    # del multigiocatore.
+    'PopupNormal_Continue.json': ('copy', 'PopupNormal_Continue_Multi.json', {}, False, [
+        ('opts', 'Countdown_panel', dict(visible=False))]),
     'AvatarInfo_Txt2.json': ('copy', 'AvatarInfo_Txt_ver340.json',
                              {'Area_Revolver': 'Area_Revolver_None', 'Area_RevolverPet': 'Area_RevolverPet_None'},
                              False, [
