@@ -17,7 +17,7 @@ Ultima revisione: 11 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
-| I-062 | APERTO | «Max Out Gauge» prima della battaglia: «server error» e gauge del keyblade selezionato non al massimo; il client manda `POST /keyblade/burst/max` {userKeybladeId, kind: 1} (non gestito, schema automatico) | [battaglia](notes/battaglia.md) | log #99 |
+| I-062 | CHIUSO | «Max Out Gauge» prima della battaglia: `POST /keyblade/burst/max` (azione 53) gestito in `keyblade-evo.js`: -30 jewel (misc 120), gauge = maxBurstGauge, risposta `{userKeyblade}`; banco: 7/12 -> 12/12, «Gauge filled.», pulsante spento | [battaglia](notes/battaglia.md) | banco mg_g3 |
 | I-063 | DA VERIFICARE | Tocco sull'AP in alto: popup con le informazioni sull'AP (`BalloonNomal_AP_Recovery`, `FUN_00b8ee90`: tempo al prossimo AP / al pieno). Verificare che si aggiorni da solo col nuovo AP (ricarica 1 ogni 3 min, I-060) o se va sistemato | [server](notes/server.md#ap) | - |
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
 | I-032 | APERTO | Valori segnaposto: HP iniziale 3000, CP/HP dei forzieri (10.000/5.000/500) | [battaglia](notes/battaglia.md#hp) | 10-08/09 |
