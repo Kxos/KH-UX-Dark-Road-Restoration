@@ -18,10 +18,13 @@
 // lwf/keyblade/KeyEvo/KeyEvo_Medal_01B, KeyEvo_eff e medal_blank_slot%d.
 //
 // GET /keyblade/subslot (191) e POST /keyblade/subslot (192, corpo [fn]:
-// {updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: {"<slotNumber>": userMedalId}}]}).
+// {updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: [{"<slotNumber>": userMedalId}, ...]}]}).
 // Risposta 192: subslotMaxNum + userKeybladeSubslots ([fn]), userKeyblades.
 // Equipment ([fn]) scrive «Subslot n/m»: m = lunghezza di subslots[] del keyblade,
 // n = voci con userMedalId != 0; il pulsante si abilita se misc 780 (= 7, stelle minime) >= 7.
+//
+// PUT /passive/list (249, corpo {isList}; I-065): «Passive Effects» di Equipment. Vedi
+// respondPassiveList piu' sotto e server/make-passives.js per le tabelle master.
 'use strict';
 
 // Bonus dei sub-slot per tier della medaglia (guiltValue), in millesimi di moltiplicatore:
@@ -36,11 +39,13 @@ const SUBSLOT_SCALE = Number(process.env.KHUX_SUBSLOT_SCALE || 1);
 function routeKeybladeEvo(p) {
   if (p === '/keyblade/enhance') return 'kbenhance';
   if (p === '/keyblade/burst/max') return 'kbburstmax';
+  if (p === '/passive/list') return 'passivelist';
   return null;
 }
 
 // ctx: { ret, send, serverTime, masterRows, player, savePlayer, ownedKeyblades, userMedalList,
-//        userKeybladesData, userDecksData, userMaterialsData, userTitlesData, USER_KEYBLADE_ID }
+//        userKeybladesData, userDecksData, userMaterialsData, userTitlesData, USER_KEYBLADE_ID,
+//        luxLevel }
 function makeKeybladeEvo(ctx) {
   const { player } = ctx;
   const rowOf = (id) => ctx.masterRows('keyblade').find((r) => r.keybladeId === id);
@@ -197,7 +202,10 @@ function makeKeybladeEvo(ctx) {
         if (!k) continue;
         const valid = new Set(subslotRows(k.keybladeId).map((r) => r.slotNumber));
         const cur = { ...(player.keybladeSubslots[id] || {}) };
-        for (const [slot, medal] of Object.entries(u.subslotMedals || {})) {
+        // banco v33: il client manda un array di oggetti a una chiave, [{"1":2004},{"2":2039},...]
+        // (non un oggetto unico): si uniscono. Con Object.entries sull'array finiva tutto a 0
+        const sm = Array.isArray(u.subslotMedals) ? Object.assign({}, ...u.subslotMedals) : (u.subslotMedals || {});
+        for (const [slot, medal] of Object.entries(sm)) {
           if (valid.has(Number(slot))) cur[Number(slot)] = Number(medal) || 0;
         }
         // una medaglia sta in un solo sub-slot di questo keyblade: l'ultima scritta vince
@@ -220,9 +228,61 @@ function makeKeybladeEvo(ctx) {
     }
   }
 
+  // ---- passive (I-065) ---------------------------------------------------------------------
+  // PUT /passive/list (azione 249), corpo {isList}: isList 1 al login (dopo /user/medal...) e
+  // al tocco di «Passive Effects» in Equipment; isList 0 dopo «Strengthen» (e dove il client
+  // cerca passive nuove). Ramo 249 del dispatcher (0x7c670c): legge isList, poi [fn]:
+  //   isList 1 -> passiveSettingIds[] (uint), isList 0 -> newPassiveSettingIds[] (uint).
+  // Senza l'array il parser rende nullo, il ramo fallisce e la callback del pulsante
+  // ([fn]) non apre PassiveDialog: era il «non succede niente» di I-065.
+  // Con isList 1 il ramo legge anche userId: nullo/assente -> lista propria (singleton +0xab8,
+  // quella di PassiveDialog::open [fn]); presente -> lista di un altro giocatore
+  // (+0xad8, profilo altrui). isList 0: le nuove in +0xac8, aggiunte a +0xab8 ([fn]);
+  // le mostra il popup PassiveResult ([fn]: nome + description).
+  // PassiveDialog (Passive_Base_ver341 + celle Passive_Panel, [fn]/[fn]): una
+  // cella per passiveSetting (nome della riga passive), «There are no passive effects.»
+  // (testo 106220507, Txt_None) se la lista e' vuota; riquadro Total ([fn]): HP,
+  // SP ATK Gauge, STR, DEF e STR per tipo di medaglia (testi 106230203..217).
+  // Quali passive ha il giocatore lo decide il server dalle condizioni di make-passives.js:
+  // 1 = livello Lux >= passiveValue1, 2 = keyblade della serie passiveValue1 a livello*10 >=
+  // passiveValue2 (il livello piu' alto tra quelli posseduti della serie).
+  function ownedPassiveSettingIds() {
+    const best = new Map(); // category -> livello*10 piu' alto
+    for (const k of ctx.ownedKeyblades()) {
+      const row = rowOf(k.keybladeId);
+      if (!row) continue;
+      const lv10 = Math.round((row.lv || 0) * 10);
+      if ((best.get(row.category) ?? -1) < lv10) best.set(row.category, lv10);
+    }
+    const lux = ctx.luxLevel ? ctx.luxLevel() : 0;
+    return ctx.masterRows('passiveSetting').filter((s) => {
+      if (s.passiveConditions === 1) return lux >= s.passiveValue1;
+      if (s.passiveConditions === 2) return (best.get(s.passiveValue1) ?? -1) >= s.passiveValue2;
+      return false;
+    }).sort((a, b) => a.sortId - b.sortId).map((s) => s.passiveSettingId);
+  }
+
+  function respondPassiveList(res, body) {
+    const ids = ownedPassiveSettingIds();
+    // player.passiveSettingIds = quelle gia' comunicate: isList 0 manda solo le altre (le
+    // aggiunge alla lista del client, che altrimenti le avrebbe doppie)
+    const known = new Set(player.passiveSettingIds || []);
+    const fresh = ids.filter((id) => !known.has(id));
+    if (fresh.length || ids.length !== known.size) {
+      player.passiveSettingIds = ids;
+      ctx.savePlayer();
+    }
+    if (Number(body?.isList) === 0) {
+      console.log(`  [passive] nuove: ${fresh.length ? fresh.join(' ') : 'nessuna'} (totale ${ids.length})`);
+      return ctx.send(res, 200, { ret: ctx.ret(), newPassiveSettingIds: fresh });
+    }
+    console.log(`  [passive] elenco: ${ids.length} passive`);
+    return ctx.send(res, 200, { ret: ctx.ret(), passiveSettingIds: ids });
+  }
+
   return {
     respondEnhance, respondBurstMax, respondSubslot, userKeybladeSubslotsData, subslotMaxNum, keybladeSubslotRate,
-    starlightKeybladeId, removeMedal,
+    starlightKeybladeId, removeMedal, respondPassiveList,
   };
 }
 

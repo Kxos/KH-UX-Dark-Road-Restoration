@@ -5,7 +5,9 @@
 config: {"stages": stage_dec.json di thethiny, "quests": wiki\\quests.json,
          "enemies": server\\master_data\\enemy.json, "cls_dir": cartella con map/<stanza>/<stanza>_cls.bin,
          "template": una parte MAP vera (es. mappoi_stg01040_00.bin), "rooms": story_rooms.json,
-         "out": cartella di uscita (stage/), "skip": [stageId...], "report": report.json}
+         "out": cartella di uscita (stage/), "skip": [stageId...], "report": report.json,
+         "world_links": recon/tools/world_links.json (facoltativo: uscite sulle porte vere),
+         "worldtour": true (facoltativo: missioni «Tour» 991000 + worldId, "worldtour_report")}
 
 Per ogni missione (stageBinId 1..N di thethiny = numero della missione):
 - stanza: rooms[nome] se noto, altrimenti una stanza dello stesso mondo (prefisso del
@@ -171,6 +173,7 @@ def walk_grid(folder):
                 ok.add((x, y))
     # componente dei pixel di ogni punto; senza componente (troppo stretto) il punto si scarta
     pc = pixel_comp(cls, W, H, stride)
+    _pc_all[folder] = pc
     lab = {p: pc(*p) for p in ok}
     ok = {p for p in ok if lab[p]}
     # componente piu' grande, distanze dalla partenza (punto libero piu' a sinistra)
@@ -227,7 +230,7 @@ def walk_grid(folder):
     return start, dist
 
 
-_old_size, _walk_info, _geo_pc = {}, {}, {}
+_old_size, _walk_info, _geo_pc, _pc_all = {}, {}, {}, {}
 POCKET = float(cfg.get('pocket_ratio', 0.4))
 
 
@@ -369,13 +372,16 @@ def bfs(src, pts):
     return dist
 
 
-def arrival_near(exit_pt, pts, folder=None):
+def arrival_near(exit_pt, pts, folder=None, avoid=()):
     """Punto percorribile ~STEP_IN passi dentro dall'uscita e a piu' di 96 (meglio 200) da essa.
     Nelle stanze corrette per la sacca d'ingresso (_geo_pc) il pezzo di griglia dell'uscita puo' essere
-    tutto entro 120 unita': allora si misura a piedi su tutta la componente di pixel."""
+    tutto entro 120 unita': allora si misura a piedi su tutta la componente di pixel. avoid: le altre
+    uscite della stanza, da cui l'arrivo deve stare a piu' di 160 (altrimenti si riparte subito)."""
     d = bfs(exit_pt, pts)
     if folder in _geo_pc and not any(dd(p, exit_pt) > 120 for p in d):
         d = geodesic(_geo_pc[folder], pts, exit_pt)
+    if avoid:
+        d = {p: v for p, v in d.items() if all(dd(p, e) > 160 for e in avoid)} or d
     cand = [p for p in d if dd(p, exit_pt) >= 200] or [p for p in d if dd(p, exit_pt) > 120] or list(d)
     return min(cand, key=lambda p: (abs(d[p] - STEP_IN), -dd(p, exit_pt), p))
 
@@ -475,6 +481,169 @@ def norm(s):
     return re.sub(r'\s+', ' ', (s or '').split('|')[0].strip().lower())
 
 
+# ---------------------------------------------------------------- collegamenti fra le aree
+# recon/tools/world_links.json (cfg['world_links']): aree di ogni mondo, porte delle stanze nelle
+# risorse ({area vicina: [x, y]} sulla bitmap CLS) e collegamenti dalla wiki/dati originali
+# (docs/notes/mappe_storia.md#collegamenti). Con il grafo le uscite delle missioni a piu' stanze
+# stanno sulle porte vere (verso la stanza dopo / quella prima) invece che nel punto piu' lontano
+# e in quello piu' a sinistra, e si generano le missioni «giro del mondo» (cfg['worldtour']).
+WLINKS = json.load(open(cfg['world_links'], encoding='utf-8-sig')) if cfg.get('world_links') else None
+AREA, ADJ, BY_CODE = {}, collections.defaultdict(set), {}
+if WLINKS:
+    for _w, _wd in WLINKS['worlds'].items():
+        for _a in _wd['areas']:
+            for _nm in [_a['name']] + _a.get('alias', []):
+                AREA[(int(_w), norm(_nm))] = _a
+            if _a.get('code') and _a.get('res') and not _a.get('variant_of'):
+                BY_CODE.setdefault(_a['code'], (int(_w), _a))
+        for _l in _wd['links']:
+            ADJ[(int(_w), _l['from'])].add(_l['to'])
+            ADJ[(int(_w), _l['to'])].add(_l['from'])
+
+
+def wl_area(world, name):
+    return AREA.get((world, norm(name)))
+
+
+def wl_path(world, a, b):
+    """Percorso piu' breve (nomi delle aree) da a a b nel grafo, None se scollegati."""
+    prev, q = {a: None}, collections.deque([a])
+    while q:
+        c = q.popleft()
+        if c == b:
+            break
+        for n in sorted(ADJ[(world, c)]):
+            if n not in prev:
+                prev[n] = c
+                q.append(n)
+    if b not in prev:
+        return None
+    p = [b]
+    while prev[p[-1]] is not None:
+        p.append(prev[p[-1]])
+    return p[::-1]
+
+
+_room_pc, _arr_geo = {}, {}
+
+
+def room_comp(folder, pts):
+    """(pc, etichetta, xs, ys) della componente di pixel percorribili che contiene i punti della griglia."""
+    import numpy as np
+    if folder not in _room_pc:
+        walk_grid(folder)
+        pc = _pc_all[folder]
+        L = collections.Counter(pc(*p) for p in sorted(pts)).most_common(1)[0][0]
+        ys, xs = np.nonzero(pc.lab == L)
+        _room_pc[folder] = (pc, L, xs, ys)
+    return _room_pc[folder]
+
+
+def door_px(folder, xy, pts):
+    """Porta agganciata al pixel percorribile piu' vicino della componente della stanza (non alla griglia
+    di 40: i corridoi stretti in fondo ai quali stanno le porte non hanno punti della griglia)."""
+    import numpy as np
+    pc, L, xs, ys = room_comp(folder, pts)
+    k = int(np.argmin((xs - xy[0]) ** 2 + (ys - xy[1]) ** 2))
+    return int(xs[k]), int(ys[k])
+
+
+def arrival_px(folder, door, pts, avoid=()):
+    """Arrivo accanto a una porta: punto della componente a ~STEP_IN passi a piedi dalla porta, a piu'
+    di 200 in linea d'aria da essa (meglio) e a piu' di 160 dalle altre uscite."""
+    pc, L, xs, ys = room_comp(folder, pts)
+    if (folder, door) not in _arr_geo:
+        lab = pc.lab
+        H, W = lab.shape
+        cand = [(x, y) for y in range(20, H, GRID) for x in range(20, W, GRID) if lab[y, x] == L]
+        _arr_geo[(folder, door)] = geodesic(pc, cand, door)
+    d = dict(_arr_geo[(folder, door)])
+    d.pop(door, None)
+    ok = [p for p in d if all(dd(p, e) > 160 for e in avoid)] or list(d)
+    best = [p for p in ok if dd(p, door) >= 200] or [p for p in ok if dd(p, door) > 120] or ok
+    return min(best, key=lambda p: (abs(d[p] - STEP_IN), -dd(p, door), p))
+
+
+def door_angle(cent, p):
+    """Angolo della freccia (gradi, 0 = su, in senso orario: 35 in alto a destra, 220 in basso a
+    sinistra come nelle 1010-1016) dal centro della zona percorribile verso la porta."""
+    import math
+    return int(round(math.degrees(math.atan2(p[0] - cent[0], -(p[1] - cent[1]))))) % 360
+
+
+def safe_start(pts, avoid, far=300):
+    """Punto piu' vicino al centro della zona percorribile a piu' di `far` da tutte le uscite."""
+    c = centroid(pts)
+    cand = sorted(pts, key=lambda p: (dd(p, c), p))
+    for r in (far, 200, 130):
+        for p in cand:
+            if all(dd(p, e) >= r for e in avoid):
+                return p
+    return cand[0]
+
+
+def wl_doors(world, names, folders_, pts, starts, fars):
+    """Uscite delle missioni a piu' stanze sulle porte di world_links.json. Per la stanza k: uscita
+    avanti sulla porta verso names[k+1] (o verso il primo passo del percorso nel grafo, se le stanze
+    non sono vicine), indietro sulla porta verso names[k-1]; se la stanza e' una sostituta (I-036) o
+    la porta manca, una porta qualsiasi della stanza (la piu' lontana dall'altra uscita); senza
+    porte resta il punto di prima. Ritorna (fars, starts, note)."""
+    R = len(names)
+    fars, starts, notes = list(fars), list(starts), []
+    for k in range(R):
+        if folders_[k] not in BY_CODE:
+            continue
+        wa = BY_CODE[folders_[k]][1]
+        doors = sorted(wa.get('doors', {}).items())
+        if not doors:
+            continue
+        exact = wl_area(world, names[k]) is wa
+
+        def toward(other):
+            oa = wl_area(world, other) if exact else None
+            if not oa:
+                return None
+            p = wl_path(world, wa['name'], oa['name'])
+            return next((d for d in doors if p and len(p) > 1 and d[0] == p[1]), None)
+        want_f = toward(names[k + 1]) if k < R - 1 else None
+        want_b = toward(names[k - 1]) if k > 0 else None
+        if want_f and want_b and want_f[0] == want_b[0]:
+            want_b = None                   # stessa porta: indietro su un'altra
+        f = b = None
+        if k < R - 1:
+            ref = want_b[1] if want_b else starts[k]
+            f = want_f or max(doors, key=lambda d: (dd(d[1], ref), d[0]))
+        if k > 0:
+            rest = [d for d in doors if not f or d[0] != f[0]]
+            b = want_b or (max(rest, key=lambda d: (dd(d[1], f[1] if f else fars[k]), d[0])) if rest else None)
+        if f:
+            fp = door_px(folders_[k], f[1], pts[k])
+            if not (k > 0 and not b and dd(fp, starts[k]) < 300):
+                notes.append('stanza %d: uscita avanti sulla porta «%s»%s (era %s, ora %s)' % (
+                    k, f[0], '' if f is want_f else ' (porta qualsiasi)', fars[k], fp))
+                fars[k] = fp
+        if b:
+            bp = door_px(folders_[k], b[1], pts[k])
+            if k == R - 1 or dd(bp, fars[k]) >= 300 or not f:
+                notes.append('stanza %d: uscita indietro sulla porta «%s»%s (era %s, ora %s)' % (
+                    k, b[0], '' if b is want_b else ' (porta qualsiasi)', starts[k], bp))
+                starts[k] = bp
+    if dd(starts[0], fars[0]) < 300 and R > 1:
+        starts[0] = safe_start(pts[0], [fars[0]])
+    return fars, starts, notes
+
+
+def wl_relation(world, a, b):
+    """Come sono collegate due aree nel grafo: 'vicine', 'via X, Y', 'scollegate', 'ignote'."""
+    aa, ab = wl_area(world, a), wl_area(world, b)
+    if not aa or not ab:
+        return 'ignote'
+    p = wl_path(world, aa['name'], ab['name'])
+    if p is None:
+        return 'scollegate'
+    return 'vicine' if len(p) <= 2 else 'via ' + ', '.join(p[1:-1])
+
+
 MIN_PTS, MIN_STEPS = 40, 15   # stanza abbastanza grande per due uscite lontane e i nemici in mezzo
 
 
@@ -545,11 +714,28 @@ def build_multi(s, q, room_names, groups):
     starts = [st for st, _ in grids]
     fars = [max(d, key=lambda p: (d[p], -p[1])) for _, d in grids]
     cents = [centroid(p) for p in pts]
+    links = []
+    if WLINKS:
+        # uscite sulle porte vere (world_links.json); relazione nel grafo di ogni coppia di stanze
+        fars, starts, notes = wl_doors(s['worldId'], room_names, folders_, pts, starts, fars)
+        doubts += notes
+        links = [{'from': a, 'to': b, 'graph': wl_relation(s['worldId'], a, b),
+                  'exact': [a in rooms, b in rooms]} for a, b in zip(room_names, room_names[1:])]
     # punti: uscita avanti fwd[k] (k < R-1) = fars[k]; uscita indietro back[k] (k > 0) = starts[k]
-    arr_in = [None] + [arrival_near(starts[k], pts[k], folders_[k]) for k in range(1, R)]        # entrando da avanti
-    arr_back = [arrival_near(fars[k], pts[k], folders_[k]) for k in range(R - 1)] + [None]       # tornando indietro
+    if WLINKS:
+        # porte agganciate ai pixel: arrivi misurati a piedi sulla componente di pixel
+        arr_in = [None] + [arrival_px(folders_[k], starts[k], pts[k], [fars[k]] if k < R - 1 else ())
+                           for k in range(1, R)]
+        arr_back = [arrival_px(folders_[k], fars[k], pts[k], [starts[k]] if k > 0 else ())
+                    for k in range(R - 1)] + [None]
+    else:
+        arr_in = [None] + [arrival_near(starts[k], pts[k], folders_[k]) for k in range(1, R)]   # entrando da avanti
+        arr_back = [arrival_near(fars[k], pts[k], folders_[k]) for k in range(R - 1)] + [None]  # tornando indietro
     face = lambda k, p: 1 if cents[k][0] < p[0] else 2                              # noqa: E731
-    angle = lambda k, p: 35 if p[0] >= cents[k][0] else 220                         # noqa: E731
+    if WLINKS:
+        angle = lambda k, p: door_angle(cents[k], p)                                # noqa: E731
+    else:
+        angle = lambda k, p: 35 if p[0] >= cents[k][0] else 220                     # noqa: E731
     # le posizioni dei nemici dipendono solo dai punti delle uscite, non dai loro campi: una prima
     # costruzione dell'ultima stanza dice dov'e' il bersaglio, poi si calcolano le distanze residue.
     def exits_of(k, rem):
@@ -601,6 +787,8 @@ def build_multi(s, q, room_names, groups):
                       0, 1, tpart, 0, tot_c, 0)
     info = {'parts': R, 'folders': folders_, 'groups_per_room': [len(g) for g in per_room],
             'chests_per_room': chests_per, 'doubts': doubts}
+    if links:
+        info['links'] = links
     return hdr, parts, info, tot_e, tot_c
 
 
@@ -686,6 +874,166 @@ if cfg.get('zoo_enemies'):
         open(os.path.join(out, 'mappoi_stg%05d_00.bin' % sid), 'wb').write(part)
         poi_add(sid, 0, ens, chests)
         print('zoo', sid, len(ens), 'nemici')
+
+
+# Missioni «giro del mondo» (cfg['worldtour'] = true o lista di worldId, serve cfg['world_links']):
+# una missione per mondo con tutte le stanze del mondo che stanno nelle risorse (varianti giorno/notte
+# escluse), una parte per stanza, collegate come nel grafo di world_links.json: ogni porta della
+# stanza porta alla stanza piu' vicina nel grafo (attraversando le aree assenti dalle risorse) e si
+# arriva accanto alla porta di ritorno. Un solo Shadow (bersaglio) nella stanza piu' lontana dalla
+# partenza. stageId cfg['worldtour_base'] (991000) + worldId; righe nel master con KHUX_WORLDTOUR=1
+# in make-game-tables.js. Rapporto in cfg['worldtour_report'].
+def tour_edges(world, wd):
+    res = {a['name']: a for a in wd['areas'] if a.get('res') and a.get('code') and not a.get('variant_of')}
+    edges, notes = [], []
+    for name in sorted(res):
+        for nb, xy in sorted(res[name].get('doors', {}).items()):
+            if nb in res:
+                hit = (nb, [])
+            else:
+                hit, seen, front = None, {name, nb}, [(nb, [nb])]
+                while front and not hit:
+                    nxt = []
+                    for c, via in front:
+                        for n in sorted(ADJ[(world, c)]):
+                            if n in seen:
+                                continue
+                            seen.add(n)
+                            if n in res:
+                                hit = hit or (n, via)
+                            else:
+                                nxt.append((n, via + [n]))
+                    front = nxt
+            if not hit:
+                notes.append('%s: porta «%s» senza stanza delle risorse dietro (vicolo cieco)' % (name, nb))
+                continue
+            dst, via = hit
+            back = via[-1] if via else name
+            dxy = res[dst].get('doors', {}).get(back)
+            if not dxy:
+                notes.append('%s -> %s: %s non ha la porta verso «%s»' % (name, dst, dst, back))
+            edges.append({'from': name, 'door': nb, 'xy': xy, 'to': dst, 'via': via, 'back': back, 'to_xy': dxy})
+    return res, edges, notes
+
+
+def build_tour(world, wd, sid):
+    res, edges, notes = tour_edges(world, wd)
+    start = wd['start']
+    order, q = [start], collections.deque([start])
+    while q:
+        c = q.popleft()
+        for e in edges:
+            if e['from'] == c and e['to'] not in order:
+                order.append(e['to'])
+                q.append(e['to'])
+    for n in sorted(res):
+        if n not in order:
+            notes.append('%s: non raggiungibile dalla partenza, esclusa' % n)
+    idx = {n: k for k, n in enumerate(order)}
+    R = len(order)
+    folders_ = [res[n]['code'] for n in order]
+    grids = [walk_grid(f) for f in folders_]
+    pts = [set(d) for _, d in grids]
+    cents = [centroid(p) for p in pts]
+    ex = [[] for _ in range(R)]                     # per parte: (punto, edge)
+    for e in edges:
+        if e['from'] in idx and e['to'] in idx:
+            k = idx[e['from']]
+            ex[k].append((door_px(folders_[k], e['xy'], pts[k]), e))
+    # partenza e arrivi lontani dalle uscite della stanza
+    st0 = safe_start(pts[0], [p for p, _ in ex[0]])
+    arr = {}
+    for k in range(R):
+        for p, e in ex[k]:
+            j = idx[e['to']]
+            others = [q for q, _ in ex[j]]
+            if e['to_xy']:
+                door_j = door_px(folders_[j], e['to_xy'], pts[j])
+                arr[id(e)] = arrival_px(folders_[j], door_j, pts[j], [q for q in others if q != door_j])
+            else:
+                arr[id(e)] = safe_start(pts[j], others)
+    # bersaglio: la stanza piu' lontana (passi nel grafo) dalla partenza
+    hops = {0: 0}
+    q = collections.deque([0])
+    while q:
+        c = q.popleft()
+        for _, e in ex[c]:
+            j = idx[e['to']]
+            if j not in hops:
+                hops[j] = hops[c] + 1
+                q.append(j)
+    tpart = max(range(R), key=lambda k: (hops.get(k, -1), k))
+    tgroup = [{'members': [('Shadow', 1)], 'target': True, 'room': ''}]
+
+    def exits_of(k, rem):
+        out_ = []
+        for p, e in ex[k]:
+            j, a = idx[e['to']], arr[id(e)]
+            out_.append((p[0], p[1], door_angle(cents[k], p), rem.get(id(e), 0), 1 if hops.get(j, 0) > hops.get(k, 0)
+                         else 2, a[0], a[1], j, 1 if cents[j][0] < a[0] else 2))
+        return out_
+    probe = build_part_mr(folders_[tpart], grids[tpart][1], tgroup, 0, exits_of(tpart, {}), 1, True)
+    tpos = (probe[2][0][0], probe[2][0][1]) if probe[2] else cents[tpart]
+    # distanza residua al bersaglio ([3]): dall'arrivo nella stanza j, a piedi in linea d'aria fino
+    # al bersaglio passando per le uscite verso la stanza del bersaglio (passi nel grafo verso tpart)
+    back_hops = {tpart: 0}
+    q = collections.deque([tpart])
+    while q:
+        c = q.popleft()
+        for k in range(R):
+            if k not in back_hops and any(idx[e['to']] == c for _, e in ex[k]):
+                back_hops[k] = back_hops[c] + 1
+                q.append(k)
+    rem, memo = {}, {}
+
+    def cost(j, pt):
+        if j == tpart:
+            return dd(pt, tpos)
+        best = [(p, e) for p, e in ex[j] if back_hops.get(idx[e['to']], 99) < back_hops.get(j, 99)]
+        if not best:
+            return 99999
+        p, e = min(best, key=lambda pe: dd(pt, pe[0]))
+        if id(e) not in memo:
+            memo[id(e)] = cost(idx[e['to']], arr[id(e)])
+        return dd(pt, p) + memo[id(e)]
+    for k in range(R):
+        for p, e in ex[k]:
+            rem[id(e)] = int(round(cost(idx[e['to']], arr[id(e)])))
+    parts, uid, tot_a, tot_e, target_id = [], 1, 0, 0, None
+    for k in range(R):
+        part, areas, ens, chests, uid = build_part_mr(folders_[k], grids[k][1], tgroup if k == tpart else [], 0,
+                                                      exits_of(k, rem), uid, k == tpart)
+        if k == tpart and ens:
+            target_id = ens[0][2]
+        poi_add(sid, k, ens, chests)
+        parts.append(part)
+        tot_a += len(areas)
+        tot_e += len(ens)
+    hdr = struct.pack('<16i', 4674643, 16, R, st0[0], st0[1], 2, target_id or 80001, 1, tot_a, tot_e,
+                      0, 1, tpart, 0, 0, 0)
+    open(os.path.join(out, 'mappoi_stg%05d.bin' % sid), 'wb').write(hdr)
+    for k, p in enumerate(parts):
+        open(os.path.join(out, 'mappoi_stg%05d_%02d.bin' % (sid, k)), 'wb').write(p)
+    return {'world': world, 'name': wd['name'], 'stageId': sid, 'parts': R, 'target_part': tpart,
+            'target': order[tpart], 'start': list(st0),
+            'rooms': [{'part': k, 'area': n, 'folder': folders_[k], 'hops': hops.get(k),
+                       'exits': [{'door': e['door'], 'at': list(p), 'to_part': idx[e['to']], 'to': e['to'],
+                                  'via': e['via'], 'arrive': list(arr[id(e)]), 'rem': rem[id(e)]}
+                                 for p, e in ex[k]]} for k, n in enumerate(order)],
+            'notes': notes}
+
+
+if cfg.get('worldtour') and WLINKS:
+    tours = []
+    want = cfg['worldtour'] if isinstance(cfg['worldtour'], list) else None
+    for w, wd in sorted(WLINKS['worlds'].items(), key=lambda kv: int(kv[0])):
+        if want and int(w) not in want:
+            continue
+        t = build_tour(int(w), wd, cfg.get('worldtour_base', 991000) + int(w))
+        tours.append(t)
+        print('giro', t['stageId'], t['name'], t['parts'], 'parti, bersaglio in', t['target'])
+    json.dump(tours, open(cfg.get('worldtour_report', os.path.join(os.path.dirname(cfg['report']), 'worldtour_report.json')),
+                          'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 if cfg.get('poi'):
     # si aggiungono a quelli delle mappe vere (stage_poi.py), che restano
     old = json.load(open(cfg['poi'], encoding='utf-8')) if os.path.exists(cfg['poi']) else {}

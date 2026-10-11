@@ -180,6 +180,7 @@ function route(url) {
   if (p === '/user/avatar' || p === '/user/avatar/all' || p === '/user/avatar/parts') return 'useravatar';
   if (p === '/user') return 'user';
   if (p === '/user/profile') return 'userprofile';
+  if (p === '/mypage') return 'mypage';
   if (p === '/user/birthday') return 'userbirthday';
   if (p === '/user/title') return 'usertitle';
   if (p === '/user/mission/list') return 'missionlist';
@@ -959,6 +960,16 @@ function respondStageStart(res, req) {
   });
 }
 
+// Messaggio del Profilo di chi non ne ha scritto uno (ISSUES I-071). Il fumetto bianco
+// sopra l'avatar della home e' MyPage_MpBaloon.json (nodi «avatarFukidashi_%d», creati in
+// [fn]): l'azione casuale dell'avatar ([fn], 10% dei casi) ne scrive
+// Txt_Comment_Label con userData.user.comment (record utente della sessione, +0x3c, 256
+// byte), senza controllare che sia vuoto: con comment "" il fumetto compare vuoto. Negli
+// originali li' c'era il messaggio del Profilo (reference\profile: «For hearth and
+// home!»; reference\home: «R.I.P. $5 VIP deal..»). Il campo Message accetta 20 caratteri;
+// il testo d'esempio del layout originale e' «はじめまして！初心者なのでお手柔らかに！».
+const DEFAULT_COMMENT = process.env.KHUX_DEFAULT_COMMENT ?? 'Nice to meet you!';
+
 // userData.user ([fn]): GET /user, /user/profile, POST /user/update
 function userObject(now) {
   return {
@@ -967,7 +978,8 @@ function userObject(now) {
     platformId: 0,
     userName: player.name, // max 32 byte
     gender: player.gender,
-    comment: player.comment || '', // max 256 byte (messaggio del Profilo, fumetto)
+    // max 256 byte: messaggio del Profilo e fumetto della home; vuoto = DEFAULT_COMMENT
+    comment: player.comment || DEFAULT_COMMENT,
     deviceType: 2,
     continueLoginCount: 1,
     isFleeze: 0,
@@ -987,6 +999,33 @@ function respondUser(res) {
     medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
   };
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
+}
+
+// GET /mypage (azione 59, ramo 0x7c4eb8 di [fn] -> parser [fn]), tutto
+// obbligatorio e in quest'ordine: adminMypageTexts[] ([fn]: type int, priority int,
+// text stringa), openBanners[] ([fn]: type, id, limitDate), userPresentCount int,
+// isChangeCoordinate int, rankingRewards ([fn], 7 int), backgroundId uint (riga di
+// mypageBackground, senza crash in [fn]; 150911 = sfondo predefinito),
+// isNewAlbumChallenge uint, isMissionReward bool. Prima la dava lo schema generico
+// (schemaResponse): stessi campi e valori, ora con una rotta propria.
+// adminMypageTexts sono i testi dell'amministrazione: forse la striscia scorrevole sotto la
+// barra in alto (negli originali «Tap the face icon to customize your avatar. Tap the
+// screen to view party members' progress.», testo che non sta in text/ui), ma chi li legge
+// non e' ancora trovato, ne' il significato di type/priority: solo con KHUX_MYPAGE_TICKER=1.
+const MYPAGE_TICKER = "Tap the face icon to customize your avatar. Tap the screen to view party members' progress.";
+function respondMyPage(res) {
+  const body = schemaResponse('/mypage') || { ret: ret() };
+  Object.assign(body, {
+    adminMypageTexts: process.env.KHUX_MYPAGE_TICKER === '1'
+      ? [{ type: Number(process.env.KHUX_MYPAGE_TICKER_TYPE || 1), priority: 1, text: MYPAGE_TICKER }] : [],
+    openBanners: [],
+    userPresentCount: 0,
+    isChangeCoordinate: 0,
+    backgroundId: body.backgroundId || 150911,
+    isNewAlbumChallenge: 0,
+    isMissionReward: false,
+  });
+  send(res, 200, body);
 }
 
 // GET /user/profile (azione 5, AvatarInfoDialog::open [fn]; corpo userId e
@@ -1309,9 +1348,20 @@ const USER_KEYBLADE_ID = 1;
 const USER_DECK_ID = 1;
 const USER_KEYBLADE_SUBSLOT_ID = 1;
 
+// Righe di un master in cache, rilette solo se il file cambia (mtime/dimensione). Prima ogni
+// chiamata rileggeva e decodificava il file: medal.json (migliaia di righe) veniva riletto
+// decine di volte per una sola vendita di medaglie. Si restituisce una copia dell'array
+// (un sort/push del chiamante non tocca la cache); le righe sono condivise: solo lettura.
+const masterCache = new Map();
 function masterRows(name) {
+  const file = path.join(MASTER_DIR, name + '.json');
   try {
-    return JSON.parse(fs.readFileSync(path.join(MASTER_DIR, name + '.json'), 'utf8'));
+    const st = fs.statSync(file);
+    const c = masterCache.get(name);
+    if (c && c.mtimeMs === st.mtimeMs && c.size === st.size) return c.rows.slice();
+    const rows = JSON.parse(fs.readFileSync(file, 'utf8'));
+    masterCache.set(name, { mtimeMs: st.mtimeMs, size: st.size, rows });
+    return rows.slice();
   } catch {
     return [];
   }
@@ -1837,8 +1887,14 @@ function soldMedalIds(body) {
 function respondMedalSell(res, body) {
   const sold = soldMedalIds(body || {});
   const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
-  // celle impilate: si vendono le prime N copie della pila
-  const copies = new Set([...sold].flatMap(([id, n]) => stackCopies(id, n)));
+  // celle impilate: si vendono le prime N copie della pila. Elenco a celle calcolato una
+  // volta sola (stackCopies lo ricostruiva per ogni medaglia venduta: vendite lente con
+  // migliaia di medaglie)
+  const cells = new Map(stackedMedalList().map((m) => [m.userMedalId, m]));
+  const copies = new Set([...sold].flatMap(([id, n]) => {
+    const cell = cells.get(Number(id));
+    return cell ? cell.copies.slice(0, Math.max(1, Number(n) || 1)) : [Number(id)];
+  }));
   let gain = 0;
   player.medals = (player.medals || []).filter((m) => {
     if (!copies.has(m.userMedalId)) return true;
@@ -1852,13 +1908,15 @@ function respondMedalSell(res, body) {
   // [fn] (userSkills), [fn] (userMedals), infine sellUserMedalIds;
   // senza i tre in radice «200 ERROR :51»
   const now = serverTime();
+  const after = stackedMedalList();
+  const left = new Set(after.map((m) => m.userMedalId));
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
     userSkills: [],
-    userMedals: userMedalsData(now),
+    userMedals: after.map((m) => userMedalElement(m, now)),
     // solo le celle sparite (una pila con copie rimaste resta)
-    sellUserMedalIds: [...sold.keys()].filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
+    sellUserMedalIds: [...sold.keys()].filter((id) => !left.has(id)),
   });
 }
 
@@ -2235,6 +2293,7 @@ function handler(scheme) {
       if (kind === 'kbsubslot') return kbEvo().respondSubslot(res, req.method, entry.bodyDecoded);
       if (kind === 'kbenhance') return kbEvo().respondEnhance(res, entry.bodyDecoded);
       if (kind === 'kbburstmax') return kbEvo().respondBurstMax(res, entry.bodyDecoded);
+      if (kind === 'passivelist') return kbEvo().respondPassiveList(res, entry.bodyDecoded); // PUT /passive/list (249), I-065
       // GET /stage/pickup (azione 250, dopo ogni clear): missioni in evidenza, elemento
       // [fn]; la chiave e' scritta cosi' nel binario. Nessuna in evidenza: []
       if (kind === 'stagepickup') return send(res, 200, { ret: ret(), pisckupStages: [] });
@@ -2349,6 +2408,7 @@ function handler(scheme) {
       if (kind === 'usermaterial') return send(res, 200, { ret: ret(), userMaterials: userMaterialsData() });
       if (kind === 'user') return respondUser(res);
       if (kind === 'userprofile') return respondUserProfile(res);
+      if (kind === 'mypage') return respondMyPage(res);
       // GET /user/birthday (azione 9, [fn]): birthday = AAAAMM (anno = /100, mese =
       // %100), dalla data di POST /user/create. Con 0 il client tratta il giocatore come minore
       // di 13 anni: popup Name/Message senza messaggio (AvatarInfo_Comment_U13, [fn])
@@ -2385,6 +2445,7 @@ function kbEvo() {
   return kbEvoInstance ??= makeKeybladeEvo({
     ret, send, serverTime, masterRows, player, savePlayer, ownedKeyblades, userMedalList,
     userKeybladesData, userDecksData, userMaterialsData, userTitlesData, USER_KEYBLADE_ID,
+    luxLevel: () => luxRankFor(player.lux), // condizioni Lux delle passive (PUT /passive/list)
   });
 }
 

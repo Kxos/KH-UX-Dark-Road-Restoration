@@ -63,7 +63,8 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
 <a id="generatore"></a>
 ## Generatore
 
-- `recon/tools/gen_story_maps.py <stage_gen\story_cfg.json>` (~3 s): per ogni missione stanza da
+- `recon/tools/gen_story_maps.py <stage_gen\story_cfg.json>` (~75 s; con `world_links` uscite sulle
+  porte e missioni Tour, vedi [collegamenti](#collegamenti)): per ogni missione stanza da
   `recon/tools/story_rooms.json` (84 stanze verificate) o una dello stesso mondo, nemici e tesori
   dalla wiki, posizioni sulla collisione. Con `"multiroom": true` una parte per stanza della wiki,
   uscite avanti e indietro, uid globali, bersaglio nell'ultima stanza (95 missioni: 86 da 2 parti, 9
@@ -94,6 +95,65 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
   Avenue, Morning Dew Grove, Garden Maze... (sostituite con una stanza dello stesso mondo: ISSUES
   I-036). La missione 8 (1050) usa DW_0003.
 - Roboloid ha 379 anteprime di stanze (`images/map`, solo riferimento).
+
+<a id="collegamenti"></a>
+## Collegamenti fra le aree e missioni «Tour»
+
+ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_links\` (`NOTE.md`,
+`wiki_worlds.txt` = pagine dei mondi della wiki, `doors\` = punte dei sentieri sulla grafica,
+`tour\` = uscite e arrivi di ogni parte delle missioni Tour, `previews\` = anteprime Roboloid).
+
+- **Causa del flusso sbagliato**: le sequenze di stanze della wiki sono coerenti (102 coppie su 104
+  vicine nel grafo, 2 saltano un piano), ma il generatore metteva l'uscita «avanti» nel punto piu'
+  lontano dalla partenza e quella «indietro» nel punto piu' a sinistra, senza guardare le porte: es.
+  missione 93 (Fountain Square -> 1st District) usciva dalla scala a destra (che porta al 2nd
+  District) e arrivava nel 1st District dalla parte sbagliata. In piu' 95 coppie su 104 hanno almeno
+  una stanza sostituita (I-036).
+- **Grafo** `recon/tools/world_links.json`: per mondo le aree (nome, codice `XX_NNNN_VV_00` dal
+  `thumbId` delle missioni, `res` = nelle risorse, `variant_of` per le varianti giorno/notte, alias dei
+  nomi della wiki), le porte delle stanze nelle risorse (`{area vicina: [x, y]}` sulla bitmap CLS) e i
+  collegamenti con `conf` (high = uscite originali 1010-1016 o wiki esplicita, medium = wiki + porta
+  scelta sulla grafica, low = dedotto, none = `tour: true`, solo per collegare i gruppi isolati nel giro)
+  e la fonte. Fonte principale: pagine dei mondi della KHUX wiki («The northeast exit of the Flower
+  Glade leads to...»), nel dump `wiki\wiki_all.json`. Le uscite vere confermano la convenzione: la
+  scala in basso a sinistra della Fountain Square porta in alto a destra del 1st District, quella a
+  destra in basso a sinistra del 2nd District.
+- **Porte**: le uscite stanno in fondo ai sentieri della zona percorribile (punte), non sul bordo
+  dell'immagine. L'anteprima Roboloid ha la stessa larghezza della CLS ed e' allineata in basso
+  (`y_grafica = y_cls - (H_cls - H_anteprima)`). Le punte candidate (rilievo geodetico + estremi nelle
+  8 direzioni) sono in `doors\*.png`; la porta di ogni collegamento e' scelta a mano con la direzione
+  della wiki.
+- **Generatore** (`gen_story_maps.py`, config `"world_links"`): nelle missioni a piu' stanze l'uscita
+  della stanza k va sulla porta verso la stanza k+1 (o verso il primo passo del percorso nel grafo) e
+  l'uscita indietro sulla porta verso k-1; nelle stanze sostitute una porta qualsiasi (la piu' lontana
+  dall'altra uscita). Porte agganciate al pixel percorribile (la griglia di 40 non entra nei corridoi
+  stretti), arrivi a ~240 unita' a piedi dalla porta e a piu' di 160 dalle altre uscite, freccia con
+  l'angolo verso la porta. Senza `world_links` l'uscita e' identica byte per byte a prima. Rapporto
+  delle coppie in `stage_gen\world_links_story.json` (relazione nel grafo, note delle porte); 205
+  uscite spostate, 55 sulla porta giusta (37 di piu' di 300 unita').
+- **Missioni Tour** (config `"worldtour": true`): una per mondo, tutte le stanze del mondo nelle
+  risorse (varianti escluse), una parte per stanza; ogni porta porta alla stanza delle risorse piu'
+  vicina nel grafo attraversando le aree assenti (es. Fountain Square, grande porta a sinistra ->
+  Warehouse via Market). Un solo Shadow (bersaglio) nella stanza piu' lontana dalla partenza; niente
+  forzieri. Rapporto `stage_gen\worldtour_report.json` (uscite, arrivi, `via`).
+
+| stageId | Tour | parti | bersaglio |
+|---|---|---|---|
+| 991001 | Daybreak Town | 12 (con Corridor of Darkness) | Beach D |
+| 991002 | Dwarf Woodlands | 3 | Path to the Mine |
+| 991003 | Wonderland | 2 | White Rabbit's House |
+| 991004 | Agrabah | 17 | Cave of Wonders: Monkey Statue |
+| 991005 | Olympus Coliseum | 2 | Coliseum |
+| 991006 | Beast's Castle | 2 | Fireplace |
+| 991007 | Castle of Dreams | 2 | Castle: Ballroom |
+| 991008 | Enchanted Dominion | 18 | Tower Room |
+
+- Master: `KHUX_WORLDTOUR=1` in `make-game-tables.js` aggiunge le righe 991001-991008 (copie della
+  1050 come le zoo, `id` 9101-9108, nome «Tour <mondo>», mondo/miniatura/musica dalla prima missione
+  del mondo, AP 0). Si avviano come le zoo: `server/save/smoke.json` `{"stageId": 991001}` -> l'elenco
+  Story mostra solo quella missione. Mappe da `stage_gen\story` in `stage_gen\files\stage`.
+- Mancano dalle risorse quasi tutte le aree dei mondi 2-7 (Dwarf's Cottage, Market, West Wing...):
+  i giri di DW, WL, OC, BC, CD hanno 2-3 stanze.
 
 <a id="nemici"></a>
 ## Nemici nelle mappe
