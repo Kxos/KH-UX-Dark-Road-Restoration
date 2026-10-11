@@ -1148,13 +1148,19 @@ function stageResumptionData() {
 // prezzo del Continue in jewel: misc 113 (100), letto dal popup PopupNormal_Continue
 const CONTINUE_STONE = 100;
 
-function respondStageContinue(res, path) {
+function respondStageContinue(res, path, body) {
   // POST /stage/continue (azione 115, dopo il KO) e /stage/retire (114): il ramo
   // rilegge userKeyblades ([fn]); retire anche userData.stageResumption.
   // Il Continue costa CONTINUE_STONE jewel (provato l'11 ottobre: prima restavano invariati);
   // il client li rilegge con GET /user/stone subito dopo.
   if (String(path).toLowerCase() === '/stage/continue') {
     player.freeStone = Math.max(0, (player.freeStone || 0) - CONTINUE_STONE);
+    savePlayer();
+  }
+  // Give Up: «the special attack gauge will reset», il corpo porta {burst: 0}
+  if (String(path).toLowerCase() === '/stage/retire' && typeof body?.burst === 'number') {
+    setKeybladeBurst(body.burst);
+    console.log(`[gauge] /stage/retire burst = ${body.burst}: salvata nel keyblade`);
     savePlayer();
   }
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userData: { stageResumption: stageResumptionData() } });
@@ -2247,7 +2253,7 @@ function handler(scheme) {
       }
       if (kind === 'stagelist') return respondStageList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
-      if (kind === 'stagecontinue') return respondStageContinue(res, req.url.split('?')[0]);
+      if (kind === 'stagecontinue') return respondStageContinue(res, req.url.split('?')[0], entry.bodyDecoded);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
       if (kind === 'aprecover') return respondApRecover(res);
   if (kind === 'stageevent') return respondStageEvent(res);
