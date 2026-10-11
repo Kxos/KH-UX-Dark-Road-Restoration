@@ -922,6 +922,111 @@ save('Ico_Param_HP.png', hp_icon())
 save('Av_Guiltbonus.png', guilt_plate())
 save('Av_Panel2.png', balloon())
 save('AvInfo_PetInfoPanel.png', dark_panel(244, 80))
+
+
+# Burst (ActionMap_Guiltburst, 1.40): pulsante rosso in alto a destra della battaglia. Le risorse
+# hanno solo Guiltburst_eff01 (anello rosso 128x128); le altre 5 texture, tutte centrate in (64,64)
+# nel pannello Guiltburst_UI, sono ricostruite dai video (reference\burst: ogp-7tDSmdg 1.40 1080p,
+# A0KztBILF9U 2019): disco di ~70 unita' con bordo grigio scuro, anello rosso, fondo blu-ardesia
+# con un cerchio arancione e tratti arancioni nei quadranti, stella dorata a 4 punte al centro e
+# keyblade bianco in diagonale (guardia in basso a sinistra, denti in alto a destra).
+def _radial(size, fn):
+    """Immagine RGBA size x size: fn(r) -> (r, g, b, a) con r = distanza dal centro in px."""
+    c = (size - 1) / 2
+    im = Image.new('RGBA', (size, size))
+    im.putdata([fn(((x - c) ** 2 + (y - c) ** 2) ** 0.5) for y in range(size) for x in range(size)])
+    return im
+
+
+def burst_button(pressed=False):
+    """Guiltburst_but01 / but02 (80x80): but02 (premuto) e' la stessa piu' scura."""
+    import math
+    w = 80
+    W, c = w * S, w * S / 2
+    im = Image.new('RGBA', (W, W), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+
+    def disc(r, fill):
+        d.ellipse((c - r * S, c - r * S, c + r * S, c + r * S), fill=fill)
+
+    def pt(r, ang, off=0.0):                 # ang in gradi (0 = destra, 90 = su), off perpendicolare
+        a = math.radians(ang)
+        return (c + (r * math.cos(a) - off * math.sin(a)) * S, c - (r * math.sin(a) + off * math.cos(a)) * S)
+
+    disc(35, (96, 96, 104, 255))                                          # bordo grigio smussato
+    d.ellipse((c - 35 * S, c - 34 * S, c + 35 * S, c + 35 * S), fill=(30, 30, 36, 255))
+    disc(33.5, (44, 44, 52, 255))
+    disc(29.5, (214, 24, 10, 255))                                        # anello rosso
+    disc(28.5, (240, 44, 16, 255))
+    disc(24.6, (255, 96, 30, 255))
+    disc(24, (34, 36, 52, 255))                                           # fondo scuro
+    im.alpha_composite(_radial(W, lambda r: (90, 70, 80, int(max(0, 1 - r / (20 * S)) * 120))))
+    d = ImageDraw.Draw(im)
+    for base in (45, 135, 225, 315):                                      # tratti nei quadranti
+        for da in (-14, 14):
+            a = base + da
+            d.polygon([pt(9, a, -0.4), pt(9, a, 0.4), pt(23, a + da * 0.25, 1.3), pt(23, a + da * 0.25, -1.3)],
+                      fill=(222, 104, 28, 235))
+    r17 = 17 * S                                                          # cerchio arancione
+    d.ellipse((c - r17, c - r17, c + r17, c + r17), outline=(226, 116, 34, 255), width=int(1.8 * S))
+    # keyblade bianco col bordo scuro: denti in alto a destra, guardia e impugnatura in basso a sinistra
+    for col, g in (((40, 40, 46, 255), 0.9), ((250, 250, 250, 255), 0)):
+        d.polygon([pt(23 - g, 45, -3.4 - g), pt(23 - g, 45, 3.4 + g), pt(33 + g, 45, 3.4 + g), pt(33 + g, 45, -3.4 - g)], fill=col)
+        for off in (-1.5, 1.5):
+            d.line((pt(13 - g, 45, off), pt(24, 45, off)), fill=col, width=int((1.3 + 2 * g) * S))
+        d.polygon([pt(23 - g, 225, -3.4 - g), pt(23 - g, 225, 3.4 + g), pt(33 + g, 225, 3.4 + g), pt(33 + g, 225, -3.4 - g)], fill=col)
+        d.line((pt(16.5 - g, 225), pt(24, 225)), fill=col, width=int((1.6 + 2 * g) * S))
+        d.line((pt(17, 225, -4 - g), pt(17, 225, 4 + g)), fill=col, width=int((1.6 + 2 * g) * S))
+
+    def star(k, fill):                                                    # stella a 4 punte
+        pts = []
+        for ang in (0, 90, 180, 270):
+            pts += [pt(3.2 * k, ang - 45), pt(6.5, ang, -2.0 * k), pt(12, ang, -3.8 * k), pt(23 * (0.82 + 0.18 * k), ang),
+                    pt(12, ang, 3.8 * k), pt(6.5, ang, 2.0 * k)]
+        d.polygon(pts, fill=fill)
+
+    star(1.25, (120, 50, 10, 255))
+    star(1.0, (246, 138, 22, 255))
+    star(0.7, (255, 206, 48, 255))
+    im.alpha_composite(_radial(W, lambda r: (255, 250, 200, int(max(0, 1 - r / (5 * S)) * 230))))
+    im = im.resize((w, w), Image.LANCZOS)
+    if pressed:
+        a = im.getchannel('A')
+        im = im.convert('RGB').point(lambda v: v * 62 // 100).convert('RGBA')
+        im.putalpha(a)
+    return im
+
+
+def burst_shadow():
+    """Guiltburst_Shadow (80x80, opacita' 128 sotto il pulsante): disco nero sfumato."""
+    return _radial(80, lambda r: (0, 0, 0, int(255 * min(1, max(0, (37 - r) / 3)))))
+
+
+def burst_glow():
+    """Guiltburst_eff02 (80x80, ImageView Eff02: pulsa 0,8 -> 1,15 dietro il pulsante): alone
+    rosso-arancio pieno, palette di Guiltburst_eff01."""
+    def f(r):
+        t = min(1, r / 39)
+        a = 255 if r < 27 else int(255 * max(0, (39.5 - r) / 12.5) ** 1.5)
+        return (255, int(110 - 90 * t), 0, a)
+    return _radial(80, f)
+
+
+def burst_ring():
+    """Guiltburst_eff03 (80x80, ImageView Eff01: onda 0,8 -> 1,35): anello rosso come
+    Guiltburst_eff01 (stesso profilo radiale ridotto a 80) ma col velo interno piu' corto."""
+    e = load('cocostudio/publish/Guiltburst_eff01.png').convert('RGBA').resize((80, 80), Image.LANCZOS)
+    a = e.getchannel('A')
+    k = _radial(80, lambda r: (0, 0, 0, int(255 * min(1, max(0, (r - 18) / 13)) ** 2))).getchannel('A')
+    e.putalpha(ImageChops.multiply(a, k))
+    return e
+
+
+save('Guiltburst_but01.png', burst_button())
+save('Guiltburst_but02.png', burst_button(True))
+save('Guiltburst_Shadow.png', burst_shadow())
+save('Guiltburst_eff02.png', burst_glow())
+save('Guiltburst_eff03.png', burst_ring())
 # Stemma della Union nell'anello delle medaglie del Profilo ([fn]: Revolver >
 # Revolver_Center, «img/union/Union_%02d.png»; crash in loadTexture se manca). Nelle risorse
 # c'e' solo cocostudio/publish/Union_03 (128x128): le altre dalle Union_L_%02d (330x330).

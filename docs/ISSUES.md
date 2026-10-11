@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-069**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-070**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -33,7 +33,7 @@ Ultima revisione: 11 ottobre 2026.
 | I-057 | APERTO | Risorse per keyblade/attributo: crash di «Select a Keyblade» risolto (MedalDeck_Type1/2/11/21/31/01 e deck 201..1901 generati, tinta dall'arte, verificato). Mancano ancora per intero `lwf/keyblade/KeyEvo/*`, `lwf/memudemo/KeyBlade_StepUp`/`_Evolution`, `lwf/medal/guilt_bonus/*` (evoluzione keyblade, subslot, guilt: non ancora raggiungibili) | [server](notes/server.md#keyblade) | make_keyblade_decks.py |
 | I-067 | DA VERIFICARE | Keyblade +0..+35 (576 righe, `make-keyblade-levels.js`, `keyblade-evo.js`), `POST /keyblade/enhance`: banco Treasure Trove +0 -> +6 ok, gauge conservata (3/12; prima si azzerava: limite in tacche invece che in unita' da 10000) (materiali scalati, moltiplicatori, evoluzione a +5 con nuovo design e 4 slot). Da vedere: +6..+35, Starlight, altri keyblade; animazioni KeyEvo/KeyBlade_Evolution vuote (saltate) | [server](notes/server.md#keyblade) | banco kv_res, kv_evo0, kv_equip5b |
 | I-068 | APERTO | Keyblade: lo slot sbloccato all'evoluzione mostra «SLOT 1» invece di «SLOT 4» | [server](notes/server.md#keyblade) | banco kv_evo0, kv_lv4 |
-| I-069 | DA VERIFICARE | Burst: `userDetail.isGuilt` (flag +0x18), `guiltBurstLv` calcolato (`guilt-burst.js`), medal 2 + burst 11 + shuffleskill 901/902 (`make-guilt-burst.js`, senza crash al via); provare il pulsante in battaglia | [battaglia](notes/battaglia.md#burst) | rapporto agente Burst |
+| I-070 | APERTO | Burst: livello calcolato 1908 col salvataggio di prova (tutte le medaglie del gioco): ok per le regole (+1 prima guilt, +5 guilt massima), ma la «guilt massima» = copia al livello massimo e' una scelta nostra; popup di salita del livello (`GuiltBonus_BurstLvup`) e Super Burst assenti | [battaglia](notes/battaglia.md#burst) | `guilt-burst.js` |
 | I-065 | APERTO | Equipment, «Passive Effects» vuoto: `passiveSetting`/`passive` vuote nella 5.0.1; le passive dei keyblade iniziano oltre +35 (35.5..60), livelli decimali non rappresentati | [server](notes/server.md#keyblade) | rapporto agente keyblade |
 | I-066 | IN CORSO | Equipment, «Subslot»: ora n/120 (`keybladeSubslot` rigenerata, `POST /keyblade/subslot`); crash al tocco = `DeckEditSubSlotScene_ver340` e 4 layout assenti (elenco widget in server.md) | [server](notes/server.md#keyblade) | banco kv_equip2 |
 | I-006 | APERTO | Party: tutti i layout `PartyTop_*` mancanti (legato a I-001) | [risorse_layout](notes/risorse_layout.md#mancanti) | ab62db9 |
@@ -106,6 +106,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-069 | Battaglia | Burst: pulsante in alto a destra come l'originale 1.40 (texture ricostruite da video), `isGuilt` + `guiltBurstLv`; premuto: attacco su tutti i nemici (danno 71023), Quest complete, risultati senza crash | banco gb10, gb11a, gb11b, gb12 |
 | I-030 | Battaglia | Gauge degli speciali conservata fra le missioni (come l'originale): campo `burst` di `/stage/clear` (23968 -> missione dopo con SPECIAL 2) | de87766, banco ap_battle |
 | I-060 | Server | AP: ricarica 1 ogni 3 min (misc 101), `stage.useAp` scalato a `/stage/start` (19 -> 9/19), `maxAp` dalla tabella player, level up oltre il massimo («20+/20»), `POST /shop/ap/recover` 100 jewel (da provare) | banco ap_home, ap_battle, ap_after |
 | I-053 | Quests | Crash del menu Quests dopo la Quest 130: testo ui 102850008 assente | 3b6bbb3 |
