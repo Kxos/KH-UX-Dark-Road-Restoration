@@ -97,6 +97,28 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
   I-036). La missione 8 (1050) usa DW_0003.
 - Roboloid ha 379 anteprime di stanze (`images/map`, solo riferimento).
 
+<a id="incomplete"></a>
+### Stanze incomplete (ISSUES I-074)
+
+- `map/<S>/<S>_info.bin` («BMI»): `0x0a` u16 livelli a tessere, `0x0c` u16 immagini intere, `0x0e`
+  u16 oggetti, `0x10` nome, `0x20` W, H di `base1`; poi record da 60 byte (stanza[16], livello[16],
+  W, H, x, y, W2, H2, flag), da 52 (stanza[16], livello[16], w, h, x, y, flag) e da 52 (nome[32], x,
+  y, ...). Percorsi (caricatore `FUN_00e61d5c`): `map/%s/%s_base1/%s_base1_%03d.png`,
+  `map/%s/%s_%s/%s_%s_%03d.png` (tessere da 256, da 001, ceil(W2/256) x ceil(H2/256)),
+  `map/%s/%s_%s.png`, `lwf/map/%s/%s.lwf`. La «stanza» dei record puo' essere un'altra cartella.
+- Tessera assente = crash (`FUN_00ade5cc`: texture nulla -> sprite nullo, nessun controllo).
+  Immagini intere e lwf assenti sono tollerati (`FUN_00b051a8` controlla il nodo nullo): 43 stanze
+  ne hanno, fra cui DW_0001/DW_0003 giocate sul banco.
+- `recon/tools/check_rooms.py` (~25 s, cache in `stage_gen\rooms_info`) controlla ogni stanza contro
+  l'indice installato (`names_v4.tsv` + `ipa431\names_addnl.tsv` + `stage_gen\files` +
+  `medal_gen\files`) e dice quali stage la usano -> `stage_gen\rooms_check.json`. Incomplete:
+  **DB_0018_01_00** (Underground Waterway: sky2, spover, over di `DB_0018_00_00`, 172 tessere) e
+  **ED_0011_01_00** (over, sky di `ED_0011_00_00`, 171 tessere); nessuna missione originale le usa.
+- `gen_story_maps.py` con `"rooms_check"` (o `"exclude_rooms"`) nella config le tratta come assenti
+  (I-036; la scelta delle altre missioni non cambia). Rigenerati 991001 (11 parti: la porta
+  «Underground Waterway Entrance» porta a Waterfront Park: Dock), 991008 (17), 12210-12250,
+  14230-14250 (Fountain Square/Warehouse); tolte le parti in piu' 991001_11, 991008_17.
+
 <a id="collegamenti"></a>
 ## Collegamenti fra le aree e missioni «Tour»
 
@@ -162,14 +184,14 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
 
 | stageId | Tour | parti | bersaglio |
 |---|---|---|---|
-| 991001 | Daybreak Town | 12 (con Corridor of Darkness) | Beach D |
+| 991001 | Daybreak Town | 11 (con Corridor of Darkness) | Beach D |
 | 991002 | Dwarf Woodlands | 3 | Path to the Mine |
 | 991003 | Wonderland | 2 | White Rabbit's House |
 | 991004 | Agrabah | 17 | Cave of Wonders: Monkey Statue |
 | 991005 | Olympus Coliseum | 2 | Coliseum |
 | 991006 | Beast's Castle | 2 | Fireplace |
 | 991007 | Castle of Dreams | 2 | Castle: Ballroom |
-| 991008 | Enchanted Dominion | 18 | Tower Room |
+| 991008 | Enchanted Dominion | 17 | Tower Room |
 
 - Master: `KHUX_WORLDTOUR=1` in `make-game-tables.js` aggiunge le righe 991001-991008 (copie della
   1050 come le zoo, `id` 9101-9108, nome «Tour <mondo>», mondo/miniatura/musica dalla prima missione

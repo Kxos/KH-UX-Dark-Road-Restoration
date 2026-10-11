@@ -7,7 +7,9 @@ config: {"stages": stage_dec.json di thethiny, "quests": wiki\\quests.json,
          "template": una parte MAP vera (es. mappoi_stg01040_00.bin), "rooms": story_rooms.json,
          "out": cartella di uscita (stage/), "skip": [stageId...], "report": report.json,
          "world_links": recon/tools/world_links.json (facoltativo: uscite sulle porte vere),
-         "worldtour": true (facoltativo: missioni «Tour» 991000 + worldId, "worldtour_report")}
+         "worldtour": true (facoltativo: missioni «Tour» 991000 + worldId, "worldtour_report"),
+         "rooms_check": rooms_check.json di check_rooms.py / "exclude_rooms": [...] (stanze incomplete,
+         trattate come assenti)}
 
 Per ogni missione (stageBinId 1..N di thethiny = numero della missione):
 - stanza: rooms[nome] se noto, altrimenti una stanza dello stesso mondo (prefisso del
@@ -61,6 +63,14 @@ os.makedirs(out, exist_ok=True)
 
 WORLD = {1: 'DB', 2: 'DW', 3: 'WL', 4: 'AG', 5: 'OC', 6: 'BC', 7: 'CD', 8: 'ED'}
 folders = sorted(d for d in os.listdir(os.path.join(cfg['cls_dir'], 'map')))
+# Stanze incomplete (check_rooms.py: tessere di un livello assenti dalle risorse -> crash del client
+# entrando nella stanza): trattate come assenti (I-036), cioe' sostituite da una stanza dello stesso
+# mondo. Restano in `folders` per non cambiare la scelta stabile delle altre missioni: si salta
+# solo la stanza esclusa (candidata successiva).
+EXCL = set(cfg.get('exclude_rooms', []))
+if cfg.get('rooms_check'):
+    EXCL |= set(json.load(open(cfg['rooms_check'], encoding='utf-8'))['incomplete'])
+rooms = {k: v for k, v in rooms.items() if v not in EXCL}
 quest_by_num = {}
 for q in quests:
     if q.get('number') and str(q['number']).isdigit():
@@ -107,7 +117,8 @@ def room_folder(name, world):
     cand = [f for f in folders if f.startswith(pre + '_')] or [f for f in folders if f.startswith('DB_')]
     base = [f for f in cand if f.endswith('_00_00')] or cand
     h = int(hashlib.md5(name.encode()).hexdigest(), 16)
-    return base[h % len(base)]
+    return next((base[(h + i) % len(base)] for i in range(len(base)) if base[(h + i) % len(base)] not in EXCL),
+                base[h % len(base)])
 
 
 GRID, MARGIN = 40, 40
@@ -492,6 +503,8 @@ AREA, ADJ, BY_CODE = {}, collections.defaultdict(set), {}
 if WLINKS:
     for _w, _wd in WLINKS['worlds'].items():
         for _a in _wd['areas']:
+            if _a.get('code') in EXCL:
+                _a['res'] = False           # stanza incompleta: come un'area assente dalle risorse
             for _nm in [_a['name']] + _a.get('alias', []):
                 AREA[(int(_w), norm(_nm))] = _a
             if _a.get('code') and _a.get('res') and not _a.get('variant_of'):
@@ -831,6 +844,8 @@ def room_folder_mr(name, world, avoid=None):
     first = None
     for i in range(len(base)):
         f = base[(h + i) % len(base)]
+        if f in EXCL:
+            continue
         walk_grid(f)
         n_old, steps_old = _old_size[f]     # misura di prima: stesse stanze scelte
         if n_old >= MIN_PTS and steps_old >= MIN_STEPS:

@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-070**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-074**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -109,6 +109,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-074 | Mappe | Crash entrando in una stanza incompleta (banco 991001, uscita «Underground Waterway Entrance» -> parte 7 `DB_0018_01_00`, `FUN_00ade5cc` -> `FUN_012d8464`: tessera assente = sprite nullo). Il suo `info.bin` usa i livelli a tessere di `DB_0018_00_00` (sky2, spover, over: 172 png), assente dalle risorse; idem `ED_0011_01_00` (171 tessere di `ED_0011_00_00`). `recon/tools/check_rooms.py` -> `stage_gen\rooms_check.json`; il generatore (`rooms_check` nella config) le tratta come assenti (I-036): rigenerati 991001 (11 parti, la porta va a Waterfront Park: Dock), 991008 (17 parti), 12210-12250, 14230-14250; validatore 0 errori | `check_rooms.py`, banco 11-10 tour3_b..d: passaggio e ritorno senza crash |
 | I-069 | Battaglia | Burst: pulsante in alto a destra come l'originale 1.40 (texture ricostruite da video), `isGuilt` + `guiltBurstLv`; premuto: attacco su tutti i nemici (danno 71023), Quest complete, risultati senza crash | banco gb10, gb11a, gb11b, gb12 |
 | I-030 | Battaglia | Gauge degli speciali conservata fra le missioni (come l'originale): campo `burst` di `/stage/clear` (23968 -> missione dopo con SPECIAL 2) | de87766, banco ap_battle |
 | I-060 | Server | AP: ricarica 1 ogni 3 min (misc 101), `stage.useAp` scalato a `/stage/start` (19 -> 9/19), `maxAp` dalla tabella player, level up oltre il massimo («20+/20»), `POST /shop/ap/recover` 100 jewel (da provare) | banco ap_home, ap_battle, ap_after |
