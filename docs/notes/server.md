@@ -235,13 +235,24 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   (mai visto), Treasure Trove 4/4/1 (Power). `recon/tools/make_medaltype_lwf.py` scrive MedalType1
   (rosso), MedalType2 (verde), MedalType01 come copie ricolorate di MedalType3, con le texture sia
   col nome originale sia `<nome LWF>_<hex>.png`.
-- Keyblade non centrato in «Select a Keyblade» (I-052, aperto): nel LWF keyblade_0201_01 (matrice
-  di rotazione + scala 1,1, frammento 303x1103) l'arte e' piu' grande e spostata rispetto a
-  keyblade_0001_01 (solo traslazione, 119x54); gli stessi LWF li usa l'avatar che impugna il
-  keyblade (`[fn]`, `lwf/avatar/keyblade/...`), con `rotation`/`scaling`/`ofsX`/`ofsY`
-  della tabella keyblade. Non e' chiaro se il riquadro usa quei campi: prova sul banco cambiando
-  `ofsX[0]`/`ofsY[0]` della riga 2000 (revisione dei master +1) prima di toccare LWF o dati.
-
+- Optimize, seconda parte (I-051): niente crash ma deck vuoto. Il client usa la lunghezza di
+  `deckMedals` come numero di slot: Optimize (`[fn]` -> `[fn]`) riempie solo quelli
+  e `[fn]` segna il deck cambiato (maschera `+0x4d8`, quindi mandato in `userDecks`)
+  confrontando solo quelle voci. Con `[]` nulla cambiava. Un deck tutto vuoto ora si manda come
+  `[0, 0, 0]` (`validConsist` della riga keyblade); gli 0 di un deck in parte pieno restano tolti
+  (battaglia, [battaglia.md](battaglia.md#slot-vuoto)): su quei deck Optimize considera solo gli
+  slot pieni.
+- Posa del keyblade nei riquadri dei menu (I-052): `[fn]` (chiamato da `[fn]`,
+  «Select a Keyblade», modo 3, e da `[fn]`) carica il LWF `keyblade_%04d_%02d` (se manca,
+  `img/keyBlade/KeyBlade_%06d.png`) e prende rotazione, scala e posizione da
+  `rule/keyblade_rule.bin` (`[fn]`: record di 0x44 byte, keybladeId + 4 modi x (rot x10000,
+  scala x10000, x, y); prima il keybladeId, poi la serie id/1000*1000, poi 1000). ofsX/ofsY della
+  tabella keyblade non c'entrano (provato sul banco, rev. 83/84). Il file servito ha solo 1000..11000
+  e con i LWF della 5.0.1 Treasure Trove cade 17 unita' a destra. `recon/tools/keyblade_rule.py`
+  calcola il centro dell'arte di ogni LWF (frammento -> traslazione -> matrici) e scrive una riga per
+  keyblade (64) con la posizione che lo porta sul centro di Starlight, rotazione e scala originali
+  della serie. Il modello torna con i valori di Square Enix per quasi tutte le serie (Lady Luck,
+  Three Wishes, Divine Rose, Olympia entro 2 unita'). L'avatar non e' toccato (stesse LWF).
 <a id="colosseo"></a>
 ## Colosseo (da fare)
 
