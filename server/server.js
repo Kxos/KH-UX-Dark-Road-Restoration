@@ -1178,7 +1178,17 @@ function respondApRecover(res) {
     const st = apState();
     player.ap = st.ap + maxAp();
     player.apTime = Date.now();
-    console.log(`[ap] recupero: -${cost} jewel, AP ${st.ap} -> ${player.ap}/${maxAp()}`);
+    // «Fills special attack gauges of all Keyblades.» (testo del popup; dopo: «AP and special
+    // attack gauges are fully restored!»): gauge di ogni keyblade al massimo della sua riga
+    for (const k of ownedKeyblades()) {
+      const full = (masterRows('keyblade').find((r) => r.keybladeId === k.keybladeId)?.maxBurstGauge || 0) * 10000;
+      if (k.userKeybladeId === USER_KEYBLADE_ID) player.keybladeBurst = full;
+      else {
+        const kk = player.keyblades.find((x) => x.userKeybladeId === k.userKeybladeId);
+        if (kk) kk.burst = full;
+      }
+    }
+    console.log(`[ap] recupero: -${cost} jewel, AP ${st.ap} -> ${player.ap}/${maxAp()}, gauge dei keyblade al massimo`);
     savePlayer();
   } else console.log(`[ap] recupero: jewel insufficienti (${player.freeStone || 0} < ${cost})`);
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) }, userKeyblades: userKeybladesData() });
