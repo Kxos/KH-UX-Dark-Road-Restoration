@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-059**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-061**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -17,7 +17,7 @@ Ultima revisione: 11 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
-| I-030 | DA VERIFICARE | Gauge degli speciali salvata nel keyblade: il campo e' `burst` di `/stage/clear` (24000 sul banco); prima si salvava `guiltBurstMaximumDamage` = 0. Da vedere: gauge conservata all'avvio della missione dopo | [battaglia](notes/battaglia.md#gauge) | 631ab31 |
+| I-061 | APERTO | Burst (Guilt Burst, pulsante rosso in battaglia, 1 volta per missione): il server manda `guiltBurstLv` (salvataggio a 10) ma il pulsante non appare; flag +0x18/+0x1c e livello di `[fn]` in analisi | [battaglia](notes/battaglia.md) | `[fn]`, `[fn]` |
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
 | I-032 | APERTO | Valori segnaposto: HP iniziale 3000, CP/HP dei forzieri (10.000/5.000/500) | [battaglia](notes/battaglia.md#hp) | 10-08/09 |
 | I-033 | APERTO | Attacchi speciali generati: 63 righe «Special Attack», animazioni del modello | [medaglie](notes/medaglie.md#burst) | 7da38e3 |
@@ -99,6 +99,8 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-030 | Battaglia | Gauge degli speciali conservata fra le missioni (come l'originale): campo `burst` di `/stage/clear` (23968 -> missione dopo con SPECIAL 2) | de87766, banco ap_battle |
+| I-060 | Server | AP: ricarica 1 ogni 3 min (misc 101), `stage.useAp` scalato a `/stage/start` (19 -> 9/19), `maxAp` dalla tabella player, level up oltre il massimo («20+/20»), `POST /shop/ap/recover` 100 jewel (da provare) | banco ap_home, ap_battle, ap_after |
 | I-053 | Quests | Crash del menu Quests dopo la Quest 130: testo ui 102850008 assente | 3b6bbb3 |
 | I-054 | Quests | Colosseo: tessera, popup «Select a mode.» (senza fasce sopra i pulsanti), `GET /user/notice` e `/colosseum`, schermata «unavailable» senza crash (gioco: I-059) | e8ec1bc, banco c3_pop |
 | I-055 | Union Cross | Pannello Union Cross: `server/multi.js` + master `multi`/`multiStage`, Begin -> «A connection error has occurred.» senza crash (partita: I-056) | banco 11-10 |
