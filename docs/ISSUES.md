@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-056**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-057**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -37,6 +37,7 @@ Ultima revisione: 11 ottobre 2026.
 | I-050 | DA VERIFICARE | Keyblade posseduti: premio di tipo 13 (Treasure Trove dalla Quest 14) mai dato, popup con l'immagine di Olympia; ora proprieta' nel salvataggio, `/user/keyblade/update/170516`, `img/keyBlade/KeyBlade_%06d.png` generate | [server](notes/server.md#keyblade) | 30549ba |
 | I-051 | DA VERIFICARE | Optimize su Treasure Trove: crash (LWF `MedalType%d` mancanti: copie ricolorate MedalType1/2/01; banco: niente crash) e deck rimasto vuoto (deck vuoto ora `[0 x slot]`); poi crash a 0x10 sulle medaglie di supporto (burstId 0 senza riga burst: aggiunta riga burst 0) | [server](notes/server.md#keyblade) | 0503105, 9d670ca |
 | I-052 | DA VERIFICARE | «Select a Keyblade»: Treasure Trove spostato a destra e tagliato: posa da `rule/keyblade_rule.bin` (non da ofsX/ofsY, provato), riscritta con una riga per keyblade centrata come Starlight | [server](notes/server.md#keyblade) | keyblade_rule.py |
+| I-057 | DA VERIFICARE | «Select a Keyblade» in crash con medaglie nel deck di Treasure Trove: servite solo `MedalDeck_Type3` e `img/carouselDeck/*_001`; generate MedalDeck_Type1/2/11/21/31/01 e i deck 201..1901 (tinta dall'arte). Mancano ancora per intero `lwf/keyblade/KeyEvo/*`, `lwf/memudemo/KeyBlade_StepUp`/`_Evolution`, `lwf/medal/guilt_bonus/*` (evoluzione keyblade, subslot, guilt: non ancora raggiungibili) | [server](notes/server.md#keyblade) | make_keyblade_decks.py |
 | I-006 | APERTO | Party: tutti i layout `PartyTop_*` mancanti (legato a I-001) | [risorse_layout](notes/risorse_layout.md#mancanti) | ab62db9 |
 | I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008 ora «Available quests!», 3b6bbb3; 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
 | I-035 | APERTO | Presents: cornici viola di Dark Road da sostituire con le texture blu | [home_profilo](notes/home_profilo.md#presents) | 081b0cb |

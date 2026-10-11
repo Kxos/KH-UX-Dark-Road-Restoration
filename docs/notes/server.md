@@ -249,7 +249,14 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `make-game-tables.js` aggiunge una riga burst 0 vuota (tutti i campi a 0; aggiunta anche a mano a
   `master_data/burst.json`, revisione dei master +1). Effetto collaterale da tenere d'occhio: con
   il deck `[0,0,0]` il riquadro mostra STR/DEF 150/150 (gli 0 contano come la medaglia finta) e una
-  quest avviata con quel deck vuoto avrebbe tre medaglie finte.- Posa del keyblade nei riquadri dei menu (I-052): `FUN_00eb6f38` (chiamato da `FUN_00990130`,
+  quest avviata con quel deck vuoto avrebbe tre medaglie finte.- Grafica per keyblade e per attributo (I-057): «Select a Keyblade» carica
+  `lwf/medal/medaldeck/MedalDeck_Type%d` (e `_Type%d1`, `_Type01`) per l'attributo della medaglia
+  nello slot e `img/carouselDeck/Deck%03d.png`, `DeckButton_%03d.png`, `DeckMedalNumUI_%03d.png`
+  (`_pvp_`) con displayId/100 del keyblade. Servite solo Type3 e 001: con le medaglie di Optimize
+  (Power) nel deck di Treasure Trove crash a 0x8d00e0 (fault 0x0). `make_keyblade_decks.py`
+  scrive le copie (deck ricolorati sulla tinta dell'arte del keyblade, palette; bagliori Power
+  rosso, Speed verde). Pacchetto generato a ~15,6 MB su 16 MiB di riserva: la prossima aggiunta
+  grande richiede una versione completa con riserva piu' alta.- Posa del keyblade nei riquadri dei menu (I-052): `FUN_00eb6f38` (chiamato da `FUN_00990130`,
   «Select a Keyblade», modo 3, e da `FUN_00c04188`) carica il LWF `keyblade_%04d_%02d` (se manca,
   `img/keyBlade/KeyBlade_%06d.png`) e prende rotazione, scala e posizione da
   `rule/keyblade_rule.bin` (`FUN_00eb72e4`: record di 0x44 byte, keybladeId + 4 modi x (rot x10000,
