@@ -80,7 +80,12 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   `beginnerLimitTime`; `POST /user/mission/receive` {receiveMissionIds} -> userData + missions +
   inventario. Contatori per periodo in `player.missions` (giorno: ora di startDate, 08:00 UTC);
   contano quest e Lux, non ancora Raid/PVP/Union Cross (ISSUES I-014). Provato sul banco (Collect
-  All: Jewel 3000 -> 3060). Nessun riferimento visivo trovato online.
+  All: Jewel 3000 -> 3060).
+- Aspetto da `reference\other_menu\missions_list_01.jpg`: schede 176x50 sopra la finestra; il codice
+  (`FUN_008d5c20`) carica `img/ui/MyMission_Category_On/_Off/_Disable.png` sulle tab e
+  `img/ui/MyMission_GroupIcon1/2.png` (1 = personali/Limited, 2 = party) in `GroupIcon`, tutte
+  generate in `make_textures.py`. `Mask_Area` (avviso «Join a party» delle settimanali) deve coprire
+  solo l'elenco: stesa sulla finestra mangiava i tocchi delle schede (Daily morta dopo Weekly, I-058).
 
 <a id="pet"></a>
 ## Pet («Spirit»)

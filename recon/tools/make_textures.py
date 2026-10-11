@@ -206,6 +206,76 @@ save_ui('Mogshop_tab_Off.png', mog_tab(False))
 save_ui('Mogshop_tab_On.png', mog_tab(True))
 save_ui('Mogshop_plate1.png', mog_plate())
 save('Mogshop_plate1.png', mog_plate())          # Base di MoogleShop_IconPanel (riga normale)
+
+
+def mission_tab(state):
+    """Schede della finestra Missioni (img/ui/MyMission_Category_On/_Off/_Disable, pulsante
+    di FUN_00a8c100 -> FUN_008d5c20): linguetta 176x50 arrotondata in alto, aperta in basso
+    sulla finestra. Colori da reference\\other_menu\\missions_list_01.jpg: spenta blu notte
+    19,37,113 con bordo 30,75,160; accesa 36,80,145 con bordo azzurro 70,146,206."""
+    w, h = 176, 50
+    edge, body = {'On': ((70, 146, 206), (36, 80, 145)),
+                  'Off': ((30, 75, 160), (19, 37, 113)),
+                  'Disable': ((70, 75, 90), (40, 42, 55))}[state]
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    r = 11 * S
+    d.rounded_rectangle((0, 0, w * S - 1, h * S + r), r, fill=edge + (255,))
+    b = 5 * S
+    inner = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    idr = ImageDraw.Draw(inner)
+    for y in range(h * S):                  # leggera luce in alto
+        t = min(1.0, y / (h * S * 0.35))
+        idr.line((0, y, w * S, y), fill=tuple(int(body[k] * (1.15 - 0.15 * t)) for k in range(3)) + (255,))
+    mask = Image.new('L', im.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((b, b, w * S - 1 - b, h * S + r), r - b, fill=255)
+    im.paste(inner, (0, 0), mask)
+    return im.resize((w, h), Image.LANCZOS)
+
+
+def mission_person(draw, cx, top, k):
+    """Omino dorato sorridente (testa tonda, corpo a campana) di altezza 36*k."""
+    hr = 9.5 * k
+    hx, hy = cx, top + hr
+    draw.polygon([(cx - 3 * k, hy + hr - 2 * k), (cx + 3 * k, hy + hr - 2 * k),
+                  (cx + 9.5 * k, top + 36 * k), (cx - 9.5 * k, top + 36 * k)], fill=(214, 176, 40, 255))
+    draw.ellipse((hx - hr, hy - hr, hx + hr, hy + hr), fill=(236, 205, 60, 255))
+    draw.ellipse((hx - hr + 1.5 * k, hy - hr + 1 * k, hx + hr - 2.5 * k, hy + hr - 3 * k),
+                 fill=(250, 236, 80, 255))
+    e = 1.4 * k
+    for ex in (hx - 3.3 * k, hx + 3.3 * k):
+        draw.ellipse((ex - e, hy - 2.5 * k - e, ex + e, hy - 2.5 * k + e), fill=(70, 50, 10, 255))
+    draw.arc((hx - 5 * k, hy - 3.5 * k, hx + 5 * k, hy + 5 * k), 25, 155, fill=(70, 50, 10, 255),
+             width=max(1, int(1.3 * k)))
+
+
+def mission_group_icon(n):
+    """img/ui/MyMission_GroupIcon1/2 (missioni personali / di party): uno o due omini dorati
+    come in missions_list_01.jpg (Daily e Limited uno, Weekly due)."""
+    w, h = (28, 38) if n == 1 else (48, 38)
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for cx in ([14] if n == 1 else [14, 34]):
+        mission_person(d, cx * S, 1 * S, S)
+    return im.resize((w, h), Image.LANCZOS)
+
+
+for _st in ('On', 'Off', 'Disable'):
+    save_ui('MyMission_Category_%s.png' % _st, mission_tab(_st))
+save_ui('MyMission_GroupIcon1.png', mission_group_icon(1))
+save_ui('MyMission_GroupIcon2.png', mission_group_icon(2))
+def mission_stock():
+    """Pillola blu notte (16,37,68, senza bordo) dietro «Missions Cleared n/m», 426x28."""
+    w, h = 426, 28
+    im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
+    ImageDraw.Draw(im).rounded_rectangle((0, 0, w * S - 1, h * S - 1), h * S // 2, fill=(16, 37, 68, 255))
+    return im.resize((w, h), Image.LANCZOS)
+
+
+save('MyMission_Stock.png', mission_stock())
+# texture iniziali di tab1..tab4 e GroupIcon in MyPageMission_Base_ver320 (il codice le sostituisce)
+save('MyMission_Category_Off.png', mission_tab('Off'))
+save('MyMission_GroupIcon1.png', mission_group_icon(1))
 # Icone dei materiali assenti dalle risorse (ce ne sono 9): scaricate dalla khuxwiki con
 # fetch_material_icons.py in reference\materials, ritagliate sul contenuto e messe al centro
 # di una tela 80x90 come le originali (contenuto ~50-66 px). Servono a Sell Materials e al

@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-057**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-058**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -112,6 +112,7 @@ Ultima revisione: 11 ottobre 2026.
 | I-011 | Mappe | Nemici senza grafica: grafica Dark Road per nome (312 nemici, 51 grafiche), zoo 50/51 | 2c57c06, 6a116c6 |
 | I-012 | Battaglia | Slot vuoto del Keyblade: nessuna medaglia finta (limite: il moltiplicatore segue la posizione) | b159b62 (banco 11-10) |
 | I-019 | Home | Missioni (rotolo): elenco Daily/Weekly, `MyPageMission_Panel`, Collect All | 2c57c06, c8577c5, 76d2796 |
+| I-058 | Home | Missioni: schede come l'originale (`MyMission_Category_On/_Off`, `GroupIcon1/2`, sopra la finestra) e Daily di nuovo toccabile dopo Weekly (`Mask_Area` copriva le schede) | banco m3_weekly/m3_daily |
 | I-020 | Medaglie | Grafica medaglie da Roboloid (2.117 medaglie), Medal List con le medaglie vere | 631ab31, 6543aff, 0d82e57 |
 | I-040 | Medaglie | Frecce «medaglia successiva» del dettaglio inerti | 839cf5e |
 | I-041 | Medaglie | Cursore di selezione della vendita invisibile | 8de54eb, 0fd2333 |
