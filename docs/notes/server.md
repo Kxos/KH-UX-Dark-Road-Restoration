@@ -160,7 +160,7 @@ node server\make-multi-tables.js                # Union Cross: multi, multiStage
 - Si salva a ogni modifica: nome, avatar, Union, Lux (`luxRank` = livello, soglie `needExp` di
   `player`), `money`, `freeStone`, `materials`, `medals` (`userMedalId` da 101), `medalLocks`,
   `medalTraits`, `deck` (tiene gli zeri di posizione), `stageScores`, `missions`, `titles`,
-  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId` ([keyblade](#keyblade)), fase e `popupFlag` del tutorial.
+  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `ap`/`apTime` ([AP](#ap)), `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId` ([keyblade](#keyblade)), fase e `popupFlag` del tutorial.
 - «Nuovo» finche' non ha fatto `/user/create`. Per ricominciare: cancellare il file (o `cycle.ps1`).
 - **Stato provvisorio all'11 ottobre**: `sphereBonus.hp = -2950` (HP 50) per provocare la sconfitta
   (ISSUES I-028): rimettere **40** a prova finita. `deck` [1,0,3] di prova.
@@ -168,6 +168,32 @@ node server\make-multi-tables.js                # Union Cross: multi, multiStage
   `maxMedal` 300 (segnaposto: con 0 popup mancante), `maxDeckCost` dal campo `cost` di `player`.
 - `sentDeckMedalIds()` toglie gli zeri da `userDecks`/`userKeyblades` (vedi
   [battaglia.md](battaglia.md#slot-vuoto)).
+
+<a id="ap"></a>
+## AP (consumo e ricarica)
+
+- `userData.userPoint` (`FUN_0078b230`): `ap` -> +0x34, `maxAp` -> +0x3c, `lastApDatetime` -> +0x40
+  dell'oggetto cifrato (lettore `FUN_006e02d4`), singleton a +0x118 del gestore (`FUN_007c1dfc`).
+- **AP mostrato** `FUN_0085bcac` (secondi al prossimo punto in `*param_2`): se `ap < maxAp` e
+  `lastApDatetime` e' passato (`FUN_00719400` <= 0), AP = `ap + trascorsi / (misc 101 x 60)`, al
+  massimo `maxAp`; con `ap >= maxAp` mostra `ap` (anche oltre il massimo) e non ricarica.
+  `FUN_0085be28` = secondi al pieno; `FUN_006e7e4c` = AP pieno (`maxAp <= AP`).
+  **misc 101 = 3: 1 AP ogni 3 minuti** (dal codice, non da fonti online).
+- `maxAp` = colonna `ap` della tabella `player` al rango Lux (16 al livello 1, 160 dal 200), come
+  `maxDeckCost` da `cost`, + `sphereBonus.ap` (prima: 10 fisso + bonus).
+- Server: `player.ap` + `player.apTime` (ms reali da cui conta la ricarica; `lastApDatetime` =
+  `serverTimeAt(apTime)`, coerente anche dopo un riavvio). `apState()` fa lo stesso conto del client,
+  `changeAp()` spende (se era pieno la ricarica parte da adesso, altrimenti tiene il punto parziale).
+  Salvataggi senza `ap`: AP pieno.
+- `POST /stage/start` (corpo `stageId`, ...): scala `useAp` della riga di `stage` (Quest 130 = 10).
+  `/stage/retire` e `/stage/continue` non rimborsano.
+- Level up (rango Lux che sale in `/stage/clear`): AP = AP di prima + nuovo `maxAp` (oltre il massimo).
+- `POST /shop/ap/recover` (azione 72, costruttore `FUN_008ef66c`, corpo vuoto; popup
+  `PopupNormal_AP_Recovery` in `FUN_006e5d10`, prezzo nel testo = **misc 112 = 100 jewel**): -100
+  `freeStone`, AP + `maxAp`; risposta `userData.userPoint` + `userKeyblades`.
+- Da verificare sul banco: HUD dopo lo start (es. 18 -> 8), il timer del fumetto
+  `BalloonNomal_AP_Recovery` (`FUN_00b8ee90`), il recupero con jewel (pieno aggiunto o portato al
+  massimo? ipotesi: aggiunto) e l'AP del level up (ipotesi, non confermata da fonti).
 
 <a id="api-funzioni"></a>
 ## API di funzione (oltre l'avvio)

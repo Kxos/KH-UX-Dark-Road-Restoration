@@ -160,6 +160,7 @@ function route(url) {
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
+  if (p === '/shop/ap/recover') return 'aprecover';
   if (p === '/stage/event') return 'stageevent';
   if (p === '/user/notice') return 'usernotice';
   if (p === '/colosseum') return 'colosseum';
@@ -211,8 +212,14 @@ const STARTED_AT = Date.now();
 const REVISION = Number(process.env.KHUX_REVISION || 0);
 
 function serverTime() {
+  return serverTimeAt(Date.now());
+}
+
+// L'ora del server corrispondente a un istante reale (ms): per i tempi salvati
+// (player.apTime), che restano coerenti anche dopo un riavvio del server.
+function serverTimeAt(realMs) {
   // Formato letto da FUN_007197ec: "YYYY-MM-DD HH:MM:SS".
-  const t = new Date(SERVER_TIME_START + (Date.now() - STARTED_AT));
+  const t = new Date(SERVER_TIME_START + (realMs - STARTED_AT));
   return t.toISOString().slice(0, 19).replace('T', ' ');
 }
 
@@ -835,7 +842,48 @@ function luxRankFor(lux) {
   return Math.max(1, ...rows.map((r) => r.lv));
 }
 
+// AP. Il client (FUN_0085bcac, AP mostrato; FUN_0085be28, secondi al pieno) ricalcola
+// da solo la ricarica: se ap < maxAp e lastApDatetime e' passato, AP = ap + (secondi
+// trascorsi) / (misc 101 x 60), fino a maxAp; con ap >= maxAp mostra ap e non ricarica
+// (l'AP oltre il massimo viene dal level up o dal recupero con jewel). Il server tiene
+// ap e l'istante reale da cui conta la ricarica (player.ap, player.apTime) e fa lo
+// stesso conto. maxAp = colonna ap della tabella player al rango Lux (16 al livello 1,
+// 160 dal 200) + i nodi AP degli Avatar Boards.
+function miscValue(id, def) {
+  return masterRows('misc').find((r) => r.miscId === id)?.value ?? def;
+}
+
+function apRecoverMs() {
+  return (miscValue(101, 3) || 3) * 60 * 1000; // misc 101 = 3: 1 AP ogni 3 minuti
+}
+
+function maxAp() {
+  return (masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.ap ?? 16) + sphereBonus().ap;
+}
+
+// AP attuale e istante (ms reali) da cui conta il prossimo punto
+function apState(nowMs = Date.now()) {
+  const max = maxAp();
+  if (typeof player.ap !== 'number') return { ap: max, time: nowMs };
+  let ap = player.ap, time = Number(player.apTime) || nowMs;
+  if (ap < max && time <= nowMs) {
+    const n = Math.floor((nowMs - time) / apRecoverMs());
+    if (ap + n >= max) { ap = max; time = nowMs; } else { ap += n; time += n * apRecoverMs(); }
+  } else if (ap >= max) time = nowMs;
+  return { ap, time };
+}
+
+// Cambia l'AP di delta (negativo = spesa). Se prima era pieno la ricarica parte da
+// adesso, altrimenti conserva il punto parziale gia' maturato.
+function changeAp(delta, nowMs = Date.now()) {
+  const st = apState(nowMs);
+  player.ap = Math.max(0, st.ap + delta);
+  player.apTime = st.ap >= maxAp() ? nowMs : st.time;
+  return player.ap;
+}
+
 function userPointData(now) {
+  const ap = apState();
   return {
     money: player.money || 0, // munny
     lux: player.lux, totalLux: player.lux, // lux e totalLux: uint64
@@ -849,13 +897,15 @@ function userPointData(now) {
     // poteva morire.
     ...deckStats(),
     // + i bonus dei nodi degli Avatar Boards (player.sphereBonus)
-    baseHp: levelHp(1) + sphereBonus().hp, hp: levelHp(1) + sphereBonus().hp, ap: 10 + sphereBonus().ap,
-    maxHp: levelHp(1) + sphereBonus().hp, maxAp: 10 + sphereBonus().ap,
-    lastApDatetime: now,
+    baseHp: levelHp(1) + sphereBonus().hp, hp: levelHp(1) + sphereBonus().hp, ap: ap.ap,
+    maxHp: levelHp(1) + sphereBonus().hp, maxAp: maxAp(),
+    lastApDatetime: serverTimeAt(ap.time), // da qui il client conta la ricarica
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
     specialPoint: 0, stageSkipTicket: 0, superSkipTicket: 0, vipPoint: 0,
-    guiltBurstLv: 0, multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
+    // livello del Burst (pulsante rosso in battaglia, una volta per missione; FUN_00aee878 non
+    // lo crea a 0): +1 alla prima guilt di ogni medaglia, +5 alla prima guilt massima
+    guiltBurstLv: player.guiltBurstLv || 0, multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
     drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
     limitedDrawTicket1: 0, limitedDrawTicket2: 0, limitedDrawTicket3: 0,
   };
@@ -875,6 +925,14 @@ function respondStageStart(res, req) {
   // /stage/clear non riporta lo stage: vale quello avviato qui
   player.currentStageId = req?.stageId ?? START_STAGE_ID;
   player.currentUserKeybladeId = Number(req?.userKeybladeId) || USER_KEYBLADE_ID; // gauge: setKeybladeBurst
+  // costo in AP: campo useAp della tabella stage (Quest 130 = 10). Il client controlla
+  // prima l'AP (popup PopupNormal_AP_Recovery se non basta); /stage/retire non rimborsa
+  const useAp = Number(masterRows('stage').find((r) => r.stageId === Number(player.currentStageId))?.useAp) || 0;
+  if (useAp) {
+    const before = apState().ap;
+    if (before < useAp) console.log(`[ap] stage ${player.currentStageId}: costo ${useAp} AP, disponibili ${before}`);
+    console.log(`[ap] stage ${player.currentStageId}: -${useAp} AP -> ${changeAp(-useAp)}/${maxAp()}`);
+  }
   savePlayer();
   send(res, 200, {
     ret: ret(),
@@ -1098,6 +1156,24 @@ function respondStageContinue(res, path) {
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userData: { stageResumption: stageResumptionData() } });
 }
 
+// POST /shop/ap/recover (azione 72, costruttore FUN_008ef66c, corpo vuoto): recupero
+// dell'AP con jewel dal popup PopupNormal_AP_Recovery (FUN_006e5d10, che nel testo
+// mostra il prezzo: misc 112 = 100). Il ramo rilegge userData.userPoint (FUN_0078b230)
+// e userKeyblades (FUN_0078cca8); i jewel li rilegge con GET /user/stone. Si aggiunge un
+// pieno (maxAp) all'AP attuale, come il level up.
+function respondApRecover(res) {
+  const cost = miscValue(112, 100);
+  if ((player.freeStone || 0) >= cost) {
+    player.freeStone -= cost;
+    const st = apState();
+    player.ap = st.ap + maxAp();
+    player.apTime = Date.now();
+    console.log(`[ap] recupero: -${cost} jewel, AP ${st.ap} -> ${player.ap}/${maxAp()}`);
+    savePlayer();
+  } else console.log(`[ap] recupero: jewel insufficienti (${player.freeStone || 0} < ${cost})`);
+  send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) }, userKeyblades: userKeybladesData() });
+}
+
 function respondStageClear(res, req) {
   // POST /stage/clear (azione 116). Il ramo chiama FUN_0078b230 (userData.userPoint),
   // FUN_0078babc (userData.userDetail), FUN_007817a0 (stageRewardUserMedalIds[]
@@ -1143,7 +1219,16 @@ function respondStageClear(res, req) {
   // le riporta: le valuta il server sui Lux della partita (getPoint.lux), che
   // restituisce in getLux (la barra Lux di RESULTS).
   const lux = Number(req?.getPoint?.lux) || 0;
+  const rankBefore = luxRankFor(player.lux);
+  const apBefore = apState().ap; // con la soglia del livello di prima
   player.lux += lux; // userPoint.lux/totalLux e luxRank nella risposta: dopo lo stage
+  // level up: si aggiunge un pieno di AP (il nuovo maxAp) a quello che c'era, anche
+  // oltre il massimo (il client lo ammette: FUN_0085bcac non ricarica sopra maxAp)
+  if (luxRankFor(player.lux) > rankBefore) {
+    player.ap = apBefore + maxAp();
+    player.apTime = Date.now();
+    console.log(`[ap] level up ${rankBefore} -> ${luxRankFor(player.lux)}: AP ${apBefore} -> ${player.ap}/${maxAp()}`);
+  }
   missionCount('quest', 1);
   missionCount('lux', lux);
   const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
@@ -2159,6 +2244,7 @@ function handler(scheme) {
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res, req.url.split('?')[0]);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
+      if (kind === 'aprecover') return respondApRecover(res);
   if (kind === 'stageevent') return respondStageEvent(res);
   if (kind === 'usernotice') return send(res, 200, { ret: ret(), raidNotice: { isSelfRaid: 0, isOthersRaid: 0 } });
   if (kind === 'colosseum') return respondColosseum(res);
