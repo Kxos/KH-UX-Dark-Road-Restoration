@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-054**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-056**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -88,6 +88,13 @@ Ultima revisione: 11 ottobre 2026.
 |---|---|---|---|---|
 | I-025 | APERTO | Fiocco COMPLETE della carta piu' semplice dell'originale dipinto | [bacheche](notes/bacheche.md#layout) | 51f60c4 |
 | I-026 | APERTO | Popup «Unlocked an Avatar Board!»: originale non trovato (stile ricavato) | [bacheche](notes/bacheche.md#popup-lb) | befacc0 |
+
+### Union Cross
+
+| ID | Stato | Titolo | Dettaglio | Prova |
+|---|---|---|---|---|
+| I-055 | DA VERIFICARE | Union Cross: «200 ERROR :166» (`matchingMemberList` mancante); ora `server/multi.js` + master `multi`/`multiStage` con un evento (senza eventi il pannello va in crash) | [union_cross](notes/union_cross.md#api) | multi.js, make-multi-tables.js |
+| I-056 | APERTO | Union Cross: stanza e partita richiedono un server Photon (UDP, master + game server); ora solo log `[photon]` sulla porta 5055 | [union_cross](notes/union_cross.md#offline) | - |
 
 ### Esterno
 

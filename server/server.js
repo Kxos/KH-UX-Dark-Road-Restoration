@@ -24,6 +24,7 @@ const zlib = require('zlib');
 
 const codec = require('./khux-codec');
 const { startDns } = require('./dns');
+const { makeMulti, routeMulti } = require('./multi');
 
 // ---------------------------------------------------------------------------
 // Configurazione
@@ -164,6 +165,7 @@ function route(url) {
   if (p === '/user/stone') return 'userstone';
   if (p === '/user/material') return 'usermaterial';
   if (p === '/campaign') return 'campaign';
+  if (p.startsWith('/multi/')) return routeMulti(p); // Union Cross: server/multi.js
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
   if (p === '/user/support') return 'usersupport';
@@ -2221,6 +2223,7 @@ function handler(scheme) {
       }
       if (kind === 'session') return respondSession(res);
       if (kind === 'bootstrap') return respondBootstrap(res);
+      if (kind && kind.startsWith('multi')) return multi().respond(kind, res, entry.bodyDecoded);
 
       const generated = schemaResponse(req.url.split('?')[0]);
       if (generated) return send(res, 200, generated);
@@ -2231,6 +2234,15 @@ function handler(scheme) {
       send(res, 200, { ret: ret() });
     });
   };
+}
+
+// Union Cross (server/multi.js): le funzioni del giocatore che gli servono
+let multiInstance = null;
+function multi() {
+  return multiInstance ??= makeMulti({
+    ret, send, serverTime, masterRows, userPointData, userKeybladesData, schemaResponse, player, savePlayer,
+    publicHost: () => (/^https?:\/\/([^/:]+)/.exec(PUBLIC_URL) || [])[1] || '127.0.0.1',
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -2285,6 +2297,8 @@ function start() {
     console.log('HTTPS disattivato: certificato assente. Generalo con server/make-cert.sh');
   }
 
+  multi().startPhotonLogger();
+
   if (DNS_ENABLED) {
     // L'IP da annunciare e' quello della nostra url pubblica.
     const m = PUBLIC_URL.match(/^https?:\/\/([^/:]+)/);
@@ -2315,4 +2329,4 @@ if (player.created && player.keyblades === undefined) {
 }
 
 if (require.main === module) start();
-module.exports = { SESSION, parseBody, start };
+module.exports = { SESSION, parseBody, start, route, multi };

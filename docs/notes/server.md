@@ -124,6 +124,7 @@ node server\import-master.js D:\Progetto_Restauro_KH_UX\apk501\extra_files `
   burst battleMisc badstatus tutorialMisc medalMisc material title theater raidEnemy raidEnemyAttack
 node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json
 node server\make-moogleshop.js
+node server\make-multi-tables.js                # Union Cross: multi, multiStage
 ```
 
 - `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (da
@@ -174,7 +175,7 @@ node server\make-moogleshop.js
 Le schermate hanno le loro API, descritte nei file d'area: medaglie
 ([medaglie.md](medaglie.md)), Moogle Shop ([moogle_shop.md](moogle_shop.md)), bacheche
 ([bacheche.md](bacheche.md)), profilo e missioni ([home_profilo.md](home_profilo.md)), stage
-([battaglia.md](battaglia.md)).
+([battaglia.md](battaglia.md)), Union Cross ([union_cross.md](union_cross.md)).
 
 <a id="eventi"></a>
 ## Eventi (`GET /stage/event`, azione 109)
