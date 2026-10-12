@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-080**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-081**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -16,6 +16,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-081 | APERTO | Velocita' del field: aumentandola non accelera solo la camminata ma tutto (anche il luccichio degli oggetti, ecc.) (segnalazione utente 12-10); verificare il comportamento dell'originale (video, fonti) prima di toccare qualcosa | [mappe_storia](notes/mappe_storia.md) | - |
 | I-080 | APERTO | Level Up di una medaglia con le medaglie speciali come nell'originale: Chip / Dale / Chip & Dale (aumento di STR e DEF), Cid (riduzione del costo); verificare regole, limiti e risposta del server (segnalazione utente 12-10). Analisi in corso con I-079 | [medaglie](notes/medaglie.md) | - |
 | I-079 | APERTO | Guilting delle medaglie non implementato come nell'originale; Brooms e Mickey & Brooms assenti dalla Medal List (segnalazione utente 12-10). Da guida dell'utente (`reference\guida_basi`) e fonti online: come sale il guilt, massimo per tier, effetto sul danno | [medaglie](notes/medaglie.md) | - |
 | I-078 | APERTO | Ultima evoluzione del keyblade: salendo di livello deve comparire l'aura animata attorno al keyblade (segnalazione utente 12-10); da verificare sul banco col Keyblade LV UP fino all'ultimo livello e confrontare con l'originale | [server](notes/server.md#keyblade) | - |
@@ -39,7 +40,6 @@ Ultima revisione: 11 ottobre 2026.
 | I-067 | DA VERIFICARE | Keyblade +0..+35 (576 righe, `make-keyblade-levels.js`, `keyblade-evo.js`), `POST /keyblade/enhance`: banco Treasure Trove +0 -> +6 ok, gauge conservata (3/12; prima si azzerava: limite in tacche invece che in unita' da 10000) (materiali scalati, moltiplicatori, evoluzione a +5 con nuovo design e 4 slot). Da vedere: +6..+35, Starlight, altri keyblade; animazioni KeyEvo/KeyBlade_Evolution vuote (saltate) ; banco 11-10 sera: +6 -> +17 (KHUX_KB_FREE, `relogin.ps1 -KbFree`), a +17 evoluzione (design 20105), SLOT 5 x1.600, gauge 15 | [server](notes/server.md#keyblade) | banco kv_res, kv_evo0, kv_equip5b |
 | I-068 | CHIUSO | Keyblade: lo slot sbloccato all'evoluzione mostrava «SLOT 1» invece di «SLOT 4»: «img/ui/Deck_Slot_Num_%d.png» esiste solo per 1-3, il 4/5 generati da make_textures.py (cifre di Mu_Num_Slot, colori di 1-3); banco: «SLOT 4» | [server](notes/server.md#keyblade) | banco sl_d1 |
 | I-070 | APERTO | Burst: livello calcolato 1908 col salvataggio di prova (tutte le medaglie del gioco): ok per le regole (+1 prima guilt, +5 guilt massima), ma la «guilt massima» = copia al livello massimo e' una scelta nostra; popup di salita del livello (`GuiltBonus_BurstLvup`) e Super Burst assenti | [battaglia](notes/battaglia.md#burst) | `guilt-burst.js` |
-| I-065 | IN CORSO | Equipment, «Passive Effects» non si apriva: `PUT /passive/list` (249) riceveva solo `ret`. Ora il server risponde `passiveSettingIds`/`newPassiveSettingIds` e `make-passives.js` genera `passive`/`passiveSetting` (Lux LV 350+ e keyblade +35..+60 dalla khuxwiki; raggiungibili quelle di +35). Da provare sul banco ; banco v33: la finestra ora si apre, ma con 0 passive resta vuota (manca «There are no passive effects.») | [server](notes/server.md#passive) | rapporto agente passive |
 | I-006 | APERTO | Party: tutti i layout `PartyTop_*` mancanti (legato a I-001) | [risorse_layout](notes/risorse_layout.md#mancanti) | ab62db9 |
 | I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008 ora «Available quests!», 3b6bbb3; 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
 | I-035 | APERTO | Presents: cornici viola di Dark Road da sostituire con le texture blu | [home_profilo](notes/home_profilo.md#presents) | 081b0cb |
@@ -112,6 +112,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-065 | Equipment | «Passive Effects» vuoto: il pulsante (`DeckEdit_PassiveBut_ver340`, `[fn]`) apre il popup web `Information2_Base` sull'URL `passiveSettingList` del login, che era ''. Ora `http://api-s.sp.kingdomhearts.com/web/passive` (`keyblade-evo.js` `respondPassivePage`): elenco delle passive o «There are no passive effects.»; in https la WebView rifiuta il nostro certificato, con sfondo trasparente non si disegna | banco 12-10 pe_6 |
 | I-075 | Medaglie | Optimize come l'originale: e' l'algoritmo del client (`[fn]`/`[fn]`, slot in ordine di moltiplicatore, costo, attributo della quest), ma riempiva solo gli slot gia' pieni perche' il server mandava i deck compatti. Ora deck completi con 0 = Stock Medal (medaglia 1, gioca il turno come nell'originale, `reference\empty_slot`), immagine 90000 (`make_stock_medal.py`); Optimize dei Subslot verificato (120/120) | banco 12-10 op2_opt ([318,0,317,0,456], STR 40589 -> 56619), sm_3 |
 | I-066 | Medaglie | Equipment, «Subslot»: n/120, schermata `DeckEditSubSlotScene_ver340` e layout generati, Optimize 120/120, lista SUBSLOT MEDALS leggibile, medaglie grandi; trascinamento da uno slot (la medaglia segue il dito, slot svuotato, 18/120) e avviso «Medals must be / set in order.» su due righe con targhetta opaca (`DeckEdit_Subslot_Caution_ver260`) | banco 12-10 sd_drag, sd_4, sd_c4, sd_c5 |
 | I-071 | Home | Fumetto bianco vuoto sopra l'avatar (messaggio del Profilo vuoto, `MyPage_MpBaloon`, `[fn]`): il server manda «Nice to meet you!» se il messaggio e' vuoto (`GET /mypage` con rotta propria) | banco 12-10 op_menu: fumetto «Nice to meet you!» |

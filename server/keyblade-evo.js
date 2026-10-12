@@ -280,9 +280,32 @@ function makeKeybladeEvo(ctx) {
     return ctx.send(res, 200, { ret: ctx.ret(), passiveSettingIds: ids });
   }
 
+  // Pagina web di «Passive Effects» (I-065): il pulsante di Equipment (DeckEdit_PassiveBut_ver340,
+  // lambda [fn]) e Button_PassiveInfo del PassiveDialog ([fn]) aprono il popup web
+  // Information2_Base (titolo 106220508) sull'URL passiveSettingList del login: con '' restava
+  // bianco. Le passive possedute (nome della riga passive + description di passiveSetting) o il
+  // testo 106220507. La query aggiunta dal client ([fn]) si ignora.
+  function respondPassivePage(res) {
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const set = new Map(ctx.masterRows('passiveSetting').map((s) => [s.passiveSettingId, s]));
+    const pas = new Map(ctx.masterRows('passive').map((p) => [p.passiveId, p]));
+    const rows = ownedPassiveSettingIds().map((id) => set.get(id)).filter(Boolean)
+      .map((s) => `<li><b>${esc(pas.get(s.passiveId)?.name)}</b><br>${esc(s.description)}</li>`).join('');
+    const html = '<!doctype html><html><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<style>body{margin:0;padding:12px;background:#08304f;color:#fff;font:18px sans-serif}'
+      + 'ul{list-style:none;margin:0;padding:0}li{padding:10px 4px;border-bottom:1px solid #2f6fa8}'
+      + '.none{text-align:center;margin-top:30%}</style></head><body>'
+      + (rows ? `<ul>${rows}</ul>` : '<p class="none">There are no passive effects.</p>')
+      + '</body></html>';
+    const buf = Buffer.from(html, 'utf8');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
+    res.end(buf);
+  }
+
   return {
     respondEnhance, respondBurstMax, respondSubslot, userKeybladeSubslotsData, subslotMaxNum, keybladeSubslotRate,
-    starlightKeybladeId, removeMedal, respondPassiveList,
+    starlightKeybladeId, removeMedal, respondPassiveList, respondPassivePage,
   };
 }
 
