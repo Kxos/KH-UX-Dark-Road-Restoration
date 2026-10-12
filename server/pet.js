@@ -198,6 +198,13 @@ function makePet(ctx) {
   //   userShuffleSkills [] (gli Spirit Trait non sono ricostruiti);
   // - 245 PUT /pet/expedition/recover (corpo {stoneNum}, FUN_0090f00c, «Train Now»): il ramo non
   //   legge nulla oltre a ret; qui l'attesa si azzera (jewel non scalati).
+  // Quali medaglie entrano negli slot lo decide solo il client (nessun campo di queste risposte):
+  // la lista (MiniMedalScrollView, +0xb29 = 1 in FUN_009163e4) vela con FUN_0088020c le medaglie
+  // di type 9/10 o con spShuffleskillSlot 0 (riga medal +0x490 / +0x4b8: Moogle, Chip, Dale, Huey...
+  // nei nostri master), e una medaglia velata non si trascina (FUN_00881654). Il tocco apre solo il
+  // dettaglio (FUN_00926f2c, callback vuota FUN_00927290); il rilascio sullo slot (FUN_00881e04 ->
+  // FUN_00927320 -> FUN_00aab8b4 sulla cella DeckEdit_RevolverMedal_ver330 175x175) la mette
+  // (FUN_00927534 -> FUN_00aabd14) solo se lo slot e' aperto (bit di FUN_00aa9db4: slot 1 sempre).
   function respondExpedition(res, method, body, path) {
     const t = training();
     const nowMs = serverMs();
