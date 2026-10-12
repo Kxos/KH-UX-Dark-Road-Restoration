@@ -48,12 +48,17 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   (I-081). Aura del +35 ok (I-078).
 - Fatto il 12 pomeriggio: guilt e medaglie speciali collegati (I-079/I-080, revisione 95), pet con
   rango 17 e sotto-schermate Name/Tricks/Train/Outfits (I-082), popup del rilancio della guilt (I-083).
-- **Prossimi passi**, in ordine:
-  1. I-083: vedere `GuiltBonus_max` (King Mickey 2216 ha guilt 9400 nel salvataggio: copia + rilancio
-     finche' esce 10000), costo di Cid nel deck, ritardo dell'animazione del Level Up (segnalato).
-  2. I-082: righe dei Tricks spostate, medaglia che non entra nello slot del Training (244/245
-     mai provate), layout del dialog SPIRIT da allineare a `reference\pet` (medaglie sovrapposte).
-  3. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
+- **Prossimi passi** (fatto il 12 sera: Level Up/Evolve senza attesa, GuiltBonus_max, pile dopo
+Evolve, animazione dell'Evolve, Tricks, dialog SPIRIT, Training 244/245 con trait), in ordine:
+  1. I-088: Optimize e Overwrite Skill del Level Up (overwriteSkills oggi vuoti).
+  2. I-086: pulsante Passive Effects del Profilo (WebView: http, sfondo opaco).
+  3. I-087: possesso, Level Up ed evoluzione di tutti i keyblade.
+  4. I-084: Trait Medal (regole in docs/notes/medaglie.md#trait-medal; type 9 da provare,
+     trait da fusione, azione 57 /user/medal/shuffleskill con slot pieni).
+  5. I-083: costo di Cid nel deck; I-085: immagine di Fantasia Mickey B che esce dalla cella.
+  6. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
+  Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
+  `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica).
 - Banco: risorse 33, **revisione master 95**, server con `-Pet` (`-KbFree` solo per le prove dei
   keyblade); `server\save\smoke.json` = {"stageId": 1010}; salvataggio con 2090 medaglie, sub-slot
   120/120, deck Treasure Trove [318,0,317,0,456] + pet 358.
