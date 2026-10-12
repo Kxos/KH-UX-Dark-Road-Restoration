@@ -1748,11 +1748,16 @@ function respondMedalEnhance(res, body) {
   // livelli del Burst dati da questa fusione (prima guilt / guilt massima): solo con il popup
   // GuiltBonus_BurstLvup (KHUX_GUILT_BURST_POPUP=1, LWF assente dalle risorse), come guilt-burst.js
   const burstGain = guiltBurst().gained();
+  const touched = new Set(comps.map((m) => m.medalId));
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
     userSkills: [],
-    userMedals: userMedalsData(now),
+    // solo le medaglie toccate (il client le fonde nel suo elenco): con tutte le ~2000 il client
+    // restava fermo 6 s prima dell'animazione (banco dl5, I-083). Le pile dei materiali si
+    // rimandano per medalId: consumata la copia in cima, la pila ha un altro userMedalId
+    userMedals: stackedMedalList().filter((m) => m.userMedalId === base.userMedalId || touched.has(m.medalId))
+      .map((m) => userMedalElement(m, now)),
     beforeEnhanceUserMedal: before,
     afterEnhanceUserMedal: userMedalElement({ ...base, level, exp, ...state }, now),
     enhanceEffect: Number(body.isGreatSuccess) ? 1 : 0,
