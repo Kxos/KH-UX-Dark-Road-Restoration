@@ -104,6 +104,16 @@ function patch(dir) {
   write('petRank', petRankRows());
   write('petSkill', petSkillRows());
   out.push(`petRank ${MAX_RANK}`, `petSkill ${SKILLS.length}`);
+  // misc 137 = rango massimo del pet: il dialog SPIRIT ricalcola il rango dai punti delle medaglie
+  // fermandosi li' ([fn], punti da [fn]). Nel master 5.0.1 vale 15: con 17 ranghi
+  // il client mostrava Rank 15 x3.700 mentre il server (e la cella del 6° slot) usava 17 x3.9
+  const miscFile = path.join(dir, 'misc.json');
+  if (fs.existsSync(miscFile)) {
+    const misc = JSON.parse(fs.readFileSync(miscFile, 'utf8'));
+    const row = misc.find((r) => r.miscId === 137);
+    if (row && row.value !== MAX_RANK) { row.value = MAX_RANK; write('misc', misc); out.push(`misc 137 = ${MAX_RANK}`); }
+    else if (!row) { misc.push({ miscId: 137, value: MAX_RANK }); write('misc', misc); out.push(`misc 137 = ${MAX_RANK}`); }
+  }
   const medalFile = path.join(dir, 'medal.json');
   if (fs.existsSync(medalFile)) {
     const medals = JSON.parse(fs.readFileSync(medalFile, 'utf8'));
