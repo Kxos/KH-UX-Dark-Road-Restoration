@@ -43,8 +43,8 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
 
 ## 2. server.js - fatto
 
-- `userMedalElement`: `attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`,
-  `guiltFactor` (centesimi di %, 10000 = +100%) da `medalState` (fuso in `userMedalList()`; l'Evolve
+- `userMedalElement`: `attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`
+  (= -riduzione di Cid, vedi sotto), `guiltFactor` (centesimi di %, 10000 = +100%) da `medalState` (fuso in `userMedalList()`; l'Evolve
   con `setMedalState({medalId, level, exp})` li conserva).
 - `respondMedalEnhance`: dopo l'EXP, `medalGuilt.applyEnhance(row, base, materiali, {burstRow,
   guiltProb, isGuilt: isGuiltUnlocked()})`; lo stato va in `medalState` e in
@@ -72,7 +72,16 @@ pulsante, solo da `guiltBurstLv` nei log).
 - Anteprima Level Up: Chip/Dale/Cid/Mirror selezionabili, «+STR/+DEF/COST» e «Bonus range +40 - 100%»
   (testi 101300036/101300043-45), risultato con effetti 7 (pallino/sblocco) e 8 (guilt su) di
   FUN_00c873f0 (animazioni `FUN_00c97818(…,7/8)`: controllare che i LWF esistano).
-- STR nel dettaglio = STR del livello + attackUpperNumber; COST = cost - upperCost (ipotesi sul
-  significato di upperCost: il client confronta `minCost < cost - upperCost - accumulato`).
+- STR nel dettaglio = STR del livello + attackUpperNumber.
+- Costo (banco rev. 95: Cid 90076 = -1 come la khuxwiki, ma «Cost 46» invariato): `upperCost` e'
+  un int con segno, la variazione del costo, negativa per Cid. `FUN_00eb577c` (costruzione
+  dell'oggetto medaglia dal `userMedal` di `FUN_0078d608`, struttura +0x28) scrive oggetto +0x2c =
+  **-upperCost**, e tutti i lettori usano `cost - (+0x2c)`: somma del costo del deck
+  (`FUN_0075f484`), confronto per l'ordinamento (`FUN_0075f2f8`), Optimize (`FUN_00756d40`),
+  limite dell'anteprima (`FUN_00c81f30`: `minCost < cost - (+0x2c) - accumulato`), effetto 6 del
+  risultato (`FUN_00c873f0`: se +0x2c sale). Il server mandava +1 (costo effettivo 47): ora
+  `userMedalElement` manda `-medalState.upperCost` (fix del 12-10, dopo rev. 95). Il dettaglio
+  della medaglia (`FUN_0072f1e0`, 0x7308b4) stampa invece il `cost` del master senza sottrarre
+  nulla: li' 46 resta 46 anche nell'originale 4.3.1.
 - Il risultato del server coincide con l'anteprima del client (pallini, sblocco della guilt): se il
   client calcola diversamente (es. guilt con `isGuilt` 0) il dettaglio dopo la fusione lo mostra.

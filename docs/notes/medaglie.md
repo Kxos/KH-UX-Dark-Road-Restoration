@@ -144,6 +144,15 @@ esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone
   `addMaxAttack/addMaxDefense`), Cid costo (fino a `cost - minCost`, 6★/7★ 20), Fantasia Mickey B
   (300913, type 8) +1 pallino; Magic Broom (300948) e Fantasia Mickey A -> B con 5 Broom. Salvati
   in `medalState`, serviti in `userMedal`. Dettagli e prove: [guilt.md](guilt.md#stato).
+- Conferma del rilancio della guilt (`FUN_00c85350`): `PopupNormal_Guilt_ver130` mancava (crash al
+  tocco di Level Up con una copia su una medaglia con guilt), generato da `PopupNormal_Text_34_4Line_
+  OkCancel`: `Win` > `Txt_Wording1` (101300035), `Txt_Wording2` (101300036, intervalli uguali) o
+  `Dummy` > `Txt_Wording4` «Bonus range:», `Txt_Wording5` -> `Syn_Arrow02` -> `Txt_Wording6`
+  (101300055: intervallo +0x508 -> +0x510) con `Dummy_Announce` > `Txt_Announce` (101300056,
+  lampeggia), `Txt_Wording3` (101300037). Testi tutti gia' serviti. Nessuno screenshot originale.
+- Avviso dei materiali rari (`FUN_00c83540`): i `_Panel` stanno in `Alert_Area` con x = 0, quindi
+  `Alert_Area` e' larga 600 e centrata; caso 1 = rarita' > 2 (`FUN_00c7e568`), «Includes ★★★
+  Medals or higher.» con le stelle figlie di `Star1`.
 - Evolve (azione 56): la medaglia diventa `evolveId` al livello 1, materiali consumati (anche dalle
   pile), costo `evolveMoney`; risposta `before/afterEvolveUserMedal`, `pet`, `attachmentMedalIds`.
   Scena `MedalEvoScene_ver320` generata (stile `reference\medal_evolve\`); `MedalInfo_Information_R1`

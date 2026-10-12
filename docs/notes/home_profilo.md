@@ -151,6 +151,58 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   Pop_PetSkill_Info, PetInfo_Medal, Area_Arrow1/2, AtlasLabel_EXP, Close_Button, Dummy, MedalArea,
   Win_under. Non ancora generato: i figli di PetInfo_Medal/Pet_LvUp vanno ricavati dalle lambda.
   Finche' manca, `Button_PowerUp` di Equipment e l'icona pet della home vanno in crash.
+- **Sotto-schermate del dialog SPIRIT** (I-082, 12 ottobre, da provare al banco). Generate in
+  `make_layouts.py` (funzioni `pet_*`), nomi e tipi dal decompilato:
+  - **Name** (`Button_A` -> FUN_00921df8 -> FUN_009144c4): `PetInfo_Rename_ver230` = popup Nome
+    del Profilo offline (`Offline_AvatarInfo_Comment`): `Txt_Name`, TextField `Txt_Name_Label`
+    (sostituito dal campo vero, FUN_006e467c), `Txt_Limit1`, `Txt_Caution`, `Button_Close`/
+    `Txt_Cancel` (annulla, FUN_00925138), `Button_Ok`/`Txt_OK` (FUN_00924cb4: nome vuoto ->
+    102300003, poi `POST /pet/name` FUN_00801e80, gia' servito).
+  - **Tricks** (`PetSkill_Button` -> FUN_0092284c -> FUN_009158bc su `Pop_PetSkill_Info`): il codice
+    cerca `PetSkill_Info` (dettaglio, nascosto: mancava = crash) e `PetSkill_List > Area`/`Txt`. La
+    lista (FUN_00a7fa94, init FUN_00a7fbe4) = `openSkillIds` della riga **petRank del rango**
+    (FUN_00915da4), non quelli del server; celle `PetInfo_PetSkill_Panel_ver230` 304x68 messe a
+    (152, 0): `PetSkill_Panel` (ImageView: il pulsante «But13» creato da FUN_00a7fdbc vi carica
+    `img/ui/But13_Off.png` con loadTexture, copia di But16 in COPIES), `Txt_PetSkill`, `Icon_New`;
+    `SkillButton` NON va nel layout. Tocco su un trick (FUN_009257d4): `PetSkill_Info` con
+    `Txt_PetSkill_Title`, `Txt_Efficacy_Title` (106110901), `Txt_Efficacy`, `Txt_Trigger_Title`
+    (106110902), `Txt_Trigger`; ritoccarlo lo chiude.
+  - **Spirit Training**: azioni 243 `GET /pet/expedition` (parser FUN_007abd68: `openMedalSlotDatas[]`
+    {`openMedalSlotNumber` 1-4, `openMedalSlotLimitDatetime`}, `limitDateimeWeekEnd`,
+    `limitDateimeMonthEnd`, `remainingDrawCount`, tutti obbligatori), 244 `POST /pet/expedition`
+    {userMedalIds} (`userMedals` + `medalResumption {userShuffleSkills[], resumptionStatus}`, poi
+    `GET /pet/profile`), 245 `PUT /pet/expedition/recover` {stoneNum} (solo ret). Prima la rotta
+    generica rispondeva a 243 con lo schema di 244: parser fallito. `server/pet.js`
+    `respondExpedition`: slot 1 sempre aperto (FUN_00aa9db4), 2..`KHUX_PET_TRAIN_SLOTS` aperti
+    fino a fine mese, attesa `KHUX_PET_TRAIN_HOURS` (20) in `recoverDatetime`, contatori
+    `expeditionTotalNum/MonthlyNum` in `player.pet.training`, `recoverStoneNum` =
+    `KHUX_PET_TRAIN_STONES` (0, non scalati); nessuno Spirit Trait (userShuffleSkills []).
+    **server.js deve smistare il kind `petexpedition`** (riga da aggiungere accanto alle altre
+    del pet: `if (kind === 'petexpedition') return pet().respondExpedition(res, req.method,
+    entry.bodyDecoded, req.url.split('?')[0]);`), finche' manca resta la risposta generica.
+    «Train» -> 243 -> `PetInfo_TrainingEdit_ver320` (FUN_0091766c): `Win_under` (Button_Sort >
+    Txt_Sort, Txt_Sort_Label, Txt_Filter_On, Scroll_Area, Txt_Possession, Txt_Cost/Slash/CostMax_Label),
+    `Win2A`, `Close_Button`, `Button_Training > Txt_Training` (106200426), `Arrow01`, `MedalArea`
+    con lo `PetTrainingSlotView` (FUN_00aa8798): `Medal1..4`, `MedalLock_Panel1..4 > Txt_Caution`,
+    `Period_NamePanel1..4 > Txt_Period`. «Training Slots» -> 243 ->
+    `PetInfo_TrainingSlotCheck_ver320` (FUN_0091c834: `MedalArea`, `Win_under`, `Close_Button`).
+    «Train Now» in attesa -> `PetInfo_TrainingRestartPop_ver320` (FUN_0091b824: `Txt_Wording`
+    (CustomRichText `Xml_Txt_Wording` creato dal codice), `Txt_CrownPossessed(_Label)`, `Txt_Time`,
+    `Button_Close/Txt_Cancel`, `Button_Ok/Txt_Ok`). Testi 106240102 e 106270102 assenti ovunque
+    (slot bloccati): nostri in `TEXTS`. Lo slot view aggiunge `cocostudio/publish/PetInfoAnim.ExportJson`
+    (assente) con addArmatureFileInfo: non trovata la creazione dell'armatura, da vedere al banco.
+    Dopo 244 il client chiede /pet/profile e aggiorna il dialog (FUN_009299d0 -> FUN_0090e540).
+  - **Outfits** (`Button_B`): scena `PetEditScene_ver230` (ScenePetPartsEdit, init FUN_00e01c44),
+    gemella di `AvatarEditScene_ver131`: nodi `CenterUI_Left` (tab1..tab6 con `Txt_Tab` 106110401-406
+    e pulsante «Av_Make_Win_But», `Area` = lista FUN_00a7ddc4 di `PetEdit_Panel_ver230` 298x122,
+    `Txt_NoPet` 106110409), `CenterUI_Right` (`KB_On`, `Avatar2`, `Pet`, `Pet2`; `Set_ChangeBut_New`
+    facoltativo e omesso: carica `PetChangeBut_*.png` assenti), `Decision` (`Button_PetSave`/
+    `Txt_PetSave`, `Button_Remove`/`Txt_Remove`), `MyCoordinate` (`Box_Num` <- img/ui/Av_Box_Num%d,
+    `Button_Switch`). Save -> 173 -> `PetEdit_Check2_ver230` (`Win_04` > `Txt_Wording` 106110410
+    «Style saved!», `Pet`). `Button_Switch` scorre gli outfit 1..6 su una lista fatta dai
+    coordinati di 172 con myCoordinateNo 1..6 (FUN_00e03b74): oltre la lista = out_of_range, quindi
+    `/pet/coordinate/all` manda sempre i 6. Parti: `userPetParts` [] -> lista vuota, «There are no
+    Spirit parts.»; le icone `img/petParts/pi%d.png` non esistono.
 - Con `isFinished` 1 a fase 995 la home creava il pet (`lwf/pet/motion/...`) e andava in crash in
   `FUN_011fa128`: risolto con i LWF vuoti.
 - **Battaglia** (blocco del banco 11 ottobre, 1010 con `-Pet`: primo attacco, avatar fermo in

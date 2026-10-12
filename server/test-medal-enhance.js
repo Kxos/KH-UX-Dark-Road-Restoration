@@ -100,9 +100,10 @@ r = enhance(b, [chips[0], dale[0], cids[0]], [10, 1, 3]);
 const a = r.afterEnhanceUserMedal;
 assert.equal(a.attackUpperNumber, Math.min(base.addMaxAttack, 1500));
 assert.equal(a.defenseUpperNumber, Math.min(base.addMaxDefense, 150));
-assert.equal(a.upperCost, 20);
+assert.equal(a.upperCost, -20, 'upperCost al client: negativo (FUN_00eb577c)');
+assert.equal(state(b).upperCost, 20, 'medalState: riduzione positiva');
 assert.equal(a.burstUpperNumber, 5, 'pallini conservati');
-log('5. Chip x10, Dale, Cid 10 x3: STR +', a.attackUpperNumber, 'DEF +', a.defenseUpperNumber, 'costo -', a.upperCost);
+log('5. Chip x10, Dale, Cid 10 x3: STR +', a.attackUpperNumber, 'DEF +', a.defenseUpperNumber, 'upperCost', a.upperCost);
 
 // 6. guilt al massimo (rilanci + specchi): Burst +5 (prima guilt massima)
 for (let i = 0; i < 200 && state(b).guiltFactor < range.max; i++) enhance(b, [give(90156)[0]]);
