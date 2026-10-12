@@ -27,6 +27,7 @@ const { startDns } = require('./dns');
 const { makeMulti, routeMulti } = require('./multi');
 const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
+const medalGuilt = require('./medal-guilt');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
 const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
 
@@ -1185,9 +1186,11 @@ function userDetailData() {
     // (1010): la schermata Quests (FUN_00d97410) lo confronta con misc 106 (130) per
     // sbloccare il quarto pulsante, e da sbloccato cerca un testo che non c'e' (crash).
     lastClearStageId: stageNumber(player.lastClearStageId),
-    // isGuilt (+0x44): con 0 niente pulsante del Burst (FUN_00b12e84 -> FUN_00b0fbd0)
+    // isGuilt (+0x44): con 0 niente pulsante del Burst (FUN_00b12e84 -> FUN_00b0fbd0), ne'
+    // sblocco/rilancio della guilt e Magic Mirror nel Level Up (FUN_00c81f30): Power Bangle,
+    // Quest 34 (isGuiltUnlocked). Il pulsante resta nascosto finche' guiltBurstLv e' 0.
     // isPet (+0x45): 1 = pet sbloccato (6° slot, catena /pet/profile all'avvio): server/pet.js
-    isGuilt: guiltBurst().isGuilt(), isPet: PET_ENABLED ? 1 : 0, pvpClass: 0, pvpMvpCount: 0, // uint
+    isGuilt: isGuiltUnlocked(), isPet: PET_ENABLED ? 1 : 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
 }
 
@@ -1626,9 +1629,12 @@ function userMedalElement(m, now) {
     medalId: m.medalId,
     number: m.number || 1, // uint
     level: m.level || 1, exp: m.exp || 0, // exp cumulativo (struttura +0x14, livello +0x10)
-    attackUpperNumber: 0, defenseUpperNumber: 0, burstUpperNumber: 0,
+    // Level Up con medaglie speciali (server/medal-guilt.js), salvati in medalState: STR/DEF di
+    // Chip/Dale, pallini dell'attacco speciale, riduzione del costo di Cid
+    attackUpperNumber: m.attackUpperNumber || 0, defenseUpperNumber: m.defenseUpperNumber || 0,
+    burstUpperNumber: m.burstUpperNumber || 0,
     lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
-    upperCost: 0, guiltFactor: 0, // guiltFactor: uint
+    upperCost: m.upperCost || 0, guiltFactor: m.guiltFactor || 0, // guiltFactor: uint, centesimi di % (10000 = +100%)
     userSkills: [], userShuffleSkills: medalTraits(m.userMedalId),
     getDatetime: m.getDatetime || now,
   };
@@ -1706,26 +1712,41 @@ function respondMedalEnhance(res, body) {
   const before = userMedalElement(base, now);
   let gain = comps.reduce((s, m) => s + (rows.get(m.medalId) ? materialExpFor(row, rows.get(m.medalId), m.level || 1) : 0), 0);
   if (Number(body.isGreatSuccess)) gain = Math.trunc(gain * medalMiscValue(118)[0] / 10000);
-  const cost = medalMiscValue(115)[0] * (base.level || 1) * comps.length;
+  // con la base gia' al livello massimo (copie per pallini/guilt) x medalMisc 123 (2500: 2.000
+  // invece di 8.000 a LV 100, banco gu_21)
+  let cost = medalMiscValue(115)[0] * (base.level || 1) * comps.length;
+  if ((base.level || 1) >= row.maxLv) cost = Math.trunc(cost * medalMiscValue(123)[0] / 10000);
   const exp = (base.exp || 0) + gain;
   const level = medalLevelFor(row, base.level || 1, exp);
-  setMedalState(base.userMedalId, { level, exp });
+  // medaglie speciali e copie (server/medal-guilt.js, docs/notes/guilt.md): pallini, sblocco e
+  // rilancio della guilt, Magic Mirror, Chip/Dale (STR/DEF), Cid (costo), con i limiti della base
+  const burstRow = row.validBurst ? masterRows('burst').find((b) => b.burstId === row.burstId) : null;
+  const { state, events } = medalGuilt.applyEnhance(row, base,
+    comps.map((m) => ({ row: rows.get(m.medalId), burstUpperNumber: m.burstUpperNumber || 0 })).filter((c) => c.row),
+    { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked() });
+  setMedalState(base.userMedalId, { level, exp, ...state });
   for (const m of comps) setMedalState(m.userMedalId, { removed: true });
   player.money = Math.max(0, (player.money || 0) - cost);
   savePlayer();
   console.log(`  [level up] ${base.userMedalId} (${row.name}) +${gain} EXP: LV ${base.level || 1} -> ${level}, ` +
-    `materiali ${comps.map((m) => m.userMedalId).join(',')}, -${cost} munny`);
+    `materiali ${comps.map((m) => m.userMedalId).join(',')}, -${cost} munny; ` +
+    `pallini ${base.burstUpperNumber || 0}->${state.burstUpperNumber}, guilt ${base.guiltFactor || 0}->${state.guiltFactor}` +
+    (events.rolls.length ? ` (tiri ${events.rolls.join(',')})` : '') +
+    `, STR +${state.attackUpperNumber}, DEF +${state.defenseUpperNumber}, costo -${state.upperCost}`);
+  // livelli del Burst dati da questa fusione (prima guilt / guilt massima): solo con il popup
+  // GuiltBonus_BurstLvup (KHUX_GUILT_BURST_POPUP=1, LWF assente dalle risorse), come guilt-burst.js
+  const burstGain = guiltBurst().gained();
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
     userSkills: [],
     userMedals: userMedalsData(now),
     beforeEnhanceUserMedal: before,
-    afterEnhanceUserMedal: userMedalElement({ ...base, level, exp }, now),
+    afterEnhanceUserMedal: userMedalElement({ ...base, level, exp, ...state }, now),
     enhanceEffect: Number(body.isGreatSuccess) ? 1 : 0,
     overwriteSkills: [],
     successOverwrite: 0,
-    guiltBurstFirstLv: 0, guiltBurstMaxLv: 0,
+    guiltBurstFirstLv: burstGain.first, guiltBurstMaxLv: burstGain.max,
     // FUN_0078e30c, obbligatorio: senza, «200 ERROR :55»
     medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
     // FUN_007948d0 (pet.petSubslot, FUN_007949f0): senza, il ramo 55 va in errore se isPet
@@ -2492,6 +2513,17 @@ function guiltBurst() {
   return guiltBurstInstance ??= makeGuiltBurst({ getPlayer: () => player, userMedalList, masterRows });
 }
 
+// userDetail.isGuilt: Power Bangle, premio della Quest 34 (guida dell'utente p. 16, khuxwiki;
+// docs/notes/guilt.md). lastClearStageId e' uno stageId, il confronto e' sul numero della
+// missione (campo id di stage, come userDetail.lastClearStageId). Con KHUX_GUILT_BURST_LV (livello
+// fisso per le prove del Burst) sempre 1, come prima.
+const POWER_BANGLE_QUEST = 34;
+function isGuiltUnlocked() {
+  const fixed = process.env.KHUX_GUILT_BURST_LV;
+  if (fixed !== undefined && fixed !== '' && Number(fixed) > 0) return 1;
+  return stageNumber(player.lastClearStageId) >= POWER_BANGLE_QUEST ? 1 : 0;
+}
+
 // Pet / 6° slot (server/pet.js, KHUX_PET=1)
 var petInstance = null;
 function pet() {
@@ -2598,3 +2630,5 @@ if (player.created && player.keyblades === undefined) {
 
 if (require.main === module) start();
 module.exports = { SESSION, parseBody, start, route, multi };
+// per i test senza client (server/test-medal-enhance.js, con KHUX_SAVE e KHUX_MASTER_DIR propri)
+module.exports._test = { player, respondMedalEnhance, userMedalList, userMedalElement, userPointData, isGuiltUnlocked };

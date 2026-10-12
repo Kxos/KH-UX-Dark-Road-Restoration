@@ -26,7 +26,8 @@ ottobre). Tocchi in [banco.md](banco.md#tocchi).
   1 +25%, 2 +50%, 3 +100%, 4 +130%, 5 +150%, 6 +180%, 7 +200%, 8 +230%, 9 +280%, 10 +320% (la
   guida dell'utente si ferma alla 8, scritta prima delle tier 9-10). Il moltiplicatore dei
   subslot dipende dal tier (calcolato dal client; subslot non ancora serviti: `subslotMaxNum` 0).
-  `userMedal.guiltFactor` (bonus sbloccato della copia) resta 0; `guiltProb` vuota.
+  `userMedal.guiltFactor` (bonus sbloccato della copia, centesimi di %) dal Level Up; `guiltProb`
+  = intervalli della khuxwiki per tier ([guilt.md](guilt.md), 12-10, da verificare al banco).
   Icone (`reference\medal_tier\NOTE.md`): dettaglio e filtro = `MedalInfo_Guilt1-8` originali
   (tondo blu con la cifra, non segnaposto) + 9-10 generate; le icone quadrate della guida
   dell'utente sono le `Guilt<n>_On` delle schermate keyblade (`FUN_0072b80c`, che carica anche
@@ -136,7 +137,13 @@ esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone
 <a id="level-evolve"></a>
 ## Level Up, Evolve, Unequip
 
-- Level Up: `POST /user/medal/enhance`, curva EXP del client, popup dei materiali rari.
+- Level Up: `POST /user/medal/enhance`, curva EXP del client, popup dei materiali rari. Medaglie
+  speciali e copie (`server/medal-guilt.js`, 12-10, DA VERIFICARE): pallini dell'attacco speciale
+  (`burstUpperNumber`, fino a `burst.maxEnhanceCount`: 6★/7★ 5), sblocco/rilancio della guilt
+  (`guiltFactor`, con `isGuilt` = Quest 34), Magic Mirror +1%, Chip/Dale STR/DEF (fino a
+  `addMaxAttack/addMaxDefense`), Cid costo (fino a `cost - minCost`, 6★/7★ 20), Fantasia Mickey B
+  (300913, type 8) +1 pallino; Magic Broom (300948) e Fantasia Mickey A -> B con 5 Broom. Salvati
+  in `medalState`, serviti in `userMedal`. Dettagli e prove: [guilt.md](guilt.md#stato).
 - Evolve (azione 56): la medaglia diventa `evolveId` al livello 1, materiali consumati (anche dalle
   pile), costo `evolveMoney`; risposta `before/afterEvolveUserMedal`, `pet`, `attachmentMedalIds`.
   Scena `MedalEvoScene_ver320` generata (stile `reference\medal_evolve\`); `MedalInfo_Information_R1`

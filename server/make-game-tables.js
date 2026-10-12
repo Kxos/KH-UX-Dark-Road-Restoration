@@ -183,6 +183,22 @@ if (process.env.KHUX_MEDALS_ALL === '1' && ROBO.length) {
   }
 }
 
+// Level Up con medaglie speciali (I-079/I-080, server/medal-guilt.js, docs/notes/guilt.md): le due
+// medaglie di Roboloid senza attributo che il ciclo sopra scarta, Magic Broom (300948, materiale
+// di Evolve) e Fantasia Mickey B (300913, type 8 = Mickey & Brooms, +1 pallino); Fantasia Mickey A
+// (90085) diventa evolvibile con 5 Magic Broom. Solo con KHUX_MEDALS_ALL=1 (immagini --all).
+const guilt = require('./medal-guilt');
+let guiltExtra = 0;
+if (process.env.KHUX_MEDALS_ALL === '1' && medals.some((m) => m.medalId === 90085) && medals.some((m) => m.medalId === 90156)) {
+  const extra = guilt.extraMedalRows(medals);
+  medals.push(...extra.rows);
+  Object.assign(medals.find((m) => m.medalId === 90085), extra.mickeyAPatch);
+  guiltExtra = extra.rows.length;
+}
+// Cid: khuxwiki «max 20 riduzioni dalla 2.0.0»: le 6★/7★ d'attacco con cost - minCost = 10
+// scendono di 20 (Cid 10 x2); upperCost di userMedal arriva fino a cost - minCost
+for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
+
 // Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1
 // (FUN_00eb577c); senza riga va in crash (es. «Begin» su una missione). Segnaposto:
 // copia della prima medaglia del file dei valori, con medalId 1.
@@ -459,6 +475,19 @@ for (const nb of newBursts) {
   if (at >= 0) bursts[at] = row; else bursts.push(row);
 }
 
+// pallini dell'attacco speciale (userMedal.burstUpperNumber): le burst di Roboloid hanno
+// maxEnhanceCount 0 e le 6★ di thethiny 4; khuxwiki per rarita' (3★ 1, 4★ 2, 5★ 3, 6★/7★ 5).
+// Le potenze per pallino (basePowerPerEnforce/displayPowerPerEnforce, valori assoluti) si
+// ricalcolano dalla potenza della riga come tierPower (+300, +900, ...): quelle copiate dal
+// modello sono di un'altra medaglia (Roboloid: 68300 di base, 15000 per pallino).
+const dotFix = guilt.burstDotFixes(medals, bursts);
+for (const b of bursts) {
+  const want = dotFix[b.burstId];
+  if (want === undefined) continue;
+  const per = (p) => [0, 1, 2, 3, 4].map((i) => (i < want ? p + 300 * ((i + 1) * (i + 2) / 2) : 1));
+  Object.assign(b, { maxEnhanceCount: want, basePowerPerEnforce: per(b.basePower), displayPowerPerEnforce: per(b.displayPower) });
+}
+
 // burst 0: le medaglie senza attacco speciale (supporto: Dewey, Fata Smemorina, validBurst 0)
 // hanno burstId 0, e Optimize (FUN_0075de5c, valore di ogni medaglia posseduta per gli slot del
 // keyblade) cerca la riga burst del burstId senza guardare validBurst: riga nulla, crash a 0x10
@@ -599,6 +628,10 @@ fs.writeFileSync(path.join(OUT, 'mypageBackground.json'), JSON.stringify(backgro
 fs.writeFileSync(path.join(OUT, 'reward.json'), JSON.stringify(rewards));
 fs.writeFileSync(path.join(OUT, 'medal.json'), JSON.stringify(medals));
 fs.writeFileSync(path.join(OUT, 'player.json'), JSON.stringify(players));
+// guiltProb (guilt della copia, «Special Attack Bonus»): intervalli della khuxwiki per tier, un
+// valore ogni 1%, peso uniforme (medal-guilt.js guiltProbRows; prima vuota)
+const guiltProb = guilt.guiltProbRows();
+fs.writeFileSync(path.join(OUT, 'guiltProb.json'), JSON.stringify(guiltProb));
 if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemies));
 // Burst: medal 2, burst 11, shuffleskill 901/902 (make-guilt-burst.js)
 require('./make-guilt-burst').patch(OUT);
@@ -612,4 +645,5 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);

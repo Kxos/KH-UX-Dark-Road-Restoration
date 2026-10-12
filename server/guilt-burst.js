@@ -14,13 +14,14 @@
 //
 // Livello (khux-guides.tumblr.com/post/152649620061): +1 alla prima guilt di ogni medaglia,
 // +5 alla prima guilt massima; i valori stanno nella riga medal (addGuiltBurstLv,
-// addGuiltBurstLvMax, +0x4c4/+0x4c8: nelle nostre tabelle 0, si usano 1 e 5). In questo
-// progetto la guilt di una medaglia e' il suo tier (guiltValue, fisso: niente guiltFactor):
-// - prima guilt = la prima volta che si possiede una medaglia (medalId) con guiltValue > 0;
-// - guilt massima = la prima volta che una copia di quella medaglia arriva al livello massimo
-//   (maxLv della riga), scelta nostra in mancanza del guiltFactor.
+// addGuiltBurstLvMax, +0x4c4/+0x4c8: nelle nostre tabelle 0, si usano 1 e 5). La guilt di una
+// copia e' userMedal.guiltFactor (Level Up, server/medal-guilt.js, docs/notes/guilt.md):
+// - prima guilt = la prima volta che una copia di una medaglia (medalId) con guiltValue > 0 ha
+//   guiltFactor > 0;
+// - guilt massima = la prima volta che una copia arriva al massimo del suo tier (guiltProb).
 // Il conto e' un registro che non scende (player.guiltBurst = {first: [medalId], max: [medalId]}):
-// vendere o fondere la medaglia non toglie il livello, come nell'originale.
+// vendere o fondere la medaglia non toglie il livello, come nell'originale. I medalId registrati
+// con le regole di prima (possesso, livello massimo) restano: il livello non scende.
 //
 // guiltBurstFirstUserMedalIds / guiltBurstMaxUserMedalIds (FUN_007a5dec: /stage/clear, draw,
 // moogle shop, raid reward) = le copie che hanno appena dato la prima guilt / guilt massima: il
@@ -29,6 +30,8 @@
 // saranno; altrimenti [] (il livello sale lo stesso, letto da userPoint).
 // KHUX_GUILT_BURST_LV=<n>: livello fisso per le prove sul banco.
 'use strict';
+
+const { guiltRange } = require('./medal-guilt');
 
 const FIRST_DEFAULT = 1;
 const MAX_DEFAULT = 5;
@@ -43,15 +46,17 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     const seed = !player.guiltBurst;   // primo giro su un salvataggio esistente: niente popup
     const rec = player.guiltBurst || (player.guiltBurst = { first: [], max: [] });
     const first = new Set(rec.first), max = new Set(rec.max);
+    const guiltProb = masterRows('guiltProb');
     for (const m of userMedalList()) {
       const row = rows.get(m.medalId);
-      if (!row || !(row.guiltValue > 0)) continue;
+      if (!row || !(row.guiltValue > 0) || !(m.guiltFactor > 0)) continue;
       if (!first.has(m.medalId)) {
         first.add(m.medalId);
         rec.first.push(m.medalId);
         if (!seed) pending.first.push(m.userMedalId);
       }
-      if (row.maxLv > 1 && (m.level || 1) >= row.maxLv && !max.has(m.medalId)) {
+      const top = guiltRange(guiltProb, row.guiltValue).max;
+      if (top > 0 && m.guiltFactor >= top && !max.has(m.medalId)) {
         max.add(m.medalId);
         rec.max.push(m.medalId);
         if (!seed) pending.max.push(m.userMedalId);
@@ -83,7 +88,21 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     return out;
   }
 
-  return { level, isGuilt: () => (level() > 0 ? 1 : 0), lists };
+  // guiltBurstFirstLv/MaxLv della risposta del Level Up (ramo 55): livelli appena dati. Con il
+  // popup spento 0 (le copie in attesa si scartano alla prossima lists()).
+  function gained() {
+    const { rows } = refresh();
+    const out = { first: 0, max: 0 };
+    if (process.env.KHUX_GUILT_BURST_POPUP !== '1') return out;
+    const medalOf = new Map(userMedalList().map((m) => [m.userMedalId, m.medalId]));
+    for (const id of pending.first) out.first += rows.get(medalOf.get(id))?.addGuiltBurstLv || FIRST_DEFAULT;
+    for (const id of pending.max) out.max += rows.get(medalOf.get(id))?.addGuiltBurstLvMax || MAX_DEFAULT;
+    pending.first.length = 0;
+    pending.max.length = 0;
+    return out;
+  }
+
+  return { level, isGuilt: () => (level() > 0 ? 1 : 0), lists, gained };
 }
 
 module.exports = { makeGuiltBurst };
