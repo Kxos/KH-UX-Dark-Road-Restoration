@@ -137,6 +137,7 @@ function parseBody(buf, headers) {
 // ---------------------------------------------------------------------------
 function route(url) {
   const p = url.split('?')[0].toLowerCase();
+  if (p === '/web/passive') return 'passivepage';
   if (p.includes('system/status')) return 'status';
   if (p.includes('system/login')) return 'login';
   if (p.includes('system/coppa')) return 'coppa';
@@ -303,6 +304,7 @@ function respondLogin(res) {
     data: LOGIN_DATA,
   };
   for (const k of LOGIN_LINKS) body[k] = '';
+  body.passiveSettingList = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/passive`; // «Passive Effects» (I-065): in https la WebView rifiuta il certificato
   send(res, 200, body);
 }
 
@@ -2319,6 +2321,7 @@ function handler(scheme) {
       if (kind === 'kbsubslot') return kbEvo().respondSubslot(res, req.method, entry.bodyDecoded);
       if (kind === 'kbenhance') return kbEvo().respondEnhance(res, entry.bodyDecoded);
       if (kind === 'kbburstmax') return kbEvo().respondBurstMax(res, entry.bodyDecoded);
+      if (kind === 'passivepage') return kbEvo().respondPassivePage(res); // pagina passiveSettingList, I-065
       if (kind === 'passivelist') return kbEvo().respondPassiveList(res, entry.bodyDecoded); // PUT /passive/list (249), I-065
       // Pet (server/pet.js, solo con KHUX_PET=1): 170-175 e 236
       if (kind === 'petprofile') return pet().respondProfile(res);
