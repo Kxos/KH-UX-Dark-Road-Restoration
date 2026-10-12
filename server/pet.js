@@ -194,8 +194,13 @@ function makePet(ctx) {
   // - 244 POST /pet/expedition (corpo {userMedalIds}, FUN_0090ec20 da «Train» FUN_00928968): il
   //   ramo legge userMedals (FUN_0078da18, obbligatorio) e medalResumption {userShuffleSkills[]
   //   (elemento FUN_0078d4b4), resumptionStatus uint} (FUN_0078e30c); poi il client richiede
-  //   GET /pet/profile e aggiorna il dialog (FUN_009299d0 -> FUN_0090e540). Nessun trait nuovo:
-  //   userShuffleSkills [] (gli Spirit Trait non sono ricostruiti);
+  //   GET /pet/profile e aggiorna il dialog (FUN_009299d0 -> FUN_0090e540), poi chiude il pannello
+  //   e per ogni medaglia allenata gioca l'animazione (FUN_009123cc: PetInfo_TrainingProduction e
+  //   lwf/pet/demo/training_SE, make_layouts.py; mancavano -> crash in GUIReader, I-082) e mostra
+  //   il trait ottenuto (Kakusei_Get1/2). Ogni medaglia riceve quindi un trait (spiritTrait) in
+  //   userMedals; medalResumption resta {[] , 0}: con resumptionStatus 1 e la medaglia fra i
+  //   userShuffleSkills (sessione +0x148) il client aprirebbe la scelta del trait da tenere
+  //   (FUN_00919d94, MedalInfo_SkillChangeWindow.json assente);
   // - 245 PUT /pet/expedition/recover (corpo {stoneNum}, FUN_0090f00c, «Train Now»): il ramo non
   //   legge nulla oltre a ret; qui l'attesa si azzera (jewel non scalati).
   // Quali medaglie entrano negli slot lo decide solo il client (nessun campo di queste risposte):
@@ -205,6 +210,32 @@ function makePet(ctx) {
   // dettaglio (FUN_00926f2c, callback vuota FUN_00927290); il rilascio sullo slot (FUN_00881e04 ->
   // FUN_00927320 -> FUN_00aab8b4 sulla cella DeckEdit_RevolverMedal_ver330 175x175) la mette
   // (FUN_00927534 -> FUN_00aabd14) solo se lo slot e' aperto (bit di FUN_00aa9db4: slot 1 sempre).
+  // Trait dell'allenamento (Spirit Trait) sulla medaglia userMedalId, in player.medalTraits come
+  // quelli del Moogle Shop (server.js medalTraits -> userMedals[].userShuffleSkills). Dopo
+  // l'animazione il client mostra il trait ottenuto (FUN_0091d384, ramo con +0x598 = 0): legge
+  // dalla medaglia ricostruita (FUN_00eb577c) il trait all'indice +0x148 = primo trait la cui riga
+  // shuffleskill ha type 2, altrimenti 0, e ne cerca la riga (FUN_00f11c28) SENZA controllo del
+  // null: una medaglia senza trait = crash. I nostri master non hanno righe di type 2, quindi il
+  // trait dello Spirit va in testa (indice 0) e uno solo per medaglia (t.spirit: un nuovo
+  // allenamento lo sostituisce; nell'originale si sceglieva quale tenere, popup KakuseiChange con
+  // medalResumption.resumptionStatus 1 e MedalInfo_SkillChangeWindow, assente: non usato).
+  // Il trait: uno a caso dei normali (type 1, esclusi i Burst 901/902). Restituisce lo shuffleSkillId.
+  function spiritTrait(t, userMedalId) {
+    const pool = ctx.masterRows('shuffleskill').filter((r) => r.type === 1 && r.shuffleSkillId < 900);
+    if (!pool.length) return 0;
+    const row = pool[Math.floor(Math.random() * pool.length)];
+    player.medalTraits = player.medalTraits || {};
+    t.spirit = t.spirit || {};
+    const list = (player.medalTraits[userMedalId] || []).filter((x) => x.userShuffleSkillId !== t.spirit[userMedalId]);
+    if (list.length >= 6) list.length = 5;          // al massimo 6 trait per medaglia (FUN_0078d4b4)
+    player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
+    list.unshift({ userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,
+      getDatetime: ctx.serverTime() });
+    player.medalTraits[userMedalId] = list;
+    t.spirit[userMedalId] = player.nextShuffleSkillId;
+    return row.shuffleSkillId;
+  }
+
   function respondExpedition(res, method, body, path) {
     const t = training();
     const nowMs = serverMs();
@@ -217,12 +248,13 @@ function makePet(ctx) {
     if (String(method).toUpperCase() === 'POST') {
       const owned = new Map(ctx.userMedalList().map((m) => [m.userMedalId, m]));
       const ids = (body?.userMedalIds || []).map(Number).filter((id) => owned.has(id)).slice(0, 4);
+      const got = ids.map((id) => spiritTrait(t, id));
       t.medals = ids;
       t.total += 1;
       t.monthly += 1;
       t.readyAt = nowMs + TRAIN_HOURS * HOUR;
       ctx.savePlayer();
-      console.log(`  [pet] training ${ids.join(',')}: totale ${t.total}, mese ${t.monthly}`);
+      console.log(`  [pet] training ${ids.join(',')}: totale ${t.total}, mese ${t.monthly}, trait ${got.join(',')}`);
       const now = ctx.serverTime();
       return ctx.send(res, 200, {
         ret: ctx.ret(),
