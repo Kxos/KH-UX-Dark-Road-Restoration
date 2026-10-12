@@ -48,20 +48,22 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   (I-081). Aura del +35 ok (I-078).
 - Fatto il 12 pomeriggio: guilt e medaglie speciali collegati (I-079/I-080, revisione 95), pet con
   rango 17 e sotto-schermate Name/Tricks/Train/Outfits (I-082), popup del rilancio della guilt (I-083).
-- **Prossimi passi** (fatto il 12 sera: Level Up/Evolve senza attesa, GuiltBonus_max, pile dopo
-Evolve, animazione dell'Evolve, Tricks, dialog SPIRIT, Training 244/245 con trait), in ordine:
-  1. I-088: Optimize e Overwrite Skill del Level Up (overwriteSkills oggi vuoti).
-  2. I-086: pulsante Passive Effects del Profilo (WebView: http, sfondo opaco).
-  3. I-087: possesso, Level Up ed evoluzione di tutti i keyblade.
-  4. I-084: Trait Medal (regole in docs/notes/medaglie.md#trait-medal; type 9 da provare,
-     trait da fusione, azione 57 /user/medal/shuffleskill con slot pieni).
-  5. I-083: costo di Cid nel deck; I-085: immagine di Fantasia Mickey B che esce dalla cella.
-  6. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
+- **Prossimi passi** (fatto il 12 sera: Optimize I-090, Overwrite Skill lato server, Passive Effects
+del Profilo, keyblade mancanti all'avvio + test dello sblocco, tetti Cid/Chip/Dale, Spirit Training
+con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
+  1. Esito dell'agente sul keyblade che sparisce col personaggio fermo nel campo (nuova riga in ISSUES).
+  2. I-072: tour Agrabah (991004) e Enchanted Dominion (991008), 17 parti; Daybreak Town gia' fatto.
+     Difetto: dopo una missione il primo Begin nell'elenco Story non risponde (rientrare da Quests).
+  3. I-088: provare Overwrite Skill sul banco (Scrooge 452/453/454 nello slot piu' a sinistra).
+  4. I-086: la pagina web «Passive Effects» aperta dal dialogo del Profilo resta vuota (da Equipment si vede).
+  5. I-087: Level Up/evoluzione di un keyblade nuovo con -KbFree; Divine Rose con smoke 15080.
+  6. I-089 etichette Equipped/LV sovrapposte dopo una fusione; I-084 Trait Medal.
+  7. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
   Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
   `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica).
-- Banco: risorse 33, **revisione master 95**, server con `-Pet` (`-KbFree` solo per le prove dei
-  keyblade); `server\save\smoke.json` = {"stageId": 1010}; salvataggio con 2090 medaglie, sub-slot
-  120/120, deck Treasure Trove [318,0,317,0,456] + pet 358.
+- Banco: risorse 33, **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
+  keyblade); `server\save\smoke.json` = {"stageId": 991007}; keyblade corrente Sleeping Lion (deck
+  vuoto: per le battaglie scegliere Treasure Trove). Begin nell'elenco: se non risponde, indietro e Story.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
