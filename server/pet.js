@@ -215,18 +215,35 @@ function makePet(ctx) {
   // l'animazione il client mostra il trait ottenuto (FUN_0091d384, ramo con +0x598 = 0): legge
   // dalla medaglia ricostruita (FUN_00eb577c) il trait all'indice +0x148 = primo trait la cui riga
   // shuffleskill ha type 2, altrimenti 0, e ne cerca la riga (FUN_00f11c28) SENZA controllo del
-  // null: una medaglia senza trait = crash. I nostri master non hanno righe di type 2, quindi il
-  // trait dello Spirit va in testa (indice 0) e uno solo per medaglia (t.spirit: un nuovo
-  // allenamento lo sostituisce; nell'originale si sceglieva quale tenere, popup KakuseiChange con
-  // medalResumption.resumptionStatus 1 e MedalInfo_SkillChangeWindow, assente: non usato).
-  // Il trait: uno a caso dei normali (type 1, esclusi i Burst 901/902). Restituisce lo shuffleSkillId.
+  // null: una medaglia senza trait = crash.
+  // Il trait: uno Special Trait (righe shuffleskill type 2, make-pet-tables.js: le 36 della tabella
+  // ufficiale v3.2.0 / khwiki «Special Traits») estratto col peso rate (= «Unlock Rate» in
+  // centesimi di punto, somma 10000), come l'originale (reference\pet\NOTE.md §10). Uno solo per
+  // medaglia («one Special Trait slot», separato dai 5 trait normali): un nuovo allenamento
+  // sostituisce quello vecchio. Nell'originale, se la medaglia ne aveva gia' uno, si sceglieva
+  // quale tenere (popup «Choose a trait to replace.», Skip/OK: medalResumption.resumptionStatus 1
+  // -> FUN_00919d94, MedalInfo_SkillChangeWindow.json assente): qui sostituzione diretta.
+  // Senza righe type 2 (master non rigenerati) ripiego di prima: un trait normale a caso.
+  // Restituisce lo shuffleSkillId.
+  function pickWeighted(rows) {
+    const total = rows.reduce((s, r) => s + Math.max(0, r.rate || 0), 0);
+    if (total <= 0) return rows[Math.floor(Math.random() * rows.length)];
+    let x = Math.random() * total;
+    for (const r of rows) { x -= Math.max(0, r.rate || 0); if (x < 0) return r; }
+    return rows[rows.length - 1];
+  }
   function spiritTrait(t, userMedalId) {
-    const pool = ctx.masterRows('shuffleskill').filter((r) => r.type === 1 && r.shuffleSkillId < 900);
+    const all = ctx.masterRows('shuffleskill');
+    const special = all.filter((r) => r.type === 2);
+    const pool = special.length ? special : all.filter((r) => r.type === 1 && r.shuffleSkillId < 900);
     if (!pool.length) return 0;
-    const row = pool[Math.floor(Math.random() * pool.length)];
+    const row = pickWeighted(pool);
+    const isSpecial = new Set(special.map((r) => r.shuffleSkillId));
     player.medalTraits = player.medalTraits || {};
     t.spirit = t.spirit || {};
-    const list = (player.medalTraits[userMedalId] || []).filter((x) => x.userShuffleSkillId !== t.spirit[userMedalId]);
+    // via il vecchio trait dello Spirit (quello registrato o qualunque riga type 2)
+    const list = (player.medalTraits[userMedalId] || []).filter((x) =>
+      x.userShuffleSkillId !== t.spirit[userMedalId] && !isSpecial.has(x.shuffleSkillId));
     if (list.length >= 6) list.length = 5;          // al massimo 6 trait per medaglia (FUN_0078d4b4)
     player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
     list.unshift({ userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,

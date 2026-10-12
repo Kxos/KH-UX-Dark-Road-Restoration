@@ -22,6 +22,20 @@
 //   250-432 nelle build successive (medaglie 7 stelle con SA+ e trait; la khwiki dice che i punti
 //   dipendono da SA Bonus Level e trait, cosa che qui non si modella).
 //
+// - shuffleskill type 2 = Special Trait («特別覚醒能力», trait dello Spirit Training, I-082): le 36
+//   righe della tabella «Special Traits» della khwiki (pagina Medal, D:\Progetto_Restauro_KH_UX\
+//   wiki\wiki_all.json; reference\pet\NOTE.md §10) con la «Unlock Rate» in centesimi di punto in
+//   rate (somma 10000). Il client: FUN_00eb577c mette in medaglia +0x148 l'indice del primo trait
+//   la cui riga ha type (+8) 2 (e +0x144 = 1): e' il trait che mostrano il risultato del
+//   training (FUN_0091d384 / FUN_00919390, Kakusei_Get1/2 e SpecialKakuseiSkill_Window) e la
+//   finestra Special Trait del dettaglio; FUN_00c97568 fa la «roulette» di Kakusei_Get1 con le
+//   righe dello stesso type e rate (+0xc4) diverso da 0 (lista vuota = std::out_of_range).
+//   name e' un formato printf (FUN_00c97298/FUN_00919390: sprintf(name, FUN_0073de5c(riga))):
+//   «%» raddoppiato. category = icona img/kakusei/Kakusei_Icon%04d.png e LWF
+//   lwf/medal/Kakusei/Kakusei_Icon%04d (make_kakusei_lwf.py), come i trait del Moogle Shop.
+//   Id 1001-1036 (1-13 Moogle Shop, 901/902 Burst). make-moogleshop.js riscrive shuffleskill.json:
+//   rilanciare poi questo script (patch() le rimette, idempotente).
+//
 // Si applica da sola (idempotente) a server/master_data e scrive anche server/tables/petRank.json e
 // petSkill.json (make-game-tables.js copia server/tables e chiama patch() in fondo, cosi' l'addPetPt
 // sopravvive alla rigenerazione di medal.json). Dopo: alzare KHUX_REVISION.
@@ -92,6 +106,62 @@ function petSkillRows() {
   }));
 }
 
+// Special Traits (khwiki, pagina Medal, «Special Traits»): [nome, icona, campi del valore, % «Unlock Rate»]
+const SPECIAL_TRAITS = [
+  ['Extra Attack: 120% Power', 80, { addDamage: 120 }, 0.2],
+  ['Damage in Raids +100%', 70, { raidKindRate: 100 }, 0.8],
+  ['Damage in Raids +30%', 70, { raidKindRate: 30 }, 2.4],
+  ['Damage in Raids +20%', 70, { raidKindRate: 20 }, 3.5],
+  ['Damage in Raids +10%', 70, { raidKindRate: 10 }, 3.5],
+  ['STR +2000', 90, { attack: 2000 }, 1.4],
+  ['STR +500', 90, { attack: 500 }, 2.0],
+  ['STR +400', 90, { attack: 400 }, 3.5],
+  ['STR +200', 90, { attack: 200 }, 3.5],
+  ['STR +100', 90, { attack: 100 }, 3.5],
+  ['STR +50', 90, { attack: 50 }, 3.5],
+  ['DEF +1000', 100, { defense: 1000 }, 2.0],
+  ['DEF +800', 100, { defense: 800 }, 3.5],
+  ['DEF +600', 100, { defense: 600 }, 3.5],
+  ['DEF +400', 100, { defense: 400 }, 3.5],
+  ['DEF +200', 100, { defense: 200 }, 3.5],
+  ['Ground Enemy DEF -20%', 60, { enemyKind: 1, enemyKindRate: 20 }, 1.4],
+  ['Aerial Enemy DEF -20%', 61, { enemyKind: 2, enemyKindRate: 20 }, 1.4],
+  ['Max Gauges +3', 10, { ability: 3 }, 3.5],
+  ['Max Gauges +2', 10, { ability: 2 }, 3.5],
+  ['Max Gauges +1', 10, { ability: 1 }, 3.5],
+  ['Max HP +1000', 20, { hp: 1000 }, 3.5],
+  ['Max HP +900', 20, { hp: 900 }, 3.5],
+  ['Max HP +800', 20, { hp: 800 }, 3.5],
+  ['Max HP +700', 20, { hp: 700 }, 3.5],
+  ['Max HP +600', 20, { hp: 600 }, 3.5],
+  ['Max HP +500', 20, { hp: 500 }, 3.5],
+  ['Poison Resist 100%', 30, { poison: 100 }, 1.0],
+  ['Poison Resist 20%', 30, { poison: 20 }, 2.8],
+  ['Poison Resist 10%', 30, { poison: 10 }, 3.5],
+  ['Sleep Resist 100%', 50, { sleep: 100 }, 1.0],
+  ['Sleep Resist 20%', 50, { sleep: 20 }, 2.8],
+  ['Sleep Resist 10%', 50, { sleep: 10 }, 3.5],
+  ['Paralysis Resist 100%', 40, { paralyze: 100 }, 1.0],
+  ['Paralysis Resist 20%', 40, { paralyze: 20 }, 2.8],
+  ['Paralysis Resist 10%', 40, { paralyze: 10 }, 3.5],
+];
+const SPECIAL_TYPE = 2;
+const SPECIAL_FIRST_ID = 1001;
+const SHUFFLE_FIELDS = ['shuffleSkillId', 'category', 'type', 'name', 'sortId', 'duplicate', 'ability', 'hp',
+  'poison', 'paralyze', 'sleep', 'enemyKind', 'enemyKindRate', 'raidKindRate', 'addDamage', 'attack', 'defense',
+  'rate', 'campaignRate'];
+
+function specialTraitRows() {
+  return SPECIAL_TRAITS.map(([name, category, fields, pct], i) => {
+    const row = {};
+    for (const f of SHUFFLE_FIELDS) row[f] = 0;
+    return Object.assign(row, {
+      shuffleSkillId: SPECIAL_FIRST_ID + i, category, type: SPECIAL_TYPE, name: name.replace(/%/g, '%%'),
+      sortId: SPECIAL_FIRST_ID + i, rate: Math.round(pct * 100),
+    }, fields);
+  });
+}
+
 // punti pet per rarita' (1-7 stelle) piu' 25 per livello di tier
 const RARE_PT = [0, 10, 15, 20, 40, 60, 120, 200];
 function addPetPtFor(m) {
@@ -113,6 +183,27 @@ function patch(dir) {
     const row = misc.find((r) => r.miscId === 137);
     if (row && row.value !== MAX_RANK) { row.value = MAX_RANK; write('misc', misc); out.push(`misc 137 = ${MAX_RANK}`); }
     else if (!row) { misc.push({ miscId: 137, value: MAX_RANK }); write('misc', misc); out.push(`misc 137 = ${MAX_RANK}`); }
+  }
+  // Special Trait (type 2): sostituisce le righe 1001-1036 con quelle di SPECIAL_TRAITS
+  const shuffleFile = path.join(dir, 'shuffleskill.json');
+  if (fs.existsSync(shuffleFile)) {
+    const rows = JSON.parse(fs.readFileSync(shuffleFile, 'utf8'));
+    const special = specialTraitRows();
+    const ids = new Set(special.map((r) => r.shuffleSkillId));
+    const kept = rows.filter((r) => !ids.has(r.shuffleSkillId));
+    // anche l'acquisto di un trait nel Moogle Shop (SceneMoogleShop::openKakuseiResultPopup,
+    // FUN_00caccbc / FUN_00caf20c) gioca Kakusei_Get1 con la roulette FUN_00c97568 sulle righe
+    // type 1: con rate 0 ovunque la lista e' vuota e il primo «dispString» del nostro LWF
+    // (make_kakusei_lwf.py) farebbe std::out_of_range. rate 100 ai trait normali (non ai Burst
+    // 901/902), usato solo come «candidato della roulette».
+    let rated = 0;
+    for (const r of kept) if (r.type === 1 && r.shuffleSkillId < 900 && !r.rate) { r.rate = 100; rated++; }
+    if (rated) out.push(`shuffleskill type 1 rate ${rated}`);
+    const before = JSON.stringify(rows.filter((r) => ids.has(r.shuffleSkillId)));
+    if (rated || before !== JSON.stringify(special)) {
+      write('shuffleskill', [...kept, ...special].sort((a, b) => a.shuffleSkillId - b.shuffleSkillId));
+      out.push(`shuffleskill type 2 ${special.length}`);
+    }
   }
   const medalFile = path.join(dir, 'medal.json');
   if (fs.existsSync(medalFile)) {
@@ -138,4 +229,4 @@ if (require.main === module) {
   console.log(`pet: ${done.join(', ')} (alzare KHUX_REVISION)`);
 }
 
-module.exports = { patch, petRankRows, petSkillRows, addPetPtFor, MAX_RANK };
+module.exports = { patch, petRankRows, petSkillRows, addPetPtFor, MAX_RANK, specialTraitRows, SPECIAL_TYPE };

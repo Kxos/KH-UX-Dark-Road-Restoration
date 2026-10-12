@@ -238,3 +238,36 @@ testi del client 101300020-032 e 100620003.
   tutto nel client, che sceglie i materiali e manda la stessa `/user/medal/enhance` (con `numbers`
   per le pile); nessun dato in piu' dal server. Dalla 3.3.0 usa Huey & Dewey & Louie e non le medaglie
   d'attacco, riempie la barra dell'EXP; le Scrooge messe a mano non le tocca (Reddit).
+
+<a id="optimize"></a>
+### Popup di Optimize (I-090)
+
+- Il crash al tocco di Optimize (banco 12-10, pc in `FUN_011adbc4` -> `FUN_0071f8ec`, x2 = 0x191924c
+  «widgetTree») e' GUIReader su un layout assente: `openMaxEnhancePopup` (`FUN_00c93f90`) carica
+  `cocostudio/publish/MedalInfo_MaxEnhanced_ver340.json`, che non c'e' in nessuna risorsa. Server,
+  master e risposte non c'entrano (`runMaxEnhance` `FUN_00ca3830` arriva solo dopo il popup).
+- Widget cercati (tutti senza controlli tranne `Announce`): `Scroll_Area` (MaxEnhanceMedalScrollView
+  con i materiali scelti), `Txt_Title` (106220300 «Choose a parameter to max out.»), `Txt_attention`
+  (106220301), `Base_Money1`/`Base_Money2` > `Txt_Money` (100300002/3) e `Txt_Money_Label` (costo e
+  posseduti), `Button_Mix` (vi aggiunge il pulsante But01) > `Txt_Mix` (106220314 «Level Up»),
+  `Close_Button`; per MaxLv/MaxAtk/MaxDef/MaxCost/MaxGuilt un nodo con `CheckBox_<p>` (CheckBox vero),
+  `Plate_Max` (lampeggia, la mostra `FUN_00c9beec`), `Txt_<p>` (106220304/306/308/310/312) e
+  `Txt_<p>_Label` (valore «%d», «+%d», «Maxed Out»...). Le scelte si ricalcolano a ogni tocco
+  (`FUN_00c96234` -> `FUN_00c8b954`, aggiornamento `FUN_00c9ab28`); Level Up chiama `runMaxEnhance`,
+  che manda la normale `/user/medal/enhance`.
+- Layout generato in `make_layouts.py` (12-10): finestra Win04, filtri But16 a sinistra, griglia a
+  destra, targhe Munny e Level Up come `MedalInfo_Mix_ver340`. Nessuno screenshot originale trovato.
+  Banco 12-10: il popup si apre, ma «No Medals» su ogni parametro.
+- Candidati (`FUN_00c8b954` -> `FUN_00c8fcfc`, scorre la lista della scena +0x330, cioe' le medaglie
+  della lista del Level Up, probabilmente gia' filtrate dal Sort/filtro): riga medal con
+  `autoEnhance` (+0x488) != 0 e `type` (+0x490) 2, 4 o 5; medalId non nella mappa di esclusione
+  (+0x680); medaglia non protetta (`FUN_00eb5ee4`, elenco locale degli userMedalId); `userMedal`
+  +0x48 < 1. Per ogni parametro **non** spuntato si scartano le medaglie che lo darebbero:
+  LV -> `materialExp` (+0x518), STR -> `enhanceAttack` (+0x52c), DEF -> `enhanceDefense` (+0x530),
+  Cost -> `enhanceCost` (+0x534), SP Attack Bonus -> `enhanceGuilt` (+0x538). Poi ordina
+  (`FUN_00c900f0`) e sceglie fino al massimo di ogni parametro.
+- `autoEnhance` era 0 su tutto il master: il formato vecchio non ce l'ha. Regola in
+  `make-game-tables.js`: 1 se `validPack` (unk_1116 del formato vecchio) e type 2/4/5, cioe' Huey/
+  Dewey/Louie e HDL, Chip, Dale, Magic Mirror, Cid/Cid 5/Cid 10 (23 righe). Restano fuori le
+  Scrooge (type 2, unk_1116 0), come nell'originale (Reddit: Optimize non usa le Scrooge). Valori
+  originali non trovati: regola ricostruita.
