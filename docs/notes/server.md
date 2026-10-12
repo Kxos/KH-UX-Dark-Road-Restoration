@@ -270,6 +270,16 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `[0, 0, 0]` (`validConsist` della riga keyblade); gli 0 di un deck in parte pieno restano tolti
   (battaglia, [battaglia.md](battaglia.md#slot-vuoto)): su quei deck Optimize considera solo gli
   slot pieni.
+- Optimize come l'originale (I-075, banco 12 ottobre): il pulsante e' nella schermata «Select a
+  Keyblade.» prima della quest (`Button_Auto` di `StartDeckEdit2_Button_ToDeck_ver260`, popup
+  «Optimize Medals for <keyblade>?»). L'algoritmo e' del client: `[fn]` da' un valore a ogni
+  medaglia (forza + trait, moltiplicatore dello slot secondo l'attributo accord +0x114 / dlaccord
+  +0x128, guilt, bonus della quest), `[fn]` riempie gli slot dal moltiplicatore piu' alto,
+  entro il costo; lo slot del pet solo col pet. Il numero di slot = lunghezza di `deckMedals`: con i
+  deck compatti riempiva solo gli slot gia' pieni (2/5). Ora `sentKeybladeDeck` manda uno 0 per
+  slot vuoto fino agli slot sbloccati (Stock Medal, [battaglia.md](battaglia.md#slot-vuoto)); il
+  client stesso manda 0 negli slot che restano vuoti (`[318,0,317,0,456]`, costo 62/62).
+  Fonti dei giocatori in `reference\optimize`.
 - Optimize, terza parte (I-051): con gli slot `[0,0,0]` Optimize valuta ogni medaglia posseduta
   (`[fn]` -> `[fn]`): legge la riga burst del `burstId` della medaglia (riga medal
   `+0x4fc`, tabella burst = id 0x26 di `[fn]`) senza guardare `validBurst`. Le 42 medaglie di

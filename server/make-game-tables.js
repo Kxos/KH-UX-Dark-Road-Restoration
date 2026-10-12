@@ -189,6 +189,14 @@ if (process.env.KHUX_MEDALS_ALL === '1' && ROBO.length) {
 if (medals.length && !medals.some((m) => m.medalId === 1)) {
   medals.push(Object.assign({}, medals[0], { medalId: 1 }));
 }
+// La medaglia 1 («空き») e' la Stock Medal dell'originale: occupa gli slot vuoti del deck e
+// gioca il turno (reference\empty_slot). Il 5.0.1 le da' l'immagine 90041, che e' Qui: 90000 =
+// medaglia grigia col cuore di recon/tools/make_stock_medal.py (I-075).
+const STOCK_IMAGE = 90000;
+for (const m of medals) {
+  if (m.medalId !== 1) continue;
+  for (const k of ['imageId', 'thumbId', 'cutinId', 'artId', 'displayId']) m[k] = STOCK_IMAGE;
+}
 
 // 3000: oltre, l'HUD allunga l'arco dell'HP e carica texture (Avatar_Circle_01/06,
 // Avatar_Side_0N) che non sono in nessun pacchetto: crash ([fn]).

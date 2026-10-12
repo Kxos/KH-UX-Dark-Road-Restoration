@@ -58,12 +58,17 @@ Il livello e' il rango Lux: `[fn]` -> `[fn]` usa `userDetail.luxRank` e
 <a id="slot-vuoto"></a>
 ## Slot vuoto del Keyblade
 
-Il client fa un turno per ogni voce di `userDecks[].deckMedals`: uno 0 diventava una medaglia finta
-(master 1, Paperino blu senza costo) che attaccava (`[fn]`/`[fn]`; analisi in
-`stage_gen\deck_empty_slot\REPORT.md`). `sentDeckMedalIds()` toglie gli zeri; `player.deck` li
-tiene. Limite del client 4.3.1: il moltiplicatore segue la posizione nell'array, il «turno saltato
-con moltiplicatore sprecato» degli originali non si riproduce senza patch (commit b159b62).
-
+Il client fa un turno per ogni voce di `userDecks[].deckMedals`: uno 0 diventa la medaglia master 1
+(«空き», `[fn]`/`[fn]`; analisi in `stage_gen\deck_empty_slot\REPORT.md`). E' la
+**Stock Medal** dell'originale (album n. 0, STR/DEF 50, «Placeholder when Medal is not equipped»):
+uno slot vuoto, anche in mezzo, giocava il suo turno con un attacco neutro quasi nullo
+(`reference\empty_slot`: khuxwiki e ~30 commenti r/KHUx). Dal 12 ottobre il server manda i deck
+completi, con uno 0 per slot vuoto fino agli slot sbloccati (`sentKeybladeDeck`), come l'originale;
+il 5.0.1 dava alla medaglia 1 l'immagine 90041 (Qui): `make-game-tables.js` le assegna 90000,
+disegnata da `recon/tools/make_stock_medal.py` (medaglia grigia col cuore). Banco 12-10 sm_3:
+contatore 6/6 con 3 medaglie + 2 slot vuoti + amico, Stock Medal al secondo turno. Prove fallite:
+deck compatti in `/stage/start` (il ramo 113 non rilegge `userDecks`), tabella medal senza la
+riga 1 (crash in Equipment).
 <a id="gauge"></a>
 ## Gauge degli speciali
 

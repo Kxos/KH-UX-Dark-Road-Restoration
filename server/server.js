@@ -960,6 +960,9 @@ function respondStageStart(res, req) {
     campaigns: [],
     luxMagnifications: { campaign: 0, party: 0 },
     supportUsers: [],
+    // deck senza gli slot vuoti per la battaglia (vedi sentKeybladeDeck); da verificare che il
+    // ramo 113 li rilegga (I-075)
+    userDecks: userDecksData(true),
   });
 }
 
@@ -1962,12 +1965,9 @@ function deckMedalIds() {
   return player.deck || startingInventory().medals.map((m) => m.userMedalId);
 }
 
-// deckMedals da mandare al client: senza gli slot vuoti. La battaglia ([fn]) fa un
-// turno per voce e non salta mai: uno 0 diventa una medaglia finta (master 1, Paperino blu)
-// che attacca; i negativi fanno rifiutare tutto userDecks. Vedi stage_gen\deck_empty_slot.
-function sentDeckMedalIds() {
-  return deckMedalIds().filter((id) => id > 0);
-}
+// Slot vuoti in battaglia: [fn] fa un turno per voce di deckMedals e non salta mai:
+// uno 0 diventa una medaglia finta (master 1, Paperino blu) che attacca; i negativi fanno
+// rifiutare tutto userDecks. Vedi stage_gen\deck_empty_slot e sentKeybladeDeck(id, compact).
 
 // POST /user/medal/remove (azione 237, Unequip dal dettaglio), corpo visto sul banco:
 // {"removeUserMedalId":2}. Lo slot del deck torna vuoto (0). Ramo 237: [fn] =
@@ -2013,25 +2013,30 @@ function keybladeDeckIds(userKeybladeId) {
   return (player.keybladeDecks || {})[userKeybladeId] || [];
 }
 
-// deckMedals da mandare: senza slot vuoti (vedi sentDeckMedalIds) e senza medaglie non piu'
-// possedute (vendute, usate come materiale): un id sconosciuto il client lo cerca e non lo trova
-// Deck tutto vuoto: tanti 0 quanti gli slot (validConsist della riga keyblade). Il client usa
-// la lunghezza di deckMedals come numero di slot: Optimize ([fn] -> [fn])
-// riempie solo quelli, e [fn] segna il deck come cambiato (quindi lo manda in
-// /user/keyblade/update/170516) confrontando solo quelle voci. Con [] Optimize non salvava
-// nulla (banco 11 ottobre, Treasure Trove). Gli 0 di un deck in parte pieno restano tolti
-// (battaglia: uno 0 diventa una medaglia finta, vedi sentDeckMedalIds).
-function sentKeybladeDeck(userKeybladeId) {
-  let ids;
-  if (userKeybladeId === USER_KEYBLADE_ID) ids = sentDeckMedalIds();
-  else {
-    const owned = new Set(userMedalList().map((m) => m.userMedalId));
-    ids = keybladeDeckIds(userKeybladeId).filter((id) => id > 0 && owned.has(id)).slice(0, 5);
-  }
-  if (ids.length) return ids;
+// deckMedals da mandare: le medaglie non piu' possedute (vendute, usate come materiale) diventano
+// 0, perche' un id sconosciuto il client lo cerca e non lo trova. Il client usa la lunghezza di
+// deckMedals come numero di slot: Optimize ([fn] -> [fn], struttura userDecks
+// 0x48) riempie solo quelli, e [fn] segna il deck come cambiato (quindi lo manda in
+// /user/keyblade/update/170516) confrontando solo quelle voci. Quindi fuori dalla battaglia il
+// deck va completo, con uno 0 per ogni slot vuoto fino agli slot sbloccati (validConsist della
+// riga keyblade): con il deck compatto Optimize riempiva solo gli slot gia' pieni (banco 12
+// ottobre, Treasure Trove 2/5, I-075). compact = senza gli 0, solo per /stage/start (in
+// battaglia uno 0 diventa una medaglia finta, vedi sopra deckMedalIds); un deck tutto vuoto resta
+// a zeri anche li'.
+function keybladeSlotCount(userKeybladeId) {
   const k = ownedKeyblades().find((x) => x.userKeybladeId === userKeybladeId);
-  const slots = masterRows('keyblade').find((r) => r.keybladeId === k?.keybladeId)?.validConsist || 3;
-  return Array(Math.min(5, slots)).fill(0);
+  return Math.min(5, masterRows('keyblade').find((r) => r.keybladeId === k?.keybladeId)?.validConsist || 3);
+}
+
+function sentKeybladeDeck(userKeybladeId, compact = false) {
+  const owned = new Set(userMedalList().map((m) => m.userMedalId));
+  const ids = keybladeDeckIds(userKeybladeId).slice(0, 5).map((id) => (id > 0 && owned.has(id) ? id : 0));
+  const filled = ids.filter((id) => id > 0);
+  if (compact && filled.length) return filled;
+  const slots = keybladeSlotCount(userKeybladeId);
+  while (ids.length < slots) ids.push(0);
+  while (ids.length > slots && ids[ids.length - 1] === 0) ids.pop();
+  return ids;
 }
 
 function keybladeDeckStats(userKeybladeId) {
@@ -2113,11 +2118,11 @@ function respondUserKeyblade(res) {
 // userDecks[], elemento letto da [fn]: un deck per keyblade.
 // petBaseSlotMedal (uint64, deck +0x40, obbligatorio) = il 6° slot, quello del pet: 0 se
 // KHUX_PET e' spento o lo slot e' vuoto (server/pet.js)
-function userDecksData() {
+function userDecksData(compact = false) {
   const ownedMedals = new Set(userMedalList().map((m) => m.userMedalId));
   return ownedKeyblades().map((k) => ({
     userDeckId: k.userKeybladeId, userKeybladeId: k.userKeybladeId, // uint64
-    deckMedals: sentKeybladeDeck(k.userKeybladeId),
+    deckMedals: sentKeybladeDeck(k.userKeybladeId, compact),
     petBaseSlotMedal: petBaseSlotMedal(player, k.userKeybladeId, ownedMedals),
   }));
 }
