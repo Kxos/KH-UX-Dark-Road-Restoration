@@ -50,8 +50,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   1. I-078: crash all'animazione di evoluzione (`KeyBlade_Evolution`): rapporto dell'agente e LWF
      nuovo; per riprovare rimettere Treasure Trove a +34 nel salvataggio (ora +35; copia del +17 in
      `%TEMP%\player_before_i078.json`).
-  2. I-076/I-077: crash del dialog del pet (Swap Gear, icona in home): layout in preparazione
-     (`make_layouts.py`), poi `-Quick` e banco.
+  2. I-082: dialog del pet (slot vuoti all'apertura, rango 15 contro 17, Train/Name/Outfits senza layout).
   3. I-079/I-080: collegare `server/medal-guilt.js` secondo [guilt.md](docs/notes/guilt.md)
      (guiltProb, Magic Broom e Fantasia Mickey B, campi di userMedal, `respondMedalEnhance`).
 - Banco: risorse 33, **revisione master 93**, server con `-Pet` (`-KbFree` solo per le prove dei
