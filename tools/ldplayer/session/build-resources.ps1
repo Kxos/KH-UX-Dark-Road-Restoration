@@ -55,6 +55,10 @@ python recon\tools\make_medaltype_lwf.py $kl "$sg\files"
 if ($LASTEXITCODE) { throw 'make_medaltype_lwf fallito' }
 python -I recon\tools\make_enemy_moves.py server\master_data\enemy.json "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" "$D\catalog\enemy_wait" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }
+# versioni 4.3.1 (addnl) di file cambiati dall'OBB 5.0.1: wait (avatar fermo nel campo, con il
+# keyblade) e win_levelup; nell'indice unito vincerebbe l'OBB (I-091)
+python -I recon\tools\prefer_addnl.py "$D\ipa431\names_addnl.tsv" "$D\ipa431\addnl.mp4" "$sg\files"
+if ($LASTEXITCODE) { throw 'prefer_addnl fallito' }
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
 # scritti a mano: dove c'e' l'originale prevale
 python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"

@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-090**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-091**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -38,6 +38,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-091 | CHIUSO | Avatar fermo nel campo della quest senza keyblade, frontale e senza ombra (segnalazione utente 12-10, screenshot tw2/tw9; camminando il keyblade c'e'). Non e' l'originale: nei video del gioco l'avatar fermo nel campo tiene il keyblade (`reference\field_idle`). Causa (offline): da fermo il client mette `lwf/avatar/motion/wait` (FUN_00b70074 -> FUN_00aced60 0x1b) e attacca il keyblade al movie «key»; nell'indice unito vince il wait.lwf dell'OBB 5.0.1 (posa frontale, serious_o_c, senza key/shadow/mark) su quello dell'addnl 4.3.1 (key, shadow, mark, face_normal_o_c). Stesso problema per `win_levelup`. Keyblade non in causa (Sleeping Lion = keyblade_1101_01, servito). Correzione: `recon/tools/prefer_addnl.py` in `build-resources.ps1` mette le versioni 4.3.1 nel pacchetto generato. Da provare al banco (`build-resources -Quick`) Banco 12-10 sera (ki1, dopo -Quick con prefer_addnl.py): fermo nel campo l'avatar tiene Sleeping Lion, ha l'ombra e il viso normale | [risorse_layout](notes/risorse_layout.md#addnl-431) | - |
 | I-002 | IN CORSO | 254 layout citati dal binario e assenti (`catalog\missing_layouts.txt`): triage | [risorse_layout](notes/risorse_layout.md#mancanti) | 10-11 |
 | I-048 | CHIUSO | Scheda Events (dopo la Quest 14): `AdventureTop2_EV_Banner_ver220`/`_EV_Button`/`_Raid_Button` generati, `GET /stage/event` con `events: []` | [server](notes/server.md#eventi) | stage_gen\layout_triage |
 | I-049 | CHIUSO | Crash 0x2c in GUIReader: 9-slice su texture assente (Plate21 in Continue/AP_Recovery/Ability_MAX, Panel07 in ReleaseWindow) | [risorse_layout](notes/risorse_layout.md#regole) | 0603a9c |
