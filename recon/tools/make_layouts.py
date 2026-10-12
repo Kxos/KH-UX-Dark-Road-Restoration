@@ -1375,11 +1375,15 @@ LAYOUTS = {
     # lo fa comparire e svanire (FadeIn, attesa, FadeOut) senza spostarlo: la posizione e' quella del
     # layout. Nella ver310 originale la griglia occupava tutta l'altezza; qui (Set_Medal ver340 con
     # l'intestazione) va sulla barra «Equipped Slots» (assoluto 262,526, 500x40: y 506..546, sopra il
-    # bordo di Win_under a 502), cosi' non copre la prima riga di slot (banco sb_3).
+    # bordo di Win_under a 502), cosi' non copre la prima riga di slot (banco sb_3). Il testo 106140377
+    # e' su due righe («Medals must be» / «set in order.»): alta 56, centrata sulla barra (banco 12-10
+    # sd_4: con 36 si vedeva solo la prima riga). Sfondo: Plate03 qui non si disegna (sd_c1, testo
+    # sopra «Equipped Slots»), quindi la targhetta opaca Subslot_InfoPlate (116x26) ingrandita.
     'DeckEdit_Subslot_Caution_ver260.json': ('build', P('Panel_Caution', 0, 0, 10, 10, [
-        P('Panel_34', -367, 36, 500, 40, [
-            I('Img_Caution', 250, 20, 500, 40, 'Plate03.png', opts=PLATE3),
-            L('Txt_Subslot_Caution_Label', 250, 20, 480, 36, 'Medals must be set in order.', 20)],
+        P('Panel_34', -367, 28, 500, 56, [
+            I('Img_Caution', 250, 28, 116, 26, 'Subslot_InfoPlate.png', s9=False,
+              opts=dict(scaleX=500 / 116, scaleY=56 / 26)),
+            L('Txt_Subslot_Caution_Label', 250, 28, 480, 52, 'Medals must be\nset in order.', 19)],
           visible=False)])),
     # Cella di un sub-slot (KeybladeSubslotMedalView: FUN_00aa19d4 la carica, 164x154; FUN_00aa1b3c
     # e FUN_00aa2190 la riempiono). Cerca (ricorsivo, tutti obbligatori tranne MatchSlotLWF):
