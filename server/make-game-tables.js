@@ -198,6 +198,14 @@ if (process.env.KHUX_MEDALS_ALL === '1' && medals.some((m) => m.medalId === 9008
 // Cid: khuxwiki «max 20 riduzioni dalla 2.0.0»: le 6★/7★ d'attacco con cost - minCost = 10
 // scendono di 20 (Cid 10 x2); upperCost di userMedal arriva fino a cost - minCost
 for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
+// Optimize del Level Up (I-090): il client sceglie i materiali solo tra le medaglie con
+// autoEnhance != 0 e type 2/4/5 ([fn]: +0x488, maschera 0x34 su +0x490), poi le filtra per
+// i parametri spuntati (materialExp, enhanceAttack/Defense/Cost/Guilt). Il formato vecchio non ha
+// autoEnhance (tutte 0 = «No Medals» ovunque): vale 1 sulle medaglie di supporto impilabili
+// (unk_1116 -> validPack) di quei tipi, cioe' Huey/Dewey/Louie e HDL (2), Chip/Dale/Magic Mirror
+// (4), Cid/Cid 5/Cid 10 (5); restano fuori le Scrooge (type 2, unk_1116 0), come nell'originale
+// (Reddit: Optimize non usa le Scrooge). Valori originali non disponibili: regola ricostruita.
+for (const m of medals) m.autoEnhance = m.validPack && [2, 4, 5].includes(m.type) ? 1 : 0;
 
 // Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1
 // ([fn]); senza riga va in crash (es. «Begin» su una missione). Segnaposto:

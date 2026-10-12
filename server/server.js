@@ -1953,8 +1953,11 @@ function respondMoogleshopBuy(res, body) {
     const replace = Number(body.userShuffleSkillId) || 0;
     const at = replace ? list.findIndex((x) => x.userShuffleSkillId === replace) : list.length;
     if (at < 0) return fail(`trait ${replace} assente dalla medaglia ${medal.userMedalId}`);
-    if (!replace && list.length >= (mrow.shuffleskillSlot || 0)) {
-      return fail(`slot pieni (${list.length}/${mrow.shuffleskillSlot})`);
+    // La Special Trait del Training del pet (shuffleskill type 2) ha uno slot a parte: non conta
+    const special = new Set(masterRows('shuffleskill').filter((r) => r.type === 2).map((r) => r.shuffleSkillId));
+    const normal = list.filter((x) => !special.has(x.shuffleSkillId)).length;
+    if (!replace && normal >= (mrow.shuffleskillSlot || 0)) {
+      return fail(`slot pieni (${normal}/${mrow.shuffleskillSlot})`);
     }
     player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
     list[at] = { userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,

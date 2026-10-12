@@ -569,6 +569,45 @@ LAYOUTS = {
             L('Txt_Announce', 0, 0, 210, 26, '', 20,
               opts=dict(hAlignment=1, vAlignment=1, colorR=255, colorG=230, colorB=60))])),
         ('add', 'Win', L('Txt_Wording3', 0, -55, 600, 36, '', 22, opts=dict(hAlignment=1, vAlignment=1)))]),
+    # Optimize del Level Up (Button_MaxEnhanced -> SceneMixedMedal::openMaxEnhancePopup, [fn]):
+    # il layout non esiste in nessuna risorsa; senza, GUIReader legge «widgetTree» da un documento
+    # vuoto ([fn] -> [fn], chiave a 0x191924c) e il client va in crash al tocco
+    # (I-090, banco 12-10). Cerca dalla radice: Scroll_Area (coda di EquipSell_Scroll_Area: vi
+    # aggiunge MaxEnhanceMedalScrollView, i materiali scelti), Txt_Title (106220300), Txt_attention
+    # (106220301), Base_Money1/Base_Money2 > Txt_Money (100300002/3) e Txt_Money_Label (costo e
+    # Munny posseduti, [fn]), Button_Mix (vi aggiunge il pulsante But01, [fn]) >
+    # Txt_Mix (106220314 «Level Up»), Announce (facoltativo), Close_Button; per ogni parametro
+    # MaxLv/MaxAtk/MaxDef/MaxCost/MaxGuilt: CheckBox_<p> (CheckBox vero: setSelected/isSelected),
+    # Plate_Max (lampeggia; nascosta e mostrata da [fn]), Txt_<p> (testo 106220304/
+    # 306/308/310/312) e Txt_<p>_Label (valore, con ombra [fn]: crash se manca). Nessuno
+    # screenshot originale trovato (reference\optimize: solo testi): finestra Win04 dei popup,
+    # targhe Munny e pulsante Level Up come MedalInfo_Mix_ver340, filtri But16 del popup Sort.
+    'MedalInfo_MaxEnhanced_ver340.json': ('build', P('Panel_MaxEnhanced', 0, 0, 960, 640, [
+        I('Win', 480, 320, 840, 600, 'Win04.png',
+          opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
+        L('Txt_Title', 480, 578, 760, 34, 'Choose a parameter to max out.', 26, opts=dict(hAlignment=1)),
+        *[P(p, 80, y, 420, 60, [
+            I('Plate_Max', 330, 30, 170, 40, 'Plate03.png', visible=False,
+              opts=dict(PLATE3, colorR=255, colorG=220, colorB=90)),
+            C('CheckBox_' + p, 115, 30, 218, 52, 'But16'),
+            L('Txt_' + p, 115, 30, 200, 40, t, 22, opts=dict(hAlignment=1, vAlignment=1)),
+            L('Txt_' + p + '_Label', 330, 30, 170, 36, '', 24, opts=dict(hAlignment=1, vAlignment=1))])
+          for p, t, y in (('MaxLv', 'LV', 480), ('MaxAtk', 'Max STR', 410), ('MaxDef', 'Max DEF', 340),
+                          ('MaxCost', 'Cost', 270), ('MaxGuilt', 'SP Attack Bonus', 200))],
+        I('Grid_Under', 700, 375, 360, 330, 'Panel04.png', opts=GRID),
+        P('Scroll_Area', 525, 215, 350, 320),
+        L('Txt_attention', 480, 168, 780, 30, '', 18, opts=dict(hAlignment=1)),
+        I('Base_Money1', 300, 118, 300, 26, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_Money', -110, 0, 100, 24, 'Cost', 18),
+            I('Icon_Money', -25, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+            L('Txt_Money_Label', 80, 0, 160, 24, '0', 20)]),
+        I('Base_Money2', 300, 86, 300, 26, 'Plate03.png', opts=PLATE3, children=[
+            L('Txt_Money', -110, 0, 100, 24, 'Held', 18),
+            I('Icon_Money', -25, 0, 44, 46, 'Icon_Prize.png', s9=False, scale=0.5),
+            L('Txt_Money_Label', 80, 0, 160, 24, '0', 20)]),
+        I('Button_Mix', 660, 102, 158, 68, 'But01_Off.png', s9=False, children=[
+            L('Txt_Mix', 0, 3, 152, 58, 'Level Up', 26, opts=dict(hAlignment=1, vAlignment=1))]),
+        B('Close_Button', 884, 604, 64, 64, 'But_Close', None)])),
     # Conferma dello scambio di un articolo del Moogle Shop (openItemBuyPopup, [fn];
     # trovato con vtable_users.py dalle lambda; senza file crash leggendo widgetTree, stack
     # mg10): Txt_Wording (domanda), Txt_CrownPossessed_Label/Txt_CrownPossessed (jewel
@@ -1741,18 +1780,22 @@ if os.path.exists(_EMPTY_LWF):
                ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
         os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
         shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
-# Spirit Training (I-082), LWF assenti da ogni risorsa, vuoti (un fotogramma = subito alla fine):
+# Spirit Training (I-082), LWF assenti da ogni risorsa:
 # - lwf/pet/demo/training_SE ([fn]: suono dell'animazione PetInfo_TrainingProduction,
-#   [fn] -> NULL -> addChild(NULL) se manca);
-# - lwf/medal/Kakusei/Kakusei_Get1 e _Get2 (trait ottenuto, [fn] / [fn] dopo
-#   l'animazione; [fn] -> NULL -> crash su setPosition se manca). Il gestore enterFrame di
-#   _root ([fn]) va avanti all'ultimo fotogramma; senza il movie «Kakusei_Icon» l'icona del
-#   trait non si carica (nessun file cercato).
+#   [fn] -> NULL -> addChild(NULL) se manca): vuoto (un fotogramma = subito alla fine);
+# - lwf/medal/Kakusei/Kakusei_Get1 e _Get2 (roulette e trait ottenuto, [fn] /
+#   [fn]; anche il Moogle Shop) e Kakusei_Icon%04d: LWF NOSTRI di
+#   make_pet_training_fx.py, con le texture delle vignette di PetInfo_TrainingProduction.
+#   Prima Get1/2 erano vuoti: nessun trait nell'animazione, TAP SCREEN sul dettaglio della
+#   medaglia e il trait solo dopo il tocco (segnalazione utente 12-10).
 if os.path.exists(_EMPTY_LWF):
-    for _p in [['pet', 'demo', 'training_SE'], ['medal', 'Kakusei', 'Kakusei_Get1'],
-               ['medal', 'Kakusei', 'Kakusei_Get2']]:
+    for _p in [['pet', 'demo', 'training_SE']]:
         os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
         shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import make_pet_training_fx  # noqa: E402
+make_pet_training_fx.write_all(OUT, SRC)
+TEXTURES |= set(make_pet_training_fx.TEXTURE_NAMES)
 # Movimenti del pet (lwf/pet/motion/*): LWF nostri che animano le 9 parti servite di
 # lwf/pet/part/001 (attaccate dal client ai movie omonimi), con l'evento «end» dove la
 # battaglia aspetta la fine del movimento (I-005: con i vuoti la battaglia col pet si bloccava
@@ -2284,29 +2327,50 @@ def pet_training_production():
       (stop) senza controllo del null, poi play con la callback [fn] che va avanti
       ([fn] -> [fn] -> [fn], Kakusei_Get1). Il tocco (pulsante tapBtn
       creato dal codice) salta l'animazione.
-    Aspetto NOSTRO (nessuna immagine dell'originale): fondo scuro, tre ritratti del pet nella
-    cornice della home, il pet al centro e «TRAINING!» che entra ingrandendosi (2,5 s)."""
-    pets = []
-    for i, x in enumerate((250, 480, 710), 1):
-        pets.append(I('%dPet' % i, x, 440, 72, 72, 'Topinfo_Pet_Panel.png', s9=False, scale=1.8, children=[
-            I('Pet_Shadow', 4, 8, 110, 84, 'Topinfo_Pet_Mask.png', s9=False),
-            I('Pet', 4, 8, 110, 84, 'Topinfo_Pet_Mask.png', s9=False)]))
-        pets.append(P('%d_parameter' % i, 0, 0, 10, 10, visible=False))
+    Aspetto dall'originale (video kTJoSgXii1E, reference\\pet\\pet_training_anim_03-05.png,
+    NOTE.md §10): fumetto senza testo su fondo bianco, quattro vignette inclinate col bordo nero
+    che entrano una dopo l'altra (scacchi verde acqua col pet = 1Pet, linee viola col muso = 2Pet,
+    fascia azzurra con le stelle = 3Pet, selciato arancione), il pet intero che corre nella fascia
+    (4Pet), poi bianco (~3 s). Le vignette e le maschere (stessa sagoma, bianche) sono di
+    make_pet_training_fx.py; Pet/Pet_Shadow hanno la maschera (il client ci ritaglia il pet e la
+    sua ombra nera, spostata di 6 px). Prima: cerchi vuoti della cornice della home e
+    «TRAINING!» (nostro), segnalazione utente 12-10. Scala del pet in %d_parameter (scaleX/Y,
+    [fn]: 3,9 / scala = risoluzione): 2,2 nelle vignette, 3,2 nel primo piano (il codice
+    abbassa 2Pet dell'altezza della testa), 2,0 per 4Pet (nodo scalato): stime da verificare."""
+    import make_pet_training_fx as fx
+    panels, nodes = [], []
+    # nome vignetta, nodo, scala del pet, ingresso (dx, dy) nell'azione e fotogramma d'arrivo
+    spec = [('Panel1', '1Pet', 2.2, (-520, 0), 3), ('Panel2', '2Pet', 3.2, (620, 0), 5),
+            ('Panel3', '3Pet', 2.2, (-1000, 0), 7), ('Panel4', 'Panel4', None, (0, -220), 9)]
+    for pname, node, scale, (dx, dy), arrive in spec:
+        x0, y0, w, h, _pts = fx.panel_geometry(pname)
+        x, y = round(x0), round(640 - y0 - h)
+        kids = [I('Bg', w / 2, h / 2, w, h, 'PetTraining_%s.png' % pname, s9=False)]
+        if scale:
+            mask = 'PetTraining_%sMask.png' % pname
+            kids += [I('Pet_Shadow', w / 2 + 6, h / 2 - 6, w, h, mask, s9=False),
+                     I('Pet', w / 2, h / 2, w, h, mask, s9=False)]
+        panels.append(P(node, x, y, w, h, kids))
+        if scale:
+            panels.append(P('%s_parameter' % node[0], 0, 0, 10, 10, visible=False, scale=scale))
+        nodes.append((node, [_action_frame(0, x + dx, y + dy), _action_frame(max(1, arrive - 3), x + dx, y + dy),
+                             _action_frame(arrive, x, y), _action_frame(30, x, y)]))
+    # pet che corre nella fascia, da sinistra a destra con piccoli balzi
+    run = [_action_frame(0, -200, 250, 2.0), _action_frame(8, -200, 250, 2.0)]
+    for k, f in enumerate(range(10, 29, 3)):
+        run.append(_action_frame(f, -200 + (f - 8) * 62, 250 + (18 if k % 2 else 0), 2.0))
+    nodes.append(('4Pet', run))
+    # dissolvenza nel bianco alla fine (poi Kakusei_Get1 sul dettaglio della medaglia)
+    nodes.append(('Fade', [_action_frame(0, -300, -200, 1.0, 0), _action_frame(25, -300, -200, 1.0, 0),
+                           _action_frame(30, -300, -200, 1.0, 255)]))
+    white = dict(colorType=1, bgColorR=255, bgColorG=255, bgColorB=255, bgColorOpacity=255)
     root = build(P('PetTrainingProduction_root', 0, 0, 960, 640, [
-        P('Mask', 0, 0, 960, 640, opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=150)),
-        *pets,
-        P('4Pet', 480, 150, 10, 10),
-        L('Txt_Training', 480, 300, 600, 70, 'TRAINING!', 56,
-          opts=dict(colorR=255, colorG=220, colorB=60))]))
-    txt, big = find(root, 'Txt_Training')['options'], find(root, '4Pet')['options']
-    nodes = [
-        {'classname': None, 'name': 'Txt_Training', 'ActionTag': txt['actiontag'], 'actionframelist': [
-            _action_frame(0, 480, 300, 0.3, 0), _action_frame(5, 480, 300, 1.15, 255),
-            _action_frame(8, 480, 300, 1.0, 255), _action_frame(22, 480, 300, 1.0, 255),
-            _action_frame(25, 480, 300, 1.0, 0)]},
-        {'classname': None, 'name': '4Pet', 'ActionTag': big['actiontag'], 'actionframelist': [
-            _action_frame(0, 480, 150), _action_frame(4, 480, 175), _action_frame(8, 480, 150),
-            _action_frame(12, 480, 175), _action_frame(16, 480, 150), _action_frame(25, 480, 150)]}]
+        P('Back', -300, -200, 1560, 1040, opts=white),
+        *panels,
+        P('4Pet', -200, 250, 10, 10, scale=2.0),
+        P('Fade', -300, -200, 1560, 1040, opts=dict(white, opacity=0))]))
+    nodes = [{'classname': None, 'name': n, 'ActionTag': find(root, n)['options']['actiontag'], 'actionframelist': fl}
+             for n, fl in nodes]
     data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}
     data['animation'] = {'classname': None, 'name': 'AnimationManager', 'actionlist': [
         {'classname': None, 'name': 'Training_Anime', 'actionnodelist': nodes, 'loop': False, 'unittime': 0.1}]}
