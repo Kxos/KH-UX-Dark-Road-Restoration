@@ -1451,6 +1451,15 @@ LAYOUTS = {
         I('Guilt_Icon', 9, 15, 57, 53, 'Guilt5_On.png', s9=False, scale=0.55, visible=False),
         L('Txt_Mag_Label', 56, 15, 64, 22, '+0.000', 17),
         I('Icon_Type', 98, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.6)])),
+    # Dialog del pet «SPIRIT» (PetInfoDialog, I-076/I-077): icona del pet della home e «Swap Gear»
+    # (Button_PowerUp di DeckEdit_PetMedal_ver230) chiamano [fn] -> open [fn], che
+    # carica cocostudio/publish/PetInfoScene_ver320.json (assente: NULL, crash 0x170 dentro
+    # [fn], ritorno 0x90db2c). Dettagli e nomi in pet_info_scene().
+    # [fn] e' il SceneReader (come per MedalListScene): la scena ha un nodo CenterUI col
+    # GUIComponent del layout generato; [fn] cerca i widget attraverso i nodi (banco 12-10:
+    # letto come layout puro -> SIGSEGV 0x0 nel SceneReader).
+    'PetInfoScene_ver320.json': ('scene', [('CenterUI', 'publish/PetInfo_Gen_ver320.json')]),
+    'PetInfo_Gen_ver320.json': ('func', 'pet_info_scene'),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
     # va in crash ([fn]). Copia di ArrowAnim con armatura e movimento rinominati.
     # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita ([fn],
@@ -2023,6 +2032,139 @@ def subslot_scene():
         if g['name'] == 'DeckEdit_SubSlot_Set_Medal':
             g['components'][0]['fileData']['path'] = 'publish/DeckEdit_SubSlot_Set_Medal_ver340.json'
     data['components'][0]['scenename'] = 'DeckEditSubSlotScene_ver340'
+    return data
+
+
+def pet_info_scene():
+    """PetInfo_Gen_ver320, layout del nodo CenterUI di PetInfoScene_ver320 (dialog «SPIRIT» del pet, PetInfoDialog: open [fn], dopo GET
+    /user/profile (5) e GET /pet/profile (170) createLayout [fn]), assente da ogni risorsa.
+    Nomi (ricerca ricorsiva [fn], prima in profondita': il Close_Button principale va
+    prima dei popup che hanno il loro) e tipi dal decompilato:
+    - Pet_Info ([fn], [fn]): Txt_Pet_Name (nome), Txt_Pet_Rank (106110102 «Rank»),
+      Txt_Pet_Rank_Num (106110103 «%d»): Label (ombra [fn]). AtlasLabel_EXP (crenatura,
+      [fn]) e Gauge_EXP ([fn]/0c90/09d4: ProgressBar_EXP, ProgressBar_RED,
+      Gage_EXP_Res, AtlasLabel_EXP) = barra «LV Up in N» copiata da MedalInfo_Mix_ver340.
+    - PetInfo_Medal: Txt_5 («×%01.3f», 106110207 = magnification del rango), Area_Arrow1/2 (vi
+      aggiunge le armature DeckEdit_KBStrength_ResultArrow_Animation, freccia su).
+    - Pet_LvUp (banner RANK UP!: Panel_img, Txt_Skill, Icon_New), mosso solo dall'azione «Panel_in»
+      di PetInfo_PetLvUp_Panel_Ver230.json (ActionManager, NULL tollerato): nascosto.
+    - UnderUI > Button_A/Txt_A (106110203 «Name») e Button_B/Txt_B (106110204 «Outfits»);
+      PowerUp_Button/Txt_PowerUP (106110205 «Gear»), PetSkill_Button/Txt_PetSkill (106110206
+      «Tricks»), Close_Button: tutti Button (setTouchEnabled +0x520).
+    - PetTraing (Spirit Training, [fn]/0090e660/0090dca4): PetTraing_But/Txt_Training
+      (106200400 «Train»), PetTraing_ChargButton/Txt_TrainingCharg (106200401 «Train Now»),
+      PetTraing_Slot/Txt_PetSkill (106200429 «Training Slots»), Txt_TotalTitle/TotalNum_Label,
+      Txt_MonthTitle/MonthNum_Label (106200402/403, expeditionTotal/MonthlyNum), Txt_Time
+      (106200404 «Training Ready in %02d:%02d:%02d»), Icon_New.
+    - MedalArea > Medal1..Medal6 ([fn]: vi aggiunge le celle medaglia 175x175 senza
+      controllo del null) + subslotView creato dal codice al centro di MedalArea.
+    - Dummy > Pet: il codice vi aggiunge il pet ([fn], nodo petNode) in movimento wait.
+    - Pop_MedalForm (Gear, [fn]/[fn], «Swap Gear» lo apre subito): Win_under >
+      EquipSell_Scroll_Area (lista medaglie MedalScrollView modo 8, celle 120x164, 3 colonne),
+      Txt_Possession (101510001 «Slots»), Txt_Cost_Label, Txt_Slash_Label, Txt_CostMax_Label;
+      Close_Button, BestButton > Txt_Best (106110301 «Optimize»), Arrow01. Win_under e' anche il
+      riquadro di rilascio del trascinamento ([fn]). Come DeckEdit_MedalForm.
+    - Pop_PetSkill_Info (Tricks, [fn]): Win (animazione d'apertura), Close_Button,
+      PetSkill_List > Area (lista) e Txt (106110903 «No learned tricks.»).
+    Aspetto da reference\\pet\\pet_spirit_training_02.png (1764x992: x = x'/1,553 - 88,
+    y = 640 - y'/1,55) e pet_spirit_edit_01.jpg (Gear: finestra MEDALS a destra, Optimize, «<»)."""
+    win4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
+    plate13 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
+    yellow = dict(colorR=255, colorG=220, colorB=40)
+    # sei celle 3x2 come nel riferimento (centri assoluti x 95/250/405, y 355/180); MedalArea in 10,85
+    medals = [P('Medal%d' % (i + 1), 85 + 155 * (i % 3) - 88, 270 - 175 * (i // 3) - 88, 175, 175)
+              for i in range(6)]
+    root = build(P('PetInfoScene', 0, 0, 960, 640, [
+        I('Win_Main', 480, 346, 936, 562, 'Win04.png', opts=win4),
+        # logo «SPIRIT» (lettere rosa, stelle gialle): nessuna texture servita, testo e stelle
+        L('Txt_Logo', 190, 594, 330, 70, 'SPIRIT', 52, opts=dict(colorR=240, colorG=120, colorB=235)),
+        I('Star_1', 40, 612, 26, 26, 'rare_star.png', s9=False, scale=1.6),
+        I('Star_2', 338, 620, 26, 26, 'rare_star.png', s9=False, scale=1.2),
+        I('Star_3', 355, 566, 26, 26, 'rare_star.png', s9=False, scale=1.0),
+        B('Close_Button', 937, 616, 70, 70, 'But_Close'),
+        P('Pet_Info', 15, 470, 365, 80, [
+            I('Name_Plate', 182, 54, 362, 40, 'Plate13.png', opts=plate13),
+            L('Txt_Pet_Name', 120, 54, 200, 34, '', 26),
+            L('Txt_Pet_Rank', 262, 52, 80, 30, 'Rank', 22),
+            L('Txt_Pet_Rank_Num', 322, 56, 60, 40, '1', 34, opts=yellow)]),
+        P('PetInfo_Medal', 390, 455, 190, 175, [
+            # sagoma a testa di gatto (cornice dello slot del pet di Equipment, nera) attenuata
+            I('Emblem', 95, 100, 340, 340, 'DeckEdit_Pet1.png', s9=False, scale=0.45, opts=dict(opacity=150)),
+            L('Txt_5', 95, 26, 180, 40, '×1.000', 30),
+            P('Area_Arrow1', 172, 26, 10, 10),
+            P('Area_Arrow2', 172, 46, 10, 10)]),
+        P('PetTraing', 585, 460, 360, 170, [
+            L('Txt_Time', 170, 145, 350, 30, 'Training Ready in 00:00:00', 24),
+            B('PetTraing_Slot', 70, 94, 176, 68, 'But03', 'Training Slots', 22, label='Txt_PetSkill', opts=BUTS),
+            B('PetTraing_ChargButton', 258, 94, 264, 68, 'But03', 'Train Now', 30, label='Txt_TrainingCharg',
+              opts=BUTS),
+            B('PetTraing_But', 258, 94, 264, 68, 'But03', 'Train', 30, label='Txt_Training', opts=BUTS,
+              visible=False),
+            I('Icon_New', 350, 118, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False),
+            I('Total_Plate', 180, 47, 350, 28, 'Plate03.png', opts=PLATE3),
+            L('Txt_TotalTitle', 18, 47, 220, 26, 'Training Total', 20, opts=dict(anchorPointX=0)),
+            L('TotalNum_Label', 346, 47, 100, 26, '0', 22, opts=dict(anchorPointX=1)),
+            I('Month_Plate', 180, 15, 350, 28, 'Plate03.png', opts=PLATE3),
+            L('Txt_MonthTitle', 18, 15, 240, 26, "This Month's Training", 20, opts=dict(anchorPointX=0)),
+            L('MonthNum_Label', 346, 15, 100, 26, '0', 22, opts=dict(anchorPointX=1))]),
+        P('MedalArea', 10, 85, 500, 370, medals),
+        P('Dummy', 560, 85, 385, 370, [P('Pet', 190, 30, 10, 10, opts=dict(scaleX=2.0, scaleY=2.0))]),
+        # linguette in basso (fuori dalla finestra, come nel riferimento): rosse, Tricks arancione
+        P('UnderUI', 0, 0, 560, 64, [
+            B('Button_A', 147, 30, 337, 68, 'But01', 'Name', 30, label='Txt_A', opts=BUTS),
+            B('Button_B', 416, 30, 342, 68, 'But01', 'Outfits', 30, label='Txt_B', opts=BUTS)]),
+        B('PowerUp_Button', 650, 30, 246, 68, 'But01', 'Gear', 30, label='Txt_PowerUP', opts=BUTS),
+        B('PetSkill_Button', 847, 30, 248, 68, 'But03', 'Tricks', 30, label='Txt_PetSkill', opts=BUTS),
+        P('Pet_LvUp', 180, 280, 600, 160, [
+            P('Panel_img', 0, 0, 600, 160),
+            I('LvUp_Base', 300, 80, 600, 110, 'Plate13.png', opts=plate13),
+            L('Txt_RankUp', 300, 108, 400, 50, 'RANK UP!', 40, opts=dict(colorR=255, colorG=120, colorB=40)),
+            I('Skill_Plate', 300, 52, 300, 34, 'Plate03.png', opts=PLATE3),
+            L('Txt_Skill', 300, 52, 280, 30, '', 22),
+            I('Icon_New', 470, 64, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6)], visible=False),
+        # Gear: finestra MEDALS a destra (pet_spirit_edit_01: x 555..945, fino in fondo: copre Gear/Tricks,
+        # che il codice disabilita in modalita' Gear), come DeckEdit_MedalForm
+        P('Pop_MedalForm', 555, 2, 390, 628, [
+            I('Win_under', 195, 314, 380, 618, 'Panel04.png', opts=PANEL4, children=[
+                I('Win', 0, 0, 386, 628, 'Panel15.png', opts=PANEL15),
+                I('Logo', -125, 286, 113, 19, 'Deck_Title_MD.png', s9=False),
+                I('Plate_Possession_Medal', 52, 286, 210, 25, 'Plate03.png', opts=PLATE3),
+                L('Txt_Possession', -40, 286, 100, 20, 'Slots', 16, opts=dict(anchorPointX=0)),
+                L('Txt_Cost_Label', 100, 286, 50, 18, '0', 16, opts=dict(anchorPointX=1)),
+                L('Txt_Slash_Label', 106, 286, 12, 18, '/', 16),
+                L('Txt_CostMax_Label', 112, 286, 50, 18, '0', 16, opts=dict(anchorPointX=0)),
+                P('EquipSell_Scroll_Area', -185, -298, 370, 566),
+                B('Close_Button', 182, 302, 70, 70, 'But_Close')]),
+            I('Arrow01', -7, 298, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.8),
+            B('BestButton', -50, 118, 196, 68, 'But06', 'Optimize', 24, label='Txt_Best', opts=BUTS)],
+          visible=False),
+        P('Pop_PetSkill_Info', 0, 0, 960, 640, [
+            I('Win', 480, 330, 620, 470, 'Win04.png', opts=win4, children=[
+                L('Txt_Title', -280, 200, 300, 40, 'TRICKS', 30, opts=dict(anchorPointX=0)),
+                B('Close_Button', 295, 220, 70, 70, 'But_Close'),
+                P('PetSkill_List', -280, -205, 560, 380, [
+                    P('Area', 0, 0, 560, 380),
+                    L('Txt', 280, 190, 520, 40, 'No learned tricks.', 24, visible=False)])])],
+          visible=False)]))
+    # barra «LV Up in N» originale (Gage_Exp_Base, ProgressBar_EXP/RED, Gage_EXP_Res «LV Up in»,
+    # AtlasLabel_EXP Topinfo_Num) da MedalInfo_Mix_ver340, allargata a 342 sotto la targa del nome
+    mix = json.load(open(os.path.join(SRC, *PUB.split('/'), 'MedalInfo_Mix_ver340.json'), encoding='utf-8-sig'))
+    gauge = json.loads(json.dumps(find(mix['widgetTree'], 'Gauge_EXP')))
+    w = 342
+    gauge['options'].update(x=182, y=14, width=w, scale9Width=w)
+    for c in gauge['children']:
+        o = c['options']
+        if o['name'] in ('ProgressBar_EXP', 'ProgressBar_RED'):
+            o.update(x=-w / 2 + 1, width=w - 2, scale9Width=w - 2)
+        elif o['name'] == 'Gauge_EXP_Frame':           # cornice: 349 su 332 nell'originale
+            o.update(width=w + 17, scale9Width=w + 17)
+        elif o['name'] == 'AtlasLabel_EXP':
+            o.update(x=w / 2 - 2, y=18)
+        elif o['name'] == 'Gage_EXP_Res':
+            o.update(x=w / 2 - 40, y=18)
+    find(root, 'Pet_Info')['children'].append(gauge)
+    data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}
+    data['widgetTree'] = root
     return data
 
 
