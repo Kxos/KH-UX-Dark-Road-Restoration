@@ -318,11 +318,13 @@ def loop(n, fn):
 
 # movimenti: lista di pose per fotogramma + fotogramma del colpo (o None)
 def motion(name):
-    if name in ('wait', 'bwait', 'waitb', 'training1', 'training2', 'training3', 'wait_accent'):
+    # training1/2: pet nelle vignette del fumetto dello Spirit Training (fermo, respira);
+    # training3: il pet intero (4Pet) che corre nella fascia azzurra -> come run
+    if name in ('wait', 'bwait', 'waitb', 'training1', 'training2', 'wait_accent'):
         n = 30 if name != 'wait_accent' else 20
         return loop(n, lambda a: dict(sy=1 + 0.03 * math.sin(a), sx=1 - 0.015 * math.sin(a),
                                       tail=8 * math.sin(a), ears=3 * math.sin(a + 1))), None
-    if name in ('walk', 'run'):
+    if name in ('walk', 'run', 'training3'):
         n = 16 if name == 'walk' else 10
         return loop(n, lambda a: dict(dy=-2.5 * abs(math.sin(a)), legs=25 * math.sin(a),
                                       tail=10 * math.sin(a), rot=2 * math.sin(a))), None

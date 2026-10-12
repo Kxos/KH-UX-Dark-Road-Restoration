@@ -2765,4 +2765,6 @@ module.exports._test = {
   player, respondMedalEnhance, userMedalList, userMedalElement, userPointData, isGuiltUnlocked, userSkillsData,
   // server/test-keyblades.js
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
+  // server/test-keyblade-unlock.js
+  respondUserCreate, respondStageClear,
 };

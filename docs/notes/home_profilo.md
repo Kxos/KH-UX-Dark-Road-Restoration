@@ -376,3 +376,55 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
 - Bad Guy Breaker +4/+9/+14/+19/+24/+29/+30: nell'originale solo Trophy NI/CS/CK (assenti da
   `material`): riga con `validNeedMaterial` 0, il passo e' gratis. Da vedere sul banco come la
   finestra KEYBLADE mostra un passo senza materiali.
+
+### Sblocco alla missione (12 ottobre, offline)
+
+- Fonti: khuxwiki (`D:\Progetto_Restauro_KH_UX\wiki\wiki_all.json`: pagina del keyblade «obtained
+  by completing ...» e campo `nakeyblade`/`proudnakeyblade` della pagina della quest), guida
+  dell'utente (`reference\guida_basi\Guida alle basi KHUX.pdf`, «Keyblade - Come ottenerli»: tutte
+  tranne Bad Guy Breaker, venuto dopo). Concordano.
+
+| Keyblade | Missione originale | Nel master (rev. 98) | Come lo da' il server |
+|---|---|---|---|
+| Starlight | iniziale | initItem | iniziale (userKeybladeId 1) |
+| Treasure Trove | Quest 14 The Mine Pt. 2 | stage 1110, clearGetItem 13 = 2000 | primo `/stage/clear` |
+| Lady Luck | Quest 24 Escorting Alice Pt. 2 | stage 1210, 3000 | primo `/stage/clear` |
+| Three Wishes | Quest 34 The Search for the Red Bandit Pt. 5 | stage 1310, 4000 | primo `/stage/clear` |
+| Olympia | Quest 130 Preliminary Final Round | stage 4100, 5000 | primo `/stage/clear` |
+| Divine Rose | Quest 433 The West Wing Pt. 6 | stage 15080, 6000 | primo `/stage/clear` |
+| Moogle O' Glory | Special Quest «A New Keyblade: Moogle O' Glory» | assente | `grantMissingKeyblades` |
+| Sleeping Lion | Proud Quest 3 Combat 102 | stage 1016 solo normale, nessun premio | `grantMissingKeyblades` |
+| Counterpoint | Proud Quest 103 | stage 3220 solo normale | `grantMissingKeyblades` |
+| Fenrir | Proud Quest 203 | stage 7030 solo normale | `grantMissingKeyblades` |
+| Darkgnaw | Proud Quest 328 | stage 11280 solo normale | `grantMissingKeyblades` |
+| Missing Ache | Proud Quest 378 | stage 13030 solo normale | `grantMissingKeyblades` |
+| Diamond Dust | Proud Quest 428 | stage 15030 solo normale | `grantMissingKeyblades` |
+| Stroke of Midnight | Quest 595 | assente (storia fino alla 525) | `grantMissingKeyblades` |
+| Fairy Stars | Quest 683 | assente | `grantMissingKeyblades` |
+| Bad Guy Breaker | Quest 880 | assente | `grantMissingKeyblades` |
+
+- Server: `respondStageClear` -> con il primo completamento (`stageId` assente da
+  `player.stageScores`) e `validClearGetItem` > 0, `grantItem` di ogni `clearGetItemType`; il tipo 13
+  va in `grantKeyblade` (una copia per serie). La risposta porta `firstClearFlag` 1 e gli elenchi
+  completi `userKeyblades`/`userDecks`/`userKeybladeSubslots` con il keyblade nuovo (deck a zeri
+  lunghi quanto gli slot). Nessun premio keyblade negli obiettivi (`submissionRewardType` 13: zero
+  righe). `grantMissingKeyblades` all'avvio da' solo le serie che nessuno stage premia, piu' i premi
+  gia' ricevuti mancanti (riparazione): le 5 della storia mai prima del completamento (salvo
+  `KHUX_KB_ALL=1`, solo per prove; in quel caso al completamento il popup compare ma niente doppione).
+- Client (Ghidra, `[fn]`, scena dei risultati di uno stage normale): la lista dei premi
+  `+0x448` si riempie con le voci di tipo 13 da (a) le righe `reward` di nemici e forzieri
+  (`[fn]`), (b) gli obiettivi nuovi, cioe' `clearMissionIds` della risposta non gia' compiuti
+  (`[fn]`), con `submissionRewardType/ItemId/ItemNum` della riga di stage, (c) se
+  `firstClearFlag` (byte +0 della risposta di `/stage/clear`, parser `[fn]`) e' 1, i
+  `clearGetItemType/Id/Num` della riga (`validClearGetItem` voci). `[fn]` tiene solo il tipo
+  13; per ogni voce `[fn]` -> `[fn]` apre il popup `BattleResult_KB` (`[fn]`:
+  immagine `KeyBlade_%06d`, nome, «Set Medals in your new Keyblade!», etichetta «Quest Completion
+  Reward» 103010011/12 per il completamento, 103010001/02 per gli obiettivi). Nessun filmato e nessun
+  campo «nuovo keyblade»: il popup dipende solo da `firstClearFlag` e dalla tabella stage; il
+  keyblade vero e' quello di `userKeyblades`.
+- `node server\test-keyblade-unlock.js`: giocatore nuovo (`/user/create`), poi `/stage/clear` di
+  ogni missione: keyblade giusto una volta sola, popup simulato x1, seconda volta e obiettivi senza
+  niente, Proud in normale senza niente, riavvio senza doppioni, riparazione di Three Wishes.
+- Banco (salvataggio 12-10: 1110/1210/1310/4100 gia' superati, 15080 no, Divine Rose assente):
+  `server\save\smoke.json` = {"stageId": 15080}, relogin, giocare The West Wing Pt. 6 -> RESULTS ->
+  popup Divine Rose -> Equipment con Divine Rose (3 slot vuoti).
