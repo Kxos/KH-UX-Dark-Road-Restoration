@@ -28,6 +28,7 @@ const { makeMulti, routeMulti } = require('./multi');
 const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
 const medalGuilt = require('./medal-guilt');
+const medalSkill = require('./medal-skill');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
 const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
 
@@ -761,6 +762,7 @@ function respondUserCreate(res, req) {
     player.gender = player.avatar?.gender ?? player.gender;
   }
   player.created = true;
+  grantMissingKeyblades(); // I-087: keyblade senza premio nel master
   savePlayer();
   send(res, 200, {
     ret: ret(),
@@ -1090,7 +1092,7 @@ function respondUserProfile(res) {
       lastActionDatetime: now,
     },
     userMedals: userMedalsData(now),
-    userSkills: [],
+    userSkills: userSkillsData(now),
     userAvatar: userAvatarData(),
     userKeyblade: userKeybladeData(favoriteKeyblade()), // il preferito
     userRecord,
@@ -1341,7 +1343,7 @@ function respondStageClear(res, req) {
     // userDecks (FUN_00792bf4), userAvatarParts (FUN_007a1d14), subslot
     // (FUN_00798a64 modo 1), infine getLux
     userMedals: userMedalsData(now),
-    userSkills: [],
+    userSkills: userSkillsData(now),
     userTitles: [],
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
@@ -1485,7 +1487,7 @@ function inventoryBlocks(now) {
   return {
     userMaterials: userMaterialsData(),
     userMedals: userMedalsData(now),
-    userSkills: [],
+    userSkills: userSkillsData(now),
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
     userAvatarParts: userAvatarPartsData(),
@@ -1640,7 +1642,9 @@ function userMedalElement(m, now) {
     // ed effetto 6 del risultato (FUN_00c873f0). medalState.upperCost = riduzione (positiva).
     upperCost: -(m.upperCost || 0),
     guiltFactor: m.guiltFactor || 0, // guiltFactor: uint, centesimi di % (10000 = +100%)
-    userSkills: [], userShuffleSkills: medalTraits(m.userMedalId),
+    // skill (I-088, server/medal-skill.js): solo l'id, l'oggetto va nella lista userSkills
+    userSkills: [medalSkillOf(m)].filter(Boolean).map((s) => s.userSkillId),
+    userShuffleSkills: medalTraits(m.userMedalId),
     getDatetime: m.getDatetime || now,
   };
 }
@@ -1648,6 +1652,48 @@ function userMedalElement(m, now) {
 // Trait di una medaglia (Moogle Shop): player.medalTraits[userMedalId] = [{userShuffleSkillId,
 // shuffleSkillId, type, getDatetime}]. Elemento letto da FUN_0078d4b4: userShuffleSkillId
 // (uint64), shuffleSkillId, userMedalId (uint64), getDatetime, type (al massimo 6 per medaglia).
+// Skill di una medaglia (server/medal-skill.js): player.medalSkills[userMedalId] = {userSkillId,
+// skillId, level, exp, getDatetime} dopo un Overwrite riuscito; senza voce, le Scrooge hanno la
+// loro skill calcolata. Tabelle lette una volta per richiesta (userMedalsData chiama medalSkillOf
+// per ~2000 medaglie: masterRows a ogni chiamata costava troppo).
+let medalSkillMemo = null;
+function medalSkillTables() {
+  if (!medalSkillMemo) {
+    const skills = masterRows('skill');
+    medalSkillMemo = { skills, byId: new Map(skills.map((r) => [r.skillId, r])),
+      medals: new Map(masterRows('medal').map((r) => [r.medalId, r])) };
+    setImmediate(() => { medalSkillMemo = null; });
+  }
+  return medalSkillMemo;
+}
+function skillRowsById() {
+  return medalSkillTables().byId;
+}
+
+function medalSkillOf(m) {
+  const t = medalSkillTables();
+  const saved = player.medalSkills?.[m.userMedalId];
+  if (saved !== undefined) return saved && t.byId.has(saved.skillId) ? saved : null;
+  return medalSkill.scroogeSkill(t.medals.get(m.medalId), m.userMedalId, t.skills);
+}
+
+// elemento di userSkills (FUN_0078e7b8)
+function userSkillElement(m, s, now) {
+  return { userSkillId: s.userSkillId, skillId: s.skillId, level: s.level, exp: s.exp || 0,
+    userMedalId: m.userMedalId, getDatetime: s.getDatetime || m.getDatetime || now };
+}
+
+// lista userSkills (FUN_0078e934): tutte le skill delle medaglie possedute, perche' il client
+// cerca ogni id di userMedal.userSkills in questa tabella (un id mancante = crash)
+function userSkillsData(now = serverTime(), medals = userMedalList()) {
+  const out = [];
+  for (const m of medals) {
+    const s = medalSkillOf(m);
+    if (s) out.push(userSkillElement(m, s, now));
+  }
+  return out;
+}
+
 function medalTraits(userMedalId) {
   return (player.medalTraits?.[userMedalId] || []).map((t) => ({ ...t, userMedalId }));
 }
@@ -1746,10 +1792,29 @@ function respondMedalEnhance(res, body) {
   const { state, events } = medalGuilt.applyEnhance(row, base,
     comps.map((m) => ({ row: rows.get(m.medalId), burstUpperNumber: m.burstUpperNumber || 0 })).filter((c) => c.row),
     { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked() });
+  // Overwrite Skill (I-088, server/medal-skill.js): con isOverwriteSkill la skill del materiale piu'
+  // a sinistra passa alla base con la probabilita' del client (20% al livello 1, 100% al massimo);
+  // altrimenti le skill dei materiali si perdono con i materiali
+  let overwrite = null, overwriteOk = false;
+  if (Number(body.isOverwriteSkill)) {
+    overwrite = medalSkill.overwriteChance(comps.map((m) => ({ skill: medalSkillOf(m) })), skillRowsById(),
+      medalMiscValue(121)[0], medalMiscValue(122)[0]);
+    if (overwrite) {
+      overwriteOk = Math.random() < overwrite.chance;
+      if (overwriteOk) {
+        player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
+        player.medalSkills = player.medalSkills || {};
+        const { skillId, level: lv, exp: sexp } = overwrite.skill;
+        player.medalSkills[base.userMedalId] = { userSkillId: player.nextUserSkillId, skillId, level: lv, exp: sexp || 0, getDatetime: now };
+      }
+    }
+  }
   setMedalState(base.userMedalId, { level, exp, ...state });
   for (const m of comps) setMedalState(m.userMedalId, { removed: true });
   player.money = Math.max(0, (player.money || 0) - cost);
   savePlayer();
+  if (overwrite) console.log(`  [level up] Overwrite Skill ${overwrite.skill.skillId} LV ${overwrite.skill.level}: ` +
+    `${Math.round(overwrite.chance * 100)}% -> ${overwriteOk ? 'riuscito' : 'fallito'}`);
   console.log(`  [level up] ${base.userMedalId} (${row.name}) +${gain} EXP: LV ${base.level || 1} -> ${level}, ` +
     `materiali ${comps.map((m) => m.userMedalId).join(',')}, -${cost} munny; ` +
     `pallini ${base.burstUpperNumber || 0}->${state.burstUpperNumber}, guilt ${base.guiltFactor || 0}->${state.guiltFactor}` +
@@ -1761,13 +1826,16 @@ function respondMedalEnhance(res, body) {
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
-    userSkills: [],
+    // tutte le skill (la tabella del client deve avere ogni id citato dalle medaglie)
+    userSkills: userSkillsData(now),
     userMedals: touchedMedalsData(base.userMedalId, comps, now),
     beforeEnhanceUserMedal: before,
     afterEnhanceUserMedal: userMedalElement({ ...base, level, exp, ...state }, now),
     enhanceEffect: Number(body.isGreatSuccess) ? 1 : 0,
-    overwriteSkills: [],
-    successOverwrite: 0,
+    // FUN_0078f990: overwriteSkills = elementi userSkill (FUN_0078e7b8), successOverwrite -> +0x2b0
+    // (il risultato mostra il nome della skill nuova della base, FUN_00c97818)
+    overwriteSkills: overwriteOk ? userSkillsData(now, [base]) : [],
+    successOverwrite: overwriteOk ? 1 : 0,
     guiltBurstFirstLv: burstGain.first, guiltBurstMaxLv: burstGain.max,
     // FUN_0078e30c, obbligatorio: senza, «200 ERROR :55»
     medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
@@ -1908,7 +1976,7 @@ function respondMoogleshopBuy(res, body) {
     // FUN_007ac5f4 legge anche userMedals e userSkills (FUN_0078da18/FUN_0078e934 col nome
     // predefinito): senza, «200 ERROR :248»
     userMedals: userMedalsData(serverTime()),
-    userSkills: [],
+    userSkills: userSkillsData(),
     userMaterials: userMaterialsData(),
     emblemIds: [],
     ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
@@ -1978,7 +2046,7 @@ function respondMedalSell(res, body) {
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
-    userSkills: [],
+    userSkills: userSkillsData(now),
     userMedals: after.map((m) => userMedalElement(m, now)),
     // solo le celle sparite (una pila con copie rimaste resta)
     sellUserMedalIds: [...sold.keys()].filter((id) => !left.has(id)),
@@ -2460,7 +2528,8 @@ function handler(scheme) {
           supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
           ...playerTitleIds(), addKizunaPoint: 0,
           keybladeId: favoriteKeyblade().keybladeId, partyId: 0, isParty: 0, isGuilt: 0, isLinkThumbnail: 0,
-          userMedal: medal, userSkills: [], userAvatar: userAvatarData(),
+          userMedal: medal, userSkills: userSkillsData(now).filter((s) => s.userMedalId === medal.userMedalId),
+          userAvatar: userAvatarData(),
           lastActionDatetime: now, earnLuxRank: 0,
         }] : [];
         return send(res, 200, { ret: ret(), supportUsers });
@@ -2637,24 +2706,60 @@ function start() {
   }
 }
 
-// Salvataggi di prima dei keyblade (11 ottobre): si danno una volta i keyblade dei premi gia'
-// ricevuti, cioe' primo completamento (clearGetItemType 13, es. stage 1110 -> Treasure Trove)
-// e obiettivi compiuti (submissionRewardType 13). Qui in fondo: usa le costanti dei keyblade.
-if (player.created && player.keyblades === undefined) {
-  player.keyblades = [];
+// Keyblade da dare senza passare dal premio (I-087), a ogni avvio e alla creazione del giocatore:
+// 1. premi gia' ricevuti, cioe' primo completamento (clearGetItemType 13, es. stage 1110 ->
+//    Treasure Trove) e obiettivi compiuti (submissionRewardType 13): riparazione dei salvataggi
+//    (prima solo con player.keyblades assente; il salvataggio del 12-10 aveva la Quest 34 superata
+//    senza Three Wishes);
+// 2. serie senza nessun premio nel master 5.0.1: Moogle O' Glory (Moogle Quest), Sleeping Lion,
+//    Counterpoint, Fenrir, Darkgnaw, Missing Ache, Diamond Dust (Proud Mode, assente), Stroke of
+//    Midnight, Fairy Stars, Bad Guy Breaker (quest 595/683/880, oltre la 525): altrimenti
+//    irraggiungibili (khuxwiki, reference\keyblades\keyblade_levels.json «obtain»);
+// 3. KHUX_KB_ALL=1: anche le serie della storia non ancora raggiunte (Divine Rose, Quest 433).
+// KHUX_KB_UNOBTAINABLE=0 spegne il punto 2. Un keyblade per serie (grantKeyblade), mai doppioni.
+function keybladeRewardIds() {
+  const ids = [];
   for (const st of masterRows('stage')) {
-    if (st.validClearGetItem && st.stageId in (player.stageScores || {})) {
-      (st.clearGetItemType || []).forEach((t, i) => { if (t === 13) grantKeyblade(st.clearGetItemId[i]); });
-    }
-    for (const n of (player.clearMissions || {})[st.stageId] || []) {
-      if (st.submissionRewardType?.[n - 1] === 13) grantKeyblade(st.submissionItemId[n - 1]);
-    }
+    (st.clearGetItemType || []).forEach((t, i) => { if (t === 13) ids.push({ id: st.clearGetItemId[i], st, clear: true }); });
+    (st.submissionRewardType || []).forEach((t, i) => { if (t === 13) ids.push({ id: st.submissionItemId[i], st, mission: i + 1 }); });
   }
-  savePlayer();
-  console.log(`[save] keyblade dei premi gia' ricevuti: ${player.keyblades.map((k) => k.keybladeId).join(', ') || 'nessuno'}`);
+  return ids;
+}
+
+function grantMissingKeyblades() {
+  player.keyblades = player.keyblades || [];
+  const cat = (id) => masterRows('keyblade').find((r) => r.keybladeId === id)?.category;
+  const owned = () => new Set(ownedKeyblades().map((k) => cat(k.keybladeId)));
+  const give = (id, why) => {
+    if (owned().has(cat(id))) return;
+    grantKeyblade(id);
+    console.log(`[save] keyblade ${id} dato: ${why}`);
+  };
+  const rewards = keybladeRewardIds();
+  for (const r of rewards) {
+    const got = r.clear ? r.st.validClearGetItem && r.st.stageId in (player.stageScores || {})
+      : ((player.clearMissions || {})[r.st.stageId] || []).includes(r.mission);
+    if (got) give(r.id, `premio gia' ricevuto (stage ${r.st.stageId})`);
+    else if (process.env.KHUX_KB_ALL === '1') give(r.id, `KHUX_KB_ALL (premio dello stage ${r.st.stageId})`);
+  }
+  if (process.env.KHUX_KB_UNOBTAINABLE !== '0') {
+    const rewarded = new Set(rewards.map((r) => cat(r.id)));
+    const base = masterRows('keyblade').filter((r) => r.lv === 0 && !rewarded.has(r.category));
+    for (const r of base.sort((a, b) => a.category - b.category)) give(r.keybladeId, 'nessun premio nel master');
+  }
+}
+
+if (player.created) {
+  const before = (player.keyblades || []).length;
+  grantMissingKeyblades();
+  if (player.keyblades.length !== before) savePlayer();
 }
 
 if (require.main === module) start();
 module.exports = { SESSION, parseBody, start, route, multi };
 // per i test senza client (server/test-medal-enhance.js, con KHUX_SAVE e KHUX_MASTER_DIR propri)
-module.exports._test = { player, respondMedalEnhance, userMedalList, userMedalElement, userPointData, isGuiltUnlocked };
+module.exports._test = {
+  player, respondMedalEnhance, userMedalList, userMedalElement, userPointData, isGuiltUnlocked, userSkillsData,
+  // server/test-keyblades.js
+  kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
+};

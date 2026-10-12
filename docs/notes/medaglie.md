@@ -195,3 +195,46 @@ STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313
   been set.»).
 - Stato: nessuna riga nel master locale; `shuffleskill.json` ha `rate` 0 (pesi ignoti). Il server
   non da' trait da fusione (ne' dalle copie identiche) e `medalResumption` e' sempre vuoto.
+
+<a id="skill"></a>
+## Skill e Overwrite Skill del Level Up (I-088)
+
+Fonti (`reference\medal_overwrite\NOTE.md`): khuxwiki «Medal» (sezione Skills) e «Scrooge»
+(`reference\guilt\khuxwiki_raw.md`), kingdomhearts.fandom «Medals», khwiki «Skill», GameFAQs
+(thread 74095652), Reddit r/KHUx (`reference\optimize\reddit_subslot_pet_levelup_optimize.md`),
+testi del client 101300020-032 e 100620003.
+- Skill = abilita' passiva della medaglia (tabella `skill`, 12 righe: Attack Boost I/II, Attack Boost
+  All I/II, Poison, Paralysis, Sleep, Attack Prize Plus, Lux Plus, No Cost, Defense Boost I/II;
+  maxLv 10/15/20). Una per medaglia (khwiki; il client ne legge 2). Sale di livello usando la
+  medaglia in battaglia (EXP della skill, tabella `skillExp`). Rara sulle medaglie dei deal; le
+  **Scrooge** (EXP medal 3/5/6★, Colosseo ed eventi) la portano sempre al livello massimo.
+- Overwrite (wiki): la skill del materiale **piu' a sinistra** passa alla base; 20% al livello 1 della
+  skill, fino al 100% al massimo (Scrooge sempre 100%); spesso la base tiene la sua. Con «Overwrite
+  Skill» spento le skill dei materiali si perdono (101300031 «"Overwrite Skill" is OFF. Skills will
+  be lost!», 101300032). Il livello passa con la skill (le Scrooge la danno al massimo); Evolve
+  conserva il livello (101400007). Costo: nessuno in piu' (il munny del Level Up resta medalMisc 115).
+- Client 4.3.1: richiesta `FUN_007e3bbc` = `{baseUserMedalId, componentUserMedalIds, isOverwriteSkill
+  (0/1, scena +0x578, pulsante `Button_Overwrite`, `FUN_00c81150`), numbers, isGreatSuccess}`: nessuna
+  skill scelta. Probabilita' (`FUN_00c8151c`, «Success Rate %d%%» 101300021): skill del primo materiale
+  (`Txt_SkillName_Label`, `Icon_Skill`); per ogni skill dei materiali con la stessa `categoryEvolve`
+  (+0x114) somma `121 + (122 - 121) * (lv - 1) / (maxLv - 1)` (medalMisc 121 = 2000, 122 = 10000) per
+  il moltiplicatore delle campagne (+0x5e0, «Increased probability of skill overwrite» 104600016) /
+  10000; limite 100%. Risposta (`FUN_0078f990`): `overwriteSkills` = elementi userSkill,
+  `successOverwrite` (+0x2b0): il risultato (`FUN_00c97818`, `FUN_00c873f0`) mostra il nome della
+  skill della base dopo la fusione.
+- Elemento userSkill (`FUN_0078e7b8`): `userSkillId` uint64, `skillId`, `level`, `exp`, `userMedalId`,
+  `getDatetime`; `userMedal.userSkills` = soli id (int). Il client cerca ogni id nella tabella della
+  sessione (`FUN_00eb76f0`, +0x1c8, riempita dalle liste `userSkills`): id senza oggetto = riga skill
+  0 = crash; con l'oggetto legge `skillExp` per `expType` (getter senza controllo del null).
+- Server (`server/medal-skill.js`, 12-10): `player.medalSkills[userMedalId]` dopo un Overwrite
+  riuscito (userSkillId da `player.nextUserSkillId`); le Scrooge hanno una skill calcolata (id
+  1000000000 + userMedalId, livello massimo; quale skill avesse ogni Scrooge non si sa: ipotesi 3★
+  rango 1, 5★ rango 2, 6★ No Cost, scelta con userMedalId). `userSkills` intera in login, inventario,
+  Level Up, vendita, trait; il supporto manda la skill della sua medaglia. `skillExp` (vuota nel
+  master) ricostruita in `server/tables/skillExp.json` (`[N, A, P]` = maxLv, 1000/3000/6000, 15000:
+  valori inventati, l'EXP delle skill in battaglia non e' servita). Prova: `server/test-medal-enhance.js`
+  (punto 9).
+- Optimize del Level Up (`Button_MaxEnhanced`, `openMaxEnhancePopup` -> `runMaxEnhance`, `FUN_00ca3830`):
+  tutto nel client, che sceglie i materiali e manda la stessa `/user/medal/enhance` (con `numbers`
+  per le pile); nessun dato in piu' dal server. Dalla 3.3.0 usa Huey & Dewey & Louie e non le medaglie
+  d'attacco, riempie la barra dell'EXP; le Scrooge messe a mano non le tocca (Reddit).

@@ -230,8 +230,8 @@ function makeKeybladeEvo(ctx) {
 
   // ---- passive (I-065) ---------------------------------------------------------------------
   // PUT /passive/list (azione 249), corpo {isList}: isList 1 al login (dopo /user/medal...) e
-  // al tocco di «Passive Effects» in Equipment; isList 0 dopo «Strengthen» (e dove il client
-  // cerca passive nuove). Ramo 249 del dispatcher (0x7c670c): legge isList, poi FUN_007accd4:
+  // al tocco di «Passive Effects» nel Profilo (I-086; quello di Equipment apre la pagina web);
+  // isList 0 dopo «Strengthen» (e dove il client cerca passive nuove). Ramo 249 del dispatcher (0x7c670c): legge isList, poi FUN_007accd4:
   //   isList 1 -> passiveSettingIds[] (uint), isList 0 -> newPassiveSettingIds[] (uint).
   // Senza l'array il parser rende nullo, il ramo fallisce e la callback del pulsante
   // (FUN_008f86a4) non apre PassiveDialog: era il «non succede niente» di I-065.
@@ -275,6 +275,17 @@ function makeKeybladeEvo(ctx) {
     if (Number(body?.isList) === 0) {
       console.log(`  [passive] nuove: ${fresh.length ? fresh.join(' ') : 'nessuna'} (totale ${ids.length})`);
       return ctx.send(res, 200, { ret: ctx.ret(), newPassiveSettingIds: fresh });
+    }
+    // Profilo di un altro giocatore (I-086): il pulsante Button_Passive del Profilo (lambda
+    // FUN_008f8454) manda userId solo se il profilo non e' il proprio (+0x3a8); la callback
+    // FUN_008f86a4 apre allora PassiveDialog sulla lista +0xad8, che il ramo 249 riempie solo
+    // se la risposta ha userId. Si rimanda l'userId: lista propria se e' il nostro (1), vuota
+    // per gli altri (non ne abbiamo i dati).
+    const otherId = Number(body?.userId) || 0;
+    if (otherId) {
+      const list = otherId === 1 ? ids : [];
+      console.log(`  [passive] elenco di ${otherId}: ${list.length} passive`);
+      return ctx.send(res, 200, { ret: ctx.ret(), passiveSettingIds: list, userId: otherId });
     }
     console.log(`  [passive] elenco: ${ids.length} passive`);
     return ctx.send(res, 200, { ret: ctx.ret(), passiveSettingIds: ids });

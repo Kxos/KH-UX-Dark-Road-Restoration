@@ -76,7 +76,25 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   l'eta' (da `GET /user/birthday`, azione 9, AAAAMM, mai chiesta) e' <= 12.
 - Play Style (`Button_C`, `FUN_008deb84`): CheckBox `But16` (con Button crash in `FUN_0125068c`);
   `POST /user/playstyle/update` {playTimezones, playFrequently} (40).
-- Da fare: Outfits (`Button_D`), Boosters/Passive, pagina 2 (`Button_Change`), frecce ‹ › (non
+- **Passive Effects** (`Button_Passive`/`Txt_Passive` della pagina 1 `AvatarInfo_Txt_ver340`, a
+  (372,88) di 960x640 = tocco `778,932`; testo 106220502; creato da `FUN_008f3f40`, lambda
+  `FUN_008f8454`, I-086). **Non e' una WebView**: al tocco (evento 2) spegne i pulsanti e manda
+  `PUT /passive/list` (249, `FUN_007dc8a0`) con `isList` 1 e `userId` solo se il profilo non e' il
+  proprio (byte +0x3a8, id in +0x3a0); la callback `FUN_008f86a4` con la risposta valida apre
+  `PassiveDialog::open` (`FUN_00a862ec`) = layout originale `Passive_Base_ver341` (Close_Button,
+  Panel_TotalSwitch/Txt_TotalSwitch Total/Individual, Button_Update, Scroll_Area, Txt_None,
+  Txt_PassiveInfo, Total_Area/Total_Score_01..15) con celle `Passive_Panel` (Panel_Passive,
+  Icon_New, Txt_Passive_Label -> `Xml_Maximum` creato dal codice, `FUN_00a85d84`); profilo altrui:
+  totali da +0xad8 (`FUN_0076b5c8`). Layout e immagini sono tutti nelle risorse servite, il server
+  rispondeva gia' (`keyblade-evo.js` `respondPassiveList`, I-065): niente build-resources. Solo il
+  pulsante «Passive Effects» DENTRO il dialog (`Button_PassiveInfo`) apre la pagina web
+  `/web/passive` (gia' in http). Aggiunto: con `userId` nel corpo la risposta lo rimanda (lista
+  propria se e' 1, altrimenti vuota), altrimenti il dialog di un altro profilo leggerebbe +0xad8
+  vuota. Originale: `reference\passive_effects\` (screenshot iOS del 2019 dal Profilo, vista Total
+  con 15 caselle; khuxwiki 3.4.3 «Active Passives can now be verified through the Profile
+  screen»). Col salvataggio del banco (1 passiva, 301350) ci si aspetta la vista Total con una
+  casella STR per tipo di medaglia diversa da +0 e, in Individual, una riga. Da provare al banco.
+- Da fare: Outfits (`Button_D`), Boosters, pagina 2 (`Button_Change`), frecce ‹ › (non
   compaiono con un solo profilo) (ISSUES I-017).
 
 <a id="missioni"></a>
@@ -331,3 +349,30 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   (ISSUES I-035).
 - Equipment (`DeckEditScene`, init `FUN_00bfd960`): serve `GET /keyblade/subslot` (vedi
   [server.md](server.md#catena)).
+
+<a id="keyblade-tutti"></a>
+## Tutti i keyblade: possesso, Level Up, evoluzione (I-087)
+
+- 16 serie nel master (rev. 95, 576 righe = 36 livelli +0..+35 ciascuna, `make-keyblade-levels.js`),
+  come la khuxwiki (`reference\keyblades\keyblade_levels.json`). Fonti: Starlight iniziale; premio
+  di prima vittoria nel master solo per Treasure Trove (Q14, stage 1110), Lady Luck (Q24, 1210),
+  Three Wishes (Q34, 1310), Olympia (Q130, 4100), Divine Rose (Q433, 15080). Le altre 10 nel gioco
+  originale venivano dalla Proud Mode (Sleeping Lion Q3, Counterpoint Q103, Fenrir Q203, Darkgnaw
+  Q328, Missing Ache Q378, Diamond Dust Q428), dalle Moogle Quest (Moogle O' Glory) e da quest oltre
+  la 525 (Stroke of Midnight Q595, Fairy Stars Q683, Bad Guy Breaker Q880): nessuna e' nel master.
+- Salvataggio del 12-10: Starlight +0, Treasure Trove +35, Lady Luck +0, Olympia +0. Mancava Three
+  Wishes con lo stage 1310 superato (il recupero dei premi girava solo con `player.keyblades`
+  assente) e le 10 senza fonte.
+- `server.js` `grantMissingKeyblades` (all'avvio con giocatore creato e a `/user/create`): premi
+  gia' ricevuti (riparazione), serie senza premio nel master (`KHUX_KB_UNOBTAINABLE=0` le spegne),
+  con `KHUX_KB_ALL=1` anche quelle della storia non ancora raggiunte (Divine Rose). Un keyblade per
+  serie, mai doppioni; deck nuovi a zeri lunghi quanto gli slot (5 per i keyblade Proud e BGB).
+  Sul salvataggio attuale: userKeybladeId 5 Three Wishes, 6..15 Moogle O' Glory .. Bad Guy Breaker.
+- `node server\test-keyblades.js`: catene evolveId +0..+35 senza salti ne' cicli, slot e gauge mai
+  in calo, materiali = khuxwiki post 2.6.0 e presenti in `material`, Strengthen di ogni serie fino a
+  +35 (materiali tolti esatti, nessun munny: la khuxwiki non ne ha, 3 cambi di design = 3
+  animazioni `KeyBlade_Evolution`, nessun passo oltre +35 ne' senza materiali), userKeyblades/
+  userDecks coerenti, 120 sub-slot, 16 passive di +35, gauge tagliata al massimo della riga.
+- Bad Guy Breaker +4/+9/+14/+19/+24/+29/+30: nell'originale solo Trophy NI/CS/CK (assenti da
+  `material`): riga con `validNeedMaterial` 0, il passo e' gratis. Da vedere sul banco come la
+  finestra KEYBLADE mostra un passo senza materiali.
