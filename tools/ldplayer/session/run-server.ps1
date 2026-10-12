@@ -15,7 +15,8 @@ $env:KHUX_REVISION = "$Revision"                      # alzarla dopo ogni modifi
 if ($TutorialFinished) { $env:KHUX_TUTORIAL_FINISHED = '1' }
 if ($KbFree) { $env:KHUX_KB_FREE = '1' }
 # -Pet: sistema dei pet e 6o slot (KHUX_PET=1, server/pet.js; I-005)
-if ($Pet) { $env:KHUX_PET = '1' }# dimensione dell'ultima versione delle risorse (cartella numerica piu' alta)
+if ($Pet) { $env:KHUX_PET = '1' }
+# dimensione dell'ultima versione delle risorse (cartella numerica piu' alta)
 $res = 'D:\Progetto_Restauro_KH_UX\resource_data'
 $last = Get-ChildItem $res -Directory | Where-Object Name -match '^\d+$' | Sort-Object { [int]$_.Name } | Select-Object -Last 1
 $env:KHUX_RESOURCE_SIZE = [string](Get-ChildItem "$($last.FullName)\data" | Measure-Object Length -Sum).Sum
