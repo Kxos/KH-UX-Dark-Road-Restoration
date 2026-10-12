@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-085**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-086**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -16,6 +16,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-086 | APERTO | Pulsante Passive Effects nel Profilo utente (segnalazione utente 12-10): verificare che si apra e mostri gli effetti come nell'originale (la pagina e' una WebView: va servita in http con sfondo opaco, vedi note del banco) | [home_profilo](notes/home_profilo.md) | - |
 | I-085 | APERTO | Evolve di Fantasia Mickey con i Brooms (segnalazione utente 12-10). Banco 12-10 (ev, ev2): Fantasia Mickey Ver. A (90085) + 5 Magic Broom (300948, dalla pila) -> Fantasia Mickey B (300913, type 8), -80.000 munny, elenco giusto (risposta con le sole medaglie toccate). Da fare: dopo l'OK lo schermo resta fermo ~7 s e poi compare il risultato, senza animazione visibile (`card_evolution_result_%02d` = copia di quella del Level Up, FUN_00ccbad8); l'immagine di Fantasia Mickey B esce dalla cella nella Medal List (da confrontare con l'originale) | [medaglie](notes/medaglie.md#level-evolve) | - |
 | I-084 | APERTO | Trait medals (segnalazione utente 12-10): medaglie grigie che servono solo a dare i trait e ad alzare di uno il guilt della medaglia corrispondente. Da verificare regole (guida dell'utente, khuxwiki), campi del master e cosa manca in `server/medal-guilt.js` | [medaglie](notes/medaglie.md) | - |
 | I-083 | APERTO | Level Up con il guilt e le medaglie speciali, banco 12-10 (King Mickey 31056). Funziona: pallini 0->5 e LV 100 (anteprima = server, Great Success x1,5 scelto dal client); sblocco guilt +94%; popup del rilancio `PopupNormal_Guilt_ver130` (nostro) e rilancio senza miglioramento; guilt salita a +100%; Chip x3 + Dale + Cid -> +STR 450 / +DEF 150; Fantasia Mickey B -> pallino; riga «Includes ★★★ Medals or higher.» centrata. Corretti: `card_strength_result_02-05` (crash con 2-5 materiali), LWF nostre `GuiltBonus`, `GuiltBonus_result`/`_max` + cifre `GuiltBonus_Yfix0-9`/`Rfix0-9` (`make_guilt_bonus_lwf.py`), costo x medalMisc 123 a livello massimo, copie diverse della stessa pila, segno di `upperCost` (Cid = negativo, FUN_00eb577c). Banco 12-10 pomeriggio: rilancio fino a +100% (massimo del tier) con `GuiltBonus_max` senza crash (gm); ritardo di 6 s prima dell'animazione (segnalazione utente) = il client rielaborava tutte le ~2090 medaglie di `userMedals` nella risposta: ora solo la base e le pile dei materiali (per medalId), animazione entro 1 s, pile e Slots giusti (dl5-dl8). Da vedere: costo ridotto di Cid nel deck (il dettaglio mostra il costo del master anche nell'originale, FUN_0072f1e0) | [medaglie](notes/medaglie.md) | banco gu_15-gu_75 |
