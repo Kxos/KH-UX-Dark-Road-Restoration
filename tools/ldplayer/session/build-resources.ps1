@@ -26,6 +26,9 @@ python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
 python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_textures fallito' }
+# Stock Medal (medaglia 1 degli slot vuoti, immagine 90000; I-075)
+python recon\tools\make_stock_medal.py "$D\reference\empty_slot\stock_medal_khuxwiki.png" "$D\catalog\files\img\medal" "$sg\files"
+if ($LASTEXITCODE) { throw 'make_stock_medal fallito' }
 # miniature dell'elenco Story stage_select_ico_<mondo>_<thumbId> (95 assenti: il carosello
 # mostrava miniature di altre missioni o il «?», I-064), dalle anteprime di Roboloid in cache
 python recon\tools\make_quest_thumbs.py server\master_data\stage.json "$D\catalog\files\img\adventure\stage" "$D\external\roboloid\cache\map" "$sg\files" --report "$sg\quest_thumbs\report.json"

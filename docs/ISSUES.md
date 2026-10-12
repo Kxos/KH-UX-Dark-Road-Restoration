@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-076**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-080**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -16,8 +16,11 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-080 | APERTO | Level Up di una medaglia con le medaglie speciali come nell'originale: Chip / Dale / Chip & Dale (aumento di STR e DEF), Cid (riduzione del costo); verificare regole, limiti e risposta del server (segnalazione utente 12-10). Analisi in corso con I-079 | [medaglie](notes/medaglie.md) | - |
+| I-079 | APERTO | Guilting delle medaglie non implementato come nell'originale; Brooms e Mickey & Brooms assenti dalla Medal List (segnalazione utente 12-10). Da guida dell'utente (`reference\guida_basi`) e fonti online: come sale il guilt, massimo per tier, effetto sul danno | [medaglie](notes/medaglie.md) | - |
+| I-078 | APERTO | Ultima evoluzione del keyblade: salendo di livello deve comparire l'aura animata attorno al keyblade (segnalazione utente 12-10); da verificare sul banco col Keyblade LV UP fino all'ultimo livello e confrontare con l'originale | [server](notes/server.md#keyblade) | - |
+| I-077 | APERTO | Home: toccare l'icona del pet (in alto a sinistra, sistema dei pet) e verificare cosa apre (segnalazione utente 12-10); collegato a I-005/I-076 (dialog del pet, layout assenti) | [home_profilo](notes/home_profilo.md#pet) | - |
 | I-076 | APERTO | Equipment > Spirit (slot del pet) > «Swap Gear»: il gioco va in crash al tocco (segnalazione utente 12-10). Probabile layout del dialog del pet assente (I-005: mancano `PetInfoScene_ver320`, `PetInfoAnim`); da catturare con `tombstone.ps1`/`stackcap.ps1` e confrontare con `catalog\missing_layouts.txt` | [home_profilo](notes/home_profilo.md#pet) | - |
-| I-075 | APERTO | Optimize da confrontare con il funzionamento dell'originale (richiesta utente 11-10): deck (Equipment, I-051), Subslot (I-066) e Gear del pet; criteri di scelta delle medaglie (forza, attributo, tier, trait, bonus SA), ordine, slot pet e supporto. Cercare prima fonti/video dell'originale in `reference\` | [medaglie](notes/medaglie.md) | - |
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
 | I-062 | CHIUSO | «Max Out Gauge» prima della battaglia: `POST /keyblade/burst/max` (azione 53) gestito in `keyblade-evo.js`: -30 jewel (misc 120), gauge = maxBurstGauge, risposta `{userKeyblade}`; banco: 7/12 -> 12/12, «Gauge filled.», pulsante spento | [battaglia](notes/battaglia.md) | banco mg_g3 |
 | I-063 | CHIUSO | Tocco sull'AP in alto: fumetto `BalloonNomal_AP_Recovery` (`FUN_00b8ee90`, si chiude da solo dopo ~2 s) con tempo al prossimo AP / al pieno; i valori seguono il tempo reale (banco: 19/20, 01:41 -> 01:16 dopo ~25 s, «Recover all» coerente con 1 AP mancante) | [server](notes/server.md#ap) | banco mg_ap3/mg_ap5 |
@@ -109,6 +112,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-075 | Medaglie | Optimize come l'originale: e' l'algoritmo del client (`FUN_0097add0`/`FUN_0075de5c`, slot in ordine di moltiplicatore, costo, attributo della quest), ma riempiva solo gli slot gia' pieni perche' il server mandava i deck compatti. Ora deck completi con 0 = Stock Medal (medaglia 1, gioca il turno come nell'originale, `reference\empty_slot`), immagine 90000 (`make_stock_medal.py`); Optimize dei Subslot verificato (120/120) | banco 12-10 op2_opt ([318,0,317,0,456], STR 40589 -> 56619), sm_3 |
 | I-066 | Medaglie | Equipment, «Subslot»: n/120, schermata `DeckEditSubSlotScene_ver340` e layout generati, Optimize 120/120, lista SUBSLOT MEDALS leggibile, medaglie grandi; trascinamento da uno slot (la medaglia segue il dito, slot svuotato, 18/120) e avviso «Medals must be / set in order.» su due righe con targhetta opaca (`DeckEdit_Subslot_Caution_ver260`) | banco 12-10 sd_drag, sd_4, sd_c4, sd_c5 |
 | I-071 | Home | Fumetto bianco vuoto sopra l'avatar (messaggio del Profilo vuoto, `MyPage_MpBaloon`, `FUN_00bbbb3c`): il server manda «Nice to meet you!» se il messaggio e' vuoto (`GET /mypage` con rotta propria) | banco 12-10 op_menu: fumetto «Nice to meet you!» |
 | I-074 | Mappe | Crash entrando in una stanza incompleta (banco 991001, uscita «Underground Waterway Entrance» -> parte 7 `DB_0018_01_00`, `FUN_00ade5cc` -> `FUN_012d8464`: tessera assente = sprite nullo). Il suo `info.bin` usa i livelli a tessere di `DB_0018_00_00` (sky2, spover, over: 172 png), assente dalle risorse; idem `ED_0011_01_00` (171 tessere di `ED_0011_00_00`). `recon/tools/check_rooms.py` -> `stage_gen\rooms_check.json`; il generatore (`rooms_check` nella config) le tratta come assenti (I-036): rigenerati 991001 (11 parti, la porta va a Waterfront Park: Dock), 991008 (17 parti), 12210-12250, 14230-14250; validatore 0 errori | `check_rooms.py`, banco 11-10 tour3_b..d: passaggio e ritorno senza crash |
