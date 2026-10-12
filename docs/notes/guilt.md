@@ -1,74 +1,70 @@
 <a id="guilt"></a>
-# Guilt e Level Up con medaglie speciali (I-079, I-080): piano
+# Guilt e Level Up con medaglie speciali (I-079, I-080)
 
-Analisi del 12 ottobre 2026 (agente): fonti in `reference\guilt` (guida dell'utente p.16/20/21, khuxwiki). Regole, campi del client (`attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`, `guiltFactor` di userMedal, `[fn]`; `POST /user/medal/enhance` azione 55, `[fn]`; tabella `guiltProb`, `[fn]`) e regole implementate in `server/medal-guilt.js` (non ancora collegato; test `node server/test-medal-guilt.js server`). Brooms = Magic Broom (5*, materiale di Evolve), Mickey & Brooms = Fantasia Mickey B (6*, type 8): assenti dal master (make-game-tables.js scarta le righe di Roboloid senza attributo).
+Analisi del 12 ottobre 2026 (agente): fonti in `reference\guilt` (guida dell'utente p.16/20/21, khuxwiki). Regole, campi del client (`attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`, `guiltFactor` di userMedal, `[fn]`; `POST /user/medal/enhance` azione 55, `[fn]`; tabella `guiltProb`, `[fn]`) e regole in `server/medal-guilt.js`. Brooms = Magic Broom (5*, materiale di Evolve), Mickey & Brooms = Fantasia Mickey B (6*, type 8): prima assenti dal master (make-game-tables.js scartava le righe di Roboloid senza attributo).
 
-# Guilt / Level Up con medaglie speciali: patch proposte (NON applicate)
+<a id="stato"></a>
+## Stato (12 ottobre 2026): collegato, DA VERIFICARE al banco
 
-Modulo pronto: `server/medal-guilt.js` (nuovo, non collegato). Test: `node test-medal-guilt.js <repo>\server`
-(in questa cartella) -> OK.
+Il piano sotto e' applicato. Test senza client:
+- `node server/test-medal-guilt.js <repo>\server`: regole del modulo.
+- `node server/test-medal-enhance.js [cartella master]`: `respondMedalEnhance` di server.js su un
+  salvataggio temporaneo (`KHUX_SAVE` nel temp, il salvataggio vero non si tocca). Serve un master
+  rigenerato (con `guiltProb` vuota si ferma con «rigenerare il master»). Esito su una copia
+  rigenerata nello scratchpad: OK (Black Coat King Mickey 6★ tier 3: 5 copie -> 5 pallini; senza
+  Quest 34 niente guilt; con Quest 34 guilt 9200 e Burst +1; Mirror x2 +200; Chip x10 / Dale / Cid
+  10 x3 -> STR +1000, DEF +150, costo -20; guilt 10000 -> Burst +5; Mickey & Brooms 2 -> 3 pallini).
 
-## 1. make-game-tables.js (tabelle)
+Serve rigenerare il master (`$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; node
+server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json`) e alzare la revisione.
+Differenze rispetto al master di prima (provato su una copia): `medal` +300948, +300913, 1.517
+`minCost` (6★/7★), la 90085 evolvibile; `burst` 1.677 righe con `maxEnhanceCount` e potenze per
+pallino; `guiltProb` 655 righe. Effetto collaterale gia' esistente della pipeline: la medaglia 2
+(Burst, `make-guilt-burst.js`) viene ricopiata dalla 1 e prende l'immagine 90000 (prima 90041).
 
-```js
-const guilt = require('./medal-guilt');
-// dopo aver costruito `medals` e `bursts`:
-const extra = guilt.extraMedalRows(medals);
-medals.push(...extra.rows);                                   // 300948 Magic Broom, 300913 Fantasia Mickey B (type 8)
-Object.assign(medals.find((m) => m.medalId === 90085), extra.mickeyAPatch); // Mickey A + 5 Broom -> Mickey B
-const fix = guilt.burstDotFixes(medals, bursts);              // 1.677 burst: maxEnhanceCount per rarita' (6★/7★ = 5)
-for (const b of bursts) if (fix[b.burstId] !== undefined) b.maxEnhanceCount = fix[b.burstId];
-write('guiltProb', guilt.guiltProbRows());                    // ora master_data/guiltProb.json e' []
-// Cid: khuxwiki "max 20 riduzioni dalla 2.0.0" -> per le 6★/7★ minCost = cost - 20 (ora 46/36 = 10)
-for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
-```
+## 1. make-game-tables.js (tabelle) - fatto
 
-Attenzione: le righe di Roboloid ripartono dalla riga modello; `burstEnhanceCategory`/`groupId` sono 0
-ovunque (2.054 medaglie): pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
+- Con `KHUX_MEDALS_ALL=1`: `extraMedalRows` aggiunge 300948 Magic Broom (copia di Fantasia Mickey A,
+  type 6, 5★) e 300913 Fantasia Mickey B (copia di Magic Mirror, type 8, 6★); la 90085 diventa
+  evolvibile: 5 Magic Broom -> 300913 (`validEvolveNeed` 5).
+- Cid (khuxwiki «max 20 riduzioni dalla 2.0.0»): medaglie d'attacco 6★/7★ con `cost - minCost` = 10
+  -> `minCost = cost - 20` (es. 46/26). Medaglia 1 (Stock Medal, immagini 90000) intatta.
+- `burstDotFixes`: `maxEnhanceCount` per rarita' (3★ 1, 4★ 2, 5★ 3, 6★/7★ 5) sulle burst che ne
+  avevano meno (Roboloid 0, 6★ di thethiny 4). Le potenze per pallino (`basePowerPerEnforce`,
+  `displayPowerPerEnforce`, valori assoluti) si ricalcolano dalla potenza della riga con la regola
+  di `tierPower` (+300, +900, +1800, +3000, +4500): quelle copiate dal modello erano di un'altra
+  medaglia (Roboloid: 68300 di base, 15000 per pallino) o 1 oltre il vecchio massimo. Il +300 per
+  pallino e' un'ipotesi (righe vere 10363/10364).
+- `guiltProb.json`: `guiltProbRows()` (intervalli della khuxwiki per tier, un valore ogni 1%, peso
+  100, `isCampaign` 0).
 
-## 2. server.js
+Le righe di Roboloid ripartono dalla riga modello; `burstEnhanceCategory`/`groupId` sono 0 ovunque:
+pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
 
-### userMedalElement (riga ~1621): leggere i campi salvati
-```js
-    attackUpperNumber: m.attackUpperNumber || 0, defenseUpperNumber: m.defenseUpperNumber || 0,
-    burstUpperNumber: m.burstUpperNumber || 0,
-    lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
-    upperCost: m.upperCost || 0, guiltFactor: m.guiltFactor || 0, // guiltFactor: uint, centesimi di %
-```
-(`medalState` viene gia' fuso in `userMedalList()`; l'Evolve con `setMedalState({medalId, level, exp})`
-li conserva: pallini e bonus restano dopo l'evoluzione, come dice la khuxwiki per i pallini.)
+## 2. server.js - fatto
 
-### respondMedalEnhance (riga ~1690): dopo il calcolo dell'EXP
-```js
-  const mg = require('./medal-guilt');
-  const burstRow = row.validBurst ? masterRows('burst').find((b) => b.burstId === row.burstId) : null;
-  const { state, events } = mg.applyEnhance(row, base,
-    comps.map((m) => ({ row: rows.get(m.medalId), burstUpperNumber: m.burstUpperNumber || 0 })).filter((c) => c.row),
-    { burstRow, guiltProb: masterRows('guiltProb'), isGuilt: isGuiltUnlocked() });
-  setMedalState(base.userMedalId, { level, exp, ...state });
-  ...
-    afterEnhanceUserMedal: userMedalElement({ ...base, level, exp, ...state }, now),
-```
-Log: `pallini ${base.burstUpperNumber||0}->${state.burstUpperNumber}, guilt ${base.guiltFactor||0}->${state.guiltFactor} (tiri ${events.rolls})`.
-`guiltBurstFirstLv/MaxLv` restano 0 finche' manca `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` (stesso
-interruttore `KHUX_GUILT_BURST_POPUP` di guilt-burst.js): con il popup, = +1/+5 se `events.guiltUnlocked`/
-`events.guiltMaxed` danno la prima guilt/guilt massima di quella medaglia.
+- `userMedalElement`: `attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`,
+  `guiltFactor` (centesimi di %, 10000 = +100%) da `medalState` (fuso in `userMedalList()`; l'Evolve
+  con `setMedalState({medalId, level, exp})` li conserva).
+- `respondMedalEnhance`: dopo l'EXP, `medalGuilt.applyEnhance(row, base, materiali, {burstRow,
+  guiltProb, isGuilt: isGuiltUnlocked()})`; lo stato va in `medalState` e in
+  `afterEnhanceUserMedal`. Log: `pallini a->b, guilt a->b (tiri ...), STR +, DEF +, costo -`.
+- `guiltBurstFirstLv/MaxLv` = livelli del Burst appena dati (`guiltBurst().gained()`), solo con
+  `KHUX_GUILT_BURST_POPUP=1` (manca `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup`); altrimenti 0.
+- `userDetail.isGuilt = isGuiltUnlocked()`: missione numero >= 34 (Power Bangle; `stageNumber` di
+  `lastClearStageId`), oppure sempre 1 con `KHUX_GUILT_BURST_LV` > 0 (prove del Burst). Il client
+  ([fn], [fn]) permette sblocco/rilancio e Magic Mirror solo con `isGuilt`; il
+  pulsante Burst resta nascosto finche' `guiltBurstLv` e' 0 ([fn]). La riga del supporto
+  (`supportUsers`, isGuilt 0) non cambia.
+- `module.exports._test`: funzioni per `test-medal-enhance.js`.
 
-### userDetail.isGuilt (riga ~1188 e ~2412)
-Oggi `isGuilt = guiltBurst().isGuilt()` (livello Burst > 0). Con la guilt vera e' un circolo: il client
-([fn], [fn]) permette sblocco/rilancio e Magic Mirror solo con `isGuilt` (= Power Bangle,
-Quest 34) e il Burst sale solo dopo la prima guilt. Proposta:
-```js
-function isGuiltUnlocked() { return (player.lastClearStageId || 0) >= POWER_BANGLE_STAGE ? 1 : 0; } // stageId della Quest 34
-    isGuilt: isGuiltUnlocked(),
-```
-Il pulsante Burst resta comunque nascosto finche' `guiltBurstLv` e' 0 ([fn]).
+## 3. guilt-burst.js - fatto
 
-## 3. guilt-burst.js (refresh)
-Prima guilt = `m.guiltFactor > 0` (non piu' "possiedo una medaglia con tier"); guilt massima =
-`m.guiltFactor >= guiltRange(guiltProb, row.guiltValue).max` (non piu' "livello massimo"). Il registro
-`player.guiltBurst` non scende (come ora). Per non togliere livelli al salvataggio attuale: migrazione
-che tiene i medalId gia' registrati.
+Prima guilt = una copia con `guiltFactor > 0`; guilt massima = `guiltFactor >= guiltRange(guiltProb,
+guiltValue).max`. Il registro `player.guiltBurst` non scende: i medalId registrati con le regole di
+prima (possesso, livello massimo) restano, quindi un salvataggio esistente non perde livelli (il
+salvataggio del banco ha 1.908 medaglie registrate: Burst 1.908, l'aumento +1/+5 non si vede dal
+pulsante, solo da `guiltBurstLv` nei log).
 
 ## 4. Da verificare al banco
 - Medal List: le righe nuove 300948/300913 compaiono (grant-all-medals le prende: `sell` > 0) e la
@@ -78,3 +74,5 @@ che tiene i medalId gia' registrati.
   [fn] (animazioni `[fn](…,7/8)`: controllare che i LWF esistano).
 - STR nel dettaglio = STR del livello + attackUpperNumber; COST = cost - upperCost (ipotesi sul
   significato di upperCost: il client confronta `minCost < cost - upperCost - accumulato`).
+- Il risultato del server coincide con l'anteprima del client (pallini, sblocco della guilt): se il
+  client calcola diversamente (es. guilt con `isGuilt` 0) il dettaglio dopo la fusione lo mostra.

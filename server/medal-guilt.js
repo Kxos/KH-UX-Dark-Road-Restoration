@@ -1,6 +1,7 @@
 // Level Up delle medaglie: pallini dell'attacco speciale, guilt (Special Attack Bonus), Chip/Dale
 // (+STR/+DEF), Cid (costo), Magic Mirror (+1% di guilt), Mickey & Brooms (Fantasia Mickey B).
-// Modulo NON ancora collegato a server.js: vedi docs/notes/medaglie.md e il piano del 2026-10-12.
+// Usato da server.js (POST /user/medal/enhance), make-game-tables.js (righe medal/burst, guiltProb)
+// e guilt-burst.js (guilt massima): docs/notes/guilt.md.
 //
 // Regole (reference\guilt\NOTE.md: khuxwiki Medal/Chip/Dale/Cid/Magic Mirror/Fantasia Mickey B,
 // guida dell'utente p. 16, 20, 21) e comportamento del client 4.3.1 (anteprima [fn]):
