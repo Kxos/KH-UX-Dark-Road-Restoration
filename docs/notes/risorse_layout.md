@@ -120,3 +120,20 @@ della tabella `world` il cui worldName e' il prefisso della stanza (`[fn]`, tabe
 `Sprite::initWithFile` fallisce (`[fn]`) e il distruttore cocos crasha.
 `make_textures.py` copia `wipe_1` in `wipe_2..10`, `10000`, `10001`. Gli originali per mondo non
 si trovano online (ISSUES I-027).
+
+<a id="addnl-431"></a>
+## OBB 5.0.1 contro addnl 4.3.1 (I-091)
+
+Nell'indice unito (`resource_merge.py`) a parita' di nome vince l'OBB 5.0.1, che precede l'addnl
+dell'IPA 4.3.1; solo il pacchetto generato (ultimo, `--last-wins`) sostituisce. Dei 19805 nomi
+dell'addnl, 13148 sono serviti dall'OBB e 2376 di questi hanno contenuto diverso (soprattutto
+`lwf/drama`; in `lwf/avatar/motion` 19 file). Il caso visibile: `lwf/avatar/motion/wait/wait.lwf`,
+che il client 4.3.1 usa per l'avatar fermo nel campo ([fn] -> [fn](avatar, 0x1b);
+camminata = walk 0x1c / move 0x17 / run 0x18 in [fn]). Il keyblade si attacca al movie con
+nome di istanza `key` (parte 30 della tabella 0x1f18970, [fn], percorso
+`lwf/avatar/keyblade/keyblade_%04d_%02d` da displayId). Il wait 5.0.1 e' una posa frontale
+(`serious_o_c`) senza `key`, `shadow`, `mark`; il wait 4.3.1 ha `key`, `shadow`, `mark`,
+`face_normal_o_c`, come nei video originali (`reference\field_idle`). Anche `win_levelup` 5.0.1 non
+ha `key`/`shadow`/faccia. `recon/tools/prefer_addnl.py` (in `build-resources.ps1`) copia in
+`stage_gen\files` le versioni 4.3.1 di wait e win_levelup con le loro texture. Gli altri motion
+diversi (bwait, btlEnd, knockback, dead1-3) hanno `key` e `shadow` in entrambe le versioni.
