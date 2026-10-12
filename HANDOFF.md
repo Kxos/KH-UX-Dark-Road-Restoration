@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 33**, **revisione master 93** (default degli script di sessione).
+Stato del banco: **risorse 33**, **revisione master 95** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
@@ -46,12 +46,15 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   che gioca il turno, immagine 90000), Subslot (I-066: trascinamento e avviso), Passive Effects
   (I-065: pagina web `/web/passive` in http), fumetto del Profilo (I-071), Field Speed = originale
   (I-081). Aura del +35 ok (I-078).
+- Fatto il 12 pomeriggio: guilt e medaglie speciali collegati (I-079/I-080, revisione 95), pet con
+  rango 17 e sotto-schermate Name/Tricks/Train/Outfits (I-082), popup del rilancio della guilt (I-083).
 - **Prossimi passi**, in ordine:
-  1. (I-078 chiuso: evoluzione e popup della passiva ok.) Salvataggio: Treasure Trove +35.
-  2. I-082: dialog del pet (slot vuoti all'apertura, rango 15 contro 17, Train/Name/Outfits senza layout).
-  3. I-079/I-080: collegare `server/medal-guilt.js` secondo [guilt.md](docs/notes/guilt.md)
-     (guiltProb, Magic Broom e Fantasia Mickey B, campi di userMedal, `respondMedalEnhance`).
-- Banco: risorse 33, **revisione master 93**, server con `-Pet` (`-KbFree` solo per le prove dei
+  1. I-083: vedere `GuiltBonus_max` (King Mickey 2216 ha guilt 9400 nel salvataggio: copia + rilancio
+     finche' esce 10000), costo di Cid nel deck, ritardo dell'animazione del Level Up (segnalato).
+  2. I-082: righe dei Tricks spostate, medaglia che non entra nello slot del Training (244/245
+     mai provate), layout del dialog SPIRIT da allineare a `reference\pet` (medaglie sovrapposte).
+  3. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
+- Banco: risorse 33, **revisione master 95**, server con `-Pet` (`-KbFree` solo per le prove dei
   keyblade); `server\save\smoke.json` = {"stageId": 1010}; salvataggio con 2090 medaglie, sub-slot
   120/120, deck Treasure Trove [318,0,317,0,456] + pet 358.
 ## Regole del lavoro (dell'utente)
