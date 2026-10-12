@@ -1514,8 +1514,12 @@ LAYOUTS = {
     # Sotto-schermate del dialog SPIRIT (I-082), assenti da ogni risorsa.
     # «Name» (Button_A -> [fn] -> [fn]): popup del nome, vedi pet_rename_popup().
     'PetInfo_Rename_ver230.json': ('func', 'pet_rename_popup'),
-    # Riga della lista dei Tricks (scroll [fn], init [fn]: cella 304x68, il layout
-    # va in «mainPanel» a (152, 0), quindi contenuto centrato sull'origine). La cella
+    # Riga della lista dei Tricks (scroll [fn], init [fn]: cella 304x68 = +0x71c,
+    # nodo con ancora (0.5, 0.5) = PTR_[data] -> 0x2086140, il layout va in «mainPanel» a
+    # (152, 0) = meta' larghezza: i due mezzi si annullano e l'origine del layout cade sul bordo
+    # SINISTRO della cella, x 0 della lista). Banco 12-10 (pt_t1): con la riga centrata
+    # sull'origine meta' riga usciva a sinistra della lista, tagliata. Contenuto quindi da 0 a 304
+    # (centro a x 152), in basso a y 0..68 (centro 34, gia' giusto al banco). La cella
     # ([fn]) cerca PetSkill_Panel (se manca esce), vi scrive Txt_PetSkill (nome del trick,
     # [fn]: Label obbligatoria), mostra Icon_New (trick non ancora visto, [fn];
     # obbligatoria) e, se in PetSkill_Panel non c'e' SkillButton, ne crea uno ([fn]
@@ -1524,7 +1528,7 @@ LAYOUTS = {
     # PetSkill_Panel deve essere un ImageView (But13 non esiste: copia di But16 in COPIES). Al tocco
     # ([fn]) il dettaglio [fn] del dialog. Aspetto: pulsante blu But16 col nome.
     'PetInfo_PetSkill_Panel_ver230.json': ('build', P('PetSkill_Panel_root', 0, 0, 304, 68, [
-        I('PetSkill_Panel', 0, 34, 300, 52, 'But16_Off.png', opts=BUT16, ignoreSize=False, children=[
+        I('PetSkill_Panel', 152, 34, 300, 52, 'But16_Off.png', opts=BUT16, ignoreSize=False, children=[
             L('Txt_PetSkill', 0, 2, 270, 30, '', 22),
             I('Icon_New', 118, 20, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.55, visible=False)])])),
     # Spirit Training: «Train» (e «Train Now» quando l'allenamento e' pronto) -> GET /pet/expedition
@@ -2410,11 +2414,20 @@ def pet_info_scene():
     Aspetto da reference\\pet\\pet_spirit_training_02.png (1764x992: x = x'/1,553 - 88,
     y = 640 - y'/1,55) e pet_spirit_edit_01.jpg (Gear: finestra MEDALS a destra, Optimize, «<»)."""
     win4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
-    plate13 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1)
+    # Plate13 e' 487x36: bordi di 50 a sinistra e a destra (con capInsetsWidth 1 il bordo destro
+    # restava di 436 e la striscia del Rank, larga 362, usciva dal dialog: segnalazione utente 12-10)
+    plate13 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=387, capInsetsHeight=36)
     yellow = dict(colorR=255, colorG=220, colorB=40)
-    # sei celle 3x2 come nel riferimento (centri assoluti x 95/250/405, y 355/180); MedalArea in 10,85
-    medals = [P('Medal%d' % (i + 1), 85 + 155 * (i % 3) - 88, 270 - 175 * (i // 3) - 88, 175, 175)
-              for i in range(6)]
+    # sei celle 3x2 come nel riferimento; MedalArea in 10,85. La cella DeckMedalView ([fn]
+    # -> [fn], DeckEdit_RevolverMedal_ver330 175x175) sta con l'angolo in basso a sinistra
+    # sull'origine di Medal%d e nessun codice ne cambia la scala: la scala di Medal%d la rimpicciolisce.
+    # Riferimenti riportati a 960x640 (pet_spirit_yt_03 / _edit_01, banco 12-10 pt_4/pt_5):
+    # monete vuote ~110 di diametro (le nostre 118, medaglie ~180 contro ~165: piu' grandi e
+    # sovrapposte), centri x 98/251/404, y 345/175 (le nostre 95/250/405, 356/180). Scala 0.9:
+    # centro della cella a 175 * 0.9 / 2 = 79 dall'origine.
+    MS = 0.9
+    medals = [P('Medal%d' % (i + 1), 88 + 153 * (i % 3) - 79, 260 - 170 * (i // 3) - 79, 175, 175,
+                opts=dict(scaleX=MS, scaleY=MS)) for i in range(6)]
     root = build(P('PetInfoScene', 0, 0, 960, 640, [
         I('Win_Main', 480, 346, 936, 562, 'Win04.png', opts=win4),
         # logo «SPIRIT» (lettere rosa, stelle gialle): nessuna texture servita, testo e stelle
@@ -2428,12 +2441,9 @@ def pet_info_scene():
             L('Txt_Pet_Name', 120, 54, 200, 34, '', 26),
             L('Txt_Pet_Rank', 262, 52, 80, 30, 'Rank', 22),
             L('Txt_Pet_Rank_Num', 322, 56, 60, 40, '1', 34, opts=yellow)]),
-        P('PetInfo_Medal', 390, 455, 190, 175, [
-            # sagoma a testa di gatto (cornice dello slot del pet di Equipment, nera) attenuata
-            I('Emblem', 95, 100, 340, 340, 'DeckEdit_Pet1.png', s9=False, scale=0.45, opts=dict(opacity=150)),
-            L('Txt_5', 95, 26, 180, 40, '×1.000', 30),
-            P('Area_Arrow1', 172, 26, 10, 10),
-            P('Area_Arrow2', 172, 46, 10, 10)]),
+        # sagoma a testa di gatto (cornice dello slot del pet di Equipment, nera) attenuata, dietro
+        # alle medaglie (fuori da PetInfo_Medal: il codice vi cerca solo Txt_5 e Area_Arrow1/2)
+        I('Emblem', 485, 555, 340, 340, 'DeckEdit_Pet1.png', s9=False, scale=0.45, opts=dict(opacity=150)),
         P('PetTraing', 585, 460, 360, 170, [
             L('Txt_Time', 170, 145, 350, 30, 'Training Ready in 00:00:00', 24),
             B('PetTraing_Slot', 70, 94, 176, 68, 'But03', 'Training Slots', 22, label='Txt_PetSkill', opts=BUTS),
@@ -2449,7 +2459,16 @@ def pet_info_scene():
             L('Txt_MonthTitle', 18, 15, 240, 26, "This Month's Training", 20, opts=dict(anchorPointX=0)),
             L('MonthNum_Label', 346, 15, 100, 26, '0', 22, opts=dict(anchorPointX=1))]),
         P('MedalArea', 10, 85, 500, 370, medals),
-        P('Dummy', 560, 85, 385, 370, [P('Pet', 190, 30, 10, 10, opts=dict(scaleX=2.0, scaleY=2.0))]),
+        # moltiplicatore DOPO MedalArea: disegnato sopra le ali delle medaglie della prima riga
+        # (banco 12-10 pt_5: «×3.700» coperto dalla medaglia 3), come nei riferimenti
+        P('PetInfo_Medal', 390, 455, 190, 175, [
+            L('Txt_5', 95, 26, 180, 40, '×1.000', 30),
+            P('Area_Arrow1', 172, 26, 10, 10),
+            P('Area_Arrow2', 172, 46, 10, 10)]),
+        # pet a destra, grande e coi piedi sul fondo della finestra: nei riferimenti (yt_03,
+        # training_02) ~190-275 di altezza, centro x ~740, piedi a y ~95; il nostro a scala 2
+        # era alto ~140 (pt_3), coi piedi a 115. Il nodo Pet ha i piedi sull'origine.
+        P('Dummy', 560, 85, 385, 370, [P('Pet', 170, 10, 10, 10, opts=dict(scaleX=2.7, scaleY=2.7))]),
         # linguette in basso (fuori dalla finestra, come nel riferimento): rosse, Tricks arancione
         P('UnderUI', 0, 0, 560, 64, [
             B('Button_A', 147, 30, 337, 68, 'But01', 'Name', 30, label='Txt_A', opts=BUTS),
@@ -2491,8 +2510,10 @@ def pet_info_scene():
                 L('Txt_Title', -350, 205, 300, 40, 'TRICKS', 30, opts=dict(anchorPointX=0)),
                 B('Close_Button', 365, 225, 70, 70, 'But_Close'),
                 I('List_Base', -195, -20, 340, 410, 'Panel04.png', opts=GRID),
+                # la lista prende la misura di Area ([fn]: setContentSize, addChild) e mette
+                # le celle da 304 a x 0: Area larga quanto la cella e centrata nel riquadro
                 P('PetSkill_List', -360, -220, 330, 400, [
-                    P('Area', 0, 0, 330, 400),
+                    P('Area', 13, 0, 304, 400),
                     L('Txt', 165, 200, 300, 40, 'No learned tricks.', 22, visible=False)]),
                 P('PetSkill_Info', -10, -225, 370, 410, [
                     I('Info_Base', 185, 205, 370, 410, 'Panel04.png', opts=GRID),
