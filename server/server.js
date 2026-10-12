@@ -1634,7 +1634,12 @@ function userMedalElement(m, now) {
     attackUpperNumber: m.attackUpperNumber || 0, defenseUpperNumber: m.defenseUpperNumber || 0,
     burstUpperNumber: m.burstUpperNumber || 0,
     lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
-    upperCost: m.upperCost || 0, guiltFactor: m.guiltFactor || 0, // guiltFactor: uint, centesimi di % (10000 = +100%)
+    // upperCost (int con segno): variazione del costo, NEGATIVA per Cid. Il client la nega
+    // ([fn]: oggetto +0x2c = -upperCost) e usa cost - (+0x2c): costo del deck
+    // ([fn]), ordinamento ([fn]), Optimize ([fn]), anteprima ([fn])
+    // ed effetto 6 del risultato ([fn]). medalState.upperCost = riduzione (positiva).
+    upperCost: -(m.upperCost || 0),
+    guiltFactor: m.guiltFactor || 0, // guiltFactor: uint, centesimi di % (10000 = +100%)
     userSkills: [], userShuffleSkills: medalTraits(m.userMedalId),
     getDatetime: m.getDatetime || now,
   };
@@ -2358,6 +2363,7 @@ function handler(scheme) {
       if (kind === 'petcoordupdate') return pet().respondCoordinateUpdate(res, entry.bodyDecoded);
       if (kind === 'petname') return pet().respondName(res, entry.bodyDecoded);
       if (kind === 'petsubslot') return pet().respondSubslot(res, entry.bodyDecoded);
+      if (kind === 'petexpedition') return pet().respondExpedition(res, req.method, entry.bodyDecoded, req.url.split('?')[0]);
       if (kind === 'medalpreremove') return pet().respondPreremove(res, '/user/medal/preremove', entry.bodyDecoded);
       // GET /stage/pickup (azione 250, dopo ogni clear): missioni in evidenza, elemento
       // [fn]; la chiave e' scritta cosi' nel binario. Nessuna in evidenza: []

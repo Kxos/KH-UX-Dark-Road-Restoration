@@ -37,7 +37,8 @@ assert.equal(r5.state.attackUpperNumber, base.addMaxAttack);
 assert.equal(r5.state.upperCost, base.cost - base.minCost);
 // Mickey & Brooms
 const ex = g.extraMedalRows(medal);
-const mb = ex.rows.find((x) => x.medalId === g.MICKEY_B_ID);
+// master gia' rigenerato: la riga c'e' e extraMedalRows non la ricrea
+const mb = ex.rows.find((x) => x.medalId === g.MICKEY_B_ID) || byId.get(g.MICKEY_B_ID);
 const r6 = g.applyEnhance(base, { burstUpperNumber: 2 }, [{ row: mb }], { burstRow, guiltProb: gp, isGuilt: 1 });
 assert.equal(r6.state.burstUpperNumber, 3);
 console.log('extra rows', ex.rows.map((x) => `${x.medalId} ${x.name} type ${x.type} sell ${x.sell}`), ex.mickeyAPatch);

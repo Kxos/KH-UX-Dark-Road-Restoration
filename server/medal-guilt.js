@@ -15,7 +15,8 @@
 // - Magic Mirror (enhanceGuilt 100): +1% se la guilt e' sbloccata e sotto il massimo del tier.
 // - Chip/Dale (enhanceAttack/enhanceDefense): attackUpperNumber/defenseUpperNumber fino a
 //   addMaxAttack/addMaxDefense della base.
-// - Cid (enhanceCost 1/5/10): upperCost fino a cost - minCost della base.
+// - Cid (enhanceCost 1/5/10): upperCost fino a cost - minCost della base. Qui upperCost e' la
+//   riduzione (positiva); al client va negato (userMedalElement di server.js, [fn]).
 'use strict';
 
 // Intervalli della khuxwiki (Medal, «Special Attack Bonus»), in centesimi di %.

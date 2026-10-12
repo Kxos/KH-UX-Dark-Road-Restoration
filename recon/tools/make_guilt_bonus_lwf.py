@@ -86,15 +86,100 @@ def build():
     return lw.build(frames, len(ORDER)), files
 
 
-def write_all(out):
-    d = os.path.join(out, 'lwf', 'medal', 'guilt_bonus', NAME)
+#  Risultato del rilancio ([fn], dopo la risposta del Level Up con una guilt nuova):
+#  lwf/medal/guilt_bonus/GuiltBonus_result/GuiltBonus_result.lwf (NULL = crash, banco gu_58) con
+#  Â«enterFrameÂ» su _root (avanti all'ultimo fotogramma) e un gestore Â«loadÂ» per ogni cifra della
+#  nuova percentuale sulle istanze num1 (unita'), num2, num3 (lambda vtable 0x1f61c48 ->
+#  [fn]): attachLWF nel movie di lwf/medal/guilt_bonus/GuiltBonus_Yfix%d (la cifra).
+#  Qui: +, tre movie vuoti per le cifre (da destra a sinistra) e %, che entrano con un rimbalzo.
+RESULT = 'GuiltBonus_result'
+MAX = 'GuiltBonus_max'
+RED = (255, 90, 70, 255)
+RN = 40
+DIGIT_W, DIGIT_H = 64, 88
+FONT = os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'Fonts', 'arialbd.ttf')
+
+
+def glyph(ch, w=DIGIT_W, h=DIGIT_H, fill=(255, 222, 80, 255)):
+    """Carattere dorato con bordo scuro, RGBA premoltiplicato."""
+    from PIL import Image, ImageDraw, ImageFont
+    try:
+        font = ImageFont.truetype(FONT, int(h * 0.9))
+    except OSError:
+        font = ImageFont.load_default()
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    bx = dr.textbbox((0, 0), ch, font=font)
+    x, y = (w - (bx[2] - bx[0])) / 2 - bx[0], (h - (bx[3] - bx[1])) / 2 - bx[1]
+    dr.text((x, y), ch, font=font, fill=fill, stroke_width=4, stroke_fill=(70, 20, 90, 255))
+    raw, px = im.tobytes(), bytearray()
+    for i in range(0, len(raw), 4):
+        r, g, b, a = raw[i:i + 4]
+        px += bytes((r * a // 255, g * a // 255, b * a // 255, a))
+    return bytes(px)
+
+
+def build_digit(n, kind='Y', fill=(255, 222, 80, 255)):
+    name = 'GuiltBonus_%sfix%d' % (kind, n)
+    lw = Lwf(name, (DIGIT_W, DIGIT_H))
+    fname = '%s_digit.png' % name
+    obj = lw.bitmap(fname, DIGIT_W, DIGIT_H, mat(-DIGIT_W / 2, -DIGIT_H / 2))
+    p = lw.place(0, obj, None, lw.matrix(mat()))
+    return name, lw.build([[p, lw.anim([(STOP, None)])]], 1), {fname: btf8(DIGIT_W, DIGIT_H, glyph(str(n), fill=fill))}
+
+
+def build_result(name=RESULT, fill=(255, 222, 80, 255)):
+    lw = Lwf(name, (1136, 640))
+    files = {}
+    objs = {}
+    for key, ch in (('plus', '+'), ('pct', '%')):
+        fname = '%s_%s.png' % (name, key)
+        files[fname] = btf8(DIGIT_W, DIGIT_H, glyph(ch, fill=fill))
+        objs[key] = lw.bitmap(fname, DIGIT_W, DIGIT_H, mat(-DIGIT_W / 2, -DIGIT_H / 2))
+    for i in (1, 2, 3):
+        objs['num%d' % i] = lw.movie('num%d' % i)
+        lw.instance('num%d' % i)
+    step = DIGIT_W * 0.8
+    xs = {'pct': 2 * step, 'num1': step, 'num2': 0.0, 'num3': -step, 'plus': -2 * step}
+    order = ['plus', 'num3', 'num2', 'num1', 'pct']
+    places, frames = {}, []
+    for f in range(RN):
+        ctrls = []
+        s = ramp(f, 0, 8, 0.2, 1.25) - ramp(f, 8, 14, 0.0, 0.25)
+        a = ramp(f, 0, 4, 0.0, 1.0)
+        for d, key in enumerate(order):
+            mid, aid = lw.matrix(mat(xs[key] * s, 0, 0, s, s)), lw.alpha(a)
+            if f == 0:
+                places[key] = lw.place(d, objs[key], key if key.startswith('num') else None, mid)
+                ctrls.append(places[key] if not aid else lw.move(places[key], mid, aid))
+            else:
+                ctrls.append(lw.move(places[key], mid, aid))
+        if f == RN - 1:
+            ctrls.append(lw.anim([(STOP, None)]))
+        frames.append(ctrls)
+    return lw.build(frames, len(order)), files
+
+
+def _write(out, name, data, files):
+    d = os.path.join(out, 'lwf', 'medal', 'guilt_bonus', name)
     os.makedirs(d, exist_ok=True)
-    data, files = build()
-    with open(os.path.join(d, NAME + '.lwf'), 'wb') as fh:
+    with open(os.path.join(d, name + '.lwf'), 'wb') as fh:
         fh.write(data)
     for fname, blob in files.items():
         with open(os.path.join(d, fname), 'wb') as fh:
             fh.write(blob)
+
+
+def write_all(out):
+    data, files = build()
+    _write(out, NAME, data, files)
+    _write(out, RESULT, *build_result())
+    # guilt arrivata al massimo ([fn]): GuiltBonus_max + cifre GuiltBonus_Rfix%d (stesso
+    # schema: enterFrame su _root, load su num1..num3, lambda 0x1f60cd8 -> [fn]); rosse
+    _write(out, MAX, *build_result(MAX, RED))
+    for n in range(10):
+        _write(out, *build_digit(n))
+        _write(out, *build_digit(n, 'R', RED))
     return len(data), len(files)
 
 

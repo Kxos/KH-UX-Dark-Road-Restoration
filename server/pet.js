@@ -62,6 +62,15 @@ const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS === '1';
 // Parti della serie 001 per il pet visibile (default). KHUX_PET_PARTS=0 = ripiego: id 0, pet
 // invisibile come prima (i movimenti mandano comunque gli eventi e i pet_eff restano visibili).
 const DEFAULT_PART = process.env.KHUX_PET_PARTS === '0' ? 0 : 1;
+// Spirit Training (I-082). Valori NOSTRI: nessun dump delle risposte originali.
+// - attesa tra due allenamenti (khwiki: un trait ogni 20 ore), in ore
+const TRAIN_HOURS = Number(process.env.KHUX_PET_TRAIN_HOURS || 20);
+// - slot aperti oltre al primo (sempre aperto, [fn]): 2-4 si sbloccavano con acquisti
+//   (Weekly Jewels, 10 draw, Jewel Box E) che il nostro server non vende; 1 = solo il primo
+const TRAIN_SLOTS = Math.min(4, Math.max(1, Number(process.env.KHUX_PET_TRAIN_SLOTS || 1)));
+// - jewel chiesti da «Train Now» per riavviare subito (recoverStoneNum, testo 106200405); non
+//   vengono scalati
+const TRAIN_STONES = Number(process.env.KHUX_PET_TRAIN_STONES || 0);
 
 function routePet(p) {
   if (!ENABLED) return null; // spento: risposte generiche dagli schemi, come prima
@@ -72,6 +81,9 @@ function routePet(p) {
   if (p === '/pet/name') return 'petname';
   if (p === '/pet/subslot') return 'petsubslot';
   if (p === '/user/medal/preremove') return 'medalpreremove';
+  // 243 GET /pet/expedition, 244 POST /pet/expedition, 245 PUT /pet/expedition/recover:
+  // respondExpedition (server.js deve smistare questo kind; senza, risposta generica come prima)
+  if (p === '/pet/expedition' || p === '/pet/expedition/recover') return 'petexpedition';
   return null;
 }
 
@@ -136,11 +148,25 @@ function makePet(ctx) {
     };
   }
 
+  // Spirit Training: stato in player.pet.training {total, monthly, month 'AAAA-MM', readyAt
+  // (ms dell'ora del server), medals [userMedalId]}
+  const HOUR = 3600 * 1000;
+  // ora del server (ctx.serverTime, «AAAA-MM-GG hh:mm:ss» UTC) <-> ms
+  const serverMs = () => Date.parse(ctx.serverTime().replace(' ', 'T') + 'Z');
+  const fmt = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+  function training() {
+    const t = (state().training ||= { total: 0, monthly: 0, month: '', readyAt: 0, medals: [] });
+    const month = ctx.serverTime().slice(0, 7);
+    if (t.month !== month) { t.month = month; t.monthly = 0; }   // conteggio del mese
+    return t;
+  }
+
   // GET /pet/profile (170)
   function respondProfile(res) {
     const now = ctx.serverTime();
     const ids = gearIds();
     const medals = ctx.userMedalList().filter((m) => ids.includes(m.userMedalId));
+    const t = training();
     ctx.send(res, 200, {
       ret: ctx.ret(),
       pet: {
@@ -151,7 +177,65 @@ function makePet(ctx) {
         userMedals: medals.map((m) => ctx.userMedalElement(m, now)),
         initCoordinate: 1, // 0 = Tutorial_Pet01 (assente) nella scena PetEdit
       },
-      recoverDatetime: now, recoverStoneNum: 0, expeditionTotalNum: 0, expeditionMonthlyNum: 0,
+      // recoverDatetime = quando il prossimo allenamento e' pronto ([fn]: passato =
+      // «Train», futuro = «Train Now» + «Training Ready in»), contatori del dialog SPIRIT
+      recoverDatetime: t.readyAt > serverMs() ? fmt(t.readyAt) : now, recoverStoneNum: TRAIN_STONES,
+      expeditionTotalNum: t.total, expeditionMonthlyNum: t.monthly,
+    });
+  }
+
+  // Spirit Training (I-082), stesso percorso per tre azioni:
+  // - 243 GET /pet/expedition (corpo vuoto, [fn]; parser [fn] -> sessione +0xa80,
+  //   tutto obbligatorio): openMedalSlotDatas[] {openMedalSlotNumber uint 1-4 (fuori = abort in
+  //   [fn]), openMedalSlotLimitDatetime data}, limitDateimeWeekEnd e limitDateimeMonthEnd
+  //   (date, scritte cosi' nel binario; scadenze degli slot 2 e 4 bloccati), remainingDrawCount
+  //   (uint, draw da 10 che mancano per lo slot 3). Prima la rotta generica mandava lo schema di
+  //   244 e il parser falliva: «Train»/«Training Slots» non si aprivano;
+  // - 244 POST /pet/expedition (corpo {userMedalIds}, [fn] da «Train» [fn]): il
+  //   ramo legge userMedals ([fn], obbligatorio) e medalResumption {userShuffleSkills[]
+  //   (elemento [fn]), resumptionStatus uint} ([fn]); poi il client richiede
+  //   GET /pet/profile e aggiorna il dialog ([fn] -> [fn]). Nessun trait nuovo:
+  //   userShuffleSkills [] (gli Spirit Trait non sono ricostruiti);
+  // - 245 PUT /pet/expedition/recover (corpo {stoneNum}, [fn], «Train Now»): il ramo non
+  //   legge nulla oltre a ret; qui l'attesa si azzera (jewel non scalati).
+  function respondExpedition(res, method, body, path) {
+    const t = training();
+    const nowMs = serverMs();
+    if (String(path || '').toLowerCase().startsWith('/pet/expedition/recover')) {
+      t.readyAt = 0;
+      ctx.savePlayer();
+      console.log('  [pet] training: attesa azzerata');
+      return ctx.send(res, 200, { ret: ctx.ret() });
+    }
+    if (String(method).toUpperCase() === 'POST') {
+      const owned = new Map(ctx.userMedalList().map((m) => [m.userMedalId, m]));
+      const ids = (body?.userMedalIds || []).map(Number).filter((id) => owned.has(id)).slice(0, 4);
+      t.medals = ids;
+      t.total += 1;
+      t.monthly += 1;
+      t.readyAt = nowMs + TRAIN_HOURS * HOUR;
+      ctx.savePlayer();
+      console.log(`  [pet] training ${ids.join(',')}: totale ${t.total}, mese ${t.monthly}`);
+      const now = ctx.serverTime();
+      return ctx.send(res, 200, {
+        ret: ctx.ret(),
+        userMedals: ids.map((id) => ctx.userMedalElement(owned.get(id), now)),
+        medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
+      });
+    }
+    // GET: slot 2..TRAIN_SLOTS aperti fino a fine mese; scadenze settimana/mese
+    const d = new Date(nowMs);
+    const day = d.getUTCDay();                                   // 0 = domenica
+    const weekEnd = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + ((7 - day) % 7), 23, 59, 59);
+    const monthEnd = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0, 23, 59, 59);
+    const slots = [];
+    for (let n = 2; n <= TRAIN_SLOTS; n++) slots.push({ openMedalSlotNumber: n, openMedalSlotLimitDatetime: fmt(monthEnd) });
+    return ctx.send(res, 200, {
+      ret: ctx.ret(),
+      openMedalSlotDatas: slots,
+      limitDateimeWeekEnd: fmt(weekEnd),
+      limitDateimeMonthEnd: fmt(monthEnd),
+      remainingDrawCount: 10,
     });
   }
 
@@ -162,10 +246,13 @@ function makePet(ctx) {
   }
 
   // GET /pet/coordinate/all (172, [fn]): pet.userPetCoordinates[] (12 int ciascuno),
-  // copiati nella mappa della sessione (+0x7b0)
+  // copiati nella mappa della sessione (+0x7b0). Sempre i 6 outfit: la scena Outfits
+  // (ScenePetPartsEdit, [fn]) mette in una lista quelli con myCoordinateNo 1..6 e
+  // «Button_Switch» passa al successivo fino al sesto ([fn] -> [fn]): un indice
+  // oltre la lista = out_of_range, crash (I-082)
   function coordinatesList() {
-    const nos = new Set([1, ...Object.keys(state().coordinates).map(Number)]);
-    return [...nos].sort((a, b) => a - b).map(coordinate);
+    const nos = new Set([1, 2, 3, 4, 5, 6, ...Object.keys(state().coordinates).map(Number)]);
+    return [...nos].filter((n) => n >= 1 && n <= 6).sort((a, b) => a - b).map(coordinate);
   }
   function respondCoordinateAll(res) {
     ctx.send(res, 200, { ret: ctx.ret(), pet: { userPetCoordinates: coordinatesList() } });
@@ -222,7 +309,7 @@ function makePet(ctx) {
 
   return {
     respondProfile, respondParts, respondCoordinateAll, respondCoordinateUpdate, respondName,
-    respondSubslot, respondPreremove, onMedalRemoved, petSubslotData,
+    respondSubslot, respondPreremove, onMedalRemoved, petSubslotData, respondExpedition,
   };
 }
 
