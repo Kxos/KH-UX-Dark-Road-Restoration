@@ -1701,8 +1701,15 @@ function respondMedalEnhance(res, body) {
   const base = list.get(Number(body?.baseUserMedalId));
   // celle impilate: numbers[i] copie della cella componentUserMedalIds[i] (vuoto = 1)
   const cells = (body?.componentUserMedalIds || []).map(Number);
-  const comps = cells.flatMap((id, i) => stackCopies(id, body?.numbers?.[i]))
-    .map((id) => list.get(id)).filter(Boolean);
+  // trascinando piu' volte la stessa cella il client la ripete ([440,440,440] senza numbers,
+  // banco gu_35): ogni ripetizione prende le copie successive, non di nuovo la prima
+  const taken = new Map();
+  const comps = cells.flatMap((id, i) => {
+    const n = Math.max(1, Number(body?.numbers?.[i]) || 1);
+    const from = taken.get(id) || 0;
+    taken.set(id, from + n);
+    return stackCopies(id, from + n).slice(from);
+  }).map((id) => list.get(id)).filter(Boolean);
   const now = serverTime();
   if (!base || !rows.get(base.medalId)) {
     console.log('  [level up] medaglia base assente:', body?.baseUserMedalId);
