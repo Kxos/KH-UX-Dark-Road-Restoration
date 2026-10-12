@@ -1659,8 +1659,9 @@ function userMedalsData(now) {
 // Level Up ed Evolve: solo le medaglie toccate (il client le fonde nel suo elenco). Con tutte le
 // ~2000 il client restava fermo 6 s prima dell'animazione (banco dl5, I-083). Le pile dei
 // materiali si rimandano per medalId: consumata la copia in cima, la pila ha un altro userMedalId.
-function touchedMedalsData(baseId, comps, now) {
+function touchedMedalsData(baseId, comps, now, baseMedalId) {
   const ids = new Set(comps.map((m) => m.medalId));
+  if (baseMedalId) ids.add(baseMedalId); // Evolve: la pila in cui e' entrata la medaglia evoluta
   return stackedMedalList().filter((m) => m.userMedalId === baseId || ids.has(m.medalId))
     .map((m) => userMedalElement(m, now));
 }
@@ -1813,12 +1814,15 @@ function respondMedalEvolve(res, body) {
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
-    userMedals: touchedMedalsData(base.userMedalId, comps, now),
+    userMedals: touchedMedalsData(base.userMedalId, comps, now, row.evolveId),
     beforeEvolveUserMedal: before,
     afterEvolveUserMedal: userMedalElement({ ...base, medalId: row.evolveId, level: 1, exp: 0 }, now),
     pet: { petSubslot: petSubslotNow() }, // come il ramo 55 (copia solo se il pet c'e', 0x7ceeac)
     // solo le celle sparite (una pila con copie rimaste resta)
-    attachmentMedalIds: [...new Set(cells)].filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
+    // e la base, se l'evoluta e' entrata in una pila esistente (validPack, es. Fantasia Mickey B):
+    // senza, il client teneva due celle separate fino al login successivo
+    attachmentMedalIds: [...new Set([...cells, base.userMedalId])]
+      .filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
   });
 }
 
