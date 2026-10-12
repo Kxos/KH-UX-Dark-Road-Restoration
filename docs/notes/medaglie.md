@@ -171,3 +171,27 @@ esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone
 `userData.userPoint` + `userMaterial`. Prezzi khuxwiki: Mythril Stone 50, Gem 100, Crystal 150, altri
 10; Mythril Shard e Orichalcum non vendibili. Icone dei materiali: `fetch_material_icons.py` (44 su 45,
 manca Remembrance Gem).
+
+<a id="trait-medal"></a>
+## Trait Medal (I-084)
+
+Fonti in `reference\trait_medals\NOTE.md` (avvisi Square Enix 38128, 46740, 54963; guida dell'utente
+p. 21-23; khuxwiki). «Dedicated Awakening Medal»: ognuna e' legata a una medaglia (es. Trait Medal #1
+-> Illustrated KH Riku [EX]), 6★ in bianco e nero con la stessa immagine, stessa voce dell'Album;
+STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313 (khuxwiki: 189).
+- Fusa sulla sua medaglia: +1 trait casuale e +1 pallino; con i pallini pieni sblocca o rilancia
+  la guilt (come una copia identica o Mickey & Brooms; il +1% e' il Magic Mirror). Su altre
+  medaglie solo EXP. Slot dei trait pieni: il giocatore sceglie quale sostituire o scarta il nuovo.
+- Dalla 3.3.0 si impilano fino a 99, niente spirit slot ne' condivisione. Ottenute da deal
+  dedicati, eventi, Moogle Shop («Trait Medal #N x10», 1.000 jewel).
+- Client 4.3.1: filtro della Medal List (`[fn]`) con i tipi 1, 2, 4/8, 5, 6, 3, 9, 10 =
+  Attack, EXP, Boost, Cost, Evolve, Sell, Trait, Subslot (Trait = type 9, da confermare);
+  `[fn]` esclude 9 e 10 dagli Special Trait. Materiale «da pallino» (`[fn]`):
+  stessa groupId, groupId in `burstEnhanceCategory` della base, o type 8: la Trait Medal va
+  collegata cosi'. Il trait lo decide il server: `afterEnhanceUserMedal.userShuffleSkills`,
+  `overwriteSkills`, `successOverwrite`, `medalResumption {userShuffleSkills, resumptionStatus}`;
+  slot pieni -> `POST /user/medal/shuffleskill` (azione 57) `{userMedalId, userShuffleSkillId,
+  enableUserShuffleSkillId}` (testi «Choose a trait to replace.», «There are traits that have not
+  been set.»).
+- Stato: nessuna riga nel master locale; `shuffleskill.json` ha `rate` 0 (pesi ignoti). Il server
+  non da' trait da fusione (ne' dalle copie identiche) e `medalResumption` e' sempre vuoto.
