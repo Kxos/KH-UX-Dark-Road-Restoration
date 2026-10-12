@@ -160,18 +160,19 @@ class TextLwf(Lwf):
 # ---- texture degli effetti (funzioni su [-1, 1]^2 -> RGBA, premoltiplicate da draw)
 
 def tex_beam(x, y):
-    """raggio orizzontale bianco-azzurro, piu' sottile verso la coda (sinistra)."""
-    core = math.exp(-(y * 4.5) ** 2)
-    glow = math.exp(-(y * 1.8) ** 2) * 0.45
-    tail = min(1.0, (x + 1) * 1.5)
-    head = min(1.0, (1 - x) * 6)
-    return lerp(0.75, 1.0, core), lerp(0.88, 1.0, core), 1.0, (core + glow) * tail * head
+    """raggio orizzontale bianco-azzurro: nucleo bianco largo (come pet_training_anim_07/08, ~1/12
+    dell'altezza dello schermo), alone azzurro, coda che sfuma a sinistra, testa arrotondata."""
+    core = min(1.0, math.exp(-(y * 2.6) ** 4) * 1.15)
+    glow = math.exp(-(y * 1.5) ** 2) * 0.55
+    tail = min(1.0, (x + 1) * 2.5)
+    head = max(0.0, min(1.0, (1 - x) * 5 - abs(y) * 2.5))
+    return lerp(0.7, 1.0, core), lerp(0.86, 1.0, core), 1.0, min(1.0, core + glow) * tail * head
 
 
 def tex_ring(x, y):
     """anello iridescente (come la bolla del video)."""
     r = math.hypot(x, y)
-    a = max(0.0, 1 - abs(r - 0.86) / 0.1) ** 1.4
+    a = max(0.0, 1 - abs(r - 0.84) / 0.13) ** 1.2
     h = (math.atan2(y, x) / (2 * math.pi)) % 1.0
     rr = 0.6 + 0.4 * math.cos(2 * math.pi * h)
     gg = 0.6 + 0.4 * math.cos(2 * math.pi * (h - 1 / 3))
@@ -232,7 +233,7 @@ def pill_pixels(glow_only=False):
 
 def _effect_textures(lw, name):
     files, objs = {}, {}
-    spec = [('beam', 512, 48, tex_beam), ('ring', 192, 192, tex_ring), ('white', 8, 8, tex_white),
+    spec = [('beam', 512, 96, tex_beam), ('ring', 192, 192, tex_ring), ('white', 8, 8, tex_white),
             ('star', 64, 64, tex_star5)]
     for key, w, h, fn in spec:
         fname = '%s_%s.png' % (name, key)
@@ -284,9 +285,13 @@ def _frames(lw, objs, order, n, layer_fn, inst, events):
 
 # ---- Kakusei_Get1: raggio, anello, lampo, poi la roulette nella pillola
 
-G1_N = 96                  # 3,2 s
-G1_FLASH = 30              # picco del lampo: la pillola appare sotto il bianco
-G1_TICKS = list(range(G1_FLASH + 4, G1_N - 2, 7))     # ~4 nomi al secondo
+# Tempi dal foglio pet_training_anim_00_sheet (4 fps): velo bianco residuo del fumetto, raggio da
+# sinistra (~1 s, anim_07), anello iridescente sulla testa del raggio (anim_08), lampo bianco a
+# tutto schermo (~0,5 s), poi la roulette (~2 s). Prima il lampo arrivava a 1 s e al banco
+# raggio/anello quasi non si vedevano.
+G1_FLASH = 44              # picco del lampo: la pillola appare sotto il bianco
+G1_N = G1_FLASH + 66       # 3,7 s
+G1_TICKS = list(range(G1_FLASH + 6, G1_N - 2, 7))     # ~4 nomi al secondo
 
 
 def build_get1(icon_scale):
@@ -299,15 +304,16 @@ def build_get1(icon_scale):
     fl = G1_FLASH
 
     def layer(f, key):
-        if key == 'beam':          # entra da sinistra e si allunga verso il centro
-            x = ramp(f, 0, fl - 6, -620, -40)
-            return mat(x, 0, 0, ramp(f, 0, fl - 6, 0.6, 2.4), ramp(f, 0, 6, 0.4, 1.0)), \
-                ramp(f, 0, 4, 0, 1) - ramp(f, fl - 4, fl + 2, 0, 1)
-        if key == 'ring':
-            s = ramp(f, 8, fl, 0.4, 1.8)
-            return mat(0, 0, 0, s, s), ramp(f, 8, 12, 0, 1) - ramp(f, fl - 6, fl + 2, 0, 1)
-        if key == 'white':         # lampo a tutto schermo
-            return mat(0, 0, 0, 190, 110), ramp(f, fl - 8, fl, 0, 1) - ramp(f, fl + 2, fl + 14, 0, 1)
+        if key == 'beam':          # entra da sinistra e si allunga fin oltre il centro
+            x = ramp(f, 0, fl - 10, -720, -90)
+            return mat(x, 0, 0, ramp(f, 0, fl - 10, 0.8, 2.5), ramp(f, 0, 6, 0.5, 1.0)), \
+                ramp(f, 0, 3, 0, 1) - ramp(f, fl - 4, fl + 1, 0, 1)
+        if key == 'ring':          # bolla iridescente che si allarga sulla testa del raggio
+            s = ramp(f, 10, fl, 0.6, 2.7)
+            return mat(40, 0, 0, s, s), ramp(f, 10, 14, 0, 1) - ramp(f, fl - 6, fl + 1, 0, 1)
+        if key == 'white':         # velo residuo del fumetto, poi lampo a tutto schermo
+            veil = 0.55 * (1 - ramp(f, 0, 8, 0, 1))
+            return mat(0, 0, 0, 190, 110), veil + ramp(f, fl - 8, fl, 0, 1) - ramp(f, fl + 3, fl + 16, 0, 1)
         if key in ('pill', 'icon', 'text'):
             s = ramp(f, fl - 2, fl + 6, 0.85, 1.0)
             base = {'pill': mat(), 'icon': pos['icon'], 'text': pos['text']}[key]
@@ -413,18 +419,30 @@ def write_kakusei(out, src):
 
 # ---- vignette del fumetto (PetInfo_TrainingProduction), texture in cocostudio/publish
 #
-# Poligoni misurati su pet_training_anim_05 (1280x720) e riportati sul layout 960x640
-# (x * 0.75, y * 0.75 + 50 dall'alto): coordinate nella texture, origine in alto a sinistra.
+# Poligoni misurati su pet_training_anim_05 (1280x720 = schermo 16:9 intero) e riportati sul
+# layout 960x640. Il client adatta il layout all'altezza (1080/640 = 1,6875 sul banco 1920x1080)
+# e lo centra in larghezza: lo schermo 16:9 e' x -88..1048 del layout (1136x640, come lo stage
+# dei LWF Kakusei). Quindi x' = x * 8/9 - 88, y' = y * 8/9 dall'alto. (Prima x * 0,75, y * 0,75
+# + 50: vignette rimpicciolite e raccolte in alto, segnalazione utente 12-10.)
+REF_K, REF_X0 = 640 / 720, -(1136 - 960) / 2
+
+
+def ref_to_layout(x, y):
+    """punto del riferimento 1280x720 -> layout 960x640 (y dall'alto)."""
+    return x * REF_K + REF_X0, y * REF_K
+
 
 def _layout_pts(pts):
-    return [(x * 0.75, y * 0.75 + 50) for x, y in pts]
+    return [ref_to_layout(x, y) for x, y in pts]
 
 
 PANELS = {
     # nome: poligono (riferimento 1280x720, y verso il basso)
     'Panel1': [(100, 25), (620, 25), (540, 312), (100, 395)],
     'Panel2': [(645, 25), (1180, 25), (1180, 188), (565, 305)],
-    'Panel3': [(-40, 432), (1320, 202), (1320, 596), (-40, 506)],
+    # fascia azzurra da bordo a bordo (prolungata oltre lo schermo per i rapporti piu' larghi):
+    # bordo alto (0, 452) -> (1280, 210), basso (0, 505) -> (1280, 590)
+    'Panel3': [(-140, 478), (1420, 184), (1420, 599), (-140, 496)],
     'Panel4': [(100, 548), (1180, 622), (1180, 692), (100, 692)],
 }
 
@@ -453,7 +471,7 @@ def _pattern(name, w, h):
     rnd = random.Random(7)
     if name == 'Panel1':          # scacchi a rombi verde acqua
         dr.rectangle((0, 0, w, h), fill=(52, 150, 142, 255))
-        s, r = 46, 23             # rombi chiari che si toccano agli angoli = scacchiera a 45 gradi
+        s, r = 62, 31             # rombi chiari che si toccano agli angoli = scacchiera a 45 gradi
         for i in range(-1, w // s + 2):
             for j in range(-1, h // s + 2):
                 cx, cy = i * s, j * s
@@ -479,7 +497,7 @@ def _pattern(name, w, h):
             p = [(cx, cy), (cx + 1400 * math.cos(a - 0.05), cy + 1400 * math.sin(a - 0.05)),
                  (cx + 1400 * math.cos(a + 0.05), cy + 1400 * math.sin(a + 0.05))]
             dr.polygon(p, fill=(150, 215, 250, 255))
-        for sx, sy, r in ((0.08, 0.45, 38), (0.85, 0.35, 70), (0.4, 0.75, 26), (0.95, 0.8, 30)):
+        for sx, sy, r in ((0.16, 0.62, 40), (0.85, 0.35, 85), (0.4, 0.78, 30), (0.95, 0.8, 36)):
             pts = []
             for i in range(10):
                 rr = r if i % 2 == 0 else r * 0.45
@@ -488,7 +506,7 @@ def _pattern(name, w, h):
             dr.polygon(pts, outline=(205, 235, 255, 255), width=3)
     else:                         # selciato arancione con una stella azzurra
         dr.rectangle((0, 0, w, h), fill=(205, 140, 70, 255))
-        s = 26
+        s = 34
         for j in range(-1, h // s + 2):
             for i in range(-1, w // s + 2):
                 x = i * s + (s // 2 if j % 2 else 0) + rnd.randint(-4, 4)
@@ -503,9 +521,42 @@ def _pattern(name, w, h):
     return im
 
 
+# Ritaglio del pet nelle vignette (FUN_009189a8 -> FUN_00b40550 -> FUN_00b4030c / FUN_00b40610):
+# - il pet (scala s = scaleX di «%d_parameter») e' disegnato in una RenderTexture grande quanto la
+#   texture di «Pet» (moltiplicata per k), poi la texture di «Pet» ci viene disegnata sopra con
+#   blend {GL_ZERO, GL_ONE_MINUS_SRC_ALPHA} (DAT_017fd0c0 = 0, 0x303): dove la maschera e' OPACA il
+#   pet si CANCELLA. La maschera quindi e' bianca FUORI dalla vignetta e trasparente dentro (prima
+#   era il contrario: al banco il pet si vedeva solo fuori dalle vignette, nei triangoli bianchi);
+# - k = min(max(1, GLView scaleX), |3,9 / s|) (DAT_017a05b8 = 3,9; scaleX = 1080/640 sul banco);
+# - origine (piedi) del pet nella maschera, unita' del layout dall'angolo in basso a sinistra,
+#   y in su: (hx + k * px, -hy + k * py) con (px, py) = posizione di «%d_parameter» e (hx, hy) =
+#   testa del pet (FUN_00b3e2c4: head_sp + pet_center = (-9, -24) + (-8,1, -13,85) della parte
+#   001/face_sp, y del LWF in giu'); per 2Pet il codice somma anche altezza_testa * s (pet +0x9a4,
+#   dalla tabella master 0xb: assente = 0);
+# - il ritaglio e' centrato sulla posizione di Pet (e Pet_Shadow), cioe' sul centro della vignetta.
+PET_HEAD = (-17.1, -37.85)        # testa del pet a riposo (LWF, y in giu')
+PET_SCALE_CAP = 3.9               # DAT_017a05b8
+GLVIEW_SCALE = 1080 / 640         # banco 1920x1080
+
+
+def pet_parameter(scale, foot_x, foot_y, glview=GLVIEW_SCALE):
+    """posizione di «%d_parameter» per avere i piedi del pet in (foot_x, foot_y) della maschera
+    (unita' del layout dall'angolo in basso a sinistra). Con s >= 3,9 / glview k non dipende dallo
+    schermo (k = 3,9 / s)."""
+    k = min(max(1.0, glview), abs(PET_SCALE_CAP / scale))
+    hx, hy = PET_HEAD[0], -PET_HEAD[1]
+    return round((foot_x - hx) / k, 1), round((foot_y + hy) / k, 1)
+
+
+def pet_feet_for_head(scale, head_x, head_y):
+    """piedi del pet che mettono la testa (pet_center) in (head_x, head_y), y in su."""
+    return head_x - PET_HEAD[0] * scale, head_y + PET_HEAD[1] * scale
+
+
 def panel_textures():
     """{nome file: blob BTF} delle vignette (sfondo con bordo nero) e delle maschere (bianco
-    pieno: il client ritaglia il pet con la texture di Pet / Pet_Shadow, FUN_00b4030c)."""
+    FUORI dalla vignetta e sul bordo, trasparente dentro: vedi sopra, il pet si cancella dove la
+    maschera e' opaca)."""
     from PIL import Image, ImageDraw
     files = {}
     for name in PANELS:
@@ -514,11 +565,15 @@ def panel_textures():
         ImageDraw.Draw(mask).polygon(pts, fill=255)
         bg = _pattern(name, w, h)
         bg.putalpha(mask)
-        ImageDraw.Draw(bg).line(pts + [pts[0]], fill=(20, 20, 24, 255), width=5)
+        ImageDraw.Draw(bg).line(pts + [pts[0]], fill=(20, 20, 24, 255), width=6)
         files['PetTraining_%s.png' % name] = btf8(w, h, _premul(bg))
         if name != 'Panel4':
+            hole = Image.new('L', (w, h), 255)
+            dr = ImageDraw.Draw(hole)
+            dr.polygon(pts, fill=0)
+            dr.line(pts + [pts[0]], fill=255, width=8)      # il bordo nero resta sopra il pet
             white = Image.new('RGBA', (w, h), (255, 255, 255, 255))
-            white.putalpha(mask)
+            white.putalpha(hole)
             files['PetTraining_%sMask.png' % name] = btf8(w, h, _premul(white))
     return files
 

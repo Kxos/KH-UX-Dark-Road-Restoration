@@ -2334,15 +2334,35 @@ def pet_training_production():
     (4Pet), poi bianco (~3 s). Le vignette e le maschere (stessa sagoma, bianche) sono di
     make_pet_training_fx.py; Pet/Pet_Shadow hanno la maschera (il client ci ritaglia il pet e la
     sua ombra nera, spostata di 6 px). Prima: cerchi vuoti della cornice della home e
-    «TRAINING!» (nostro), segnalazione utente 12-10. Scala del pet in %d_parameter (scaleX/Y,
-    FUN_00b4030c: 3,9 / scala = risoluzione): 2,2 nelle vignette, 3,2 nel primo piano (il codice
-    abbassa 2Pet dell'altezza della testa), 2,0 per 4Pet (nodo scalato): stime da verificare."""
+    «TRAINING!» (nostro), segnalazione utente 12-10.
+    Rifatto dopo il confronto col foglio pet_training_anim_00_sheet (segnalazione utente 12-10:
+    vignette piccole in alto, pet minuscolo, bianco troppo presto):
+    - vignette a tutto schermo 16:9 (make_pet_training_fx.ref_to_layout: il layout e' adattato
+      all'altezza e centrato, lo schermo e' x -88..1048);
+    - pet enorme come nell'originale: maschere invertite (il client cancella il pet dove la
+      maschera e' opaca, blend {0, 1-srcA}) e %d_parameter calcolato da
+      make_pet_training_fx.pet_parameter (FUN_009189a8/FUN_00b4030c: k = min(max(1, scala GLView),
+      3,9 / s); posizione * k + testa = piedi del pet nella maschera). 1Pet s 4,2 = pet intero
+      alto quanto la vignetta; 2Pet s 6,5 = solo il muso; 3Pet s 3,9 nella fascia; 4Pet s 3,4
+      (nodo scalato) corre da destra a sinistra (il pet guarda a -x; training3 = corsa);
+    - tempi: vignette in entrata 0,1-1,3 s (1 in dissolvenza, 2 e la fascia da destra, 4 dal
+      basso), il pet corre 1,2-3,1 s, bianco 3,2-3,5 s, fine dell'azione a 3,6 s."""
     import make_pet_training_fx as fx
     panels, nodes = [], []
-    # nome vignetta, nodo, scala del pet, ingresso (dx, dy) nell'azione e fotogramma d'arrivo
-    spec = [('Panel1', '1Pet', 2.2, (-520, 0), 3), ('Panel2', '2Pet', 3.2, (620, 0), 5),
-            ('Panel3', '3Pet', 2.2, (-1000, 0), 7), ('Panel4', 'Panel4', None, (0, -220), 9)]
-    for pname, node, scale, (dx, dy), arrive in spec:
+
+    def in_mask(pname, xr, yr):
+        """punto del riferimento 1280x720 -> unita' del layout dall'angolo in basso a sinistra
+        della maschera della vignetta (y in su)."""
+        x0, y0, w, h, _pts = fx.panel_geometry(pname)
+        lx, ly = fx.ref_to_layout(xr, yr)
+        return lx - x0, (y0 + h) - ly
+    # nome vignetta, nodo, scala del pet, piedi del pet (riferimento 1280x720) o None, testa del
+    # pet (per il primo piano) o None, ingresso (dx, dy), primo e ultimo fotogramma dell'ingresso
+    spec = [('Panel1', '1Pet', 4.2, (335, 350), None, (-120, 0), 1, 4),
+            ('Panel2', '2Pet', 6.5, None, (840, 140), (520, 0), 4, 7),
+            ('Panel3', '3Pet', 3.9, (800, 545), None, (1100, 0), 7, 10),
+            ('Panel4', 'Panel4', None, None, None, (0, -160), 10, 13)]
+    for pname, node, scale, feet, head, (dx, dy), f0, f1 in spec:
         x0, y0, w, h, _pts = fx.panel_geometry(pname)
         x, y = round(x0), round(640 - y0 - h)
         kids = [I('Bg', w / 2, h / 2, w, h, 'PetTraining_%s.png' % pname, s9=False)]
@@ -2352,22 +2372,34 @@ def pet_training_production():
                      I('Pet', w / 2, h / 2, w, h, mask, s9=False)]
         panels.append(P(node, x, y, w, h, kids))
         if scale:
-            panels.append(P('%s_parameter' % node[0], 0, 0, 10, 10, visible=False, scale=scale))
-        nodes.append((node, [_action_frame(0, x + dx, y + dy), _action_frame(max(1, arrive - 3), x + dx, y + dy),
-                             _action_frame(arrive, x, y), _action_frame(30, x, y)]))
-    # pet che corre nella fascia, da sinistra a destra con piccoli balzi
-    run = [_action_frame(0, -200, 250, 2.0), _action_frame(8, -200, 250, 2.0)]
-    for k, f in enumerate(range(10, 29, 3)):
-        run.append(_action_frame(f, -200 + (f - 8) * 62, 250 + (18 if k % 2 else 0), 2.0))
+            if head:
+                fxm, fym = fx.pet_feet_for_head(scale, *in_mask(pname, *head))
+            else:
+                fxm, fym = in_mask(pname, *feet)
+            px, py = fx.pet_parameter(scale, fxm, fym)
+            panels.append(P('%s_parameter' % node[0], px, py, 10, 10, visible=False, scale=scale))
+        nodes.append((node, [_action_frame(0, x + dx, y + dy, opacity=0), _action_frame(f0, x + dx, y + dy, opacity=0),
+                             _action_frame(f1, x, y), _action_frame(36, x, y)]))
+    # pet intero che corre nella fascia da destra a sinistra (piedi poco sopra il bordo basso
+    # della fascia: (0, 505) -> (1280, 590)), con piccoli balzi
+    def run_at(xr, hop):
+        lx, ly = fx.ref_to_layout(xr, 505 + 0.0664 * xr - 22)
+        return round(lx), round(640 - ly + hop)
+    start = run_at(1500, 0)
+    run = [_action_frame(0, *start, 3.4), _action_frame(11, *start, 3.4)]
+    for k, f in enumerate(range(12, 32, 2)):
+        xr = 1500 - (f - 12) * 95
+        run.append(_action_frame(f, *run_at(xr, 16 if k % 2 else 0), 3.4))
+    run.append(_action_frame(36, *run_at(1500 - 19 * 95, 0), 3.4))
     nodes.append(('4Pet', run))
     # dissolvenza nel bianco alla fine (poi Kakusei_Get1 sul dettaglio della medaglia)
-    nodes.append(('Fade', [_action_frame(0, -300, -200, 1.0, 0), _action_frame(25, -300, -200, 1.0, 0),
-                           _action_frame(30, -300, -200, 1.0, 255)]))
+    nodes.append(('Fade', [_action_frame(0, -300, -200, 1.0, 0), _action_frame(32, -300, -200, 1.0, 0),
+                           _action_frame(35, -300, -200, 1.0, 255), _action_frame(36, -300, -200, 1.0, 255)]))
     white = dict(colorType=1, bgColorR=255, bgColorG=255, bgColorB=255, bgColorOpacity=255)
     root = build(P('PetTrainingProduction_root', 0, 0, 960, 640, [
         P('Back', -300, -200, 1560, 1040, opts=white),
         *panels,
-        P('4Pet', -200, 250, 10, 10, scale=2.0),
+        P('4Pet', *start, 10, 10, scale=3.4),
         P('Fade', -300, -200, 1560, 1040, opts=dict(white, opacity=0))]))
     nodes = [{'classname': None, 'name': n, 'ActionTag': find(root, n)['options']['actiontag'], 'actionframelist': fl}
              for n, fl in nodes]
