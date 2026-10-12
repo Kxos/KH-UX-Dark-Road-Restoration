@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 33**, **revisione master 90** (default degli script di sessione).
+Stato del banco: **risorse 33**, **revisione master 93** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
@@ -40,22 +40,23 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato all'11 ottobre 2026 (notte) e prossimo passo
+## Stato al 12 ottobre 2026 e prossimo passo
 
-- Fatto e verificato l'11 ([diario della sera](docs/journal/2026-10-11-sera.md)): Max Out Gauge
-  (I-062), popup AP (I-063), miniature Story (I-064), SLOT 4/5/6 (I-068), Subslot (I-066), Passive
-  Effects si apre (I-065), vendita medaglie (I-073), keyblade fino a +17 (I-067); pet (I-005):
-  visibile in home e in battaglia (gattino Kitstar, parti `lwf/pet/part/001` animate da
-  `make_pet_motions.py`), la medaglia del 6o slot attacca col balzo del pet, la sua speciale la fa
-  l'avatar; uscite «giro lungo» spostate (I-072) e stanze incomplete escluse (I-074 chiuso).
-- **Prossimo passo (richiesta dell'utente): I-075, Optimize** da confrontare col funzionamento
-  dell'originale (deck, Subslot, Gear del pet): prima fonti/video in `reference\`, poi banco.
-- Poi: trascinamento sub-slot (I-066); resto dei Tour 991001-991008 (991008 parte 12 da vedere,
-  I-072); dialog del pet (layout assenti: non toccare Swap Gear); fumetto «Nice to meet you!»
-  (I-071); «There are no passive effects.» (I-065); danni Burst esagerati (I-070).
-- Banco: server con `-Pet`, `server\save\smoke.json` = {"stageId": 1010}; salvataggio con 2090
-  medaglie (prova), sub-slot 120/120. Video delle battaglie: `screenrecord` nel guest, copia in
-  `/mnt/shared/Misc` (= `Documents\XuanZhi9\Misc`), fotogrammi con ffmpeg (`D:\Programmi\ffmpeg`).
+- Fatto e verificato il 12: Optimize come l'originale (I-075: deck completi, slot vuoti = Stock Medal
+  che gioca il turno, immagine 90000), Subslot (I-066: trascinamento e avviso), Passive Effects
+  (I-065: pagina web `/web/passive` in http), fumetto del Profilo (I-071), Field Speed = originale
+  (I-081). Aura del +35 ok (I-078).
+- **Prossimi passi**, in ordine:
+  1. I-078: crash all'animazione di evoluzione (`KeyBlade_Evolution`): rapporto dell'agente e LWF
+     nuovo; per riprovare rimettere Treasure Trove a +34 nel salvataggio (ora +35; copia del +17 in
+     `%TEMP%\player_before_i078.json`).
+  2. I-076/I-077: crash del dialog del pet (Swap Gear, icona in home): layout in preparazione
+     (`make_layouts.py`), poi `-Quick` e banco.
+  3. I-079/I-080: collegare `server/medal-guilt.js` secondo [guilt.md](docs/notes/guilt.md)
+     (guiltProb, Magic Broom e Fantasia Mickey B, campi di userMedal, `respondMedalEnhance`).
+- Banco: risorse 33, **revisione master 93**, server con `-Pet` (`-KbFree` solo per le prove dei
+  keyblade); `server\save\smoke.json` = {"stageId": 1010}; salvataggio con 2090 medaglie, sub-slot
+  120/120, deck Treasure Trove [318,0,317,0,456] + pet 358.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
