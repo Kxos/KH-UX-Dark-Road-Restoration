@@ -47,9 +47,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   (I-065: pagina web `/web/passive` in http), fumetto del Profilo (I-071), Field Speed = originale
   (I-081). Aura del +35 ok (I-078).
 - **Prossimi passi**, in ordine:
-  1. I-078: crash all'animazione di evoluzione (`KeyBlade_Evolution`): rapporto dell'agente e LWF
-     nuovo; per riprovare rimettere Treasure Trove a +34 nel salvataggio (ora +35; copia del +17 in
-     `%TEMP%\player_before_i078.json`).
+  1. (I-078 chiuso: evoluzione e popup della passiva ok.) Salvataggio: Treasure Trove +35.
   2. I-082: dialog del pet (slot vuoti all'apertura, rango 15 contro 17, Train/Name/Outfits senza layout).
   3. I-079/I-080: collegare `server/medal-guilt.js` secondo [guilt.md](docs/notes/guilt.md)
      (guiltProb, Magic Broom e Fantasia Mickey B, campi di userMedal, `respondMedalEnhance`).
