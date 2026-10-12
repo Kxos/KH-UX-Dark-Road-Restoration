@@ -1598,6 +1598,10 @@ COPIES.update({'img/ui/But15_On.png': PUB + 'dark_But15_On.png', 'img/ui/QuestBu
                'img/ui/Complete_icon2.png': PUB + 'AchievedComplete.png'})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
                for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
+# PassiveResult (popup «nuova passiva», FUN_00c54f84, dopo PUT /passive/list isList 0): l'ImageView
+# Panel_Passive ha il 9-slice su Result_Clear_Challenge_Panel01B.png, assente da ogni risorsa: crash
+# in GUIReader (SIGSEGV 0x2c, I-078: Treasure Trove +35 = prima passiva 301350). Copia della 01.
+COPIES[PUB + 'Result_Clear_Challenge_Panel01B.png'] = PUB + 'Result_Clear_Challenge_Panel01.png'
 # Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come
 # per gli NPC e il pet (FUN_011f9fc4 restituisce NULL se manca: crash)
 _EMPTY_LWF = os.path.join(OUT, 'lwf', 'character', 'npc', '2000', 'wait', 'wait.lwf')
@@ -1624,6 +1628,9 @@ if os.path.exists(_EMPTY_LWF):
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_pet_motions  # noqa: E402
 make_pet_motions.write_all(OUT)
+# Evoluzione del keyblade (FUN_00c0eebc): LWF nostro al posto di quello vuoto scritto sopra (I-078).
+import make_kb_evolution_lwf  # noqa: E402
+make_kb_evolution_lwf.write_all(OUT)
 
 # Animazione del risultato di Evolve (FUN_00ccbad8: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il
