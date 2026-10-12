@@ -48,11 +48,11 @@ const give = (medalId, n = 1) => Array.from({ length: n }, () => {
   p.medals.push(m);
   return m.userMedalId;
 });
-function enhance(baseId, cells, numbers = []) {
+function enhance(baseId, cells, numbers = [], isOverwriteSkill = 0) {
   let out;
   const res = { writeHead: () => {}, end: (b) => { out = JSON.parse(b.toString('utf8')); } };
   console.log = () => {};
-  try { t.respondMedalEnhance(res, { baseUserMedalId: baseId, componentUserMedalIds: cells, numbers, isOverwriteSkill: 0, isGreatSuccess: 0 }); }
+  try { t.respondMedalEnhance(res, { baseUserMedalId: baseId, componentUserMedalIds: cells, numbers, isOverwriteSkill, isGreatSuccess: 0 }); }
   finally { console.log = log; }
   return out;
 }
@@ -133,6 +133,83 @@ r = enhance(dewey, give(90041));
 assert.equal(r.afterEnhanceUserMedal.burstUpperNumber, 0);
 assert.equal(r.afterEnhanceUserMedal.guiltFactor, 0);
 log('8. Dewey: pallini 0, LV', r.afterEnhanceUserMedal.level);
+
+// 9. Overwrite Skill (I-088, server/medal-skill.js)
+const sk = require('./medal-skill');
+const skills = JSON.parse(fs.readFileSync(path.join(MASTER, 'skill.json'), 'utf8'));
+const skById = new Map(skills.map((s) => [s.skillId, s]));
+const misc = JSON.parse(fs.readFileSync(path.join(MASTER, 'medalMisc.json'), 'utf8'));
+const mv = (id) => misc.find((r) => r.medalMiscId === id).value[0];
+assert.deepEqual([mv(121), mv(122)], [2000, 10000], 'medalMisc 121/122: 20% - 100%');
+const ab1 = skById.get(1100);   // Attack Boost I, maxLv 10
+assert.equal(sk.skillChance(ab1, 1, 2000, 10000), 0.2);
+assert.equal(sk.skillChance(ab1, 10, 2000, 10000), 1);
+assert.equal(sk.skillChance(ab1, 5, 2000, 10000), Math.trunc(2000 + Math.trunc(8000 * 4 / 9)) / 10000);
+const scroogeRow = medal.find((r) => sk.isSkillMedal(r));
+assert.ok(scroogeRow, 'Scrooge (type 2, «grants a skill») nel master');
+Object.assign(p, { medalSkills: {}, nextUserSkillId: 0 });
+const atk = medal.find((r) => r.type === 1 && r.rare >= 3 && r.medalId < 300000 && r.medalId !== base.medalId);
+
+// 9a. la Scrooge ha la sua skill al livello massimo, nella lista userSkills e nell'elemento
+const sc1 = give(scroogeRow.medalId)[0];
+const scSkill = t.userSkillsData().find((s) => s.userMedalId === sc1);
+assert.ok(scSkill && scSkill.userSkillId === sk.SCROOGE_SKILL_BASE + sc1, 'skill della Scrooge');
+assert.equal(scSkill.level, skById.get(scSkill.skillId).maxLv);
+assert.deepEqual(t.userMedalElement(state(sc1), 'x').userSkills, [scSkill.userSkillId]);
+log('9a. Scrooge', scroogeRow.rare + '★:', skById.get(scSkill.skillId).name, 'LV', scSkill.level);
+
+// 9b. Overwrite acceso, Scrooge a sinistra: 100%, la base prende skill e livello
+const x = give(atk.medalId)[0];
+assert.deepEqual(t.userMedalElement(state(x), 'x').userSkills, [], 'medaglia d\'attacco senza skill');
+r = enhance(x, [sc1, give(90041)[0]], [], 1);
+assert.equal(r.successOverwrite, 1);
+assert.equal(r.overwriteSkills.length, 1);
+const ow = r.overwriteSkills[0];
+assert.deepEqual([ow.skillId, ow.level, ow.userMedalId], [scSkill.skillId, scSkill.level, x]);
+assert.deepEqual(r.afterEnhanceUserMedal.userSkills, [ow.userSkillId]);
+assert.deepEqual(r.beforeEnhanceUserMedal.userSkills, []);
+assert.ok(r.userSkills.some((s) => s.userSkillId === ow.userSkillId), 'skill nuova nella lista userSkills');
+assert.ok(!r.userSkills.some((s) => s.userMedalId === sc1), 'la skill della Scrooge consumata sparisce');
+log('9b. Overwrite su', atk.name, ':', skById.get(ow.skillId).name, 'LV', ow.level, 'id', ow.userSkillId);
+
+// 9c. Overwrite spento: la base tiene la sua skill, quella della Scrooge si perde
+const sc2 = give(scroogeRow.medalId)[0];
+r = enhance(x, [sc2], [], 0);
+assert.equal(r.successOverwrite, 0);
+assert.deepEqual(r.overwriteSkills, []);
+assert.deepEqual(r.afterEnhanceUserMedal.userSkills, [ow.userSkillId]);
+assert.ok(!r.userSkills.some((s) => s.userMedalId === sc2));
+log('9c. Overwrite spento: skill della base invariata');
+
+// 9d. skill al livello 1 a sinistra: 20% (fallisce con 0,5, riesce con 0,1); stessa categoria
+// sommata (due Attack Boost I LV1 = 40%), primo materiale senza skill = niente tentativo
+const rnd = Math.random;
+const withSkill = (skillId, level) => {
+  const id = give(atk.medalId)[0];
+  p.medalSkills[id] = { userSkillId: 900 + id, skillId, level, exp: 0 };
+  return id;
+};
+try {
+  const y = give(atk.medalId)[0];
+  Math.random = () => 0.5;
+  r = enhance(y, [withSkill(1100, 1)], [], 1);
+  assert.equal(r.successOverwrite, 0, '20%: fallisce con 0,5');
+  assert.deepEqual(r.afterEnhanceUserMedal.userSkills, []);
+  Math.random = () => 0.35;
+  r = enhance(y, [withSkill(1100, 1), withSkill(1100, 1)], [], 1);
+  assert.equal(r.successOverwrite, 1, 'due Attack Boost I LV1 = 40%');
+  assert.equal(r.overwriteSkills[0].skillId, 1100);
+  Math.random = () => 0.1;
+  r = enhance(y, [withSkill(1112, 3)], [], 1);
+  assert.equal(r.successOverwrite, 1, 'Defense Boost I LV3 sostituisce Attack Boost I');
+  assert.deepEqual([r.overwriteSkills[0].skillId, r.overwriteSkills[0].level], [1112, 3]);
+  assert.equal(t.userSkillsData().filter((s) => s.userMedalId === y).length, 1, 'una skill sola per medaglia');
+  Math.random = () => 0;
+  r = enhance(y, [give(90041)[0], withSkill(1100, 10)], [], 1);
+  assert.equal(r.successOverwrite, 0, 'skill non nel primo materiale: nessun tentativo');
+  assert.equal(r.afterEnhanceUserMedal.userSkills.length, 1);
+} finally { Math.random = rnd; }
+log('9d. probabilita\' 20%/40%/sostituzione/primo slot: ok');
 
 // medaglia 1 (Stock Medal) intatta
 assert.equal(byId.get(1).imageId, 90000);
