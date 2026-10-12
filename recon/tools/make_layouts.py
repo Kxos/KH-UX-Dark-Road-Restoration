@@ -2059,8 +2059,9 @@ def pet_info_scene():
     - MedalArea > Medal1..Medal6 (FUN_008d1314: vi aggiunge le celle medaglia 175x175 senza
       controllo del null) + subslotView creato dal codice al centro di MedalArea.
     - Dummy > Pet: il codice vi aggiunge il pet (FUN_00b38f10, nodo petNode) in movimento wait.
-    - Pop_MedalForm (Gear, FUN_00911170/FUN_0091678c, «Swap Gear» lo apre subito): Win_under >
-      EquipSell_Scroll_Area (lista medaglie MedalScrollView modo 8, celle 120x164, 3 colonne),
+    - Pop_MedalForm (Gear, FUN_00911170/FUN_0091678c; il nome «Scroll_Area» e' la coda della stringa
+      EquipSell_Scroll_Area+10 a 0x1830dde, 0x911200: con EquipSell_Scroll_Area NULL e crash a 0x9112a0, «Swap Gear» lo apre subito): Win_under >
+      Scroll_Area (lista medaglie MedalScrollView modo 8, celle 120x164, 3 colonne),
       Txt_Possession (101510001 «Slots»), Txt_Cost_Label, Txt_Slash_Label, Txt_CostMax_Label;
       Close_Button, BestButton > Txt_Best (106110301 «Optimize»), Arrow01. Win_under e' anche il
       riquadro di rilascio del trascinamento (FUN_008d25ac). Come DeckEdit_MedalForm.
@@ -2133,7 +2134,7 @@ def pet_info_scene():
                 L('Txt_Cost_Label', 100, 286, 50, 18, '0', 16, opts=dict(anchorPointX=1)),
                 L('Txt_Slash_Label', 106, 286, 12, 18, '/', 16),
                 L('Txt_CostMax_Label', 112, 286, 50, 18, '0', 16, opts=dict(anchorPointX=0)),
-                P('EquipSell_Scroll_Area', -185, -298, 370, 566),
+                P('Scroll_Area', -185, -298, 370, 566),
                 B('Close_Button', 182, 302, 70, 70, 'But_Close')]),
             I('Arrow01', -7, 298, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.8),
             B('BestButton', -50, 118, 196, 68, 'But06', 'Optimize', 24, label='Txt_Best', opts=BUTS)],
