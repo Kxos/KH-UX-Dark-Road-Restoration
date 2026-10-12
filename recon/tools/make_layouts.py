@@ -1556,6 +1556,9 @@ LAYOUTS = {
     'PetEdit_Check2_ver230.json': ('func', 'pet_edit_check2'),
     'PetInfo_TrainingEdit_ver320.json': ('func', 'pet_training_edit'),
     'PetInfo_TrainingSlotCheck_ver320.json': ('func', 'pet_training_slot_check'),
+    # animazione dopo «Train» ([fn], vedi pet_training_production): mancava -> crash in
+    # GUIReader subito dopo la 244 e la 170 (I-082)
+    'PetInfo_TrainingProduction.json': ('func', 'pet_training_production'),
     # Riavvio a jewel ([fn]): Txt_Wording ([fn] ne fa un CustomRichText
     # «Xml_Txt_Wording» col testo 106200405 e i jewel richiesti, pet +0x74: niente widget con quel
     # nome), Txt_CrownPossessed (100310001) e Txt_CrownPossessed_Label (jewel posseduti, somma dei
@@ -1738,6 +1741,18 @@ if os.path.exists(_EMPTY_LWF):
                ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
         os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
         shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
+# Spirit Training (I-082), LWF assenti da ogni risorsa, vuoti (un fotogramma = subito alla fine):
+# - lwf/pet/demo/training_SE ([fn]: suono dell'animazione PetInfo_TrainingProduction,
+#   [fn] -> NULL -> addChild(NULL) se manca);
+# - lwf/medal/Kakusei/Kakusei_Get1 e _Get2 (trait ottenuto, [fn] / [fn] dopo
+#   l'animazione; [fn] -> NULL -> crash su setPosition se manca). Il gestore enterFrame di
+#   _root ([fn]) va avanti all'ultimo fotogramma; senza il movie «Kakusei_Icon» l'icona del
+#   trait non si carica (nessun file cercato).
+if os.path.exists(_EMPTY_LWF):
+    for _p in [['pet', 'demo', 'training_SE'], ['medal', 'Kakusei', 'Kakusei_Get1'],
+               ['medal', 'Kakusei', 'Kakusei_Get2']]:
+        os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
+        shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
 # Movimenti del pet (lwf/pet/motion/*): LWF nostri che animano le 9 parti servite di
 # lwf/pet/part/001 (attaccate dal client ai movie omonimi), con l'evento «end» dove la
 # battaglia aspetta la fine del movimento (I-005: con i vuoti la battaglia col pet si bloccava
@@ -1759,24 +1774,34 @@ make_guilt_bonus_lwf.write_all(OUT)
 # Avatar Boards: apertura del nodo ([fn]) e premio/bacheca completata ([fn],
 # gotoAndPlay su un'etichetta: con una LWF vuota crash dopo lo sblocco, banco v32), assenti da
 # ogni risorsa: copie dell'animazione del premio dei risultati (Result_Reward), rinominate
+# Texture delle copie (I-085): il LWF non si riscrive, e la sua tabella delle stringhe nomina le
+# texture col nome COMPLETO dell'originale (card_strength_result_01_<hex>.png, Result_Reward_
+# <hex>.png: il prefisso lo mette il convertitore, il client le cerca come <cartella del LWF>/
+# <nome nel LWF>). Le PNG rinominate col nome della copia non le carica nessuno: il LWF gira
+# (stessa durata, callback di fine) ma senza immagini, schermo fermo ~7 s (Evolve, banco 12-10).
+# Si scrive quindi ogni PNG anche col nome originale nella cartella della copia.
+def _lwf_copy(src_dir, dst_dir, old, new):
+    for _f in os.listdir(os.path.join(SRC, *src_dir.split('/'))):
+        COPIES[dst_dir + _f.replace(old, new)] = src_dir + _f
+        if _f.endswith('.png'):
+            COPIES[dst_dir + _f] = src_dir + _f
+
+
 _RR = 'lwf/battleresult/Result_Reward/'
 if os.path.isdir(os.path.join(SRC, *_RR.split('/'))):
     for _n in ('SpIcon_Open', 'SphereMap_Complete'):
-        for _f in os.listdir(os.path.join(SRC, *_RR.split('/'))):
-            COPIES['lwf/sphere/%s/%s' % (_n, _f.replace('Result_Reward', _n))] = _RR + _f
+        _lwf_copy(_RR, 'lwf/sphere/%s/' % _n, 'Result_Reward', _n)
 _LU = 'lwf/medal/compose/strength/card_strength_result_01/'
 if os.path.isdir(os.path.join(SRC, *_LU.split('/'))):
     for _n in range(1, 6):
         _ev = 'card_evolution_result_%02d' % _n
-        for _f in os.listdir(os.path.join(SRC, *_LU.split('/'))):
-            COPIES['lwf/medal/compose/evolution/%s/%s' % (_ev, _f.replace('card_strength_result_01', _ev))] = _LU + _f
+        _lwf_copy(_LU, 'lwf/medal/compose/evolution/%s/' % _ev, 'card_strength_result_01', _ev)
     # Level Up con 2-5 materiali ([fn]: card_strength_result_%02d, %02d = numero dei
     # materiali; NULL da [fn] = crash dopo la risposta, banco gu_17): nelle risorse c'e'
     # solo la _01, che mostra una sola carta
     for _n in range(2, 6):
         _st = 'card_strength_result_%02d' % _n
-        for _f in os.listdir(os.path.join(SRC, *_LU.split('/'))):
-            COPIES['lwf/medal/compose/strength/%s/%s' % (_st, _f.replace('card_strength_result_01', _st))] = _LU + _f
+        _lwf_copy(_LU, 'lwf/medal/compose/strength/%s/' % _st, 'card_strength_result_01', _st)
 for _f in os.listdir(os.path.join(SRC, *PUB.split('/'))):
     if _f.startswith('But') and _f.endswith(('_On.png', '_Off.png', '_Disable.png')):
         COPIES.setdefault('img/ui/' + _f, PUB + _f)
@@ -2229,6 +2254,62 @@ def pet_training_slot_check():
         P('MedalArea', 70, 160, 820, 300, pet_training_slots((105, 305, 505, 705), (160, 160, 160, 160))),
         B('Close_Button', 905, 515, 70, 70, 'But_Close')]))
     data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}
+    data['widgetTree'] = root
+    return data
+
+
+def _action_frame(fid, x, y, scale=1.0, opacity=255):
+    """Fotogramma di un'azione cocostudio 1.6 (come ActionMap_Success_Treasure_Null: posizione
+    nel genitore, scala, opacita'; ActionNode crea un frame per ogni chiave presente)."""
+    return {'classname': None, 'name': None, 'colorb': 255, 'colorg': 255, 'colorr': 255, 'frameid': fid,
+            'opacity': opacity, 'positionx': x, 'positiony': y, 'rotation': 0, 'scalex': scale, 'scaley': scale,
+            'starttime': 0, 'tweenParameter': [], 'tweenType': 0, 'visible': False}
+
+
+def pet_training_production():
+    """PetInfo_TrainingProduction (animazione dopo «Train», I-082), assente da ogni risorsa: senza,
+    dopo POST /pet/expedition (244) e GET /pet/profile il client andava in crash in GUIReader
+    (SIGSEGV 0xc00000001, sullo stack la stringa «widgetTree» 0x191924c). Catena: la 170 del ramo
+    244 ([fn]) chiude il pannello di scelta ([fn]) -> lambda di createLayout
+    ([fn] / [fn], +0x59b = 1; per le medaglie successive [fn]) ->
+    [fn]: MedalMixResultScene_ver320 (originale) e sopra questo layout, aggiunto col nome
+    PetTrainingAnime. Il codice ([fn], [fn]) cerca:
+    - per i = 1..3 «%dPet» con dentro «Pet_Shadow» e «Pet» (nascosti dal codice; della texture di
+      Pet fa la maschera, getVirtualRenderer()->getTexture(): ImageView con texture vera, quella
+      dell'icona del pet della home GlobalNavi Topinfo_Pet_Mask) e «%d_parameter» (scala e
+      posizione del pet nella maschera, [fn]): nel genitore di Pet aggiunge il pet ritagliato
+      (PetIcon%d / PetIconShadow%d, movimenti training1/training2);
+    - «4Pet»: vi aggiunge il pet intero (PetIcon4, training3);
+    - l'azione «Training_Anime» del layout (ActionManagerEx, chiave = nome del file): [fn]
+      (stop) senza controllo del null, poi play con la callback [fn] che va avanti
+      ([fn] -> [fn] -> [fn], Kakusei_Get1). Il tocco (pulsante tapBtn
+      creato dal codice) salta l'animazione.
+    Aspetto NOSTRO (nessuna immagine dell'originale): fondo scuro, tre ritratti del pet nella
+    cornice della home, il pet al centro e «TRAINING!» che entra ingrandendosi (2,5 s)."""
+    pets = []
+    for i, x in enumerate((250, 480, 710), 1):
+        pets.append(I('%dPet' % i, x, 440, 72, 72, 'Topinfo_Pet_Panel.png', s9=False, scale=1.8, children=[
+            I('Pet_Shadow', 4, 8, 110, 84, 'Topinfo_Pet_Mask.png', s9=False),
+            I('Pet', 4, 8, 110, 84, 'Topinfo_Pet_Mask.png', s9=False)]))
+        pets.append(P('%d_parameter' % i, 0, 0, 10, 10, visible=False))
+    root = build(P('PetTrainingProduction_root', 0, 0, 960, 640, [
+        P('Mask', 0, 0, 960, 640, opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=150)),
+        *pets,
+        P('4Pet', 480, 150, 10, 10),
+        L('Txt_Training', 480, 300, 600, 70, 'TRAINING!', 56,
+          opts=dict(colorR=255, colorG=220, colorB=60))]))
+    txt, big = find(root, 'Txt_Training')['options'], find(root, '4Pet')['options']
+    nodes = [
+        {'classname': None, 'name': 'Txt_Training', 'ActionTag': txt['actiontag'], 'actionframelist': [
+            _action_frame(0, 480, 300, 0.3, 0), _action_frame(5, 480, 300, 1.15, 255),
+            _action_frame(8, 480, 300, 1.0, 255), _action_frame(22, 480, 300, 1.0, 255),
+            _action_frame(25, 480, 300, 1.0, 0)]},
+        {'classname': None, 'name': '4Pet', 'ActionTag': big['actiontag'], 'actionframelist': [
+            _action_frame(0, 480, 150), _action_frame(4, 480, 175), _action_frame(8, 480, 150),
+            _action_frame(12, 480, 175), _action_frame(16, 480, 150), _action_frame(25, 480, 150)]}]
+    data = {k: v for k, v in _tmpl.items() if k != 'widgetTree'}
+    data['animation'] = {'classname': None, 'name': 'AnimationManager', 'actionlist': [
+        {'classname': None, 'name': 'Training_Anime', 'actionnodelist': nodes, 'loop': False, 'unittime': 0.1}]}
     data['widgetTree'] = root
     return data
 
