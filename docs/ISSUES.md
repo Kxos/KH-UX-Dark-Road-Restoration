@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-075**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-076**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -16,6 +16,7 @@ Ultima revisione: 11 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-076 | APERTO | Equipment > Spirit (slot del pet) > «Swap Gear»: il gioco va in crash al tocco (segnalazione utente 12-10). Probabile layout del dialog del pet assente (I-005: mancano `PetInfoScene_ver320`, `PetInfoAnim`); da catturare con `tombstone.ps1`/`stackcap.ps1` e confrontare con `catalog\missing_layouts.txt` | [home_profilo](notes/home_profilo.md#pet) | - |
 | I-075 | APERTO | Optimize da confrontare con il funzionamento dell'originale (richiesta utente 11-10): deck (Equipment, I-051), Subslot (I-066) e Gear del pet; criteri di scelta delle medaglie (forza, attributo, tier, trait, bonus SA), ordine, slot pet e supporto. Cercare prima fonti/video dell'originale in `reference\` | [medaglie](notes/medaglie.md) | - |
 | I-013 | APERTO | Bilanciamento: Bandit + Red Nocturne (1240 parte 2, missione da 27) azzerano 3040 HP a LV3 | [battaglia](notes/battaglia.md#sconfitta) | 11-10 (testo tolto in f10ea90) |
 | I-062 | CHIUSO | «Max Out Gauge» prima della battaglia: `POST /keyblade/burst/max` (azione 53) gestito in `keyblade-evo.js`: -30 jewel (misc 120), gauge = maxBurstGauge, risposta `{userKeyblade}`; banco: 7/12 -> 12/12, «Gauge filled.», pulsante spento | [battaglia](notes/battaglia.md) | banco mg_g3 |
