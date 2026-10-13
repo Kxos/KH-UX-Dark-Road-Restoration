@@ -251,8 +251,17 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
 - **Video** (`video\`): 186 video catalogati (gothwood9 1-760 completo); la freccia azzurra si vede e,
   registrata sull'anteprima, ritrova le 4 uscite vere di Daybreak Town (arrivi a 9-46 unita'). Le
   coppie della wiki non sono sempre parti diverse (DW missioni 8 e 11: mappe larghe senza tendina).
-  Nel video la freccia sta 52-124 unita' verso l'interno rispetto all'uscita: convenzione da chiarire
-  nel codice (`FUN_00b035c0`) prima di convertire frecce in uscite.
+  Nel video la freccia sta 52-124 unita' verso l'interno rispetto all'uscita.
+- **Freccia d'uscita nel codice** (`freccia_uscita.md`): `FUN_00b035c0` mette il marker sul punto
+  dell'uscita senza offset, `setRotation(angolo)`; le due sprite `map/next_map.png` stanno in un nodo
+  a y = -80 (`DAT_01785f58`) e oscillano fra -80 e -40 (`FUN_00b037e8`, 40.0/80.0), la scia va da -40
+  a 0. Da mappa a schermo y invertita (`FUN_00b02d08`); 0 gradi = su, orario. In CLS: **freccia =
+  (x - d·sin a, y + d·cos a), d in [40,80], punta verso (sin a, -cos a)**, cioe' 40-80 unita' PRIMA
+  dell'uscita verso l'interno; quindi uscita ~ freccia + 60·(sin a, -cos a). Verificato sui video
+  (3 uscite di 1010/1013). Il generatore ha la convenzione dell'angolo giusta (scarti 1-21 gradi
+  sulle uscite originali) ma **controlla la freccia 100 unita' oltre l'uscita** (`gen_story_maps.py`
+  righe 602-623, `tx = p + 100·sin`): va corretto in d = 40..80 verso l'interno prima di rigenerare
+  (correzione proposta in `freccia_uscita.md`, non ancora applicata: le mappe sono ferme per I-116).
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
   originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
