@@ -337,7 +337,12 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   Controlli: 6/6 uscite 4.3.1, video DB 19 concordi / 8 discordi (arrivi e angoli). Grafi per mondo
   (`_grafo_storia`, `_grafo_completo`, sottografi per zona, PNG+SVG) leggibili. 15 dubbi per l'utente
   nel rapporto (Underground Waterway DB_0020-0023 e DB_0010 a geometria incerta, nomi mancanti,
-  classificazione degli stage, angoli diversi fra missioni, mediana storia/tutte). Storia oltre la master 18010-39xxx; `text\`
+  classificazione degli stage, angoli diversi fra missioni, mediana storia/tutte).
+  **Decisioni dell'utente (13-10)**: varianti 9060-10390 = storia; 3xxxxx = eventi, 80000-99999 e
+  9000xxxx = raid/prove; ogni missione usa il proprio angolo originale (lo schema mostra il piu'
+  frequente); posizione della porta = mediana sulle sole missioni di storia; AG_0000_00_00 con la
+  nostra INFO (client WW). Le 38 stanze a geometria incerta si risolvono solo con prove dai dati
+  (`reference\world_schema\stanze_incerte.md`). Storia oltre la master 18010-39xxx; `text\`
   solo giapponese, nessuna tabella dei nomi delle aree. Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
   stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, poi `schema_report.py`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
