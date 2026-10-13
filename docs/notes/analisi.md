@@ -37,7 +37,9 @@ libreria e' strippata al 95%: il livello API si trova per xref sulle stringhe e 
 - Mappe: `stage_poi.py`, `mappoi_gen.py`, `mappoi_room.py`, `gen_story_maps.py`, `validate_maps.py`,
   `smoke_pick.py`.
 - Generatori di risorse: `make_layouts.py`, `make_textures.py`, `gen_sphere_armatures.py`,
-  `make_enemy_moves.py`, `layout_tree.py`, `scene_tree.py`.
+  `make_enemy_moves.py`, `layout_tree.py`, `scene_tree.py`, `import_jp_coco.py` (layout originali JP
+  al posto dei generati) e `jp_coco_widgets.py` ([risorse_layout](risorse_layout.md#jp-originali)).
+- Ghidra: `khux_decomp_ranges.py` decompila piu' intervalli in un solo avvio.
 
 <a id="singleton"></a>
 ## Oggetti noti

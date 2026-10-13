@@ -11,12 +11,26 @@
 # Si tronca misc.mp4.1 dove inizia d0035, si accoda il nuovo, si copia misc.png, poi
 # riavvio dell'app (il server resta acceso). Dimensioni fisse: vedi sotto.
 #   .\build-resources.ps1 -Quick
-param([int]$Version, [switch]$Quick)
+#
+# Prova a secco (-DryRun): stessi generatori su una copia di stage_gen\files in
+# tmp\stage_gen_dry, pacchetto e indice controllati contro la riserva dell'ultima versione
+# installata (come -Quick); non scrive in resource_data, ne' nel guest, ne' fa login.
+#   .\build-resources.ps1 -DryRun
+# -NoJp: senza i layout originali JP di import_jp_coco.py (elenco recon\tools\jp_coco_layouts.txt).
+param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 Set-Location $repo
 $D = 'D:\Progetto_Restauro_KH_UX'
 $sg = "$D\stage_gen"
+if ($DryRun) {
+  $Quick = $true
+  $sg = "$D\tmp\stage_gen_dry"
+  robocopy "$D\stage_gen\files" "$sg\files" /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
+  if ($LASTEXITCODE -ge 8) { throw 'copia di stage_gen\files non riuscita' }
+  $global:LASTEXITCODE = 0
+  New-Item -ItemType Directory -Force "$sg\quest_thumbs" | Out-Null
+}
 if ($Quick) {
   $Version = [int](Get-ChildItem "$D\resource_data" -Directory | Where-Object Name -match '^\d+$' |
     Sort-Object { [int]$_.Name } | Select-Object -Last 1).Name
@@ -63,6 +77,14 @@ if ($LASTEXITCODE) { throw 'prefer_addnl fallito' }
 # scritti a mano: dove c'e' l'originale prevale
 python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"
 Copy-Item "$D\layouts\ui_texts\text\ui\*" "$sg\files\text\ui\" -Force
+# layout originali dai dati JP 4.3.1 al posto dei nostri generati (I-117): elenco versionato in
+# recon\tools\jp_coco_layouts.txt (togliere una riga = torna il generato), sopra l'uscita di
+# make_layouts/make_textures; rapporto e manifest in $sg\jp_import (Pillow: senza -I)
+# -NoJp: niente originali JP (tornano i generati; serve per un -Quick su una versione installata
+# prima degli originali: i ~250 nomi nuovi non stanno nella riserva dell'indice)
+$jpOpt = @(); if ($NoJp) { $jpOpt = @('--none') }
+python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt
+if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
@@ -99,6 +121,26 @@ if ($Quick) {
 $genLen = (Get-Item "$sg\gen.mp4").Length
 if ($genLen -gt $dataSize) { throw "pacchetto generato di $genLen byte oltre la riserva di ${dataSize}: serve una versione completa" }
 $fs = [IO.File]::Open("$sg\gen.mp4", 'Open', 'ReadWrite'); $fs.SetLength($dataSize); $fs.Close()
+if ($DryRun) {
+  $o = "$D\obb76"
+  $packs = @("$D\apk501\ext\assets\aliud.png", "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb",
+             "$D\ipa431\addnl.png", "$D\ipa431\addnl.mp4") + $medalPack + @("$sg\gen.png", "$sg\gen.mp4")
+  $want = (Get-Item "$v\index\misc.png").Length
+  $ErrorActionPreference = 'Continue'
+  $out = python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$sg\misc_dry.png" @packs 2>&1
+  $quick = -not $LASTEXITCODE
+  if (-not $quick) {
+    # oltre la riserva dell'indice: si prova l'indice di una versione completa (riserva di 64 KiB)
+    $out2 = python -I recon\tools\resource_merge.py --last-wins --fast-md5 --filler 65536 recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$sg\misc_dry.png" @packs 2>&1
+    if ($LASTEXITCODE) { $out2; throw 'resource_merge fallito anche come versione completa' }
+  }
+  $ErrorActionPreference = 'Stop'
+  $ix = (Get-Item "$sg\misc_dry.png").Length
+  "prova a secco su versione ${Version}: pacchetto $genLen byte su $dataSize di riserva ($([math]::Round(100 * $genLen / $dataSize, 1))%)"
+  if ($quick) { "indice $ix byte = installato: -Quick possibile; niente scritto in resource_data ne' nel guest" }
+  else { "indice oltre la riserva di -Quick ($($out | Select-Object -Last 1)): serve una versione completa (-Version $($Version + 1)); come versione completa l'indice e' di $ix byte. Niente scritto in resource_data ne' nel guest" }
+  return
+}
 # d0035 e' una copia (non un hard link): sovrascriverla non tocca le altre versioni
 Copy-Item "$sg\gen.mp4" "$v\data\$genName" -Force
 $o = "$D\obb76"

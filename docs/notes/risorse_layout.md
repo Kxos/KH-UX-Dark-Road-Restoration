@@ -116,6 +116,84 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   quelli WW (284/466 identici). Le texture localizzate WW (11, es. Ch_Logo, World_Stage_Clear) vincono
   sempre. I layout usano testo libero (segnaposto giapponesi, anche nei WW: il codice li sovrascrive
   dagli id text/ui). Senza fonte solo 13 layout propri del WW.
+- Dal 13-10 74 dei nostri layout generati sono sostituiti dagli originali JP: vedi
+  [sotto](#jp-originali).
+
+<a id="jp-originali"></a>
+## Layout originali JP al posto dei generati (I-117)
+
+Decisione dell'utente (13-10): dove abbiamo un layout generato e l'originale e' nei dati JP 4.3.1,
+si usa l'originale. Fonte `thethiny_data\ KHUx data shared\...\jp_final_4.3.1\cocostudio\` (spazio
+iniziale nel percorso; sola lettura; dati di terzi, mai nel repository).
+
+**Strumento** `recon/tools/import_jp_coco.py` (Pillow: senza `-I`), lanciato da `build-resources.ps1`
+dopo `make_layouts`/`make_textures`/testi e prima di `btf_fix`. Legge l'elenco versionato
+`recon/tools/jp_coco_layouts.txt` (una radice per riga; opzioni `rev=N`, `need=a,b`, `+absent-ok`;
+`? Nome # motivo` = da decidere) e per ogni radice prende la chiusura (sotto-layout delle scene,
+armature, texture) e la scrive in `stage_gen\files\cocostudio\publish\` sopra il generato.
+- Revisione: entry id piu' alto, salvo `rev=`. **Attenzione**: l'estrattore a volte da' a una
+  revisione il contenuto di un altro layout (`PresentBOX_Panel_ver131.00265720` e' un pannello di
+  icone): se la revisione scelta ha meno di meta' dei nomi della prima, la radice si ferma.
+- Nomi gia' serviti (`names_v4.tsv`): mai copiati, vince la WW (comprese le 11 texture localizzate).
+  Radice WW servita che make_layouts sovrascriveva (`MedalInfo_ReleaseWindow`): torna il WW,
+  copiato solo per tradurne i testi, con le texture mancanti da JP (Panel07, 9-slice di I-049).
+- Sotto-layout nostri non in elenco restano i nostri; texture disegnate da noi sostituite
+  dall'originale JP (stessa tela o nessun altro layout generato le usa; mai gli atlanti delle
+  armature). Texture di `publish/` che l'estrattore ha tolto come doppioni: si prendono con lo
+  stesso nome da `cocostudio/` o `img/` JP (Panel10, BG_Black, MD_Guilt4_On, Complete_icon1...).
+- PNG JP (alpha diritta) -> BTF premoltiplicato con `btf.encode`.
+- Texture con giapponese disegnato (QuestBut6/7_Title, Rank_Title_3, Comeback_Tutorial_*,
+  Camp_Balloon3, TresXTresStartUp_*_Logo): mai importate, contano come assenti.
+- Testi: etichetta giapponese uguale (spazi esclusi) a un `text/ui/<id>` JP -> inglese dello stesso
+  id se tutti gli id candidati danno lo stesso testo; testi a mano in `recon/tools/jp_coco_texts.tsv`;
+  il resto resta segnaposto (lo scrive il codice). Sui 74: 206 sostituiti, 110 segnaposto rimasti
+  (elenco in `stage_gen\jp_import\report.json`, `texts_left`).
+- Si ferma (resta il generato): 9-slice su texture che non ci sarebbe, plist non servito, texture
+  assente (salvo `+absent-ok`), widget `Txt_*_Cus`, `need=` mancante, layout assente in JP.
+- Reversibile: `stage_gen\jp_import\manifest.json` (provenienza e sha1) e `orig\` (copie dei nostri
+  file sostituiti). Togliere una riga dall'elenco = al build successivo i file non piu' richiesti si
+  tolgono o tornano com'erano (solo se nessun generatore li ha riscritti). Provato: import, import di
+  nuovo (identico), `--none` -> albero identico a prima (sha1).
+- `build-resources.ps1 -NoJp`: build senza originali (pulisce gli importati). `-DryRun`: tutti i
+  generatori su una copia (`tmp\stage_gen_dry`), pacchetto e indice confrontati con la riserva di
+  `-Quick` dell'ultima versione; niente login, niente guest, niente `resource_data`.
+
+**Controllo dei widget cercati dal codice** (13-10): `who_refs.py` sulle stringhe
+`cocostudio/publish/<nome>` (e sulla tabella di puntatori dei layout del Profilo, 0x1f850c0..),
+45 finestre di indirizzi attorno ai caricatori decompilate in un solo avvio
+(`recon/ghidra/khux_decomp_ranges.py`, 7.406 funzioni, ~10 min), `widget_lookup.py` sulle sole
+ricerche (FUN_006e0e2c, FUN_006e6e6c, FUN_006e436c, FUN_006e467c), `jp_coco_widgets.py` (nomi
+nostri assenti dall'originale e cercati dal codice), commenti di `make_layouts.py`, confronto delle
+classi. Ogni nome rimasto guardato nel C: quasi tutti sono di altre schermate o controllati (null)
+prima dell'uso (FaceBook_PhotoPanel, Count_Label, ImageButton_Buy1/LockMask, Button_Change,
+Button_Passive; Txt_Countdown solo nel ramo multi di FUN_00e72dd4; «Count_Rare» = stringa
+Plate_Count_Rare + 6, presente nell'originale). **Il JP 4.3.1 non e' sempre il WW 4.3.1**:
+`Sphere_Popup_Get_ver240` JP non ha Button_Ok/Txt_Ok che FUN_00f3564c usa senza controllo.
+
+**Esito** (`-DryRun`, 13-10): 74 radici sostituite, 9 da decidere; 324 file (102 json, 222 texture
+BTF, 219 nomi nuovi); json tutti leggibili, nessun 9-slice su texture assente, assenti solo
+Camp_Balloon3 (Guilt, fumetto della campagna) e LB_Charge (carta delle bacheche), entrambe senza
+9-slice. Pacchetto generato 24,5 MB su 32 MiB; **indice oltre la riserva di `-Quick`** (30.058.100
+> 30.049.366 byte, la riserva rimasta era ~3,6 KB): serve una versione completa, `-Version 34`
+(indice 30.123.635 con la riserva nuova di 64 KiB). Fino ad allora `-Quick` solo con `-NoJp`.
+
+Sostituiti (elenco completo in `jp_coco_layouts.txt`): Presents (scena, Base, Panel `rev=0`,
+IconPanel), Medal List e vendita (scene, Check/Ok, RareCaution e Panel, Guilt, MaxEnhanced), Evolve
+(scena, Evo_Medal), ReleaseWindow (WW), Sort, SlideMedalInfo, MedalOver, Cost_Over, DeckEdit
+Cost_Over, Subslot (scena e 5 layout), Moogle Shop (scena, righe Traits/Items, IconPanel, MedalSelect,
+AddCheck, OverwriteCheck), Sell Materials (scena, Block, Step1/2, Medal_Step1), Avatar Boards
+(scena elenco, carta, scena bacheca, Sphere_Incentive e _ver240, SphereCoinCheck), Profilo (scena,
+Oneself, User, Txt2, Comment e U13, PlayStyle, AvatarTitle_Base, TresCommu User/Other), Chirithy,
+Missioni (Base, Panel), Other (MenuDialog_ver300), Pet (PetInfoScene, PetSkill_Panel, Rename,
+TrainingEdit, TrainingProduction, TrainingRestartPop, PetEditScene, PetEdit_Panel, PetEdit_Check2),
+risultati (KB, LB, Skill), Continue, AP_Recovery, Ability_MAX, EV_Banner.
+
+Da decidere (restano i generati, motivo nell'elenco): MedalInfo_Information_R1 (crash dopo Evolve
+senza Panel_MixResult_Area/Tap_Screen_Area), PetInfo_TrainingSlotCheck_ver320 (Win_under usato senza
+controllo da FUN_00915efc), Sphere_Popup_Get_ver240 (Button_Ok/Txt_Ok), Sphere_Popup_Comp_ver310
+(SphereMap_Complete assente, cornice diversa dal riferimento), PvP_SelectWindow (titoli con
+giapponese disegnato), AdventureTop2_EV_Button e _Colosseum_Button (World_Ico7/8 assenti),
+AdventureTop2_Colosseum_Panel e _Raid_Button (nomi cercati dalle celle; online, non provabili).
 
 <a id="wipe"></a>
 ## Tendine dei cambi di parte
