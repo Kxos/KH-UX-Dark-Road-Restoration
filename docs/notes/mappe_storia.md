@@ -288,7 +288,20 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
 - **Estrattore** `reference\world_schema\scripts\extract_all_exits.py` (CHECK OK sulle 6 uscite di
   1010-1016, cartelle sciolte con revisioni, pacchetti BGAD). **Pacchetto 2016**: 923 stage, 1.300
   parti, 236 a piu' parti (fino a 23), **697 uscite, 241 collegamenti fra 119 stanze** con coordinate
-  originali -> `stages_2016.json`.
+  originali -> `stages_2016.json` (superato, vedi sotto).
+- **Pacchetto 2016 inventariato** (`bundle2016.md`, `[local reference data]\MANIFEST.md`): `misc.mp4` = 27
+  pacchetti BGAD in fila (base rev. 8 + aggiornamenti 9-34), 161.651 record modo 2; a nome ripetuto
+  vale l'ultimo. **Stub**: int32 contato dal primo record vero del *proprio* blocco di aggiornamento
+  (negativo = blocco precedente), non indice assoluto come nel JOURNAL di thethiny (82.736/82.736
+  coerenti). `misc.png` si apre con KEY_DOWNLOAD ed e' di una revisione successiva. OBB 4.4.0 di
+  thethiny identici ai nostri. **150 stanze (144 complete)**: recuperate 93 stanze che mancavano (DW 20,
+  WL 17, BC 15, DB 14, AG 13, OC 9, DG 5) + 38 codici nuovi; le 19 in comune con le nostre hanno CLS/CHP/JMP
+  identici; DB_0018_01_00 completa nel 2016 (chiude il buco di I-074); OC_0001_00_00 nostra piu' nuova.
+  `base1` si carica dal nome stanza nel BMI a +0x10 (28 stanze usano la grafica di un'altra):
+  `check_rooms.py` va adeguato. Mancano ancora 139 stanze (CD, ED, mondi di Ralph, DB_0020-0031,
+  AG_0005-0023): dati JP 4.3.1. **Missioni**: tutte le 525 di storia della master sono nel 2016;
+  uscite in `stage_exits_2016.json` (744 uscite, versioni piu' recenti). Tutorial 1010-1030 diversi
+  dalla 4.3.1 (stesse stanze, contenuto diverso): per i contenuti vale la versione piu' vicina.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
   originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
