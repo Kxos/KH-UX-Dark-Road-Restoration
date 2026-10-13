@@ -234,6 +234,26 @@ Ordine del lavoro:
    all'utente**; poi si rigenerano i tour, l'utente li prova, e solo dopo si rigenerano le missioni di
    storia.
 
+Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
+- **Dati locali** (`dati_locali.md`, `exits_original.json`): le uniche uscite originali sono le 6 di
+  1010/1013/1016 (FS basso-sinistra <-> 1st District alto-destra, FS destra <-> 2nd District
+  basso-sinistra); 1019/1020/1030 una parte sola, 1040 solo intestazione. Nessun file della stanza
+  (`_chp` griglia 0/1/2 a celle da 60, `_jmp` salti interni, `_info` solo grafica), tabella o testo
+  codifica porte o destinazioni; al passaggio solo tendina `wipe_<mondo>` e freccia `next_map.png`, mai
+  il nome dell'area. Le uscite sono per missione (1013 e 1016: stessa porta, coordinate diverse). Le
+  punte della zona percorribile sono condizione necessaria (6/6 uscite vere a 12-86 da una punta) ma
+  non sufficiente (~5 punte per stanza, 1-2 usate): da qui l'imprecisione dei tour.
+- **Archivi** (`fonti_risorse.md`): nessun pacchetto pubblico (IPA WW/JP 1.0.1-5.0.1, APK JP/TW, web
+  Arena7664, api.sp, Wayback) ha missioni o stanze in piu': arrivavano dal CDN in `files/r/misc.mp4`.
+  Unica fonte nota: **thethiny** (misc.mp4 dal CDN, ~898 STG, ~124 stanze contro 86, stessa chiave
+  KEY_DOWNLOAD); pubblico solo `stage_maps.json` (nemici/forzieri per stage, senza uscite). Contatto da
+  fare (utente, I-029).
+- **Video** (`video\`): 186 video catalogati (gothwood9 1-760 completo); la freccia azzurra si vede e,
+  registrata sull'anteprima, ritrova le 4 uscite vere di Daybreak Town (arrivi a 9-46 unita'). Le
+  coppie della wiki non sono sempre parti diverse (DW missioni 8 e 11: mappe larghe senza tendina).
+  Nel video la freccia sta 52-124 unita' verso l'interno rispetto all'uscita: convenzione da chiarire
+  nel codice (`[fn]`) prima di convertire frecce in uscite.
+
 <a id="nemici"></a>
 ## Nemici nelle mappe
 
