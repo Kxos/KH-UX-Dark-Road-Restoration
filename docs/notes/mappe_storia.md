@@ -302,6 +302,16 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   AG_0005-0023): dati JP 4.3.1. **Missioni**: tutte le 525 di storia della master sono nel 2016;
   uscite in `stage_exits_2016.json` (744 uscite, versioni piu' recenti). Tutorial 1010-1030 diversi
   dalla 4.3.1 (stesse stanze, contenuto diverso): per i contenuti vale la versione piu' vicina.
+- **Schema dei mondi v1** (`reference\world_schema\schema\`: `schema_mondi.json/.md`, `index.html` locale,
+  `img\<mondo>\` = stanza con porte, freccia e arrivi + `_grafo.png`; script `schema_mondi.py`,
+  `schema_report.py`, `room_render.py`): dalle uscite 2016, 695 uscite valide, **277 porte in 90
+  stanze, 118 collegamenti**, 5 sensi unici, 42 coppie con piu' porte. Scartate 45 uscite di «parti
+  residue» (file di parte oltre il numero dichiarato nello STG: destinazione sbagliata, es. 72020) e 4
+  di STG vecchi. Controlli: 6/6 uscite 4.3.1 concordano; video di Daybreak Town 17 concordi, 7
+  discordanze tutte su arrivi poco affidabili nel video o angoli (porte sempre coincidenti). BC senza
+  porte (missioni 2016 tutte a una parte); CD, ED e mondi di Ralph attendono i dati JP 4.3.1.
+  Sfondo delle immagini = base1 ricomposta dalle tessere BTF, allineata alla CLS. Non pubblicare:
+  grafica Square Enix. Da confermare con l'utente.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
   originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
