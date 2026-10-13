@@ -315,7 +315,19 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   dell'utente 13-10: rivedere solo lo schema unito). **Collegamenti fra mondi diversi** (solo stage
   evento 91000 e 16160: Boardwalk <-> Mine: Corridor <-> Dreadful Dunes, Path to the Mine <-> Scarab
   Sands, FS -> Corridor of Darkness): tenuti a parte, non usati per le missioni di storia (utente
-  13-10). Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
+  13-10).
+- **Dati JP 4.3.1** (`jp431.md`, `stage_exits_jp431.json`, `[local reference data]\MANIFEST_jp.md`): 272.673 file,
+  4.793 stage, 7.701 parti, 5.763 uscite, 392 stanze. L'estrazione di thethiny ha **scartato gli stub**:
+  mancano `_jmp` di 265 stanze, CLS/CHP di ~70 varianti, 8 STG e parti di 272 stage, 3 stanze
+  DG_0100_*; ricostruibili (jmp vuoto da 16 byte o della stanza-geometria: 133/133; CLS/CHP da stanza
+  con stesse dimensioni scelta coi punti delle missioni: 15/15, 38 stanze ancora ambigue). Le nostre 86
+  stanze sono in JP identiche; uscite del tutorial identiche alle nostre WW: **i dati di mappa JP 4.3.1
+  sono quelli WW**. Recuperate 132 delle 139 stanze mancanti; restano assenti solo DB_0001_01_00,
+  DW_0026_00_00, SA_0000/SA_0004_00..03 (nessuno stage le usa). Tutte le 525 missioni della master
+  presenti con lo stesso stageId; nelle comuni col 2016 porte identiche; 5 missioni con stanze diverse
+  (2060, 3310, 5300, 7170, 11220): per il WW vale il 2016 (concorda con mapName e miniatura della
+  master). 507 coppie di stanze collegate (113 nel 2016). Storia oltre la master 18010-39xxx; `text\`
+  solo giapponese, nessuna tabella dei nomi delle aree. Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
   stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, poi `schema_report.py`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
