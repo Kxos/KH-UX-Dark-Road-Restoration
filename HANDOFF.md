@@ -56,6 +56,10 @@ con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
      collegamenti con prova, posizione esatta di ogni indicatore, aree mancanti cercate o rigenerate
      con precisione), confermato dall'utente; solo dopo tour e missioni di storia. Metodo in
      [mappe_storia](docs/notes/mappe_storia.md#schema-mondi). (I-091 chiuso; I-072 confluito qui.)
+     Stato 13-10: inventario, dati locali, archivi, freccia nel codice e Daybreak Town dai video
+     fatti (`D:\Progetto_Restauro_KH_UX\reference\world_schema\`). **thethiny manda ~4 GB** (1.0.1,
+     1.1.3, 4.4.0, JP finale) su un Drive dell'utente: appena arrivano, piano §5 di
+     `thethiny_repos.md` (uscite dalla 4.4.0/JP, non dalla 1.x).
   2. Difetto: dopo una missione il primo Begin nell'elenco Story non risponde (rientrare da Quests).
   3. I-088: provare Overwrite Skill sul banco (Scrooge 452/453/454 nello slot piu' a sinistra).
   4. I-086: la pagina web «Passive Effects» aperta dal dialogo del Profilo resta vuota (da Equipment si vede).

@@ -262,6 +262,19 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   sulle uscite originali) ma **controlla la freccia 100 unita' oltre l'uscita** (`gen_story_maps.py`
   righe 602-623, `tx = p + 100·sin`): va corretto in d = 40..80 verso l'interno prima di rigenerare
   (correzione proposta in `freccia_uscita.md`, non ancora applicata: le mappe sono ferme per I-116).
+- **Daybreak Town dai video** (`video\daybreak_town.md/.json`): 27 passaggi con 3 fotogrammi ciascuno
+  (FS-2nd, FS-1st, FS-Corridor of Darkness, Market-Warehouse, Market-Avenue, Avenue-Boardwalk,
+  Boardwalk-Waterfront Park (due collegamenti: passeggiata alta e parco in basso a sinistra),
+  WP-Office, Office-Dock, Attic-Moogle Shop, Rooftop-Attic, Underground Waterway-Clock Tower Level).
+  Uscita derivata = freccia + 60·(sin a, -cos a): 26-31 unita' dalle uscite vere. Coordinate CLS
+  solo per le stanze nelle risorse; per Market/Avenue/Boardwalk/WP pixel dell'immagine wiki. La
+  tendina cambia dopo la ~230 («artigli», non nera). Non coperti: Q351-375 e Q401-425 (YouTube chiede
+  login), Q846-869 (nessun video), interni della Clock Tower (Q541-555, 20 tendine non attribuite).
+- **thethiny** (`thethiny_repos.md`): i suoi strumenti leggono nemici e forzieri, non le uscite; chiavi
+  uguali alle nostre; il tutorial 1.x e' diverso dalla 4.3.1 (1010: bersaglio 89001 e 7 nemici contro
+  81020 e 14) -> uscite da prendere dai dati 4.4.0 WW / JP finale. Repo senza licenza: solo fatti
+  tecnici finche' non da' un permesso. Piano per i suoi ~4 GB nel §5: `thethiny_data\<versione>\` +
+  manifest, estrazione con `bgad.py`, verifiche, tutte le uscite -> `schema_mondi.json/.md`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
   originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
