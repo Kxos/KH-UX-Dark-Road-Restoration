@@ -146,7 +146,7 @@ armature, texture) e la scrive in `stage_gen\files\cocostudio\publish\` sopra il
   Camp_Balloon3, TresXTresStartUp_*_Logo): mai importate, contano come assenti.
 - Testi: etichetta giapponese uguale (spazi esclusi) a un `text/ui/<id>` JP -> inglese dello stesso
   id se tutti gli id candidati danno lo stesso testo; testi a mano in `recon/tools/jp_coco_texts.tsv`;
-  il resto resta segnaposto (lo scrive il codice). Sui 74: 206 sostituiti, 110 segnaposto rimasti
+  il resto resta segnaposto (lo scrive il codice). Sui 74: 198 sostituiti (1 da `jp_coco_texts.tsv`), 99 segnaposto rimasti
   (elenco in `stage_gen\jp_import\report.json`, `texts_left`).
 - Si ferma (resta il generato): 9-slice su texture che non ci sarebbe, plist non servito, texture
   assente (salvo `+absent-ok`), widget `Txt_*_Cus`, `need=` mancante, layout assente in JP.
