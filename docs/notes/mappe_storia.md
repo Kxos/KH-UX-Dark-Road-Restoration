@@ -275,6 +275,20 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   81020 e 14) -> uscite da prendere dai dati 4.4.0 WW / JP finale. Repo senza licenza: solo fatti
   tecnici finche' non da' un permesso. Piano per i suoi ~4 GB nel §5: `[local reference data]\<versione>\` +
   manifest, estrazione con `bgad.py`, verifiche, tutte le uscite -> `schema_mondi.json/.md`.
+- **Dati di thethiny arrivati** (13-10, `D:\Progetto_Restauro_KH_UX\[local reference data]\`): build, decompilati
+  IDA 1.0.1 con simboli, dati 1.0.1/1.1.3/1.2.3/4.4.0, **pacchetto globale 2016** (`misc.mp4`, 1,27 GB),
+  JOURNAL. Manca `data/jp_final_4.3.1` (4.793 stage, 394 stanze): chiesto di nuovo dall'utente.
+- **Formato confermato dai simboli 1.0.1** (`decompile_101.md`): `StageManager::createMapTransferInfo`
+  = uscite (9 int: x, y, angolo, distanza residua, [4], arrivo x, arrivo y, parte di destinazione,
+  verso), raggio 96, `MapGateMarker`, sezione B = materiali, C = NPC. Correzioni a
+  `stage_gen\exits\NOTE.md`: uscita [4] non letta (= 1 + passaggi dalla parte di destinazione a quella
+  del bersaglio, 635/681), verso [8] 0 = libero; STG [13] = nemici esclusi da «sconfiggi tutti», [1] =
+  versione del formato (13/14 nel 2016, 16 nella 4.3.1), MAP +0x1c = meteo; NPC con uno short in piu'.
+  Nessuna tabella dei nomi delle stanze nel codice.
+- **Estrattore** `reference\world_schema\scripts\extract_all_exits.py` (CHECK OK sulle 6 uscite di
+  1010-1016, cartelle sciolte con revisioni, pacchetti BGAD). **Pacchetto 2016**: 923 stage, 1.300
+  parti, 236 a piu' parti (fino a 23), **697 uscite, 241 collegamenti fra 119 stanze** con coordinate
+  originali -> `stages_2016.json`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
   originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
