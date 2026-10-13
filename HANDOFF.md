@@ -40,42 +40,32 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato al 12 ottobre 2026 e prossimo passo
+## Stato al 13 ottobre 2026 e prossimo passo
 
-- Fatto e verificato il 12: Optimize come l'originale (I-075: deck completi, slot vuoti = Stock Medal
-  che gioca il turno, immagine 90000), Subslot (I-066: trascinamento e avviso), Passive Effects
-  (I-065: pagina web `/web/passive` in http), fumetto del Profilo (I-071), Field Speed = originale
-  (I-081). Aura del +35 ok (I-078).
-- Fatto il 12 pomeriggio: guilt e medaglie speciali collegati (I-079/I-080, revisione 95), pet con
-  rango 17 e sotto-schermate Name/Tricks/Train/Outfits (I-082), popup del rilancio della guilt (I-083).
-- **Prossimi passi** (fatto il 12 sera: Optimize I-090, Overwrite Skill lato server, Passive Effects
-del Profilo, keyblade mancanti all'avvio + test dello sblocco, tetti Cid/Chip/Dale, Spirit Training
-con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
-  1. **I-116 (priorita' dell'utente, 13-10)**: i tour 9101-9108 provati dall'utente hanno indicatori
-     fra le aree molto imprecisi e aree mancanti. Prima uno **schema esatto dei mondi** (aree, solo
-     collegamenti con prova, posizione esatta di ogni indicatore, aree mancanti cercate o rigenerate
-     con precisione), confermato dall'utente; solo dopo tour e missioni di storia. Metodo in
-     [mappe_storia](docs/notes/mappe_storia.md#schema-mondi). (I-091 chiuso; I-072 confluito qui.)
-     Stato 13-10: inventario, dati locali, archivi, freccia nel codice e Daybreak Town dai video
-     fatti (`D:\Progetto_Restauro_KH_UX\reference\world_schema\`). **thethiny manda ~4 GB** (1.0.1,
-     1.1.3, 4.4.0, JP finale) su un Drive dell'utente: appena arrivano, piano §5 di
-     `thethiny_repos.md` (uscite dalla 4.4.0/JP, non dalla 1.x).
-  2. Difetto: dopo una missione il primo Begin nell'elenco Story non risponde (rientrare da Quests).
-  3. I-088: provare Overwrite Skill sul banco (Scrooge 452/453/454 nello slot piu' a sinistra).
-  4. I-086: la pagina web «Passive Effects» aperta dal dialogo del Profilo resta vuota (da Equipment si vede).
-  5. I-087: Level Up/evoluzione di un keyblade nuovo con -KbFree; Divine Rose con smoke 15080.
-  6. I-089 etichette Equipped/LV sovrapposte dopo una fusione; I-084 Trait Medal.
-  7. Lista dell'utente del 13-10 in ISSUES, **I-092..I-115**: Avatar Boards Unlock/Unlock All, keyblade a
-     +35, Outfits/Tricks del pet, missione di prova per mondo, Presents, home (Chirithy, Join a Party,
-     Rankings, Party Search, frecce), Boosters, Shop (banner/pull, Increase Storage), Subslot, Moogle
-     Shop, menu Other (Notices, Album, Party, Transfer, Records, Legal, Help, Settings, Credits).
-  8. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
+- Fatto il 13: **dati di thethiny** in `D:\Progetto_Restauro_KH_UX\thethiny_data\` (pacchetto 2016, JP 4.3.1,
+  decompilati 1.0.1 con simboli); **schema dei mondi v2** da sole uscite originali
+  (`reference\world_schema\schema_v2\index.html`, 497 porte di storia; eventi e fra-mondi a parte; 38 stanze
+  incerte risolte con l'indice 2016); **layout originali JP** sul banco (I-117, risorse 34: 74 importati,
+  MoogleShop_Item_Panel resta generato dopo un crash 0x2c). README principale in inglese (`README.it.md`).
+  Dettagli: [mappe_storia](docs/notes/mappe_storia.md#schema-mondi), [diario](docs/journal/2026-10-13.md).
+- **Prossimi passi**, in ordine:
+  1. **I-116**: l'utente rivede lo schema v2 (decisioni gia' prese in mappe_storia); poi correzione del
+     generatore (freccia 40-80 unita' *prima* dell'uscita, `freccia_uscita.md`), rigenerazione dei tour e
+     prova dell'utente; solo dopo le missioni di storia con stanze e uscite originali.
+  2. I-117: provare le schermate rimaste (righe di Presents, popup di Level Up/Evolve, popup di battaglia,
+     Chirithy, trascinamento del Subslot); poi i passi 1, 2, 4 della proposta (texture, schermate online).
+  3. Documento per thethiny `reference\world_schema\for_thethiny.md`: l'utente lo rilegge e lo manda
+     (nessuna licenza nel nostro repo: decisione dell'utente).
+  4. Missioni Daily e Weekly con la stessa lista; Outfits del pet senza parti (I-094).
+  5. Restano: primo Begin che non risponde dopo una missione; I-088; I-086; I-087; I-089/I-084; lista
+     I-092..I-115.
   Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
-  `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica).
-- Banco: risorse 34 (74 layout originali JP; MoogleShop_Item_Panel resta generato), **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
-  keyblade); `server\save\smoke.json` = {"stageIds": [991001..991008]} (13-10: tutti i tour
-  nell'elenco Story per le prove dell'utente, in attesa del suo esito); keyblade corrente Sleeping Lion (deck
-  vuoto: per le battaglie scegliere Treasure Trove). Begin nell'elenco: se non risponde, indietro e Story.
+  `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica). Con la versione 34
+  `-Quick` torna possibile solo se l'indice non cresce: prima `-DryRun`.
+- Banco: risorse 34, **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
+  keyblade); `server\save\smoke.json` = {"stageIds": [991001..991008]} (tutti i tour nell'elenco Story:
+  toglierlo per l'elenco normale); keyblade corrente Sleeping Lion (deck vuoto: per le battaglie
+  scegliere Treasure Trove). Begin nell'elenco: se non risponde, indietro e Story.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
