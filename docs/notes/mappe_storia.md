@@ -201,6 +201,39 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
 - Mancano dalle risorse quasi tutte le aree dei mondi 2-7 (Dwarf's Cottage, Market, West Wing...):
   i giri di DW, WL, OC, BC, CD hanno 2-3 stanze.
 
+<a id="schema-mondi"></a>
+## Schema esatto dei mondi (ISSUES I-116)
+
+Esito delle prove dell'utente sui tour 991001-991008 (13-10): **posizione degli indicatori di
+spostamento fra le aree molto imprecisa**; nei mondi a cui mancano aree le porte portano a stanze
+sostitute e il giocatore non capisce dove si trova. Lo stesso difetto passa alle missioni di storia
+generate. Il grafo attuale (`world_links.json`) mescola collegamenti certi (`high`) con collegamenti
+dedotti (`medium`/`low`/`none`) e porte scelte a mano sulla grafica: non basta.
+
+**Regola dell'utente**: prima uno schema esatto e verificato della struttura di ogni mondo, poi le
+missioni. Nessuna missione standard (storia) si rigenera finche' lo schema non e' confermato.
+
+Ordine del lavoro:
+1. **Inventario delle aree** per mondo: tutte le aree del gioco originale (nome, codice
+   `XX_NNNN_VV_00`, varianti giorno/notte), con la fonte di ciascuna; segnare quali sono nelle
+   risorse (OBB 5.0.1, `addnl` dell'IPA 4.3.1, pacchetto nostro) e quali mancano.
+2. **Collegamenti certi**: un collegamento entra nello schema solo con una prova diretta: uscita di
+   una missione originale (`.stg` 1010-1016 e altre recuperabili), video/screenshot del gioco originale
+   che mostra il passaggio, oppure testo esplicito della wiki confermato da un'immagine. Ogni arco porta
+   la fonte; gli archi senza prova restano fuori, non si deducono.
+3. **Posizione esatta degli indicatori**: per ogni porta la coordinata dell'uscita e l'angolo della
+   freccia presi da una missione originale quando esiste; altrimenti dalla porta visibile nella grafica
+   della stanza, confrontata con video/screenshot dell'originale (salvati in
+   `D:\Progetto_Restauro_KH_UX\reference\world_links\`). Da verificare sul banco porta per porta
+   (screenshot dell'indicatore e dell'arrivo), non solo con il validatore.
+4. **Aree mancanti**: cercarle prima (altre versioni del client: JP, OBB/patch precedenti, IPA,
+   archivi della comunita', Dark Road; registrare in [ricerca_esterna](ricerca_esterna.md)); solo se
+   introvabili, rigenerarle con la massima precisione dall'originale (grafica, zona percorribile CLS,
+   livelli a tessere, porte) e documentare come.
+5. **Schema finale** in un file unico (aree, collegamenti, porte, fonti) da far **confermare
+   all'utente**; poi si rigenerano i tour, l'utente li prova, e solo dopo si rigenerano le missioni di
+   storia.
+
 <a id="nemici"></a>
 ## Nemici nelle mappe
 
