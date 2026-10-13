@@ -110,6 +110,12 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   I-001/I-006), `PetInfoScene_ver320`, `PetInfoAnim`, `lwf/pet/motion` (generati da
   `make_pet_motions.py`, LWF nostri con «end»: [home_profilo](home_profilo.md#pet)); di
   `lwf/pet/part` c'e' solo `001`.
+- **Dati JP 4.3.1 di thethiny** (13-10, ISSUES I-117, `D:\Progetto_Restauro_KH_UX\reference\world_schema\jp431_cocostudio.md`):
+  `jp_final_4.3.1\cocostudio\` ha 1.596 layout json (revisione corrente = entry id piu' alto), PNG non premoltiplicate
+  (convertire con `btf_fix.py`); 243 dei 256 mancanti, tutte le schermate online complete; i layout JP sono
+  quelli WW (284/466 identici). Le texture localizzate WW (11, es. Ch_Logo, World_Stage_Clear) vincono
+  sempre. I layout usano testo libero (segnaposto giapponesi, anche nei WW: il codice li sovrascrive
+  dagli id text/ui). Senza fonte solo 13 layout propri del WW.
 
 <a id="wipe"></a>
 ## Tendine dei cambi di parte
