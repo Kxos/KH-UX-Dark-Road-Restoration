@@ -326,7 +326,18 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   DW_0026_00_00, SA_0000/SA_0004_00..03 (nessuno stage le usa). Tutte le 525 missioni della master
   presenti con lo stesso stageId; nelle comuni col 2016 porte identiche; 5 missioni con stanze diverse
   (2060, 3310, 5300, 7170, 11220): per il WW vale il 2016 (concorda con mapName e miniatura della
-  master). 507 coppie di stanze collegate (113 nel 2016). Storia oltre la master 18010-39xxx; `text\`
+  master). 507 coppie di stanze collegate (113 nel 2016).
+- **Schema dei mondi v2** (`reference\world_schema\schema_v2\`, `index.html` locale; script
+  `rooms_merge_v2.py`, `exits_merge_v2.py`, `schema_mondi_v2.py`, `schema_report_v2.py`): stanze unite
+  in `tmp\thethiny_x\rooms_merged\` (413: nostre 86 + JP + 2016; 633 file ricostruiti con la regola in
+  `_manifest.md`; 38 a geometria incerta lasciate senza CLS/CHP). Uscite unite: 5.849 stage, 8.516
+  uscite (2016 per 2060/3310/5300/7170/11220, JP per il resto, + multi_stage); tipi storia_master 525,
+  storia_oltre 459, storia_variante 28, evento 3.808, raid/prova 47, multi 982. 1.747 porte: **P =
+  storia 497** (geografia certa), E = solo eventi/raid/multi 694, X = fra mondi 556 (a parte).
+  Controlli: 6/6 uscite 4.3.1, video DB 19 concordi / 8 discordi (arrivi e angoli). Grafi per mondo
+  (`_grafo_storia`, `_grafo_completo`, sottografi per zona, PNG+SVG) leggibili. 15 dubbi per l'utente
+  nel rapporto (Underground Waterway DB_0020-0023 e DB_0010 a geometria incerta, nomi mancanti,
+  classificazione degli stage, angoli diversi fra missioni, mediana storia/tutte). Storia oltre la master 18010-39xxx; `text\`
   solo giapponese, nessuna tabella dei nomi delle aree. Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
   stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, poi `schema_report.py`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
