@@ -50,6 +50,11 @@ Tutto il materiale di Square Enix sta fuori dal repository, su `D:\Progetto_Rest
 ## Contatti da fare (compito dell'utente, ISSUES I-029)
 
 - thethiny (file `r/` del CDN, master complete), Roboloid.
+  **13-10: thethiny ha risposto** (messaggio dell'utente con il README inglese): disponibile a
+  mandare ~4 GB di dati KHUx 1.0.1, 1.1.3, 4.4.0 e JP finale (manca solo la grafica del gacha dal CDN e
+  alcuni file `m` 1.1.3-1.3.0, coperti dalla 5.0.1) su una cartella Google Drive condivisa creata da
+  noi; offre anche il suo diario di lavoro con Claude. Ha aggiornato i repo il 13-10 (KHUx-Recomp:
+  ricompilazione della 1.0.1). Studio dei repo: `reference\world_schema\thethiny_repos.md`.
 - Appello su r/KHUx per chi ha ancora `files/r/` di una 4.x.
 - **Arena7664** («Cross Road», client 5.0.1 nel browser via Rellume/WASM; sa reimpacchettare
   `extra_mp4`; github.com/Arena7664, IA `[archive item]`).
