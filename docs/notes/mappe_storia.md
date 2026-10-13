@@ -342,7 +342,16 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   9000xxxx = raid/prove; ogni missione usa il proprio angolo originale (lo schema mostra il piu'
   frequente); posizione della porta = mediana sulle sole missioni di storia; AG_0000_00_00 con la
   nostra INFO (client WW). Le 38 stanze a geometria incerta si risolvono solo con prove dai dati
-  (`reference\world_schema\stanze_incerte.md`). Storia oltre la master 18010-39xxx; `text\`
+  (`reference\world_schema\stanze_incerte.md`).
+- **38 stanze incerte risolte** (`stanze_incerte.md/.json`, `scripts\stanze_incerte.py`, regole R3/R4 in
+  `rooms_merge_v2.py`): prova decisiva = indice `misc.png` del 2016 (revisione globale successiva):
+  stesso offset di un nome deduplicato = stesso file (verificato CLS 58/58, CHP 54/54, JMP 9.595/9.595,
+  0 contraddizioni). 26 certe (es. DB_0020_* -> DB_0020_01_03, DB_0021_* -> DB_0021_01_03, CD_0012_04/06/07
+  -> CD_0012_05_00, dove la regola dei punti avrebbe sbagliato), 12 molto probabili (DB_0010_0x_0y ->
+  propria _00 col BMI identico; DB_0026_01_00 -> DB_0026_06_00; NL_*). Tarature: con la geometria vera
+  bloccati 0% forzieri, 0,24% nemici, 0,23% arrivi; uscite 45% (non discriminano). Corretti 18 jmp
+  vuoti smentiti dall'indice; restano da rivedere HD_0002_00_00 e SR_0009_01_00 (jmp vuoto senza
+  prove). Schema v2 rigenerato: 0 stanze incerte, porte invariate. Storia oltre la master 18010-39xxx; `text\`
   solo giapponese, nessuna tabella dei nomi delle aree. Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
   stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, poi `schema_report.py`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
