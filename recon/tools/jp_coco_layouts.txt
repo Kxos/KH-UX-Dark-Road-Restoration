@@ -1,0 +1,121 @@
+# Layout originali dai dati JP 4.3.1 (thethiny) al posto dei nostri generati: import_jp_coco.py
+# (lanciato da build-resources.ps1 dopo make_layouts/make_textures). I-117,
+# docs/notes/risorse_layout.md#jp-originali.
+#
+# Una riga = un layout radice (con la sua chiusura: sotto-layout delle scene, texture).
+# Togliere (o commentare) una riga = al build successivo torna il layout generato.
+# Opzioni dopo il nome:
+#   rev=N        revisione JP fissata (0 = file senza suffisso; predefinita: entry id piu' alto)
+#   need=a,b     widget che il codice cerca senza controllo: se l'originale non li ha, la radice si ferma
+#   +absent-ok   texture assenti ovunque tollerate (mai con il 9-slice: quello ferma sempre)
+# «? Nome  # motivo» = da decidere: non si importa, compare solo nel rapporto.
+#
+# Controllo fatto il 13-10-2026 (jp_coco_widgets.py sul decompilato attorno ai caricatori,
+# widget_lookup.py; commenti di make_layouts.py; classi dei widget): per le righe attive
+# l'originale ha i widget che il codice cerca, o il codice li controlla (null) prima di usarli.
+
+# --- Presents (I-035, I-096) ---
+PresentBOXScene.json
+PresentBOX_Base_ver400.json
+# la revisione 00265720 di thethiny e' un pannello di icone (33 widget, nessuno di quelli cercati
+# da [fn]/[fn]): si usa la prima, con i nomi del codice
+PresentBOX_Panel_ver131.json            rev=0 need=Panel_Present,Txt_Gift_Name_Label,Txt_Storage_Date_Label,Button,Txt_Receive
+PresentBOX_IconPanel_ver131.json        need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
+
+# --- Medal List, vendita, Level Up, Evolve, Sort ---
+MedalListScene_ver130.json
+MedalSellScene_ver350.json
+PopupNormal_MedalSell_Check_ver350.json need=Alert_Area
+PopupNormal_MedalSell_Ok_ver350.json
+PopupNormal_MedalMix_RareCaution.json   need=Alert_Area,Txt_Wording3
+PopupNormal_MedalMix_RareCaution_Panel.json
+# Camp_Balloon3 (fumetto della campagna) ha giapponese disegnato: non importata, fumetto vuoto
+PopupNormal_Guilt_ver130.json           +absent-ok
+MedalInfo_MaxEnhanced_ver340.json
+MedalEvoScene_ver320.json
+MedalInfo_Evo_Medal.json                need=Medal_S,Possession,Label_9,Num_Label
+# WW servito con i testi giapponesi: torna l'originale WW, Panel07 (9-slice, I-049) arriva da JP
+MedalInfo_ReleaseWindow.json
+PopupNormal_SortButton_ver350.json
+SlideMedalInfoScene_ver341.json
+PopupNormal_MedalOver.json
+PopupNormal_Cost_Over.json
+DeckEdit_Cost_Over_ver131.json
+
+# --- Subslot (I-066, I-101) ---
+DeckEditSubSlotScene_ver340.json
+DeckEdit_SubSlot_Set_Medal_ver340.json
+DeckEdit_SubSlot_Select_Medal_ver310.json
+DeckEdit_Subslot_Caution_ver260.json
+DeckEdit_SubSlotMedal_ver260.json       need=Medale,MedalBase,Slot,SlotNum,InfoPanel,TYpe,Icon_Type,Icon_Type_1,Medal_S,Txt_Mag_Label,Guilt_Icon,Cursor
+DeckEdit_SubSlot_MedalInfo_ver260.json
+
+# --- Moogle Shop e Sell Materials (I-021, I-102, I-103) ---
+MoogleShopScene_ver410.json
+MoogleShop_Traits_Panel_ver410.json     need=Count,Count_Rare,SkillPanel,SkillPanel_Rare,Panel,Panel_Rare
+MoogleShop_Item_Panel.json
+MoogleShop_IconPanel.json               need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
+MoogleShop_Traits_MedalSelect_Pop_ver410.json
+MoogleShop_Traits_AddCheck.json
+MoogleShop_Traits_OverwriteCheck_ver410.json
+EquipSellScene.json
+EquipSell_Block.json                    need=EquipSellBlock,MaterialSellIcon,Txt_Material_Name,Panel_On,PanelMask
+EquipSell_Dialog_Step1.json
+EquipSell_Dialog_Step2.json
+EquipSell_Medal_Step1_ver131.json
+
+# --- Avatar Boards ---
+SphereBoardScene_ver310.json
+# LB_Charge assente anche in JP (non 9-slice): targhetta invisibile, come nel nostro
+SphereBoard_Select_Icon_ver130.json     +absent-ok
+SphereScene_ver310.json
+Sphere_Incentive.json                   need=Get,Txt_Incentive_Label,Txt_Price_Label
+Sphere_Incentive_ver240.json
+PopupNormal_SphereCoinCheck_ver310.json
+
+# --- Profilo, home, missioni, Other ---
+AvatarInfoScene_A_ver131.json
+AvatarInfo_Oneself_ver131.json
+AvatarInfo_User_ver260.json
+AvatarInfo_Txt2.json
+AvatarInfo_Comment_ver132.json
+AvatarInfo_Comment_U13_ver132.json
+AvatarInfo_PlayStyle.json
+AvatarTitle_Base.json
+TresCommu_CommunicationUser.json
+TresCommu_CommunicationOther.json
+MyPage_ChirishiBaloon.json
+MyPageMission_Base_ver320.json
+MyPageMission_Panel.json                need=Panel_Present,Gauge_Base,Gauge,Button_Challenge,Button_Receive
+MenuDialog_ver300.json
+
+# --- Pet (I-082) ---
+PetInfoScene_ver320.json
+PetInfo_PetSkill_Panel_ver230.json      need=PetSkill_Panel,Txt_PetSkill,Icon_New
+PetInfo_Rename_ver230.json
+PetInfo_TrainingEdit_ver320.json        need=MedalArea,Win_under
+PetInfo_TrainingProduction.json         need=1Pet,2Pet,3Pet,4Pet
+PetInfo_TrainingRestartPop_ver320.json
+PetEditScene_ver230.json
+PetEdit_Panel_ver230.json
+PetEdit_Check2_ver230.json
+
+# --- Risultati e popup di battaglia ---
+BattleResult_KB.json
+BattleResult_LB_ver120.json
+BattleResult_Skill_ver130.json          need=Txt_GetItem_Label
+PopupNormal_Continue.json
+PopupNormal_AP_Recovery.json
+PopupNormal_Ability_MAX.json
+AdventureTop2_EV_Banner_ver220.json     need=Image_3
+
+# --- Da decidere (restano i generati) ---
+? MedalInfo_Information_R1.json         # WW servito senza Panel_MixResult_Area/Tap_Screen_Area (crash dopo Evolve, [fn]); JP non ha Tap_Screen_Area
+? PetInfo_TrainingSlotCheck_ver320.json # l'originale non ha Win_under, che [fn] usa senza controllo ([fn])
+? Sphere_Popup_Get_ver240.json          # l'originale JP non ha Button_Ok/Txt_Ok, che [fn] usa senza controllo (crash al nodo sbloccato)
+? Sphere_Popup_Comp_ver310.json         # SphereMap_Complete assente ovunque; cornice diversa dal riferimento WW (ab_ref_title_popup_01)
+? PvP_SelectWindow.json                 # QuestBut6_Title/QuestBut7_Title con giapponese disegnato («VS エネミー»): da ridisegnare
+? AdventureTop2_EV_Button.json          # World_Ico7A/7B assenti ovunque: pulsante senza icona (il nostro usa World_Ico10)
+? AdventureTop2_Colosseum_Button.json   # World_Ico8A/8B assenti ovunque: pulsante senza icona
+? AdventureTop2_Colosseum_Panel.json    # le celle ([fn], [fn], [fn]) cercano Avatar/Story/SubClear* assenti nell'originale; Colosseo non provabile offline
+? AdventureTop2_Raid_Button.json        # Button_Last_Member cercato da [fn] e assente nell'originale; Raid non provabile offline
