@@ -253,6 +253,14 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   coppie della wiki non sono sempre parti diverse (DW missioni 8 e 11: mappe larghe senza tendina).
   Nel video la freccia sta 52-124 unita' verso l'interno rispetto all'uscita: convenzione da chiarire
   nel codice (`FUN_00b035c0`) prima di convertire frecce in uscite.
+- **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
+  anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
+  originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
+  risorse** (84 su 86 in totale; incomplete DB_0018_01_00, ED_0011_01_00). Mancano quasi tutte le
+  aree di DW, WL, OC (Underworld), BC, CD, il deserto e il Bazaar di AG, mezza Daybreak Town.
+  Roboloid ha l'anteprima grafica intera di molte stanze assenti: base per un'eventuale
+  rigenerazione. Dubbi: AG_0003_01_00 con tre nomi, thumbId diverso dalla stanza nominata in alcune
+  righe (OC_0001_00, WL_0001/0002, DW_0004, DB_0007), prefisso del Corridor of Darkness dedotto.
 
 <a id="nemici"></a>
 ## Nemici nelle mappe
