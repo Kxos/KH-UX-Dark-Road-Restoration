@@ -66,7 +66,8 @@ con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
   Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
   `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica).
 - Banco: risorse 33, **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
-  keyblade); `server\save\smoke.json` = {"stageId": 991007}; keyblade corrente Sleeping Lion (deck
+  keyblade); `server\save\smoke.json` = {"stageIds": [991001..991008]} (13-10: tutti i tour
+  nell'elenco Story per le prove dell'utente, in attesa del suo esito); keyblade corrente Sleeping Lion (deck
   vuoto: per le battaglie scegliere Treasure Trove). Begin nell'elenco: se non risponde, indietro e Story.
 ## Regole del lavoro (dell'utente)
 

@@ -196,7 +196,8 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
 - Master: `KHUX_WORLDTOUR=1` in `make-game-tables.js` aggiunge le righe 991001-991008 (copie della
   1050 come le zoo, `id` 9101-9108, nome «Tour <mondo>», mondo/miniatura/musica dalla prima missione
   del mondo, AP 0). Si avviano come le zoo: `server/save/smoke.json` `{"stageId": 991001}` -> l'elenco
-  Story mostra solo quella missione. Mappe da `stage_gen\story` in `stage_gen\files\stage`.
+  Story mostra solo quella missione; `{"stageIds": [991001, ..., 991008]}` mostra tutti i tour
+  insieme (banco 13-10: 9101-9108 nell'elenco, tutti NEW). Mappe da `stage_gen\story` in `stage_gen\files\stage`.
 - Mancano dalle risorse quasi tutte le aree dei mondi 2-7 (Dwarf's Cottage, Market, West Wing...):
   i giri di DW, WL, OC, BC, CD hanno 2-3 stanze.
 

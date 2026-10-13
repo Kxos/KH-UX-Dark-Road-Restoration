@@ -2345,15 +2345,17 @@ function respondStageList(res) {
   }
   if (!stories.length) stories.push({ stageId: START_STAGE_ID, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] });
   // Prova automatica delle missioni (tools/ldplayer/smoke_quests.ps1): se esiste
-  // save/smoke.json {"stageId": N} l'elenco contiene solo quella missione, nuova
+  // save/smoke.json {"stageId": N} l'elenco contiene solo quella missione, nuova;
+  // {"stageIds": [N, ...]} (es. i tour 991001-991008) contiene solo quelle, tutte nuove
   const smokePath = path.join(path.dirname(SAVE_FILE), 'smoke.json');
   if (fs.existsSync(smokePath)) {
-    const id = JSON.parse(fs.readFileSync(smokePath, 'utf8')).stageId;
-    const r = stages.find((x) => x.stageId === id);
-    if (r) {
+    const smoke = JSON.parse(fs.readFileSync(smokePath, 'utf8'));
+    const ids = Array.isArray(smoke.stageIds) ? smoke.stageIds : [smoke.stageId];
+    const rows = ids.map((id) => stages.find((x) => x.stageId === id)).filter(Boolean);
+    if (rows.length) {
       stories.length = 0;
-      stories.push({ stageId: id, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] });
-      next = r;
+      for (const r of rows) stories.push({ stageId: r.stageId, useAp: 0, score: 0, playStatus: 0, clearMissionIds: [] });
+      next = rows[0];
     }
   }
   send(res, 200, {
