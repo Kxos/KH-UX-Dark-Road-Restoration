@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 33**, **revisione master 95** (default degli script di sessione).
+Stato del banco: **risorse 34** (layout originali JP, I-117), **revisione master 98** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
@@ -72,7 +72,7 @@ con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
   8. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
   Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
   `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica).
-- Banco: risorse 33, **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
+- Banco: risorse 34 (74 layout originali JP; MoogleShop_Item_Panel resta generato), **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
   keyblade); `server\save\smoke.json` = {"stageIds": [991001..991008]} (13-10: tutti i tour
   nell'elenco Story per le prove dell'utente, in attesa del suo esito); keyblade corrente Sleeping Lion (deck
   vuoto: per le battaglie scegliere Treasure Trove). Begin nell'elenco: se non risponde, indietro e Story.
