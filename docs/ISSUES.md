@@ -2,13 +2,13 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-091**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-115**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
 **OBSOLETO** (non piu' pertinente). Prova = commit (hash) o data.
 
-Ultima revisione: 11 ottobre 2026.
+Ultima revisione: 13 ottobre 2026.
 
 ## Aperti
 
@@ -33,6 +33,8 @@ Ultima revisione: 11 ottobre 2026.
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
 | I-032 | APERTO | Valori segnaposto: HP iniziale 3000, CP/HP dei forzieri (10.000/5.000/500) | [battaglia](notes/battaglia.md#hp) | 10-08/09 |
 | I-033 | APERTO | Attacchi speciali generati: 63 righe «Special Attack», animazioni del modello | [medaglie](notes/medaglie.md#burst) | 7da38e3 |
+| I-093 | APERTO | Keyblade (segnalazione utente 13-10): portare all'evoluzione +35 tutti i keyblade e verificarne il corretto funzionamento (livelli, slot, materiali, animazioni); seguito di I-087/I-067 | [home_profilo](notes/home_profilo.md#keyblade-tutti) | - |
+| I-101 | APERTO | Subslot del keyblade (segnalazione utente 13-10): sfondo troppo scuro e «X» troppo spenta; confrontare colori e layout con l'originale (seguito di I-066) | [risorse_layout](notes/risorse_layout.md) | - |
 
 ### Risorse e layout
 
@@ -49,6 +51,7 @@ Ultima revisione: 11 ottobre 2026.
 | I-006 | APERTO | Party: tutti i layout `PartyTop_*` mancanti (legato a I-001) | [risorse_layout](notes/risorse_layout.md#mancanti) | ab62db9 |
 | I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008 ora «Available quests!», 3b6bbb3; 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
 | I-035 | APERTO | Presents: cornici viola di Dark Road da sostituire con le texture blu | [home_profilo](notes/home_profilo.md#presents) | 081b0cb |
+| I-096 | APERTO | Presents (segnalazione utente 13-10): layout come nell'originale (vedi I-035) | [home_profilo](notes/home_profilo.md#presents) | - |
 
 ### Mappe e missioni di storia
 
@@ -63,6 +66,7 @@ Ultima revisione: 11 ottobre 2026.
 | I-036 | APERTO | Stanze assenti dalle risorse (Dwarf's Cottage, West Wing, Market...): sostituite con stanze dello stesso mondo | [mappe_storia](notes/mappe_storia.md#stanze) | 2c57c06 |
 | I-072 | IN CORSO | Flusso fra le aree delle missioni a piu' stanze non coerente (segnalazione utente): uscite nel punto piu' lontano / piu' a sinistra invece che sulle porte (es. Fountain Square -> 1st District usciva dalla scala del 2nd District). Grafo delle aree `recon/tools/world_links.json` (wiki + uscite originali 1010-1016), uscite delle 95 missioni sulle porte, missioni «Tour <mondo>» 991001-991008 (`KHUX_WORLDTOUR=1`). Banco 991001: uscita «Underground Waterway Entrance» del 2nd District introvabile (giro di ~4500 unita' dietro un edificio): regola `short_exit` (giro > 1,5x la linea d'aria -> uscita sul punto vicino alla porta con percorso breve), spostata da (2020,2068) a (1616,1640); spostate anche 4 uscite di 991008 e 13 missioni di storia, avvisi «giro lungo» 15 -> 0: da provare sul banco Banco 12-10 sera, tour: Dwarf Woodlands (Flower Glade -> Dark Forest), Wonderland (Fork in the Road -> White Rabbit's House, fino al RESULTS), Olympus Coliseum (Entrance -> Coliseum, RESULTS), Beast's Castle (Library -> Fireplace), Castle of Dreams (Path to the Chateau -> Ballroom): uscite sulle porte e arrivi coerenti. Restano Agrabah e Enchanted Dominion (17 parti). Difetto a parte: dopo una missione il primo Begin nell'elenco Story non risponde finche' non si rientra da Quests | [mappe_storia](notes/mappe_storia.md#collegamenti) | `stage_gen\worldtour_report.json` |
 | I-037 | APERTO | Quests: tutte le categorie «COMPLETE» (`/stage/achievements` con contatori a 0) | [server](notes/server.md#catena) | 10-08; nessun commit dopo |
+| I-095 | APERTO | Missioni di prova (segnalazione utente 13-10): una missione per mondo che contenga tutte le aree del mondo collegate correttamente, per i test (legato a I-072) | [mappe_storia](notes/mappe_storia.md) | - |
 
 ### Home, profilo, pet
 
@@ -74,6 +78,21 @@ Ultima revisione: 11 ottobre 2026.
 | I-016 | APERTO | Chirithy invisibile (LWF dell'NPC 999 vuota) | [home_profilo](notes/home_profilo.md#home) | f10ea90 |
 | I-017 | APERTO | Profilo: Outfits, Boosters/Passive, pagina 2, frecce ‹ › | [home_profilo](notes/home_profilo.md#profilo) | 2ed41df |
 | I-018 | APERTO | Pulsanti mai provati: Beginner's Guide (vuota), Shop jewel, frecce della home, menu Other, Share medaglia, titolo (Restore Resources, Save User Data, x3, KHDR START) | [home_profilo](notes/home_profilo.md#home) | 640d345 |
+| I-094 | APERTO | Pet (segnalazione utente 13-10): verificare Outfits e Tricks, compreso lo sblocco (seguito di I-082/I-005) | [home_profilo](notes/home_profilo.md) | - |
+| I-097 | APERTO | Home (segnalazione utente 13-10): Chirithy invisibile (I-016) e pulsanti sovrapposti al banner «Join a Party»; verificare posizioni con l'originale | [home_profilo](notes/home_profilo.md) | - |
+| I-098 | APERTO | Profilo utente (segnalazione utente 13-10): crash sul pulsante Boosters (vedi I-017) | [home_profilo](notes/home_profilo.md) | - |
+| I-104 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Notices; le notizie dovrebbero apparire anche al login, sulla home | [home_profilo](notes/home_profilo.md) | - |
+| I-105 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Album | [home_profilo](notes/home_profilo.md) | - |
+| I-106 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Party (vedi I-006, layout `PartyTop_*` mancanti) | [home_profilo](notes/home_profilo.md) | - |
+| I-107 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Transfer Union | [home_profilo](notes/home_profilo.md) | - |
+| I-108 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Records | [home_profilo](notes/home_profilo.md) | - |
+| I-109 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Legal Information | [home_profilo](notes/home_profilo.md) | - |
+| I-110 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Help | [home_profilo](notes/home_profilo.md) | - |
+| I-111 | APERTO | Other (segnalazione utente 13-10): verificare che le impostazioni di Settings abbiano effetto davvero | [home_profilo](notes/home_profilo.md) | - |
+| I-112 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Credits | [home_profilo](notes/home_profilo.md) | - |
+| I-113 | APERTO | Home (segnalazione utente 13-10): errore 200 toccando Chirithy e poi il pulsante Rankings | [home_profilo](notes/home_profilo.md) | - |
+| I-114 | APERTO | Home (segnalazione utente 13-10): crash sul pulsante Party Search | [home_profilo](notes/home_profilo.md) | - |
+| I-115 | APERTO | Home (segnalazione utente 13-10): studiare le frecce bianche in basso (dovrebbero mostrare eventi e banner attivi); verificare con l'originale (vedi I-018) | [home_profilo](notes/home_profilo.md) | - |
 
 ### Medaglie
 
@@ -93,6 +112,8 @@ Ultima revisione: 11 ottobre 2026.
 |---|---|---|---|---|
 | I-021 | APERTO | Moogle invisibile, nomi lunghi dei trait, targa `LB_Munnies` assente, «N days left» = 1980 giorni | [moogle_shop](notes/moogle_shop.md#aperti) | c8afb88 |
 | I-043 | APERTO | Cursore rosso dello slot da sostituire troppo largo; trait speciali (Spirit Training) non gestiti | [moogle_shop](notes/moogle_shop.md#aperti) | a35aab2 |
+| I-102 | APERTO | Moogle Shop (segnalazione utente 13-10): stile del layout da confrontare con l'originale; medaglie in Items troppo piccole; verificare il layout in generale | [moogle_shop](notes/moogle_shop.md) | - |
+| I-103 | APERTO | Moogle Shop (segnalazione utente 13-10): layout di Sell Materials da confrontare con l'originale | [moogle_shop](notes/moogle_shop.md) | - |
 
 ### Avatar Boards
 
@@ -100,6 +121,14 @@ Ultima revisione: 11 ottobre 2026.
 |---|---|---|---|---|
 | I-025 | APERTO | Fiocco COMPLETE della carta piu' semplice dell'originale dipinto | [bacheche](notes/bacheche.md#layout) | 51f60c4 |
 | I-026 | APERTO | Popup «Unlocked an Avatar Board!»: originale non trovato (stile ricavato) | [bacheche](notes/bacheche.md#popup-lb) | befacc0 |
+| I-092 | APERTO | Avatar Boards (segnalazione utente 13-10): verificare i pulsanti «Unlock All» e «Unlock» e il loro funzionamento; ritardo di alcuni secondi e grafica «Congratulations» invasiva a ogni nodo sbloccato (confrontare con l'originale) | [bacheche](notes/bacheche.md) | - |
+
+### Shop
+
+| ID | Stato | Titolo | Dettaglio | Prova |
+|---|---|---|---|---|
+| I-099 | APERTO | Shop (segnalazione utente 13-10): recuperare i banner e la loro logica (pull delle medaglie) | [server](notes/server.md) | - |
+| I-100 | APERTO | Shop (segnalazione utente 13-10): crash sul pulsante Increase Storage | [server](notes/server.md) | - |
 
 ### Union Cross
 
