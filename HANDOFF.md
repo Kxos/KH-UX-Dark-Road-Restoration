@@ -51,9 +51,12 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Prossimi passi** (fatto il 12 sera: Optimize I-090, Overwrite Skill lato server, Passive Effects
 del Profilo, keyblade mancanti all'avvio + test dello sblocco, tetti Cid/Chip/Dale, Spirit Training
 con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
-  1. Esito dell'agente sul keyblade che sparisce col personaggio fermo nel campo (nuova riga in ISSUES).
-  2. I-072: tour Agrabah (991004) e Enchanted Dominion (991008), 17 parti; Daybreak Town gia' fatto.
-     Difetto: dopo una missione il primo Begin nell'elenco Story non risponde (rientrare da Quests).
+  1. **I-116 (priorita' dell'utente, 13-10)**: i tour 9101-9108 provati dall'utente hanno indicatori
+     fra le aree molto imprecisi e aree mancanti. Prima uno **schema esatto dei mondi** (aree, solo
+     collegamenti con prova, posizione esatta di ogni indicatore, aree mancanti cercate o rigenerate
+     con precisione), confermato dall'utente; solo dopo tour e missioni di storia. Metodo in
+     [mappe_storia](docs/notes/mappe_storia.md#schema-mondi). (I-091 chiuso; I-072 confluito qui.)
+  2. Difetto: dopo una missione il primo Begin nell'elenco Story non risponde (rientrare da Quests).
   3. I-088: provare Overwrite Skill sul banco (Scrooge 452/453/454 nello slot piu' a sinistra).
   4. I-086: la pagina web «Passive Effects» aperta dal dialogo del Profilo resta vuota (da Equipment si vede).
   5. I-087: Level Up/evoluzione di un keyblade nuovo con -KbFree; Divine Rose con smoke 15080.
