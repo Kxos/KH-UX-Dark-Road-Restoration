@@ -58,7 +58,11 @@ con 36 Special Trait e fumetto, tour DW/WL/OC/BC/CD), in ordine:
   4. I-086: la pagina web «Passive Effects» aperta dal dialogo del Profilo resta vuota (da Equipment si vede).
   5. I-087: Level Up/evoluzione di un keyblade nuovo con -KbFree; Divine Rose con smoke 15080.
   6. I-089 etichette Equipped/LV sovrapposte dopo una fusione; I-084 Trait Medal.
-  7. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
+  7. Lista dell'utente del 13-10 in ISSUES, **I-092..I-115**: Avatar Boards Unlock/Unlock All, keyblade a
+     +35, Outfits/Tricks del pet, missione di prova per mondo, Presents, home (Chirithy, Join a Party,
+     Rankings, Party Search, frecce), Boosters, Shop (banner/pull, Increase Storage), Subslot, Moogle
+     Shop, menu Other (Notices, Album, Party, Transfer, Records, Legal, Help, Settings, Credits).
+  8. File temporanei grossi su `D:\Progetto_Restauro_KH_UX\tmp`, non nello scratchpad di C:.
   Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
   `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica).
 - Banco: risorse 33, **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
