@@ -311,7 +311,12 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   discordanze tutte su arrivi poco affidabili nel video o angoli (porte sempre coincidenti). BC senza
   porte (missioni 2016 tutte a una parte); CD, ED e mondi di Ralph attendono i dati JP 4.3.1.
   Sfondo delle immagini = base1 ricomposta dalle tessere BTF, allineata alla CLS. Non pubblicare:
-  grafica Square Enix. Da confermare con l'utente.
+  grafica Square Enix. Da confermare con l'utente dopo l'unione con i dati JP 4.3.1 (decisione
+  dell'utente 13-10: rivedere solo lo schema unito). **Collegamenti fra mondi diversi** (solo stage
+  evento 91000 e 16160: Boardwalk <-> Mine: Corridor <-> Dreadful Dunes, Path to the Mine <-> Scarab
+  Sands, FS -> Corridor of Darkness): tenuti a parte, non usati per le missioni di storia (utente
+  13-10). Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
+  stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, poi `schema_report.py`.
 - **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
   anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
   originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
