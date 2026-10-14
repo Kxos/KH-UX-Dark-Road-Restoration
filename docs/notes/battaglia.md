@@ -193,3 +193,14 @@ con l'icona del tier 3 e la freccia (serve `isGuilt` 1: Burst visibile = gia' 1)
 tier 9/10 con guilt (Level Up) -> icona viola 9/10 come nella foto, niente crash. (3) Dopo un build
 completo (nomi nuovi: non con `-Quick` se la riserva non basta): uno speciale con un buff (STR/DEF
 su, effetto della riga burst) o un debuff nemico -> icona e «×N» sopra l'avatar.
+
+<a id="cornice-avatar"></a>
+## Cornice dell'avatar nell'HUD (I-125, 14-10)
+
+`FUN_00b1792c(?, angolo, ?)` (chiamata da `FUN_00b157c8`, `ActionMap_PlayerStatusField_new`) carica
+`img/ui/PlayerStatusIndicator/Avatar_Circle_0N.png` per l'angolo di vita persa
+`(1 - HP/HPmax) * DAT_017f57a0` contro le soglie `DAT_0175a074` = 90 e `DAT_017f579c` = 180:
+< 90 Circle_01, 90-180 Circle_05, >= 180 Circle_06 (poi Side_01/02). La texture nulla non e'
+controllata: SIGSEGV a 0x24, pc `0xb17adc` (logcat -b crash: `rbx` = indirizzo ARM). Le risorse WW
+servivano solo Circle_03/04/05 e Msk: Circle_06 e Side_02-04 dai dati JP, Circle_01/02 e Side_01 dal
+pacchetto 2016 (`import_jp_coco.py`, `JP_IMG`). Per riconoscerlo: crash subito dopo `/stage/start`.

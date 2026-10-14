@@ -547,8 +547,33 @@ for d in JP_LWF:
         writes.setdefault(name, ('jp', p, None))
 
 
+# ---- immagini originali JP assenti dalle risorse WW -------------------------------------------
+# Cartelle img/ di cui il client WW chiede file che nessuna risorsa serve. PlayerStatusIndicator:
+# FUN_00b1792c sceglie la cornice dell'avatar dell'HUD per soglie (Avatar_Circle_03..06, Side_02..04);
+# servite solo Circle_03/04/05: oltre la soglia (HP saliti con le Avatar Boards) texture nulla e
+# crash a ogni battaglia (pc 0xb17adc, indirizzo 0x24; banco 14-10). Solo i file non serviti.
+JP_IMG = ['img/ui/PlayerStatusIndicator']
+_served_all = set()
+for _tsv in (os.path.join(D, 'resource_data', 'names_v4.tsv'), os.path.join(D, 'ipa431', 'names_addnl.tsv')):
+    if os.path.exists(_tsv):
+        for _line in open(_tsv, encoding='utf-8'):
+            _served_all.add(_line.split('\t')[0])
+# poi il pacchetto 2016 (stessi nomi; Circle_01/02 e Side_01 mancano anche nel JP: Circle_01 e' la
+# cornice a vita quasi piena, chiesta a inizio battaglia)
+B16_ROOT = os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files')
+for d in JP_IMG:
+    for root in (JP_ROOT, B16_ROOT):
+        src_dir = os.path.join(root, *d.split('/'))
+        if not os.path.isdir(src_dir):
+            continue
+        for rel, p in latest(src_dir).items():
+            name = d + '/' + rel
+            if rel.endswith('.png') and name not in _served_all:
+                writes.setdefault(name, ('jp', p, None))
+
+
 def out_path(name):
-    return os.path.join(OUT if name.startswith('lwf/') else pub_out, *name.split('/'))
+    return os.path.join(OUT if name.startswith(('lwf/', 'img/')) else pub_out, *name.split('/'))
 
 
 # ---- scrittura --------------------------------------------------------------------------------
