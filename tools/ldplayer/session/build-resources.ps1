@@ -81,9 +81,14 @@ if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }
 python -I recon\tools\prefer_addnl.py "$D\ipa431\names_addnl.tsv" "$D\ipa431\addnl.mp4" "$sg\files"
 if ($LASTEXITCODE) { throw 'prefer_addnl fallito' }
 # testi ui originali dell'IPA 4.4.0 (import_ui_texts.py -> layouts\ui_texts), dopo quelli
-# scritti a mano: dove c'e' l'originale prevale
+# scritti a mano: dove c'e' l'originale prevale, tranne i segnaposto «[id]» dell'IPA (es. i
+# filtri Supernova 106240205-215) quando make_layouts.py ha gia' scritto un testo
 python -I recon\tools\import_ui_texts.py "$D\resource_data\names_v4.tsv" "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" "$D\layouts\ui_texts" "$D\layouts\served_texts\text\ui"
-Copy-Item "$D\layouts\ui_texts\text\ui\*" "$sg\files\text\ui\" -Force
+foreach ($t in Get-ChildItem "$D\layouts\ui_texts\text\ui" -File) {
+    $dst = Join-Path "$sg\files\text\ui" $t.Name
+    if ((Test-Path $dst) -and ([IO.File]::ReadAllText($t.FullName) -match '^\[\d+\]$')) { continue }
+    Copy-Item $t.FullName $dst -Force
+}
 # layout originali dai dati JP 4.3.1 al posto dei nostri generati (I-117): elenco versionato in
 # recon\tools\jp_coco_layouts.txt (togliere una riga = torna il generato), sopra l'uscita di
 # make_layouts/make_textures; rapporto e manifest in $sg\jp_import (Pillow: senza -I)

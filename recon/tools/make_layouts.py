@@ -1697,11 +1697,26 @@ TEXTS = {
     106240102: 'Valid until the end of the month',
     106270102: 'Not available\nat this time',
 }
-# Popup Sort (FUN_00a45e24 nella costruzione dei filtri): testi del filtro Super Burst.
-# Nell'IPA 4.4.0 i vicini (106240205-215) sono ancora segnaposto «[id]»: stesso formato
-# (la sezione Dummy_Sb e' nascosta).
-TEXTS.update({i: '[%d]' % i for i in [106240220] + list(range(106240216, 106240220))
-              + list(range(106240221, 106240228))})
+# Popup Sort, scheda Filter (FUN_00a45fa0 -> FUN_00a45e24(label, id); filtro FUN_00759f50):
+# testi assenti ovunque (IPA 4.4.0 e JP 4.3.1: segnaposto «[id]»), nostri, nello stile delle
+# sezioni normali e con i termini NA delle descrizioni («Pierces DEF boost», «SN Renew»).
+# 206-208 = sezione Special Attacks (Filter_Ability_Guard/BaseAttack/BaseDefence), il resto =
+# sezione Supernova (riga burst di superBurstId; vedi docs/notes/medaglie.md#filtri).
+TEXTS.update({
+    106240205: 'Types',          # Txt_SubTitleSb01: intestazione dei filtri d'effetto
+    106240206: 'Pierce DEF', 106240207: 'Base STR', 106240208: 'Base DEF',
+    106240209: 'Pierce DEF',     # Filter_Sb_Guard: penetrate > 0
+    106240210: 'Base STR',       # Filter_Sb_BaseAttack: addBaseAtkSelf/Opponent != 0
+    106240211: 'Base DEF',       # Filter_Sb_BaseDefence: addBaseDefSelf/Opponent != 0
+    106240212: 'Single', 106240213: 'All', 106240214: 'Random',   # target 1/2/3
+    106240215: 'None',           # Filter_Sb_NotSet: medaglia senza Supernova
+    106240216: 'Heal',           # Filter_Sb_Recovery: heal/cure/recovery
+    106240217: 'Special',        # Filter_Sb_Special: copia/azzeramento buff, contatore, riflesso
+    106240218: 'SN Renew',       # Filter_Sb_Recovery2: recurringAttribute > 0
+    106240219: 'Attack Only',    # Filter_Sb_AttackOnly
+    106240220: 'PvP Timing',     # Txt_SubTitleSb02: superburstTiming 1-7 («Triggers before slot N»)
+})
+TEXTS.update({106240220 + n: str(n) for n in range(1, 8)})
 
 
 def node(name, tag):
