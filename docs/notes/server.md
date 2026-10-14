@@ -539,3 +539,13 @@ Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
     e gli altri 17 `Ranking*` citati, tutti assenti dalle risorse WW: originali JP nell'elenco; 4
     (`Ranking_Result*`, `Ranking_Reward_ver1301`, `RankingRewardScene_ver1301`) da decidere per
     `Rank_Title_3.png`/`Rank_Result_Deco.png` assenti ovunque.
+  - Crash dopo `/ranking/lux/border` (SIGSEGV a 0x8, banco 14-10): `[fn]` riempie l'elenco Lux
+    (legge +0x5f0/+0x600/+0x7f0) e sulla riga del giocatore crea l'armatura `Cursor_Anim_Ranking2`
+    (`[fn]`, poi `getAnimation()->playWithIndex(0)`), registrata da `[fn]` con
+    `Cursor_Anim_Ranking2.ExportJson`: assente dalle risorse WW (come `Cursor_Anim_Ranking`). Import in
+    `import_jp_coco.py` (`JP_ARM`): ExportJson JP con plist e texture sul nome libero `MyPageAnime0`
+    (i plist nuovi non si caricano, [risorse_layout](risorse_layout.md#regole)); le due armature hanno lo
+    stesso fotogramma `Rank_Panel_User_Eff.png` (`Cursor_Anim_Ranking20.png` manca anche nel JP).
+    Stessa riga: numero di posizione `img/colosseum/Colosseum_Rank_Num1..10.png` e i fumetti
+    `img/ranking/Rank_Balloon*` (`Ranking_IconPanel_ver131`, `[fn]`), assenti dalle risorse WW:
+    dal JP (`Rank_Balloon1_01` = copia di `1_02`, manca anche nel JP).
