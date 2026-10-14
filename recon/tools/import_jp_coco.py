@@ -654,6 +654,43 @@ for _t in ('SBurst_Icon1.png', 'SBurst_Icon2.png', 'SBurst_Icon3.png', 'SBurst_P
     if os.path.exists(os.path.join(_jp_pub, _t)) and 'cocostudio/publish/' + _t not in _served_all:
         writes.setdefault(_t, ('jp', os.path.join(_jp_pub, _t), None))
 
+# righe delle classifiche (FUN_009353e8): numero di posizione 1-10 img/colosseum/Colosseum_Rank_Num%d
+# (la 3 il JP la tiene in cocostudio/publish) e fumetti img/ranking/Rank_Balloon* di
+# Ranking_IconPanel_ver131 (FUN_00956dcc); Rank_Balloon1_01 manca anche nel JP: copia di 1_02 (stesso
+# fumetto azzurro). Rank_Title_%d (scritte «N位» disegnate, schermata dei premi) non si importa.
+_rank_img = {'img/colosseum/Colosseum_Rank_Num%d.png' % n: os.path.join(JP_ROOT, 'img', 'colosseum', 'Colosseum_Rank_Num%d.png' % n)
+             for n in range(1, 11)}
+_rank_img['img/colosseum/Colosseum_Rank_Num3.png'] = os.path.join(_jp_pub, 'Colosseum_Rank_Num3.png')
+for _b in ('1_02', '1_03', '2_01', '2_02', '2_03'):
+    _rank_img['img/ranking/Rank_Balloon%s.png' % _b] = os.path.join(JP_ROOT, 'img', 'ranking', 'Rank_Balloon%s.png' % _b)
+_rank_img['img/ranking/Rank_Balloon1_01.png'] = _rank_img['img/ranking/Rank_Balloon1_02.png']
+for _name, _src in sorted(_rank_img.items()):
+    if os.path.exists(_src) and _name not in _served_all:
+        writes.setdefault(_name, ('jp', _src, None))
+
+# ---- armature originali JP su un plist libero -------------------------------------------------
+# Armature che il client WW crea e che nessuna risorsa serve: senza ExportJson la creazione va in
+# crash (FUN_011843c4). Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle
+# classifiche (FUN_00932570 con Ranking_MainPanel_ver230; SIGSEGV a 0x8 dopo /ranking/lux/border,
+# banco 14-10). I plist con un nome nuovo non si caricano (docs/notes/risorse_layout.md#regole): il
+# plist e la texture vanno sul nome di un plist servito che il binario non cita mai; le due armature
+# hanno lo stesso fotogramma (Rank_Panel_User_Eff.png) e condividono il plist. La texture di
+# Ranking2 (Cursor_Anim_Ranking20.png) manca anche nel JP: si usa quella di Ranking.
+JP_ARM = {'Cursor_Anim_Ranking': ('MyPageAnime0', 'Cursor_Anim_Ranking0'),
+          'Cursor_Anim_Ranking2': ('MyPageAnime0', 'Cursor_Anim_Ranking0')}
+for _arm, (_slot, _src) in sorted(JP_ARM.items()):
+    _ej = os.path.join(_jp_pub, _arm + '.ExportJson')
+    if 'cocostudio/publish/%s.ExportJson' % _arm in _served_all or not os.path.exists(_ej):
+        continue
+    _data = load_json(_ej)
+    _data['config_file_path'] = [_slot + '.plist']
+    _data['config_png_path'] = [_slot + '.png']
+    writes[_arm + '.ExportJson'] = ('jp', _ej, _data)
+    _pl = open(os.path.join(_jp_pub, _src + '.plist'), encoding='utf-8').read()
+    writes[_slot + '.plist'] = ('jp', os.path.join(_jp_pub, _src + '.plist'),
+                                _pl.replace(_src + '.png', _slot + '.png').encode('utf-8'))
+    writes[_slot + '.png'] = ('jp', os.path.join(_jp_pub, _src + '.png'), None)
+
 
 def out_path(name):
     return os.path.join(OUT if name.startswith(('lwf/', 'img/')) else pub_out, *name.split('/'))
@@ -669,7 +706,9 @@ if not args.check:
                 os.remove(dst)
             continue
         src, data = w[1], w[2]
-        if data is not None:
+        if isinstance(data, bytes):                   # testo gia' pronto (plist rinominato)
+            blob = data
+        elif data is not None:
             blob = json.dumps(data, ensure_ascii=False).encode('utf-8')
         else:
             blob = open(src, 'rb').read()
