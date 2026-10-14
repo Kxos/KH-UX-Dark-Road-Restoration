@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 34** (layout originali JP, I-117), **revisione master 98** (default degli script di sessione).
+Stato del banco: **risorse 35** (stage originali delle 525 missioni, stanze JP recuperate), **revisione master 101** (default degli script di sessione).
 
 ```powershell
 # emulatore (se spento)
@@ -63,9 +63,13 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
      I-086; I-087; I-089/I-084; lista I-092..I-115.
   Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1`. Con la versione 34
   `-Quick` e' possibile se l'indice non cresce: prima `-DryRun` (14-10: 72% della riserva).
-- Banco: risorse 34, **revisione master 98**, server con `-Pet` (`-KbFree` solo per i keyblade,
-  `-TestPresents` per i regali); `server\save\smoke.json` = {"stageIds": [991001..991008]} (lo rilegge a
-  ogni richiesta: spostarlo per l'elenco normale); giocatore al livello 13, keyblade Sleeping Lion.
+- Banco: **risorse 35** (+ -Quick del 14-10 pomeriggio), **revisione master 101**, server con `-Pet`.
+  **Stage di storia = originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`), stanze recuperate in
+  `rooms_gen`; tour v2 in `stage_gen\tours_v2` tenuti da parte (solo prove). `smoke.json` spostato in
+  `D:\Progetto_Restauro_KH_UX\tmp\smoke.json.bak` (elenco Story normale). Copie di sicurezza:
+  `stage_gen\stage_generated_bak_20261014`, `stage_poi_bak_20261014.json`, `master_bak_20261014`.
+  Da provare sul banco: Boosters (I-123), icona Jewels degli Items (I-122), HUD guilt/buff (I-124),
+  missioni nelle stanze recuperate.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
