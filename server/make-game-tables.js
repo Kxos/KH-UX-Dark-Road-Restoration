@@ -527,6 +527,13 @@ for (const b of bursts) {
   Object.assign(b, { maxEnhanceCount: want, basePowerPerEnforce: per(b.basePower), displayPowerPerEnforce: per(b.displayPower) });
 }
 
+// buff/debuff degli speciali da Roboloid (burst-buffs.js, I-124); valori originali dalle righe
+// burst di thethiny (data/burst.json, gia' in chiaro) dove la descrizione coincide
+const ORIG_BURST = process.env.KHUX_ORIG_BURST || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data\\burst.json';
+const origBursts = fs.existsSync(ORIG_BURST) ? new Map(JSON.parse(fs.readFileSync(ORIG_BURST, 'utf8')).map((b) => [b.burstId, b])) : new Map();
+const buffStats = require('./burst-buffs').applyBurstBuffs(medals, bursts,
+  (m) => ROBO_BY_ID.get(m.medalId >= 300000 ? m.medalId - 300000 : MEDAL_MAP[m.medalId]), origBursts);
+
 // burst 0: le medaglie senza attacco speciale (supporto: Dewey, Fata Smemorina, validBurst 0)
 // hanno burstId 0, e Optimize ([fn], valore di ogni medaglia posseduta per gli slot del
 // keyblade) cerca la riga burst del burstId senza guardare validBurst: riga nulla, crash a 0x10
@@ -711,6 +718,6 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
   if (f.endsWith('.json')) fs.copyFileSync(path.join(TABLES, f), path.join(OUT, f));
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded}, ${buffStats.rows} con buff/debuff, ${buffStats.fromOrig} da thethiny, ${buffStats.conflicts} conflitti)` +
   `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
