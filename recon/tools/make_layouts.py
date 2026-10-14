@@ -1297,6 +1297,15 @@ LAYOUTS = {
                                                                             capInsetsWidth=1, capInsetsHeight=200)),
                                       ('text', 'Txt_Title_Label', 'Unequip this Medal from where it is set.'),
                                       ('text', 'Txt_Cancel', 'Cancel')]),
+    # Fumetti del Level Up (Camp_Balloon2, testo rosso scuro in dissolvenza ciclica): Txt_Announce
+    # e' tarato sul giapponese a una riga (font 20, area 234x64 e 312x64 su tela 960x640); con
+    # l'inglese ufficiale 101300064/65 (due righe, «Fuse the same Medals for» / «Fuse one more of
+    # the same Medal») la prima riga andava a capo e l'ultima usciva dal fumetto (banco 14-10,
+    # d14_lvup). Font 16: entrambe le righe stanno nelle aree originali (sostituzione, --last-wins).
+    'MedalMix_GuiltMixBalloon1.json': ('copy', 'MedalMix_GuiltMixBalloon1.json', {}, False,
+                                       [('opts', 'Txt_Announce', dict(fontSize=16))]),
+    'MedalMix_GuiltMixBalloon2.json': ('copy', 'MedalMix_GuiltMixBalloon2.json', {}, False,
+                                       [('opts', 'Txt_Announce', dict(fontSize=16))]),
     # Evolve ([fn]): senza MedalEvoScene_ver320 [fn] restituisce null e il
     # client va in crash all'addChild. Nodi come nella ver260 (UnderUI, CenterUI_Left,
     # CenterUI_Right a x=480, LeftUI a y=576), ma Under e Left non esistono in nessuna

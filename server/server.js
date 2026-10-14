@@ -176,6 +176,8 @@ function route(url) {
   if (p === '/colosseum') return 'colosseum';
   if (p === '/user/point' || p === '/user/sphere/reset') return 'userpoint';
   if (p === '/user/stone') return 'userstone';
+  if (p === '/user/present') return 'userpresent';
+  if (p === '/user/present/receive') return 'presentreceive';
   if (p === '/user/material') return 'usermaterial';
   if (p === '/campaign') return 'campaign';
   if (p.startsWith('/multi/')) return routeMulti(p); // Union Cross: server/multi.js
@@ -190,6 +192,8 @@ function route(url) {
   if (p === '/user/birthday') return 'userbirthday';
   if (p === '/user/title') return 'usertitle';
   if (p === '/user/mission/list') return 'missionlist';
+  if (p === '/user/mission') return 'usermission';
+  if (p === '/web/beginner') return 'beginnerpage';
   if (p === '/user/sphere') return 'spherelist';
   if (p === '/user/sphere/update') return 'sphereupdate';
   if (p.startsWith('/user/sphere/check')) return 'spherecheck';
@@ -307,6 +311,9 @@ function respondLogin(res) {
   };
   for (const k of LOGIN_LINKS) body[k] = '';
   body.passiveSettingList = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/passive`; // «Passive Effects» (I-065): in https la WebView rifiuta il certificato
+  // «Beginner's Guide» della home: [fn] apre una WebView (titolo testo 106210101)
+  // sull'URL beginnersGuide (link +0x210); vuoto = finestra vuota. Pagina nostra, /web/beginner
+  body.beginnersGuide = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/beginner`;
   send(res, 200, body);
 }
 
@@ -1030,7 +1037,7 @@ function respondMyPage(res) {
     adminMypageTexts: process.env.KHUX_MYPAGE_TICKER === '1'
       ? [{ type: Number(process.env.KHUX_MYPAGE_TICKER_TYPE || 1), priority: 1, text: MYPAGE_TICKER }] : [],
     openBanners: [],
-    userPresentCount: 0,
+    userPresentCount: livePresents().length, // badge «!» del pulsante Presents
     isChangeCoordinate: 0,
     backgroundId: body.backgroundId || 150911,
     isNewAlbumChallenge: 0,
@@ -1140,6 +1147,8 @@ function grantItem(type, id, num) {
   } else if (type === 2) player.freeStone = (player.freeStone || 0) + num;
   else if (type === 4) player.money = (player.money || 0) + num;
   else if (type === 14) player.spherePoint = (player.spherePoint || 0) + num;
+  // 11 Lux (testo 100200001 in SceneUtil::setItemImageData della 1.0.1, 0x46C71C)
+  else if (type === 11) player.lux = (player.lux || 0) + num;
   else if (type === 5 && id) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
@@ -1508,17 +1517,46 @@ function userTitlesData() {
 }
 
 // ---------------------------------------------------------------------------
-// Missioni giornaliere e settimanali (master `mission`, server/tables/mission.json; formato
-// in stage_gen/missions/NOTE.md). missionType = scheda (2 Daily, 3 Weekly); il periodo
-// riparte da startDate + k giorni (giornaliere) o k settimane (settimanali). conditionId:
-// 1 quest completate, 3/6 Raid Boss, 4/9 Lux, 12 Union Cross, 28 PVP (6, 9 e 12 sono del
-// party: senza party si contano quelli del giocatore).
+// Missioni (master `mission`, server/tables/mission.json; formato in stage_gen/missions/NOTE.md
+// e docs/notes/home_profilo.md#missioni). La scheda la decide SOLO il client, dal campo
+// missionType della riga del master ([fn]: id della risposta -> riga -> +4):
+// 1 Beginner, 2 Daily, 3 Weekly (party), 4 Limited; il server manda tutte le righe attive
+// in un unico missions[]. Il periodo: giornaliere da startDate + k giorni (l'ora di
+// startDate e' anche quella del conto alla rovescia del client, [fn]),
+// settimanali da startDate + k settimane, Beginner e Limited senza azzeramento (valgono
+// fino a beginnerLimitTime / endDate). conditionId: 1 quest completate, 3/6 Raid Boss,
+// 4/9 Lux, 12 Union Cross, 28 PVP (6, 9 e 12 sono del party: senza party si contano quelli
+// del giocatore).
 // ---------------------------------------------------------------------------
 const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp' };
+const MISSION_SPAN = { 2: 86400000, 3: 7 * 86400000 }; // 1 e 4: nessun azzeramento
+// Durata della scheda Beginner dal primo elenco (ipotesi: il valore originale non e' noto)
+const BEGINNER_DAYS = Number(process.env.KHUX_BEGINNER_DAYS || 30);
+
+const masterDateMs = (d) => Date.parse(String(d).replace(' ', 'T') + 'Z');
 
 function missionPeriod(row, nowMs) {
-  const span = row.missionType === 3 ? 7 * 86400000 : 86400000;
-  return Math.floor((nowMs - Date.parse(row.startDate.replace(' ', 'T') + 'Z')) / span);
+  const span = MISSION_SPAN[row.missionType];
+  return span ? Math.floor((nowMs - masterDateMs(row.startDate)) / span) : 0;
+}
+
+// Righe che il client puo' mostrare: scheda 1-4 (le altre le ignora), gia' iniziate, non
+// scadute; le Beginner solo fino a beginnerLimitTime.
+function missionActive(row, nowMs) {
+  if (!(row.missionType >= 1 && row.missionType <= 4)) return false;
+  if (nowMs < masterDateMs(row.startDate) || nowMs >= masterDateMs(row.endDate)) return false;
+  if (row.missionType === 1) return nowMs < masterDateMs(beginnerLimitTime());
+  return true;
+}
+
+// beginnerLimitTime di /user/mission/list e /receive: null senza righe Beginner (il client lo
+// usa solo per l'etichetta del tempo delle missionType 1); altrimenti la scadenza della
+// scheda, BEGINNER_DAYS dal primo elenco (player.beginnerSince)
+function beginnerLimitTime() {
+  if (!masterRows('mission').some((r) => r.missionType === 1)) return null;
+  if (!player.beginnerSince) player.beginnerSince = serverTime();
+  return new Date(masterDateMs(player.beginnerSince) + BEGINNER_DAYS * 86400000)
+    .toISOString().slice(0, 19).replace('T', ' ');
 }
 
 // contatori del periodo corrente di ogni missione: player.missions[id] = {period, count, received}
@@ -1534,7 +1572,7 @@ function missionCount(counter, n) {
   if (!n) return;
   const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
   for (const row of masterRows('mission')) {
-    if (MISSION_COUNTER[row.conditionId] === counter) missionState(row, nowMs).count += n;
+    if (MISSION_COUNTER[row.conditionId] === counter && missionActive(row, nowMs)) missionState(row, nowMs).count += n;
   }
 }
 
@@ -1542,7 +1580,7 @@ function missionCount(counter, n) {
 // client va in crash), status 0 in corso, 1 da riscuotere, 2 riscossa
 function missionsData() {
   const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
-  return masterRows('mission').filter((r) => r.missionType === 2 || r.missionType === 3).map((r) => {
+  return masterRows('mission').filter((r) => missionActive(r, nowMs)).map((r) => {
     const s = missionState(r, nowMs);
     const goal = r.targetNum?.[0] || 1;
     const done = s.count >= goal;
@@ -1557,7 +1595,7 @@ function respondMissionReceive(res, req) {
   const rows = new Map(masterRows('mission').map((r) => [r.id, r]));
   for (const id of req?.receiveMissionIds || []) {
     const r = rows.get(id);
-    if (!r) continue;
+    if (!r || !missionActive(r, nowMs)) continue;
     const s = missionState(r, nowMs);
     if (s.received || s.count < (r.targetNum?.[0] || 1)) continue;
     s.received = true;
@@ -1568,9 +1606,157 @@ function respondMissionReceive(res, req) {
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData() },
-    missions: missionsData(), beginnerLimitTime: null,
+    missions: missionsData(), beginnerLimitTime: beginnerLimitTime(),
     userSphere: userSphereAll(),
     ...inventoryBlocks(now),
+  });
+}
+
+// GET /user/mission (azione 187, all'ingresso della home): parser [fn] legge solo
+// "id" (day/isFinish solo per l'azione 183 /user/mission/update), salvato nello stato di
+// gioco +0x830. Non e' la finestra Missioni: id e' la riga di un'altra tabella master
+// ([fn], campi +0x908..+0x914 = stage e intervallo) letta da [fn]; id 0 =
+// nessuna, il client prosegue (callback con true).
+function respondUserMission(res) {
+  send(res, 200, { ret: ret(), id: 0, day: 0, isFinish: false });
+}
+
+// Pagina della WebView «Beginner's Guide» (login.beginnersGuide): le missioni Daily/Weekly
+// dal master con premi e orari di azzeramento, e le basi della guida dell'utente
+// (reference\guida_basi). Stesso stile della pagina /web/passive.
+function respondBeginnerPage(res) {
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rows = masterRows('mission');
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const section = (type, title, reset) => {
+    const list = rows.filter((r) => r.missionType === type).sort((a, b) => (a.sortId || 0) - (b.sortId || 0));
+    if (!list.length) return '';
+    const items = list.map((r) => `<li>${esc(r.missionName)}<span>${r.rewardType === 2 ? 'Jewel' : 'Reward'} x${esc(r.itemNum)}</span></li>`).join('');
+    return `<h2>${title}</h2><p>${reset(list[0])}</p><ul>${items}</ul>`;
+  };
+  const hour = (r) => String(r.startDate).slice(11, 16);
+  const html = '<!doctype html><html><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<style>body{margin:0;padding:12px;background:#08304f;color:#fff;font:18px sans-serif}'
+    + 'h2{font-size:20px;color:#ffe27a;margin:18px 0 6px}p{margin:4px 0 8px;color:#cfe3f7}'
+    + 'ul{list-style:none;margin:0;padding:0}li{padding:8px 4px;border-bottom:1px solid #2f6fa8}'
+    + 'li span{float:right;color:#ffe27a}</style></head><body>'
+    + '<h2>Missions</h2><p>Tap the scroll under your avatar on the home screen. Clear the goals, '
+    + 'then tap Receive (or Collect All) to get the rewards.</p>'
+    + section(1, 'Beginner', () => 'Available for a limited time after you start playing.')
+    + section(2, 'Daily', (r) => `Reset every day at ${esc(hour(r))} (server time).`)
+    + section(3, 'Weekly (party)', (r) => `Reset every ${days[new Date(masterDateMs(r.startDate)).getUTCDay()]} at `
+      + `${esc(hour(r))} (server time). Progress is shared with your party: join a party to take them on.`)
+    + section(4, 'Limited', () => 'Available until the date shown on each mission.')
+    + '<h2>Jewels</h2><p>Jewels come from missions, quests and login bonuses. Use them to draw '
+    + 'medals and buy boards.</p></body></html>';
+  const buf = Buffer.from(html, 'utf8');
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
+  res.end(buf);
+}
+
+// ---------------------------------------------------------------------------
+// Presents (docs/notes/home_profilo.md#presents). player.presents[] = {userPresentId,
+// resourceType, resourceId, number, limitDatetime, comment, created[, test]}; resourceType
+// come reward.type di grantItem (1/2 jewel, 3 medaglia, 4 munny, 5 materiale, 11 Lux,
+// 13 keyblade, 14 Avatar Coin).
+// GET /user/present (azione 20, nessun parametro; ramo 0x7c3848 di [fn] -> parser
+// [fn], tutto obbligatorio): userPresent {userPresentDatas[], presentCount,
+// presentCountMax, stonePresentCount, stonePresentCountMax} (int). Elemento [fn]:
+// userPresentId uint64, resourceType/resourceId/number int, limitDatetime stringa data,
+// comment stringa, created stringa data (come UserPresent::Present::init della 1.0.1,
+// 0x4A6014). La scena ([fn]) elenca tutte le righe e scrive presentCount/Max
+// accanto a «Other» (testo 106250104) e stonePresentCount/Max accanto a «Jewels» (106250103).
+// ---------------------------------------------------------------------------
+const PRESENT_MAX = 200; // «Presents over the limit of 200 will be deleted» (testo 103500013)
+
+// KHUX_TEST_PRESENTS=1: se nella scatola non resta nessun regalo di prova se ne aggiungono
+// alcuni di tipi diversi (per provare le righe e la riscossione sul banco)
+// Una sola volta per avvio del server: se ricomparivano subito dopo Collect All, il client
+// (che rilegge la scatola dopo la riscossione) scriveva «There are items that cannot be
+// collected.» (banco 14-10)
+let testPresentsSeeded = false;
+function seedTestPresents() {
+  if (process.env.KHUX_TEST_PRESENTS !== '1' || testPresentsSeeded) return;
+  testPresentsSeeded = true;
+  player.presents = player.presents || [];
+  if (player.presents.some((p) => p.test)) return;
+  const now = serverTime();
+  const limit = serverTimeAt(Date.now() + 29 * 86400000);
+  const medalId = masterRows('medal').some((m) => m.medalId === 90041) ? 90041 : masterRows('medal')[0]?.medalId;
+  const materialId = masterRows('material')[0]?.materialId;
+  const rows = [
+    [2, 0, 300, 'Daily Login Bonus Reward'],
+    [11, 0, 1000, 'Test: Lux'],
+    [4, 0, 5000, 'Test: Munny'],
+    [14, 0, 6, 'Test: Avatar Coin'],
+    ...(medalId ? [[3, medalId, 1, 'Test: Medal']] : []),
+    ...(materialId ? [[5, materialId, 3, 'Test: Material']] : []),
+  ];
+  // id progressivi mai riusati (player.presentLastId)
+  let id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId));
+  for (const [resourceType, resourceId, number, comment] of rows) {
+    player.presents.push({ userPresentId: ++id, resourceType, resourceId, number, limitDatetime: limit, comment, created: now, test: true });
+  }
+  player.presentLastId = id;
+  console.log(`[presents] ${rows.length} regali di prova aggiunti (KHUX_TEST_PRESENTS=1)`);
+  savePlayer();
+}
+
+// regali ancora validi: quelli scaduti (limitDatetime passato, ora del server) si tolgono
+function livePresents() {
+  seedTestPresents();
+  const now = serverTime();
+  const all = player.presents || [];
+  const live = all.filter((p) => !p.limitDatetime || p.limitDatetime > now);
+  if (live.length !== all.length) { player.presents = live; savePlayer(); }
+  return live;
+}
+
+const isStonePresent = (p) => p.resourceType === 1 || p.resourceType === 2;
+
+function userPresentData() {
+  const list = livePresents();
+  const stones = list.filter(isStonePresent).length;
+  return {
+    // i piu' recenti in alto
+    userPresentDatas: list.slice().reverse().map((p) => ({
+      userPresentId: p.userPresentId, resourceType: p.resourceType, resourceId: p.resourceId || 0,
+      number: p.number, limitDatetime: p.limitDatetime, comment: p.comment || '', created: p.created,
+    })),
+    presentCount: list.length - stones, presentCountMax: PRESENT_MAX,
+    stonePresentCount: stones, stonePresentCountMax: PRESENT_MAX,
+  };
+}
+
+function respondUserPresent(res) {
+  send(res, 200, { ret: ret(), userPresent: userPresentData() });
+}
+
+// POST /user/present/receive (azione 49, [fn]): {receivePresentIds: [uint64]}, sia
+// Collect sia Collect All. Ramo 0x7cad14 di [fn], tutto obbligatorio: userData
+// (userPoint, [fn]), userMaterials, userMedals, userSkills, userKeyblades, userDecks,
+// userAvatarParts, userTitles, pet, emblemIds, sub-slot, liste del Burst (come 190), poi
+// lastUserPresentIds [uint64]: i regali RIMASTI nella scatola; il client segna come riscossi
+// ([fn], byte +0x40 della riga) quelli della sua lista che non ci sono (0x7d0fd0).
+// userStone non lo legge (la 1.0.1 si'): lo si manda lo stesso per i jewel.
+function respondPresentReceive(res, body) {
+  const want = new Set((body?.receivePresentIds || []).map(Number));
+  const keep = [];
+  for (const p of livePresents()) {
+    if (!want.has(p.userPresentId)) { keep.push(p); continue; }
+    grantItem(p.resourceType === 1 ? 2 : p.resourceType, p.resourceId, p.number);
+    console.log(`[presents] riscosso ${p.userPresentId}: tipo ${p.resourceType} id ${p.resourceId} x${p.number}`);
+  }
+  player.presents = keep;
+  savePlayer();
+  const now = serverTime();
+  send(res, 200, {
+    ret: ret(),
+    userData: { userPoint: userPointData(now) },
+    ...inventoryBlocks(now),
+    lastUserPresentIds: keep.map((p) => p.userPresentId),
+    userStone: { freeStone: player.freeStone || 0, payStone: 0 },
   });
 }
 
@@ -2464,7 +2650,9 @@ function handler(scheme) {
       if (kind === 'moogleshopbuy') return respondMoogleshopBuy(res, entry.bodyDecoded);
       if (kind === 'userupdate') return respondUserUpdate(res, entry.bodyDecoded);
       // GET /user/mission/list (azione 189): missions[] e beginnerLimitTime
-      if (kind === 'missionlist') { const missions = missionsData(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: null }); }
+      if (kind === 'missionlist') { const missions = missionsData(); const beginner = beginnerLimitTime(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: beginner }); }
+      if (kind === 'usermission') return respondUserMission(res); // GET /user/mission (187)
+      if (kind === 'beginnerpage') return respondBeginnerPage(res); // WebView «Beginner's Guide»
       // Avatar Boards: GET /user/sphere (azione 10, sostituisce l'elenco), POST /user/sphere/check e
       // /check/170119 (azioni 60/61: userSphere in merge, closeEventSphereBoardIds se checkTypes ha 3)
       if (kind === 'spherelist') { const userSphere = userSphereAll(); savePlayer(); return send(res, 200, { ret: ret(), userSphere }); }
@@ -2562,6 +2750,9 @@ function handler(scheme) {
       // GET /user/stone (azione 7, [fn]): i jewel. freeStone = guadagnati in
       // gioco (premi delle missioni), payStone = comprati (sempre 0)
       if (kind === 'userstone') return send(res, 200, { ret: ret(), userStone: { freeStone: player.freeStone || 0, payStone: 0 } });
+      // Presents: GET /user/present (azione 20) e POST /user/present/receive (azione 49)
+      if (kind === 'userpresent') return respondUserPresent(res);
+      if (kind === 'presentreceive') return respondPresentReceive(res, entry.bodyDecoded);
       // GET /user/material (azione 16): userMaterials[]
       if (kind === 'usermaterial') return send(res, 200, { ret: ret(), userMaterials: userMaterialsData() });
       if (kind === 'user') return respondUser(res);

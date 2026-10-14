@@ -40,32 +40,30 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato al 13 ottobre 2026 e prossimo passo
+## Stato al 14 ottobre 2026 e prossimo passo
 
-- Fatto il 13: **dati di thethiny** in `D:\Progetto_Restauro_KH_UX\[local reference data]\` (pacchetto 2016, JP 4.3.1,
-  decompilati 1.0.1 con simboli); **schema dei mondi v2** da sole uscite originali
-  (`reference\world_schema\schema_v2\index.html`, 497 porte di storia; eventi e fra-mondi a parte; 38 stanze
-  incerte risolte con l'indice 2016); **layout originali JP** sul banco (I-117, risorse 34: 74 importati,
-  MoogleShop_Item_Panel resta generato dopo un crash 0x2c). README principale in inglese (`README.it.md`).
-  Dettagli: [mappe_storia](docs/notes/mappe_storia.md#schema-mondi), [diario](docs/journal/2026-10-13.md).
+- Fatto il 14 ([diario](docs/journal/2026-10-14.md)): **Presents** completo (`/user/present`, Collect,
+  Collect All; prove con `relogin.ps1 -TestPresents`); **Beginner's Guide** = WebView, pagina nostra
+  `/web/beginner`; `GET /user/mission` risposto; fumetti del Level Up con l'inglese nel fumetto (font 16);
+  trascinamento del Subslot ok (serve `sendevent`, `tmp\drag.ps1`); OPTIONS/Give Up in battaglia ok;
+  `Shot` di bench_lib non perde piu' gli screenshot (bloccava `story.ps1`).
+- Il 13: dati di thethiny (`[local reference data]\`), schema dei mondi v2
+  (`reference\world_schema\schema_v2\index.html`), layout originali JP (I-117, risorse 34).
 - **Prossimi passi**, in ordine:
-  1. **I-116**: l'utente rivede lo schema v2 (decisioni gia' prese in mappe_storia); poi correzione del
-     generatore (freccia 40-80 unita' *prima* dell'uscita, `freccia_uscita.md`), rigenerazione dei tour e
-     prova dell'utente; solo dopo le missioni di storia con stanze e uscite originali.
-  2. I-117: provare le schermate rimaste (righe di Presents, popup di Level Up/Evolve, popup di battaglia,
-     Chirithy, trascinamento del Subslot); poi i passi 1, 2, 4 della proposta (texture, schermate online).
-  3. Documento per thethiny `reference\world_schema\for_thethiny.md`: l'utente lo rilegge e lo manda
-     (nessuna licenza nel nostro repo: decisione dell'utente).
-  4. Missioni Daily e Weekly con la stessa lista; Outfits del pet senza parti (I-094).
-  5. Restano: primo Begin che non risponde dopo una missione; I-088; I-086; I-087; I-089/I-084; lista
-     I-092..I-115.
-  Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1` (un
-  `build-resources -Quick` fa login sul server acceso, che risalva sopra la modifica). Con la versione 34
-  `-Quick` torna possibile solo se l'indice non cresce: prima `-DryRun`.
-- Banco: risorse 34, **revisione master 98**, server con `-Pet` (`-KbFree` solo per le prove dei
-  keyblade); `server\save\smoke.json` = {"stageIds": [991001..991008]} (tutti i tour nell'elenco Story:
-  toglierlo per l'elenco normale); keyblade corrente Sleeping Lion (deck vuoto: per le battaglie
-  scegliere Treasure Trove). Begin nell'elenco: se non risponde, indietro e Story.
+  1. **I-116**: l'utente sta rivedendo lo schema v2; poi correzione del generatore (freccia 40-80 unita'
+     *prima* dell'uscita, `freccia_uscita.md`), rigenerazione dei tour e prova dell'utente; solo dopo le
+     missioni di storia (oggi il TARGET della 133 cambia stanza e la missione non si chiude).
+  2. I-117: popup di Evolve e risultati di battaglia (dopo I-116); poi i passi 1, 2, 4 della proposta.
+  3. I-118 (missioni Beginner/Limited nel master, reset 07:00 UTC, countdown Weekly) e I-119 (EXP del
+     Level Up a 0).
+  4. Documento per thethiny `reference\world_schema\for_thethiny.md`: l'utente lo rilegge e lo manda.
+  5. Restano: Outfits del pet senza parti (I-094); primo Begin che non risponde dopo una missione; I-088;
+     I-086; I-087; I-089/I-084; lista I-092..I-115.
+  Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1`. Con la versione 34
+  `-Quick` e' possibile se l'indice non cresce: prima `-DryRun` (14-10: 72% della riserva).
+- Banco: risorse 34, **revisione master 98**, server con `-Pet` (`-KbFree` solo per i keyblade,
+  `-TestPresents` per i regali); `server\save\smoke.json` = {"stageIds": [991001..991008]} (lo rilegge a
+  ogni richiesta: spostarlo per l'elenco normale); giocatore al livello 13, keyblade Sleeping Lion.
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
