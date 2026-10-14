@@ -105,6 +105,10 @@ function supernovaBursts(medalRows, burstRows, robo, buffFields) {
     }, buffFields(s, target).out);
     rows.push(row);
     Object.assign(m, { validSuperBurst: 1, superBurstId: id });
+    // Badge sulla medaglia ([fn], displayId): 100/200/300 -> img/ui/SBurst_Icon1/2/3
+    // (SN, SN+, SN++), +1000 -> variante ...R (Supernova che rinnova le altre).
+    const plus = /^(?:SN|Supernova)(\+*)\s*-/.exec(m.name);
+    if (plus) m.displayId = 100 * Math.min(plus[1].length + 1, 3) + (row.recurringAttribute ? 1000 : 0);
   }
   return rows;
 }

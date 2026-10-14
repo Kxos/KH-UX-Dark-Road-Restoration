@@ -547,6 +547,10 @@ const ORIG_BURST = process.env.KHUX_ORIG_BURST || 'D:\\Progetto_Restauro_KH_UX\\
 const origBursts = fs.existsSync(ORIG_BURST) ? new Map(JSON.parse(fs.readFileSync(ORIG_BURST, 'utf8')).map((b) => [b.burstId, b])) : new Map();
 const buffStats = require('./burst-buffs').applyBurstBuffs(medals, bursts,
   (m) => ROBO_BY_ID.get(m.medalId >= 300000 ? m.medalId - 300000 : MEDAL_MAP[m.medalId]), origBursts);
+// danno fisso (fixed-damage.js): Beast, KH II Yuffie, ... damageType 2 come le righe di thethiny
+const fixedStats = require('./fixed-damage').applyFixedDamage(medals, bursts,
+  (m) => ROBO_BY_ID.get(m.medalId >= 300000 ? m.medalId - 300000 : MEDAL_MAP[m.medalId]), origBursts);
+console.log(`danno fisso: ${fixedStats.orig} righe da thethiny, ${fixedStats.robo} da Roboloid`);
 // attacchi Supernova (supernova.js): una riga burst per medaglia SN, superBurstId sulla medaglia
 const snBursts = supernova.supernovaBursts(medals, bursts, ROBO, require('./burst-buffs').buffFields);
 bursts.push(...snBursts);
