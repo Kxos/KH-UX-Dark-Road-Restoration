@@ -32,7 +32,7 @@ import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from bgad import HDR, NONCE_XOR, _chacha_block, stream_xor   # noqa: E402
+from bgad import HDR, NONCE_XOR, chacha_xor   # noqa: E402
 
 LCG_MUL, LCG_ADD = 0x19660d, 0x3c6ef35f
 
@@ -60,7 +60,7 @@ def record(name, plain, key):
     """Un record BGAD versione 2, cifratura 3 (ChaCha8), nonce in coda."""
     nonce = os.urandom(8)
     iv = struct.pack('<Q', struct.unpack('<Q', nonce)[0] ^ NONCE_XOR)
-    data = stream_xor(plain, key, iv, _chacha_block, 8) + nonce
+    data = chacha_xor(plain, key, iv) + nonce
     hdr = HDR.pack(b'BGAD', 2, 4, HDR.size, len(name), 3, 0, len(data), len(plain))
     return hdr + obfuscate_name(name, len(data)) + data
 

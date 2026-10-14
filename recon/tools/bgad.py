@@ -99,6 +99,38 @@ def stream_xor(data, key, nonce, block=_salsa20_block, rounds=20):
     return bytes(out)
 
 
+def chacha_xor(data, key, nonce, rounds=8):
+    """Come stream_xor con _chacha_block, ma con numpy (tutti i blocchi insieme): ~100 volte piu'
+    veloce, per i pacchetti di centinaia di MB. Senza numpy ripiega su stream_xor."""
+    try:
+        import numpy as np
+    except ImportError:
+        return stream_xor(data, key, nonce, _chacha_block, rounds)
+    n = (len(data) + 63) // 64
+    if not n:
+        return b''
+    c = b'expand 32-byte k' if len(key) == 32 else b'expand 16-byte k'
+    k = key if len(key) == 32 else key + key
+    init = struct.unpack('<4I', c) + struct.unpack('<8I', k)
+    ctr = np.arange(n, dtype=np.uint64)
+    x = [np.full(n, v, np.uint32) for v in init]
+    x += [(ctr & 0xffffffff).astype(np.uint32), (ctr >> 32).astype(np.uint32)]
+    x += [np.full(n, v, np.uint32) for v in struct.unpack('<2I', nonce)]
+    w = [a.copy() for a in x]
+
+    def qr(a, b, c_, d):
+        for p, q, r, s in ((a, b, d, 16), (c_, d, b, 12), (a, b, d, 8), (c_, d, b, 7)):
+            w[p] += w[q]
+            v = w[r] ^ w[p]
+            w[r] = (v << np.uint32(s)) | (v >> np.uint32(32 - s))
+    for _ in range(rounds // 2):
+        qr(0, 4, 8, 12); qr(1, 5, 9, 13); qr(2, 6, 10, 14); qr(3, 7, 11, 15)
+        qr(0, 5, 10, 15); qr(1, 6, 11, 12); qr(2, 7, 8, 13); qr(3, 4, 9, 14)
+    ks = np.stack([w[i] + x[i] for i in range(16)], axis=1).astype('<u4').tobytes()
+    d = np.frombuffer(data, np.uint8)
+    return (d ^ np.frombuffer(ks, np.uint8, len(data))).tobytes()
+
+
 def parse(buf, off=0):
     """Header di un record BGAD all'offset dato, come dizionario."""
     (magic, ver, flags, hsize, nlen, enc, comp, size, raw) = HDR.unpack_from(buf, off)
@@ -149,7 +181,8 @@ def decode(buf, h, key, block=_chacha_block, rounds=8):
         data = bytes(out[:len(data)])
     elif h['enc'] == 3:
         iv = struct.pack('<Q', struct.unpack('<Q', nonce)[0] ^ NONCE_XOR)
-        data = stream_xor(data, key, iv, block, rounds)
+        data = (chacha_xor(data, key, iv, rounds) if block is _chacha_block
+                else stream_xor(data, key, iv, block, rounds))
     if h['comp'] in (1, 2):
         data = zlib.decompress(data)
     return data
@@ -174,7 +207,7 @@ def read_index(index_path, key):
         raise ValueError('indice senza magic \\x89BGI: %r' % bytes(b[:4]))
     if struct.unpack_from('<I', b, 8)[0] & 1:
         iv = struct.pack('<Q', struct.unpack_from('<Q', b, len(b) - 8)[0] ^ INDEX_IV_XOR)
-        b[0xc:len(b) - 8] = stream_xor(bytes(b[0xc:len(b) - 8]), key, iv, _chacha_block, 8)
+        b[0xc:len(b) - 8] = chacha_xor(bytes(b[0xc:len(b) - 8]), key, iv)
     n_rec, n_names = struct.unpack_from('<II', b, 0xc)
     p_off = 0x14
     p_idx = p_off + n_rec * 8

@@ -81,7 +81,7 @@ def _read_bgi(path):
     assert b[:4] == b'\x89BGI', path
     if struct.unpack_from('<I', b, 8)[0] & 1:
         iv = struct.pack('<Q', struct.unpack_from('<Q', b, len(b) - 8)[0] ^ bgad.INDEX_IV_XOR)
-        b[0xc:len(b) - 8] = bgad.stream_xor(bytes(b[0xc:len(b) - 8]), skey, iv, bgad._chacha_block, 8)
+        b[0xc:len(b) - 8] = bgad.chacha_xor(bytes(b[0xc:len(b) - 8]), skey, iv)
     n_rec, n_names = struct.unpack_from('<II', b, 0xc)
     offs = struct.unpack_from('<%dQ' % n_rec, b, 0x14)
     p_idx = 0x14 + n_rec * 8
