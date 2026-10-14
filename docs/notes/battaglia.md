@@ -194,6 +194,83 @@ tier 9/10 con guilt (Level Up) -> icona viola 9/10 come nella foto, niente crash
 completo (nomi nuovi: non con `-Quick` se la riserva non basta): uno speciale con un buff (STR/DEF
 su, effetto della riga burst) o un debuff nemico -> icona e «×N» sopra l'avatar.
 
+
+<a id="supernova"></a>
+## Supernova e campi nuovi di `burst` (client 4.3.1, 14-10)
+
+Riga `burst` in memoria (lettore `[fn]`, getter per id `[fn]`): campi a 4 byte in
+ordine di schema da `addTurn` +0x388 fino a `unmatchMagnification` +0x52c (`target` +0x2a8,
+`critical` +0x2b8, `criticalPower` +0x2bc, `recovery` +0x4d0, `oprUrgencyId/Value` +0x4d4/+0x4d8,
+`addGuiltBonusId/Count/Value` +0x4dc..+0x4e4, `superburstTiming` +0x4e8, `recurringAttribute` +0x4ec,
+`reflection*` +0x4f0..+0x4fc, `addBase*` +0x500..+0x51c, `matchCount*` +0x520..+0x52c). Medaglia:
+`validBurst` +0x4f8, `burstId` +0x4fc, `validSuperBurst` +0x500, `superBurstId` +0x504.
+
+**Supernova** (certezza alta):
+- `superBurstId` e' un `burstId` della tabella `burst`: la Supernova e' una riga `burst` come gli
+  speciali. `[fn]` sceglie la riga dell'attacco: con il flag Supernova dell'attacco (+0x6a)
+  `superBurstId` (se `validSuperBurst` != 0), altrimenti `burstId` (se `validBurst` != 0). Quindi buff,
+  debuff, `addTurn`/`addCount`, `recovery`, guilt bonus ecc. della riga valgono anche per la Supernova.
+- Pulsante (`[fn]`, da `setupSuperGuiltBurst` `[fn]`): per ogni slot del deck con
+  `validSuperBurst` e `superBurstId` != 0, se la battaglia ha `isGuilt` (`[fn]`) oppure e' la
+  medaglia dell'amico (categoria 2), aggiunge il pannello (`[fn]`) e accende il bit dello slot
+  (una Supernova per medaglia per quest). Pannello: nome +0x14 e descrizione +0x95 della riga
+  `burst`, icona del bersaglio da `target` (1-3), `MultiplyNum_Label`, targa `SBurst_Plate01.png` o,
+  con `recurringAttribute` != 0, `SBurst_Plate01re.png` (solo JP).
+- `superburstTiming` (`[fn]`, solo IA in PvP in difesa): se > 0 la Supernova scatta prima
+  dello slot `min(timing, n slot)` (1 = prima dello slot 1), come «Triggers before slot N is activated
+  when defending in PVP» della wiki (Roboloid: campo `Supernova.Timing`).
+- `recurringAttribute` (`[fn]`): maschera; dopo la Supernova riaccende la Supernova gia' usata
+  delle altre medaglie del deck la cui riga Supernova ha `recurringAttribute` 0 e il cui tipo combacia:
+  bit 0/1/2 = attributo Power/Speed/Magic (medaglia +0x494 = 1/2/3), bit 3/4 = Upright/Reversed
+  (+0x498 = 1/2) (`[fn](maschera, bit)`). Animazione `lwf/battle/SBurst_Revival` (`[fn]`).
+- Badge SN/SN+/SN++ (`[fn]`): dal campo +0x18 della riga medaglia (`displayId` in ordine di
+  schema): 100/101 e 1100/1101 -> `img/ui/SBurst_Icon1`, 200/201 e 1200/1201 -> `Icon2`, 300/301 e
+  1300/1301 -> `Icon3`; da 1100 in su la variante `...R.png`. Da noi `displayId` = id dell'immagine:
+  nessun badge. Da verificare se il client usa `displayId` delle medaglie anche per la grafica.
+- Animazioni: `lwf/burst/motion/abl_50011..50521` (51) e `lwf/burst/effect/eff_500x1` (40) sono
+  servite (WW) e assenti nel JP: con ogni probabilita' `motionId`/`effectId` delle righe Supernova
+  (5xxx1, una per Supernova); nessun dato originale lega id e medaglia.
+- Nessun dato originale locale ha righe Supernova o `superBurstId` (thethiny: formato vecchio senza
+  questi campi; 5.0.1: niente tabella `medal`). Fonte per ricostruirle: Roboloid
+  `medal_db.json` campo `Supernova` (`Name`, `Text`, `Multi` = moltiplicatore, `Timing`, `Target`,
+  `SelfBuffs`/`EnemyBuffs`), khuxwiki «Supernova».
+- Risorse **mancanti** dalle servite (names_v4, addnl): `lwf/battle/Sburst/` (`[fn]`),
+  `lwf/battle/SBurst_Revival/`, `lwf/battle/BurstGauge_Recovery/`, `img/ui/SBurst_Icon1..3.png` e
+  `..1R..3R.png` (nel JP solo le R in `img/ui`; le non R sono in `cocostudio`),
+  `cocostudio/publish/SBurst_Icon1/3.png` e `SBurst_Plate01re.png` (servita solo `SBurst_Icon2`).
+  Tutte nel JP 4.3.1 (`lwf\battle\Sburst`, `SBurst_Revival`, `BurstGauge_Recovery`, `img\ui`,
+  `cocostudio`): da aggiungere a `JP_LWF`/`JP_IMG` di `import_jp_coco.py`. Servite: `ActionMap_SuperBurst_*`,
+  `MedalInfo_SuperBurstWindow_ver*`, `SBurst_but01/02`, `SBurst_eff02..05`, `SBurst_Plate01..03`.
+
+**Campi nuovi** (formato thethiny vecchio senza questi campi):
+- `critical` = probabilita' di critico in decimillesimi (5000 = 50%), `criticalPower` = moltiplicatore
+  x10000 del colpo critico (10000 = x1), `[fn]` (divisore 10000.0 `[data]`; la
+  probabilita' e' scalata per 1 + bonus/10000 dei trait). Certezza alta.
+- `recovery` = gauge recuperati dal giocatore («Gauge +N»): `[fn]` -> `[fn]` somma N
+  al gauge (+0xbc0) e, se > 0, anima il recupero (`BurstGauge_Recovery`). Certezza alta.
+- `oprUrgencyId`/`oprUrgencyValue` = conto alla rovescia dei nemici (`[fn]` ->
+  `[fn]`): id 1 = riporta i contatori al valore iniziale («Resets count»), id 2 = somma
+  `oprUrgencyValue` (con segno, massimo 999: «Enemy countdown +3» = 3, «±0» = 0) ai contatori degli
+  attacchi nemici di tipo 2/3. Altri id: nulla. Certezza alta.
+- `addGuiltBonusId`/`Count`/`Value` = «SP ATK B +N%» (`[fn]`/`[fn]` ->
+  `[fn]`): voce attiva solo con id != 0, count > 0, value != 0; il bonus mostrato e' il
+  **massimo** delle voci attive (`[fn]`), in percento (230 = +230%), scritto nel
+  `CarouselDeck` +0x488 (sommato alla guilt/100 nel cut-in, max 999). Id/count = tipo e durata
+  (presumibilmente 1 = turni, 2 = attacchi, come `addTurn`/`addCount`): da verificare sul banco.
+- `matchCountType`/`matchCountValue`/`matchMagnification`/`unmatchMagnification` (`[fn]`):
+  stesso schema a liste (+0x590 con `matchMagnification`, +0x5e0 con `unmatchMagnification`, voce
+  attiva con tipo != 0 e valore > 0); moltiplicatori probabilmente x10000. Significato non verificato.
+- `reflection*` (`[fn]` -> `[fn]` per ogni bersaglio): attivo con `reflectionTurn` > 0
+  (turni), con `reflectionMagnification` e `reflectionAttribute`; `reflectionResetAttribute` letto
+  altrove. Icone `ActMapReflectionAnim/RIcon_*`. Unita' non verificate.
+- `addBase*` (`[fn]` se' stesso, `[fn]` avversario -> `[fn](tipo, valore,
+  atk, def, attributo)`): `addBaseCountType`/`Value` = tipo e durata, `addBaseAtk/DefSelf` e
+  `...Opponent` = variazione di STR/DEF base, `addBaseAttribute` = maschera. Unita' non verificate.
+- Buff/debuff (dalle 154 righe thethiny confrontate con Roboloid): `buf*` = livelli positivi,
+  `debuf*` = livelli **negativi** (-N); `...All` = su tutti i bersagli (speciali con `target` 2),
+  senza `All` = sul bersaglio; `addTurn` = durata in turni, `addCount` = durata in attacchi;
+  `heal`/`healShake` (cura, es. 2500/500), `cure*` 1 (Esuna), `resetDebuf*` 1 (Dispel), `copyBuf*` 1 +
+  `addTurn` (Mirror); attributo neutro = `attribute` 5.
 <a id="cornice-avatar"></a>
 ## Cornice dell'avatar nell'HUD (I-125, 14-10)
 

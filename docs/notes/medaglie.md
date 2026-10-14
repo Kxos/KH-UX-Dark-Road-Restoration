@@ -159,6 +159,16 @@ esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone
   con `Panel_MixResult_Area`/`Tap_Screen_Area` della R3. Le LWF
   `lwf/medal/compose/evolution/card_evolution_result_01..05` mancano: copie del Level Up (ISSUES
   I-024). Provata sul banco: Donald 1★ LV20 + Cheshire Cat -> Donald 2★.
+- Evolve con medaglie richieste (client 4.3.1, 14-10; Supernova: 5 Dual Meow Wow [SAB LV 7/8/9]
+  dello stesso tipo, khuxwiki): riga medaglia `validEvolve` +0x544, `evolveId` +0x548, `evolveMoney`
+  +0x54c, `validEvolveNeed` +0x550 = **numero** di medaglie richieste (fino a 5), `evolveNeedId[5]`
+  +0x554 = medalId richiesto per ogni posto (5 Dual Meow Wow uguali = `[X,X,X,X,X]`). La scena
+  (`[fn]`) raggruppa gli id consecutivi uguali e conta le copie possedute (elenco delle
+  medaglie dell'utente, record da 0x148, medalId a +0). `[fn]`: `validEvolve` non e' solo
+  0/1 (3 = ramo diverso, 1 = suoni/tutorial), da verificare. La richiesta (`[fn]`, azione 56)
+  ha solo `baseUserMedalId` e `attachmentMedalIds`: le medaglie richieste arrivano in
+  `attachmentMedalIds` insieme ai materiali (da confermare sul banco, anche per le pile `validPack`:
+  stesso userMedalId ripetuto?). Il server deve consumarle e rispondere come per l'Evolve normale.
 - Unequip: `POST /user/medal/remove` (237); prima il client chiede `GET /user/medal/preremove`, a cui
   il server da' una risposta generica (ISSUES I-038).
 
