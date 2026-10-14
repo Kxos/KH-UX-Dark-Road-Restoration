@@ -2158,6 +2158,7 @@ function respondMoogleshopBuy(res, body) {
   const row = masterRows('moogleshop').find((r) => r.moogleshopId === id);
   const now = serverTime();
   const changed = [];
+  const snap = inventorySnapshot(now);
   const fail = (why) => {
     console.log(`  [moogle shop] articolo ${id} rifiutato: ${why} (corpo ${JSON.stringify(body)})`);
     // codice d'errore del server ignoto: senza i campi della risposta il client mostra
@@ -2197,15 +2198,18 @@ function respondMoogleshopBuy(res, body) {
   player.moogleshopBought[id] = (player.moogleshopBought[id] || 0) + n;
   savePlayer();
   console.log(`  [moogle shop] articolo ${id} x${n}: tipo ${row.itemType} id ${row.itemId} x${row.itemNum * n}, -${cost} ${row.payType === 1 ? 'jewel' : 'munny'}`);
+  // solo le voci cambiate (inventoryBlocks): con le liste intere (~2000 medaglie) il client
+  // restava fermo ~5,8 s dopo «Set Trait» (banco 14-10), come lo sblocco dei nodi
+  const inv = inventoryBlocks(now, snap);
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
     shuffleskillUserMedals: changed.map((m) => userMedalElement(m, now)),
     // FUN_007ac5f4 legge anche userMedals e userSkills (FUN_0078da18/FUN_0078e934 col nome
     // predefinito): senza, «200 ERROR :248»
-    userMedals: userMedalsData(serverTime()),
-    userSkills: userSkillsData(),
-    userMaterials: userMaterialsData(),
+    userMedals: inv.userMedals,
+    userSkills: inv.userSkills,
+    userMaterials: inv.userMaterials,
     emblemIds: [],
     ...guiltBurst().lists(), // guiltBurstFirst/MaxUserMedalIds
   });
