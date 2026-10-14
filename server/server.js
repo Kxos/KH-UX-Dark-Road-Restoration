@@ -28,6 +28,8 @@ const { makeMulti, routeMulti } = require('./multi');
 const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
 const medalGuilt = require('./medal-guilt');
+const infoAlbum = require('./routes-info-album');
+const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
 const medalSkill = require('./medal-skill');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
 const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
@@ -182,6 +184,7 @@ function route(url) {
   if (p === '/user/material') return 'usermaterial';
   if (p === '/campaign') return 'campaign';
   if (p === '/ranking/reward/check') return 'rankingrewardcheck';
+  if (routePartyRanking(p)) return routePartyRanking(p);
   // Coliseum PvP (azioni 194-205): respondPvp
   // /pvp/keyblade resta alla risposta generica (com'era prima del 14-10): con la risposta del ramo pvp
   // (userDecks) ogni battaglia andava in crash creando l'HUD, con solo ret «200 ERROR :196»
@@ -200,6 +203,10 @@ function route(url) {
   if (p === '/user/mission/list') return 'missionlist';
   if (p === '/user/mission') return 'usermission';
   if (p === '/web/beginner') return 'beginnerpage';
+  if (p === '/system/information/list') return 'infolist';
+  if (p.startsWith('/system/information/list/')) return 'infopopup';
+  if (p === '/web/notices') return 'noticespage';
+  if (p.startsWith('/user/album/') && !p.startsWith('/user/album/challenge')) return 'album';
   if (p === '/user/sphere') return 'spherelist';
   if (p === '/user/sphere/update') return 'sphereupdate';
   if (p.startsWith('/user/sphere/check')) return 'spherecheck';
@@ -2758,6 +2765,21 @@ function handler(scheme) {
       if (kind === 'missionlist') { const missions = missionsData(); const beginner = beginnerLimitTime(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: beginner }); }
       if (kind === 'usermission') return respondUserMission(res); // GET /user/mission (187)
       if (kind === 'beginnerpage') return respondBeginnerPage(res); // WebView «Beginner's Guide»
+      // Notices (azioni 30/31, WebView /web/notices) e Album (17): server/routes-info-album.js
+      if (kind === 'infolist') return send(res, 200, { ret: ret(), ...infoAlbum.informationList(SESSION_BASE) });
+      if (kind === 'infopopup') return send(res, 200, { ret: ret(), ...infoAlbum.informationPopup(SESSION_BASE) });
+      if (kind === 'noticespage') {
+        const buf = Buffer.from(infoAlbum.noticesPage(), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
+        return res.end(buf);
+      }
+      if (kind === 'album') return send(res, 200, { ret: ret(), ...infoAlbum.albumData(userMedalList(), masterRows('medal'),
+        (t) => (medalGuilt.GUILT_RANGES[t] || {}).max || 0) });
+      // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
+      if (kind === 'partylogin' || kind === 'partysearch' || kind === 'rankinglist') {
+        return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData },
+          res, kind, req.url.split('?')[0].toLowerCase());
+      }
       // Avatar Boards: GET /user/sphere (azione 10, sostituisce l'elenco), POST /user/sphere/check e
       // /check/170119 (azioni 60/61: userSphere in merge, closeEventSphereBoardIds se checkTypes ha 3)
       if (kind === 'spherelist') { const userSphere = userSphereAll(); savePlayer(); return send(res, 200, { ret: ret(), userSphere }); }
