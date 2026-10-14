@@ -17,7 +17,10 @@
 # installata (come -Quick); non scrive in resource_data, ne' nel guest, ne' fa login.
 #   .\build-resources.ps1 -DryRun
 # -NoJp: senza i layout originali JP di import_jp_coco.py (elenco recon\tools\jp_coco_layouts.txt).
-param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp)
+# -NoRooms: versione completa senza il pacchetto delle stanze recuperate (rooms_gen, make_jp_rooms.py).
+# I pacchetti statici di una versione completa sono scritti in resource_data\<N>\packs.txt: -Quick e
+# -DryRun usano quelli della versione installata (senza packs.txt: niente stanze, versioni <= 34).
+param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 Set-Location $repo
@@ -99,13 +102,31 @@ if (Test-Path "$mg\files") {
 }
 if ($LASTEXITCODE) { throw 'resource_pack fallito' }
 $v = "$D\resource_data\$Version"
+# pacchetto delle stanze recuperate (make_jp_rooms.py -> rooms_gen\files: stanze JP 4.3.1/2016 con
+# tessere e lwf in BTF): solo nelle versioni complete, dopo le medaglie e prima del generato (che
+# vince a nome ripetuto); -Quick non lo ricostruisce mai, lo rimette nell'indice solo se la versione
+# installata lo contiene (packs.txt)
+$rg = "$D\rooms_gen"
+$roomsPack = @()
+if ($Quick) {
+  if ((Test-Path "$v\packs.txt") -and ((Get-Content "$v\packs.txt") -contains 'rooms_gen')) {
+    if (-not (Test-Path "$rg\gen.png")) { throw "la versione $Version contiene rooms_gen ma manca $rg\gen.png" }
+    $roomsPack = @("$rg\gen.png", "$rg\gen.mp4")
+  }
+} elseif (-not $NoRooms -and (Test-Path "$rg\files")) {
+  python -I recon\tools\resource_pack.py "$rg\files" $key "$rg\gen.mp4" "$rg\gen.png"
+  if ($LASTEXITCODE) { throw 'resource_pack stanze fallito' }
+  $roomsPack = @("$rg\gen.png", "$rg\gen.mp4")
+}
+$staticPacks = $medalPack + $roomsPack
 # Dimensioni fisse: il client confronta le dimensioni dei file installati con quelle del
 # download e, se cambiano, butta le risorse e riscarica tutto (resourceRevision 0). Il
 # pacchetto generato si riempie di zeri fino a una riserva (letto per offset, la coda non
 # e' mai letta) e l'indice ha un nome di riempimento (resource_merge.py): una versione
 # completa riserva 16 MiB e 64 KiB, -Quick ritorna alle dimensioni installate.
-# l'ultimo pezzo dei dati e' il pacchetto generato (d0035, o d0036 con quello delle medaglie)
-$genName = if ($Quick) { (Get-ChildItem "$v\data" | Sort-Object Name | Select-Object -Last 1).Name } elseif ($medalPack) { 'd0036' } else { 'd0035' }
+# l'ultimo pezzo dei dati e' il pacchetto generato: d0035 + uno per pacchetto statico (medaglie
+# d0035, stanze d0036, generato d0037)
+$genName = if ($Quick) { (Get-ChildItem "$v\data" | Sort-Object Name | Select-Object -Last 1).Name } else { 'd{0:D4}' -f (35 + $staticPacks.Count / 2) }
 if ($Quick) {
   $dataSize = (Get-Item "$v\data\$genName").Length
   $mergeOpt = @('--fast-md5', '--index-size', (Get-Item "$v\index\misc.png").Length)
@@ -114,7 +135,10 @@ if ($Quick) {
   New-Item -ItemType Directory -Force "$v\data", "$v\index" | Out-Null
   Get-ChildItem "$D\resource_data\7\data" | Where-Object Name -ne 'd0035' |
     ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
-  if ($medalPack) { Copy-Item "$mg\gen.mp4" "$v\data\d0035" }
+  # pacchetti statici come pezzi d0035.. (copie: le versioni dopo li ricostruiscono)
+  for ($i = 1; $i -lt $staticPacks.Count; $i += 2) { Copy-Item $staticPacks[$i] ("$v\data\d{0:D4}" -f (35 + ($i - 1) / 2)) }
+  $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }
+  Set-Content -Encoding ascii "$v\packs.txt" $names
   $dataSize = 32MB   # 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
@@ -124,7 +148,7 @@ $fs = [IO.File]::Open("$sg\gen.mp4", 'Open', 'ReadWrite'); $fs.SetLength($dataSi
 if ($DryRun) {
   $o = "$D\obb76"
   $packs = @("$D\apk501\ext\assets\aliud.png", "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb",
-             "$D\ipa431\addnl.png", "$D\ipa431\addnl.mp4") + $medalPack + @("$sg\gen.png", "$sg\gen.mp4")
+             "$D\ipa431\addnl.png", "$D\ipa431\addnl.mp4") + $staticPacks + @("$sg\gen.png", "$sg\gen.mp4")
   $want = (Get-Item "$v\index\misc.png").Length
   $ErrorActionPreference = 'Continue'
   $out = python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$sg\misc_dry.png" @packs 2>&1
@@ -146,14 +170,21 @@ Copy-Item "$sg\gen.mp4" "$v\data\$genName" -Force
 $o = "$D\obb76"
 python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$v\index\misc.png" `
   "$D\apk501\ext\assets\aliud.png" "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb" `
-  "$D\ipa431\addnl.png" "$D\ipa431\addnl.mp4" @medalPack "$sg\gen.png" "$sg\gen.mp4"
+  "$D\ipa431\addnl.png" "$D\ipa431\addnl.mp4" @staticPacks "$sg\gen.png" "$sg\gen.mp4"
 if ($LASTEXITCODE) { throw 'resource_merge fallito' }
-if (-not $Quick) { return }
+if (-not $Quick) {
+  # il client spezza i dati in misc.mp4 + misc.mp4.1 a 2 GiB; oltre 4 GiB servirebbe misc.mp4.2
+  # (mai provato) e -Quick non saprebbe dove sta il pacchetto generato
+  $total = (Get-ChildItem "$v\data" | Measure-Object Length -Sum).Sum
+  "versione ${Version}: dati $([math]::Round($total / 1GB, 2)) GiB in $((Get-ChildItem "$v\data").Count) pezzi, pacchetti statici: $((Get-Content "$v\packs.txt") -join ', ')"
+  if ($total -gt 2 * [int64]2147483648) { Write-Warning "dati oltre 4 GiB ($total byte): misc.mp4.2 mai provato sul client" }
+  return
+}
 
 . "$repo\tools\ldplayer\bench_lib.ps1"
 $before = (Get-ChildItem "$v\data" | Where-Object Name -ne $genName | Measure-Object Length -Sum).Sum
 $split = [int64]2147483648
-if ($before -lt $split) { throw 'il pacchetto generato non sta in misc.mp4.1' }
+if ($before -lt $split -or $before -ge 2 * $split) { throw 'il pacchetto generato non sta in misc.mp4.1' }
 $tail = $before - $split
 $genLen = (Get-Item "$v\data\$genName").Length
 Copy-Item "$v\data\$genName" "$SHARED\q_gen.bin" -Force
