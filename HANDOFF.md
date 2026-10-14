@@ -42,24 +42,17 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 ## Stato al 14 ottobre 2026 (sera) e prossimo passo
 
-- **Banco**: risorse **35** (+ -Quick del pomeriggio), master **revisione 101** (default degli script), server
-  `-Pet`. Missioni di storia con gli **stage originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`,
-  `stage_gen\orig_stages`), stanze JP recuperate nel pacchetto `rooms_gen`. Battaglie ok (missione 123 provata)
-  dopo I-125 (cornici dell'avatar dell'HUD). `smoke.json` spostato in `D:\Progetto_Restauro_KH_UX\tmp\smoke.json.bak`.
+- **Banco**: risorse **36** (pacchetti statici medal_gen, rooms_gen, enemy_gen), master **revisione 102** (default
+  degli script, grafiche originali dei nemici: 605/670 displayId), server `-Pet`. Missioni di storia con gli
+  **stage originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`, `stage_gen\orig_stages`), stanze JP
+  recuperate in `rooms_gen`. Missione 123 provata sulla 36: Yellow Opera, Munny Egg e Ice Plant con le grafiche
+  originali, battaglie e risultati senza crash. `smoke.json` spostato in `D:\Progetto_Restauro_KH_UX\tmp\smoke.json.bak`.
   Tour v2 in `stage_gen\tours_v2`: da parte, solo per provare componenti originali (decisione dell'utente).
-- **PROSSIMO PASSO (interrotto per memoria bassa del PC)**: versione **36** con le grafiche originali dei nemici
-  (pacchetto `enemy_gen`, 52 MB, gia' generato; I-124 buff, Boosters ecc. gia' dentro con -Quick):
-  1. `.\tools\ldplayer\session\build-resources.ps1 -Version 36` (~1 ora; chiedere all'utente prima di lanciarla:
-     consuma molta memoria); controllare che `resource_data\36` sia completa (~3,71 GiB, packs.txt con medal_gen,
-     rooms_gen, enemy_gen). Se interrotta, cancellare `resource_data\36` parziale (il server annuncia la piu' alta).
-  2. `update-resources.ps1` (installa la 36; riavvia il gioco: avvisare l'utente).
-  3. Master nuovo: copiare `D:\Progetto_Restauro_KH_UX\stage_gen\master_enemy_gen_rev102\*` in `server\master_data\`
-     (oppure rigenerare: `KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1 KHUX_STAGE_POI_EXTRA=...\stage_gen\orig_stages\stage_poi_orig.json
-     node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json`), revisione **102** nei 4 script
-     di sessione, `relogin.ps1 -Pet`. **Mai il master nuovo con la versione 35** (displayId senza grafica = crash).
-  4. Prove sul banco: missione con Munny Egg (es. 123), una pianta (move da wait), un effetto di comparsa
-     ripristinato; Boosters (I-123), icona Jewels degli Items (I-122), icone buff/debuff e guilt (I-124; per il
-     guilt mettere Black Coat King Mickey, userMedal 2216, nel deck del keyblade 2).
+- **Build delle risorse veloce**: ChaCha8 con numpy (`bgad.chacha_xor`) e `resource_pack.py --cache` sui pacchetti
+  statici: versione completa in ~8 minuti (prima ~1 ora), poca memoria; i pacchetti invariati si saltano.
+- **Prossimo**: prove sul banco di Boosters (I-123), icona Jewels degli Items (I-122), icone buff/debuff e guilt
+  (I-124; per il guilt mettere Black Coat King Mickey, userMedal 2216, nel deck del keyblade 2), un'animazione
+  di pianta in battaglia (move da wait), missioni nelle stanze recuperate.
 - Poi: missioni nelle stanze recuperate; I-118 (Beginner/Limited nel master), I-119 (EXP del Level Up), I-120 (PvP:
   riga master e layout), I-009 (storia 526-979: mappe in JP, master da ricostruire), I-094, lista I-092..I-115.
 - Copie di sicurezza: `stage_gen\stage_generated_bak_20261014`, `stage_poi_bak_20261014.json`,
