@@ -40,9 +40,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato al 14 ottobre 2026 (sera) e prossimo passo
+## Stato al 14 ottobre 2026 (fine giornata) e prossimo passo
 
-- **Banco**: risorse **36** (pacchetti statici medal_gen, rooms_gen, enemy_gen), master **revisione 107** (buff degli speciali, Supernova, Evolve con Dual Meow Wow; default
+- **Banco**: risorse **36** (pacchetti statici medal_gen, rooms_gen, enemy_gen), master **revisione 108** (buff degli speciali, Supernova con badge SN/SN+/SN++, speciali a danno fisso, Evolve con Dual Meow Wow; default
   degli script, grafiche originali dei nemici: 605/670 displayId), server `-Pet`. Missioni di storia con gli
   **stage originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`, `stage_gen\orig_stages`), stanze JP
   recuperate in `rooms_gen`. Missione 123 provata sulla 36: Yellow Opera, Munny Egg e Ice Plant con le grafiche
@@ -58,12 +58,14 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `recon/tools/jp_coco_layouts.txt` (anche armature Cursor_Anim_Ranking su `MyPageAnime0`, `set=` e `clone=` di
   `import_jp_coco.py`). Risorse 36 aggiornate con -Quick (non serve una versione completa).
   Da fare dopo il blocco 1: cambio di Union dopo OK in Transfer Unions (richiesta non ancora vista), sfide
-  dell'Album (azione 168), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), badge SN/SN+ delle
-  Supernova (displayId, docs/notes/battaglia.md#supernova), missioni nelle stanze recuperate. Poi blocco 2 (I-119 EXP
+  dell'Album (azione 168), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), missioni nelle stanze
+  recuperate. Fatto il 14-10 sera: Supernova provata in battaglia con un deck di 5 SN (utente), badge SN sulle
+  medaglie, danno fisso (Yuffie x3600 = 3600 di danno), testi e prove dei filtri Supernova (medaglie.md#filtri). Poi blocco 2 (I-119 EXP
   del Level Up, I-118 Beginner/Limited, I-087/I-093 keyblade), blocco 3 (stile: Presents I-035/I-096, Moogle Shop
   I-102/I-103, Subslot I-101, Home I-097, Chirithy I-016), blocco 4 (I-009, I-116, I-120/I-059, I-099, I-056).
-  Salvataggio di prova: Supernova+ - SP Roxas (userMedal 762) nel deck del keyblade 2; copie in
-  `tmp\player_before_guilt.json` e `tmp\player_before_meow.json`.
+  Salvataggio di prova: livello 100 (lux 320000), keyblade 2 con 5 Supernova (762, 766, 769, 777, 1284); copie in
+  `tmp\player_before_sndeck.json`, `tmp\player_before_guilt.json`, `tmp\player_before_meow.json`. Sul popup
+  Sort/Filter scorrere solo sul bordo destro (x 1722): uno swipe su un pulsante lo attiva.
 - Strumenti del banco: `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <nome> <x> <y> [-Pre "x,y;..."] [-Wait s]`
   (tocca, salva richieste del server, logcat crash e foto in `tmp\repro\<nome>`, riavvia l'app se cade; -Pre di
   default = MENU > Other). Stack ARM di un crash: avviare `tools\ldplayer\armtrace\stackcap.ps1 -NoStart -WaitSec 25`
