@@ -204,3 +204,47 @@ su, effetto della riga burst) o un debuff nemico -> icona e «×N» sopra l'avat
 controllata: SIGSEGV a 0x24, pc `0xb17adc` (logcat -b crash: `rbx` = indirizzo ARM). Le risorse WW
 servivano solo Circle_03/04/05 e Msk: Circle_06 e Side_02-04 dai dati JP, Circle_01/02 e Side_01 dal
 pacchetto 2016 (`import_jp_coco.py`, `JP_IMG`). Per riconoscerlo: crash subito dopo `/stage/start`.
+
+<a id="nemici-jp"></a>
+## Grafiche originali dei nemici (enemy_gen, 14-10)
+
+Problema: le risorse WW servono `lwf/character/enemy/<displayId>/` solo per 1, 6, 8, 17, 37, 1020 e
+le serie di Dark Road: `make-game-tables.js` dava a tutti gli altri un sostituto (Shadow, Armored
+Knight, tabella di Dark Road), es. Munny Egg con lo Shadow.
+
+Cosa carica il client 4.3.1 (Ghidra): `FUN_00adcb84(nemico, stato, n)` formatta la LWF dalla tabella
+`0x1f1cc88` = {0 `wait`, 1 `bwait`, 2 `move`, 3 `atk%d_o`, 4 `atkSp`, 5 `knockback`, 6 `dead`} e la
+apre con `FUN_011f9fc4`, che rende NULL se il file manca; subito dopo si legge `+0x4a0`: crash.
+`FUN_00adc99c` (creazione) prova solo l'esistenza di `bwait` e `atkSp` (`FUN_01322b08`, flag
+`+0x892`/`+0x893`): assenti -> stato 1 e 4 ricadono su `wait`. `atk%d_o`: n = `attackMotion` della
+riga `enemyAttack` (`FUN_00e3f39c`/`FUN_00e94358`, campo `+0x2d8`; 2 = `atkSp`); nel nostro master
+tutte le righe hanno `attackMotion` 1. `FUN_00add39c` precarica le 7 voci (tollera le assenti).
+Quindi **obbligatorie: `wait`, `move`, `atk1_o`, `knockback`, `dead`**; facoltative `bwait`,
+`atkSp`, `atkN_o`. `move` serve solo quando il nemico cammina nel campo (`FUN_00b3616c` stato 3):
+142 dei 360 nemici JP non l'hanno (piante, boss fermi, come il 37 servito), ma le nostre mappe
+possono farli muovere (crash di Yellow Opera su Dark Road 5075): si ricostruisce da `wait` come
+`make_enemy_moves.py`. Effetto di comparsa: `lwf/character/enemy/show_effect_fla/show_effect<showSwf>/`.
+
+`recon/tools/make_jp_enemies.py` (Pillow: senza `-I`; ~40 s) scrive `D:\Progetto_Restauro_KH_UX\enemy_gen\files`
+per i displayId originali (`enemy_display_orig.json`) delle righe del master non serviti dagli indici
+(names_v4 + addnl): per animazione (1) LWF JP 4.3.1 con tutte le texture JP (le assenti dal 2016 solo
+se il LWF 2016 e' identico byte per byte), (2) LWF e texture del pacchetto 2016, (3) LWF JP con le
+texture scartate come doppioni riprese da un'altra animazione dello stesso nemico (copie identiche);
+PNG -> BTF premoltiplicato. Un nemico entra solo con tutte le obbligatorie complete. Piu' gli
+effetti di comparsa originali non serviti (5, 7, 8, 9, 12, 13, 15, 16, 19, 101, 103). Rapporto in
+`enemy_gen\report.md`. Formato LWF uguale nelle tre fonti (intestazioni `12101000`/`13121100`).
+
+Risultato (14-10): 121 displayId da coprire, **116 completi** (605 righe enemy su 670, 12.267 file,
+51,8 MB; pacchetto 53,2 MB), move da wait per 16 (36, 38, 39, 73, 75, 76, 154, 184, 198, 199, 211,
+228, 230, 231, 232, 1023). Incompleti (restano col sostituto): 251 Cannoned Camel, 1501 Gold
+Tricholoma (texture di wait/knockback assenti, niente dead), 2001-2003 sEnm (niente knockback ne'
+dead in nessuna fonte). Stage di storia: 173 enemyId, 18 serviti WW, 152 con la grafica originale,
+3 col sostituto (1501 -> Dark Road 5038, 2001/2002 -> 17).
+
+`make-game-tables.js`: le cartelle `enemy_gen\files\lwf\character\enemy\<id>\wait\wait.lwf` e
+`show_effect_fla\show_effect<N>` contano come servite (`KHUX_ENEMY_GEN` per un'altra cartella,
+`KHUX_NO_ENEMY_GEN=1` per ignorarle); le righe vere a cui una corsa precedente aveva messo l'effetto
+dello Shadow riprendono il loro (show, showSwf, showFrame, hideFrame) se ora e' servito (55 righe).
+Build: pacchetto statico `d0037` prima del generato (`build-resources.ps1`, `-NoEnemies`).
+Master e pacchetto vanno insieme: un master con i displayId originali su una versione senza
+`enemy_gen` va in crash all'avvio delle missioni.

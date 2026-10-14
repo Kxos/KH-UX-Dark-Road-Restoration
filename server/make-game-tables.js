@@ -253,6 +253,17 @@ const DISPLAY_SUBSTITUTE = {
   7: 17, // Large Body -> Armored Knight (grande, a terra)
 };
 let displaysSubstituted = 0, showsSubstituted = 0, attacksAdded = 0, displaysDarkRoad = 0;
+let displaysJp = 0, showsRestored = 0;
+// grafiche originali recuperate (make_jp_enemies.py -> pacchetto statico enemy_gen,
+// docs/notes/battaglia.md#nemici-jp): le cartelle lwf/character/enemy/<displayId>/ e gli effetti
+// show_effect<N> di enemy_gen\files contano come serviti. Il pacchetto deve stare nella versione
+// installata (build-resources.ps1 senza -NoEnemies); senza: KHUX_NO_ENEMY_GEN=1
+const ENEMY_GEN = process.env.KHUX_NO_ENEMY_GEN ? null
+  : path.join(process.env.KHUX_ENEMY_GEN || 'D:\\Progetto_Restauro_KH_UX\\enemy_gen\\files', 'lwf', 'character', 'enemy');
+const enemyGenDir = (sub) => (ENEMY_GEN && fs.existsSync(path.join(ENEMY_GEN, sub)) ? fs.readdirSync(path.join(ENEMY_GEN, sub)) : []);
+const drawnJp = new Set(enemyGenDir('').filter((n) => /^\d+$/.test(n) && fs.existsSync(path.join(ENEMY_GEN, n, 'wait', 'wait.lwf'))).map(Number));
+const showsJp = new Set(enemyGenDir('show_effect_fla').map((n) => /^show_effect(\d+)$/.exec(n))
+  .filter((m) => m && fs.existsSync(path.join(ENEMY_GEN, 'show_effect_fla', m[0], m[0] + '.lwf'))).map((m) => Number(m[1])));
 const DR_MAP_PATH = path.join(ROOT, 'recon', 'tools', 'enemy_display_map.json');
 const DR_MAP = process.env.KHUX_NO_DARKROAD || !fs.existsSync(DR_MAP_PATH) ? {} : JSON.parse(fs.readFileSync(DR_MAP_PATH, 'utf8'));
 const namesFile = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
@@ -262,13 +273,14 @@ if (enemies && fs.existsSync(namesFile)) {
     const m = /^lwf\/character\/enemy\/(\d+)\/wait\//.exec(line);
     if (m) drawn.add(Number(m[1]));
   }
+  for (const d of drawnJp) drawn.add(d);
   const origPath = path.join(OUT, 'enemy_display_orig.json');
   const orig = fs.existsSync(origPath) ? JSON.parse(fs.readFileSync(origPath, 'utf8')) : {};
   for (const e of enemies) {
     if (!(e.enemyId in orig)) orig[e.enemyId] = e.displayId;
     const d = orig[e.enemyId];
     // solo la grafica dei nemici KHUX: le serie di Dark Road (5001+) hanno altre animazioni
-    if (drawn.has(d) && d < 5000) { e.displayId = d; continue; }
+    if (drawn.has(d) && d < 5000) { e.displayId = d; if (drawnJp.has(d)) displaysJp++; continue; }
     // grafica equivalente di Dark Road riconosciuta per nome (recon/tools/enemy_display_map.json,
     // confronto visivo; confidenza alta o media). Dark Road non ha l'animazione move: la
     // ricostruisce make_enemy_moves.py (copia di wait) nel pacchetto generato
@@ -308,8 +320,19 @@ if (enemies && fs.existsSync(namesFile)) {
     const m = /^lwf\/character\/enemy\/show_effect_fla\/show_effect(\d+)\//.exec(line);
     if (m) shows.add(Number(m[1]));
   }
+  for (const n of showsJp) shows.add(n);
   const shadow = enemies.find((e) => e.enemyId === 80001);
+  // enemy.json e' anche l'ingresso: le righe vere sostituite in una corsa precedente hanno gia' i
+  // valori dello Shadow. Se l'effetto originale (riga vera) ora c'e' (enemy_gen), torna quello
+  const SHOW_KEYS = ['show', 'showSwf', 'showFrame', 'hideFrame'];
+  const realById = new Map((realEnemies || []).map((r) => [r.enemyId, r]));
   for (const e of enemies) {
+    const r = realById.get(e.enemyId);
+    if (r && shadow && e !== shadow && r.showSwf !== e.showSwf && shows.has(r.showSwf) &&
+        SHOW_KEYS.every((k) => e[k] === shadow[k])) {
+      for (const k of SHOW_KEYS) e[k] = r[k];
+      showsRestored++;
+    }
     if (!shows.has(e.showSwf) && shadow) {
       Object.assign(e, { show: shadow.show, showSwf: shadow.showSwf, showFrame: shadow.showFrame, hideFrame: shadow.hideFrame });
       showsSubstituted++;
@@ -688,6 +711,6 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
   if (f.endsWith('.json')) fs.copyFileSync(path.join(TABLES, f), path.join(OUT, f));
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
-  (enemies ? `; enemy: ${enemies.length} righe (${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
+  (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded})` +
   `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);

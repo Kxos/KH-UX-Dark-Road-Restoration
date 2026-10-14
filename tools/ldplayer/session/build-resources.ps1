@@ -18,9 +18,11 @@
 #   .\build-resources.ps1 -DryRun
 # -NoJp: senza i layout originali JP di import_jp_coco.py (elenco recon\tools\jp_coco_layouts.txt).
 # -NoRooms: versione completa senza il pacchetto delle stanze recuperate (rooms_gen, make_jp_rooms.py).
+# -NoEnemies: versione completa senza le grafiche originali dei nemici (enemy_gen, make_jp_enemies.py);
+#   il master va rigenerato con KHUX_NO_ENEMY_GEN=1, altrimenti i nemici citano grafiche assenti (crash).
 # I pacchetti statici di una versione completa sono scritti in resource_data\<N>\packs.txt: -Quick e
 # -DryRun usano quelli della versione installata (senza packs.txt: niente stanze, versioni <= 34).
-param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms)
+param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 Set-Location $repo
@@ -120,14 +122,31 @@ if ($Quick) {
   if ($LASTEXITCODE) { throw 'resource_pack stanze fallito' }
   $roomsPack = @("$rg\gen.png", "$rg\gen.mp4")
 }
-$staticPacks = $medalPack + $roomsPack
+# pacchetto delle grafiche originali dei nemici (make_jp_enemies.py -> enemy_gen\files: lwf/character/enemy
+# JP 4.3.1/2016 in BTF, docs/notes/battaglia.md#nemici-jp): come rooms_gen, dopo le stanze e prima del
+# generato; make-game-tables.js tiene il displayId originale dei nemici le cui cartelle sono in enemy_gen\files
+$eg = "$D\enemy_gen"
+$enemyPack = @()
+if ($Quick) {
+  if ((Test-Path "$v\packs.txt") -and ((Get-Content "$v\packs.txt") -contains 'enemy_gen')) {
+    if (-not (Test-Path "$eg\gen.png")) { throw "la versione $Version contiene enemy_gen ma manca $eg\gen.png" }
+    $enemyPack = @("$eg\gen.png", "$eg\gen.mp4")
+  }
+} elseif (-not $NoEnemies -and (Test-Path "$eg\files")) {
+  python -I recon\tools\resource_pack.py "$eg\files" $key "$eg\gen.mp4" "$eg\gen.png"
+  if ($LASTEXITCODE) { throw 'resource_pack nemici fallito' }
+  $enemyPack = @("$eg\gen.png", "$eg\gen.mp4")
+} elseif ($NoEnemies -and (Test-Path "$eg\files")) {
+  Write-Warning 'senza enemy_gen: il master deve essere rigenerato con KHUX_NO_ENEMY_GEN=1'
+}
+$staticPacks = $medalPack + $roomsPack + $enemyPack
 # Dimensioni fisse: il client confronta le dimensioni dei file installati con quelle del
 # download e, se cambiano, butta le risorse e riscarica tutto (resourceRevision 0). Il
 # pacchetto generato si riempie di zeri fino a una riserva (letto per offset, la coda non
 # e' mai letta) e l'indice ha un nome di riempimento (resource_merge.py): una versione
 # completa riserva 16 MiB e 64 KiB, -Quick ritorna alle dimensioni installate.
 # l'ultimo pezzo dei dati e' il pacchetto generato: d0035 + uno per pacchetto statico (medaglie
-# d0035, stanze d0036, generato d0037)
+# d0035, stanze d0036, nemici d0037, generato d0038)
 $genName = if ($Quick) { (Get-ChildItem "$v\data" | Sort-Object Name | Select-Object -Last 1).Name } else { 'd{0:D4}' -f (35 + $staticPacks.Count / 2) }
 if ($Quick) {
   $dataSize = (Get-Item "$v\data\$genName").Length
@@ -139,7 +158,7 @@ if ($Quick) {
     ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
   # pacchetti statici come pezzi d0035.. (copie: le versioni dopo li ricostruiscono)
   for ($i = 1; $i -lt $staticPacks.Count; $i += 2) { Copy-Item $staticPacks[$i] ("$v\data\d{0:D4}" -f (35 + ($i - 1) / 2)) }
-  $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }
+  $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }
   Set-Content -Encoding ascii "$v\packs.txt" $names
   $dataSize = 32MB   # 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
