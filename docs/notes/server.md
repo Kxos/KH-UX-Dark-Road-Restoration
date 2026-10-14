@@ -458,3 +458,47 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   gli stage del Colosseo, quindi il server risponde status 2 e nessuno stage (`respondColosseum`).
   Per giocarlo servono le righe master (da ricostruire) e `stage/cl_stg%05d_%02d.bin` (nessuno
   servito) per la mappa `AdventureTop2_Colosseum_Target`, poi 126 start / 128 clear.
+
+<a id="pvp"></a>
+## Coliseum PvP (azioni 194-205)
+
+Stato «vuoto» ma valido in `respondPvp` (server.js, rotta `pvp`). Rami di `[fn]` (Ghidra),
+un parser che restituisce null = «200 ERROR :<id>». Tipi: +0x11 bit 2 int, 3 uint, 5 uint64; +0x12
+bit 4 stringa (`recon/tools/response_schema.py`).
+
+| Azione | Richiesta | Ramo / parser | Chiavi obbligatorie | Risposta del server |
+|---|---|---|---|---|
+| 195 | GET `/pvp` | 0x7ca204 / `[fn]` | `pvp {pvpId, playNumber, pvpPoint, pvpClass, pvpRank` uint, `openRankingId` uint64, `numParticipant` uint`}` | pvpId `KHUX_PVP_ID` (1), pvpClass 1, resto 0 |
+| 196/197 | GET/POST `/pvp/keyblade` | 0x7c3b9c / `[fn]` | `pvp.keybladeIds` [uint64], `pvp.userDecks` (`[fn]`, elemento `[fn]`) | keybladeIds salvati (`player.pvpKeybladeIds`, vuoto), userDecks = `/user/deck` |
+| 198 | GET `/pvp/vs_list` | 0x7c559c / `[fn]` | `vsUsers` [] (elemento `[fn]`, 0x278 byte) | `[]` |
+| 199 | GET `/ranking/pvpParade` | 0x7c9a24 / `[fn]` | `pvpParade {pvpClass uint, rankingPvpTopRanker []}` (elemento `[fn]`) | classe 1, nessuno |
+| 200/201/202 | GET `/ranking/pvp`, `/own`, `/border` | 0x7c6ec8 / 0x7c5d20 / 0x7c6db0, `[fn](chiave)` | `pvpRanking` / `pvpRankingOwn` / `pvpRankingBorder` = `{rankingDatas [], rankingStatus int, rankingTermStart, rankingTermEnd}` (date "YYYY-MM-DD HH:MM:SS") | status 2, nessun dato, stagione = mese corrente |
+| 203 | GET `/pvp/rewardlist` | 0x7ca344 / `[fn]` | `pvpPoint` uint64, `scoreRewardId` [uint] | 0, `[]` |
+| 204/205 | POST `/pvp/entry`, DELETE `/pvp/lock` | 0x7d0f0c (nessun parser, esito 1) | — | solo `ret` |
+
+- Elemento di `rankingDatas` (`[fn]`): un giocatore completo (`userData` `[fn]`,
+  `userDetail`, `userKeyblades`, `userDecks`, medaglie, skill, avatar, `pvp/keyblade`,
+  `userPvpRanking` `[fn]`). `rankingStatus` (`[fn]`): 2 = elenco, 1 e 3 = testi
+  (0x652f715 / 0x63163a2 / 0x6316388). `[fn]` mostra `rankingTermEnd` (+0xc).
+- Sequenza della scheda PvP di AdventureTop (lambda): DELETE `/pvp/lock` (`[fn]`) ->
+  `/pvp` (`[fn]`; salta se sessione +0x790 -> +0x14 == 5) -> `/pvp/keyblade` (`[fn]`)
+  -> `/pvp/vs_list` (`[fn]`, se scena +0x43b) -> `[fn]` -> `[fn](modo)` +
+  `[fn]` (`cocostudio/publish/AdventureTop2_PvP_Button.json`: Button_PvPStart/Txt_PvPStart,
+  Button_Ranking, Button_Reward, PvP_DetailButton(_Panel/_Draw), PvP_Point_DetailBut, Txt_PvP_Detail).
+  Le classifiche (200-202) le chiede la scena Ranking (lambda `[fn]`/`d63060`/`d634c0`),
+  `/ranking/reward/check` (142) parte anche da `[fn]`.
+- **Bloccante: riga master `pvp`** (tabella 0x47, getter `[fn]`, null se manca).
+  `[fn]` (detailUrl a +0x94), `[fn]` (rankingId +0x90), `[fn]`,
+  `[fn]` (+0x29e), `[fn]` (scoreStartReward/EndReward +0x88/+0x8c) la dereferenziano
+  senza controllo: con `master_data/pvp.json` vuoto la scheda PvP va in crash appena costruita.
+  Schema (`master_types_ww431.json`): pvpId, stageId, stageBinId, dayCount, benefitDayCount,
+  battleTimeout, validHoldKeyblade, holdKeyblade int[9], validRank, rankUpPer int[8], rankDownPer
+  int[8], groupId, scoreStartReward, scoreEndReward, rankingId, detailUrl string(512), startTime,
+  endTime. Una riga segnaposto (pvpId 1, rankingId 0 = nessuna riga `rankingPvp`, cosi'
+  `[fn]` nasconde il widget; scoreStartReward 1 > scoreEndReward 0 = nessun premio) richiede
+  un nuovo `KHUX_REVISION`. Anche `pvpScoreReward` e `rankingPvp` sono vuote.
+- Layout mancanti (catalogo `missing_layouts.txt`): `AdventureTop2_PvP_Button`, `PvP_PlayerInfo`,
+  `PvP_KeyBladeButton`, `PvP_KeyBladeBut_Base`, `DeckEdit_KeyBladeButton_PvP`, `StartDeckPvPScene`,
+  `RankingPvPScene`, `Ranking_Result_PvP`, `BattleResultPvPWinScene`/`LoseScene`, Ranking_* .
+- Resta: battaglia vera (`/pvp/entry` 204 con avversario da `vsUsers`, `/pvp/clear` 194 non
+  analizzata), classifiche con giocatori, premi (`pvpScoreReward`, `rankingPvp`).

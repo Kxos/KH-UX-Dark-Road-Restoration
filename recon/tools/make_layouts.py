@@ -650,11 +650,24 @@ LAYOUTS = {
     # come popup completo appariva una seconda finestra spostata di Panel (banco v32_unlock4a).
     # Txt_Get_Label a y 45: sotto la scritta CONGRATULATIONS (LWF in Area_Point; a y 78 la
     # copriva, banco q9_get) e sopra l'icona (Panel y 250)
+    # Geometria dall'originale JP (thethiny, Sphere_Popup_Get_ver240: finestra LB_Reward_Win 750x513
+    # al centro, Panel a +46, Txt_Get_Label a -146, Area_Point a y 514, nessun OK). LB_Reward_Win
+    # e' la finestra arancione ad arco: qui Result_Reward_Win, servita, come Sphere_Popup_Comp.
+    # Con l'icona del premio JP (150x150, centrata sull'origine di Panel) nella finestra Win04 di
+    # prima l'icona copriva OK (banco 14-10, d15_unl_late). OK resta (il codice WW lo usa) in fondo.
     'Sphere_Popup_Get_ver240.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                      {'4Line_Label': 'Txt_Get_Label', 'Button_OK': 'Button_Ok', 'Txt_OK': 'Txt_Ok'},
-                                     False, [('text', 'Txt_Get_Label', ''), ('opts', 'Txt_Get_Label', dict(y=45, height=60)),
-                                             P('Panel', 430, 250, 100, 100),
-                                             P('Area_Point', 480, 420, 10, 10)]),
+                                     False, [('text', 'Txt_Get_Label', ''),
+                                             ('tex', 'NormalText_Window01', 'Result_Reward_Win.png',
+                                              dict(scale9Enable=True, capInsetsX=40, capInsetsY=110,
+                                                   capInsetsWidth=1, capInsetsHeight=1)),
+                                             ('opts', 'NormalText_Window01', dict(y=320, width=750, height=513,
+                                                                                   scale9Width=750, scale9Height=513)),
+                                             # figli dell'ImageView: coordinate dal centro (480, 320)
+                                             ('opts', 'Txt_Get_Label', dict(y=-118, width=600, height=60)),
+                                             ('opts', 'Button_Ok', dict(y=-198)),
+                                             P('Panel', 480, 366, 100, 100),
+                                             P('Area_Point', 480, 514, 10, 10)]),
     'Sphere_Incentive_ver240.json': ('build', P('Sphere_Incentive_ver240', 0, 0, 100, 100, reward_icons(50, 50))),
     # ultimo nodo, bacheca completata ([fn]): carica questo layout, cerca Txt_All
     # (testo 106180205 «You completed the board!», visibile solo con il flag +0x7b3) e poi
@@ -688,10 +701,13 @@ LAYOUTS = {
                                                                                          bgColorB=30, bgColorOpacity=255, ZOrder=3))),
                                               ('opts', 'Txt_Get_Label', dict(y=-122, width=600, height=60, ZOrder=4)),
                                               ('opts', 'Button_Ok', dict(y=-260, ZOrder=4)),
-                                              L('Txt_All', 480, 300, 600, 40, '', 24),
-                                              P('Panel', 430, 329, 100, 100),
-                                              # scritta fissa sull'arco (la LWF del banner qui non parte)
-                                              I('Comp_Congrats', 480, 552, 800, 81, 'Sphere_Congrats.png', s9=False, scale=1.07),
+                                              # targa del titolo JP (Sphere_Incentive_ver240, centrata sull'origine di Panel)
+                                              # sopra Txt_All: a 430/329 copriva «You completed the board!» (banco 14-10)
+                                              L('Txt_All', 480, 290, 600, 34, '', 22),
+                                              P('Panel', 480, 372, 100, 100),
+                                              # niente scritta fissa sull'arco: la LWF originale SphereMap_Complete
+                                              # (import_jp_coco, JP_LWF) disegna «COMPLETE» in Area_Point; con la
+                                              # vecchia CONGRATULATIONS fissa si leggeva «C oCOMPLETions!» (banco 14-10)
                                               P('Area_Point', 480, 550, 10, 10)]),
     # Bacheca sbloccata dal level up ([fn], dopo «Level Up!» nei risultati e alla home;
     # specifica in stage_gen\lb_popup\REPORT.md). Cerca ([fn], ricorsivo dalla radice):
@@ -1840,7 +1856,11 @@ def _lwf_copy(src_dir, dst_dir, old, new):
 
 
 _RR = 'lwf/battleresult/Result_Reward/'
-if os.path.isdir(os.path.join(SRC, *_RR.split('/'))):
+# con i dati JP di thethiny le due animazioni originali le scrive import_jp_coco.py (JP_LWF):
+# le copie restano solo come ripiego senza quei dati
+_JP_SPHERE = os.path.join(SRC, '..', '..', '[local reference data]', '', '[local reference data]', 'data',
+                          '[local reference data]', 'data', 'jp_final_4.3.1', 'lwf', 'sphere', 'SpIcon_Open')
+if os.path.isdir(os.path.join(SRC, *_RR.split('/'))) and not os.path.isdir(_JP_SPHERE):
     for _n in ('SpIcon_Open', 'SphereMap_Complete'):
         _lwf_copy(_RR, 'lwf/sphere/%s/' % _n, 'Result_Reward', _n)
 _LU = 'lwf/medal/compose/strength/card_strength_result_01/'

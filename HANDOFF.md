@@ -46,11 +46,13 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Collect All; prove con `relogin.ps1 -TestPresents`); **Beginner's Guide** = WebView, pagina nostra
   `/web/beginner`; `GET /user/mission` risposto; fumetti del Level Up con l'inglese nel fumetto (font 16);
   trascinamento del Subslot ok (serve `sendevent`, `tmp\drag.ps1`); OPTIONS/Give Up in battaglia ok;
-  `Shot` di bench_lib non perde piu' gli screenshot (bloccava `story.ps1`).
+  `Shot` di bench_lib non perde piu' gli screenshot (bloccava `story.ps1`). Poi: bacheche veloci (0,5 s,
+  solo le voci cambiate dell'inventario) e con le LWF originali JP; Challenge PvP: niente piu' errori 200 ma
+  crash (I-120, master `pvp` e layout).
 - Il 13: dati di thethiny (`[local reference data]\`), schema dei mondi v2
   (`reference\world_schema\schema_v2\index.html`), layout originali JP (I-117, risorse 34).
 - **Prossimi passi**, in ordine:
-  1. **I-116**: l'utente sta rivedendo lo schema v2; poi correzione del generatore (freccia 40-80 unita'
+  1. **I-116**: schema v2 **approvato dall'utente il 14-10**; poi correzione del generatore (freccia 40-80 unita'
      *prima* dell'uscita, `freccia_uscita.md`), rigenerazione dei tour e prova dell'utente; solo dopo le
      missioni di storia (oggi il TARGET della 133 cambia stanza e la missione non si chiude).
   2. I-117: popup di Evolve e risultati di battaglia (dopo I-116); poi i passi 1, 2, 4 della proposta.

@@ -25,7 +25,36 @@ popup del titolo provati sul banco** (risorse 32, revisione 81).
 - `GET /user/sphere`, `POST /user/sphere/update` (nodi, monete, premi HP/AP/costo/medaglie/parti,
   titolo a bacheca completa), `/user/sphere/check` (61, `userSphere` `[fn]` modo 1; con
   `checkTypes` contenente 3, `closeEventSphereBoardIds[]`), `/user/sphere/reset` (62). Risposte 44/190
-  con l'inventario completo (`inventoryBlocks`, `userTitlesData`).
+  con l'inventario (`inventoryBlocks`, `userTitlesData`).
+- **Risposta di `/user/sphere/update` (44), ramo `0x7c33bc` di `[fn]`** (condiviso con
+  190 `/user/mission/receive`, che distingue con `cmp w8,#0xbe`/`#0x2c`). Ogni parser torna null
+  se la chiave manca o non e' un array/oggetto (`[fn]` + controllo del tipo), e un null
+  controllato porta a `w19 = 0` (errore 2). Per la 44 sono **tutte obbligatorie**:
+  `userData.userPoint` (`[fn]`, `0x7c33cc`), `userData.userDetail` (`[fn]`,
+  `0x7c33ec`; facoltativa solo per la 190), `userSphere` (`[fn]`, `0x7c3430`, solo 44),
+  `userMaterials` (`[fn]`), `userMedals` (`[fn]`, chiave di default se x1 = 0),
+  `userSkills` (`[fn]`), `userKeyblades` (`[fn]`), `userDecks` (`[fn]`),
+  `userAvatarParts` (`[fn]`), `userTitles` (`[fn]`), `pet.userPetParts`
+  (`[fn]`, `0x7c34ec`, solo 44), `emblemIds` (`[fn]`, `0x7c350c`, solo 44),
+  `subslotMaxNum`+`userKeybladeSubslots` (`[fn]`), `guiltBurstFirst/MaxUserMedalIds`
+  (`[fn]`, 44 e 190). `missions` (`[fn]`) e' controllato solo per la 190.
+  Azione 49 (`/user/present/receive`, ramo `0x7cad14`): stesse liste tutte obbligatorie piu'
+  `lastUserPresentIds`; `userData` e' facoltativo (se c'e' ed e' un oggetto, `userPoint` e'
+  obbligatorio, `0x7cad38`). Le azioni 60/61/62 hanno rami propri (`0x7c44e8`, `0x7cbde0`,
+  `0x7c4f08`) senza inventario.
+- **L'array vuoto e' valido e il client non sostituisce le liste**: dopo il parse (`0x7ce7ac` per
+  44/190; `0x7d03d4`/`0x7d0b2c`/`0x7d0c9c` per la 49) ogni voce passa per un upsert per id:
+  `[fn]` materiali (voce con `number` 0 = tolta), `[fn]` medaglie (voce nuova ->
+  `[fn]`), `[fn]` skill. Ogni upsert ricopia tutto l'elenco (0x148 byte a
+  medaglia) e ne ricostruisce l'indice (`[fn]`): con ~2076 medaglie e' O(n^2) ed era la
+  causa dei ~6,5 s di attesa dopo ogni nodo (banco 14 ottobre; stesso problema del Level Up, I-083).
+  Sub-slot e liste del Burst invece si sostituiscono (`+0x890`, `+0x930` dello stato), `emblemIds`
+  passa a `[fn]`; keyblade/deck/parti/titoli/pet usano `[fn]`/`[fn]`/
+  `[fn]`/`[fn]`/`[fn]` (non verificati: restano complete).
+- Server: `inventorySnapshot(now)` prima dei premi e `inventoryBlocks(now, snap)` mandano per
+  `userMaterials`/`userMedals`/`userSkills` solo le voci nuove o cambiate (array vuoto se il nodo
+  da' HP/AP/costo); se una voce e' sparita si manda la lista intera. Vale per 44, 49 e 190;
+  `KHUX_FULL_INVENTORY=1` torna alle liste complete.
 - **Ogni voce di `userSphereDatas` di `/user/sphere/check` e' per il client «bacheca appena
   sbloccata»** (elenco `[fn]()+0x6a8`, letto dalla home `[fn]`, dai risultati
   `[fn]` e dall'elenco bacheche): il server manda solo le bacheche non ancora annunciate
