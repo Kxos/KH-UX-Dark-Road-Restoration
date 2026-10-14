@@ -20,6 +20,17 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   (`resource_merge.py`; a parita' di nome vince il primo). Dalla 4 in poi si aggiunge il pacchetto
   generato (`resource_pack.py`), dalla 30 anche il pacchetto delle medaglie (`medal_gen`, penultimo
   pezzo). `--last-wins`: il pacchetto generato puo' sostituire file originali.
+- **Pezzi di una versione completa** (`build-resources.ps1 -Version N`): `d0000`-`d0034` della 7
+  (hard link: OBB 5.0.1, `aliud`, `addnl` 4.3.1), poi i pacchetti statici, ricostruiti solo nelle
+  versioni complete: `d0035` medaglie (`medal_gen`, ~850 MB), `d0036` **stanze recuperate**
+  (`rooms_gen`, `make_jp_rooms.py`, ~1.035 MB, dalla 35; `-NoRooms` per farne a meno), poi il
+  generato (`stage_gen`, `d0037`, riserva 32 MiB) che vince su tutti. Elenco dei pacchetti statici
+  in `resource_data\<N>\packs.txt`: `-Quick`/`-DryRun` rimettono nell'indice quelli della versione
+  installata (senza `packs.txt`, versioni <= 34: niente stanze) e non ricostruiscono mai `rooms_gen`.
+  Il client spezza i dati in `misc.mp4` + `misc.mp4.1` a 2 GiB: la 34 ha 3,20 GB, la 35 con le
+  stanze ~4,24 GB, **53 MB sotto i 4 GiB** (oltre servirebbe `misc.mp4.2`, mai provato, e `-Quick`
+  si ferma); con `make_jp_rooms.py --story-only` ~3,82 GB. Dettagli:
+  [mappe_storia.md#stanze-jp](mappe_storia.md#stanze-jp).
 - Strumenti: `res_get.py <nomi.tsv> <resource_data\N\data> <uscita> <nome>...` (estrae per nome in
   `D:\Progetto_Restauro_KH_UX\layouts\orig\`), `res_bulk.py` (estrazione in blocco, 16 s per 4000
   file), `catalog.py` (catalogo, 2 min), `asset_coverage.py` (asset citati dal binario contro un

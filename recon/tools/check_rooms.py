@@ -5,14 +5,16 @@
         [--data resource_data\\7\\data] [--stages <cartella stage> ...]
 
 Default: indice names_v4.tsv (dati resource_data\\7\\data) + ipa431\\names_addnl.tsv, pacchetti
-generati stage_gen\\files e medal_gen\\files, stage di stage_gen\\story e stage_gen\\files\\stage
+generati medal_gen\\files, rooms_gen\\files (stanze recuperate, make_jp_rooms.py: solo se l'ultima
+versione di resource_data lo contiene, packs.txt, o con --rooms-gen) e stage_gen\\files, stage di stage_gen\\story e stage_gen\\files\\stage
 (+ gli stage originali dell'indice), uscita stage_gen\\rooms_check.json.
 
 Formato di map/<S>/<S>_info.bin («BMI»), letto dal caricatore della mappa (stringhe del binario
 4.3.1 «map/%s/%s_base1/%s_base1_%%03d.png», «map/%s/%s_%s/%s_%s_%%03d.png», «map/%s/%s_%s.png»,
 «lwf/map/%s/%s.lwf», «map/%s/%s_{cls,chp,jmp,info}.bin»):
   0x00 'BMI\\0', 0x0a u16 nT livelli a tessere, 0x0c u16 nI immagini intere, 0x0e u16 nO oggetti,
-  0x10 nome[16] della stanza, 0x20 u32 W, H del livello base1;
+  0x10 nome[16] della stanza di cui si usa base1 (alias grafico se diversa dalla cartella),
+  0x20 u32 W, H del livello base1 -> map/<nome>/<nome>_base1/<nome>_base1_NNN.png;
   poi nT record da 60 byte: stanza[16] livello[16] W H x y W2 H2 flag
       -> map/<stanza>/<stanza>_<livello>/<stanza>_<livello>_NNN.png
   poi nI record da 52 byte: stanza[16] livello[16] w h x y flag
@@ -42,11 +44,29 @@ ap.add_argument('--files', action='append')
 ap.add_argument('--stages', action='append')
 ap.add_argument('--cache', default=os.path.join(D, 'stage_gen', 'rooms_info'))
 ap.add_argument('--out', default=os.path.join(D, 'stage_gen', 'rooms_check.json'))
-ap.add_argument('--lib', default=os.path.join(here, '..', 'ext', 'ww431', 'libcocos2dcpp.so'))
+ap.add_argument('--rooms-gen', action='store_true',
+                help='conta rooms_gen\\files anche se la versione installata non lo contiene (prova della 35)')
+ap.add_argument('--lib',default=os.path.join(here, '..', 'ext', 'ww431', 'libcocos2dcpp.so'))
 a = ap.parse_args()
 a.index = a.index or [os.path.join(D, 'resource_data', 'names_v4.tsv'), os.path.join(D, 'ipa431', 'names_addnl.tsv')]
-a.files = a.files or [p for p in (os.path.join(D, 'stage_gen', 'files'), os.path.join(D, 'medal_gen', 'files'))
-                      if os.path.isdir(p)]
+
+
+def rooms_installed():
+    """rooms_gen conta solo se l'ultima versione in resource_data lo contiene (packs.txt di
+    build-resources.ps1) o con --rooms-gen: prima della 35 le stanze non sono nel client."""
+    if a.rooms_gen:
+        return True
+    rd = os.path.join(D, 'resource_data')
+    vs = sorted((int(v) for v in os.listdir(rd) if v.isdigit()), reverse=True)
+    pt = os.path.join(rd, str(vs[0]), 'packs.txt') if vs else ''
+    return bool(pt) and os.path.exists(pt) and 'rooms_gen' in open(pt).read().split()
+
+
+# pacchetti nell'ordine di build-resources.ps1 (a nome ripetuto vince l'ultimo): medaglie, stanze
+# recuperate (make_jp_rooms.py, se installate), generato
+a.files = a.files or [p for p in (os.path.join(D, 'medal_gen', 'files'),
+                                  os.path.join(D, 'rooms_gen', 'files') if rooms_installed() else '',
+                                  os.path.join(D, 'stage_gen', 'files')) if p and os.path.isdir(p)]
 a.stages = a.stages or [os.path.join(D, 'stage_gen', 'story'), os.path.join(D, 'stage_gen', 'files', 'stage')]
 TILE = 256
 
@@ -155,8 +175,11 @@ def check_room(room):
         return r
     info = parse_info(b)
     r['info'] = {k: info[k] for k in ('name', 'w', 'h', 'size_ok')}
-    fatal = {'base1 (%s, %dx%d)' % (room, info['w'], info['h']): [
-        'map/{0}/{0}_base1/{0}_base1_{1:03d}.png'.format(room, i + 1) for i in range(tiles(info['w'], info['h']))]}
+    # base1 della stanza scritta nel BMI a +0x10 (alias grafico: createMapFieldLayer, decompilato 1.0.1);
+    # nelle nostre 86 nome = cartella, fra le recuperate di rooms_gen ci sono alias (DB_0020_00_01 -> DB_0020_00_00)
+    bn = info['name'] or room
+    fatal = {'base1 (%s, %dx%d)' % (bn, info['w'], info['h']): [
+        'map/{0}/{0}_base1/{0}_base1_{1:03d}.png'.format(bn, i + 1) for i in range(tiles(info['w'], info['h']))]}
     for t in info['tiled']:
         fatal['%s_%s (tessere, %dx%d)' % (t['room'], t['layer'], t['w2'], t['h2'])] = [
             'map/{0}/{0}_{1}/{0}_{1}_{2:03d}.png'.format(t['room'], t['layer'], i + 1) for i in range(tiles(t['w2'], t['h2']))]

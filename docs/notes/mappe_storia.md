@@ -110,14 +110,52 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
   Immagini intere e lwf assenti sono tollerati (`[fn]` controlla il nodo nullo): 43 stanze
   ne hanno, fra cui DW_0001/DW_0003 giocate sul banco.
 - `recon/tools/check_rooms.py` (~25 s, cache in `stage_gen\rooms_info`) controlla ogni stanza contro
-  l'indice installato (`names_v4.tsv` + `ipa431\names_addnl.tsv` + `stage_gen\files` +
-  `medal_gen\files`) e dice quali stage la usano -> `stage_gen\rooms_check.json`. Incomplete:
+  l'indice installato (`names_v4.tsv` + `ipa431\names_addnl.tsv` + `medal_gen\files` +
+  `stage_gen\files`; `rooms_gen\files` solo se l'ultima versione di `resource_data` lo contiene, cioe'
+  `packs.txt`, o con `--rooms-gen`; base1 dal nome nel BMI a +0x10) e dice quali stage la usano ->
+  `stage_gen\rooms_check.json`. Con `rooms_gen` ([#stanze-jp](#stanze-jp)) le due incomplete qui
+  sotto diventano complete. Incomplete fino alla 34:
   **DB_0018_01_00** (Underground Waterway: sky2, spover, over di `DB_0018_00_00`, 172 tessere) e
   **ED_0011_01_00** (over, sky di `ED_0011_00_00`, 171 tessere); nessuna missione originale le usa.
 - `gen_story_maps.py` con `"rooms_check"` (o `"exclude_rooms"`) nella config le tratta come assenti
   (I-036; la scelta delle altre missioni non cambia). Rigenerati 991001 (11 parti: la porta
   «Underground Waterway Entrance» porta a Waterfront Park: Dock), 991008 (17), 12210-12250,
   14230-14250 (Fountain Square/Warehouse); tolte le parti in piu' 991001_11, 991008_17.
+
+<a id="stanze-jp"></a>
+### Stanze recuperate nelle risorse (`rooms_gen`, versione 35)
+
+- `recon/tools/make_jp_rooms.py` (Pillow: senza `-I`; ~10 min la prima volta, poi incrementale)
+  scrive in `D:\Progetto_Restauro_KH_UX\rooms_gen\files\` tutti i file che il client apre per le
+  stanze di `tmp\thethiny_x\rooms_merged\` non ancora servite (cartella per cartella; cio' che li'
+  manca dai dati JP 4.3.1, revisione piu' alta). Obbligatori: i 4 `.bin`, le tessere di base1 della
+  stanza scritta nel BMI a +0x10 (97 stanze sono alias grafici di un'altra) e quelle dei livelli a
+  tessere, da 001 a ceil(W/256)*ceil(H/256); una stanza entra **solo se nessuno manca**. Facoltativi:
+  immagini intere e oggetti `lwf/map/<O>/` (lwf + tutti i png citati; il `.res` non serve). I file
+  gia' serviti non si riscrivono mai. Rapporto in `rooms_gen\report.md/.json`.
+- Texture: PNG JP (alpha non premoltiplicata) -> BTF tipo 8 con `btf.encode` (verificato: decodifica
+  identica al PNG sui pixel opachi); tessere del tutto trasparenti -> il segnaposto BTF tipo 1 da 45
+  byte delle originali (le tessere vuote servite sono cosi': 588 su 592 hanno il PNG JP trasparente,
+  le altre 4 alpha <= 3); BTF del 2016 copiati. Texture di lwf scartate come stub da thethiny: si
+  prende lo stesso nome originale (`<oggetto>_<esadecimale>.png`) da un altro oggetto JP solo se
+  tutti i candidati hanno contenuto identico (79 texture).
+- **Esito** (14-10): 413 stanze; **319 nuove complete**, 34 servite completate (immagini intere, lwf
+  e i livelli mancanti: DB_0018_01_00 e ED_0011_01_00 ora complete), 52 servite gia' complete, 8
+  scartate: 7 senza `_info.bin` (DB_0000_00_01, DW_0100_00/01_00, ED_0020_00_00, SR_0009_01_00,
+  WL_0004_00_01, WL_0100_00_00: la INFO si apre dalla cartella, usarle = crash) e DB_0000_01_00 (4
+  tessere di base1 assenti ovunque). 39.816 file, **1.035 MB** (map 994, lwf 41). Oggetti lwf: 203
+  aggiunti, 22 gia' serviti, 116 non copiati (texture assenti: l'oggetto manca, tollerato come in
+  DW_0001).
+- **Stanze di storia** (porte `scope` storia di `schema_v2\schema_mondi.json`, stanza e destinazione):
+  231; con `rooms_gen` **230 complete** (`check_rooms.py --rooms-gen --out rooms_gen\rooms_check.json`:
+  405 stanze, 0 incomplete; senza, come prima: 86 stanze, 2 incomplete). Manca solo **SR_0009_01_00** (porta SR_0008_00_00 <-> SR_0009_01_00, solo
+  `storia_oltre`, fuori dalla master): nessuna INFO in nessuna fonte.
+- `--story-only`: solo le stanze delle porte di storia (24.406 file, 615 MB). Default: tutte le
+  complete. `build-resources.ps1` ne fa il pacchetto statico `rooms_gen\gen.*`
+  ([risorse_layout.md#pacchetti](risorse_layout.md#pacchetti)). Finche' la 35 non e' costruita
+  `check_rooms.py` (e quindi `"rooms_check"` di `gen_story_maps.py`) non vede queste stanze: le mappe
+  che le usano vanno generate solo dopo la 35. Da provare sul banco: una stanza alias (es.
+  DB_0020_00_01), una con lwf aggiunti, DB_0018_01_00.
 
 <a id="collegamenti"></a>
 ## Collegamenti fra le aree e missioni «Tour»
