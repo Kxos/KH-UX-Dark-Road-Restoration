@@ -90,7 +90,7 @@ Ultima revisione: 13 ottobre 2026.
 | I-018 | APERTO | Pulsanti mai provati: Beginner's Guide (vuota), Shop jewel, frecce della home, menu Other, Share medaglia, titolo (Restore Resources, Save User Data, x3, KHDR START) | [home_profilo](notes/home_profilo.md#home) | 640d345 |
 | I-094 | APERTO | Pet (segnalazione utente 13-10): verificare Outfits e Tricks, compreso lo sblocco (seguito di I-082/I-005) | [home_profilo](notes/home_profilo.md) | - |
 | I-097 | APERTO | Home (segnalazione utente 13-10): Chirithy invisibile (I-016) e pulsanti sovrapposti al banner «Join a Party»; verificare posizioni con l'originale | [home_profilo](notes/home_profilo.md) | - |
-| I-098 | APERTO | Profilo utente (segnalazione utente 13-10): crash sul pulsante Boosters (vedi I-017) | [home_profilo](notes/home_profilo.md) | - |
+| I-098 | CHIUSO | Profilo utente (segnalazione utente 13-10): crash sul pulsante Boosters (vedi I-017). Risolto con I-123 (provato sulla 36) | [home_profilo](notes/home_profilo.md) | - |
 | I-104 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Notices; le notizie dovrebbero apparire anche al login, sulla home | [home_profilo](notes/home_profilo.md) | - |
 | I-105 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Album | [home_profilo](notes/home_profilo.md) | - |
 | I-106 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Party (vedi I-006, layout `PartyTop_*` mancanti) | [home_profilo](notes/home_profilo.md) | - |
@@ -131,7 +131,7 @@ Ultima revisione: 13 ottobre 2026.
 |---|---|---|---|---|
 | I-025 | APERTO | Fiocco COMPLETE della carta piu' semplice dell'originale dipinto | [bacheche](notes/bacheche.md#layout) | 51f60c4 |
 | I-026 | APERTO | Popup «Unlocked an Avatar Board!»: originale non trovato (stile ricavato) | [bacheche](notes/bacheche.md#popup-lb) | befacc0 |
-| I-092 | APERTO | Avatar Boards (segnalazione utente 13-10): verificare i pulsanti «Unlock All» e «Unlock» e il loro funzionamento; ritardo di alcuni secondi e grafica «Congratulations» invasiva a ogni nodo sbloccato (confrontare con l'originale) | [bacheche](notes/bacheche.md) | - |
+| I-092 | CHIUSO | Avatar Boards (segnalazione utente 13-10): verificare i pulsanti «Unlock All» e «Unlock» e il loro funzionamento; ritardo di alcuni secondi e grafica «Congratulations» invasiva a ogni nodo sbloccato (confrontare con l'originale). Risolto il 14-10: sblocco da 6,8 s a 0,5 s (inventario a delta) e LWF JP SpIcon_Open/SphereMap_Complete al posto della copia di Result_Reward (01bebd2) | [bacheche](notes/bacheche.md) | - |
 
 ### Shop
 
