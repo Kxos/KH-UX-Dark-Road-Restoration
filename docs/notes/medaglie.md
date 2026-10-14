@@ -114,6 +114,32 @@ il 10 era nascosto sotto il 9 e `MedalInfo_Guilt9` era una copia dell'8; ora 9 e
 esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone e confronti:
 `D:\Progetto_Restauro_KH_UX\reference\medal_tier\NOTE.md` ([tier](#tier)).
 
+<a id="filtri"></a>
+Sezione **Supernova** (visibile da quando le medaglie hanno `validSuperBurst`, master 108). Testi
+106240205-227 assenti ovunque (IPA 4.4.0 e JP 4.3.1: segnaposto «[id]»): nostri, in
+`make_layouts.py` (TEXTS). Filtro `[fn]` (unico chiamante `[fn]`, 15 controlli in
+AND); riga «SN» = `burst` di `superBurstId` (`[fn]`, nessun limite agli id 4000000+).
+
+| Pulsante (flag del filtro) | Testo | Condizione |
+|---|---|---|
+| Filter_Sb / SbPlus / SbPlusPlus (0x12-0x14) | icone SB | medaglia `displayId` 100/200/300 (+1, +1000, +1001), `validSuperBurst` 1 (`[fn]/61ac/6298`) |
+| Filter_Sb_NotSet (0x3c) | None | nessuno dei tre |
+| Filter_Sb_Single/All/Random (0x2c-0x2e) | Single/All/Random | riga SN `target` 1/2/3 (in OR) |
+| Filter_Sb01-08, 09, 12 (0x2f-0x38) | icone (sotto «Types», 106240205) | buff/debuff della riga SN (`bufAttack*`, `debufDefense*`, ...) |
+| Filter_Sb_Guard / BaseAttack / BaseDefence (0x39-0x3b) | Pierce DEF / Base STR / Base DEF | `penetrate` > 0 / `addBaseAtk*` / `addBaseDef*` != 0: da noi sempre 0 |
+| Filter_Sb_Recovery (0x3d) | Heal | `heal`, `cure*`, `recovery` |
+| Filter_Sb_Special (0x3f) | Special | copia/azzeramento buff, contatore, riflesso |
+| Filter_Sb_Recovery2 (0x3e) | SN Renew | `recurringAttribute` > 0 |
+| Filter_Sb_AttackOnly (0x40) | Attack Only | `specialPowerType` 1 e nessun effetto |
+| Filter_Sb_Timing1-7 (0x41-0x47) | 1-7 sotto «PvP Timing» (106240220) | `superburstTiming` == n |
+
+106240206-208 = Pierce DEF / Base STR / Base DEF della sezione Special Attacks (riga `burstId`).
+Restano a `%d`/`%d+` solo 106240201-204 (Hits/Gauges). Banco 14-10 (un filtro alla volta): SN+,
+None, Single, SN Renew (le 16 SN++ «R», icona verde) corretti. Attenzione: uno swipe che parte su un
+pulsante lo attiva (Hits/Gauges fuori vista davano liste vuote o solo Moogle): scorrere sul bordo
+destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Supernova casuali
+(Roboloid ha solo Single/All) e `penetrate`/`addBase*` (nessuna fonte con i valori originali).
+
 <a id="vendita"></a>
 ## Vendita (Sell Medals) e lucchetto
 
