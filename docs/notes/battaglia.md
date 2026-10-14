@@ -182,8 +182,10 @@ Tre elementi mancano da noi.
   (`[fn]`, record +0x18) oppure e' la medaglia dell'amico. «SB» = Supernova nel WW (wiki:
   «"SB" Sephiroth» -> «Supernova - Sephiroth»; `SBurst_Icon1/2/3` = SN, SN+, SN++). Da noi manca
   perche' nessuna medaglia del master ha `superBurstId`. Nota: il pulsante 4.3.1 usa
-  `SBurst_but01.png` (bussola azzurra, uguale nel WW e nel JP), mentre nella foto c'e' la «bolla»
-  di `SBurst_Icon` senza scritta: forse una versione successiva, da confermare. Per accenderlo: righe
+  `SBurst_but01.png` (bussola azzurra; `ActionMap_SuperBurst_SelectWindow.json` uguale nel WW e nel
+  JP), mentre nella foto c'e' la «bolla» di `SBurst_Icon` senza scritta (= `Supernova icon KHUX.png`
+  della khuxwiki): non e' in nessuna versione locale (4.3.1, 4.4.0, 5.0.1), quindi viene da un
+  aggiornamento NA successivo. Deciso con l'utente (14-10): resta la bussola originale. Per accenderlo: righe
   medal/burst delle Supernova (`superburstTiming`), `lwf/battle/Sburst` e `SBurst_Revival` (nel JP,
   da aggiungere a `JP_LWF` insieme ai dati), `img/ui/SBurst_Icon1..3R.png` (JP `img/ui`).
 
@@ -223,6 +225,11 @@ ordine di schema da `addTurn` +0x388 fino a `unmatchMagnification` +0x52c (`targ
   delle altre medaglie del deck la cui riga Supernova ha `recurringAttribute` 0 e il cui tipo combacia:
   bit 0/1/2 = attributo Power/Speed/Magic (medaglia +0x494 = 1/2/3), bit 3/4 = Upright/Reversed
   (+0x498 = 1/2) (`[fn](maschera, bit)`). Animazione `lwf/battle/SBurst_Revival` (`[fn]`).
+- Banco 14-10 sera, deck di sole Supernova (keyblade 2: Supernova - SP Roxas, Supernova+ - SP Axel,
+  Supernova+ - SP Xion, SN+ - Illustrated Sora, SN+ - HD Xion [EX]; costo 230, serve livello giocatore
+  ~95 con la sphere: sotto, «Exceeds equipment cost» come nell'originale): il pulsante apre il
+  pannello con tutte e 5, la Supernova scelta parte e funziona (provato dall'utente). Senza badge SN
+  sulle medaglie del deck (vedi sotto).
 - Badge SN/SN+/SN++ (`[fn]`): dal campo +0x18 della riga medaglia (`displayId` in ordine di
   schema): 100/101 e 1100/1101 -> `img/ui/SBurst_Icon1`, 200/201 e 1200/1201 -> `Icon2`, 300/301 e
   1300/1301 -> `Icon3`; da 1100 in su la variante `...R.png`. Da noi `displayId` = id dell'immagine:
