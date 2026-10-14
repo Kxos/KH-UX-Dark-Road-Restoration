@@ -42,7 +42,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 ## Stato al 14 ottobre 2026 (sera) e prossimo passo
 
-- **Banco**: risorse **36** (pacchetti statici medal_gen, rooms_gen, enemy_gen), master **revisione 102** (default
+- **Banco**: risorse **36** (pacchetti statici medal_gen, rooms_gen, enemy_gen), master **revisione 105** (stessi dati della 102; 103-104 erano prove dei buff; default
   degli script, grafiche originali dei nemici: 605/670 displayId), server `-Pet`. Missioni di storia con gli
   **stage originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`, `stage_gen\orig_stages`), stanze JP
   recuperate in `rooms_gen`. Missione 123 provata sulla 36: Yellow Opera, Munny Egg e Ice Plant con le grafiche
@@ -50,7 +50,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Tour v2 in `stage_gen\tours_v2`: da parte, solo per provare componenti originali (decisione dell'utente).
 - **Build delle risorse veloce**: ChaCha8 con numpy (`bgad.chacha_xor`) e `resource_pack.py --cache` sui pacchetti
   statici: versione completa in ~8 minuti (prima ~1 ora), poca memoria; i pacchetti invariati si saltano.
-- **Prossimo** (Boosters I-123 e Items I-122 provati e chiusi sulla 36): guilt BONUS provato dall'utente; Set Trait 0,9 s (delta); prove sul banco delle icone buff/debuff e icona blu sotto il burst
+- **Prossimo** (Boosters I-123 e Items I-122 provati e chiusi sulla 36): guilt BONUS provato dall'utente; Set Trait 0,9 s (delta); icone buff/debuff provate (funzionano, ma nessuno speciale del master ha buff: dati da ricostruire); resta l'icona blu sotto il burst (Supernova)
   (I-124; per il guilt mettere Black Coat King Mickey, userMedal 2216, nel deck del keyblade 2), un'animazione
   di pianta in battaglia (move da wait), missioni nelle stanze recuperate.
 - Poi: missioni nelle stanze recuperate; I-118 (Beginner/Limited nel master), I-119 (EXP del Level Up), I-120 (PvP:
