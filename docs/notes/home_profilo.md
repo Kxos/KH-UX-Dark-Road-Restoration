@@ -49,6 +49,25 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
 scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cercato da
 `FUN_009ed888`). Pulsanti mai provati.
 
+Crash senza richieste al server (banco 14-10, SIGSEGV a indirizzo 0 dentro libhoudini, stessa
+firma per i tre casi): layout non serviti, caricati senza controllo (come Emblem_Base, I-123).
+Nomi presi dalle stringhe citate dai caricatori (`func_strings.py`, `widget_lookup.py`); tutti
+assenti da names_v4, addnl e stage_gen. Aggiunti gli originali JP 4.3.1 a `jp_coco_layouts.txt`
+(gli originali hanno tutti i widget cercati):
+- **Transfer Unions** (I-107): `SceneTakeOver::init` `FUN_00d80be0` carica
+  `Information2_TakeoverCheck.json` (Txt_Title, Txt_Wording, Button_Takeover/Txt_Takeover,
+  Button_Intro/Txt_Intro). Il resto del flusso (backup, WebView) non e' stato guardato.
+- **Legal Information** (I-109): `OtherMenuDialog::openLegalPopup` `FUN_009edf64` (da
+  `FUN_009fa928`) carica `Legal.json` (Close_Button, UserAgreementButton, Txt_Legal1,
+  LicenseButton, Txt_Legal3). Non e' una WebView: e' un popup con due pulsanti; cosa aprono i
+  pulsanti (probabilmente pagine web) non e' stato verificato.
+- **Shop > Increase Storage** (I-100): popup del limite delle medaglie `FUN_00ac0618`
+  (`PopupNormal_MedalPossessed1_ver350.json`: Txt_UpperLimit1/2, Txt_CrownPossessed, barra
+  MaterialStock_bar con Button_stock_down/up, Button_OK, Button_Close) e conferma `FUN_00ac1bdc`
+  (`PopupNormal_MedalPossessed2.json`: Txt_UpperLimit_before/after). La richiesta d'acquisto al
+  server (dopo OK) non e' ancora gestita.
+Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta un `-Quick`.
+
 <a id="profilo"></a>
 ## Profilo
 
