@@ -54,18 +54,35 @@ firma per i tre casi): layout non serviti, caricati senza controllo (come Emblem
 Nomi presi dalle stringhe citate dai caricatori (`func_strings.py`, `widget_lookup.py`); tutti
 assenti da names_v4, addnl e stage_gen. Aggiunti gli originali JP 4.3.1 a `jp_coco_layouts.txt`
 (gli originali hanno tutti i widget cercati):
-- **Transfer Unions** (I-107): `SceneTakeOver::init` `FUN_00d80be0` carica
-  `Information2_TakeoverCheck.json` (Txt_Title, Txt_Wording, Button_Takeover/Txt_Takeover,
-  Button_Intro/Txt_Intro). Il resto del flusso (backup, WebView) non e' stato guardato.
+- **Transfer Unions** (I-107): il primo import (`Information2_TakeoverCheck.json`, di
+  `SceneTakeOver::init` `FUN_00d80be0`) non bastava, il crash restava identico. Il pulsante passa
+  da `OtherMenuDialog::openBackupPopup`, la cui callback ($_91, `FUN_00a0d0bc`, tipo risolto dalla
+  vtable 0x1dfdbd0) con esito vero apre la scelta dell'account `FUN_009f7014`
+  (`MenuDialog_account_select_ver401.json`; conferma `FUN_009f7a6c`,
+  `MenuDialog_account_select_ok_cancel_ver401.json`; anche `SceneTakeOver::openBackupPopup`
+  `FUN_00d82788`). Il codice prende la variante `dark_` solo col flag Dark Road (`FUN_0084f290`
+  +0x1a9), altrimenti quella senza prefisso, assente da ogni risorsa e anche dal JP. Ora
+  `make_layouts.py` le copia dalle `dark_` servite (estratte con `res_get.py` in
+  `layouts\orig`) con le cornici KHUX; i pulsanti Apple / SQEX Bridge (texture assenti, non
+  9-slice) restano senza immagine come nel dark.
 - **Legal Information** (I-109): `OtherMenuDialog::openLegalPopup` `FUN_009edf64` (da
   `FUN_009fa928`) carica `Legal.json` (Close_Button, UserAgreementButton, Txt_Legal1,
-  LicenseButton, Txt_Legal3). Non e' una WebView: e' un popup con due pulsanti; cosa aprono i
-  pulsanti (probabilmente pagine web) non e' stato verificato.
+  LicenseButton, Txt_Legal3); funziona (banco 14-10). I due pulsanti aprono la WebView
+  `FUN_006f1f6c`: UserAgreementButton ($_23 `FUN_009fca90`, titolo testo 104040001) sull'URL a
+  +0x78 dei link di `/system/login` (`agreement`, sesta stringa da 0x18 byte), LicenseButton ($_24
+  `FUN_009fce5c`, testo 104040003) su +0x90 (`license`). Vuoti = WebView bianca: pagine nostre in
+  `server/legal-pages.js` (condizioni del server di restauro; licenze dei componenti open source
+  le cui stringhe sono nella libreria: cocos2d-x, LWF, curl, OpenSSL, zlib, libpng, ogg/vorbis,
+  Photon, RapidJSON, TinyXML-2, FreeType, Chipmunk2D).
 - **Shop > Increase Storage** (I-100): popup del limite delle medaglie `FUN_00ac0618`
   (`PopupNormal_MedalPossessed1_ver350.json`: Txt_UpperLimit1/2, Txt_CrownPossessed, barra
   MaterialStock_bar con Button_stock_down/up, Button_OK, Button_Close) e conferma `FUN_00ac1bdc`
   (`PopupNormal_MedalPossessed2.json`: Txt_UpperLimit_before/after). La richiesta d'acquisto al
-  server (dopo OK) non e' ancora gestita.
+  server (dopo OK) non e' ancora gestita. Sul banco «Current capacity: 2248» copriva «(Max: 3000
+  slots)»: nel JP le due etichette (aree 310 e 230, 240..550 e 489..719) si toccavano gia' e i
+  testi WW sono piu' lunghi. Opzione nuova `set=Widget.opzione=valore` di `jp_coco_layouts.txt`
+  (import_jp_coco.py): etichette ai lati (x -310 / 310, aree 330 / 280, 170..500 e 510..790),
+  font 24.
 Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta un `-Quick`.
 - Party (Other e banner «Party Search» della home) e Rankings: crash e «200 ERROR :133» spiegati in
   [server](server.md#party-ranking) (layout `PartyTopScene_ver131` e `Ranking*` assenti dalle risorse
