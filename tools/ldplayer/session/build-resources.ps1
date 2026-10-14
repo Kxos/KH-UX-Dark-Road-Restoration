@@ -1,4 +1,4 @@
-# Costruisce resource_data\<N>: pezzi OBB 5.0.1 + addnl della versione 7 (hard link) +
+﻿# Costruisce resource_data\<N>: pezzi OBB 5.0.1 + addnl della versione 7 (hard link) +
 # il pacchetto generato (stage_gen\files: mappe, LWF sostitutivi, layout di
 # make_layouts.py) come ultimo pezzo, e l'indice unito. Poi si installa con
 # update-resources.ps1 (il server annuncia solo l'ultima versione).
@@ -96,12 +96,13 @@ if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
 python recon\tools\btf_fix.py "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
 python -I recon\tools\resource_pack.py "$sg\files" $key "$sg\gen.mp4" "$sg\gen.png"
+# pacchetti statici (medaglie, stanze, nemici) con --cache: rifatti solo se i loro file cambiano
 # pacchetto delle immagini delle medaglie (fetch_medal_images.py, ~150 MB): solo nelle
 # versioni complete, come penultimo pezzo; -Quick riscrive solo l'ultimo (quello generato)
 $mg = "$D\medal_gen"
 $medalPack = @()
 if (Test-Path "$mg\files") {
-  if (-not $Quick) { python recon\tools\btf_fix.py "$mg\files"; python -I recon\tools\resource_pack.py "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
+  if (-not $Quick) { python recon\tools\btf_fix.py "$mg\files"; python -I recon\tools\resource_pack.py --cache "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
   if (Test-Path "$mg\gen.png") { $medalPack = @("$mg\gen.png", "$mg\gen.mp4") }
 }
 if ($LASTEXITCODE) { throw 'resource_pack fallito' }
@@ -118,7 +119,7 @@ if ($Quick) {
     $roomsPack = @("$rg\gen.png", "$rg\gen.mp4")
   }
 } elseif (-not $NoRooms -and (Test-Path "$rg\files")) {
-  python -I recon\tools\resource_pack.py "$rg\files" $key "$rg\gen.mp4" "$rg\gen.png"
+  python -I recon\tools\resource_pack.py --cache "$rg\files" $key "$rg\gen.mp4" "$rg\gen.png"
   if ($LASTEXITCODE) { throw 'resource_pack stanze fallito' }
   $roomsPack = @("$rg\gen.png", "$rg\gen.mp4")
 }
@@ -133,7 +134,7 @@ if ($Quick) {
     $enemyPack = @("$eg\gen.png", "$eg\gen.mp4")
   }
 } elseif (-not $NoEnemies -and (Test-Path "$eg\files")) {
-  python -I recon\tools\resource_pack.py "$eg\files" $key "$eg\gen.mp4" "$eg\gen.png"
+  python -I recon\tools\resource_pack.py --cache "$eg\files" $key "$eg\gen.mp4" "$eg\gen.png"
   if ($LASTEXITCODE) { throw 'resource_pack nemici fallito' }
   $enemyPack = @("$eg\gen.png", "$eg\gen.mp4")
 } elseif ($NoEnemies -and (Test-Path "$eg\files")) {
