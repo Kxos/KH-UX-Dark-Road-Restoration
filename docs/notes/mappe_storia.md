@@ -190,8 +190,9 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
   dall'altra uscita). Porte agganciate al pixel percorribile (la griglia di 40 non entra nei corridoi
   stretti), arrivi a ~240 unita' a piedi dalla porta e a piu' di 160 dalle altre uscite, freccia con
   l'angolo verso l'esterno della zona percorribile (media dei pixel bloccati entro 160). Banco
-  991001: l'uscita «Moogle Shop» sul bordo della fontana non scattava: la freccia (disegnata ~100
-  unita' oltre l'uscita) cadeva sulla fontana, toccandola il giocatore saltava sulla cima della fontana
+  991001: l'uscita «Moogle Shop» sul bordo della fontana non scattava: la freccia (creduta ~100
+  unita' oltre l'uscita; in realta' 40-80 prima, verso l'interno: [schema-mondi](#schema-mondi), controllo
+  corretto il 14-10) cadeva sulla fontana, toccandola il giocatore saltava sulla cima della fontana
   (isola libera della CLS staccata dalla piazza) e restava fuori dal raggio di 96. Ora le uscite stanno
   a >= 240 dalle isole libere da >= 1000 pixel e la punta della freccia a > 200 (angolo ruotato fino a
   90 gradi); la porta del negozio e' sul bordo alto della piazza a sinistra della fontana (la porta vera
@@ -298,8 +299,9 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   dell'uscita verso l'interno; quindi uscita ~ freccia + 60·(sin a, -cos a). Verificato sui video
   (3 uscite di 1010/1013). Il generatore ha la convenzione dell'angolo giusta (scarti 1-21 gradi
   sulle uscite originali) ma **controlla la freccia 100 unita' oltre l'uscita** (`gen_story_maps.py`
-  righe 602-623, `tx = p + 100·sin`): va corretto in d = 40..80 verso l'interno prima di rigenerare
-  (correzione proposta in `freccia_uscita.md`, non ancora applicata: le mappe sono ferme per I-116).
+  righe 602-623, `tx = p + 100·sin`): va corretto in d = 40..80 verso l'interno prima di rigenerare.
+  **Applicata il 14-10** in `exit_angle` (punti d = 40/60/80 prima dell'uscita lontani > 200 dalle isole;
+  mappe non ancora rigenerate, I-116).
 - **Daybreak Town dai video** (`video\daybreak_town.md/.json`): 27 passaggi con 3 fotogrammi ciascuno
   (FS-2nd, FS-1st, FS-Corridor of Darkness, Market-Warehouse, Market-Avenue, Avenue-Boardwalk,
   Boardwalk-Waterfront Park (due collegamenti: passeggiata alta e parco in basso a sinistra),
@@ -400,6 +402,67 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   Roboloid ha l'anteprima grafica intera di molte stanze assenti: base per un'eventuale
   rigenerazione. Dubbi: AG_0003_01_00 con tre nomi, thumbId diverso dalla stanza nominata in alcune
   righe (OC_0001_00, WL_0001/0002, DW_0004, DB_0007), prefisso del Corridor of Darkness dedotto.
+
+<a id="tour-v2"></a>
+## Tour v2: un giro per zona sulle porte originali (I-116)
+
+Sostituiscono i tour 991001-991008 (porte indovinate). `recon/tools/gen_tours_v2.py [config.json]
+[--available stanze.json] [--worlds DB,AG] [--out DIR]` (~4 min, numpy/scipy) legge lo schema v2 approvato
+(`reference\world_schema\schema_v2\schema_mondi.json` + `_graphs.json`), le stanze di
+`tmp\thethiny_x\rooms_merged\` e le intestazioni STG JP (partenze originali). Uscita in
+`D:\Progetto_Restauro_KH_UX\stage_gen\tours_v2\` (NON in `stage_gen\files`): `mappoi_stg99xxxx*.bin`,
+`reports\<id>.json/.md` (stanze, porte usate con id della porta, coordinate originali e usate, porte omesse
+con il motivo, note), `tours.json` (indice e righe del master), `stage_poi_tours_v2.json` (lo Shadow di ogni
+tour, da unire a mano in `server/game_data/stage_poi.json`), `available_rooms.json`, `validate.json`.
+
+- **Zone**: `zone_storia` di `_graphs.json` (DB 6, AG 4); negli altri mondi le componenti connesse del grafo
+  delle porte di storia (etichette `c1`, `c2`...). Solo porte `scope = storia` fra stanze dello stesso mondo e
+  della zona; omesse (nel rapporto) le porte verso stanze fuori zona o non disponibili, quelle verso la stessa
+  stanza (anelli: il tour ha una parte per stanza) e, fra porte della stessa stanza a <= 96 verso stanze
+  diverse (varianti, es. il labirinto DB_0010), tutte meno quella con piu' missioni di storia.
+- **Porta** (decisioni 13-10): uscita = `story_median`; angolo = il piu' frequente fra le missioni di storia
+  (a parita' quello della missione piu' vicina alla mediana); arrivo = mediana del gruppo di arrivi (a catena
+  entro 96) piu' numeroso delle missioni di storia, verso = il piu' frequente nel gruppo (quasi sempre 0 =
+  libero: il validatore lo segnala come avviso, e' il valore originale). [3] = distanza residua al bersaglio,
+  [4] = 1 + passi dalla parte di destinazione a quella del bersaglio (come gli originali).
+- **Aggancio**: le uscite originali stanno spesso su un pixel bloccato (bordo). Si tiene il punto originale se
+  e' percorribile e aggancia una componente raggiunta entro 48 (regole di `validate_maps.py`), altrimenti il
+  pixel con spazio libero > 16 piu' vicino di una componente raggiunta, al massimo 96 (raggio di scatto del
+  client; oltre, porta omessa): 14-10, 206 uscite su 346 spostate, al massimo 85, mediana 35. Arrivi a <= 120
+  da un'uscita della parte di destinazione spostati nella stessa componente a >= 140 da tutte (10 arrivi,
+  24-167 dall'originale). Porte omesse: 55 «stessa porta», 24 irraggiungibili, 19 anelli, 16 verso stanze non
+  disponibili (piu' quelle fuori zona). Componenti raggiunte a punto fisso dalla partenza seguendo le uscite attive, **con i salti
+  interni** (`_jmp.bin`: record {cella CHP, k, k x (x1, y1, x2, y2, h)} di interi, gradini fra livelli,
+  presi nei due versi): `validate_maps.py --jmp` fa lo stesso (senza `--jmp` invariato).
+- **Partenza**: stanza con piu' partenze di missioni di storia fra quelle che raggiungono almeno 3/4 delle
+  stanze del pezzo (es. DB z2 = Fountain Square); punto = medoide delle partenze originali in quella stanza
+  (spostato a >= 300 dalle uscite se a < 200). Le stanze non raggiunte (sensi unici, uscite irraggiungibili)
+  fanno un tour a parte (zona `z1.2`...). Ordine delle parti = BFS sulle uscite attive.
+- **Bersaglio**: uno Shadow (10001) nella stanza piu' lontana (passi), nel punto piu' lontano a piedi
+  dall'ingresso a >= 240 dalle uscite, preferendo i punti senza giro lungo; niente altri nemici, niente
+  forzieri.
+- **stageId** = 992000 + indice del mondo x 100 + numero progressivo del tour nel mondo (DB 1 ... ED 8, DG 9,
+  CS 11, HD 12, NL 13, SR 14): 992101-993406; `id` del master = stageId - 900000. Nome «Tour <XX><n> <stanza
+  di partenza>».
+- **Stanze disponibili**: servite oggi (`names_v4.tsv`, `ipa431\names_addnl.tsv`, `stage_gen\files`, meno le
+  incomplete di `rooms_check.json`) + complete in `rooms_merged` (`_manifest.json` status `completa`): 399.
+  Quando `rooms_gen` (risorse 35) e' pronto rilanciare con `--available <lista finale>` (JSON lista o
+  `{"available": [...]}`). Oggi solo 992112, 992802, 993102 usano solo stanze gia' servite.
+
+Esito 14-10: **57 tour, 207 parti** (2: 23, 3: 13, 4: 8, 5: 5, 6: 4, 7-9: 3, 17: 1); 19 stanze disponibili
+senza porte utilizzabili (in `tours.json` `single_rooms`). `validate_maps.py <tours_v2> <cartella con map\ ->
+rooms_merged> --jmp`: **0 errori**; avvisi: verso d'arrivo 0 (originale), «giro lungo» in 8 tour (9 verso porte
+originali, lasciate dove sono: es. 992101 labirinto DB_0010, 992502 Underworld; 1 verso il bersaglio, 993402),
+un bersaglio a 163 da un'uscita (992201, stanza piccola). Senza `--jmp` 14 tour hanno porte raggiungibili solo con
+i salti. Per il validatore: giunzione `D:\Progetto_Restauro_KH_UX\tmp\tours_v2_cls\map` -> `rooms_merged`.
+
+Master: `KHUX_TOURS_V2=1` (o il percorso di `tours.json`) in `make-game-tables.js` aggiunge le righe dei tour
+(copie della 1050 come i 99100N; worldId del tour, mondi di Ralph -> 1; musica e miniatura dalla prima
+missione del mondo, miniatura della stanza di partenza se una missione ha lo stesso thumbId). Provato su una
+copia: +57 righe, nessuna riga esistente cambiata. Comando (poi alzare la revisione del master):
+`$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; $env:KHUX_TOURS_V2='1'; node server\make-game-tables.js
+D:\Progetto_Restauro_KH_UX\wiki\medals.json`. Avvio: `server/save/smoke.json` `{"stageIds": [992101, ...]}`
+(server.js accetta gia' gli stageId del master); mappe da copiare in `stage_gen\files\stage` e POI da unire.
 
 <a id="nemici"></a>
 ## Nemici nelle mappe
