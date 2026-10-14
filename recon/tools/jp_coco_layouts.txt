@@ -133,3 +133,59 @@ Legal.json
 # Increase Storage: popup del limite delle medaglie ([fn]) e conferma ([fn])
 PopupNormal_MedalPossessed1_ver350.json
 PopupNormal_MedalPossessed2.json
+
+# --- Party e classifiche (I-006, I-106, I-113, I-114; 14-10) ---
+# PartyTopScene_ver131 ([fn]) assente da ogni risorsa WW: GUIReader null, SIGSEGV a 0x170 aprendo
+# Party / Party Search (dopo POST /party/login). Classifiche: Ranking_MainPanel_ver230 ([fn]),
+# RankingPartyScene_ver1301 ([fn]) e le altre scene/pannelli che il client WW cita. Controllo
+# import_jp_coco.py --check: tutte ok tranne 4 con texture assenti ovunque (sotto, da decidere).
+PartyTopScene.json
+PartyTopScene_ver131.json
+PartyTop_AlertRequest_ver120.json
+PartyTop_Edit.json
+PartyTop_InfoRequest_ver120.json
+PartyTop_InfoRequest_ver131.json
+PartyTop_Initial.json
+PartyTop_InitialManagement_Scene_ver210.json
+PartyTop_InitialPanel.json
+PartyTop_InitialRequest_Scene_ver130.json
+PartyTop_Invitation_Scene_ver130.json
+PartyTop_Join.json
+PartyTop_JoinPanel.json
+PartyTop_MemberCheck_Scene_ver130.json
+PartyTop_MemberList_ver240.json
+PartyTop_info.json
+PartyTop_right1_ver131.json
+PartyTop_right2_ver131.json
+PartyTop_right3_ver131.json
+PartyTop_right4_ver131.json
+PopupNormal_PartySearch_Approvalmethod.json
+PopupNormal_PartySearch_Level_ver230.json
+PopupNormal_PartySearch_Lux.json
+PopupNormal_PartySearch_Membernumber.json
+PopupNormal_PartySearch_PartyRank.json
+PopupNormal_PartySearch_Style.json
+PopupNormal_PartySearch_Timezone.json
+PopupNormal_Party_General.json
+PopupNormal_Party_IDSearch.json
+PopupNormal_Party_Jewel.json
+PopupNormal_Party_JoinNew.json
+PopupNormal_Party_JoinRequest.json
+RankingColosseumScene_ver1301.json
+RankingHiScoreScene.json
+RankingPartyScene_ver1301.json
+RankingPvPScene.json
+Ranking_Balloon_ver140.json
+Ranking_IconPanel_ver131.json
+Ranking_MainPanel_ver230.json
+Ranking_PartyPanel.json
+Ranking_RewardPanel.json
+Ranking_RewardPanel2_ver130.json
+Ranking_TacticalPanel_ver260.json
+Ranking_preparation.json
+TresLSI_RankingPanel.json
+TresLSI_RankingScene_ver310.json
+? Ranking_Result.json                   # Rank_Result_Deco.png e Rank_Title_3.png assenti ovunque
+? Ranking_Result_PvP.json               # Rank_Result_Deco.png assente ovunque
+? Ranking_Reward_ver1301.json           # Rank_Title_3.png assente ovunque
+? RankingRewardScene_ver1301.json       # Rank_Title_3.png assente ovunque (img/ranking/Rank_Title_%d.png)

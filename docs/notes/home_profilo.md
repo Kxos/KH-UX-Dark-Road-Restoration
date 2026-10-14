@@ -67,6 +67,9 @@ assenti da names_v4, addnl e stage_gen. Aggiunti gli originali JP 4.3.1 a `jp_co
   (`PopupNormal_MedalPossessed2.json`: Txt_UpperLimit_before/after). La richiesta d'acquisto al
   server (dopo OK) non e' ancora gestita.
 Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta un `-Quick`.
+- Party (Other e banner «Party Search» della home) e Rankings: crash e «200 ERROR :133» spiegati in
+  [server](server.md#party-ranking) (layout `PartyTopScene_ver131` e `Ranking*` assenti dalle risorse
+  WW, `GET /ranking/lux` non gestita; 14-10).
 
 <a id="profilo"></a>
 ## Profilo

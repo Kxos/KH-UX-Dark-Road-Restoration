@@ -502,3 +502,40 @@ bit 4 stringa (`recon/tools/response_schema.py`).
   `RankingPvPScene`, `Ranking_Result_PvP`, `BattleResultPvPWinScene`/`LoseScene`, Ranking_* .
 - Resta: battaglia vera (`/pvp/entry` 204 con avversario da `vsUsers`, `/pvp/clear` 194 non
   analizzata), classifiche con giocatori, premi (`pvpScoreReward`, `rankingPvp`).
+
+<a id="party-ranking"></a>
+## Party e classifiche (Rankings della home)
+
+Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
+
+- **Party / Party Search** (Other > Party, banner della home): `GET /payment/info` (24), `GET /party` (83),
+  `GET /party/member/list` (86), `PUT /party/notice` (81), `POST /party/login` (82), poi SIGSEGV a
+  0x170. Le risposte non c'entrano: con `userParty.partyId` 0 la 82 legge solo `userParty`
+  (`[fn]`, salto a 0x7c4ab0 prima di `party`/`partyLeader`). La scena `[fn]` carica
+  `cocostudio/publish/PartyTopScene_ver131.json`, assente da ogni risorsa WW, come tutti i 31 layout
+  Party che il client cita (`PartyTop_*`, `PopupNormal_Party*`, `PopupNormal_PartySearch_*`; servite
+  solo `PartyTop_JoinManagement_Scene_ver150` e `PartyTop_MultiMemberList_Scene_ver150`): GUIReader
+  torna null. Originali JP 4.3.1 in `recon/tools/jp_coco_layouts.txt` (tutti ok a `--check`).
+  Senza party si apre `PartyTop_Initial.json` (`[fn]`: Txt_PREdit/Button_PREdit,
+  Txt/Button_InitialRequest = cerca, Txt/Button_InitialManagement = crea).
+- `POST /party/login` (82): `userParty` + `isAbsenceLeader`. `GET /party/search/active` (87):
+  `partyList[]` (`[fn]`), vuoto. Creare un party (79) e il resto (84-106) restano agli
+  schemi automatici: da provare.
+- «7 ERROR :249» al riavvio dopo il crash del Party = `PUT /passive/list` (249) con codice curl 7
+  (connessione rifiutata): la rete del guest era caduta, non e' un errore del server.
+- **Classifiche** (`[fn]` disegna l'elenco; scheda Lux = tipo 4, `+0x360` 1 = propria
+  posizione / 2 = prime / altro = confine; `rankingStatus` 2 = elenco, 1/3 = messaggio):
+  - Lux, parser `[fn]` con chiave per azione: 129 `/ranking/weekly/user`
+    (`luxRankingWeekly`), 130 monthly (`luxRankingMonthly`), 131/132 `.../own`
+    (`luxRankingWeeklyOwn`/`MonthlyOwn`), 133 `/ranking/lux` e 134 `/ranking/lux/own` (`luxRanking`),
+    178 `/ranking/lux/border` (`luxRankingBorder`). Campi `rankingDatas[]`, `rankingStatus` int,
+    `rankingTermStart`/`rankingTermEnd` data, `lastRank` int. Elemento `[fn]`: `userData`
+    (campi di `userData.user`, `[fn]`), `userDetail` (`[fn]`), `userAvatar`
+    (`[fn]`), `lux` uint64, `rank` int. Senza 133: «200 ERROR :133».
+  - High score `[fn]` (135/136/179) e Colosseo `[fn]` (139/140/180): stessi campi;
+    Party `[fn]` (137/138/184): `rankingDatas`, `rankingStatus`, `lastRank`, `updateTime`,
+    `nextUpdateTime`. Server: il giocatore 1° nelle Lux, le altre vuote.
+  - Layout: `Ranking_MainPanel_ver230` (`[fn]`), `RankingPartyScene_ver1301` (`[fn]`)
+    e gli altri 17 `Ranking*` citati, tutti assenti dalle risorse WW: originali JP nell'elenco; 4
+    (`Ranking_Result*`, `Ranking_Reward_ver1301`, `RankingRewardScene_ver1301`) da decidere per
+    `Rank_Title_3.png`/`Rank_Result_Deco.png` assenti ovunque.
