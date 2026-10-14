@@ -180,6 +180,9 @@ function route(url) {
   if (p === '/user/present/receive') return 'presentreceive';
   if (p === '/user/material') return 'usermaterial';
   if (p === '/campaign') return 'campaign';
+  if (p === '/ranking/reward/check') return 'rankingrewardcheck';
+  // Coliseum PvP (azioni 194-205): respondPvp
+  if (p === '/pvp' || p.startsWith('/pvp/') || p.startsWith('/ranking/pvp')) return 'pvp'; // anche pvpparade
   if (p.startsWith('/multi/')) return routeMulti(p); // Union Cross: server/multi.js
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
@@ -1463,6 +1466,8 @@ function grantSphereReward(masu, i) {
 // POST /user/sphere/update (azione 44): {sphereBoardId, releaseMasuId} o {releaseMasuId 0, allOpen 1}.
 // Si scalano gli Avatar Coin, si danno i premi e, a bacheca completa, il titolo 2000+N
 function respondSphereUpdate(res, req) {
+  const now = serverTime();
+  const snap = inventorySnapshot(now); // solo le voci toccate dai premi (vedi inventoryBlocks)
   const boardId = Number(req?.sphereBoardId);
   const board = masterRows('sphere').find((r) => r.sphereBoardId === boardId);
   const s = sphereBoards()[boardId];
@@ -1482,21 +1487,50 @@ function respondSphereUpdate(res, req) {
     } else console.log(`[sphere] sblocco rifiutato: bacheca ${boardId}, nodi ${todo.join(',') || '-'}, costo ${cost}`);
   }
   savePlayer();
-  const now = serverTime();
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData() },
     userSphere: { userSphereDatas: s ? [userSphereData(boardId)] : [], notChargedSphereBoardIds: [] },
-    ...inventoryBlocks(now),
+    ...inventoryBlocks(now, snap),
   });
 }
 
-// liste dell'inventario che le risposte 44/182/190 rimandano complete (il client le sostituisce)
-function inventoryBlocks(now) {
+// Liste dell'inventario delle risposte 44/49/190 (rami 0x7c33bc e 0x7cad14 di FUN_007c3204).
+// Ogni chiave e' OBBLIGATORIA: parser nullo (chiave assente o non array, FUN_0071f8ec) = errore
+// del dispatcher (cbz -> w19 = 0). Ma l'array vuoto e' valido e il client NON sostituisce le
+// liste: userMaterials/userMedals/userSkills passano voce per voce per un upsert per id
+// (FUN_007d6834 materiali, number 0 = tolto; FUN_007d6188 medaglie; FUN_007d65f0 skill) che
+// ricopia tutto l'elenco e ne ricostruisce l'indice a ogni voce: con ~2000 medaglie O(n^2),
+// ~6,5 s di attesa dopo ogni sblocco di nodo (banco 14 ottobre, come I-083 per il Level Up).
+// Con snap (inventorySnapshot preso prima dei premi) si mandano solo le voci nuove o cambiate;
+// se una voce e' sparita (l'upsert non sa togliere medaglie/skill) si rimanda la lista intera.
+// KHUX_FULL_INVENTORY=1 torna alle liste complete. Le altre liste restano complete (piccole;
+// keyblade/deck/parti/titoli non verificati, sub-slot e Burst li sostituisce: +0x890, +0x930).
+const INVENTORY_DELTA = { userMaterials: 'userMaterialId', userMedals: 'userMedalId', userSkills: 'userSkillId' };
+const FULL_INVENTORY = process.env.KHUX_FULL_INVENTORY === '1';
+
+function inventoryDeltaLists(now) {
+  return { userMaterials: userMaterialsData(), userMedals: userMedalsData(now), userSkills: userSkillsData(now) };
+}
+
+function inventorySnapshot(now) {
+  if (FULL_INVENTORY) return null;
+  const lists = inventoryDeltaLists(now), snap = {};
+  for (const [k, id] of Object.entries(INVENTORY_DELTA)) snap[k] = new Map(lists[k].map((e) => [e[id], JSON.stringify(e)]));
+  return snap;
+}
+
+function inventoryBlocks(now, snap = null) {
+  const lists = inventoryDeltaLists(now);
+  if (snap) {
+    for (const [k, id] of Object.entries(INVENTORY_DELTA)) {
+      const cur = new Set(lists[k].map((e) => e[id]));
+      if ([...snap[k].keys()].some((x) => !cur.has(x))) continue; // voce sparita: lista intera
+      lists[k] = lists[k].filter((e) => snap[k].get(e[id]) !== JSON.stringify(e));
+    }
+  }
   return {
-    userMaterials: userMaterialsData(),
-    userMedals: userMedalsData(now),
-    userSkills: userSkillsData(now),
+    ...lists, // userMaterials, userMedals, userSkills
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
     userAvatarParts: userAvatarPartsData(),
@@ -1591,7 +1625,9 @@ function missionsData() {
 // POST /user/mission/receive (azione 190): {receiveMissionIds}; premio rewardType/itemId/itemNum,
 // poi la lista aggiornata e l'inventario completo, come /stage/clear
 function respondMissionReceive(res, req) {
-  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  const now = serverTime();
+  const snap = inventorySnapshot(now); // solo le voci toccate dai premi (vedi inventoryBlocks)
+  const nowMs = Date.parse(now.replace(' ', 'T') + 'Z');
   const rows = new Map(masterRows('mission').map((r) => [r.id, r]));
   for (const id of req?.receiveMissionIds || []) {
     const r = rows.get(id);
@@ -1602,13 +1638,12 @@ function respondMissionReceive(res, req) {
     grantItem(r.rewardType, r.itemId, r.itemNum);
   }
   savePlayer();
-  const now = serverTime();
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now), userDetail: userDetailData() },
     missions: missionsData(), beginnerLimitTime: beginnerLimitTime(),
     userSphere: userSphereAll(),
-    ...inventoryBlocks(now),
+    ...inventoryBlocks(now, snap),
   });
 }
 
@@ -1741,6 +1776,8 @@ function respondUserPresent(res) {
 // (FUN_00778858, byte +0x40 della riga) quelli della sua lista che non ci sono (0x7d0fd0).
 // userStone non lo legge (la 1.0.1 si'): lo si manda lo stesso per i jewel.
 function respondPresentReceive(res, body) {
+  const now = serverTime();
+  const snap = inventorySnapshot(now); // solo le voci toccate dai regali (vedi inventoryBlocks)
   const want = new Set((body?.receivePresentIds || []).map(Number));
   const keep = [];
   for (const p of livePresents()) {
@@ -1750,11 +1787,10 @@ function respondPresentReceive(res, body) {
   }
   player.presents = keep;
   savePlayer();
-  const now = serverTime();
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
-    ...inventoryBlocks(now),
+    ...inventoryBlocks(now, snap),
     lastUserPresentIds: keep.map((p) => p.userPresentId),
     userStone: { freeStone: player.freeStone || 0, payStone: 0 },
   });
@@ -2506,6 +2542,58 @@ function respondColosseum(res) {
     userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
   });
 }
+// Coliseum PvP, stato «vuoto» ma valido (nessun avversario, nessuna classifica). Rami di
+// FUN_007c3204 e parser (indirizzi Ghidra; un parser che restituisce null = «200 ERROR :<id>»):
+// - GET /pvp (195, ramo 0x7ca204, FUN_0079989c): pvp {pvpId, playNumber, pvpPoint, pvpClass,
+//   pvpRank uint; openRankingId uint64; numParticipant uint}, tutti obbligatori. pvpId = riga
+//   della tabella master pvp (id 0x47, getter FUN_00f18ff0): il pannello AdventureTop2_PvP_Button
+//   (FUN_00da22a0, detailUrl a +0x94) e FUN_00da75c4 la leggono SENZA controllo del null.
+//   pvpClass 1..8 (FUN_00da75c4: array::at su pvpClass - 1 con la riga rankingPvp presente).
+// - GET/POST /pvp/keyblade (196/197, ramo 0x7c3b9c, FUN_0079a240): pvp.keybladeIds [uint64] e
+//   pvp.userDecks (FUN_00792bf4, elemento FUN_00792a8c come /user/deck). Corpo del POST
+//   (FUN_00805e60): userDecks [{userDeckId, medals, petBaseSlotMedal}], keybladeIds [uint64].
+// - GET /pvp/vs_list (198, ramo 0x7c559c, FUN_0079aa04): vsUsers [] (elemento FUN_0079a888).
+// - GET /ranking/pvpParade (199, ramo 0x7c9a24, FUN_007a4568): pvpParade {pvpClass uint,
+//   rankingPvpTopRanker [] (elemento FUN_007a43e4)}.
+// - GET /ranking/pvp, /own, /border (200/201/202, rami 0x7c6ec8/0x7c5d20/0x7c6db0, FUN_0078806c
+//   con chiave pvpRanking/pvpRankingOwn/pvpRankingBorder): {rankingDatas [] (elemento
+//   FUN_00787d54: userData, userDetail... per giocatore), rankingStatus int, rankingTermStart e
+//   rankingTermEnd "YYYY-MM-DD HH:MM:SS"}. rankingStatus 2 = elenco (FUN_00d55964), 1/3 = messaggi.
+// - GET /pvp/rewardlist (203, ramo 0x7ca344, FUN_007a53dc): pvpPoint uint64, scoreRewardId [uint].
+// - POST /pvp/entry (204), DELETE /pvp/lock (205): nessun parser (0x7d0f0c, esito 1): solo ret.
+// Sequenza AdventureTop PvP: DELETE /pvp/lock (lambda FUN_00dc3c58) -> /pvp (FUN_00dc3ff0) ->
+// /pvp/keyblade (FUN_00dc4208) -> /pvp/vs_list (FUN_00dc43d4) -> FUN_00dc47f0 -> FUN_00da22a0.
+const PVP_ID = Number(process.env.KHUX_PVP_ID || 1);
+function pvpSeason() {
+  // stagione segnaposto: il mese corrente dell'ora del server
+  const [y, m] = serverTime().slice(0, 7).split('-').map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const mm = String(m).padStart(2, '0');
+  return { start: `${y}-${mm}-01 00:00:00`, end: `${y}-${mm}-${last} 23:59:59` };
+}
+function respondPvp(res, p, method, body) {
+  if (p === '/pvp') {
+    return send(res, 200, { ret: ret(), pvp: {
+      pvpId: PVP_ID, playNumber: 0, pvpPoint: 0, pvpClass: 1, pvpRank: 0, openRankingId: 0, numParticipant: 0 } });
+  }
+  if (p === '/pvp/keyblade') {
+    if (method === 'POST' && Array.isArray(body?.keybladeIds)) {
+      player.pvpKeybladeIds = body.keybladeIds.map(Number).filter((n) => Number.isSafeInteger(n) && n >= 0);
+      savePlayer();
+    }
+    return send(res, 200, { ret: ret(), pvp: { keybladeIds: player.pvpKeybladeIds || [], userDecks: userDecksData() } });
+  }
+  if (p === '/pvp/vs_list') return send(res, 200, { ret: ret(), vsUsers: [] });
+  if (p === '/ranking/pvpParade') return send(res, 200, { ret: ret(), pvpParade: { pvpClass: 1, rankingPvpTopRanker: [] } });
+  const rankingKey = { '/ranking/pvp': 'pvpRanking', '/ranking/pvp/own': 'pvpRankingOwn', '/ranking/pvp/border': 'pvpRankingBorder' }[p];
+  if (rankingKey) {
+    const s = pvpSeason();
+    return send(res, 200, { ret: ret(), [rankingKey]: { rankingDatas: [], rankingStatus: 2, rankingTermStart: s.start, rankingTermEnd: s.end } });
+  }
+  if (p === '/pvp/rewardlist') return send(res, 200, { ret: ret(), pvpPoint: 0, scoreRewardId: [] });
+  // /pvp/entry, /pvp/lock, /pvp/clear (194, non analizzata) e altro: il solo involucro
+  return send(res, 200, { ret: ret() });
+}
 const STAGE_CLEARED = Number(process.env.KHUX_STAGE_CLEARED || 2);
 
 function respondStageList(res) {
@@ -2576,6 +2664,8 @@ function respondBootstrap(res) {
 
 function send(res, code, obj) {
   const body = Buffer.from(JSON.stringify(obj), 'utf8');
+  // risposte grandi (inventario completo): il client impiega secondi a leggerle
+  if (body.length > 200000) console.log(`[send] risposta di ${Math.round(body.length / 1024)} KB`);
   res.writeHead(code, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': body.length,
@@ -2679,6 +2769,14 @@ function handler(scheme) {
   if (kind === 'colosseum') return respondColosseum(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: [] });
+      // POST /ranking/reward/check (azione 142, ramo 0x7c9708 di FUN_007c3204): prima FUN_007a5728
+      // vuole tre array in radice (lastRankingResults, rankingRewardIds, openRankingIds; tipo 3 =
+      // oggetto, 4 = array), poi rankingReward: array vuoto = nessun premio di classifica, salto a
+      // 0x7d0ed0 (esito 1). Senza: «200 ERROR :142» al Challenge della Daily del Coliseum (banco 14-10)
+      if (kind === 'rankingrewardcheck') {
+        return send(res, 200, { ret: ret(), lastRankingResults: [], rankingRewardIds: [], openRankingIds: [], rankingReward: [] });
+      }
+      if (kind === 'pvp') return respondPvp(res, req.url.split('?')[0], req.method, entry.bodyDecoded);
       // GET /raid/list/181221 (azione 240, FUN_007aadc0): selfRaid (FUN_0079c07c modo 0:
       // raidStatus int, raid {raidId uint64, level, useAp, timeLeft, feverFlag,
       // feverTime, stageId, parts[]}) e raids[] ({...raid, isRelief, isEntry}).

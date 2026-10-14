@@ -478,11 +478,64 @@ for root, opts in roots:
             writes.setdefault(k, v)
     results.append(r)
 
+# ---- animazioni LWF originali -----------------------------------------------------------------
+# Cartelle lwf/ assenti dalle risorse WW che make_layouts sostituiva con copie rinominate di
+# Result_Reward: la copia mostrava «CONGRATULATIONS!» sul nodo della bacheca appena aperto e il
+# client aspettava la sua fine (~7 s) prima del popup (banco 14-10). Si prendono .lwf e PNG (->
+# BTF) della revisione corrente; il .res non lo serve nessuna risorsa. Chiavi relative a OUT.
+JP_LWF = ['lwf/sphere/SpIcon_Open', 'lwf/sphere/SphereMap_Complete']
+# Texture citate dal LWF ma assenti dall'estrazione JP: il nome e' <cartella>_<nome originale in
+# esadecimale>.png e lo stesso nome originale (effetti KeyBlade_ef*, png_ef0*, star01, 進化_KeyBlade_
+# ef*) sta in altre LWF. Senza, il client non disegna quei pezzi: «COMPLET» senza la seconda E
+# (banco 14-10). Prima le LWF JP, poi la Result_Reward servita (gia' BTF, estratta in layouts\orig).
+LWF_FILL = [os.path.join(JP_ROOT, 'lwf', 'battleresult', 'Result_Reward'),
+            os.path.join(JP_ROOT, 'lwf', 'adventure', 'Colosseum_Open'),
+            os.path.join(JP_ROOT, 'lwf', 'battle', 'Burst_Medal_Change'),
+            os.path.join(D, 'layouts', 'orig', 'lwf', 'battleresult', 'Result_Reward')]
+# nomi solo numerici (lettere della scritta) non si cercano altrove: «8» e' la seconda E di COMPLETE
+LWF_ALIAS = {'lwf/sphere/SphereMap_Complete/SphereMap_Complete_382e706e67.png':
+             'lwf/sphere/SphereMap_Complete/SphereMap_Complete_362e706e67.png'}
+fill_idx = {}
+for fd in LWF_FILL:
+    if os.path.isdir(fd):
+        pre = os.path.basename(fd) + '_'
+        for rel, p in latest(fd).items():
+            if rel.startswith(pre) and rel.endswith('.png'):
+                fill_idx.setdefault(rel[len(pre):], p)
+for d in JP_LWF:
+    src_dir = os.path.join(JP_ROOT, *d.split('/'))
+    if not os.path.isdir(src_dir):
+        continue
+    have = {}
+    for rel, p in latest(src_dir).items():
+        if rel.endswith(('.lwf', '.png')):
+            have[d + '/' + rel] = p
+    base = os.path.basename(d)
+    lwf = have.get('%s/%s.lwf' % (d, base))
+    if lwf:
+        for t in sorted(set(re.findall((re.escape(base) + r'_([0-9a-f]+\.png)').encode(), open(lwf, 'rb').read()))):
+            name = '%s/%s_%s' % (d, base, t.decode())
+            if name in have:
+                continue
+            if name in LWF_ALIAS and LWF_ALIAS[name] in have:
+                have[name] = have[LWF_ALIAS[name]]
+            elif t.decode() in fill_idx:
+                have[name] = fill_idx[t.decode()]
+            else:
+                print('jp_lwf: texture assente ' + name)
+    for name, p in have.items():
+        writes.setdefault(name, ('jp', p, None))
+
+
+def out_path(name):
+    return os.path.join(OUT if name.startswith('lwf/') else pub_out, *name.split('/'))
+
+
 # ---- scrittura --------------------------------------------------------------------------------
 manifest, n_btf, n_png, removed = {}, 0, 0, []
 if not args.check:
     for name, w in sorted(writes.items()):
-        dst = os.path.join(pub_out, *name.split('/'))
+        dst = out_path(name)
         if w[0] == 'delete':
             if os.path.exists(dst):
                 os.remove(dst)
@@ -522,7 +575,7 @@ if not args.check:
     for name, m in old.items():
         if name in manifest or name in writes:
             continue
-        dst = os.path.join(pub_out, *name.split('/'))
+        dst = out_path(name)
         if os.path.exists(dst) and sha(open(dst, 'rb').read()) == m['sha1']:
             if m.get('backup') and os.path.exists(m['backup']):
                 shutil.copyfile(m['backup'], dst)
