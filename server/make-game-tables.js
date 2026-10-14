@@ -593,6 +593,34 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
       stagesOut.push(row);
     }
   }
+  // tour v2 (I-116, recon/tools/gen_tours_v2.py, docs/notes/mappe_storia.md#tour-v2): un giro per zona sulle
+  // porte originali dello schema dei mondi v2, stage 992000 + indice del mondo * 100 + zona. Righe dall'indice
+  // tours.json del generatore: KHUX_TOURS_V2=1 (D:\Progetto_Restauro_KH_UX\stage_gen\tours_v2\tours.json) o
+  // KHUX_TOURS_V2=<percorso>. Copie della 1050 come i tour 99100N; worldId dal tour (mondi di Ralph -> 1, non
+  // sono nella tabella world), musica dalla prima missione del mondo; miniatura della stanza di partenza solo se
+  // una missione della master ha lo stesso thumbId (immagine presente), altrimenti quella della prima missione.
+  if (process.env.KHUX_TOURS_V2) {
+    const p = process.env.KHUX_TOURS_V2 === '1'
+      ? 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\tours_v2\\tours.json' : process.env.KHUX_TOURS_V2;
+    const tpl = stagesOut.find((s) => s.stageId === 1050);
+    const index = JSON.parse(fs.readFileSync(p, 'utf8'));
+    for (const t of index.tours) {
+      if (have.has(t.stageId) || stagesOut.some((s) => s.stageId === t.stageId)) continue;
+      const story = stagesOut.filter((s) => s.stageKind === 1 && s.worldId === t.worldId && s.stageId < 100000)
+        .sort((a, b) => a.id - b.id);
+      const ref = story[0];
+      const row = Object.assign(JSON.parse(JSON.stringify(tpl)), {
+        stageId: t.stageId, id: t.id, name: t.name, mapName: t.mapName, worldId: t.worldId, useAp: 0,
+        validBeforeDrama: 0, beforeDramaId: [], beforeDramaType: [], validAfterDrama: 0, afterDramaId: [],
+        afterDramaType: [],
+      });
+      if (ref) {
+        for (const k of ['thumbId', 'bgmField', 'bgmBattle', 'bgmBoss']) if (k in ref) row[k] = ref[k];
+      }
+      if (story.some((s) => s.thumbId === t.thumbId)) row.thumbId = t.thumbId;
+      stagesOut.push(row);
+    }
+  }
   // filmati: quelli assenti dalle risorse si cercano nel theater della versione finale
   // (righe con lo stesso stageId: i filmati della storia rifatti come lwf/drama/<id>)
   const theaterBy = new Map();

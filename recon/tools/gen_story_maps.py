@@ -600,8 +600,9 @@ def door_px(folder, xy, pts):
 
 def exit_angle(folder, pts, p, cent):
     """Angolo della freccia verso l'esterno della zona percorribile nel punto dell'uscita (media dei
-    pixel bloccati entro 160): la freccia, disegnata ~100 unita' oltre l'uscita in quella direzione, cade
-    sul muro/sulla scala e non su un ostacolo interno. Senza pixel bloccati vicini: dal centro."""
+    pixel bloccati entro 160). Il client ([fn]/[fn], reference/world_schema/
+    freccia_uscita.md) disegna la freccia 40-80 unita' PRIMA dell'uscita, verso l'interno, con la punta
+    verso l'esterno: (x - d sin a, y + d cos a), d in [40, 80]. Senza pixel bloccati vicini: dal centro."""
     import math
     import numpy as np
     free, dist, F = room_raw(folder, pts)
@@ -615,13 +616,15 @@ def exit_angle(folder, pts, p, cent):
         return door_angle(cent, p)
     vx, vy = float(xx[k].mean()), float(yy[k].mean())
     a0 = int(round(math.degrees(math.atan2(vx, -vy)))) % 360
-    # punta della freccia (~100 oltre l'uscita) lontana dalle isole: altrimenti si ruota fino a 90 gradi
+    # freccia (40-80 prima dell'uscita, verso l'interno) lontana dalle isole: toccandola il giocatore non
+    # deve saltare su un'isola libera fuori dal raggio di 96; altrimenti si ruota fino a 90 gradi.
+    # (Prima si controllava un punto 100 unita' OLTRE l'uscita: lato sbagliato, freccia_uscita.md.)
     Hc, Wc = dist.shape
     for da in (0, 15, -15, 30, -30, 45, -45, 60, -60, 75, -75, 90, -90):
         a = (a0 + da) % 360
-        tx = int(p[0] + 100 * math.sin(math.radians(a)))
-        ty = int(p[1] - 100 * math.cos(math.radians(a)))
-        if not (0 <= ty // F < Hc and 0 <= tx // F < Wc) or dist[ty // F, tx // F] > 200:
+        pts_ = [(int(p[0] - d * math.sin(math.radians(a))), int(p[1] + d * math.cos(math.radians(a))))
+                for d in (40, 60, 80)]
+        if all(not (0 <= ty // F < Hc and 0 <= tx // F < Wc) or dist[ty // F, tx // F] > 200 for tx, ty in pts_):
             return a
     return a0
 

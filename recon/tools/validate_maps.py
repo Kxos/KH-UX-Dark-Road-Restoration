@@ -1,6 +1,9 @@
 """Controllo delle mappe di missione (STG + parti MAP) in una cartella stage/.
 
-    python -I validate_maps.py <cartella_stage> <cls_dir> [stageId ...] [--json report.json]
+    python -I validate_maps.py <cartella_stage> <cls_dir> [stageId ...] [--json report.json] [--jmp]
+
+--jmp: le componenti collegate dai salti interni della stanza (_jmp.bin accanto alla CLS) contano come
+raggiunte (gradini fra due livelli; usato per i tour v2 di gen_tours_v2.py). Senza: come prima.
 
 cls_dir: cartella con map/<stanza>/<stanza>_cls.bin (es. maps_x). Formato: stage_gen/exits/NOTE.md.
 Errori (E) per stage:
@@ -54,6 +57,9 @@ def _opt(name, conv):
     return None
 
 
+JMP = '--jmp' in args
+if JMP:
+    args.remove('--jmp')
 jout = _opt('--json', str)
 RADIUS = _opt('--radius', float) or RADIUS
 TOL = _opt('--tol', int) or TOL
@@ -100,6 +106,42 @@ def comp_at(folder, x, y):
     d2 = (xs + x0 - x) ** 2 + (ys + y0 - y) ** 2
     k = int(np.argmin(d2))
     return int(win[ys[k], xs[k]]) if d2[k] <= TOL * TOL else 0
+
+
+_jmp = {}
+
+
+def jump_close(folder, comps):
+    """Con --jmp: componenti raggiunte + quelle collegate dai salti interni della stanza (map/<stanza>/
+    <stanza>_jmp.bin: JMP, n, 0, 0, n record {cella CHP, k, k x (x1, y1, x2, y2, h)} di interi; gradini fra
+    due livelli, nei due versi). Senza --jmp: invariato."""
+    comps = set(comps)
+    if not JMP:
+        return comps
+    if folder not in _jmp:
+        pairs = []
+        p = os.path.join(cls_dir, 'map', folder, folder + '_jmp.bin')
+        if os.path.exists(p) and labels(folder) is not None:
+            b = open(p, 'rb').read()
+            o = 16
+            for _ in range(i32(b, 4)):
+                k = i32(b, o + 4)
+                o += 8
+                for _ in range(k):
+                    x1, y1, x2, y2 = struct.unpack_from('<4i', b, o)
+                    o += 20
+                    a, c = comp_at(folder, x1, y1), comp_at(folder, x2, y2)
+                    if a and c and a != c:
+                        pairs.append((a, c))
+        _jmp[folder] = pairs
+    changed = True
+    while changed:
+        changed = False
+        for a, c in _jmp[folder]:
+            if (a in comps) != (c in comps):
+                comps |= {a, c}
+                changed = True
+    return comps
 
 
 def walkable(folder, x, y):
@@ -216,7 +258,7 @@ def reach_check(h, parts, spart, W=None):
     src = [[] for _ in parts]
     c = comp_at(parts[spart]['room'], h[3], h[4])
     if c:
-        reached[spart].add(c)
+        reached[spart] = jump_close(parts[spart]['room'], {c})
     else:
         E.append('parte %d: partenza (%d,%d) senza pixel percorribile entro %d' % (spart, h[3], h[4], TOL))
     src[spart].append(('partenza', h[3], h[4]))
@@ -232,7 +274,7 @@ def reach_check(h, parts, spart, W=None):
                     continue
                 c = comp_at(parts[dst]['room'], ex[5], ex[6])
                 if c and c not in reached[dst]:
-                    reached[dst].add(c)
+                    reached[dst] = jump_close(parts[dst]['room'], reached[dst] | {c})
                     changed = True
                 tag = ('arrivo da parte %d' % k, ex[5], ex[6])
                 if tag not in src[dst]:
