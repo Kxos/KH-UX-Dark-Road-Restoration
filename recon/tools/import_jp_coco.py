@@ -145,6 +145,14 @@ for ln, line in enumerate(open(args.list, encoding='utf-8'), 1):
                 if not m:
                     sys.exit('%s:%d: clone= non valido %r' % (args.list, ln, c))
                 opts.setdefault('clone', []).append(m.groups())
+        elif p.startswith('set='):              # set=Widget.opzione=valore[,...]: ritocco del layout JP
+            for c in p[4:].split(','):
+                m = re.match(r'^([^.=]+)\.([^.=]+)=(.+)$', c)
+                if not m:
+                    sys.exit('%s:%d: set= non valido %r' % (args.list, ln, c))
+                v = m.group(3)
+                v = int(v) if re.fullmatch(r'-?\d+', v) else float(v) if re.fullmatch(r'-?\d+\.\d+', v) else v
+                opts.setdefault('set', []).append((m.group(1), m.group(2), v))
         else:
             sys.exit('%s:%d: opzione sconosciuta %r' % (args.list, ln, p))
     if args.none:
@@ -280,6 +288,12 @@ def jp_tex(name):
     if p is None and '/' not in name and name in jp_any:
         p = ALT[name] = jp_any[name]
     return p
+
+
+def walk_widgets(w):
+    yield w
+    for c in w.get('children', []):
+        yield from walk_widgets(c)
 
 
 def clone_widget(data, src, new, ref=None):
@@ -431,6 +445,15 @@ for root, opts in roots:
                         r['block'].append('%s: clone %s>%s: %s' % (name, c[0], c[1], err))
                     else:
                         r['warn'].append('widget %s aggiunto (copia di %s)' % (c[1], c[0]))
+                for wname, key, val in opts.get('set', []):
+                    found = [w for w in walk_widgets(data.get('widgetTree', {}))
+                             if w.get('options', {}).get('name') == wname]
+                    if not found:
+                        r['block'].append('%s: set %s.%s: widget assente' % (name, wname, key))
+                    for w in found:
+                        w['options'][key] = val
+                    if found:
+                        r['warn'].append('ritocco %s.%s = %s' % (wname, key, val))
             plan[name] = ('jp', src, data)
             r['layouts'].append(name)
         else:

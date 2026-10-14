@@ -1281,6 +1281,13 @@ LAYOUTS = {
         I('GetStamp', 785, 54, 170, 34, 'World_Stage_Clear.png', s9=False, scale=0.95, visible=False)])),
     # «Other» del menu ([fn]): vedi other_menu
     'MenuDialog_ver300.json': ('func', 'other_menu'),
+    # Transfer Unions (I-107): OtherMenuDialog::openBackupPopup ($_91, [fn]) apre la
+    # scelta dell'account [fn] e la conferma [fn], che caricano la variante
+    # dark_ solo con il flag Dark Road ([fn] +0x1a9), altrimenti quella senza prefisso,
+    # assente da ogni risorsa (anche JP): crash immediato senza richieste. Copie dei dark_ con le
+    # cornici KHUX; i pulsanti Apple/SQEX Bridge (non 9-slice) restano senza immagine come nel dark
+    'MenuDialog_account_select_ver401.json': ('copy', 'dark_MenuDialog_account_select_ver401.json', {}, True),
+    'MenuDialog_account_select_ok_cancel_ver401.json': ('copy', 'dark_MenuDialog_account_select_ok_cancel_ver401.json', {}, True),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
     'TresCommu_CommunicationOther.json': ('build', P('commu_other', 0, 0, 200, 200)),
     # Esito ([fn]): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
