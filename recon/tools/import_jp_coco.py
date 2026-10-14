@@ -499,6 +499,19 @@ LWF_FILL = [os.path.join(JP_ROOT, 'lwf', 'battleresult', 'Result_Reward'),
 _npc = os.path.join(JP_ROOT, 'lwf', 'character', 'npc')
 if os.path.isdir(_npc):
     LWF_FILL += [os.path.join(_npc, n, 'wait') for n in sorted(os.listdir(_npc)) if os.path.isdir(os.path.join(_npc, n, 'wait'))]
+# Icone di stato sopra l'avatar in battaglia (I-124, docs/notes/battaglia.md#hud): BattleStateIcon
+# FUN_00adb7a0 carica lwf/battle/ActMapBuffDeBuffAnim/<BIconNN|DIconNN>/... (tabelle 0x1f1be08 buff,
+# 0x1f1be88 debuff) e il tier BuffNum_Up/DownNN (0x1f1bf28, indice tier + 20); FUN_00adba34 le
+# icone del Reflect lwf/battle/ActMapReflectionAnim/RIcon_* (se il file esiste). Nessuna delle due
+# cartelle e' servita (names_v4 e addnl): niente icone, niente crash. Le texture condivise stanno
+# una sola volta nell'estrazione JP (es. «素材画像_Buff01» in DIcon02): le stesse cartelle fanno
+# da riempimento (101 texture citate, 0 assenti).
+for _grp in ('ActMapBuffDeBuffAnim', 'ActMapReflectionAnim'):
+    _gd = os.path.join(JP_ROOT, 'lwf', 'battle', _grp)
+    if os.path.isdir(_gd):
+        _subs = sorted(n for n in os.listdir(_gd) if os.path.isdir(os.path.join(_gd, n)))
+        JP_LWF += ['lwf/battle/%s/%s' % (_grp, n) for n in _subs]
+        LWF_FILL += [os.path.join(_gd, n) for n in _subs]
 # nomi solo numerici (lettere della scritta) non si cercano altrove: «8» e' la seconda E di COMPLETE
 LWF_ALIAS = {'lwf/sphere/SphereMap_Complete/SphereMap_Complete_382e706e67.png':
              'lwf/sphere/SphereMap_Complete/SphereMap_Complete_362e706e67.png'}

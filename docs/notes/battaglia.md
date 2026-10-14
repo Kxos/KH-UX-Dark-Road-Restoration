@@ -139,3 +139,57 @@ Codice: `CarouselGuiltBurst`, setup `FUN_00b0fbd0` (battaglia) -> `FUN_00aee878`
   `lwf/battle/Sburst/Sburst.lwf`, `SBurst_Revival.lwf` e `img/ui/SBurst_Icon1..3[R].png` (assenti).
 - Da verificare: `abl_15031` (tabella delle mosse dell'avatar, accanto a `fburst_1/2`) assente; altri
   lettori di `isGuilt` (es. `PopupNormal_Guilt_ver130`, layout mancante) non cercati a fondo.
+
+<a id="hud"></a>
+## HUD: confronto con l'originale (I-124)
+
+Riferimento: `reference\battle_hud\hud_khux_utente.jpeg` (originale) contro `screenshots\d14_*.png`.
+Tre elementi mancano da noi.
+
+- **«530% BONUS» con la freccia rossa** (in basso a destra, durante il cut-in dello speciale) = guilt
+  della medaglia. `CarouselDeck`: `FUN_00adfdd0` prepara i movimenti `GuiltBonus`/`GuiltBonus_Plus`
+  dell'armatura `ActMapCarouselAnim` (`FUN_00ae163c`, tabella 0x1f1e820; `FUN_00adefb4` torna NULL
+  se il movimento manca). Allo speciale `FUN_00ae3c90` legge `darklight` della medaglia (riga medal
+  +0x498: 1 cut-in normale, 2 «Dark», 3 nessuno) e la guilt dello slot (`CarouselDeck` +0x4fc +
+  4·slot): se != 0 usa il cut-in `_Guilt` e chiama `FUN_00ae426c`, che scrive `guilt/100 + plus`
+  (+0x488, max 999) nelle ossa `GuiltBonusNum1..3` e mette `GuiltBIcon`/`_eff` sull'immagine
+  `guiltValue - 1` (riga +0x4c0, il tier). La guilt dello slot viene da `FUN_00ae6dc4` = campo +0x10
+  della medaglia di battaglia, che `FUN_00b0d95c` copia da `userMedal.guiltFactor` (struttura
+  +0x2c, parser `FUN_0078d608`) **solo se la battaglia ha `isGuilt`** (record +0x18 =
+  `userDetail.isGuilt`) o se e' la medaglia dell'amico (categoria 2). Server: gia' giusto
+  (`guiltFactor` in `userMedalElement`, `isGuilt` dalla Quest 34). Da noi manca perche' le medaglie
+  del deck hanno guilt 0: nel salvataggio solo la 2216 (Black Coat King Mickey, tier 3, guilt 10000)
+  ce l'ha, e non e' nel deck del keyblade 2. Risorsa: il movimento `GuiltBonus` c'e' nella servita,
+  ma e' una revisione vecchia (8 movimenti, 52 frame): `GuiltBIcon` ha 8 immagini e
+  `FUN_011938bc` (changeDisplayWithIndex) non controlla il limite, quindi una medaglia di tier 9/10
+  (307 righe nel master) con guilt leggerebbe oltre il vettore = crash al cut-in; mancano anche
+  `GuiltBonus_Plus`, il PvP e `MedalAttack_SBurst`. `recon/tools/make_carousel_anim.py` scrive
+  l'armatura JP corrente (18 movimenti, icone 1-10) con un solo atlante col nome servito (WW a
+  sinistra, i 42 frame solo JP a destra, tela 2048x1024; un plist nuovo non si caricherebbe).
+- **Icone di stato sopra l'avatar** («↑↑↑ luna+spada ×15», «Re» col colore dell'attributo):
+  `BattleStateIcon`. `FUN_00adb7a0` cicla i 16 tipi (tier a +0x300; >0 buff `BIconNN`, <0 debuff
+  `DIconNN`, tabelle 0x1f1be08/0x1f1be88) e carica `lwf/battle/ActMapBuffDeBuffAnim/<nome>/<nome>.lwf`
+  piu' il tier `BuffNum_Up/DownNN` (0x1f1bf28, indice tier + 20: «×15» = `BuffNum_Up15`);
+  `FUN_00adba34` le icone del Reflect `lwf/battle/ActMapReflectionAnim/RIcon_*` (solo se il file
+  esiste). Nessuna delle due cartelle e' servita (names_v4, addnl, stage_gen): niente icone, nessun
+  crash. Il JP 4.3.1 le ha (69 + 6 cartelle; texture condivise una volta sola, es. «素材画像_Buff01»
+  in DIcon02): aggiunte a `JP_LWF` di `import_jp_coco.py` con le stesse cartelle come riempimento
+  (101 texture citate, 0 assenti; prova su una copia: 176 file, nomi nuovi nell'indice).
+- **Icona blu sotto il Burst** = posto del pulsante **Super Burst (Supernova)**: `SuperBurst_UI` di
+  `ActionMap_SuperBurst_SelectWindow` (servito; `createSuperBurstUI` `FUN_00aed360`). Si mostra se
+  `setupSuperGuiltBurst` (`FUN_00aef124` -> `FUN_00af14e0`) trova una medaglia del deck con
+  `validSuperBurst` (+0x500) e `superBurstId` (+0x504) != 0, e la battaglia ha `isGuilt`
+  (`FUN_00b0e4cc`, record +0x18) oppure e' la medaglia dell'amico. «SB» = Supernova nel WW (wiki:
+  «"SB" Sephiroth» -> «Supernova - Sephiroth»; `SBurst_Icon1/2/3` = SN, SN+, SN++). Da noi manca
+  perche' nessuna medaglia del master ha `superBurstId`. Nota: il pulsante 4.3.1 usa
+  `SBurst_but01.png` (bussola azzurra, uguale nel WW e nel JP), mentre nella foto c'e' la «bolla»
+  di `SBurst_Icon` senza scritta: forse una versione successiva, da confermare. Per accenderlo: righe
+  medal/burst delle Supernova (`superburstTiming`), `lwf/battle/Sburst` e `SBurst_Revival` (nel JP,
+  da aggiungere a `JP_LWF` insieme ai dati), `img/ui/SBurst_Icon1..3R.png` (JP `img/ui`).
+
+Banco: (1) senza risorse nuove: mettere la 2216 nel deck, uno stage, il suo speciale -> «100% BONUS»
+con l'icona del tier 3 e la freccia (serve `isGuilt` 1: Burst visibile = gia' 1). (2) Dopo
+`python recon\tools\make_carousel_anim.py` (scrive in `stage_gen\files`) e un build: una medaglia di
+tier 9/10 con guilt (Level Up) -> icona viola 9/10 come nella foto, niente crash. (3) Dopo un build
+completo (nomi nuovi: non con `-Quick` se la riserva non basta): uno speciale con un buff (STR/DEF
+su, effetto della riga burst) o un debuff nemico -> icona e «×N» sopra l'avatar.

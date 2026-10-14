@@ -55,7 +55,7 @@ MoogleShopScene_ver410.json
 MoogleShop_Traits_Panel_ver410.json     need=Count,Count_Rare,SkillPanel,SkillPanel_Rare,Panel,Panel_Rare
 ? MoogleShop_Item_Panel.json  # l'unica revisione JP non ha i widget del client WW (ImageButton_Buy1, ImageButton_LockMask, Row_Base, Name_Plate): crash 0x2c all'apertura del Moogle Shop (banco 13-10, r34)
 MoogleShop_IconPanel.json               need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
-MoogleShop_Traits_MedalSelect_Pop_ver410.json
+? MoogleShop_Traits_MedalSelect_Pop_ver410.json  # crash su «Select Medal» (I-121, utente 14-10, risorse 34); il generato funzionava (banco 10-10 ts9-ts11). L'originale ha tutti i nomi che FUN_00e103f4/FUN_00760c64/FUN_00ab567c cercano: causa da catturare sul banco prima di riprovarlo
 MoogleShop_Traits_AddCheck.json
 MoogleShop_Traits_OverwriteCheck_ver410.json
 EquipSellScene.json
@@ -82,6 +82,11 @@ AvatarInfo_Comment_ver132.json
 AvatarInfo_Comment_U13_ver132.json
 AvatarInfo_PlayStyle.json
 AvatarTitle_Base.json
+# Boosters del Profilo (I-123): assenti da ogni risorsa WW, crash dopo PUT /emblem/list.
+# FUN_00a84370 (Emblem_Base: Close_Button, Scroll_Area, Txt_None 106120213), cella
+# FUN_00a836a4/FUN_00a838f0 (Emblem_Panel, caricato sempre all'init della lista)
+Emblem_Base.json                        need=Close_Button,Scroll_Area,Txt_None
+Emblem_Panel.json                       need=Emblem_Base,Panel_Emblem,Txt_Emblem_Name_Label,Area_Ticker_Emblem_Name,mask,Txt_Emblem_Detail_Label,Txt_Storage_Date_Label,Txt_Storage_Date_Title
 TresCommu_CommunicationUser.json
 TresCommu_CommunicationOther.json
 MyPage_ChirishiBaloon.json

@@ -95,7 +95,23 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   con 15 caselle; khuxwiki 3.4.3 «Active Passives can now be verified through the Profile
   screen»). Col salvataggio del banco (1 passiva, 301350) ci si aspetta la vista Total con una
   casella STR per tipo di medaglia diversa da +0 e, in Individual, una riga. Da provare al banco.
-- Da fare: Outfits (`Button_D`), Boosters, pagina 2 (`Button_Change`), frecce ‹ › (non
+- **Boosters** (`Button_Emblem`/`Txt_Emblem` della pagina 1, `FUN_008f3f40`; testo 106120211; I-123).
+  Gli emblemi sono i Booster degli eventi (khuxwiki: premi delle bacheche, «+25%», scadenza). Al
+  tocco `PUT /emblem/list` (188, parser `FUN_00797a84`: `emblemIds[]` in +0x860 della sessione,
+  +0x870 per un profilo altrui); il server risponde dallo schema (`emblemIds: []`, «[?]» nel log),
+  poi `FUN_00a84370` carica **`Emblem_Base.json`** e la lista `EmblemScrollView` (`FUN_00a83564`,
+  init `FUN_00a836a4`) carica sempre **`Emblem_Panel.json`** come cella: **entrambi assenti** da ogni
+  risorsa WW (`catalog\missing_layouts.txt`) -> GUIReader null -> crash (log del 14-10: #148
+  `/user/profile`, #149 `PUT /emblem/list`, poi riavvio #150). Correzione: originali JP in
+  `jp_coco_layouts.txt` (titolo disegnato «BOOST» in inglese, `MyEmblem_Title`; `MyEmblem_Panel1-4`
+  da JP, Win22/Panel04/But_Close serviti). Nomi cercati: Emblem_Base `Close_Button`, `Scroll_Area`,
+  `Txt_None` (106120213 «No current boosters.», visibile con lista vuota); cella (`FUN_00a838f0`)
+  `Emblem_Base` (controllato), `Icon_New` (controllato), `Txt_Emblem_Name_Label`,
+  `Area_Ticker_Emblem_Name`, `mask`, `Panel_Emblem` (+ `PresentBOX_IconPanel_ver131`, icona tipo
+  0x22 `img/ui/emblem/Emblem_%d.png`, `Base` nascosto), `Txt_Emblem_Detail_Label`,
+  `Txt_Storage_Date_Label`, `Txt_Storage_Date_Title` (106120212 «Expires»): tutti nell'originale.
+  Con `emblemIds` vuoto non si crea nessuna cella. Da provare al banco dopo il prossimo build.
+- Da fare: Outfits (`Button_D`), pagina 2 (`Button_Change`), frecce ‹ › (non
   compaiono con un solo profilo) (ISSUES I-017).
 
 <a id="missioni"></a>
