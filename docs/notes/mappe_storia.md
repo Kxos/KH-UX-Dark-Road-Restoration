@@ -42,23 +42,75 @@ risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli age
 <a id="formato"></a>
 ## Formato STG e MAP
 
-- `stage/mappoi_stg<id>.bin` = intestazione `STG`: [2] parti | (parte di partenza << 16), [3,4]
-  partenza, [5] verso iniziale, [6] bersaglio, [8] aree, [9] nemici, [10] enemyId della scheda
-  bersaglio, [11] bonus di livello, [14] forzieri, [15] oggetti.
-- Ogni parte `mappoi_stg<id>_NN.bin` = file `MAP` della stanza (parser `FUN_00e5f6e8`): `+0x24` X
-  (inizio dati), `+0x28/+0x2c/+0x30` posizioni delle sezioni dopo i nemici meno 0x34; `X+0x34`
-  aree, `X+0x38` nemici; aree da 0x44 (`[0]` primo nemico, `[1]` quanti), nemici da 0x20 (`x, y,
-  enemyId, 1, 1, 1, reward, uid`), forzieri da 0x14 (`x, y, reward, tipo, uid`; sezione `+0x28` letta
-  da `FUN_00e60f28`), oggetti da 0x10. Il nome della stanza (`DB_0000_00_00`...) e' dentro la parte.
-- **Uscite**: blocco a +0x34 di ogni parte (u32 n + n record da 9 interi: x, y, angolo della
-  freccia, distanza, avanti/indietro, x/y di arrivo, parte di destinazione, verso; X = 4 + 36n),
-  scattano entro 96 unita'. La sezione C sono attori evento (tipo 0xb), non uscite.
-- `uid` di aree, nemici e forzieri **globali fra le parti**; e' lo spazio di id di `userTreasures`/
-  `userEnemyDropItems` e di `getTreasures`/`getEnemyDropItems`.
+Parser esatto: `recon/tools/mapfile.py` (`parse_stg`, `parse_map`, `load_stage`, `check_stage`; da riga
+di comando `mapfile.py <cartella|file> [--json out] [--quiet]` controlla ogni stage contro l'STG). Lo
+usano `import_orig_stages.py` e `stage_poi.py`. Nomi dei campi dal decompilato 1.0.1 con simboli
+(`reference\world_schema\decompile_101.md`), letture confermate sul 4.3.1 (`FUN_00e5f6e8`, `FUN_00e60f28`).
+
+**Versioni** (`STG +0x04` = `MAP +0x04`, l'anno dell'ultima modifica del file, non del client: il client
+**non legge** la versione). 13, 14, 15, 16, 17 hanno **lo stesso formato** (quello qui sotto). Verifica:
+tutte le 9.173 parti JP 4.3.1 (ogni revisione) e le 1.300 del 2016 hanno le cinque sezioni contigue,
+senza buchi e senza coda, e squadre/nemici = totali STG su tutti gli stage completi (4.510 JP); il
+vecchio parser euristico sbagliava sulle 13 per la forma dei record, non per il formato. I file 4, 6, 7, 8
+(solo eventi del 2016 e revisioni JP superate, nessuno tra le 525) sono diversi e il client 4.3.1 li
+leggerebbe male: STG v4 da 28 byte (7 int), v6/v7 da 40 (10 int); MAP 6/7 squadre da 0x24 (9 int, senza
+poligono); MAP 4 anche uscite da 0x1c (7 int) e npc da 0x1c; 8 solo file vuoti.
+
+`stage/mappoi_stg<id>.bin`, **STG** (64 byte letti sempre, poi le partenze alternative):
+
+| int | byte | campo |
+|---|---|---|
+| [0] | +0x00 | `STG\0` |
+| [1] | +0x04 | versione |
+| [2] | +0x08 | short basso = parti, alto = parte di partenza |
+| [3],[4] | +0x0c,+0x10 | partenza x, y |
+| [5] | +0x14 | short basso = verso (1/3 -> +1, 2/4 -> -1; 3/4 fisso), alto = n partenze alternative (solo 4.3.1: n x 4 short a +0x40: parte, verso, x, y) |
+| [6] | +0x18 | enemyId del bersaglio (`getStageBossEnemyID`) |
+| [7] | +0x1c | ? (WW 1, JP 40/41/43...) |
+| [8] | +0x20 | squadre, **senza** quelle col bit 0x20 di [4] (91 stage JP su 91); il server puo' toglierne (squadre «random») |
+| [9] | +0x24 | nemici delle squadre contate; «sconfiggi tutti» conta [9] - [13] |
+| [10] | +0x28 | enemyId della scheda del bersaglio (0 = [6]) |
+| [11] | +0x2c | bonus di livello della scheda |
+| [12] | +0x30 | ? |
+| [13] | +0x34 | nemici da non contare |
+| [14] | +0x38 | forzieri, [15] +0x3c materiali: **non mantenuti** (89 delle 518 importate e 125 dei 4.793 JP hanno somme delle parti maggiori, anche nel 2016); usati solo dagli obiettivi 17 «Open all treasure chests» / 18 «Collect all materials» (nessuno dei 5 stage con quegli obiettivi e' sfasato) |
+
+`stage/mappoi_stg<id>_NN.bin`, **MAP** (parte = stanza): intestazione da 0x34 byte, poi cinque sezioni
+agli offset scritti nell'intestazione (+ 0x34), in quest'ordine e contigue:
+
+| byte | campo |
+|---|---|
+| +0x00 | `MAP\0` |
+| +0x04 | versione |
+| +0x08 | 40 (non letto) |
+| +0x0c | nome della stanza, 16 byte (`DB_0000_00_00`: `map/<stanza>/..._info/_cls/_chp/_jmp.bin`) |
+| +0x1c | short meteo (1 pioggia, 2/3 neve; solo se lo short +8 di `_info` e' 0) |
+| +0x20 | uscite - 0x34 (sempre 0: blocco a +0x34) |
+| +0x24 | squadre/nemici - 0x34 (`FUN_00e5f6e8`: `X = [+0x24]`, `X+0x34` n squadre, `X+0x38` n nemici) |
+| +0x28 | forzieri - 0x34 (`FUN_00e60f28`) |
+| +0x2c | materiali - 0x34 |
+| +0x30 | npc - 0x34 |
+
+| sezione | contenuto |
+|---|---|
+| uscite | u32 n, n x 36: `x, y, angolo freccia, distanza residua al bersaglio, [4] (mai letto: 1 + passaggi fino alla parte del bersaglio), arrivo x, arrivo y, parte di destinazione, verso`; scattano entro 96 unita' |
+| squadre/nemici | u32 n_squadre, u32 n_nemici, n_squadre x 0x44, n_nemici x 0x20 |
+| squadra (17 int) | `[0]` primo nemico (indice nella parte), `[1]` quanti, `[2]` 128, `[3]` ?, `[4]` flag (bit 0 capo/bersaglio, bit 2-3 comportamento, bit 5 = 0x20 seconda lista: non contata nell'STG, bit 6), `[5]` uid della squadra, `[6]`,`[7]` parametri del simbolo, `[8]` verso, `[9..16]` 4 punti del poligono d'incontro |
+| nemico (8 int) | `x, y, enemyId, f3 (0; 1 nelle missioni JP ridisegnate), f4 (1), livello, rewardId, uid` |
+| forzieri | u32 n, n x 0x14: `x, y, rewardId, aspetto (look: pari = specchiato, (look % 6) >> 1 e look / 6 = grafica; 0..19 negli originali), uid` |
+| materiali | u32 n, n x 0x10: `x, y, materialId, quantita'`; uid calcolato `(32*parte + 32) | ((i+1) << 10) | 6` |
+| npc | u32 n, n x 0x20: `x, y, id, short tipo (3, 4; 5 = dentro un livello grafico), short ?, short verso, short livello, int, int, int ordine`; grafica `lwf/character/npc/<id>/wait/wait.lwf` |
+
+- `uid` di squadre, nemici e forzieri **globali fra le parti**; e' lo spazio di id di `userTreasures`/
+  `userEnemyDropItems` e di `getTreasures`/`getEnemyDropItems`. Gli uid delle squadre non hanno record
+  di nemico (es. 1 nel Prologue).
 - Collisione: `map/<stanza>/<stanza>_cls.bin` ('CLS', larghezza, altezza, byte per riga, 1 bit per
   pixel, bit alto a sinistra, 0 = percorribile).
-- Le mappe originali dopo il tutorial arrivavano dal CDN: non si trovano (solo 1010-1040 nelle
-  risorse).
+- Le mappe originali dopo il tutorial arrivavano dal CDN: nelle risorse WW solo 1010-1040 (1040_00
+  si apre con la chiave 5.0.1 in `BGAD_KEY`); le altre vengono dai dati JP 4.3.1 e dal pacchetto 2016
+  (`recon/tools/import_orig_stages.py`, I-116). Il JP ha ridisegnato 17 missioni (capo unico, enemyId
+  solo JP 1027/10240/10242/10261/11025/11028/11029/11033/11530, obiettivi della master non piu'
+  soddisfatti): per quelle l'importatore prende il 2016, che corrisponde alla master WW.
 
 <a id="generatore"></a>
 ## Generatore

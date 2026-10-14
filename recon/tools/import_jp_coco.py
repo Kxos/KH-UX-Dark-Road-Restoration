@@ -484,6 +484,10 @@ for root, opts in roots:
 # client aspettava la sua fine (~7 s) prima del popup (banco 14-10). Si prendono .lwf e PNG (->
 # BTF) della revisione corrente; il .res non lo serve nessuna risorsa. Chiavi relative a OUT.
 JP_LWF = ['lwf/sphere/SpIcon_Open', 'lwf/sphere/SphereMap_Complete']
+# NPC degli stage originali importati (import_orig_stages.py) senza grafica nelle risorse WW: 19 stage
+# (2010, 2100, 2180, 2400, 11110, 11140, 11250, 13150, 13220, 16160-16250) li usano
+NPC_JP = [5500] + list(range(5504, 5517)) + [5518, 5519, 5520, 5528, 5529]
+JP_LWF += ['lwf/character/npc/%d/wait' % n for n in NPC_JP]
 # Texture citate dal LWF ma assenti dall'estrazione JP: il nome e' <cartella>_<nome originale in
 # esadecimale>.png e lo stesso nome originale (effetti KeyBlade_ef*, png_ef0*, star01, 進化_KeyBlade_
 # ef*) sta in altre LWF. Senza, il client non disegna quei pezzi: «COMPLET» senza la seconda E
@@ -492,6 +496,9 @@ LWF_FILL = [os.path.join(JP_ROOT, 'lwf', 'battleresult', 'Result_Reward'),
             os.path.join(JP_ROOT, 'lwf', 'adventure', 'Colosseum_Open'),
             os.path.join(JP_ROOT, 'lwf', 'battle', 'Burst_Medal_Change'),
             os.path.join(D, 'layouts', 'orig', 'lwf', 'battleresult', 'Result_Reward')]
+_npc = os.path.join(JP_ROOT, 'lwf', 'character', 'npc')
+if os.path.isdir(_npc):
+    LWF_FILL += [os.path.join(_npc, n, 'wait') for n in sorted(os.listdir(_npc)) if os.path.isdir(os.path.join(_npc, n, 'wait'))]
 # nomi solo numerici (lettere della scritta) non si cercano altrove: «8» e' la seconda E di COMPLETE
 LWF_ALIAS = {'lwf/sphere/SphereMap_Complete/SphereMap_Complete_382e706e67.png':
              'lwf/sphere/SphereMap_Complete/SphereMap_Complete_362e706e67.png'}

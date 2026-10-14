@@ -1,94 +1,90 @@
-"""Forzieri e nemici di ogni stage, dalle mappe stage/mappoi_stg<id>_NN.bin dell'addnl.
+"""Forzieri e nemici di ogni stage, dalle mappe stage/mappoi_stg<id>_NN.bin.
 
     python -I recon/tools/stage_poi.py recon/tools <names_addnl.tsv> <addnl.mp4> <out.json>
+    python -I recon/tools/stage_poi.py --dir <cartella con mappoi_stg*.bin> [...] <out.json>
 
-Chiave dei record: BGAD_KEY (esadecimale, la chiave 5.0.1 come per bgad_extract.py).
-Ogni mappa (formato MAP, parser del client FUN_00e5f6e8) finisce con i nemici, record
-da 8 interi (x, y, enemyId, 1, 1, 1, reward, uid), poi un contatore e i forzieri,
-record da 5 interi (x, y, reward, tipo, uid; letti da FUN_00e60f28), poi un contatore
-e oggetti da 4 interi, poi 0 (o, in 1030, un'altra sezione). uid e' l'id univoco che
-il client cerca in userTreasures / userEnemyDropItems di /stage/start e che riporta in
-/stage/clear (getTreasures, getEnemyDropItems); reward e' la riga della tabella reward
-(per i nemici di solito 1, per il primo di ogni mappa una sua, es. 80002: letta da
-FUN_00e7e6e8, se manca il client va in crash dopo /stage/start). Alcuni uid di nemici
-non compaiono come record (es. 1 nel Prologue): il server usa tutti gli uid fino al
-massimo.
+Prima forma: le parti dell'addnl (chiave dei record in BGAD_KEY, esadecimale, la chiave 5.0.1 come per
+bgad_extract.py). Seconda forma: file sciolti (es. stage_gen\\orig_stages\\stage; con piu' cartelle
+vince l'ultima per lo stesso file), letti con l'STG: si scartano gli stage incoerenti.
+Lettura con il parser esatto recon/tools/mapfile.py (formato del client FUN_00e5f6e8 / FUN_00e60f28):
+nemici = record da 8 interi (x, y, enemyId, f3, f4, livello, reward, uid), forzieri = record da 5
+(x, y, reward, tipo, uid). uid e' l'id univoco che il client cerca in userTreasures /
+userEnemyDropItems di /stage/start e che riporta in /stage/clear (getTreasures, getEnemyDropItems);
+reward e' la riga della tabella reward (per i nemici di solito 1, per alcuni una sua, es. 80002:
+letta da FUN_00e7e6e8, se manca il client va in crash dopo /stage/start; make-game-tables.js crea
+una riga per ogni reward di questo file). Si riportano tutti i nemici, anche quelli delle squadre
+con il bit 0x20 (non contate nei totali dell'STG). Alcuni uid di nemici non compaiono come record
+(es. 1 nel Prologue: sono gli uid delle squadre): il server usa tutti gli uid fino al massimo.
 Uscita: {"<stageId>": {"chests": [{uid, reward, kind, map}], "enemies": [{uid, enemyId, reward, map}]}}.
 """
 import json
 import os
 import re
-import struct
 import sys
 
-sys.path.insert(0, sys.argv[1])
-import bgad
-
-key = bytes.fromhex(os.environ['BGAD_KEY'])
-names, data, out = sys.argv[2], sys.argv[3], sys.argv[4]
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mapfile  # noqa: E402
 
 
-def read_record(fh, off):
-    fh.seek(off)
-    h = bgad.parse(fh.read(bgad.HDR.size))
-    fh.seek(off)
-    buf = fh.read(h['hsize'] + h['nlen'] + h['size'])
-    return bgad.decode(buf, bgad.parse(buf), key)
+def poi(part_bytes, part):
+    p = mapfile.parse_map(part_bytes, part)
+    if not p['client_layout']:
+        raise mapfile.FormatError('formato vecchio (versione %d)' % p['version'])
+    enemies = [{'uid': e['uid'], 'enemyId': e['enemyId'], 'reward': e['reward'], 'map': part} for e in p['enemies']]
+    chests = [{'uid': c['uid'], 'reward': c['reward'], 'kind': c['kind'], 'map': part} for c in p['chests']]
+    return enemies, chests
 
 
-def is_enemy(v, i):
-    # x, y, enemyId (5 cifre), quattro campi (flag piccoli o un altro enemyId), uid
-    return (i + 7 < len(v) and 10000 <= v[i + 2] < 1000000 and 0 < v[i] < 10000 and 0 < v[i + 1] < 10000
-            and all(0 <= f <= 9 or 10000 <= f < 1000000 for f in v[i + 3:i + 7]) and 0 < v[i + 7] < 1000)
+stages, errors = {}, []
 
 
-def parse(d):
-    v = struct.unpack_from('<%di' % (len(d) // 4), d)
-    if d[:4] != b'MAP\0':
-        raise ValueError('non e\' una mappa')
-    # ultimo nemico: il primo record dalla fine che rispetta la forma
-    last = max((i for i in range(len(v)) if is_enemy(v, i)), default=None)
-    if last is None:
-        raise ValueError('nessun nemico')
-    # tutti i nemici (sono sparsi tra i record delle aree): scansione in avanti
-    enemies, i = [], 0
-    while i <= last:
-        if is_enemy(v, i):
-            enemies.append({'uid': v[i + 7], 'enemyId': v[i + 2], 'reward': v[i + 6]})
-            i += 8
-        else:
-            i += 1
-    p = last + 8
-    n = v[p]
-    chests = [{'uid': v[p + 1 + 5 * k + 4], 'reward': v[p + 1 + 5 * k + 2], 'kind': v[p + 1 + 5 * k + 3]}
-              for k in range(n)]
-    p += 1 + 5 * n
-    m = v[p]                                    # oggetti: controllo della forma
-    p += 1 + 4 * m
-    # dopo gli oggetti c'e' a volte un'altra sezione (1030: un record da 6 interi)
-    if p >= len(v) or not 0 <= v[p] <= 16 or not all(0 < c['uid'] < 1000 for c in chests):
-        raise ValueError('coda inattesa dopo forzieri/oggetti')
-    return sorted(enemies, key=lambda e: e['uid']), chests
+def add(sid, enemies, chests):
+    s = stages.setdefault(str(sid), {'chests': [], 'enemies': []})
+    s['chests'] += chests
+    s['enemies'] += enemies
 
 
-stages = {}
-errors = []
-with open(names, encoding='utf-8') as fn, open(data, 'rb') as fh:
-    for line in fn:
-        name, off = line.rstrip('\n').split('\t')
-        m = re.fullmatch(r'stage/mappoi_stg(\d+)_(\d+)\.bin', name)
-        if not m:
-            continue
-        sid, part = int(m.group(1)), int(m.group(2))
+if len(sys.argv) >= 3 and sys.argv[1] == '--dir':
+    *dirs, out = sys.argv[2:]
+    files = {}
+    for d in dirs:
+        files.update(mapfile.iter_stage_files(d))
+    for sid in sorted({k[0] for k in files}):
         try:
-            enemies, chests = parse(read_record(fh, int(off)))
-        except Exception as e:  # noqa: BLE001 - si riportano e si prosegue
-            errors.append('%s: %s' % (name, e))
-            continue
-        s = stages.setdefault(str(sid), {'chests': [], 'enemies': []})
-        s['chests'] += [dict(c, map=part) for c in chests]
-        s['enemies'] += [dict(e, map=part) for e in enemies]
+            stg, parts = mapfile.load_stage(files, sid)
+            bad, _ = mapfile.check_stage(stg, parts)
+            if bad:
+                raise mapfile.FormatError('; '.join(bad))
+            for k in range(len(parts)):
+                add(sid, *poi(open(files[(sid, k)], 'rb').read(), k))
+        except (mapfile.FormatError, OSError) as e:
+            errors.append('%d: %s' % (sid, e))
+else:
+    sys.path.insert(0, sys.argv[1])
+    import bgad
+    key = bytes.fromhex(os.environ['BGAD_KEY'])
+    names, data, out = sys.argv[2], sys.argv[3], sys.argv[4]
 
+    def read_record(fh, off):
+        fh.seek(off)
+        h = bgad.parse(fh.read(bgad.HDR.size))
+        fh.seek(off)
+        buf = fh.read(h['hsize'] + h['nlen'] + h['size'])
+        return bgad.decode(buf, bgad.parse(buf), key)
+
+    with open(names, encoding='utf-8') as fn, open(data, 'rb') as fh:
+        for line in fn:
+            name, off = line.rstrip('\n').split('\t')
+            m = re.fullmatch(r'stage/mappoi_stg(\d+)_(\d+)\.bin', name)
+            if not m:
+                continue
+            try:
+                add(int(m.group(1)), *poi(read_record(fh, int(off)), int(m.group(2))))
+            except Exception as e:  # noqa: BLE001 - si riportano e si prosegue
+                errors.append('%s: %s' % (name, e))
+
+for s in stages.values():
+    s['enemies'].sort(key=lambda e: e['uid'])
 os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
 with open(out, 'w', encoding='utf-8') as fo:
     json.dump(dict(sorted(stages.items(), key=lambda kv: int(kv[0]))), fo, separators=(',', ':'))

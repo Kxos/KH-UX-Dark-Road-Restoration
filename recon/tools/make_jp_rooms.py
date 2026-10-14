@@ -309,6 +309,14 @@ def main():
     for dr in sch['doors'].values():
         if dr.get('scope') == 'storia':
             story.update((dr['room'], dr['dest']))
+    # anche le stanze delle missioni di storia a una sola parte (nessuna porta: es. Beast's Castle),
+    # come le usa import_orig_stages.py (stage_exits_v2.json: stanze di ogni stage)
+    ex = os.path.join(D, 'tmp', 'thethiny_x', 'schema_v2_work', 'stage_exits_v2.json')
+    if os.path.exists(ex):
+        st = json.load(open(ex, encoding='utf-8'))['stages']
+        for s in (st.values() if isinstance(st, dict) else st):
+            if s.get('stage_type') in ('storia_master', 'storia_variante'):
+                story.update(r for r in s.get('rooms', {}).values() if r)
     rooms = sorted(f for f in os.listdir(a.merged) if os.path.isdir(os.path.join(a.merged, f)))
     if a.rooms:
         rooms = [x for x in a.rooms.split(',') if x]
