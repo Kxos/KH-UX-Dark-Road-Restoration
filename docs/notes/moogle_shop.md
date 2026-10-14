@@ -67,6 +67,13 @@ Riferimenti: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Tocch
 - Slot pieni: `MoogleShop_Traits_OverwriteCheck_ver410` (OK = `Button_Draw`/`Txt_Draw`,
   `Txt_Wording2` «Replace X with Y?»; lo slot si sceglie toccando la riga del trait).
 
+- Attesa dopo «Set Trait» (banco 14-10): la risposta di `POST /moogleshop/buy` (248) conteneva le liste intere
+  di medaglie/skill/materiali; il client le applica voce per voce (upsert, O(n^2) con ~2076 medaglie) e restava
+  fermo **5,8 s** dal tocco su OK al risultato. Ora `inventorySnapshot`/`inventoryBlocks` mandano solo le voci cambiate:
+  **0,9 s**, e la lista delle medaglie resta intera (2076/2243 dopo lo scambio: anche per la 248 e' un upsert).
+  Con un inventario normale (centinaia di medaglie) l'attesa originale sarebbe stata una frazione di secondo:
+  il ritardo veniva dall'inventario di prova con tutte le medaglie (KHUX_MEDALS_ALL).
+
 <a id="aperti"></a>
 ## Aperti
 
