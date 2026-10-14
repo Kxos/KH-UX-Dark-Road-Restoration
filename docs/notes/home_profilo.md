@@ -34,7 +34,8 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
   to customize your avatar. Tap the screen to view party members' progress.»), ma il lettore
   non e' trovato; da provare con `KHUX_MYPAGE_TICKER=1` (type da `KHUX_MYPAGE_TICKER_TYPE`, 1).
 - Mappatura dei pulsanti (`sweep.ps1`, 9 ottobre): Quests, Shop, Chat («You need to be in a party»),
-  Presents, Equipment ok; Beginner's Guide si apre vuota; gli altri risolti dopo. Mai provati:
+  Presents, Equipment ok; Beginner's Guide si apre vuota (e' una WebView sull'URL `beginnersGuide`
+  del login, ora `/web/beginner`: [missioni-schede](#missioni-schede)); gli altri risolti dopo. Mai provati:
   Beginner's Guide (contenuto), Shop jewel, frecce ‹ ›, pulsanti di Other, Share della medaglia, titolo
   (Restore Resources, Save User Data, x3 [ex tres], KHDR START) (ISSUES I-018).
 - Schermata Quests (`SceneAdventureSelect`, `FUN_00d97410`): `lastClearStageId` confrontato con
@@ -117,6 +118,54 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   `img/ui/MyMission_GroupIcon1/2.png` (1 = personali/Limited, 2 = party) in `GroupIcon`, tutte
   generate in `make_textures.py`. `Mask_Area` (avviso «Join a party» delle settimanali) deve coprire
   solo l'elenco: stesa sulla finestra mangiava i tocchi delle schede (Daily morta dopo Weekly, I-058).
+
+<a id="missioni-schede"></a>
+### Schede Daily / Weekly / Beginner / Limited (14 ottobre, offline)
+
+- **La scheda la decide solo il client, dal master.** `FUN_00a8bda8` crea la mappa
+  categoria -> id (chiavi fisse 1-4, oggetto +0x3b8), testi `Txt_Tab` (+0x3d0: 106120117 Beginner,
+  118 Daily, 119 Weekly, 120 Limited) e l'ordine degli stati (+0x3f8). `FUN_00a8d8b0` svuota le
+  liste, scorre la mappa delle missioni della risposta (stato di gioco `FUN_007c1dfc()+0x880`,
+  riempita dal parser `FUN_00797eb8`), legge la riga del master (`FUN_00f1734c`) e mette l'id nella
+  lista di `missionType` (+4); altri valori ignorati. `FUN_00a8c100` crea `tab1..tabN` solo per le
+  categorie non vuote (lambda `PTR_FUN_01f0e748` con indice scheda +0x10 e categoria +0x14).
+- Tocco su una scheda (`FUN_00a93b30`, operator() della lambda): se l'indice cambia, salva i «visti»
+  della scheda vecchia (`FUN_00a90ce4`, solo categoria 2), scrive +0x3ec = indice e +0x3f0 =
+  categoria e chiama `FUN_00a8de54(this, categoria)` (w1 = categoria, verificato nel disassemblato):
+  copia la lista della categoria nella tabella (`+0x910`), `FUN_00875e10`/`FUN_00876d10`, contatore
+  (`FUN_00a8cf50`), `FUN_00875f2c(list, 0)` ridisegna tutte le celle visibili (vfunc +0x688),
+  `Mask_Area` visibile solo con categoria 3 e senza party (+0x3a1). All'apertura (`FUN_00a8ad3c`)
+  stessa copia per la scheda iniziale (`FUN_00a8cc18`).
+- Quindi con il master attuale (2001-2010 missionType 2, 3001-3010 missionType 3) Daily e Weekly
+  sono per forza liste diverse; il server manda tutte le righe in un solo `missions[]`. Sul banco del
+  13-10 (`screenshots\r34_daily.png` / `r34_weekly.png`) infatti erano diverse. «Stessa lista» del
+  14-10: non riprodotto offline; sospetto le linguette, che nelle schermate sembrano uguali accese e
+  spente (`MyMission_Category_On/_Off` di `make_textures.py`), da guardare sul banco.
+- Tempi: Daily = conto alla rovescia del client fino a `startDate + k*86400` (`FUN_00a90e28`), quindi
+  il server azzera allo stesso istante (ora di `startDate`, 08:00 UTC); Weekly = il client mostra
+  `endDate` (2099, «28719 days left»), il server azzera ogni `startDate + k*7 giorni` (lunedi' 08:00
+  UTC). La guida dell'utente dice 9:00 ora italiana per entrambe: con l'ora del server (maggio 2021,
+  CEST) sarebbe 07:00 UTC. **Modifica al master da coordinare (non fatta)**: ora di `startDate`
+  07:00 se si vuole il 9:00 estivo; per un conto alla rovescia settimanale vero, `endDate` delle
+  settimanali = prossimo azzeramento, rigenerato ogni settimana (nuova revisione).
+- Beginner (missionType 1) e Limited (4): nessuna riga nel master, quindi le schede non compaiono.
+  Il server ora le gestisce se arrivano: righe 1-4 attive (`startDate <= ora < endDate`), periodo
+  senza azzeramento per 1 e 4, `beginnerLimitTime` = primo elenco (`player.beginnerSince`) +
+  `KHUX_BEGINNER_DAYS` (30, ipotesi), null senza righe Beginner (il client lo usa solo per
+  l'etichetta delle missionType 1). Aggiungerle = nuove righe del master (khuxwiki: 34 Beginner) e
+  bump di revisione.
+- `GET /user/mission` (azione 187, all'ingresso della home) **non e' la finestra Missioni**: parser
+  `FUN_007976d8` (per la 187 solo `id`; `day`/`isFinish` solo per la 183 `/user/mission/update`),
+  salvato in `FUN_007c1dfc()+0x830`; letto da `FUN_00749df4`, `FUN_0074b22c` (riga di un'altra
+  tabella via `FUN_00f16978`, campi +0x908..+0x914: stage e intervallo), `FUN_0074be08`. `id` 0 =
+  nessuna; il server risponde `{id: 0, day: 0, isFinish: false}` (`respondUserMission`).
+- **Beginner's Guide della home = WebView**, non missioni: `FUN_00bd9f18` (lambda della home) apre
+  `FUN_006f1f6c(titolo 106210101, url)` con l'URL `beginnersGuide` dei link di `/system/login`
+  (`FUN_00791070`, oggetto +0x210, salvato in `FUN_007c1dfc()+0x390` da `FUN_007c2adc`). Con la
+  stringa vuota la finestra restava vuota. Ora punta a `http://.../web/beginner`
+  (`respondBeginnerPage`: missioni Daily/Weekly dal master con premi e orari, come `/web/passive`).
+  `/user/mission/list` non parte da li': l'unico chiamante di `FUN_00804434` e' `FUN_00a8a8d8`
+  (finestra Missioni, dalla lambda della pergamena `FUN_00ba3930`). Da provare sul banco.
 
 <a id="pet"></a>
 ## Pet («Spirit»)
@@ -347,6 +396,37 @@ scrive i testi e nasconde Support/Transfer/Movie; `TwitterButton` nascosto (cerc
   `_Panel_ver131`/`_IconPanel_ver131` copie dei `dark_PresentBOX_*`, testi 103500002/3/13 e
   106250103/4 (`reference\presents`). Cornici viola di Dark Road da sostituire con le texture blu
   (ISSUES I-035).
+- Protocollo dei Presents (14-10-2026, da provare sul banco; `server.js` `respondUserPresent`/
+  `respondPresentReceive`, salvataggio `player.presents[]`):
+  - `GET /user/present` = azione 20 (`assets431\json\server_api.json`), nessun parametro (`m=1&i=1`
+    e' l'involucro di tutte le GET). Ramo `0x7c3848` di `FUN_007c3204` -> parser `FUN_007781bc`,
+    tutto obbligatorio: `userPresent {userPresentDatas[], presentCount, presentCountMax,
+    stonePresentCount, stonePresentCountMax}` (int). Elemento `FUN_00777f80`: `userPresentId`
+    uint64, `resourceType`/`resourceId`/`number` int, `limitDatetime` data, `comment` stringa,
+    `created` data. Uguale a `UserPresent::parse`/`Present::init` della 1.0.1 con simboli
+    (thethiny, `0x4A61E4`/`0x4A6014`), che pero' non aveva i due contatori `stone*`.
+    La lista sta nella sessione `+0x228` (righe da 0x48 byte, flag «riscosso» a +0x40).
+  - Scena `FUN_00d0b350` (`PresentBOX_Base_ver400`): mette tutte le righe nella scroll view;
+    `presentCount`/`presentCountMax` (+0x40/+0x44) accanto a «Other» (106250104),
+    `stonePresentCount`/`stonePresentCountMax` (+0x48/+0x4c) accanto a «Jewels» (106250103).
+    Il server conta come «Jewels» i tipi 1/2, il resto come «Other», massimo 200 per entrambi
+    (il massimo dei jewel e' una scelta nostra).
+  - `resourceType`: tipi di `SceneUtil::setItemImageData` (1.0.1 `0x46C71C`): 1/2 Jewel, 3 medaglia,
+    4 Munny, 5 materiale, 6 Friend Point, 10 Raid Points, 11 Lux, 13 keyblade, 14-17 premi,
+    18-20/23 parti avatar, 25 sphere, 26 Skip Ticket. Il server riscuote 1/2, 3, 4, 5, 11, 13, 14
+    (`grantItem`, ora anche 11 = `player.lux`).
+  - `POST /user/present/receive` = azione 49, costruttore `FUN_007eda9c`: `{receivePresentIds:
+    [uint64]}` (Collect e Collect All; la 1.0.1: `executeUserPresentReceive` `0x4CD080`).
+    Ramo `0x7cad14`, tutto obbligatorio: `userData.userPoint`, `userMaterials`, `userMedals`,
+    `userSkills`, `userKeyblades`, `userDecks`, `userAvatarParts`, `userTitles`, `pet`, `emblemIds`,
+    sub-slot, liste del Burst (come `/user/mission/receive`), poi `lastUserPresentIds` [uint64] =
+    regali RIMASTI: il client segna riscossi (`FUN_00778858`) quelli della sua lista assenti
+    (`0x7d0fd0`). `userStone` non lo legge piu' (la 1.0.1 si'): il server lo manda lo stesso.
+  - `/mypage` `userPresentCount` = regali validi (badge del pulsante). Scaduti (`limitDatetime`
+    passato, ora del server) tolti a ogni lettura.
+  - Prova: `KHUX_TEST_PRESENTS=1` aggiunge 6 regali (300 jewel «Daily Login Bonus Reward», 1000
+    Lux, 5000 Munny, 6 Avatar Coin, Dewey 90041, 3 Mythril Shard; scadenza +29 giorni) quando
+    nella scatola non ne resta nessuno di prova (`test: true`).
 - Equipment (`DeckEditScene`, init `FUN_00bfd960`): serve `GET /keyblade/subslot` (vedi
   [server.md](server.md#catena)).
 

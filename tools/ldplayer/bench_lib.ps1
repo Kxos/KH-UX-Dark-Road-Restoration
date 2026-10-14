@@ -204,7 +204,13 @@ function Shot([string]$name) {
     $src = Join-Path $SHARED "$name.png"
     $dst = Join-Path $SHOTS "$name.png"
     for ($i = 0; $i -lt 20 -and -not (Test-Path -LiteralPath $src); $i++) { Start-Sleep -Milliseconds 100 }
-    Move-Item -LiteralPath $src -Destination $dst -Force
+    # il file compare prima che il guest abbia finito di scriverlo: Move-Item fallisce con
+    # «in uso da un altro processo» e FindTarget/FindSpotlight ricevono un'immagine nulla
+    # (story.ps1 fermo nel campo, 14-10): si riprova per ~3 s
+    for ($i = 0; $i -lt 30; $i++) {
+        try { Move-Item -LiteralPath $src -Destination $dst -Force -ErrorAction Stop; break }
+        catch [System.IO.IOException] { Start-Sleep -Milliseconds 100 }
+    }
     $dst
 }
 
