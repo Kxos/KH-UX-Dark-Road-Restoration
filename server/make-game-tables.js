@@ -367,12 +367,20 @@ const ENEMY_PRIZE = {
   type: Number(process.env.KHUX_ENEMY_DROP_TYPE || 5),
   id: Number(process.env.KHUX_ENEMY_DROP_ITEM || 13), num: Number(process.env.KHUX_ENEMY_DROP_NUM || 1),
 };
+// KHUX_STAGE_POI_EXTRA: altri file nello stesso formato (separati da ';'), es. il POI degli stage
+// originali importati (D:\Progetto_Restauro_KH_UX\stage_gen\orig_stages\stage_poi_orig.json, da
+// recon/tools/stage_poi.py --dir): per ogni stage sostituiscono stage_poi.json, cosi' le righe reward
+// dei loro nemici e forzieri esistono prima ancora di unire quel file a server/game_data (senza riga
+// il client va in crash dopo /stage/start). Le righe in piu' non danno fastidio agli altri stage.
 let poi = {};
 try {
   poi = JSON.parse(fs.readFileSync(path.join(__dirname, 'game_data', 'stage_poi.json'), 'utf8'));
 } catch {
   console.warn('stage_poi.json assente: solo le righe del Prologue');
   poi = { 1010: { chests: [{ uid: 18, reward: 81 }], enemies: [{ reward: 80001 }] } };
+}
+for (const extra of (process.env.KHUX_STAGE_POI_EXTRA || '').split(';').filter(Boolean)) {
+  Object.assign(poi, JSON.parse(fs.readFileSync(extra, 'utf8')));
 }
 const chestRewards = new Set(Object.values(poi).flatMap((s) => s.chests.map((c) => c.reward)));
 const enemyRewards = new Set([1, ...Object.values(poi).flatMap((s) => s.enemies.map((e) => e.reward))]);
