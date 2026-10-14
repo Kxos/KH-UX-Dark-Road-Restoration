@@ -204,3 +204,7 @@ Album_Challenge_ver112.json
 Album_Challenge_Panel_ver112.json
 Album_Reward_Set_ver112.json
 Album_Challenge_Receive_ver112.json
+# Transfer Unions (I-107, banco 14-10 con armtrace): Other -> [fn] -> [fn]/[fn] ->
+# [fn] carica Union_Popup2.json (cambio di Union, non trasferimento dell account), assente: GUIReader
+# [fn] -> [fn] su un nodo nullo. L originale ha Button_Close/OK, Txt_Wording1/2, Txt_10Line_Label_0_1
+Union_Popup2.json
