@@ -29,6 +29,7 @@ const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
 const medalGuilt = require('./medal-guilt');
 const infoAlbum = require('./routes-info-album');
+const legalPages = require('./legal-pages');
 const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
 const medalSkill = require('./medal-skill');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
@@ -206,6 +207,8 @@ function route(url) {
   if (p === '/system/information/list') return 'infolist';
   if (p.startsWith('/system/information/list/')) return 'infopopup';
   if (p === '/web/notices') return 'noticespage';
+  if (p === '/web/agreement') return 'agreementpage';
+  if (p === '/web/license') return 'licensepage';
   if (p.startsWith('/user/album/') && !p.startsWith('/user/album/challenge')) return 'album';
   if (p === '/user/sphere') return 'spherelist';
   if (p === '/user/sphere/update') return 'sphereupdate';
@@ -327,6 +330,9 @@ function respondLogin(res) {
   // «Beginner's Guide» della home: FUN_00bd9f18 apre una WebView (titolo testo 106210101)
   // sull'URL beginnersGuide (link +0x210); vuoto = finestra vuota. Pagina nostra, /web/beginner
   body.beginnersGuide = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/beginner`;
+  // Legal Information: User Agreement (+0x78) e License (+0x90), WebView (server/legal-pages.js)
+  body.agreement = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/agreement`;
+  body.license = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/license`;
   send(res, 200, body);
 }
 
@@ -2770,6 +2776,11 @@ function handler(scheme) {
       if (kind === 'infopopup') return send(res, 200, { ret: ret(), ...infoAlbum.informationPopup(SESSION_BASE) });
       if (kind === 'noticespage') {
         const buf = Buffer.from(infoAlbum.noticesPage(), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
+        return res.end(buf);
+      }
+      if (kind === 'agreementpage' || kind === 'licensepage') {
+        const buf = Buffer.from(kind === 'agreementpage' ? legalPages.agreementPage() : legalPages.licensePage(), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
         return res.end(buf);
       }
