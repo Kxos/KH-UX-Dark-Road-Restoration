@@ -124,3 +124,12 @@ AdventureTop2_EV_Banner_ver220.json     need=Image_3
 ? AdventureTop2_Colosseum_Button.json   # World_Ico8A/8B assenti ovunque: pulsante senza icona
 ? AdventureTop2_Colosseum_Panel.json    # le celle ([fn], [fn], [fn]) cercano Avatar/Story/SubClear* assenti nell'originale; Colosseo non provabile offline
 ? AdventureTop2_Raid_Button.json        # Button_Last_Member cercato da [fn] e assente nell'originale; Raid non provabile offline
+
+# --- Other e Shop: crash senza richieste al server (I-107, I-109, I-100; 14-10) ---
+# Transfer Unions: SceneTakeOver::init ([fn]) carica Information2_TakeoverCheck senza controllo
+Information2_TakeoverCheck.json
+# Legal Information: OtherMenuDialog::openLegalPopup ([fn], da [fn])
+Legal.json
+# Increase Storage: popup del limite delle medaglie ([fn]) e conferma ([fn])
+PopupNormal_MedalPossessed1_ver350.json
+PopupNormal_MedalPossessed2.json
