@@ -54,7 +54,17 @@ firma per i tre casi): layout non serviti, caricati senza controllo (come Emblem
 Nomi presi dalle stringhe citate dai caricatori (`func_strings.py`, `widget_lookup.py`); tutti
 assenti da names_v4, addnl e stage_gen. Aggiunti gli originali JP 4.3.1 a `jp_coco_layouts.txt`
 (gli originali hanno tutti i widget cercati):
-- **Transfer Unions** (I-107): il primo import (`Information2_TakeoverCheck.json`, di
+- **Transfer Unions** (I-107), causa vera (banco 14-10, registri ARM di `armtrace\stackcap.ps1`,
+  `dumps\armtrace\transfer`): «Transfer Unions» e' il **cambio di Union**, non il trasferimento
+  dell'account. x24 = `cocostudio/publish/Union_Popup2.json`; catena dalla pila: Other
+  `FUN_009fa11c` -> `FUN_00ac5a1c`/`FUN_00ac6aec` -> `FUN_00d0131c` (carica Union_Popup2) ->
+  GUIReader `FUN_011b0704` -> `FUN_011b1c6c` su nodo nullo (file assente; servite solo
+  Union_Popup1/3). Importato l'originale JP 4.3.1 (Button_Close, Button_OK/Txt_OK, Txt_Cancel,
+  Txt_Wording1/2, Txt_10Line_Label_0_1; testi 103700002 «You can transfer to a different Union.»,
+  103700004 «Proceed?»). Dopo OK il client chiedera' il cambio al server (azione da vedere).
+  Le copie `MenuDialog_account_select*` qui sotto restano: servono al percorso del backup
+  dell'account, che non e' questo pulsante.
+- Transfer Unions, prima ipotesi (sbagliata per questo pulsante): il primo import (`Information2_TakeoverCheck.json`, di
   `SceneTakeOver::init` `FUN_00d80be0`) non bastava, il crash restava identico. Il pulsante passa
   da `OtherMenuDialog::openBackupPopup`, la cui callback ($_91, `FUN_00a0d0bc`, tipo risolto dalla
   vtable 0x1dfdbd0) con esito vero apre la scelta dell'account `FUN_009f7014`
