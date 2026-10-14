@@ -50,7 +50,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Tour v2 in `stage_gen\tours_v2`: da parte, solo per provare componenti originali (decisione dell'utente).
 - **Build delle risorse veloce**: ChaCha8 con numpy (`bgad.chacha_xor`) e `resource_pack.py --cache` sui pacchetti
   statici: versione completa in ~8 minuti (prima ~1 ora), poca memoria; i pacchetti invariati si saltano.
-- **Prossimo** (Boosters I-123 e Items I-122 provati e chiusi sulla 36): prove sul banco delle icone buff/debuff e guilt
+- **Prossimo** (Boosters I-123 e Items I-122 provati e chiusi sulla 36): guilt BONUS provato dall'utente; Set Trait 0,9 s (delta); prove sul banco delle icone buff/debuff e icona blu sotto il burst
   (I-124; per il guilt mettere Black Coat King Mickey, userMedal 2216, nel deck del keyblade 2), un'animazione
   di pianta in battaglia (move da wait), missioni nelle stanze recuperate.
 - Poi: missioni nelle stanze recuperate; I-118 (Beginner/Limited nel master), I-119 (EXP del Level Up), I-120 (PvP:
