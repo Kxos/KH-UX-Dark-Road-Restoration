@@ -17,8 +17,13 @@
 //   (Alice, Belle); AttributeAlways Neutral -> attribute 5 (Shadow).
 // Dove thethiny ha la riga originale dello stesso burstId con la stessa descrizione, i suoi campi
 // d'effetto vincono (valori veri, es. le cure per livello).
-// Restano fuori (codifica non ancora verificata nel client): GuiltBuff (SP ATK B +N%),
-// GaugeRecovery, Counter (countdown), CriticalChance, HPDrain, Mirror, Copy, Reflect, STRPlus.
+// Campi della 4.3.1 assenti nel formato vecchio (docs/notes/battaglia.md#supernova): GuiltBuff N ->
+// addGuiltBonusValue N (percento) con addGuiltBonusId/Count (durata, da verificare); GaugeRecovery
+// -> recovery (gauge in piu'); Counter -> oprUrgencyId 1 (reset del countdown nemico) o 2 col valore
+// con segno; CriticalChance N% -> critical N*100; Renew* (Supernova rinnovate) -> recurringAttribute,
+// bit 0-4 = Power/Speed/Magic/Upright/Reversed.
+// Restano fuori: HPDrain, Mirror, Copy, Reflect, STRPlus (unita' non verificate).
+const RENEW = { Power: 0, Speed: 1, Magic: 2, Upright: 3, Reversed: 4 };
 const KIND = { G: '', P: 'Power', S: 'Speed', M: 'Magic', U: 'Upright', R: 'Reverse' };
 const STAT = { A: 'Attack', D: 'Defense' };
 const CURES = ['curePoison', 'cureSleep', 'cureDeepPoison', 'cureParalysis'];
@@ -36,6 +41,7 @@ function buffFields(ability, target) {
   const skipped = [];
   let turns = 0;
   let attacks = 0;
+  let guilt = 0;
   const all = target === 2 ? 'All' : '';
   const dur = (v) => {
     if (v.DurationType === 'Turn') turns = Math.max(turns, v.DurationCount || 1);
@@ -52,7 +58,14 @@ function buffFields(ability, target) {
       Object.assign(out, { heal: h ? h[1] : 3000, healShake: 500 });
     } else if (code === 'Esuna') for (const k of CURES) out[k] = 1;
     else if (code === 'AttributeAlways' && v === 'Neutral') out.attribute = 5;
-    else skipped.push(code);
+    else if (code === 'GuiltBuff' && Number(v)) guilt = Number(v);
+    else if (code === 'GaugeRecovery' && Number(v)) out.recovery = Number(v);
+    else if (code === 'CriticalChance' && Number(v)) out.critical = Number(v) * 100;
+    else if (/^Renew/.test(code)) {
+      const kind = code === 'Renew' ? v : code.slice(5);
+      if (RENEW[kind] !== undefined) out.recurringAttribute = (out.recurringAttribute || 0) | (1 << RENEW[kind]);
+      else skipped.push(code);
+    } else skipped.push(code);
   }
   for (const [code, v] of Object.entries(ability.EnemyBuffs || {})) {
     const m = /^Debuff([GPSMUR])([AD])$/.exec(code);
@@ -60,7 +73,13 @@ function buffFields(ability, target) {
       out[`debuf${STAT[m[2]]}${KIND[m[1]]}${all}`] = -v.BuffCount;
       dur(v);
     } else if (code === 'Dispel') for (const k of DISPEL) out[k + all] = 1;
-    else skipped.push('E.' + code);
+    else if (code === 'Counter' && v) {
+      if (v.CountDirection === 'Reset') out.oprUrgencyId = 1;
+      else {
+        out.oprUrgencyId = 2;
+        out.oprUrgencyValue = (v.CountDirection === 'Down' ? -1 : v.CountDirection === 'Up' ? 1 : 0) * (v.Count || 0);
+      }
+    } else skipped.push('E.' + code);
   }
   // medaglie senza dati strutturati su Roboloid: solo il testo
   if (!ability.SelfBuffs && !ability.EnemyBuffs) {
@@ -72,6 +91,9 @@ function buffFields(ability, target) {
   }
   if (turns) out.addTurn = turns;
   else if (attacks) out.addCount = attacks;
+  // SP ATK B +N%: voce della lista del bonus (id 1 = turni, 2 = attacchi, durata come i buff)
+  if (guilt) Object.assign(out, { addGuiltBonusId: attacks && !turns ? 2 : 1,
+    addGuiltBonusCount: turns || attacks || 1, addGuiltBonusValue: guilt });
   return { out, skipped };
 }
 

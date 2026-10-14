@@ -195,6 +195,20 @@ if (process.env.KHUX_MEDALS_ALL === '1' && medals.some((m) => m.medalId === 9008
   Object.assign(medals.find((m) => m.medalId === 90085), extra.mickeyAPatch);
   guiltExtra = extra.rows.length;
 }
+// Supernova (supernova.js): Dual Meow Wow [SAB LV 7/8/9] e Evolve verso SN/SN+/SN++ con le medaglie
+// richieste della khuxwiki (5 copie della stessa 7★, o 5 Dual Meow Wow)
+const supernova = require('./supernova');
+let snEvolve = { applied: 0, missing: 0 };
+let meowAdded = 0;
+if (process.env.KHUX_MEDALS_ALL === '1') {
+  const meow = supernova.meowRows(medals, guilt.BROOM_ID);
+  medals.push(...meow);
+  meowAdded = meow.length;
+  try {
+    const wiki = JSON.parse(fs.readFileSync(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json', 'utf8'));
+    snEvolve = supernova.applyEvolveRules(medals, supernova.evolveRules(wiki), ROBO);
+  } catch { console.warn('wiki_all.json assente: Evolve delle Supernova senza medaglie richieste'); }
+}
 // Cid: khuxwiki «max 20 riduzioni dalla 2.0.0»: le 6★/7★ d'attacco con cost - minCost = 10
 // scendono di 20 (Cid 10 x2); upperCost di userMedal arriva fino a cost - minCost
 for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
@@ -533,6 +547,10 @@ const ORIG_BURST = process.env.KHUX_ORIG_BURST || 'D:\\Progetto_Restauro_KH_UX\\
 const origBursts = fs.existsSync(ORIG_BURST) ? new Map(JSON.parse(fs.readFileSync(ORIG_BURST, 'utf8')).map((b) => [b.burstId, b])) : new Map();
 const buffStats = require('./burst-buffs').applyBurstBuffs(medals, bursts,
   (m) => ROBO_BY_ID.get(m.medalId >= 300000 ? m.medalId - 300000 : MEDAL_MAP[m.medalId]), origBursts);
+// attacchi Supernova (supernova.js): una riga burst per medaglia SN, superBurstId sulla medaglia
+const snBursts = supernova.supernovaBursts(medals, bursts, ROBO, require('./burst-buffs').buffFields);
+bursts.push(...snBursts);
+for (const b of snBursts) burstById.set(b.burstId, b);
 
 // burst 0: le medaglie senza attacco speciale (supporto: Dewey, Fata Smemorina, validBurst 0)
 // hanno burstId 0, e Optimize (FUN_0075de5c, valore di ogni medaglia posseduta per gli slot del
@@ -719,5 +737,6 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded}, ${buffStats.rows} con buff/debuff, ${buffStats.fromOrig} da thethiny, ${buffStats.conflicts} conflitti)` +
+  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie)` +
   `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);

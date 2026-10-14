@@ -484,6 +484,9 @@ for root, opts in roots:
 # client aspettava la sua fine (~7 s) prima del popup (banco 14-10). Si prendono .lwf e PNG (->
 # BTF) della revisione corrente; il .res non lo serve nessuna risorsa. Chiavi relative a OUT.
 JP_LWF = ['lwf/sphere/SpIcon_Open', 'lwf/sphere/SphereMap_Complete']
+# Supernova (I-124, docs/notes/battaglia.md#supernova): animazione del lancio, del rinnovo
+# (recurringAttribute) e del gauge recuperato (campo recovery), assenti dalle risorse WW
+JP_LWF += ['lwf/battle/Sburst', 'lwf/battle/SBurst_Revival', 'lwf/battle/BurstGauge_Recovery']
 # NPC degli stage originali importati (import_orig_stages.py) senza grafica nelle risorse WW: 19 stage
 # (2010, 2100, 2180, 2400, 11110, 11140, 11250, 13150, 13220, 16160-16250) li usano
 NPC_JP = [5500] + list(range(5504, 5517)) + [5518, 5519, 5520, 5528, 5529]
@@ -570,6 +573,17 @@ for d in JP_IMG:
             name = d + '/' + rel
             if rel.endswith('.png') and name not in _served_all:
                 writes.setdefault(name, ('jp', p, None))
+# icone SN/SN+/SN++ della Supernova (FUN_0073eaf0): img/ui/SBurst_Icon1..3 e ...R (il JP tiene le
+# non R in cocostudio/publish) e le texture del pannello assenti dalle risorse WW
+_jp_pub = os.path.join(JP_ROOT, 'cocostudio', 'publish')
+for _n in (1, 2, 3):
+    for _name, _src in (('img/ui/SBurst_Icon%dR.png' % _n, os.path.join(JP_ROOT, 'img', 'ui', 'SBurst_Icon%dR.png' % _n)),
+                        ('img/ui/SBurst_Icon%d.png' % _n, os.path.join(_jp_pub, 'SBurst_Icon%d.png' % _n))):
+        if os.path.exists(_src) and _name not in _served_all:
+            writes.setdefault(_name, ('jp', _src, None))
+for _t in ('SBurst_Icon1.png', 'SBurst_Icon2.png', 'SBurst_Icon3.png', 'SBurst_Plate01re.png'):
+    if os.path.exists(os.path.join(_jp_pub, _t)) and 'cocostudio/publish/' + _t not in _served_all:
+        writes.setdefault(_t, ('jp', os.path.join(_jp_pub, _t), None))
 
 
 def out_path(name):
