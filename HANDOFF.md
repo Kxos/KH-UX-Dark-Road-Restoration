@@ -59,7 +59,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `import_jp_coco.py`). Risorse 36 aggiornate con -Quick (non serve una versione completa).
   Da fare dopo il blocco 1: cambio di Union dopo OK in Transfer Unions (richiesta non ancora vista), sfide
   dell'Album (azione 168), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), missioni nelle stanze
-  recuperate. Fatto il 14-10 sera: Supernova provata in battaglia con un deck di 5 SN (utente), badge SN sulle
+  recuperate. Da verificare sul banco (annotazione dell'utente): l'Evolve di una medaglia a 6 stelle. Fatto il 14-10 sera: Supernova provata in battaglia con un deck di 5 SN (utente), badge SN sulle
   medaglie, danno fisso (Yuffie x3600 = 3600 di danno), testi e prove dei filtri Supernova (medaglie.md#filtri). Poi blocco 2 (I-119 EXP
   del Level Up, I-118 Beginner/Limited, I-087/I-093 keyblade), blocco 3 (stile: Presents I-035/I-096, Moogle Shop
   I-102/I-103, Subslot I-101, Home I-097, Chirithy I-016), blocco 4 (I-009, I-116, I-120/I-059, I-099, I-056).
