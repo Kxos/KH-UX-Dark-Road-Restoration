@@ -124,7 +124,7 @@ def held_plates(y):
     payType. Targhe centrate in x=480 della radice (finestra del popup OK/Annulla)."""
     return [
         I('LB_Jewel', 480, y, 360, 28, 'Plate03.png', opts=PLATE3, children=[
-            I('Icon_Jewel', 15, 0, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.3)]),
+            I('Icon_Jewel', 15, 0, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.3)]),
         L('Txt_CrownPossessed', 400, y, 160, 28, 'Held', 22),
         L('Txt_CrownPossessed_Label', 570, y, 200, 28, '0', 22),
         I('LB_Munnies', 480, y - 32, 360, 28, 'Plate03.png', opts=PLATE3, children=[
@@ -137,12 +137,12 @@ def reward_icons(x, y):
     tipo, cercati tutti dalla radice (senza uno: crash dopo lo sblocco, banco v32). Il codice
     mostra quello del tipo e ne carica la texture."""
     def icon(n):
-        return I(n, x, y, 90, 90, 'IncentiveIcon_02.png', s9=False, visible=False)
+        return I(n, x, y, 90, 90, 'IncentiveIcon_01.png', s9=False, visible=False)
     return ([icon(n) for n in ('MDL', 'SKL', 'KB', 'MTR', 'HP', 'AP', 'SG', 'COST', 'Incentive', 'Icon_Skil',
                                 'MixCircle_Plate')]
             + [P('AVT', x - 45, y - 45, 90, 90, [
-                I('Icon_Base', 45, 45, 90, 90, 'IncentiveIcon_02.png', s9=False),
-                I('Icon_Avatar', 45, 45, 90, 90, 'IncentiveIcon_02.png', s9=False),
+                I('Icon_Base', 45, 45, 90, 90, 'IncentiveIcon_01.png', s9=False),
+                I('Icon_Avatar', 45, 45, 90, 90, 'IncentiveIcon_01.png', s9=False),
                 I('Gender', 75, 75, 41, 61, 'Kind_0001.png', s9=False, scale=0.4)], visible=False),
                P('LuxBoard', x - 45, y - 45, 90, 90, [
                    I('Select_Board', 45, 45, 306, 306, 'Board_0001.png', s9=False, scale=0.3),
@@ -154,7 +154,7 @@ def reward_icons(x, y):
                I('RankTitle_Board', x, y, 610, 82, 'title_1000.png', s9=False, scale=0.8, visible=False,
                  children=[L('RankTitle_Name', -226, 0, 530, 42, '', 22, opts=dict(anchorPointX=0))]),
                P('Comment', x - 150, y - 30, 300, 60, [
-                   I('Icon_Comment', 20, 30, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4),
+                   I('Icon_Comment', 20, 30, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.4),
                    L('MultiComment_txt', 160, 30, 240, 50, '', 18)], visible=False),
                P('Area_MixCircle', x - 45, y - 45, 90, 90, visible=False)])
 
@@ -179,14 +179,14 @@ LAYOUTS = {
     # dell'avatar: Icon_Avatar, Icon_Base, Gender, [fn]), Star_Area, Incentive (icona
     # img/incentive/IncentiveIcon_NN, materiali, emblemi...), Medal (Medal_S), KB, Stamp
     'PresentBOX_IconPanel_ver131.json': ('build', P('PresentBOX_IconPanel', 0, 0, 80, 80, [
-        I('Incentive', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8),
-        I('Medal', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4, visible=False),
-        I('KB', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8, visible=False),
-        I('Stamp', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8, visible=False),
+        I('Incentive', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.8),
+        I('Medal', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.4, visible=False),
+        I('KB', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.8, visible=False),
+        I('Stamp', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.8, visible=False),
         P('Star_Area', 0, 0, 80, 16),
         P('AVT', 0, 0, 80, 80, [
-            I('Icon_Base', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8),
-            I('Icon_Avatar', 40, 40, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.8),
+            I('Icon_Base', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.8),
+            I('Icon_Avatar', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.8),
             I('Gender', 66, 66, 41, 61, 'Kind_0001.png', s9=False, scale=0.3)], visible=False),
         P('LuxBoard', 0, 0, 80, 80, [
             I('Select_Board', 40, 40, 306, 306, 'Board_0001.png', s9=False, scale=0.26),
@@ -376,7 +376,7 @@ LAYOUTS = {
                   opts=dict(PLATE3, colorR=255, colorG=220, colorB=90)),
                 L('Txt_Count', 110, 13, 210, 22, '', 16)], visible=False)]),
         P('Jewel', 480, 34, 220, 50, [
-            I('Jewel_Icon', 30, 25, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.45),
+            I('Jewel_Icon', 30, 25, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.45),
             L('Txt_Jewel', 140, 25, 150, 34, '0', 26)]),
         P('Munnies', 480, 34, 220, 50, [
             I('Munnies_Icon', 30, 25, 44, 46, 'Icon_Prize.png', s9=False, scale=0.6),
@@ -409,7 +409,7 @@ LAYOUTS = {
         L('Txt_Material_Name', 330, 140, 300, 36, '', 24),
         L('Txt_Material_Text', 360, 92, 360, 40, '', 18),
         P('Jewel', 520, 118, 190, 44, [
-            I('Jewel_Icon', 28, 22, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.45),
+            I('Jewel_Icon', 28, 22, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.45),
             L('Txt_Jewel', 130, 22, 150, 34, '0', 26)]),
         B('But_Buy', 612, 62, 177, 64, 'But01', 'Exchange', 24, label='Txt_buy', opts=BUTS, children=[
             B('ImageButton_Buy1', 0, 0, 177, 64, 'But01', None, opts=BUTS, visible=False)]),
@@ -1147,7 +1147,7 @@ LAYOUTS = {
         I('Select_On', 153, 153, 306, 306, 'Board_0001.png', s9=False, visible=False),
         P('Jewel_Panel', 53, 10, 200, 40, [
             I('LB_Jewel', 100, 20, 200, 30, 'Plate02.png', opts=PLATE3, children=[
-                I('Icon_Jewel', -80, 0, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.3)]),
+                I('Icon_Jewel', -80, 0, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.3)]),
             L('Txt_Jewel_Label', 120, 20, 120, 26, '0', 22)], visible=False),
         # «No. 49» sopra la carta (ab_sheet) nella linguetta grigio-azzurra (Sphere_No_Tab)
         P('No_Panel', 53, 300, 200, 40, [I('No_Tab', 100, 20, 195, 30, 'Sphere_No_Tab.png', s9=False),
@@ -1760,10 +1760,13 @@ TEXTURES = set(open(os.path.join(SRC, '..', 'textures.txt'), encoding='utf-8-sig
 #  - img/ui/<pulsante>_On/_Off/_Disable: i pulsanti di [fn] caricano
 #    «img/ui/%s_On.png» al tocco ([fn]); 46 varianti esistono solo in
 #    cocostudio/publish (es. But06_On: crash toccando «Sell Medals» in Evolve e Level Up);
-#  - icone delle valute (img/incentive/IncentiveIcon_NN: 02 jewel, 04 munny, 14 Avatar
-#    Coin) accanto ai layout, per gli ImageView della vendita.
+#  - icone delle valute (img/incentive/IncentiveIcon_NN: 04 munny, 14 Avatar Coin) accanto ai
+#    layout, per gli ImageView della vendita. Il jewel NON si copia: in cocostudio/publish la
+#    numerazione e' diversa (01 = jewel, servito WW; 02 = munny nei dati JP, che
+#    import_jp_coco.py scrive sopra la copia: righe Items del Moogle Shop col munny, I-122).
+#    I layout generati usano IncentiveIcon_01.png per il jewel.
 COPIES = {'cocostudio/publish/' + n: 'img/incentive/' + n
-          for n in ('IncentiveIcon_02.png', 'IncentiveIcon_04.png', 'IncentiveIcon_14.png')}
+          for n in ('IncentiveIcon_04.png', 'IncentiveIcon_14.png')}
 # icone che il popup Sort/Filter (PopupNormal_SortButton_ver350) cerca accanto ai layout ma
 # che esistono solo sotto img/: Guilt 2-8 (img/ui/guilt) e risvegli (img/kakusei)
 COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%d.png' % i for i in range(2, 9)})
@@ -2112,7 +2115,7 @@ def trait_medal_select_popup():
           children=[L('Txt_Traits_Text', 0, -14, 420, 50, '', 22)]),
         P('Jewel', 25, 24, 230, 36, [
             I('Plate_Jewel', 115, 18, 230, 32, 'Plate03.png', opts=PLATE3),
-            I('Icon_Jewel', 28, 18, 90, 90, 'IncentiveIcon_02.png', s9=False, scale=0.4),
+            I('Icon_Jewel', 28, 18, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.4),
             L('Txt_Jewel', 215, 18, 160, 30, '0', 24, opts=dict(anchorPointX=1))]),
         P('Munnies', 25, 24, 230, 36, [
             I('Plate_Munnies', 115, 18, 230, 32, 'Plate03.png', opts=PLATE3),

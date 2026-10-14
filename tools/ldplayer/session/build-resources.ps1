@@ -69,6 +69,8 @@ if ($LASTEXITCODE) { throw 'make_keyblade_images fallito' }
 # bagliore «medaglia del tipo dello slot» MedalType1/2/01 (solo MedalType3 servito: crash di
 # Optimize su Treasure Trove, slot Power)
 python recon\tools\make_medaltype_lwf.py $kl "$sg\files"
+# armatura ActMapCarouselAnim della 4.3.1 JP (GuiltBonus_Plus, icone di tier 1-10: la WW servita ne ha 8, I-124)
+python recon\tools\make_carousel_anim.py
 if ($LASTEXITCODE) { throw 'make_medaltype_lwf fallito' }
 python -I recon\tools\make_enemy_moves.py server\master_data\enemy.json "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" "$D\catalog\enemy_wait" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_enemy_moves fallito' }

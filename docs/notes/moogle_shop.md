@@ -34,6 +34,18 @@ Riferimenti: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Tocch
   dei trait «%» va raddoppiato (passano da printf).
 - Conferma `MoogleShop_Traits_AddCheck.json` (`openItemBuyPopup` `[fn]`, anche con
   `LB_Jewel`), esito «Received ...».
+- Valuta degli Items (I-122): **sempre jewel**, senza guardare `payType`. `changeRowItem` scrive solo
+  il prezzo (`+0x238`) in `Jewel` > `Txt_Jewel` e non carica icone: l'icona e' quella del layout.
+  `openItemBuyPopup` usa il testo 106220414 «Spend N Jewels in exchange for X?», mette in
+  `Txt_CrownPossessed_Label` i jewel posseduti (gratis + acquistati) e nasconde sempre `LB_Munnies`,
+  `Txt_MunniesPossessed_Label`, `Txt_Munnies`. Originale: WW `moogle_shop_01.png` (Rainbow Gem x10 =
+  100 jewel, «Exchange Jewels for materials and traits!»); riga JP `MoogleShop_Item_Panel` con
+  `Ico_jewel.png`. Il munny nelle righe veniva dalle texture: in `cocostudio/publish` la numerazione
+  non e' quella di `img/incentive` (publish `IncentiveIcon_01` = jewel, servito WW; JP publish
+  `IncentiveIcon_02` = munny, `img/incentive/IncentiveIcon_02` = jewel). Il nostro `Jewel_Icon`
+  puntava a `IncentiveIcon_02.png` (copia del jewel di `img/incentive` in `COPIES`), ma
+  `import_jp_coco.py` la sovrascrive con la `IncentiveIcon_02` JP (munny) per i layout JP che la
+  usano. Ora i layout generati usano `IncentiveIcon_01.png` e la copia 02 non c'e' piu'.
 
 <a id="trait"></a>
 ## Scambio dei trait
@@ -47,6 +59,18 @@ Riferimenti: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Tocch
   `[fn]` la imposta e riempie `KakuseiSkill_Window` con `[fn]`).
 - Medaglie velate (grigio 100,100,100): `[fn]` con flag +0xb29 = tipo 9/10 (supporto) oppure
   `spShuffleskillSlot` 0.
+- **Crash su «Select Medal» con l'originale JP (I-121, utente 14-10, risorse 34)**: il generato
+  funzionava (banco 10-10, ts9-ts11); il 13-10 (I-117) il popup e' passato all'originale JP
+  `MoogleShop_Traits_MedalSelect_Pop_ver410` (radice `Traits_pop`). Nessuna richiesta al server
+  (log 14-10: `#89 /moogleshop/list`, poi riavvio). Controllo statico: l'originale ha **tutti** i nomi
+  cercati senza controllo da `[fn]` (Button_OK>Txt_OK, Jewel>Txt_Jewel, Munnies>Txt_Munnies,
+  Win_Base>Txt_Traits_Text, SkillPanel>kakusei_Icon/Txt_KakuseiSkill, Win_under>Scroll_Area/
+  Txt_Possession/Txt_Cost_Label/Txt_Slash_Label/Txt_CostMax_Label/Button_Sort, MedalArea>Medal1
+  (`[fn]`), Arrow01, KakuseiSkill_Window, Close_Button), da `[fn]` (Txt_Sort,
+  Txt_Sort_Label, Txt_Filter_On) e da `[fn]`; texture tutte presenti, 9-slice dentro le
+  texture. Causa non trovata (differenze: Win_under/Jewel/Munnies ImageView invece di Panel,
+  `Medal1` touchAble, `Effect1` in MedalArea, Mask1/2). Rimesso il generato (`?` in
+  `jp_coco_layouts.txt`); per riprovare l'originale serve lo stack del crash ([banco](banco.md#crash)).
 - Slot pieni: `MoogleShop_Traits_OverwriteCheck_ver410` (OK = `Button_Draw`/`Txt_Draw`,
   `Txt_Wording2` «Replace X with Y?»; lo slot si sceglie toccando la riga del trait).
 
