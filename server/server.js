@@ -168,6 +168,7 @@ function route(url) {
   if (p === '/user/medal/remove') return 'medalremove';
   if (p === '/user/material/sell') return 'materialsell';
   if (p === '/moogleshop/buy') return 'moogleshopbuy';
+  if (p === '/shop/medal/max') return 'medalmax';
   if (p === '/moogleshop/list') return 'moogleshoplist';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
@@ -921,6 +922,33 @@ function changeAp(delta, nowMs = Date.now()) {
   return player.ap;
 }
 
+// Posti medaglia (userDetail.maxMedal). Base: KHUX_MAX_MEDAL o 300 (segnaposto), sempre sopra le
+// medaglie possedute; player.medalMaxExtra = posti comprati con Increase Storage (I-100).
+const MEDAL_MAX_LIMIT = 3000;        // «(Max: 3000 slots)» del popup
+const MEDAL_MAX_STEP = 5, MEDAL_MAX_COST = 100;   // «Spend 100 Jewels ... by 5 slots?»
+function maxMedal() {
+  const base = Math.max(Number(process.env.KHUX_MAX_MEDAL || 300), player.medals.length + 50);
+  return Math.min(MEDAL_MAX_LIMIT, base + (player.medalMaxExtra || 0));
+}
+
+// POST /shop/medal/max (azione 71, Shop > Increase Storage), corpo {count} = scatti del cursore
+// del popup PopupNormal_MedalPossessed1. Ramo 0x7c3a68 di [fn]: solo [fn]
+// (userData.userDetail, obbligatorio: senza, «200 ERROR :71»); i jewel il client li rilegge con
+// GET /user/stone. Ogni scatto: +5 posti, -100 jewel.
+function respondMedalMax(res, body) {
+  const now = serverTime();
+  const room = Math.floor((MEDAL_MAX_LIMIT - maxMedal()) / MEDAL_MAX_STEP);
+  const n = Math.min(Math.max(1, Number(body?.count) || 1), room);
+  const cost = n * MEDAL_MAX_COST;
+  if (n > 0 && (player.freeStone || 0) >= cost) {
+    player.freeStone -= cost;
+    player.medalMaxExtra = (player.medalMaxExtra || 0) + n * MEDAL_MAX_STEP;
+    savePlayer();
+    console.log(`  [increase storage] +${n * MEDAL_MAX_STEP} posti (${maxMedal()}), -${cost} jewel`);
+  } else console.log(`  [increase storage] rifiutato: count ${body?.count}, jewel ${player.freeStone || 0}, posti ${maxMedal()}`);
+  send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
+}
+
 function userPointData(now) {
   const ap = apState();
   return {
@@ -1210,7 +1238,7 @@ function userDetailData() {
     // 300 e' un segnaposto, il valore iniziale vero non e' noto; sempre sopra le medaglie
     // possedute (prova con tutte le medaglie: server/grant-all-medals.js)
     unionId: player.unionId,
-    maxMedal: Math.max(Number(process.env.KHUX_MAX_MEDAL || 300), player.medals.length + 50), mvpCount: 0,
+    maxMedal: maxMedal(), mvpCount: 0,
     equipCoordinateNo: player.avatar ? AVATAR_COORDINATE : 0, // coordinato indossato (userAvatars)
     // numero della missione (campo id della tabella stage: Prologue = 1), non lo stageId
     // (1010): la schermata Quests ([fn]) lo confronta con misc 106 (130) per
@@ -2766,6 +2794,7 @@ function handler(scheme) {
       if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
       if (kind === 'moogleshopbuy') return respondMoogleshopBuy(res, entry.bodyDecoded);
+      if (kind === 'medalmax') return respondMedalMax(res, entry.bodyDecoded);
       if (kind === 'userupdate') return respondUserUpdate(res, entry.bodyDecoded);
       // GET /user/mission/list (azione 189): missions[] e beginnerLimitTime
       if (kind === 'missionlist') { const missions = missionsData(); const beginner = beginnerLimitTime(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: beginner }); }

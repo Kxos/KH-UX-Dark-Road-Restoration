@@ -94,7 +94,7 @@ Ultima revisione: 13 ottobre 2026.
 | I-104 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Notices; le notizie dovrebbero apparire anche al login, sulla home Risolto il 14-10 (provato): azione 31 con popUpViewUrl -> WebView /web/notices, anche al login sulla home (server/routes-info-album.js, layout JP Information2_Base). | [home_profilo](notes/home_profilo.md) | - |
 | I-105 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Album Risolto il 14-10 (provato): GET /user/album (17) con userAlbum, layout JP Album*; Album 2073/2099. Restano le sfide (azione 168). | [home_profilo](notes/home_profilo.md) | - |
 | I-106 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Party (vedi I-006, layout `PartyTop_*` mancanti) Risolto il 14-10 (provato): crash dal layout PartyTopScene assente, ora layout JP; schermata «Create or join a party». Creazione del party e azioni 84-106 non provate. | [home_profilo](notes/home_profilo.md) | - |
-| I-107 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Transfer Union | [home_profilo](notes/home_profilo.md) | - |
+| I-107 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Transfer Union Risolto il 14-10 (provato): crash da Union_Popup2.json assente (layout JP); il popup «You can transfer to a different Union» si apre. Il cambio di Union dopo OK non e' ancora servito. | [home_profilo](notes/home_profilo.md) | - |
 | I-108 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Records | [home_profilo](notes/home_profilo.md) | - |
 | I-109 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Legal Information Risolto il 14-10 (provato): Legal.json JP, popup User Agreement / License; User Agreement e License ora sono pagine del server (/web/agreement, /web/license; link nel login). | [home_profilo](notes/home_profilo.md) | - |
 | I-110 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Help | [home_profilo](notes/home_profilo.md) | - |
@@ -138,7 +138,7 @@ Ultima revisione: 13 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-099 | APERTO | Shop (segnalazione utente 13-10): recuperare i banner e la loro logica (pull delle medaglie) | [server](notes/server.md) | - |
-| I-100 | APERTO | Shop (segnalazione utente 13-10): crash sul pulsante Increase Storage Crash risolto il 14-10 (provato): popup JP PopupNormal_MedalPossessed; sovrapposizione delle etichette risolta (set= in jp_coco_layouts.txt, provato); resta l'acquisto (richiesta dopo OK non gestita). | [server](notes/server.md) | - |
+| I-100 | CHIUSO | Shop (segnalazione utente 13-10): crash sul pulsante Increase Storage Crash risolto il 14-10 (provato): popup JP PopupNormal_MedalPossessed; sovrapposizione delle etichette risolta (set= in jp_coco_layouts.txt, provato); acquisto servito: POST /shop/medal/max (71) con userData.userDetail, +5 posti e -100 jewel per scatto, massimo 3000 (provato: 2248 -> 2258, -200 jewel).  | [server](notes/server.md) | - |
 
 ### Union Cross
 
