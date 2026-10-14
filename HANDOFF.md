@@ -50,9 +50,27 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Tour v2 in `stage_gen\tours_v2`: da parte, solo per provare componenti originali (decisione dell'utente).
 - **Build delle risorse veloce**: ChaCha8 con numpy (`bgad.chacha_xor`) e `resource_pack.py --cache` sui pacchetti
   statici: versione completa in ~8 minuti (prima ~1 ora), poca memoria; i pacchetti invariati si saltano.
-- **Prossimo**: I-124 chiuso (guilt, buff/debuff, Supernova ed Evolve con Dual Meow Wow provati sul banco; I-122/I-123 chiusi; Set Trait 0,9 s). Salvataggio di prova: Supernova+ - SP Roxas (userMedal 762) nel deck del keyblade 2; copie in `tmp\player_before_guilt.json` e `tmp\player_before_meow.json`. Da fare: badge SN/SN+ (displayId), missioni nelle stanze recuperate.
-- Poi: missioni nelle stanze recuperate; I-118 (Beginner/Limited nel master), I-119 (EXP del Level Up), I-120 (PvP:
-  riga master e layout), I-009 (storia 526-979: mappe in JP, master da ricostruire), I-094, lista I-092..I-115.
+- **Prossimo**: blocco 1 (pulsanti in crash) finito il 14-10 sera, tutti provati sul banco: Notices (anche al login,
+  `/web/notices`), Album, Party / Party Search (schermata «Create or join a party»), Rankings («Solo Ranking: Me»),
+  Legal Information (pagine `/web/agreement`, `/web/license`), Increase Storage (acquisto `POST /shop/medal/max`,
+  +5 posti / -100 jewel, max 3000; `player.medalMaxExtra`), Transfer Unions (popup originale). Moduli nuovi:
+  `server/routes-info-album.js`, `server/routes-party-ranking.js`, `server/legal-pages.js`; layout JP aggiunti in
+  `recon/tools/jp_coco_layouts.txt` (anche armature Cursor_Anim_Ranking su `MyPageAnime0`, `set=` e `clone=` di
+  `import_jp_coco.py`). Risorse 36 aggiornate con -Quick (non serve una versione completa).
+  Da fare dopo il blocco 1: cambio di Union dopo OK in Transfer Unions (richiesta non ancora vista), sfide
+  dell'Album (azione 168), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), badge SN/SN+ delle
+  Supernova (displayId, docs/notes/battaglia.md#supernova), missioni nelle stanze recuperate. Poi blocco 2 (I-119 EXP
+  del Level Up, I-118 Beginner/Limited, I-087/I-093 keyblade), blocco 3 (stile: Presents I-035/I-096, Moogle Shop
+  I-102/I-103, Subslot I-101, Home I-097, Chirithy I-016), blocco 4 (I-009, I-116, I-120/I-059, I-099, I-056).
+  Salvataggio di prova: Supernova+ - SP Roxas (userMedal 762) nel deck del keyblade 2; copie in
+  `tmp\player_before_guilt.json` e `tmp\player_before_meow.json`.
+- Strumenti del banco: `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <nome> <x> <y> [-Pre "x,y;..."] [-Wait s]`
+  (tocca, salva richieste del server, logcat crash e foto in `tmp\repro\<nome>`, riavvia l'app se cade; -Pre di
+  default = MENU > Other). Stack ARM di un crash: avviare `tools\ldplayer\armtrace\stackcap.ps1 -NoStart -WaitSec 25`
+  come job e poi toccare; registri con indirizzi Ghidra (G...), `dumps\armtrace\<tag>\stack.bin`. Dispatcher:
+  `python -I tmp\jt.py recon\ext\ww431\libcocos2dcpp.so 167e414 <azioni>`, rami in `tmp\dispatcher_linear.txt`.
+  Se il gioco da' «connection error» e il guest non raggiunge 192.168.1.185 (`ip route` senza default): rete del
+  guest guasta -> `ldconsole reboot --index 0`, attendere `sys.boot_completed`, `phaseb-guest.sh`, relogin.
 - Copie di sicurezza: `stage_gen\stage_generated_bak_20261014`, `stage_poi_bak_20261014.json`,
   `master_bak_20261014`, `master_bak_rev101`.
 - Regole del banco nuove: `bench_lib` Tap/Swipe rifiutano i tocchi a gioco chiuso (dopo un crash i tocchi
