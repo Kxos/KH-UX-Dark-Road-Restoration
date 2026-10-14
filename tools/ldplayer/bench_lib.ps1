@@ -24,11 +24,25 @@ function Sh([string]$cmd) {
     try { & "$LD\ld.exe" -s 0 $cmd } finally { $LD_MUTEX.ReleaseMutex() }
 }
 
-function Tap([int]$x, [int]$y) { Sh "input tap $x $y" | Out-Null }
+# Mai toccare con il gioco chiuso: sulla home di LDPlayer i tocchi aprono i banner pubblicitari nel
+# browser di Windows (14-10: decine di schede gtarcade dopo un crash, story.ps1 continuava a toccare).
+# Controllo del processo al massimo ogni 5 s; con il gioco chiuso si ferma lo script.
+$script:AppSeen = [datetime]::MinValue
+function AppAlive {
+    if (((Get-Date) - $script:AppSeen).TotalSeconds -lt 5) { return $true }
+    $alive = [bool]((Sh "pidof $PKG") -match '\d')
+    if ($alive) { $script:AppSeen = Get-Date }
+    return $alive
+}
+function Tap([int]$x, [int]$y) {
+    if (-not (AppAlive)) { throw "gioco non in esecuzione: tocco ($x,$y) annullato" }
+    Sh "input tap $x $y" | Out-Null
+}
 
 # Swipe da (x1,y1) a (x2,y2) in $ms millisecondi: lo swipe in diagonale su una
 # medaglia ne usa l'attacco speciale, se la barra SPECIAL basta per il suo costo.
 function Swipe([int]$x1, [int]$y1, [int]$x2, [int]$y2, [int]$ms = 250) {
+    if (-not (AppAlive)) { throw "gioco non in esecuzione: trascinamento annullato" }
     Sh "input swipe $x1 $y1 $x2 $y2 $ms" | Out-Null
 }
 

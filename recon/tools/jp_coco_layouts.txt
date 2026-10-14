@@ -55,7 +55,7 @@ MoogleShopScene_ver410.json
 MoogleShop_Traits_Panel_ver410.json     need=Count,Count_Rare,SkillPanel,SkillPanel_Rare,Panel,Panel_Rare
 ? MoogleShop_Item_Panel.json  # l'unica revisione JP non ha i widget del client WW (ImageButton_Buy1, ImageButton_LockMask, Row_Base, Name_Plate): crash 0x2c all'apertura del Moogle Shop (banco 13-10, r34)
 MoogleShop_IconPanel.json               need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
-? MoogleShop_Traits_MedalSelect_Pop_ver410.json  # crash su «Select Medal» (I-121, utente 14-10, risorse 34); il generato funzionava (banco 10-10 ts9-ts11). L'originale ha tutti i nomi che [fn]/[fn]/[fn] cercano: causa da catturare sul banco prima di riprovarlo
+MoogleShop_Traits_MedalSelect_Pop_ver410.json
 MoogleShop_Traits_AddCheck.json
 MoogleShop_Traits_OverwriteCheck_ver410.json
 EquipSellScene.json

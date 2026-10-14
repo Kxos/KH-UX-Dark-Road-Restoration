@@ -157,6 +157,7 @@ function route(url) {
   if (routeKeybladeEvo(p)) return routeKeybladeEvo(p);
   if (routePet(p)) return routePet(p);
   if (p === '/user/medal') return 'usermedal';
+  if (p === '/user/skill') return 'userskill';
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
   if (p === '/user/medal/enhance') return 'medalenhance';
@@ -182,7 +183,9 @@ function route(url) {
   if (p === '/campaign') return 'campaign';
   if (p === '/ranking/reward/check') return 'rankingrewardcheck';
   // Coliseum PvP (azioni 194-205): respondPvp
-  if (p === '/pvp' || p.startsWith('/pvp/') || p.startsWith('/ranking/pvp')) return 'pvp'; // anche pvpparade
+  // /pvp/keyblade resta alla risposta generica (com'era prima del 14-10): con la risposta del ramo pvp
+  // (userDecks) ogni battaglia andava in crash creando l'HUD, con solo ret «200 ERROR :196»
+  if (p !== '/pvp/keyblade' && (p === '/pvp' || p.startsWith('/pvp/') || p.startsWith('/ranking/pvp'))) return 'pvp'; // anche pvpparade
   if (p.startsWith('/multi/')) return routeMulti(p); // Union Cross: server/multi.js
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
@@ -2581,7 +2584,10 @@ function respondPvp(res, p, method, body) {
       player.pvpKeybladeIds = body.keybladeIds.map(Number).filter((n) => Number.isSafeInteger(n) && n >= 0);
       savePlayer();
     }
-    return send(res, 200, { ret: ret(), pvp: { keybladeIds: player.pvpKeybladeIds || [], userDecks: userDecksData() } });
+    // solo ret, come prima del 14-10: con pvp.userDecks (parser dei deck, [fn]) il client
+      // sostituiva i deck all'avvio e ogni battaglia andava in crash creando l'HUD del giocatore
+      // ([fn] / [fn], banco 14-10, risorse 35). Il Coliseo PvP resta comunque bloccato (I-120)
+      return send(res, 200, { ret: ret() });
   }
   if (p === '/pvp/vs_list') return send(res, 200, { ret: ret(), vsUsers: [] });
   if (p === '/ranking/pvpParade') return send(res, 200, { ret: ret(), pvpParade: { pvpClass: 1, rankingPvpTopRanker: [] } });
@@ -2731,6 +2737,11 @@ function handler(scheme) {
       // [fn]; la chiave e' scritta cosi' nel binario. Nessuna in evidenza: []
       if (kind === 'stagepickup') return send(res, 200, { ret: ret(), pisckupStages: [] });
       if (kind === 'usermedal') return respondUserMedal(res);
+      // GET /user/skill (azione 13): userSkills completa. Senza risposta il client restava con la lista
+      // vuota e la cella di una medaglia con skill (Scrooge, Overwrite) cercava il suo userSkillId nella
+      // tabella di sessione +0x1c8 senza trovarlo: riga skill 0 = crash in [fn] (pc 0xeb78a4,
+      // chiamata da [fn]). Moogle Shop > Traits > Select Medal (I-121, banco 14-10)
+      if (kind === 'userskill') return send(res, 200, { ret: ret(), userSkills: userSkillsData() });
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);

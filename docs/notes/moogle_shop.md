@@ -59,18 +59,11 @@ Riferimenti: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Tocch
   `[fn]` la imposta e riempie `KakuseiSkill_Window` con `[fn]`).
 - Medaglie velate (grigio 100,100,100): `[fn]` con flag +0xb29 = tipo 9/10 (supporto) oppure
   `spShuffleskillSlot` 0.
-- **Crash su «Select Medal» con l'originale JP (I-121, utente 14-10, risorse 34)**: il generato
-  funzionava (banco 10-10, ts9-ts11); il 13-10 (I-117) il popup e' passato all'originale JP
-  `MoogleShop_Traits_MedalSelect_Pop_ver410` (radice `Traits_pop`). Nessuna richiesta al server
-  (log 14-10: `#89 /moogleshop/list`, poi riavvio). Controllo statico: l'originale ha **tutti** i nomi
-  cercati senza controllo da `[fn]` (Button_OK>Txt_OK, Jewel>Txt_Jewel, Munnies>Txt_Munnies,
-  Win_Base>Txt_Traits_Text, SkillPanel>kakusei_Icon/Txt_KakuseiSkill, Win_under>Scroll_Area/
-  Txt_Possession/Txt_Cost_Label/Txt_Slash_Label/Txt_CostMax_Label/Button_Sort, MedalArea>Medal1
-  (`[fn]`), Arrow01, KakuseiSkill_Window, Close_Button), da `[fn]` (Txt_Sort,
-  Txt_Sort_Label, Txt_Filter_On) e da `[fn]`; texture tutte presenti, 9-slice dentro le
-  texture. Causa non trovata (differenze: Win_under/Jewel/Munnies ImageView invece di Panel,
-  `Medal1` touchAble, `Effect1` in MedalArea, Mask1/2). Rimesso il generato (`?` in
-  `jp_coco_layouts.txt`); per riprovare l'originale serve lo stack del crash ([banco](banco.md#crash)).
+- **Crash su «Select Medal» (I-121, 14-10): non era il layout.** Prima di aprire l'elenco il client
+  chiede `GET /user/skill` (azione 13), che il server non gestiva: la lista delle skill della sessione
+  (+0x1c8) restava vuota e la cella di una medaglia con skill (Scrooge con skill calcolata dal 12-10,
+  Overwrite) chiedeva la riga skill 0: crash in `[fn]` (pc 0xeb78a4, chiamata da `[fn]`;
+  stackcap `i121`). Il server ora risponde `userSkills` completa; il popup originale JP resta.
 - Slot pieni: `MoogleShop_Traits_OverwriteCheck_ver410` (OK = `Button_Draw`/`Txt_Draw`,
   `Txt_Wording2` «Replace X with Y?»; lo slot si sceglie toccando la riga del trait).
 

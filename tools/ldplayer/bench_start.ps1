@@ -6,6 +6,8 @@ param([string]$Out, [string]$Shot = 'khuxstart', [double]$Settle = 8)
 $sw = [Diagnostics.Stopwatch]::StartNew()
 $from = LogLines $Out
 Sh "logcat -c; rm -f /data/tombstones/*; am force-stop $PKG; monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1" | Out-Null
+# Tap di bench_lib rifiuta i tocchi a gioco chiuso: si aspetta che il processo sia partito (fino a 60 s)
+for ($i = 0; $i -lt 60 -and -not (AppAlive); $i++) { Start-Sleep 1 }
 while (-not (Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -match 'POST /khux/login' })) {
     if ($sw.Elapsed.TotalSeconds -gt 120) { Write-Host '  KHUX START: nessun /khux/login dopo 120 s'; break }
     # dopo un aggiornamento dei master compare «Download» (rosso) con «Cancel»; al primo
