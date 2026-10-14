@@ -40,36 +40,33 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   passarla con `KHUX_BASE`; sempre `capture.ps1 -Release` dopo `-Arm`). Ricetta completa in
   [banco.md](docs/notes/banco.md#crash).
 
-## Stato al 14 ottobre 2026 e prossimo passo
+## Stato al 14 ottobre 2026 (sera) e prossimo passo
 
-- Fatto il 14 ([diario](docs/journal/2026-10-14.md)): **Presents** completo (`/user/present`, Collect,
-  Collect All; prove con `relogin.ps1 -TestPresents`); **Beginner's Guide** = WebView, pagina nostra
-  `/web/beginner`; `GET /user/mission` risposto; fumetti del Level Up con l'inglese nel fumetto (font 16);
-  trascinamento del Subslot ok (serve `sendevent`, `tmp\drag.ps1`); OPTIONS/Give Up in battaglia ok;
-  `Shot` di bench_lib non perde piu' gli screenshot (bloccava `story.ps1`). Poi: bacheche veloci (0,5 s,
-  solo le voci cambiate dell'inventario) e con le LWF originali JP; Challenge PvP: niente piu' errori 200 ma
-  crash (I-120, master `pvp` e layout).
-- Il 13: dati di thethiny (`[local reference data]\`), schema dei mondi v2
-  (`reference\world_schema\schema_v2\index.html`), layout originali JP (I-117, risorse 34).
-- **Prossimi passi**, in ordine:
-  1. **I-116**: schema v2 **approvato dall'utente il 14-10**; poi correzione del generatore (freccia 40-80 unita'
-     *prima* dell'uscita, `freccia_uscita.md`), rigenerazione dei tour e prova dell'utente; solo dopo le
-     missioni di storia (oggi il TARGET della 133 cambia stanza e la missione non si chiude).
-  2. I-117: popup di Evolve e risultati di battaglia (dopo I-116); poi i passi 1, 2, 4 della proposta.
-  3. I-118 (missioni Beginner/Limited nel master, reset 07:00 UTC, countdown Weekly) e I-119 (EXP del
-     Level Up a 0).
-  4. Documento per thethiny `reference\world_schema\for_thethiny.md`: l'utente lo rilegge e lo manda.
-  5. Restano: Outfits del pet senza parti (I-094); primo Begin che non risponde dopo una missione; I-088;
-     I-086; I-087; I-089/I-084; lista I-092..I-115.
-  Attenzione: modificare `server\save\player.json` solo subito prima di `relogin.ps1`. Con la versione 34
-  `-Quick` e' possibile se l'indice non cresce: prima `-DryRun` (14-10: 72% della riserva).
-- Banco: **risorse 35** (+ -Quick del 14-10 pomeriggio), **revisione master 101**, server con `-Pet`.
-  **Stage di storia = originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`), stanze recuperate in
-  `rooms_gen`; tour v2 in `stage_gen\tours_v2` tenuti da parte (solo prove). `smoke.json` spostato in
-  `D:\Progetto_Restauro_KH_UX\tmp\smoke.json.bak` (elenco Story normale). Copie di sicurezza:
-  `stage_gen\stage_generated_bak_20261014`, `stage_poi_bak_20261014.json`, `master_bak_20261014`.
-  Da provare sul banco: Boosters (I-123), icona Jewels degli Items (I-122), HUD guilt/buff (I-124),
-  missioni nelle stanze recuperate.
+- **Banco**: risorse **35** (+ -Quick del pomeriggio), master **revisione 101** (default degli script), server
+  `-Pet`. Missioni di storia con gli **stage originali** (JP 4.3.1 / 2016 / WW, `import_orig_stages.py`,
+  `stage_gen\orig_stages`), stanze JP recuperate nel pacchetto `rooms_gen`. Battaglie ok (missione 123 provata)
+  dopo I-125 (cornici dell'avatar dell'HUD). `smoke.json` spostato in `D:\Progetto_Restauro_KH_UX\tmp\smoke.json.bak`.
+  Tour v2 in `stage_gen\tours_v2`: da parte, solo per provare componenti originali (decisione dell'utente).
+- **PROSSIMO PASSO (interrotto per memoria bassa del PC)**: versione **36** con le grafiche originali dei nemici
+  (pacchetto `enemy_gen`, 52 MB, gia' generato; I-124 buff, Boosters ecc. gia' dentro con -Quick):
+  1. `.\tools\ldplayer\session\build-resources.ps1 -Version 36` (~1 ora; chiedere all'utente prima di lanciarla:
+     consuma molta memoria); controllare che `resource_data\36` sia completa (~3,71 GiB, packs.txt con medal_gen,
+     rooms_gen, enemy_gen). Se interrotta, cancellare `resource_data\36` parziale (il server annuncia la piu' alta).
+  2. `update-resources.ps1` (installa la 36; riavvia il gioco: avvisare l'utente).
+  3. Master nuovo: copiare `D:\Progetto_Restauro_KH_UX\stage_gen\master_enemy_gen_rev102\*` in `server\master_data\`
+     (oppure rigenerare: `KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1 KHUX_STAGE_POI_EXTRA=...\stage_gen\orig_stages\stage_poi_orig.json
+     node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json`), revisione **102** nei 4 script
+     di sessione, `relogin.ps1 -Pet`. **Mai il master nuovo con la versione 35** (displayId senza grafica = crash).
+  4. Prove sul banco: missione con Munny Egg (es. 123), una pianta (move da wait), un effetto di comparsa
+     ripristinato; Boosters (I-123), icona Jewels degli Items (I-122), icone buff/debuff e guilt (I-124; per il
+     guilt mettere Black Coat King Mickey, userMedal 2216, nel deck del keyblade 2).
+- Poi: missioni nelle stanze recuperate; I-118 (Beginner/Limited nel master), I-119 (EXP del Level Up), I-120 (PvP:
+  riga master e layout), I-009 (storia 526-979: mappe in JP, master da ricostruire), I-094, lista I-092..I-115.
+- Copie di sicurezza: `stage_gen\stage_generated_bak_20261014`, `stage_poi_bak_20261014.json`,
+  `master_bak_20261014`, `master_bak_rev101`.
+- Regole del banco nuove: `bench_lib` Tap/Swipe rifiutano i tocchi a gioco chiuso (dopo un crash i tocchi
+  aprivano i banner pubblicitari di LDPlayer nel browser); dopo un crash fermare subito lo script. Diagnosi dei
+  crash: `ld.exe -s 0 "logcat -d -b crash"` da' `rbx` = indirizzo ARM (Ghidra = rbx - base + 0x100000).
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
