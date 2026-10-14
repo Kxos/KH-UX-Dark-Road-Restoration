@@ -189,3 +189,16 @@ TresLSI_RankingScene_ver310.json
 ? Ranking_Result_PvP.json               # Rank_Result_Deco.png assente ovunque
 ? Ranking_Reward_ver1301.json           # Rank_Title_3.png assente ovunque
 ? RankingRewardScene_ver1301.json       # Rank_Title_3.png assente ovunque (img/ranking/Rank_Title_%d.png)
+
+# --- Other: Notices e Album (I-104, I-105; 14-10) ---
+# WebView delle notizie (FUN_006f20a4, se il flag dark di FUN_0084f290 e' spento): uguale al WW 4.4.0
+Information2_Base.json
+# Album: scena (FUN_00d05cb8), sfide (FUN_00d07fa0, FUN_00a2f61c, FUN_00a30f90, FUN_00a2ffe4) e cella
+# (FUN_00897d90). La cella WW cerca Txt_Medal_Label («?» sulle medaglie non possedute) senza controllo
+# e il layout JP non l'ha: clone=Origine>Nuovo[@Rif] copia un widget (alla posizione di Rif)
+AlbumScene_ver130.json
+Album_Medal_ver140.json                 clone=Txt_Medal_Num_Label>Txt_Medal_Label@Medal_S
+Album_Challenge_ver112.json
+Album_Challenge_Panel_ver112.json
+Album_Reward_Set_ver112.json
+Album_Challenge_Receive_ver112.json

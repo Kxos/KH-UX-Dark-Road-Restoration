@@ -139,6 +139,12 @@ for ln, line in enumerate(open(args.list, encoding='utf-8'), 1):
             opts['rev'] = int(p[4:])
         elif p.startswith('need='):
             opts['need'] += [x for x in p[5:].split(',') if x]
+        elif p.startswith('clone='):            # clone=Origine>Nuovo[@Rif]: widget del WW assente nel JP
+            for c in p[6:].split(','):
+                m = re.match(r'^([^>@]+)>([^>@]+)(?:@(.+))?$', c)
+                if not m:
+                    sys.exit('%s:%d: clone= non valido %r' % (args.list, ln, c))
+                opts.setdefault('clone', []).append(m.groups())
         else:
             sys.exit('%s:%d: opzione sconosciuta %r' % (args.list, ln, p))
     if args.none:
@@ -276,6 +282,39 @@ def jp_tex(name):
     return p
 
 
+def clone_widget(data, src, new, ref=None):
+    """Opzione clone=: copia il widget src (stesso genitore) col nome new e un tag nuovo; con ref
+    lo mette alla posizione del widget ref. Per i widget che il codice WW cerca senza controllo e
+    che il layout JP non ha (es. Txt_Medal_Label di Album_Medal_ver140)."""
+    import copy
+    found, tags = {}, []
+
+    def walk(n, parent):
+        o = n.get('options') or {}
+        if isinstance(o.get('tag'), int):
+            tags.append(o['tag'])
+        if o.get('name') in (src, ref):
+            found.setdefault(o['name'], (n, parent))
+        for c in n.get('children') or []:
+            walk(c, n)
+    walk(data.get('widgetTree') or {}, None)
+    if src not in found or found[src][1] is None:
+        return 'widget origine assente'
+    if ref and ref not in found:
+        return 'widget di riferimento assente'
+    node, parent = found[src]
+    dup = copy.deepcopy(node)
+    o = dup['options']
+    o['name'] = new
+    o['tag'] = max(tags) + 1
+    o['visible'] = True
+    if ref:
+        ro = found[ref][0]['options']
+        o['x'], o['y'] = ro.get('x', o.get('x')), ro.get('y', o.get('y'))
+    parent['children'].append(dup)
+    return None
+
+
 # ---- analisi di un layout ---------------------------------------------------------------------
 def scan(data):
     """(sotto-layout, texture [(nome, 9-slice)], plist, nomi dei widget, testi [(dict, chiave)])."""
@@ -385,6 +424,13 @@ for root, opts in roots:
             if sus:
                 r['block'].append('%s: %s' % (name, sus))
             data = load_json(src)
+            if name == root:
+                for c in opts.get('clone', []):
+                    err = clone_widget(data, *c)
+                    if err:
+                        r['block'].append('%s: clone %s>%s: %s' % (name, c[0], c[1], err))
+                    else:
+                        r['warn'].append('widget %s aggiunto (copia di %s)' % (c[1], c[0]))
             plan[name] = ('jp', src, data)
             r['layouts'].append(name)
         else:

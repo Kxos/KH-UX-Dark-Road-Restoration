@@ -546,3 +546,47 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
 - Banco (salvataggio 12-10: 1110/1210/1310/4100 gia' superati, 15080 no, Divine Rose assente):
   `server\save\smoke.json` = {"stageId": 15080}, relogin, giocare The West Wing Pt. 6 -> RESULTS ->
   popup Divine Rose -> Equipment con Divine Rose (3 slot vuoti).
+
+<a id="notices-album"></a>
+## Notices e Album (menu Other, I-104/I-105; 14-10, offline)
+
+- **Notices**: il pulsante (FUN_009f8d84, evento 2) manda POST /system/information/list/151203
+  (azione 31, costruttore FUN_007eedec); parser FUN_00778f88: popUpViewUrl = array di stringhe,
+  obbligatorio. Il ramo del dispatcher ( x7c3c78) mette il vettore nella sessione +0x3c0; la callback
+  FUN_009f8ed4 legge il primo elemento senza controlli e apre la WebView FUN_006f1f6c (titolo testo
+  0x5ff08d2) sull'URL con i parametri di sessione aggiunti da FUN_006ec8d4. Con la risposta generica
+  il vettore era nullo: SIGSEGV a  x9f9010 (banco 14-10, 	mp\repro\notices). Serve almeno un URL.
+- **Notizie al login** (come l'originale): la stessa azione 31 parte dalla home (FUN_00c36108 ->
+  FUN_00de63ac, callback FUN_00de7b30); FUN_00de6908 mostra in sequenza una WebView per ogni
+  elemento di popUpViewUrl (il primo con i parametri di sessione). Con un solo URL la pagina delle
+  notizie si apre a ogni ingresso nella home (894 richieste 31 nel log: il client la chiede sempre).
+- GET /system/information/list (azione 30, parser FUN_00778eac): iewUrl stringa; non vista
+  sul banco, stessa pagina.
+- Layout della WebView (FUN_006f20a4): Information2_Base.json, o dark_Information2_Base.json se
+  il flag +0x1a9 di FUN_0084f290 e' acceso (la Beginner's Guide si apre: probabilmente oggi vale il dark, da verificare).
+  Information2_Base non e' servito: l'originale JP (uguale a quello dell'IPA WW 4.4.0, stesse
+  texture) e' in jp_coco_layouts.txt.
+- Pagina nostra /web/notices (server/routes-info-album.js): elenco come
+  eference\other_menu\notices_list_yt_02.jpg (data, etichetta colorata EVENT/CAMPAIGN/UPDATE/
+  IMPORTANT/INFORMATION, titolo, freccia rossa), dettaglio come 
+otices_detail_yt_03.jpg (titoletti
+  col quadratino, BACK). Notizie del restauro (server privato, Supernova e Dual Meow Wow, grafiche dei
+  nemici, buff degli speciali, missioni), nessuna notizia originale inventata.
+- **Album**: GET /user/album/161102 (azione 17, costruttore FUN_007def64, parser FUN_00777110):
+  userAlbum {lbumMedals[] {medalId uint, guiltStatus uint letto come byte}, llMedalCount
+  int}, tutto obbligatorio (risposta generica = risultato nullo, SIGSEGV a 0x170, 	mp\repro\album).
+  Scena AlbumScene_ver130 -> Album_Base_ver130 (FUN_00d05cb8: Win_Bottom, Txt_MedalGet*,
+  Txt_MedalComp*, Scroll_Area, Txt_Challenge, Button_Challenge), cella Album_Medal_ver140
+  (FUN_00897d90): medaglia posseduta = in lbumMedals, altrimenti Medal_S_0 e «?» in
+  Txt_Medal_Label; icona AlbumGuilt_1/2/3 per guiltStatus 0/1/2, solo se userDetail.isGuilt e il
+  tier della medaglia (+0x4c0) non e' 0. Sfide: Album_Challenge_ver112 (FUN_00d07fa0), pannello
+  FUN_00a2f61c (crea Set_Reward da Album_Reward_Set_ver112 se manca), premi FUN_00a30f90,
+  ricevuta FUN_00a2ffe4; POST /user/album/challenge/update (azione 168) non ancora servito.
+- Nessun layout dell'Album e' servito nel WW: gli originali JP sono in jp_coco_layouts.txt (prova
+  --check: 7 radici ok). La cella JP non ha Txt_Medal_Label, che il codice WW usa senza controllo:
+  nuova opzione clone=Txt_Medal_Num_Label>Txt_Medal_Label@Medal_S di import_jp_coco.py (copia del
+  widget, tag nuovo, alla posizione di Medal_S).
+- guiltStatus nostro (i valori originali non sono noti): 0 = nessuna copia con Special Attack Bonus,
+  1 = almeno una, 2 = una copia al bonus massimo del tier (GUILT_RANGES di medal-guilt.js).
+  llMedalCount = righe della tabella medal tranne la medaglia 1 (originale: «Medals 1837/1930»,
+  eference\album\album_yt_01.jpg).
