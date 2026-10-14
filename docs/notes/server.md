@@ -529,7 +529,7 @@ Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
     (`luxRankingWeekly`), 130 monthly (`luxRankingMonthly`), 131/132 `.../own`
     (`luxRankingWeeklyOwn`/`MonthlyOwn`), 133 `/ranking/lux` e 134 `/ranking/lux/own` (`luxRanking`),
     178 `/ranking/lux/border` (`luxRankingBorder`). Campi `rankingDatas[]`, `rankingStatus` int,
-    `rankingTermStart`/`rankingTermEnd` data, `lastRank` int. Elemento `FUN_007869f0`: `userData`
+    `rankingTermStart`/`rankingTermEnd` data, `lastRank` int. Elemento `FUN_007869f0`: **`userData.user`** e **`userData.userDetail` annidati** come in `GET /user` (`FUN_0078ade0` modo 0 cerca `user` dentro `userData`, `FUN_0078babc` cerca `userData` -> `userDetail`; piatti = «200 ERROR :133», banco 14-10): `userData`
     (campi di `userData.user`, `FUN_0078ade0`), `userDetail` (`FUN_0078babc`), `userAvatar`
     (`FUN_0078c740`), `lux` uint64, `rank` int. Senza 133: «200 ERROR :133».
   - High score `FUN_00787214` (135/136/179) e Colosseo `FUN_00787a38` (139/140/180): stessi campi;

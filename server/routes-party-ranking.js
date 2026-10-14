@@ -8,8 +8,9 @@
 //   (luxRankingMonthly), 131/132 .../own (luxRankingWeeklyOwn/MonthlyOwn), 133 /ranking/lux e
 //   134 /ranking/lux/own (luxRanking), 178 /ranking/lux/border (luxRankingBorder):
 //   {rankingDatas[], rankingStatus int, rankingTermStart, rankingTermEnd "YYYY-MM-DD HH:MM:SS",
-//   lastRank int}; elemento FUN_007869f0 = {userData (campi di GET /user userData.user),
-//   userDetail (FUN_0078babc), userAvatar (FUN_0078c740 -> FUN_0078c55c), lux uint64, rank int}.
+//   lastRank int}; elemento FUN_007869f0 = {userData: {user (FUN_0078ade0 modo 0, senza
+//   nativeTagName), userDetail (FUN_0078babc)}, userAvatar (FUN_0078c740 -> FUN_0078c55c), lux uint64,
+//   rank int}.
 //   Senza la 133: «200 ERROR :133» toccando Rankings (banco 14-10).
 // - High score, FUN_00787214: 135/136/179 (highscoreRanking, ...Own, ...Border), stessi campi.
 // - Party, FUN_00787610: 137/138/184 (partyRanking, ...Own, ...Border): rankingDatas, rankingStatus,
@@ -70,8 +71,10 @@ function respondPartyRanking(deps, res, kind, p) {
   const base = { rankingStatus: 2, rankingTermStart: t.start, rankingTermEnd: t.end, lastRank: 0,
     updateTime: now, nextUpdateTime: t.end };
   if (LUX_KEYS[p]) {
-    const me = { userData: deps.userObject(now), userDetail: deps.userDetailData(), userAvatar: deps.userAvatarData(),
-      lux: player.lux || 0, rank: 1 };
+    // userData.user (FUN_0078ade0 cerca "user" dentro "userData") e userData.userDetail
+    // (FUN_0078babc), come in GET /user; con user e userDetail piatti: «200 ERROR :133» (banco 14-10)
+    const me = { userData: { user: deps.userObject(now), userDetail: deps.userDetailData() },
+      userAvatar: deps.userAvatarData(), lux: player.lux || 0, rank: 1 };
     return send(res, 200, { ret: ret(), [LUX_KEYS[p]]: { ...base, rankingDatas: [me], lastRank: 1 } });
   }
   return send(res, 200, { ret: ret(), [EMPTY_KEYS[p]]: { ...base, rankingDatas: [] } });
