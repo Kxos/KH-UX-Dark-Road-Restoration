@@ -96,11 +96,11 @@ Ultima revisione: 13 ottobre 2026.
 | I-106 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Party (vedi I-006, layout `PartyTop_*` mancanti) Risolto il 14-10 (provato): crash dal layout PartyTopScene assente, ora layout JP; schermata «Create or join a party». Creazione del party e azioni 84-106 non provate. | [home_profilo](notes/home_profilo.md) | - |
 | I-107 | APERTO | Other (segnalazione utente 13-10): crash sul pulsante Transfer Union | [home_profilo](notes/home_profilo.md) | - |
 | I-108 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Records | [home_profilo](notes/home_profilo.md) | - |
-| I-109 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Legal Information Risolto il 14-10 (provato): Legal.json JP, popup User Agreement / License; le due WebView restano bianche (URL esterni). | [home_profilo](notes/home_profilo.md) | - |
+| I-109 | CHIUSO | Other (segnalazione utente 13-10): crash sul pulsante Legal Information Risolto il 14-10 (provato): Legal.json JP, popup User Agreement / License; User Agreement e License ora sono pagine del server (/web/agreement, /web/license; link nel login). | [home_profilo](notes/home_profilo.md) | - |
 | I-110 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Help | [home_profilo](notes/home_profilo.md) | - |
 | I-111 | APERTO | Other (segnalazione utente 13-10): verificare che le impostazioni di Settings abbiano effetto davvero | [home_profilo](notes/home_profilo.md) | - |
 | I-112 | APERTO | Other (segnalazione utente 13-10): verificare il funzionamento del pulsante Credits | [home_profilo](notes/home_profilo.md) | - |
-| I-113 | APERTO | Home (segnalazione utente 13-10): errore 200 toccando Chirithy e poi il pulsante Rankings | [home_profilo](notes/home_profilo.md) | - |
+| I-113 | CHIUSO | Home (segnalazione utente 13-10): errore 200 toccando Chirithy e poi il pulsante Rankings Risolto il 14-10 (provato): azioni 133/134/178 (userData con user e userDetail annidati) e armature JP Cursor_Anim_Ranking/Ranking2 (crash a 0x8); «Solo Ranking: Me», 1° con 29.436 Lux. | [home_profilo](notes/home_profilo.md) | - |
 | I-114 | CHIUSO | Home (segnalazione utente 13-10): crash sul pulsante Party Search Risolto il 14-10 (provato): stesso caso di I-106. | [home_profilo](notes/home_profilo.md) | - |
 | I-115 | APERTO | Home (segnalazione utente 13-10): studiare le frecce bianche in basso (dovrebbero mostrare eventi e banner attivi); verificare con l'originale (vedi I-018) | [home_profilo](notes/home_profilo.md) | - |
 
@@ -138,7 +138,7 @@ Ultima revisione: 13 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-099 | APERTO | Shop (segnalazione utente 13-10): recuperare i banner e la loro logica (pull delle medaglie) | [server](notes/server.md) | - |
-| I-100 | APERTO | Shop (segnalazione utente 13-10): crash sul pulsante Increase Storage Crash risolto il 14-10 (provato): popup JP PopupNormal_MedalPossessed; restano la sovrapposizione di «Current capacity» con «(Max 3000 slots)» e l'acquisto (richiesta dopo OK non gestita). | [server](notes/server.md) | - |
+| I-100 | APERTO | Shop (segnalazione utente 13-10): crash sul pulsante Increase Storage Crash risolto il 14-10 (provato): popup JP PopupNormal_MedalPossessed; sovrapposizione delle etichette risolta (set= in jp_coco_layouts.txt, provato); resta l'acquisto (richiesta dopo OK non gestita). | [server](notes/server.md) | - |
 
 ### Union Cross
 
