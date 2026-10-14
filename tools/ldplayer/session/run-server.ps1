@@ -6,7 +6,7 @@
 # dal 9 ottobre 2026 il server lo considera finito gia' dalla fase 995 (dopo il
 # Prologue), quindi serve solo a un giocatore fermo prima.
 # -KbFree: potenziamento dei keyblade senza materiali (KHUX_KB_FREE=1, prove dei livelli)
-param([int]$Revision = 105, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$TestPresents)
+param([int]$Revision = 106, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$TestPresents)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
