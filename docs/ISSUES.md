@@ -108,6 +108,7 @@ Ultima revisione: 13 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-126 | APERTO | Blue Fairy (Evolve 6★ -> 7★, master 109): nell'originale dalle draw dei ticket PvP, non servite. Decisione dell'utente rimandata (15-10); proposte da valutare: Moogle Shop (scambio in jewel/materiali), ricompense di missioni settimanali/limitate o presents, nessuna fonte finche' non arriva il PvP/Colosseo | [medaglie](notes/medaglie.md#blue-fairy) | - |
 | I-022 | APERTO | Vendita: la targhetta delle medaglie di supporto alterna il prezzo con un testo vuoto (orig. «FOR SYNTHESIS») | [medaglie](notes/medaglie.md#medal-list) | 9b83a55 |
 | I-023 | APERTO | Popup Sort/Filter da confrontare con l'originale (Favorite, SP Attack Bonus/No Bonus grigi, Imitation, Special Traits); riga tier ora 1-10 con le icone 9-10 (da vedere sul banco) | [medaglie](notes/medaglie.md#sort) | dbcf6c6, b19a74c |
 | I-046 | DA VERIFICARE | Tier (SP Attack Bonus) delle medaglie: 480 a 0 presi da Roboloid/khuxwiki, icone 9-10 (prima mostravano l'1), slot dei trait dal tier (1.126 cambiati); rev. 82 | [medaglie](notes/medaglie.md#tier) | 2030f79, b19a74c; banco rev. 82 ok (dati, filtro 1-10); icone 9-10 v2 56e96e9 da vedere |
