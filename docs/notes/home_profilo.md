@@ -61,7 +61,11 @@ assenti da names_v4, addnl e stage_gen. Aggiunti gli originali JP 4.3.1 a `jp_co
   GUIReader `[fn]` -> `[fn]` su nodo nullo (file assente; servite solo
   Union_Popup1/3). Importato l'originale JP 4.3.1 (Button_Close, Button_OK/Txt_OK, Txt_Cancel,
   Txt_Wording1/2, Txt_10Line_Label_0_1; testi 103700002 «You can transfer to a different Union.»,
-  103700004 «Proceed?»). Dopo OK il client chiedera' il cambio al server (azione da vedere).
+  103700004 «Proceed?»). Dopo OK: schermata «Select a new Union.» (la Union attuale scurita), conferma
+  «Spend 100 Jewels to transfer to <Union>?», poi `POST /union/change` {unionId} (azione 74, stesso ramo
+  0x7c3a68 della 71: solo `userData.userDetail`) e `GET /user/stone`; «Transfer complete.» e ritorno alla home.
+  Server: `respondUnionChange` (-100 jewel, `player.unionId`; senza risposta «200 ERROR :74»). Provato il 15-10:
+  Unicornus -> Leopardus, stemma nuovo nel Profilo, jewel 2660 -> 2560.
   Le copie `MenuDialog_account_select*` qui sotto restano: servono al percorso del backup
   dell'account, che non e' questo pulsante.
 - Transfer Unions, prima ipotesi (sbagliata per questo pulsante): il primo import (`Information2_TakeoverCheck.json`, di
@@ -594,7 +598,8 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   Information2_Base non e' servito: l'originale JP (uguale a quello dell'IPA WW 4.4.0, stesse
   texture) e' in jp_coco_layouts.txt.
 - Pagina nostra /web/notices (server/routes-info-album.js): elenco come
-  eference\other_menu\notices_list_yt_02.jpg (data, etichetta colorata EVENT/CAMPAIGN/UPDATE/
+  
+eference\other_menu\notices_list_yt_02.jpg (data, etichetta colorata EVENT/CAMPAIGN/UPDATE/
   IMPORTANT/INFORMATION, titolo, freccia rossa), dettaglio come 
 otices_detail_yt_03.jpg (titoletti
   col quadratino, BACK). Notizie del restauro (server privato, Supernova e Dual Meow Wow, grafiche dei
@@ -616,4 +621,5 @@ otices_detail_yt_03.jpg (titoletti
 - guiltStatus nostro (i valori originali non sono noti): 0 = nessuna copia con Special Attack Bonus,
   1 = almeno una, 2 = una copia al bonus massimo del tier (GUILT_RANGES di medal-guilt.js).
   llMedalCount = righe della tabella medal tranne la medaglia 1 (originale: «Medals 1837/1930»,
-  eference\album\album_yt_01.jpg).
+  
+eference\album\album_yt_01.jpg).
