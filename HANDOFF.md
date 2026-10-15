@@ -66,6 +66,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Salvataggio di prova: livello 100 (lux 320000), keyblade 2 con 5 Supernova (762, 766, 769, 777, 1284); copie in
   `tmp\player_before_sndeck.json`, `tmp\player_before_guilt.json`, `tmp\player_before_meow.json`. Sul popup
   Sort/Filter scorrere solo sul bordo destro (x 1722): uno swipe su un pulsante lo attiva.
+- Pet acceso di default in `run-server.ps1` dal 15-10 (`-NoPet` per spegnerlo): senza `-Pet` il pet spariva dalla home.
 - 15-10 sera: **risorse 37**, **master 110**: BGM Medals (medaglie.md#bgm-medals, provate), Share della
   medaglia (`player.supportUserMedalId`; salvataggio di prova: HD Roxas condivisa, copia prima in
   `tmp\player_before_bgm.json`). Riserva del pacchetto generato 128 MiB nelle versioni complete.
