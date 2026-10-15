@@ -1812,6 +1812,15 @@ function seedTestPresents() {
   savePlayer();
 }
 
+// un regalo nella scatola (id progressivi mai riusati), valido 30 giorni come gli originali
+function addPresent(resourceType, resourceId, number, comment) {
+  player.presents = player.presents || [];
+  const id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId)) + 1;
+  player.presents.push({ userPresentId: id, resourceType, resourceId, number,
+    limitDatetime: serverTimeAt(Date.now() + 30 * 86400000), comment, created: serverTime() });
+  player.presentLastId = id;
+}
+
 // regali ancora validi: quelli scaduti (limitDatetime passato, ora del server) si tolgono
 function livePresents() {
   seedTestPresents();
@@ -2848,7 +2857,7 @@ function handler(scheme) {
         (t) => (medalGuilt.GUILT_RANGES[t] || {}).max || 0) });
       // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
       if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail', 'partyupdate', 'partyleave', 'partyemptylist'].includes(kind)) {
-        return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer,
+        return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer, addPresent,
           selfElement: (now, partyId) => selfPlayerElement(now, userMedalsData(now)[0], partyId),
           keyblade: () => userKeybladeData(favoriteKeyblade()) },
           res, kind, req.url.split('?')[0].toLowerCase(), entry.bodyDecoded);
