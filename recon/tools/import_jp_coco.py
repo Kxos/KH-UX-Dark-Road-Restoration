@@ -664,6 +664,11 @@ _rank_img['img/colosseum/Colosseum_Rank_Num3.png'] = os.path.join(_jp_pub, 'Colo
 for _b in ('1_02', '1_03', '2_01', '2_02', '2_03'):
     _rank_img['img/ranking/Rank_Balloon%s.png' % _b] = os.path.join(JP_ROOT, 'img', 'ranking', 'Rank_Balloon%s.png' % _b)
 _rank_img['img/ranking/Rank_Balloon1_01.png'] = _rank_img['img/ranking/Rank_Balloon1_02.png']
+# icona del rango del party ([fn] da [fn], party.rank): img/partyRank/Party_RankIcon1..5, corone
+# arcobaleno/argento luccicante/oro/argento/bronzo; la 1 il JP la tiene in cocostudio/publish
+for _n in range(1, 6):
+    _rank_img['img/partyRank/Party_RankIcon%d.png' % _n] = os.path.join(JP_ROOT, 'img', 'partyRank', 'Party_RankIcon%d.png' % _n)
+_rank_img['img/partyRank/Party_RankIcon1.png'] = os.path.join(_jp_pub, 'Party_RankIcon1.png')
 for _name, _src in sorted(_rank_img.items()):
     if os.path.exists(_src) and _name not in _served_all:
         writes.setdefault(_name, ('jp', _src, None))

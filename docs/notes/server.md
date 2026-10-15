@@ -547,8 +547,10 @@ Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
     (`addPresent`): il client non mostra nulla dopo la 79 e non rilegge i jewel. Banco 15-10: Collect -> «Received
     Jewel x 100!». Effetto vero di firstReward nel client non verificato.
   - Da fare: medaglia
-    della scheda del membro (oggi la prima della lista), icone `img/partyRank` (assenti nel WW, 1-5 nel bundle JP 2016),
-    Chat (ChatScene senza layout).
+    della scheda del membro (oggi la prima della lista), Chat (ChatScene senza layout).
+  - Icone `img/partyRank/Party_RankIcon1-5` (corone arcobaleno/argento luccicante/oro/argento/bronzo) importate dal JP
+    4.3.1 (`import_jp_coco.py`). Prova con `party.rank` 5 (15-10): la corona resta quella arcobaleno del layout; da
+    verificare quale campo sceglie l'icona (forse il `rank` della 84 o la classifica).
 - «7 ERROR :249» al riavvio dopo il crash del Party = `PUT /passive/list` (249) con codice curl 7
   (connessione rifiutata): la rete del guest era caduta, non e' un errore del server.
 - **Classifiche** (`[fn]` disegna l'elenco; scheda Lux = tipo 4, `+0x360` 1 = propria
