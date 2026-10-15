@@ -26,6 +26,16 @@
 // Il crash di Party/Party Search (SIGSEGV a 0x170 dopo /party/login) non e' nelle risposte: la
 // scena [fn] carica PartyTopScene_ver131.json, assente da ogni risorsa WW (GUIReader -> null):
 // layout originali JP in recon/tools/jp_coco_layouts.txt.
+//
+// Party di un solo giocatore (15-10, schemi in docs/notes/server.md#party-ranking): Create Party salva
+// player.party; il giocatore e' leader e unico membro (userId, leaderUserId e supportUserId 1: il pannello
+// destro [fn] cerca il leader in partyUserList, senza di lui legge fuori dall'array). Catena:
+// 83 /party, 86 /party/member/list, 81 /party/notice, 84 /party/detail (solo con partyId), 82 /party/login.
+// - 79 POST /party/create {name, message, playStyle, agreeType}: userParty, party, firstReward int.
+// - party ([fn]): chatId 0 e chatEndpointUrl vuoto (chat HTTP non servita).
+// - 86 con getDetail: ogni elemento = elemento giocatore ([fn]) + [fn] (userKeyblade,
+//   userRanking, lastStageId, comment, linkPlatformId, userColosseumRanking/userPvpRanking int, raidHelpNumber).
+// - 84 GET /party/detail: {rank uint}.
 
 const LUX_KEYS = {
   '/ranking/weekly/user': 'luxRankingWeekly', '/ranking/monthly/user': 'luxRankingMonthly',
@@ -42,6 +52,10 @@ const EMPTY_KEYS = {
 
 function routePartyRanking(p) {
   if (p === '/party/login') return 'partylogin';
+  if (p === '/party/create') return 'partycreate';
+  if (p === '/party') return 'party';
+  if (p === '/party/member/list') return 'partymembers';
+  if (p === '/party/detail') return 'partydetail';
   if (p === '/party/search/active') return 'partysearch';
   if (LUX_KEYS[p] || EMPTY_KEYS[p]) return 'rankinglist';
   return null;
@@ -60,12 +74,47 @@ function term(now, monthly) {
   return { start: fmt(start), end: fmt(end) };
 }
 
-// deps: send, ret, serverTime, player, userObject, userDetailData, userAvatarData
-function respondPartyRanking(deps, res, kind, p) {
+const PARTY_ID = 1;
+
+// deps: send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer,
+// selfElement(now, partyId), keyblade()
+function respondPartyRanking(deps, res, kind, p, body) {
   const { send, ret, serverTime, player } = deps;
   const now = serverTime();
-  const userParty = { userId: 1, partyId: 0, isJoin: 0, isLeader: 0, isAdmin: 0, flagFirstReward: 0, joinDate: now };
-  if (kind === 'partylogin') return send(res, 200, { ret: ret(), userParty, isAbsenceLeader: 0 });
+  if (kind === 'partycreate') {
+    player.party = {
+      name: String(body?.name || `${player.name}'s Party`), message: String(body?.message || ''),
+      playStyle: Number(body?.playStyle) || 0, agreeType: Number(body?.agreeType) || 0, createDate: now,
+    };
+    deps.savePlayer();
+    console.log(`  [party] creato «${player.party.name}» (playStyle ${player.party.playStyle}, agreeType ${player.party.agreeType})`);
+  }
+  const pt = player.party;
+  const userParty = pt
+    ? { userId: 1, partyId: PARTY_ID, isJoin: 1, isLeader: 1, isAdmin: 0, flagFirstReward: 0, joinDate: pt.createDate }
+    : { userId: 1, partyId: 0, isJoin: 0, isLeader: 0, isAdmin: 0, flagFirstReward: 0, joinDate: now };
+  const party = pt && {
+    partyId: PARTY_ID, unionId: player.unionId || 0, rank: 1, name: pt.name, playStyle: pt.playStyle,
+    agreeType: pt.agreeType, message: pt.message, memberCount: 1, leaderUserId: 1, adminUserIds: [],
+    leaderAppointDate: pt.createDate, newcomerDate: pt.createDate, chatId: 0, chatEndpointUrl: '',
+  };
+  const withParty = (o) => (pt ? { ret: ret(), userParty, party, ...o } : { ret: ret(), userParty, ...o });
+  if (kind === 'partycreate') return send(res, 200, withParty({ firstReward: 0 }));
+  if (kind === 'party') return send(res, 200, withParty({}));
+  if (kind === 'partydetail') return send(res, 200, { ret: ret(), rank: 0 });
+  if (kind === 'partymembers') {
+    const partyUserList = pt ? [{
+      ...deps.selfElement(now, PARTY_ID),
+      userKeyblade: deps.keyblade(), userRanking: { lux: player.lux || 0, rank: 1 }, lastStageId: 0,
+      comment: player.comment || '', linkPlatformId: '', userColosseumRanking: 0, userPvpRanking: 0, raidHelpNumber: 0,
+    }] : [];
+    return send(res, 200, withParty({ partyUserList }));
+  }
+  if (kind === 'partylogin') {
+    return send(res, 200, pt
+      ? withParty({ isAbsenceLeader: 0, partyLeader: deps.selfElement(now, PARTY_ID) })
+      : { ret: ret(), userParty, isAbsenceLeader: 0 });
+  }
   if (kind === 'partysearch') return send(res, 200, { ret: ret(), partyList: [] });
   const t = term(now, /monthly/.test(p));
   const base = { rankingStatus: 2, rankingTermStart: t.start, rankingTermEnd: t.end, lastRank: 0,

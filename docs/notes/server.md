@@ -519,8 +519,20 @@ Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
   Senza party si apre `PartyTop_Initial.json` (`[fn]`: Txt_PREdit/Button_PREdit,
   Txt/Button_InitialRequest = cerca, Txt/Button_InitialManagement = crea).
 - `POST /party/login` (82): `userParty` + `isAbsenceLeader`. `GET /party/search/active` (87):
-  `partyList[]` (`[fn]`), vuoto. Creare un party (79) e il resto (84-106) restano agli
-  schemi automatici: da provare.
+  `partyList[]` (`[fn]`), vuoto.
+- **Party di un solo giocatore** (15-10, provato): schemi ricavati offline (agente, `D:\Progetto_Restauro_KH_UX	mp\party_re\`
+  REPORT.md e decompilati). Create Party = `POST /party/create` (79, ramo 0x7c494c) `{name, message, playStyle,
+  agreeType}` -> `{userParty, party, firstReward int}`; `player.party` nel salvataggio. Con `partyId` != 0 la catena
+  diventa 83 -> 86 -> 81 -> **84 `GET /party/detail`** (`{rank uint}`) -> 82, e servono: `party` (`[fn]`:
+  ... `chatId` uint, `chatEndpointUrl`), in 82 `partyLeader` = elemento giocatore `[fn]` **con `userMedal` e
+  `userSkills`** (come `/stage/support/list`, `selfPlayerElement` in server.js), in 86 `partyUserList` con lo stesso
+  elemento piu' i dettagli `[fn]` (`userKeyblade`, `userRanking`, `lastStageId`, `comment`, `linkPlatformId`,
+  `userColosseumRanking`/`userPvpRanking` int, `raidHelpNumber`). Il pannello destro (`[fn]`) cerca il leader
+  (`supportUserId` == `party.leaderUserId`) in `partyUserList`: senza, indice -1. Leader non assente -> PartyTop_right1.
+  Chat: servizio HTTP a parte (non Photon), con `chatId` 0 e url vuoti non parte; ChatScene non ha layout (crash
+  probabile toccando Chat). Banco 15-10: «Kxos's Party» con Leader, Members 1/30, Play Style, Approval, messaggio e
+  pulsanti Edit/Recruit/Manage/Rankings/Search. Da fare: Edit, Recruit, Manage, Search, uscita dal party, medaglia
+  della scheda del membro (oggi la prima della lista), icone `img/partyRank` (assenti nel WW, 1-5 nel bundle JP 2016).
 - «7 ERROR :249» al riavvio dopo il crash del Party = `PUT /passive/list` (249) con codice curl 7
   (connessione rifiutata): la rete del guest era caduta, non e' un errore del server.
 - **Classifiche** (`[fn]` disegna l'elenco; scheda Lux = tipo 4, `+0x360` 1 = propria

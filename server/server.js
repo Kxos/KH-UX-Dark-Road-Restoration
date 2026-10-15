@@ -966,6 +966,19 @@ function respondUnionChange(res, body) {
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
 }
 
+// Elemento giocatore [fn] (supportUsers di /stage/support/list, partyLeader e partyUserList del
+// party): il giocatore stesso con una medaglia (userMedal [fn], userSkills[], userAvatar).
+function selfPlayerElement(now, medal, partyId = 0) {
+  return {
+    supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
+    ...playerTitleIds(), addKizunaPoint: 0,
+    keybladeId: favoriteKeyblade().keybladeId, partyId, isParty: partyId ? 1 : 0, isGuilt: 0, isLinkThumbnail: 0,
+    userMedal: medal, userSkills: userSkillsData(now).filter((s) => s.userMedalId === medal.userMedalId),
+    userAvatar: userAvatarData(),
+    lastActionDatetime: now, earnLuxRank: 0,
+  };
+}
+
 function userPointData(now) {
   const ap = apState();
   return {
@@ -2834,9 +2847,11 @@ function handler(scheme) {
       if (kind === 'album') return send(res, 200, { ret: ret(), ...infoAlbum.albumData(userMedalList(), masterRows('medal'),
         (t) => (medalGuilt.GUILT_RANGES[t] || {}).max || 0) });
       // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
-      if (kind === 'partylogin' || kind === 'partysearch' || kind === 'rankinglist') {
-        return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData },
-          res, kind, req.url.split('?')[0].toLowerCase());
+      if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail'].includes(kind)) {
+        return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer,
+          selfElement: (now, partyId) => selfPlayerElement(now, userMedalsData(now)[0], partyId),
+          keyblade: () => userKeybladeData(favoriteKeyblade()) },
+          res, kind, req.url.split('?')[0].toLowerCase(), entry.bodyDecoded);
       }
       // Avatar Boards: GET /user/sphere (azione 10, sostituisce l'elenco), POST /user/sphere/check e
       // /check/170119 (azioni 60/61: userSphere in merge, closeEventSphereBoardIds se checkTypes ha 3)
@@ -2910,14 +2925,7 @@ function handler(scheme) {
       if (kind === 'supportlist') {
         const now = serverTime();
         const medal = userMedalsData(now)[0];
-        const supportUsers = medal ? [{
-          supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
-          ...playerTitleIds(), addKizunaPoint: 0,
-          keybladeId: favoriteKeyblade().keybladeId, partyId: 0, isParty: 0, isGuilt: 0, isLinkThumbnail: 0,
-          userMedal: medal, userSkills: userSkillsData(now).filter((s) => s.userMedalId === medal.userMedalId),
-          userAvatar: userAvatarData(),
-          lastActionDatetime: now, earnLuxRank: 0,
-        }] : [];
+        const supportUsers = medal ? [selfPlayerElement(now, medal)] : [];
         return send(res, 200, { ret: ret(), supportUsers });
       }
       // GET /user/avatar (21), /user/avatar/all (22), /user/avatar/parts (23)
