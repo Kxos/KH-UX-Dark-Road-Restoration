@@ -540,6 +540,26 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   non vendibili, usati solo da BGB (khuxwiki «Keyblade#Trophy»). Servono le 3 righe in `material` e i premi
   del terzo obiettivo di quelle quest; BGB stesso si otteneva alla quest 880.
 
+<a id="keyblade-oltre-35"></a>
+### Oltre +35 (15 ottobre, analisi offline; DA PROVARE)
+
+- Nell'originale WW si andava oltre +35: passi da 0,1 fino a +60, Bad Guy Breaker a interi (screenshot
+  `reference\equipment`: «Starlight +52.2», «Bad Guy Breaker +41»); dati in `reference\keyblades\keyblade_levels.json`.
+- Client 4.3.1 (agente, decompilati in `D:\Progetto_Restauro_KH_UX	mp\kb35_re\`): lettore `[fn]` (25 campi,
+  `lv` int a +0xc8, nessun campo decimale; chiavi in piu' ignorate). Titolo = `name` cosi' com'e' (`[fn]`,
+  `[fn]`), nessun «+%d.%d». `lv` letto solo da `[fn]` («Unlock +%d» degli slot bloccati) e dal ramo
+  dell'azione 54 (`lv == 30` -> evento 0x6008f73). Massimo = solo `evolveId 0` («Keyblade level max.», 101900006,
+  Strengthen spento); i materiali della finestra si mostrano per `validNeedMaterial` anche con evolveId 0 (per
+  questo a +35 si vedevano materiali). Il popup di conferma carica la riga `evolveId` senza controllo del null.
+  Nessun tetto a 35/60 nel client. `passive`/`passivePower` della riga keyblade non letti: le passive passano da
+  `passiveSetting` + `PUT /passive/list` (gia' generate fino a +60 da `make-passives.js`).
+- Server (15-10, non ancora rigenerato ne' installato): `make-keyblade-levels.js` estrae tutti i livelli e aggiunge
+  +35.1..+60 (id serie*1000+216..465, BGB serie*1000+lv*10; `lv` intero, `lv10` per il server; design della riga
+  +35; +60 con evolveId 0 e senza materiali); `keyblade-evo.js` usa `lv10` per le passive. ~3775 righe nuove.
+  Da fare: rigenerare (`node server\make-keyblade-levels.js <keyblade_levels.json>`, la tabella ridotta va rifatta
+  dal riferimento), confrontare il master, alzare la revisione, provare sul banco (tempi di caricamento, titolo
+  «+35.1», passive a +35.5, «Keyblade level max.» a +60).
+
 ### Sblocco alla missione (12 ottobre, offline)
 
 - Fonti: khuxwiki (`D:\Progetto_Restauro_KH_UX\wiki\wiki_all.json`: pagina del keyblade «obtained

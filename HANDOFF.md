@@ -88,6 +88,19 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - Regole del banco nuove: `bench_lib` Tap/Swipe rifiutano i tocchi a gioco chiuso (dopo un crash i tocchi
   aprivano i banner pubblicitari di LDPlayer nel browser); dopo un crash fermare subito lo script. Diagnosi dei
   crash: `ld.exe -s 0 "logcat -d -b crash"` da' `rbx` = indirizzo ARM (Ghidra = rbx - base + 0x100000).
+## Fine giornata 15 ottobre 2026 (sera) e prossimo passo
+
+- Banco: risorse **37**, master **111**, pet acceso di default. Fatti oggi (tutti provati): Supernova con icona SN,
+  Transfer Unions, party (create/edit/recruit/manage/leave/bonus), Blue Fairy ed Evolve 6★->7★, BGM Medals,
+  missioni Beginner, crash di Filter nella storia (I-127), 13 keyblade a +35 + Bad Guy Breaker a +35 (utente).
+- **Prossimo**: keyblade oltre +35 fino a +60 (home_profilo.md#keyblade-oltre-35: codice pronto, da rigenerare,
+  confrontare e provare); poi «Quest 0» nella bolla della home (la storia e' alla 133), Limited (I-118, da
+  decidere), Blue Fairy (I-126, da decidere), monete degli slot vuoti piu' scure nel popup Strengthen (I-093,
+  serve un riferimento originale), crash intermittenti dopo sessioni lunghe (home/pet, Olympia +9: non riprodotti).
+- La rete del guest e' caduta due volte oggi: «7 ERROR» -> `ldconsole reboot`, `phaseb-guest.sh`, relogin.
+- Salvataggio di prova: 999 di ogni materiale, tutti i keyblade a +35, party creato, HD Roxas condivisa; copie in
+  `tmp\player_before_*.json`.
+
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
