@@ -206,7 +206,7 @@ destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Su
   dell'intervallo del tier (`FUN_00c80b50`): il «Max Guilted» della fonte e' imposto dal client.
   Banco 15-10: Lexaeus A 6★ LV100, 5 pallini, guilt 10000 (max tier 3) + 5 Blue Fairy [3] -> Lexaeus A 7★ (No. 1111),
   richiesta `{baseUserMedalId:723, attachmentMedalIds:[2313 x5]}` (la pila ripete il primo id), il server consuma
-  2313-2317 e 99999 munny. Da decidere: come si ottengono le Blue Fairy senza PvP.
+  2313-2317 e 99999 munny. Come si ottengono senza PvP: I-126 (decisione rimandata).
 - Unequip: `POST /user/medal/remove` (237); prima il client chiede `GET /user/medal/preremove`, a cui
   il server da' una risposta generica (ISSUES I-038).
 
