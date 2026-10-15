@@ -68,7 +68,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Sort/Filter scorrere solo sul bordo destro (x 1722): uno swipe su un pulsante lo attiva.
 - 15-10: **master revisione 109** (Blue Fairy ed Evolve 6★ -> 7★, medaglie.md#blue-fairy, provato). Salvataggio di prova
   modificato per la prova (munny, Lexaeus A 7★): copia prima in `tmp\player_before_evo6.json`. Party: creazione e schermata del party servite e provate (server.md#party-ranking,
-  `player.party`; copia prima in `tmp\player_before_party.json`); restano Edit/Recruit/Manage/Search/uscita. Come ottenere le Blue Fairy: decisione rimandata (I-126).
+  `player.party`; copia prima in `tmp\player_before_party.json`); Edit/Recruit/Manage/Rankings/Search/Leave provati il 15-10 (risorse 36 -Quick con
+  PartyTop_JoinManagement_Right JP); restano firstReward 100 jewel, icone partyRank, Chat. Come ottenere le Blue Fairy: decisione rimandata (I-126).
 - 15-10: pulsante Supernova in battaglia con l'icona SN dei filtri (`SBurst_SN_but01/02`, battaglia.md#supernova).
   Git Bash su D: di nuovo utilizzabile (sistemato dall'utente).
 - Strumenti del banco: `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <nome> <x> <y> [-Pre "x,y;..."] [-Wait s]`

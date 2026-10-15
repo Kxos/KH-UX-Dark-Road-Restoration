@@ -36,6 +36,7 @@
 // - 86 con getDetail: ogni elemento = elemento giocatore (FUN_0078a5c4) + FUN_00785274 (userKeyblade,
 //   userRanking, lastStageId, comment, linkPlatformId, userColosseumRanking/userPvpRanking int, raidHelpNumber).
 // - 84 GET /party/detail: {rank uint}.
+// - 80 POST /party/update e 85 POST /party/leave (ramo 0x7c3f88): solo userParty.
 
 const LUX_KEYS = {
   '/ranking/weekly/user': 'luxRankingWeekly', '/ranking/monthly/user': 'luxRankingMonthly',
@@ -53,6 +54,9 @@ const EMPTY_KEYS = {
 function routePartyRanking(p) {
   if (p === '/party/login') return 'partylogin';
   if (p === '/party/create') return 'partycreate';
+  if (PARTY_EMPTY_LISTS[p]) return 'partyemptylist';
+  if (p === '/party/update') return 'partyupdate';
+  if (p === '/party/leave') return 'partyleave';
   if (p === '/party') return 'party';
   if (p === '/party/member/list') return 'partymembers';
   if (p === '/party/detail') return 'partydetail';
@@ -75,11 +79,21 @@ function term(now, monthly) {
 }
 
 const PARTY_ID = 1;
+// Elenchi del party sempre vuoti (un solo giocatore sul server; parser dai rami di FUN_007c3204, 15-10):
+// 89 FUN_0078381c, 91 FUN_00782b88, 98 FUN_0078aa3c con la chiave partyUserList (stringa 0x1775281), 100 FUN_00784848, 102 FUN_007862bc
+const PARTY_EMPTY_LISTS = {
+  '/party/application/list': { partyApplicants: [], partyList: [] },
+  '/party/applicant/list': { partyApplicants: [], partyUserList: [] },
+  '/party/invite/search': { partyUserList: [] },
+  '/party/invite/list': { partyOffers: [], partyUserList: [] },
+  '/party/offer/list': { partyOffers: [], partyList: [] },
+};
 
 // deps: send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer,
 // selfElement(now, partyId), keyblade()
 function respondPartyRanking(deps, res, kind, p, body) {
   const { send, ret, serverTime, player } = deps;
+  if (kind === 'partyemptylist') return send(res, 200, { ret: ret(), ...PARTY_EMPTY_LISTS[p] });
   const now = serverTime();
   if (kind === 'partycreate') {
     player.party = {
@@ -88,6 +102,18 @@ function respondPartyRanking(deps, res, kind, p, body) {
     };
     deps.savePlayer();
     console.log(`  [party] creato «${player.party.name}» (playStyle ${player.party.playStyle}, agreeType ${player.party.agreeType})`);
+  }
+  // 80 POST /party/update (stesso corpo di create) e 85 POST /party/leave: ramo 0x7c3f88, solo userParty
+  if (kind === 'partyupdate' && player.party) {
+    for (const k of ['name', 'message']) if (typeof body?.[k] === 'string') player.party[k] = body[k];
+    for (const k of ['playStyle', 'agreeType']) if (body && k in body) player.party[k] = Number(body[k]) || 0;
+    deps.savePlayer();
+    console.log(`  [party] modificato: ${JSON.stringify(player.party)}`);
+  }
+  if (kind === 'partyleave' && player.party) {
+    console.log(`  [party] sciolto «${player.party.name}»`);
+    delete player.party;
+    deps.savePlayer();
   }
   const pt = player.party;
   const userParty = pt
@@ -100,7 +126,7 @@ function respondPartyRanking(deps, res, kind, p, body) {
   };
   const withParty = (o) => (pt ? { ret: ret(), userParty, party, ...o } : { ret: ret(), userParty, ...o });
   if (kind === 'partycreate') return send(res, 200, withParty({ firstReward: 0 }));
-  if (kind === 'party') return send(res, 200, withParty({}));
+  if (kind === 'party' || kind === 'partyupdate' || kind === 'partyleave') return send(res, 200, withParty({}));
   if (kind === 'partydetail') return send(res, 200, { ret: ret(), rank: 0 });
   if (kind === 'partymembers') {
     const partyUserList = pt ? [{
