@@ -613,7 +613,9 @@ otices_detail_yt_03.jpg (titoletti
   Txt_Medal_Label; icona AlbumGuilt_1/2/3 per guiltStatus 0/1/2, solo se userDetail.isGuilt e il
   tier della medaglia (+0x4c0) non e' 0. Sfide: Album_Challenge_ver112 ([fn]), pannello
   [fn] (crea Set_Reward da Album_Reward_Set_ver112 se manca), premi [fn],
-  ricevuta [fn]; POST /user/album/challenge/update (azione 168) non ancora servito.
+  ricevuta [fn]; POST /user/album/challenge/update (azione 168). **Non raggiungibile nel WW 4.3.1**
+  (15-10): [fn] nasconde e disattiva sempre Button_Challenge (vtable +0x160 setVisible(false),
+  +0x520 setTouchEnabled(false), senza condizioni), come nei video dell'originale (`referencelbum`): niente da servire.
 - Nessun layout dell'Album e' servito nel WW: gli originali JP sono in jp_coco_layouts.txt (prova
   --check: 7 radici ok). La cella JP non ha Txt_Medal_Label, che il codice WW usa senza controllo:
   nuova opzione clone=Txt_Medal_Num_Label>Txt_Medal_Label@Medal_S di import_jp_coco.py (copia del
