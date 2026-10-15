@@ -169,6 +169,7 @@ function route(url) {
   if (p === '/user/material/sell') return 'materialsell';
   if (p === '/moogleshop/buy') return 'moogleshopbuy';
   if (p === '/shop/medal/max') return 'medalmax';
+  if (p === '/union/change') return 'unionchange';
   if (p === '/moogleshop/list') return 'moogleshoplist';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
   if (p === '/stage/start') return 'stagestart';
@@ -946,6 +947,22 @@ function respondMedalMax(res, body) {
     savePlayer();
     console.log(`  [increase storage] +${n * MEDAL_MAX_STEP} posti (${maxMedal()}), -${cost} jewel`);
   } else console.log(`  [increase storage] rifiutato: count ${body?.count}, jewel ${player.freeStone || 0}, posti ${maxMedal()}`);
+  send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
+}
+
+// POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo
+// {unionId} 1-5. Stesso ramo della 71 (0x7c3a68): solo userData.userDetail, i jewel il client li
+// rilegge. «It will cost 100 Jewels»; i lux settimanali/mensili non li teniamo (niente da azzerare).
+const UNION_CHANGE_COST = 100;
+function respondUnionChange(res, body) {
+  const now = serverTime();
+  const id = Number(body?.unionId);
+  if (id >= 1 && id <= 5 && id !== player.unionId && (player.freeStone || 0) >= UNION_CHANGE_COST) {
+    console.log(`  [union] ${player.unionId} -> ${id}, -${UNION_CHANGE_COST} jewel`);
+    player.unionId = id;
+    player.freeStone -= UNION_CHANGE_COST;
+    savePlayer();
+  } else console.log(`  [union] rifiutato: unionId ${body?.unionId}, attuale ${player.unionId}, jewel ${player.freeStone || 0}`);
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
 }
 
@@ -2795,6 +2812,7 @@ function handler(scheme) {
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
       if (kind === 'moogleshopbuy') return respondMoogleshopBuy(res, entry.bodyDecoded);
       if (kind === 'medalmax') return respondMedalMax(res, entry.bodyDecoded);
+      if (kind === 'unionchange') return respondUnionChange(res, entry.bodyDecoded);
       if (kind === 'userupdate') return respondUserUpdate(res, entry.bodyDecoded);
       // GET /user/mission/list (azione 189): missions[] e beginnerLimitTime
       if (kind === 'missionlist') { const missions = missionsData(); const beginner = beginnerLimitTime(); savePlayer(); return send(res, 200, { ret: ret(), missions, beginnerLimitTime: beginner }); }
