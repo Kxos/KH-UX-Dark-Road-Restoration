@@ -161,6 +161,9 @@ PartyTop_right1_ver131.json
 PartyTop_right2_ver131.json
 PartyTop_right3_ver131.json
 PartyTop_right4_ver131.json
+# Manage del party (15-10): PartyTop_JoinManagement_Scene_ver150 (servita) cita publish/PartyTop_JoinManagement_Right.json,
+# assente nel WW: GUIReader su documento vuoto, strlen(NULL) cercando useMergedTexture
+PartyTop_JoinManagement_Right.json
 PopupNormal_PartySearch_Approvalmethod.json
 PopupNormal_PartySearch_Level_ver230.json
 PopupNormal_PartySearch_Lux.json

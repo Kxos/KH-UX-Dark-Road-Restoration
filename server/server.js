@@ -2847,7 +2847,7 @@ function handler(scheme) {
       if (kind === 'album') return send(res, 200, { ret: ret(), ...infoAlbum.albumData(userMedalList(), masterRows('medal'),
         (t) => (medalGuilt.GUILT_RANGES[t] || {}).max || 0) });
       // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
-      if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail'].includes(kind)) {
+      if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail', 'partyupdate', 'partyleave', 'partyemptylist'].includes(kind)) {
         return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer,
           selfElement: (now, partyId) => selfPlayerElement(now, userMedalsData(now)[0], partyId),
           keyblade: () => userKeybladeData(favoriteKeyblade()) },

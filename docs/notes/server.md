@@ -531,8 +531,20 @@ Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
   (`supportUserId` == `party.leaderUserId`) in `partyUserList`: senza, indice -1. Leader non assente -> PartyTop_right1.
   Chat: servizio HTTP a parte (non Photon), con `chatId` 0 e url vuoti non parte; ChatScene non ha layout (crash
   probabile toccando Chat). Banco 15-10: «Kxos's Party» con Leader, Members 1/30, Play Style, Approval, messaggio e
-  pulsanti Edit/Recruit/Manage/Rankings/Search. Da fare: Edit, Recruit, Manage, Search, uscita dal party, medaglia
-  della scheda del membro (oggi la prima della lista), icone `img/partyRank` (assenti nel WW, 1-5 nel bundle JP 2016).
+  pulsanti Edit/Recruit/Manage/Rankings/Search.
+- Pulsanti del party (15-10, tutti provati sul banco, nessun crash):
+  - Edit = `POST /party/update` (80) col corpo di create; Leave (in Manage) = `POST /party/leave` (85); stesso ramo
+    0x7c3f88, solo `userParty`. Leave -> «You have left the party.» e ritorno a «Create or join a party».
+  - Recruit = `GET /party/invite/search` (98): `[fn]` con la chiave **`partyUserList`** (stringa 0x1775281),
+    non `supportUsers`: con la chiave sbagliata «200 ERROR :98».
+  - Manage = scena servita `PartyTop_JoinManagement_Scene_ver150`, che cita `PartyTop_JoinManagement_Right.json` assente
+    nel WW (SIGSEGV in strlen da GUIReader): importato dal JP (`jp_coco_layouts.txt`). Schede: 91 `/party/applicant/list`
+    {partyApplicants, partyUserList}, 100 `/party/invite/list` {partyOffers, partyUserList}, 102 `/party/offer/list`
+    {partyOffers, partyList}; 89 `/party/application/list` {partyApplicants, partyList}: tutte vuote.
+  - Rankings = classifiche party 137/138/184 (vuote); Search = 87 `/party/search/active` (vuota).
+  - Da fare: «Receive 100 Jewels for joining your first party!» (`firstReward`/`flagFirstReward`, oggi 0), medaglia
+    della scheda del membro (oggi la prima della lista), icone `img/partyRank` (assenti nel WW, 1-5 nel bundle JP 2016),
+    Chat (ChatScene senza layout).
 - «7 ERROR :249» al riavvio dopo il crash del Party = `PUT /passive/list` (249) con codice curl 7
   (connessione rifiutata): la rete del guest era caduta, non e' un errore del server.
 - **Classifiche** (`[fn]` disegna l'elenco; scheda Lux = tipo 4, `+0x360` 1 = propria
