@@ -185,7 +185,9 @@ Tre elementi mancano da noi.
   `SBurst_but01.png` (bussola azzurra; `ActionMap_SuperBurst_SelectWindow.json` uguale nel WW e nel
   JP), mentre nella foto c'e' la «bolla» di `SBurst_Icon` senza scritta (= `Supernova icon KHUX.png`
   della khuxwiki): non e' in nessuna versione locale (4.3.1, 4.4.0, 5.0.1), quindi viene da un
-  aggiornamento NA successivo. Deciso con l'utente (14-10): resta la bussola originale. Per accenderlo: righe
+  aggiornamento NA successivo. Dal 15-10 (decisione dell'utente) il pulsante usa l'icona SN dei filtri della Medal List:
+  `SBurst_SN_but01/02` (SBurst_Icon1 JP ridotta a 80x80, premuto scurito, `make_textures.py`) in una copia di
+  `ActionMap_SuperBurst_SelectWindow` (`make_layouts.py`, sorgente WW in `layouts\orig`); provato sul banco. Per accenderlo: righe
   medal/burst delle Supernova (`superburstTiming`), `lwf/battle/Sburst` e `SBurst_Revival` (nel JP,
   da aggiungere a `JP_LWF` insieme ai dati), `img/ui/SBurst_Icon1..3R.png` (JP `img/ui`).
 

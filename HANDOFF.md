@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 35** (stage originali delle 525 missioni, stanze JP recuperate), **revisione master 101** (default degli script di sessione).
+Stato del banco: **risorse 36**, **revisione master 108** (default degli script di sessione); dettagli sotto.
 
 ```powershell
 # emulatore (se spento)
@@ -66,6 +66,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Salvataggio di prova: livello 100 (lux 320000), keyblade 2 con 5 Supernova (762, 766, 769, 777, 1284); copie in
   `tmp\player_before_sndeck.json`, `tmp\player_before_guilt.json`, `tmp\player_before_meow.json`. Sul popup
   Sort/Filter scorrere solo sul bordo destro (x 1722): uno swipe su un pulsante lo attiva.
+- 15-10: pulsante Supernova in battaglia con l'icona SN dei filtri (`SBurst_SN_but01/02`, battaglia.md#supernova).
+  Git Bash su D: di nuovo utilizzabile (sistemato dall'utente).
 - Strumenti del banco: `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <nome> <x> <y> [-Pre "x,y;..."] [-Wait s]`
   (tocca, salva richieste del server, logcat crash e foto in `tmp\repro\<nome>`, riavvia l'app se cade; -Pre di
   default = MENU > Other). Stack ARM di un crash: avviare `tools\ldplayer\armtrace\stackcap.ps1 -NoStart -WaitSec 25`
@@ -83,7 +85,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
   (altri agenti committano in parallelo). Messaggi in italiano, terminati da
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. `git -c safe.directory=*`,
-  `git commit -F <file>`; PowerShell (Git Bash si blocca su D:); UTF-8 senza BOM.
+  `git commit -F <file>`; UTF-8 senza BOM.
 - **Stile dagli originali**: prima di fare una schermata si cercano screenshot/video/dati
   dell'originale, si salvano in `D:\Progetto_Restauro_KH_UX\reference\<schermata>\` e ci si
   adegua; controllo dello stile a ogni passo.

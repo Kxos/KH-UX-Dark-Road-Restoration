@@ -1313,6 +1313,11 @@ LAYOUTS = {
     'MedalInfo_Information_R1.json': ('copy', 'MedalInfo_Information_R1.json', {}, False, [
         P('Panel_MixResult_Area', 486, 50, 562, 300),
         P('Tap_Screen_Area', 480, 15, 1, 1)]),
+    # Pulsante Supernova in battaglia: l'icona SN dei filtri al posto della bussola SBurst_but01/02
+    # (texture SBurst_SN_but01/02 di make_textures.py; sostituzione, --last-wins).
+    'ActionMap_SuperBurst_SelectWindow.json': ('copy', 'ActionMap_SuperBurst_SelectWindow.json', {}, False, [
+        ('opts', 'SuperBurst_but', dict(normalData={'path': 'SBurst_SN_but01.png', 'plistFile': '', 'resourceType': 0},
+                                        pressedData={'path': 'SBurst_SN_but02.png', 'plistFile': '', 'resourceType': 0}))]),
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
                                      [# Win_Over (9-slice) usa Panel07, assente da ogni risorsa: stesso
                                       # crash di Plate21 (vedi NO_PLATE21); finestra blu Win04
