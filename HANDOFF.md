@@ -57,8 +57,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `server/routes-info-album.js`, `server/routes-party-ranking.js`, `server/legal-pages.js`; layout JP aggiunti in
   `recon/tools/jp_coco_layouts.txt` (anche armature Cursor_Anim_Ranking su `MyPageAnime0`, `set=` e `clone=` di
   `import_jp_coco.py`). Risorse 36 aggiornate con -Quick (non serve una versione completa).
-  Da fare dopo il blocco 1 (cambio di Union fatto il 15-10: `POST /union/change`, Leopardus nel salvataggio): sfide
-  dell'Album (azione 168), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), missioni nelle stanze
+  Da fare dopo il blocco 1 (cambio di Union fatto il 15-10: `POST /union/change`, Leopardus nel salvataggio; sfide
+  dell'Album: pulsante sempre nascosto dal client WW, niente da fare), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), missioni nelle stanze
   recuperate. Da verificare sul banco (annotazione dell'utente): l'Evolve di una medaglia a 6 stelle; medaglie con musica propria (BGM Medals): quali sono e quali OST, da https://www.khuxwiki.com/wiki/Category:BGM_Medals. Fatto il 14-10 sera: Supernova provata in battaglia con un deck di 5 SN (utente), badge SN sulle
   medaglie, danno fisso (Yuffie x3600 = 3600 di danno), testi e prove dei filtri Supernova (medaglie.md#filtri). Poi blocco 2 (I-119 EXP
   del Level Up, I-118 Beginner/Limited, I-087/I-093 keyblade), blocco 3 (stile: Presents I-035/I-096, Moogle Shop
