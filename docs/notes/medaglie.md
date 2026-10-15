@@ -207,6 +207,20 @@ destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Su
   Banco 15-10: Lexaeus A 6★ LV100, 5 pallini, guilt 10000 (max tier 3) + 5 Blue Fairy [3] -> Lexaeus A 7★ (No. 1111),
   richiesta `{baseUserMedalId:723, attachmentMedalIds:[2313 x5]}` (la pila ripete il primo id), il server consuma
   2313-2317 e 99999 munny. Come si ottengono senza PvP: I-126 (decisione rimandata).
+<a id="bgm-medals"></a>
+- **BGM Medals** (15-10, `referencegm_medals\`, khuxwiki «Category:BGM_Medals»): 37 medaglie con un brano che
+  suona nel dettaglio della medaglia e in home quando e' condivisa (Share). Client: `medal.bgm` int (+0x56c,
+  `FUN_00efce88`) = id del suono; `FUN_00737ff0` lo suona (`FUN_00ac7278`, dissolvenza 500 ms) e caricando
+  `audio/%09d.akb` (`FUN_00ac4894`, banco SQEX AKB v2 con Ogg Vorbis; senza file non suona nulla, ma l'icona ♪
+  `Support_Bgm` compare lo stesso). `text/audio/<nome>` e' solo testo (nome -> id).
+  Server: `server/medal_bgm.json` (nome -> id, abbinamenti incerti in `_incerti`) applicato da `make-game-tables.js`
+  (71 righe, master revisione 110); i 20 AKB non serviti dal JP 4.3.1 (`import_jp_coco.py`, `audio/` fuori da
+  cocostudio/publish), riserva delle versioni complete portata a 128 MiB (risorse 37). Share = `POST
+  /user/support/update` {supportMedalId} (azione 47, stesso ramo 0x7c4124 della 19): `player.supportUserMedalId`,
+  servito da `GET /user/support`. Banco 15-10: HD Roxas -> Another Side nel dettaglio e, condivisa, in home;
+  Sephiroth [EX] -> One-Winged Angel (sentiti dall'utente). Senza file: HD King Mickey [EX] (Vim and Vigor).
+  Crash intermittente della home dopo il -Quick (pet `wait.lwf` non caricato, `FUN_00b3c350`): non riprodotto
+  con le stesse risorse dopo un riavvio, da tenere d'occhio.
 - Unequip: `POST /user/medal/remove` (237); prima il client chiede `GET /user/medal/preremove`, a cui
   il server da' una risposta generica (ISSUES I-038).
 

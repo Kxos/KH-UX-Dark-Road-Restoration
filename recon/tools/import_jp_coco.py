@@ -669,6 +669,12 @@ _rank_img['img/ranking/Rank_Balloon1_01.png'] = _rank_img['img/ranking/Rank_Ball
 for _n in range(1, 6):
     _rank_img['img/partyRank/Party_RankIcon%d.png' % _n] = os.path.join(JP_ROOT, 'img', 'partyRank', 'Party_RankIcon%d.png' % _n)
 _rank_img['img/partyRank/Party_RankIcon1.png'] = os.path.join(_jp_pub, 'Party_RankIcon1.png')
+# musica delle BGM Medals (server/medal_bgm.json): audio/<id>.akb dal JP 4.3.1 (stesso formato AKB dei serviti,
+# md5 uguali su 501006019/021); le gia' servite si saltano (_served_all)
+_bgm = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'server', 'medal_bgm.json'),
+                      encoding='utf-8'))['medals']
+for _id in sorted(set(_bgm.values())):
+    _rank_img['audio/%09d.akb' % _id] = os.path.join(JP_ROOT, 'audio', '%09d.akb' % _id)
 for _name, _src in sorted(_rank_img.items()):
     if os.path.exists(_src) and _name not in _served_all:
         writes.setdefault(_name, ('jp', _src, None))
@@ -698,7 +704,7 @@ for _arm, (_slot, _src) in sorted(JP_ARM.items()):
 
 
 def out_path(name):
-    return os.path.join(OUT if name.startswith(('lwf/', 'img/')) else pub_out, *name.split('/'))
+    return os.path.join(OUT if name.startswith(('lwf/', 'img/', 'audio/')) else pub_out, *name.split('/'))
 
 
 # ---- scrittura --------------------------------------------------------------------------------

@@ -195,7 +195,7 @@ function route(url) {
   if (p.startsWith('/multi/')) return routeMulti(p); // Union Cross: server/multi.js
   if (p.startsWith('/raid/list')) return 'raidlist';
   if (p.startsWith('/raid/reward')) return 'raidreward';
-  if (p === '/user/support') return 'usersupport';
+  if (p === '/user/support' || p === '/user/support/update') return 'usersupport';
   if (p === '/stage/support/list') return 'supportlist';
   if (p === '/user/avatar' || p === '/user/avatar/all' || p === '/user/avatar/parts') return 'useravatar';
   if (p === '/user') return 'user';
@@ -2914,8 +2914,16 @@ function handler(scheme) {
       // GET /user/support: la medaglia di supporto del giocatore (supportUser). Con
       // medalId 0 la home cerca la medaglia 0 e va in crash (FUN_00721a24, riga nulla):
       // si usa la prima medaglia del deck, con la keyblade iniziale.
+      // POST /user/support/update {supportMedalId = userMedalId} (azione 47, Share del dettaglio della medaglia):
+      // stesso ramo della 19 (0x7c4124), stessa risposta; la medaglia scelta resta in player.supportUserMedalId.
       if (kind === 'usersupport') {
-        const m = startingInventory().medals[0] || { userMedalId: 0, medalId: 0 };
+        const sid = Number(entry.bodyDecoded?.supportMedalId);
+        if (sid && userMedalList().some((u) => u.userMedalId === sid)) {
+          player.supportUserMedalId = sid; savePlayer();
+          console.log(`  [support] medaglia condivisa ${sid}`);
+        }
+        const shared = player.supportUserMedalId && userMedalList().find((u) => u.userMedalId === player.supportUserMedalId);
+        const m = shared || startingInventory().medals[0] || { userMedalId: 0, medalId: 0 };
         return send(res, 200, {
           ret: ret(),
           supportUser: {

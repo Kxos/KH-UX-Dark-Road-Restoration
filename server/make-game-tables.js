@@ -218,6 +218,16 @@ if (process.env.KHUX_MEDALS_ALL === '1') {
   fairyAdded = fairies.length;
   fairyEvolve = blueFairy.applyBlueFairyEvolve(medals);
 }
+// BGM Medals (medal_bgm.json): bgm = id del suono audio/<id>.akb (FUN_00efce88 +0x56c), suonato nel dettaglio
+// della medaglia (FUN_00737ff0); stesso nome = righe 6★ e 7★. Nomi della wiki «(EX)» = «[EX]» del master.
+const MEDAL_BGM = JSON.parse(fs.readFileSync(path.join(__dirname, 'medal_bgm.json'), 'utf8')).medals;
+const bgmKey = (s) => String(s).toLowerCase().replace(/\(ex(\+?)\)/, '[ex$1]').replace(/[^a-z0-9[\]+&]/g, '');
+const bgmByName = new Map(Object.entries(MEDAL_BGM).map(([n, id]) => [bgmKey(n), id]));
+let bgmRows = 0;
+for (const m of medals) {
+  const id = bgmByName.get(bgmKey(m.name)) || bgmByName.get(bgmKey(String(m.name).replace(/ A$/, '')));
+  if (id) { m.bgm = id; bgmRows++; }
+}
 // Cid: khuxwiki «max 20 riduzioni dalla 2.0.0»: le 6★/7★ d'attacco con cost - minCost = 10
 // scendono di 20 (Cid 10 x2); upperCost di userMedal arriva fino a cost - minCost
 for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
@@ -750,6 +760,6 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded}, ${buffStats.rows} con buff/debuff, ${buffStats.fromOrig} da thethiny, ${buffStats.conflicts} conflitti)` +
-  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie); +${fairyAdded} Blue Fairy, ${fairyEvolve} Evolve 6★->7★ con Blue Fairy` +
+  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie); +${fairyAdded} Blue Fairy, ${fairyEvolve} Evolve 6★->7★ con Blue Fairy; bgm: ${bgmRows} righe` +
   `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
