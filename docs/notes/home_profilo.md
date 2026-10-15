@@ -533,8 +533,12 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   animazioni `KeyBlade_Evolution`, nessun passo oltre +35 ne' senza materiali), userKeyblades/
   userDecks coerenti, 120 sub-slot, 16 passive di +35, gauge tagliata al massimo della riga.
 - Bad Guy Breaker +4/+9/+14/+19/+24/+29/+30: nell'originale solo Trophy NI/CS/CK (assenti da
-  `material`): riga con `validNeedMaterial` 0, il passo e' gratis. Da vedere sul banco come la
-  finestra KEYBLADE mostra un passo senza materiali.
+  `material`): riga con `validNeedMaterial` 0, il passo e' gratis (banco 15-10: lista dei materiali vuota,
+  Strengthen funziona, BGB arriva a +35). **Da rifare come l'originale quando ci saranno le quest 880-915**
+  (decisione dell'utente, 15-10): i Trophy si ottenevano uno alla volta col terzo obiettivo («Complete without
+  having to continue») delle quest 880 e 885 (Trophy NI), 890, 895, 900, 905 (Trophy CS), 915 (Trophy CK);
+  non vendibili, usati solo da BGB (khuxwiki «Keyblade#Trophy»). Servono le 3 righe in `material` e i premi
+  del terzo obiettivo di quelle quest; BGB stesso si otteneva alla quest 880.
 
 ### Sblocco alla missione (12 ottobre, offline)
 
