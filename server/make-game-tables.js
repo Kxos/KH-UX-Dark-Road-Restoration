@@ -209,6 +209,15 @@ if (process.env.KHUX_MEDALS_ALL === '1') {
     snEvolve = supernova.applyEvolveRules(medals, supernova.evolveRules(wiki), ROBO);
   } catch { console.warn('wiki_all.json assente: Evolve delle Supernova senza medaglie richieste'); }
 }
+// Evolve 6★ -> 7★ con 5 Blue Fairy dello stesso tier (blue-fairy.js)
+const blueFairy = require('./blue-fairy');
+let fairyAdded = 0, fairyEvolve = 0;
+if (process.env.KHUX_MEDALS_ALL === '1') {
+  const fairies = blueFairy.blueFairyRows(medals, guilt.BROOM_ID);
+  medals.push(...fairies);
+  fairyAdded = fairies.length;
+  fairyEvolve = blueFairy.applyBlueFairyEvolve(medals);
+}
 // Cid: khuxwiki «max 20 riduzioni dalla 2.0.0»: le 6★/7★ d'attacco con cost - minCost = 10
 // scendono di 20 (Cid 10 x2); upperCost di userMedal arriva fino a cost - minCost
 for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
@@ -741,6 +750,6 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded}, ${buffStats.rows} con buff/debuff, ${buffStats.fromOrig} da thethiny, ${buffStats.conflicts} conflitti)` +
-  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie)` +
+  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie); +${fairyAdded} Blue Fairy, ${fairyEvolve} Evolve 6★->7★ con Blue Fairy` +
   `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);

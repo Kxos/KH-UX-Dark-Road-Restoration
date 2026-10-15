@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 36**, **revisione master 108** (default degli script di sessione); dettagli sotto.
+Stato del banco: **risorse 36**, **revisione master 109** (default degli script di sessione); dettagli sotto.
 
 ```powershell
 # emulatore (se spento)
@@ -59,13 +59,16 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `import_jp_coco.py`). Risorse 36 aggiornate con -Quick (non serve una versione completa).
   Da fare dopo il blocco 1 (cambio di Union fatto il 15-10: `POST /union/change`, Leopardus nel salvataggio; sfide
   dell'Album: pulsante sempre nascosto dal client WW, niente da fare), creare/cercare un party (azioni 79, 84-106; senza Photon, I-056), missioni nelle stanze
-  recuperate. Da verificare sul banco (annotazione dell'utente): l'Evolve di una medaglia a 6 stelle; medaglie con musica propria (BGM Medals): quali sono e quali OST, da https://www.khuxwiki.com/wiki/Category:BGM_Medals. Fatto il 14-10 sera: Supernova provata in battaglia con un deck di 5 SN (utente), badge SN sulle
+  recuperate. Da verificare sul banco (annotazione dell'utente; Evolve 6★ fatto il 15-10): medaglie con musica propria (BGM Medals): quali sono e quali OST, da https://www.khuxwiki.com/wiki/Category:BGM_Medals. Fatto il 14-10 sera: Supernova provata in battaglia con un deck di 5 SN (utente), badge SN sulle
   medaglie, danno fisso (Yuffie x3600 = 3600 di danno), testi e prove dei filtri Supernova (medaglie.md#filtri). Poi blocco 2 (I-119 EXP
   del Level Up, I-118 Beginner/Limited, I-087/I-093 keyblade), blocco 3 (stile: Presents I-035/I-096, Moogle Shop
   I-102/I-103, Subslot I-101, Home I-097, Chirithy I-016), blocco 4 (I-009, I-116, I-120/I-059, I-099, I-056).
   Salvataggio di prova: livello 100 (lux 320000), keyblade 2 con 5 Supernova (762, 766, 769, 777, 1284); copie in
   `tmp\player_before_sndeck.json`, `tmp\player_before_guilt.json`, `tmp\player_before_meow.json`. Sul popup
   Sort/Filter scorrere solo sul bordo destro (x 1722): uno swipe su un pulsante lo attiva.
+- 15-10: **master revisione 109** (Blue Fairy ed Evolve 6★ -> 7★, medaglie.md#blue-fairy, provato). Salvataggio di prova
+  modificato per la prova (munny, Lexaeus A 7★): copia prima in `tmp\player_before_evo6.json`. Party: schemi in
+  `tmp\party_re\REPORT.md`, da implementare (79/83/84/86/82). Da decidere con l'utente: come ottenere le Blue Fairy.
 - 15-10: pulsante Supernova in battaglia con l'icona SN dei filtri (`SBurst_SN_but01/02`, battaglia.md#supernova).
   Git Bash su D: di nuovo utilizzabile (sistemato dall'utente).
 - Strumenti del banco: `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <nome> <x> <y> [-Pre "x,y;..."] [-Wait s]`
