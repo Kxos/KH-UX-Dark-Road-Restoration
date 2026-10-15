@@ -1144,4 +1144,16 @@ for _n in ('Deck_Mark_Uplight', 'Deck_Mark_Reverse', 'Deck_Medal1'):
 _r = load('cocostudio/publish/Deck_Medal1.png').convert('RGBA')
 _ch = _r.split()
 save_ui('Deck_Medal2.png', Image.merge('RGBA', (_ch[2], _ch[0], _ch[1], _ch[3])))   # rosso -> verde
-print('img/ui/Deck_Mark_Uplight, Deck_Mark_Reverse, Deck_Medal1')
+print('img/ui/Deck_Mark_Uplight, Deck_Mark_Reverse, Deck_Medal1')# Pulsante Supernova della battaglia (SuperBurst_but di ActionMap_SuperBurst_SelectWindow): al posto
+# della bussola SBurst_but01/02 l'icona SN dei filtri della Medal List (SBurst_Icon1 JP, 112x112,
+# alpha diritta) ridotta a 80x80; premuto = la stessa scurita (decisione dell'utente, 15-10).
+_jp_sn = os.path.join(src, '..', '..', 'thethiny_data', ' KHUx data shared', 'khux_dev_data', 'data',
+                      'khux_dev_jp_final_4.3.1', 'data', 'jp_final_4.3.1', 'cocostudio', 'publish', 'SBurst_Icon1.png')
+if os.path.exists(_jp_sn):
+    _sn = Image.open(_jp_sn).convert('RGBA').resize((80, 80), Image.LANCZOS)
+    save('SBurst_SN_but01.png', _sn)
+    _r, _g, _b, _a = _sn.split()
+    _dk = [c.point(lambda v: v * 6 // 10) for c in (_r, _g, _b)]
+    save('SBurst_SN_but02.png', Image.merge('RGBA', _dk + [_a]))
+else:
+    print('SBurst_Icon1 JP assente: pulsante Supernova con la bussola originale')
