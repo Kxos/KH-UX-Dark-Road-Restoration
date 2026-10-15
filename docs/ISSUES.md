@@ -33,7 +33,7 @@ Ultima revisione: 13 ottobre 2026.
 | I-031 | APERTO | Avviso della morte nel tutorial mai catturato | [battaglia](notes/battaglia.md#sconfitta) | 10-08 |
 | I-032 | APERTO | Valori segnaposto: HP iniziale 3000, CP/HP dei forzieri (10.000/5.000/500) | [battaglia](notes/battaglia.md#hp) | 10-08/09 |
 | I-033 | APERTO | Attacchi speciali generati: 63 righe «Special Attack», animazioni del modello | [medaglie](notes/medaglie.md#burst) | 7da38e3 |
-| I-093 | APERTO | Keyblade (segnalazione utente 13-10): portare all'evoluzione +35 tutti i keyblade e verificarne il corretto funzionamento (livelli, slot, materiali, animazioni); seguito di I-087/I-067 | [home_profilo](notes/home_profilo.md#keyblade-tutti) | - |
+| I-093 | APERTO | Keyblade (segnalazione utente 13-10): portare all'evoluzione +35 tutti i keyblade e verificarne il corretto funzionamento (livelli, slot, materiali, animazioni); seguito di I-087/I-067. Banco 15-10: 13 serie a +35 (Lady Luck e Olympia dallo script, le altre a mano dall'utente), evoluzioni, slot, gauge e popup della passiva corretti; Bad Guy Breaker +5 (il passo +4 senza materiali funziona, lista vuota). Da verificare: monete degli slot vuoti piu' scure nel confronto di Strengthen che in Equipment (entrambi layout originali serviti: DeckEdit_KBStrength_ver120 / DeckEdit_RevolverMedal), manca uno screenshot originale | [home_profilo](notes/home_profilo.md#keyblade-tutti) | - |
 | I-101 | APERTO | Subslot del keyblade (segnalazione utente 13-10): sfondo troppo scuro e «X» troppo spenta; confrontare colori e layout con l'originale (seguito di I-066) | [risorse_layout](notes/risorse_layout.md) | - |
 
 ### Risorse e layout
