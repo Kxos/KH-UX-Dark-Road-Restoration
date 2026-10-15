@@ -223,6 +223,16 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   `KHUX_BEGINNER_DAYS` (30, ipotesi), null senza righe Beginner (il client lo usa solo per
   l'etichetta delle missionType 1). Aggiungerle = nuove righe del master (khuxwiki: 34 Beginner) e
   bump di revisione.
+- **Beginner (15-10, I-118, provato sul banco)**: le 34 della khuxwiki («Mission», 2019; fonti e Limited in
+  `reference\missionseginner_limited.md` e `limited_all_khuxwiki.tsv`), `server/make-beginner-missions.js` (righe
+  1001-1034 in `tables/mission.json` e `master_data/mission.json`, master revisione 111). Scheda valida 30 giorni
+  (avviso ufficiale «Introducing Missions!», 9-11-2017). conditionId originali ignoti: 30-44 (nessun effetto nel
+  client), avanzamento calcolato dallo stato (`MISSION_DERIVED`: 30 storia, 31 STR del keyblade preferito, 32 livello
+  della serie di keyblade, 33 Lux, 34 Special Attack Bonus al massimo) o contatore 3 (Raid Boss); 35-44 (draw, quest
+  speciali, eventi, Nova, Spirit, Proud, Coliseum, Union Cross) restano a 0. Premio «Skip Ticket+» = tipo 26 (il
+  client scrive «Skip Ticket», icona del jewel: immagine da cercare), `player.stageSkipTicket`. Banco: 12/34 complete
+  sul salvataggio di prova, Collect All -> +1000 jewel e «All rewards have been collected.». Limited non aggiunte
+  (tutte legate a date 2017-2021: da decidere).
 - `GET /user/mission` (azione 187, all'ingresso della home) **non e' la finestra Missioni**: parser
   `FUN_007976d8` (per la 187 solo `id`; `day`/`isFinish` solo per la 183 `/user/mission/update`),
   salvato in `FUN_007c1dfc()+0x830`; letto da `FUN_00749df4`, `FUN_0074b22c` (riga di un'altra

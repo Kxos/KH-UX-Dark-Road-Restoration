@@ -1,5 +1,1399 @@
 [
  {
+  "id": 1001,
+  "missionType": 1,
+  "sortId": 1,
+  "conditionId": 30,
+  "page": 10,
+  "missionName": "Complete story quest 6",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   6
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1002,
+  "missionType": 1,
+  "sortId": 2,
+  "conditionId": 30,
+  "page": 10,
+  "missionName": "Complete story quest 14",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   14
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1003,
+  "missionType": 1,
+  "sortId": 3,
+  "conditionId": 30,
+  "page": 10,
+  "missionName": "Complete story quest 24",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   24
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1004,
+  "missionType": 1,
+  "sortId": 4,
+  "conditionId": 30,
+  "page": 10,
+  "missionName": "Complete story quest 34",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   34
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1005,
+  "missionType": 1,
+  "sortId": 5,
+  "conditionId": 30,
+  "page": 10,
+  "missionName": "Complete story quest 130",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   130
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1006,
+  "missionType": 1,
+  "sortId": 6,
+  "conditionId": 31,
+  "page": 10,
+  "missionName": "Raise your equipment's total power to 30000",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   30000
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1007,
+  "missionType": 1,
+  "sortId": 7,
+  "conditionId": 31,
+  "page": 10,
+  "missionName": "Raise your equipment's total power to 50000",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   50000
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1008,
+  "missionType": 1,
+  "sortId": 8,
+  "conditionId": 31,
+  "page": 10,
+  "missionName": "Raise your equipment's total power to 120000",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   120000
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 100,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1009,
+  "missionType": 1,
+  "sortId": 9,
+  "conditionId": 35,
+  "page": 10,
+  "missionName": "Draw Medal x 3",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   3
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 26,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 5,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1010,
+  "missionType": 1,
+  "sortId": 10,
+  "conditionId": 35,
+  "page": 10,
+  "missionName": "Draw Medal x 7",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   7
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 26,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 10,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1011,
+  "missionType": 1,
+  "sortId": 11,
+  "conditionId": 36,
+  "page": 10,
+  "missionName": "Complete special quest for EXP Medals of all attributes x 5",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   5
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1012,
+  "missionType": 1,
+  "sortId": 12,
+  "conditionId": 37,
+  "page": 10,
+  "missionName": "Complete special quest for materials for all Keyblades x 5",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   5
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1013,
+  "missionType": 1,
+  "sortId": 13,
+  "conditionId": 38,
+  "page": 10,
+  "missionName": "Complete event \"Proud Quest\" of all attributes x 1",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1014,
+  "missionType": 1,
+  "sortId": 14,
+  "conditionId": 38,
+  "page": 10,
+  "missionName": "Complete event \"Proud Quest\" of all attributes x 10",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   10
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1015,
+  "missionType": 1,
+  "sortId": 15,
+  "conditionId": 32,
+  "page": 10,
+  "missionName": "Strengthen Starlight Keyblade to +4",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   1
+  ],
+  "targetNum": [
+   4
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1016,
+  "missionType": 1,
+  "sortId": 16,
+  "conditionId": 32,
+  "page": 10,
+  "missionName": "Strengthen Starlight Keyblade to +11",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   1
+  ],
+  "targetNum": [
+   11
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1017,
+  "missionType": 1,
+  "sortId": 17,
+  "conditionId": 32,
+  "page": 10,
+  "missionName": "Strengthen Starlight Keyblade to +21",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   1
+  ],
+  "targetNum": [
+   21
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1018,
+  "missionType": 1,
+  "sortId": 18,
+  "conditionId": 32,
+  "page": 10,
+  "missionName": "Strengthen Treasure Trove Keyblade to +5",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   201
+  ],
+  "targetNum": [
+   5
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1019,
+  "missionType": 1,
+  "sortId": 19,
+  "conditionId": 32,
+  "page": 10,
+  "missionName": "Strengthen Lady Luck Keyblade to +5",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   301
+  ],
+  "targetNum": [
+   5
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1020,
+  "missionType": 1,
+  "sortId": 20,
+  "conditionId": 32,
+  "page": 10,
+  "missionName": "Strengthen Three Wishes Keyblade to +5",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   401
+  ],
+  "targetNum": [
+   5
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1021,
+  "missionType": 1,
+  "sortId": 21,
+  "conditionId": 33,
+  "page": 10,
+  "missionName": "Obtain a total of 500000 Lux",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   500000
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1022,
+  "missionType": 1,
+  "sortId": 22,
+  "conditionId": 33,
+  "page": 10,
+  "missionName": "Obtain a total of 2000000 Lux",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   2000000
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1023,
+  "missionType": 1,
+  "sortId": 23,
+  "conditionId": 3,
+  "page": 10,
+  "missionName": "Defeat Raid Boss x 3",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   3
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1024,
+  "missionType": 1,
+  "sortId": 24,
+  "conditionId": 3,
+  "page": 10,
+  "missionName": "Defeat Raid Boss x 10",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   10
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1025,
+  "missionType": 1,
+  "sortId": 25,
+  "conditionId": 34,
+  "page": 10,
+  "missionName": "Max out the SP Attack Bonus of Medal x 1",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1026,
+  "missionType": 1,
+  "sortId": 26,
+  "conditionId": 34,
+  "page": 10,
+  "missionName": "Max out the SP Attack Bonus of Medal x 2",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   2
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1027,
+  "missionType": 1,
+  "sortId": 27,
+  "conditionId": 39,
+  "page": 10,
+  "missionName": "Raise Nova attack to LV 20",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   20
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1028,
+  "missionType": 1,
+  "sortId": 28,
+  "conditionId": 39,
+  "page": 10,
+  "missionName": "Raise Nova attack to LV 50",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   50
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1029,
+  "missionType": 1,
+  "sortId": 29,
+  "conditionId": 40,
+  "page": 10,
+  "missionName": "Raise a Spirit's rank to 2",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   2
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1030,
+  "missionType": 1,
+  "sortId": 30,
+  "conditionId": 40,
+  "page": 10,
+  "missionName": "Raise a Spirit's rank to 3",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   3
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1031,
+  "missionType": 1,
+  "sortId": 31,
+  "conditionId": 41,
+  "page": 10,
+  "missionName": "Complete up to story quest 3 in Proud Mode",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   1
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1032,
+  "missionType": 1,
+  "sortId": 32,
+  "conditionId": 42,
+  "page": 10,
+  "missionName": "Complete event quest x 10",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   10
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1033,
+  "missionType": 1,
+  "sortId": 33,
+  "conditionId": 43,
+  "page": 24,
+  "missionName": "Complete Coliseum round x 10",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   10
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
+  "id": 1034,
+  "missionType": 1,
+  "sortId": 34,
+  "conditionId": 44,
+  "page": 16,
+  "missionName": "Complete Union Cross quest x 10",
+  "validTarget": 1,
+  "targetType": [
+   0
+  ],
+  "targetId": [
+   0
+  ],
+  "targetNum": [
+   10
+  ],
+  "validStages": 0,
+  "targetStageType": [
+   0,
+   0
+  ],
+  "targetStageStartId": [
+   0,
+   0
+  ],
+  "targetStageEndId": [
+   0,
+   0
+  ],
+  "rewardType": 2,
+  "itemId": 0,
+  "skillType": 0,
+  "skillId": 0,
+  "skillLv": 0,
+  "burstUpperNumber": 0,
+  "itemNum": 50,
+  "startDate": "2015-01-01 08:00:00",
+  "endDate": "2099-12-31 23:59:59",
+  "rewardEndTime": "2099-12-31 23:59:59"
+ },
+ {
   "id": 2001,
   "missionType": 2,
   "sortId": 1,
