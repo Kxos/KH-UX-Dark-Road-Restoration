@@ -542,7 +542,11 @@ Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
     {partyApplicants, partyUserList}, 100 `/party/invite/list` {partyOffers, partyUserList}, 102 `/party/offer/list`
     {partyOffers, partyList}; 89 `/party/application/list` {partyApplicants, partyList}: tutte vuote.
   - Rankings = classifiche party 137/138/184 (vuote); Search = 87 `/party/search/active` (vuota).
-  - Da fare: «Receive 100 Jewels for joining your first party!» (`firstReward`/`flagFirstReward`, oggi 0), medaglia
+  - «Receive 100 Jewels for joining your first party!» (testo di PartyTop_Initial): alla prima create `firstReward` 1,
+    `flagFirstReward` 1 da allora (`player.partyFirstRewardDone`) e regalo «First Party Bonus» Jewel x100 nei Presents
+    (`addPresent`): il client non mostra nulla dopo la 79 e non rilegge i jewel. Banco 15-10: Collect -> «Received
+    Jewel x 100!». Effetto vero di firstReward nel client non verificato.
+  - Da fare: medaglia
     della scheda del membro (oggi la prima della lista), icone `img/partyRank` (assenti nel WW, 1-5 nel bundle JP 2016),
     Chat (ChatScene senza layout).
 - «7 ERROR :249» al riavvio dopo il crash del Party = `PUT /passive/list` (249) con codice curl 7

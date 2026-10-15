@@ -79,6 +79,7 @@ function term(now, monthly) {
 }
 
 const PARTY_ID = 1;
+const FIRST_PARTY_JEWELS = 100;
 // Elenchi del party sempre vuoti (un solo giocatore sul server; parser dai rami di [fn], 15-10):
 // 89 [fn], 91 [fn], 98 [fn] con la chiave partyUserList (stringa 0x1775281), 100 [fn], 102 [fn]
 const PARTY_EMPTY_LISTS = {
@@ -95,13 +96,19 @@ function respondPartyRanking(deps, res, kind, p, body) {
   const { send, ret, serverTime, player } = deps;
   if (kind === 'partyemptylist') return send(res, 200, { ret: ret(), ...PARTY_EMPTY_LISTS[p] });
   const now = serverTime();
+  let firstReward = 0;
   if (kind === 'partycreate') {
     player.party = {
       name: String(body?.name || `${player.name}'s Party`), message: String(body?.message || ''),
       playStyle: Number(body?.playStyle) || 0, agreeType: Number(body?.agreeType) || 0, createDate: now,
     };
+    // «Receive 100 Jewels for joining your first party!» (PartyTop_Initial): una sola volta per giocatore, nei
+    // Presents (resourceType 2 = jewel): il client non rilegge i jewel dopo la 79
+    firstReward = player.partyFirstRewardDone ? 0 : 1;
+    if (firstReward) { player.partyFirstRewardDone = 1; deps.addPresent(2, 0, FIRST_PARTY_JEWELS, 'First Party Bonus'); }
     deps.savePlayer();
-    console.log(`  [party] creato «${player.party.name}» (playStyle ${player.party.playStyle}, agreeType ${player.party.agreeType})`);
+    console.log(`  [party] creato «${player.party.name}» (playStyle ${player.party.playStyle}, agreeType ${player.party.agreeType})` +
+      (firstReward ? `, primo party: ${FIRST_PARTY_JEWELS} jewel nei Presents` : ''));
   }
   // 80 POST /party/update (stesso corpo di create) e 85 POST /party/leave: ramo 0x7c3f88, solo userParty
   if (kind === 'partyupdate' && player.party) {
@@ -117,15 +124,15 @@ function respondPartyRanking(deps, res, kind, p, body) {
   }
   const pt = player.party;
   const userParty = pt
-    ? { userId: 1, partyId: PARTY_ID, isJoin: 1, isLeader: 1, isAdmin: 0, flagFirstReward: 0, joinDate: pt.createDate }
-    : { userId: 1, partyId: 0, isJoin: 0, isLeader: 0, isAdmin: 0, flagFirstReward: 0, joinDate: now };
+    ? { userId: 1, partyId: PARTY_ID, isJoin: 1, isLeader: 1, isAdmin: 0, flagFirstReward: player.partyFirstRewardDone ? 1 : 0, joinDate: pt.createDate }
+    : { userId: 1, partyId: 0, isJoin: 0, isLeader: 0, isAdmin: 0, flagFirstReward: player.partyFirstRewardDone ? 1 : 0, joinDate: now };
   const party = pt && {
     partyId: PARTY_ID, unionId: player.unionId || 0, rank: 1, name: pt.name, playStyle: pt.playStyle,
     agreeType: pt.agreeType, message: pt.message, memberCount: 1, leaderUserId: 1, adminUserIds: [],
     leaderAppointDate: pt.createDate, newcomerDate: pt.createDate, chatId: 0, chatEndpointUrl: '',
   };
   const withParty = (o) => (pt ? { ret: ret(), userParty, party, ...o } : { ret: ret(), userParty, ...o });
-  if (kind === 'partycreate') return send(res, 200, withParty({ firstReward: 0 }));
+  if (kind === 'partycreate') return send(res, 200, withParty({ firstReward }));
   if (kind === 'party' || kind === 'partyupdate' || kind === 'partyleave') return send(res, 200, withParty({}));
   if (kind === 'partydetail') return send(res, 200, { ret: ret(), rank: 0 });
   if (kind === 'partymembers') {
