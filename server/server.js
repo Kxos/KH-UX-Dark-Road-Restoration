@@ -999,7 +999,7 @@ function userPointData(now) {
     lastApDatetime: serverTimeAt(ap.time), // da qui il client conta la ricarica
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
-    specialPoint: 0, stageSkipTicket: 0, superSkipTicket: 0, vipPoint: 0,
+    specialPoint: 0, stageSkipTicket: player.stageSkipTicket || 0, superSkipTicket: 0, vipPoint: 0,
     // livello del Burst (pulsante rosso in battaglia, una volta per missione; [fn] non
     // lo crea a 0): +1 alla prima guilt di ogni medaglia, +5 alla prima guilt massima
     guiltBurstLv: guiltBurst().level(), multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
@@ -1224,6 +1224,7 @@ function grantItem(type, id, num) {
   } else if (type === 2) player.freeStone = (player.freeStone || 0) + num;
   else if (type === 4) player.money = (player.money || 0) + num;
   else if (type === 14) player.spherePoint = (player.spherePoint || 0) + num;
+  else if (type === 26) player.stageSkipTicket = (player.stageSkipTicket || 0) + num; // Skip Ticket (setItemImageData 1.0.1)
   // 11 Lux (testo 100200001 in SceneUtil::setItemImageData della 1.0.1, 0x46C71C)
   else if (type === 11) player.lux = (player.lux || 0) + num;
   else if (type === 5 && id) {
@@ -1638,6 +1639,31 @@ function userTitlesData() {
 // ---------------------------------------------------------------------------
 const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp' };
 const MISSION_SPAN = { 2: 86400000, 3: 7 * 86400000 }; // 1 e 4: nessun azzeramento
+// Condizioni delle Beginner (make-beginner-missions.js) calcolate dallo stato del giocatore a ogni elenco,
+// non da un contatore: 30 storia superata fino alla quest targetId, 31 STR del keyblade preferito,
+// 32 livello +N della serie di keyblade targetId (category), 33 Lux totali, 34 medaglie con lo Special
+// Attack Bonus al massimo del tier. 35-44 non hanno ancora una funzione: restano a 0.
+const MISSION_DERIVED = {
+  30: (r) => (stageNumber(player.lastClearStageId) >= (r.targetId?.[0] || 0) ? 1 : 0),
+  31: () => keybladeDeckStats(favoriteKeybladeId()).attack || 0,
+  32: (r) => {
+    const rows = masterRows('keyblade');
+    const lv = ownedKeyblades().map((k) => rows.find((x) => x.keybladeId === k.keybladeId))
+      .filter((x) => x && x.category === r.targetId?.[0]).map((x) => x.lv || 0);
+    return lv.length ? Math.max(...lv) : 0;
+  },
+  33: () => player.lux || 0,
+  34: () => {
+    const medals = new Map(masterRows('medal').map((m) => [m.medalId, m]));
+    const prob = masterRows('guiltProb');
+    return userMedalList().filter((u) => {
+      const tier = medals.get(u.medalId)?.guiltValue || 0;
+      const max = tier ? medalGuilt.guiltRange(prob, tier).max : 0;
+      return max > 0 && (u.guiltFactor || 0) >= max;
+    }).length;
+  },
+};
+const missionProgress = (row, s) => (MISSION_DERIVED[row.conditionId] ? MISSION_DERIVED[row.conditionId](row) : s.count);
 // Durata della scheda Beginner dal primo elenco (ipotesi: il valore originale non e' noto)
 const BEGINNER_DAYS = Number(process.env.KHUX_BEGINNER_DAYS || 30);
 
@@ -1691,8 +1717,9 @@ function missionsData() {
   return masterRows('mission').filter((r) => missionActive(r, nowMs)).map((r) => {
     const s = missionState(r, nowMs);
     const goal = r.targetNum?.[0] || 1;
-    const done = s.count >= goal;
-    return { id: r.id, status: s.received ? 2 : done ? 1 : 0, numUpper: Math.min(s.count, goal), numLower: goal };
+    const count = missionProgress(r, s);
+    const done = count >= goal;
+    return { id: r.id, status: s.received ? 2 : done ? 1 : 0, numUpper: Math.min(count, goal), numLower: goal };
   });
 }
 
@@ -1707,7 +1734,7 @@ function respondMissionReceive(res, req) {
     const r = rows.get(id);
     if (!r || !missionActive(r, nowMs)) continue;
     const s = missionState(r, nowMs);
-    if (s.received || s.count < (r.targetNum?.[0] || 1)) continue;
+    if (s.received || missionProgress(r, s) < (r.targetNum?.[0] || 1)) continue;
     s.received = true;
     grantItem(r.rewardType, r.itemId, r.itemNum);
   }
