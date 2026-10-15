@@ -251,7 +251,7 @@ function makeKeybladeEvo(ctx) {
     for (const k of ctx.ownedKeyblades()) {
       const row = rowOf(k.keybladeId);
       if (!row) continue;
-      const lv10 = Math.round((row.lv || 0) * 10);
+      const lv10 = row.lv10 ?? Math.round((row.lv || 0) * 10); // lv10: livelli oltre +35 (make-keyblade-levels.js)
       if ((best.get(row.category) ?? -1) < lv10) best.set(row.category, lv10);
     }
     const lux = ctx.luxLevel ? ctx.luxLevel() : 0;

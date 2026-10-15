@@ -15,8 +15,15 @@
 //   - le 64 righe della 5.0.1 restano come sono (si cambia solo evolveId); lo script stampa
 //     dove la khuxwiki non torna con loro.
 // Le righe aggiunte hanno "generated": true (chiave in piu', ignorata dal client): rilanciando
-// lo script si rifanno da capo. Oltre +35 (+35.1 .. +60 dell'ultima versione) non si va: la
-// riga ha lv intero e la 5.0.1 chiude a +35 con evolveId 0.
+// lo script si rifanno da capo.
+// Oltre +35 (15-10, analisi del client 4.3.1 in docs/notes/home_profilo.md#keyblade-oltre-35): passi da 0.1 fino
+// a +60 (Bad Guy Breaker interi +36..+60). Il client non formatta il livello: il titolo e' il campo name
+// («Starlight +52.2»), il massimo e' solo evolveId 0 (FUN_00c04188: «Keyblade level max.»). Righe:
+//   - keybladeId: serie*1000 + 215 + passi da 0.1 (216..465), Bad Guy Breaker serie*1000 + lv*10;
+//   - lv intero (floor: il client lo usa solo per «Unlock +%d» e un controllo a 30), lv10 = livello*10
+//     per il server (passive di keyblade-evo.js; chiave in piu', ignorata dal client);
+//   - design, passiva, rotazione/scala della riga +35; slot, moltiplicatori, gauge e materiali dalla khuxwiki;
+//   - l'ultima (+60) con evolveId 0 e nessun materiale.
 // keybladeSubslot (vuota nella 5.0.1): 120 sub-slot per serie {subslotId = category*1000 + n,
 // category, slotNumber, attribute 1/2/3, darklight 1 Upright / 2 Reversed / 3 nessuno}.
 //
@@ -37,7 +44,7 @@ const MAX_LV = 35;
 function load(f) { return JSON.parse(fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '')); }
 function save(f, data) { fs.writeFileSync(f, JSON.stringify(data, null, 1) + '\n', 'utf8'); }
 
-// tabella ridotta: per serie i livelli interi 0..35 e i 120 sub-slot
+// tabella ridotta: per serie tutti i livelli (0..35 interi, poi fino a 60) e i 120 sub-slot
 function extract(ref) {
   const out = {};
   for (const [name, s] of Object.entries(ref)) {
@@ -46,7 +53,7 @@ function extract(ref) {
       source: s.source,
       designLevels: s.designLevels,
       subslots: (s.subslotTree || []).map((t) => [t.n, ATTR[t.attribute] || 0, DL[t.urType] || 3]),
-      levels: s.levels.filter((l) => Number.isInteger(l.lv) && l.lv <= MAX_LV).map((l) => ({
+      levels: s.levels.map((l) => ({
         lv: l.lv, slots: l.slots, sa: l.saGauges, friend: l.friendMultiplier,
         m: l.multipliers.map((x) => [ATTR[x.attribute] || 4, x.value, x.matchValue, DL[x.urType] || 3]),
         mat: (l.materialsToNext || []).map((x) => [x.id, x.num, x.name]),
@@ -88,6 +95,9 @@ function main() {
     const top = Math.min(MAX_LV, list[list.length - 1].lv);
     // partnerRate: formula della khuxwiki, tranne dove non torna con la 5.0.1 (Bad Guy Breaker):
     // li' interpolazione lineare fra le righe 5.0.1
+    // livelli oltre +35 (dopo l'ultima riga intera)
+    const ext = top === MAX_LV ? data.levels.filter((l) => l.lv > MAX_LV).sort((a, b) => a.lv - b.lv) : [];
+    const extId = (lv) => base.keybladeId + (tens ? Math.round(lv * 10) : 215 + Math.round((lv - MAX_LV) * 10));
     const friendOk = list.every((r) => !levels.get(r.lv) || Math.abs(Math.round(levels.get(r.lv).friend * 10000) - r.partnerRate) <= 1);
     for (let lv = 0; lv <= top; lv++) {
       const anchor = list.find((r) => r.lv === lv);
@@ -96,7 +106,7 @@ function main() {
       const l = levels.get(lv);
       const id = anchor ? anchor.keybladeId : idOf(lv);
       if (!anchor && list.some((r) => r.keybladeId === id)) throw new Error(`id ${id} gia' usato (${base.name} +${lv})`);
-      const nextId = lv < top ? (list.find((r) => r.lv === lv + 1)?.keybladeId ?? idOf(lv + 1)) : 0;
+      const nextId = lv < top ? (list.find((r) => r.lv === lv + 1)?.keybladeId ?? idOf(lv + 1)) : (ext.length ? extId(ext[0].lv) : 0);
       if (!l) { // senza dati: copia della riga precedente
         rows.push(anchor ? { ...anchor, evolveId: nextId } : { ...prev, keybladeId: id, name: `${base.name} +${lv}`, lv, evolveId: nextId, generated: true });
         if (!anchor) { warn++; console.log(`! ${base.name} +${lv}: nessun dato, copia di +${prev.lv}`); }
@@ -133,11 +143,35 @@ function main() {
         rows.push(gen);
       }
     }
+    const lv35 = rows[rows.length - 1];
+    ext.forEach((l, i) => {
+      const id = extId(l.lv);
+      if (list.some((r) => r.keybladeId === id) || rows.some((r) => r.keybladeId === id)) throw new Error(`id ${id} gia' usato (${base.name} +${l.lv})`);
+      const last = i === ext.length - 1;
+      const slots = l.slots;
+      const m = l.m.slice(0, slots);
+      const mats = last ? [] : l.mat.filter(([mid]) => mid && materials.has(mid));
+      if (!last) for (const [mid, , nm] of l.mat) if (!mid || !materials.has(mid)) { warn++; console.log(`! ${base.name} +${l.lv}: materiale ${nm} (${mid}) assente da material.json, tolto`); }
+      const label = Number.isInteger(l.lv) ? String(l.lv) : l.lv.toFixed(1);
+      rows.push({
+        ...lv35,
+        keybladeId: id, name: `${base.name} +${label}`, lv: Math.floor(l.lv), lv10: Math.round(l.lv * 10),
+        drawCount: slots, maxBurstGauge: l.sa, validConsist: slots,
+        attribute: m.map(([a, v, mv]) => (v === 1 && mv == null ? 4 : a)),
+        darklight: m.map(([, , mv, d]) => (mv == null ? 3 : d)),
+        accord: m.map(([, v]) => Math.round(v * 10000)),
+        dlaccord: [0, 1, 2, 3, 4].map((j) => (m[j] && m[j][2] != null ? Math.round(m[j][2] * 10000) : (j === 0 ? 0 : 10000))),
+        partnerRate: l.friend ? Math.round(l.friend * 10000) : lv35.partnerRate,
+        evolveId: last ? 0 : extId(ext[i + 1].lv),
+        validNeedMaterial: mats.length, needMaterialId: mats.map(([mid]) => mid), needMaterialNum: mats.map(([, n]) => n),
+        generated: true,
+      });
+    });
     // sub-slot della serie
     for (const [n, a, d] of data.subslots) subslots.push({ subslotId: category * 1000 + n, category, slotNumber: n, attribute: a, darklight: d });
-    console.log(`${base.name}: +0..+${top}, ${data.subslots.length} sub-slot`);
+    console.log(`${base.name}: +0..+${ext.length ? ext[ext.length - 1].lv : top}, ${data.subslots.length} sub-slot`);
   }
-  rows.sort((a, b) => a.category - b.category || a.lv - b.lv);
+  rows.sort((a, b) => a.category - b.category || (a.lv10 ?? a.lv * 10) - (b.lv10 ?? b.lv * 10));
   save(kbFile, rows);
   save(path.join(MASTER, 'keybladeSubslot.json'), subslots);
   console.log(`keyblade: ${rows.length} righe (${rows.filter((r) => r.generated).length} generate), keybladeSubslot: ${subslots.length}, avvisi ${warn}`);
