@@ -245,7 +245,9 @@ function respondStatus(res) {
 const clock = require('./clock');
 const STARTED_AT = Date.now();
 const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE della revisione del master
-const realNow = () => Date.now();
+// KHUX_REAL_NOW (prove al banco): l'ora reale parte da quell'istante all'avvio del server
+const REAL_SHIFT = process.env.KHUX_REAL_NOW ? Date.parse(process.env.KHUX_REAL_NOW) - STARTED_AT : 0;
+const realNow = () => Date.now() + REAL_SHIFT;
 function clockOffset() {
   if (process.env.KHUX_SERVER_TIME) return Date.parse(process.env.KHUX_SERVER_TIME) - STARTED_AT;
   return Number.isFinite(player.clockOffset) ? player.clockOffset : clock.twinOffset(realNow());

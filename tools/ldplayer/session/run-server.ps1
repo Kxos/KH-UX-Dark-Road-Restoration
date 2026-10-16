@@ -1,17 +1,22 @@
 # Avvia il server KHUX per il banco LDPlayer (vedi HANDOFF, «Come riprendere il lavoro»).
 # La chiave delle risorse non sta nel repository: si rilegge dal binario 5.0.1.
 # Log: D:\Progetto_Restauro_KH_UX\logs\server.log (lo leggono cycle.ps1 e relogin.ps1).
-#   powershell -File run-server.ps1 [-Revision N] [-TutorialFinished]
+#   powershell -File run-server.ps1 [-Revision N] [-TutorialFinished] [-RealNow <ISO>]
+# -Revision: BASE della revisione del master (alzarla dopo ogni modifica dei master); il server
+# manda BASE*100000 + scadenze (lunedi'/inizio mese 08:00 UTC) passate dal 1/1/2026 (server/clock.js)
+# -RealNow: ora reale finta all'avvio (KHUX_REAL_NOW, es. 2026-10-19T09:00:00Z) per provare un
+# cambio di settimana o di mese; poi l'ora scorre normalmente
 # -TutorialFinished: il client scarica le risorse (azione 28) solo a tutorial finito;
 # dal 9 ottobre 2026 il server lo considera finito gia' dalla fase 995 (dopo il
 # Prologue), quindi serve solo a un giocatore fermo prima.
 # -KbFree: potenziamento dei keyblade senza materiali (KHUX_KB_FREE=1, prove dei livelli)
-param([int]$Revision = 117, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts)
+param([int]$Revision = 117, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
 $env:KHUX_PUBLIC_URL = 'https://192.168.1.185'
-$env:KHUX_REVISION = "$Revision"                      # alzarla dopo ogni modifica dei master
+$env:KHUX_REVISION = "$Revision"                      # BASE: alzarla dopo ogni modifica dei master
+if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow }
 if ($TutorialFinished) { $env:KHUX_TUTORIAL_FINISHED = '1' }
 if ($KbFree) { $env:KHUX_KB_FREE = '1' }
 # -Pet: sistema dei pet e 6o slot (KHUX_PET=1, server/pet.js; I-005)
