@@ -122,7 +122,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - Ora del server = data reale nel **mese gemello** 2016-2021 (`server/clock.js`), scostamento fissato a ogni
   `/khux/login`; periodi e scadenze sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00).
   Daily/Weekly/Limited mostrano il tempo vero (banco: 22 hours / 2 days / 15 days il venerdi' 16-10).
-- **Revisione del master = BASE*100000 + scadenze settimanali/mensili passate dal 1/1/2026** (oggi 11700051):
+- **Revisione del master = BASE*100000 + scadenze settimanali/mensili passate dal 1/1/2026** (con BASE 118: 11800051 al 16-10):
   `-Revision` degli script e' la BASE (118 dal 16-10 sera, da alzare come prima dopo ogni modifica dei master). Il client
   riscarica il master una volta a settimana/mese, mai le risorse (`darkVersionRes` resta la BASE).
 - Nuovo `-RealNow <ISO>` in `run-server.ps1`/`relogin.ps1` (`KHUX_REAL_NOW`): sposta l'ora reale del server per

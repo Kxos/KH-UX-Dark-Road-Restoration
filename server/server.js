@@ -61,6 +61,8 @@ const PUBLIC_URL = process.env.KHUX_PUBLIC_URL || 'https://127.0.0.1';
 // Dove mandare la richiesta di sessione. Per nome, non per IP: l'host di
 // bootstrap risolve gia' su di noi ed e' coperto dal certificato.
 const SESSION_BASE = process.env.KHUX_SESSION_BASE || 'https://api-s.sp.kingdomhearts.com';
+// Indirizzo http dello stesso host (pagine WebView e immagini dello Shop): https: la WebView rifiuta il certificato
+const WEB_BASE = SESSION_BASE.replace(/^https:/, 'http:');
 
 // Stato di sessione. La sharedSecurityKey la scegliamo noi: e' il punto in cui
 // prendiamo il controllo dell'intero canale cifrato.
@@ -444,8 +446,8 @@ function servedMasterRows(name, realMs) {
   // drawMedalType: bannerUrl/detailUrl sono percorsi (server/make-banners.js); l'indirizzo http si
   // aggiunge qui (max 128 byte, strncpy del client)
   if (name === 'drawMedalType') {
-    return rows.map((r) => ({ ...r, bannerUrl: r.bannerUrl.startsWith('/') ? WEB_BASE + r.bannerUrl : r.bannerUrl,
-      detailUrl: r.detailUrl.startsWith('/') ? WEB_BASE + r.detailUrl : r.detailUrl }));
+    return rows.map((r) => ({ ...r, bannerUrl: String(r.bannerUrl || '').startsWith('/') ? WEB_BASE + r.bannerUrl : r.bannerUrl,
+      detailUrl: String(r.detailUrl || '').startsWith('/') ? WEB_BASE + r.detailUrl : r.detailUrl }));
   }
   if (name !== 'mission') return rows;
   const off = clock.twinOffset(realMs);
@@ -1111,11 +1113,11 @@ const GACHA_FILE = process.env.KHUX_GACHA_BANNERS || path.join(__dirname, 'game_
 const GACHA_IMG = path.join(__dirname, 'game_data', 'gacha_img');
 const GACHA_TEST = process.env.KHUX_GACHA_TEST === '1';
 const GACHA_SIZES = new Set((process.env.KHUX_GACHA_SIZES || '1,3,10').split(',').map(Number));
-const WEB_BASE = SESSION_BASE.replace(/^https:/, 'http:'); // https: la WebView rifiuta il certificato
 let gachaBannerList = null;
 // Le medaglie impilabili (validPack) non si estraggono: stackedMedalList fonde la copia nuova nella
 // cella con l'id della prima, e l'id restituito non comparirebbe in userMedals (crash del client).
-// Le toglie dai pool al caricamento; un banner rimasto senza medaglie sparisce.
+// Le toglie dai pool al caricamento; un banner rimasto senza medaglie sparisce, e sparisce anche
+// quello in cui uno slot non trova nessuna medaglia alla sua stella o sotto (rollDraw lancerebbe).
 function sanitizeBanners(list) {
   const packed = new Set(masterRows('medal').filter((m) => m.validPack === 1).map((m) => m.medalId));
   return list.map((b) => {
@@ -1126,7 +1128,13 @@ function sanitizeBanners(list) {
       pool[rare] = keep;
     }
     return { ...b, pool };
-  }).filter((b) => Object.values(b.pool).some((ids) => ids.length));
+  }).filter((b) => {
+    if (!Object.values(b.pool).some((ids) => ids.length)) return false;
+    const poolOf = (r) => b.pool[r] || b.pool[String(r)] || [];
+    const bad = gachaData.slotRarities(b).find((rare) => ![1, 2, 3, 4, 5, 6, 7].filter((r) => r <= rare).some((r) => poolOf(r).length));
+    if (bad !== undefined) console.log(`  [gacha] ${b.rowId}: banner tolto, nessuna medaglia a ${bad}★ o sotto`);
+    return bad === undefined;
+  });
 }
 const gachaBanners = () => (gachaBannerList ??= sanitizeBanners(gachaData.loadBanners(GACHA_FILE)));
 function reloadGachaBanners() { gachaBannerList = null; }
@@ -1143,14 +1151,18 @@ function respondGachaDraw(res, body) {
   player.medals = player.medals || []; // salvataggio nuovo: l'elenco nasce alla prima medaglia
   const now = serverTime(), realMs = realNow();
   const banner = gachaData.bannerById(gachaBanners(), body?.drawMedalTypeId);
-  const why = gacha.checkDraw(banner, player, body, { realMs, test: GACHA_TEST, freeSlots: maxMedal() - player.medals.length, sizes: GACHA_SIZES });
+  const why = gacha.checkDraw(banner, player, body, { realMs, test: GACHA_TEST, freeSlots: maxMedal() - stackedMedalList().length, sizes: GACHA_SIZES });
   if (why) {
     console.log(`  [gacha] estrazione rifiutata: ${why} (corpo ${JSON.stringify(body)})`);
     return send(res, 200, { ret: ret() });
   }
   const snap = inventorySnapshot(now);
   const owned = new Set(userMedalList().map((m) => m.medalId)); // quello che vede il client
-  const medalIds = gachaData.rollDraw(banner, Math.random);
+  let medalIds;
+  try { medalIds = gachaData.rollDraw(banner, Math.random); } catch (e) {
+    console.log(`  [gacha] estrazione impossibile, niente addebitato: ${e.message}`);
+    return send(res, 200, { ret: ret() });
+  }
   gacha.payDraw(banner, player, realMs);
   const userMedalIds = [], first = [];
   for (const medalId of medalIds) {
@@ -3128,6 +3140,7 @@ function handler(scheme) {
     const chunks = [];
     req.on('data', (c) => chunks.push(c));
     req.on('end', () => {
+     try {
       let buf = Buffer.concat(chunks);
       // Le GET portano il payload cifrato nella query: ?m=0&v=<base64>. Lo si
       // tratta come se fosse il corpo, cosi' passa dallo stesso decodificatore.
@@ -3364,6 +3377,11 @@ function handler(scheme) {
       // involucro "ret", perche' prosegua e ci mostri la richiesta successiva.
       // Scoprire la sequenza vale piu' che rispondere bene a una singola chiamata.
       send(res, 200, { ret: ret() });
+     } catch (e) {
+      // nessuna rotta deve poter abbattere il server: log con rotta e stack, risposta neutra
+      console.log(`  [errore] rotta ${route(req.url)}: ${e && e.stack || e}`);
+      if (!res.headersSent) send(res, 200, { ret: ret() });
+     }
     });
   };
 }
@@ -3553,5 +3571,5 @@ module.exports._test = {
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-gacha-server.js
-  respondGachaList, respondGachaDraw, respondGachaWeb, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
+  handler, sanitizeBanners, respondGachaList, respondGachaDraw, respondGachaWeb, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };

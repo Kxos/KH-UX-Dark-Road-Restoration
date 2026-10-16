@@ -75,7 +75,11 @@ function drawResultFields(userMedalIds, firstIds) {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const PAY = { 1: 'Jewels', 7: 'Platinum Tickets', 8: 'Draw Tickets' };
-const priceText = (b) => `${b.price} ${b.price === 1 ? PAY[b.payType].replace(/s$/, '') : PAY[b.payType]}`;
+// payType sconosciuto: ripiega su Jewels (1) o Tickets, senza lanciare
+const priceText = (b) => {
+  const unit = PAY[b.payType] || (b.payType === 1 ? 'Jewels' : 'Tickets');
+  return `${b.price} ${b.price === 1 ? unit.replace(/s$/, '') : unit}`;
+};
 function page(title, body) {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<style>body{margin:0;background:#174a5c;color:#e8f2f6;font:17px sans-serif;padding:10px 14px 40px}'
