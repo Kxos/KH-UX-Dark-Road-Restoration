@@ -219,8 +219,11 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   nemici sconfitti (`enemyDeadNumber` di `/stage/clear`). `missions[].numUpper/numLower` sono uint64
   (FUN_00797de0): i 10/100 miliardi ci stanno.
 - Premi: rewardType 33 = parte dello Spirit (itemId = petPartsId; FUN_00753370/FUN_0074bee0 caso 0x21),
-  materiali, medaglie, Jewel; le 4 parti senza grafica hanno un sostituto (SUBST). Platinum Ticket,
-  Draw Ticket e il Title restano rewardType 0 finche' non sono mappati (REWARDS).
+  materiali, medaglie, Jewel; le 4 parti senza grafica hanno un sostituto (SUBST). 40 Platinum
+  Ticket -> `userPoint.limitedDrawTicket1`, 41 Draw Ticket (anche Holiday Draw Ticket, Moogle Point,
+  Spooky Cookie) -> `limitedDrawTicket2` (banner Shop payType 7/8, `/gacha/*` non ancora fatte), 7
+  titolo (12601 «With Gratitude»), 20 parte avatar (Snuggly). Mappa e prove:
+  `reference\missions\limited_rewards_map.md`.
 - Conto alla rovescia: «28719 days left» (endDate fisso del master, come le Weekly).
 - Prova offline `node server/test-limited.js`; al banco la scheda mostra icone e nomi delle parti.
 

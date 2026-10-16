@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 38**, **revisione master 115** (default degli script di sessione); dettagli sotto.
+Stato del banco: **risorse 38**, **revisione master 117** (default degli script di sessione); dettagli sotto.
 
 ```powershell
 # emulatore (se spento)
@@ -120,7 +120,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `reference\missions\limited_all_khuxwiki.tsv` (320 righe, 64 campagne). Premi: 170 sono **parti dello Spirit**
   (Lambstar, Foxstar, ...), che vanno **recuperate** (decisione dell'utente): nel JP 4.3.1 ci sono 348
   `lwf/pet/part/NNN` e `img/petParts`, ma `master_data/petParts.json` e' vuoto (serve la tabella nome -> id). Ordine:
-  1) recupero parti Spirit (fatto 16-10: 668 parti, home_profilo.md; 38 accessori premio senza grafica), 2) design Limited approvato e implementato 16-10 (home_profilo.md#limited; mancano Draw/Platinum Ticket e Title: ricerca dei rewardType in corso, referencemissionsimited_rewards_map.md).
+  1) recupero parti Spirit (fatto 16-10: 668 parti, home_profilo.md; 38 accessori premio senza grafica), 2) design Limited approvato e implementato 16-10 (home_profilo.md#limited; premi tutti mappati, reference/missions/limited_rewards_map.md; i biglietti si accumulano finche' non ci sono i banner /gacha/*).
 - **PvP (I-126 Blue Fairy), percorso «architectural» (spec scritto + piano prima del codice)**: avversari generati
   (copie del giocatore) con build di medaglie **sensate** (anche la posizione negli slot conta), difficolta' che sale
   poco a poco a ogni vittoria e resta uguale se perde; evento **settimanale**, **5 tentativi al giorno** (35 a

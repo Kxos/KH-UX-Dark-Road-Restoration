@@ -29,8 +29,15 @@ const SUBST = {
   'Orange Tortoirstar Body': 'Orange Tortoistar Body', // refuso della khuxwiki
 };
 // premi che non sono ne' materiali ne' medaglie ne' parti: [rewardType, itemId]
+// (tipi da reference/missions/limited_rewards_map.md: 40/41 biglietti dei banner a tempo, 7 titolo)
 const REWARDS = {
   Jewel: [2, 0],
+  'Platinum Ticket': [40, 0],
+  'Draw Ticket': [41, 0],
+  'Holiday Draw Ticket': [41, 0],
+  'Moogle Point': [41, 0],
+  'Spooky Cookie': [41, 0],
+  Title: [7, 12601], // «"" Title» della khuxwiki = «With Gratitude» (khuxwiki Title Banner, nameplate 1349)
 };
 const LIMITED = 4;
 const FIRST_ID = 4001;

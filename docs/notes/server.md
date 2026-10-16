@@ -108,6 +108,10 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   per tabella `{revision, url, key (32 caratteri), md5}`. File: corpo -> `curl_easy_unescape` ->
   Base64 -> AES-256-CBC (key = i 32 byte della stringa, IV zero, PKCS#7) -> JSON; `md5` = MD5
   esadecimale del corpo HTTP. Il client le salva come `m/m%03d.jpg` (BGAD).
+- **Revisione per tabella ignorata** (prova del 16-10): con la revisione globale da 115 a 116, la sola
+  `mission` a 116 e le altre 105 a 115 (md5 invariati) il client ha riscaricato tutte le 106 tabelle
+  (18 MB). Il download pesa poco: login di 18,7 s con il master riscaricato (rev 117), 25-77 s in
+  altre prove a seconda dell'emulatore.
 - 106 tabelle (nomi nel loader a `0x20a0b80`, passo 0x80). Ogni tabella = **array di righe**; ogni
   campo dello schema e' obbligatorio, chiavi in piu' ignorate; riga nulla = «Master data error».
   Schema: `recon/out/master_types_ww431.json` (1.739 campi, `recon/tools/master_types.py`); il
