@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-115**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-132**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -152,6 +152,10 @@ Ultima revisione: 13 ottobre 2026.
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
 | I-128 | APERTO | Data del dispositivo: il client mostra da solo «End of Service» e non si connette se l'orologio del telefono e' dopo il 29/6/2021 (sul banco `phaseb-guest.sh` porta l'emulatore al 2021). Far cambiare la data all'utente e' escluso (decisione dell'utente 16-10): va trovata un'altra strada, insieme alla scelta di dove girera' il server (PC di casa, telefono, APK modificato). I conti alla rovescia invece seguono l'ora del server | [server](notes/server.md#master), [protector](notes/protector.md) | banco 16-10 |
+| I-129 | APERTO | Orologio finto, mesi con gemello maggio 2021 (ago 2026, mag 2027, gen e lug 2028, dic 2029, mar 2031...): `clock.fake` si ferma al 28/6/2021 23:59:59 (SAFE_TO), quindi le scadenze precalcolate oltre quella data (prossima Limited mensile, Weekly dell'ultima settimana) escono troncate e il conto alla rovescia della Limited mensile risulta corto; se la sessione supera la data l'ora finta del server resta ferma | [server](notes/server.md#orologio) | revisione finale 16-10 |
+| I-130 | APERTO | Orologio finto: Co-op/Union Cross (`server/multi.js`, eventi con `startTime` 2020-01-01) nascosto nei mesi il cui gemello e' prima del 2020 (dal 4/2028: apr 2028 -> 6/2019, set 2028 -> 11/2019, feb 2029 -> 2/2018...) | [server](notes/server.md#orologio) | revisione finale 16-10 |
+| I-131 | APERTO | Orologio finto: `term()` delle classifiche di party (`server/routes-party-ranking.js`) usa lunedi' 00:00 del calendario finto, le Weekly si azzerano lunedi' 08:00 UTC reale: periodo della classifica sfasato di 8 ore (solo visualizzazione) | [server](notes/server.md#orologio) | revisione finale 16-10 |
+| I-132 | APERTO | Orologio finto con `KHUX_SERVER_TIME` (data finta fissa, prove): gli `endDate` di Weekly/Limited nel master seguono comunque il mese gemello dell'ora reale, non la data fissa: conti alla rovescia incoerenti in quella modalita' | [server](notes/server.md#orologio) | revisione finale 16-10 |
 | I-029 | APERTO | Contatti esterni (thethiny, Roboloid, r/KHUx, Arena7664, Traverse Town): compito dell'utente | [ricerca_esterna](notes/ricerca_esterna.md#contatti) | 10-09 |
 
 ## Chiusi

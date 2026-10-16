@@ -122,8 +122,21 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   riscarica il master una volta a settimana/mese, mai le risorse (`darkVersionRes` resta 117).
 - Nuovo `-RealNow <ISO>` in `run-server.ps1`/`relogin.ps1` (`KHUX_REAL_NOW`): sposta l'ora reale del server per
   provare un cambio di settimana (`relogin.ps1 -Tag x -RealNow 2026-10-19T09:00:00Z`), poi `relogin.ps1` senza per
-  tornare all'ora vera. Attenzione: dopo un salto in avanti `player.clockSettled` resta nel futuro finche' l'ora
-  vera non lo raggiunge (le consegne nei Presents di quei giorni saltano).
+  tornare all'ora vera. Attenzione: al ritorno `settleClock` rimette `player.clockSettled` sull'ora vera alla prima
+  richiesta, ma gli stati delle missioni del giorno/settimana reali vengono ricreati: una Daily consegnata nei
+  Presents durante il salto si puo' completare e riscuotere di nuovo, l'avanzamento fatto durante il salto si perde.
+- **Revisione del master fissa per sessione** (revisione finale 16-10): `player.sessionRevision`/`sessionRealMs`
+  fissati a `POST /system/login`; `ret()`, `/system/resourcesize` e il master servito restano quelli della sessione.
+  Prova sul banco: con la revisione del momento nel `ret`, passate le 08:00 a gioco aperto il client e' tornato al
+  titolo («Game data has been updated», `-RealNow 2026-10-19T07:55:00Z`); con la revisione fissa (`-RealNow
+  2026-10-26T07:55:00Z`) 10 minuti oltre le 08:00 senza ritorno al titolo, Limited e Weekly nuove subito con i conti
+  giusti, riscossioni e Presents normali. Anche md5/corpo coerenti se il download scavalca una scadenza.
+- **Chiuso**: le missioni Weekly/Limited COMPLETE contavano fino al `rewardEndTime` 2099 del master («28920 days
+  left»): ora `rewardEndTime` = `endDate` nelle righe riscritte (banco: «6 days left»).
+- **Aperti** (revisione finale 16-10, ISSUES): I-129 mesi con gemello maggio 2021 (`clock.fake` fermo al 28/6/2021,
+  Limited mensile con conto corto), I-130 Co-op nascosto con gemello prima del 2020 (dal 4/2028), I-131 periodo delle
+  classifiche di party sul lunedi' 00:00 finto (Weekly lunedi' 08:00 reale, solo visualizzazione), I-132 con
+  `KHUX_SERVER_TIME` gli `endDate` seguono comunque il gemello.
 - Premi completati e non riscossi -> Presents al cambio di periodo (provato: 3 Daily). Misura del login:
   `tools\ldplayer\session\login-time.ps1 -N 5` ([server.md](docs/notes/server.md#orologio)).
 - Copia del salvataggio all'inizio delle prove: `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-clock\` (era gia'
@@ -139,7 +152,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   con la data finta vecchia (`KHUX_SERVER_TIME`) e con l'orologio finto, quindi **non dipende dalla data**; da capire.
 - Effetti delle prove sul salvataggio: 300 jewel spesi dai «continue» automatici di `story.ps1` (Lady Luck e altri
   keyblade hanno il deck di medaglie vuoto: il giocatore perde); keyblade scelto passato a Treasure Trove; 3 premi
-  Daily nei Presents (da riscuotere).
+  Daily nei Presents (da riscuotere). Revisione finale (16-10 pomeriggio): riscossi Beginner «story quest 6» (+100
+  jewel, 3560) e Limited «story quest 30» (+3 Power Gem) a ora spostata; copia prima delle prove:
+  `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-clockfix\`; ultimo rientro all'ora vera (`-Tag back`).
 
 ### Decisioni dell'utente (16-10 sera) per i prossimi lavori
 

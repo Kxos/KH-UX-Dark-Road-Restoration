@@ -135,6 +135,22 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   2026-10-19T09:00:00Z` -> 106 tabelle, **0 `GET /resource/`**, Daily azzerate, 3 premi Daily non
   riscossi nei Presents, nuova campagna breve, Weekly «6 days»; ritorno all'ora vera -> 106 tabelle
   (revisione di nuovo 11700051).
+- **Revisione del master fissa per sessione (revisione finale 16-10)**: il client confronta `versionDat` del
+  `ret` di ogni risposta con la sua revisione. Prova sul banco con la revisione del momento (`-RealNow
+  2026-10-19T07:55:00Z`, home alle 07:56): dopo le 08:00 elenco missioni, riscossione, `/user/point`,
+  `/user/stone` normali (Limited nuova «6 days», Weekly «6 days», Daily «23 hours»), poi tornando alla home
+  `PUT /playtime/bp` e popup «Game data has been updated. You will be returned to the title screen.»
+  (`screenshots\mid_post_presents.png`), OK -> titolo. Correzione: `player.sessionRevision`/`sessionRealMs`
+  fissati a `POST /system/login` (prima risposta con `ret` di ogni login; il master si scarica dopo
+  `/khux/login`); `ret()`, `/system/resourcesize`, `respondMaster` e il contenuto servito usano quelli, quindi
+  il master cambia solo al login dopo e md5/corpo restano coerenti anche se il download scavalca una
+  scadenza. Prova (`-RealNow 2026-10-26T07:55:00Z`, master riscaricato al login): 10 minuti oltre le 08:00,
+  missioni, riscossione, Presents, nessun `PUT /playtime/bp` e nessun ritorno al titolo
+  (`screenshots\mid2_*`). Righe riscritte: anche `rewardEndTime` = `endDate` (le COMPLETE contavano fino
+  al 2099: «28920 days left», `mid2_post_limited.png`; dopo: «6 days left», `rw_limited.png`).
+- Aperti dell'orologio: I-129 (gemello maggio 2021, `clock.fake` fermo al 28/6/2021), I-130 (Co-op con
+  gemello prima del 2020), I-131 (`term()` delle classifiche sul lunedi' 00:00 finto), I-132 (`endDate` con
+  `KHUX_SERVER_TIME`). `KHUX_REAL_NOW` illeggibile ferma l'avvio del server con un errore.
 - **Misura del login** (`tools\ldplayer\session\login-time.ps1 -N 5`, tempi dal lancio dell'app):
 
   | | /khux/login | totale (home ferma) | tabelle |
