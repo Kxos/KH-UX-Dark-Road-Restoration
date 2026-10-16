@@ -49,6 +49,9 @@ at('2026-10-21T12:00:00Z');
 const wk2 = quiet(() => t.missionsData()).map((m) => m.id).filter((id) => id >= 3001 && id <= 3020);
 check(wk.length === 10 && wk2.length === 10, `Weekly attive ${wk.length}/${wk2.length}`);
 check(!wk.some((id) => wk2.includes(id)), 'serie A/B non alternate');
+// la serie A (3001-3010) e' quella delle settimane pari
+const evenWk = require('./clock').weekIndex(Date.parse('2026-10-14T12:00:00Z')) % 2 === 0 ? wk : wk2;
+check(evenWk.every((id) => id <= 3010), `serie A non attiva nella settimana pari: ${evenWk}`);
 
 Date.now = realNowFn;
 try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
