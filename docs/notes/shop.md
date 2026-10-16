@@ -1,0 +1,139 @@
+# Shop > Draw: estrazioni delle medaglie
+
+Sotto-progetto 1 delle estrazioni (16-10-2026): piastra «Banner Catalog» + tre banner originali del primo anno
+(DAILY DEAL!, SMALL DEAL!, Epic Medal Carnival) pagati in jewel, banner di prova a biglietti (Platinum Ticket Draw,
+solo con `KHUX_GACHA_TEST=1`). Codice: `server/gacha-data.js` (funzioni pure), `server/gacha.js` (lista, controlli,
+pagamento, pagine web), `server/make-banners.js` (generatore -> `server/game_data/gacha_banners.json`,
+`server/master_data/drawMedalType.json`, immagini in `server/game_data/gacha_img`), rotte in `server/server.js`.
+Prove: `node server/test-gacha.js`, `node server/test-gacha-server.js`. Piano e spec:
+`docs/superpowers/plans/2026-10-16-shop-estrazioni.md`.
+
+<a id="protocollo"></a>
+## Protocollo (client WW 4.3.1, indirizzi Ghidra)
+
+### GET /gacha/list (azione 75)
+
+- Parser `[fn]` (`gachaList`, elemento `[fn]`, 0x90 byte) **e** `[fn]` (`petGachaList`):
+  senza `petGachaList` -> «200 ERROR :75». Salvata nel singleton `[fn]` +0x560.
+- `[fn]` fa una piastra per elemento (mappa scena+0x998, raggruppate per `sortId`): +0x18 drawMedalTypeId,
+  +0x1c price, +0x20 lotCount, +0x28 bannerUrl, +0x40 drawType, +0x44 payType, +0x48 isDayLimited,
+  +0x4c userLimitedCount (estrazioni RIMASTE oggi), +0x50 userWarrantDisplayOfTime, +0x58 warrantMedalIds.
+- Il master **DrawMedalType** (parser `[fn]`, getter `[fn]`, tabella 0x5c) e' obbligatorio: la piastra
+  legge la riga senza controllo (displayTimeLeft in `[fn]`, detailUrl in `[fn]`). Ogni cambio di
+  `drawMedalType.json` = revisione del master (BASE 118 dal 16-10).
+- `bannerUrl` scaricato in http dal client (`[fn]` -> `[fn]`), 640x140: `/web/gacha/img/<id>.png`.
+  Le immagini delle piastre fuori schermo si scaricano solo quando la piastra entra nella vista (banco: la piastra
+  Platinum mostrava il cuore segnaposto finche' `GET /web/gacha/img/10456.png` non era arrivato).
+
+### POST /gacha/draw (azione 76)
+
+- Tocco su DrawButton1/3 -> `[fn]` (busy +0x990/+0x991; drawType in {1,3,5,6}; isDayLimited con
+  userLimitedCount 0 -> nessuna azione) -> `[fn]`: controllo locale jewel (`[fn]`) o biglietti
+  (`[fn]`), box pieno -> popup 0xd; price 0 -> estrazione diretta `[fn]` (mai price 0), altrimenti
+  conferma `[fn]` -> `[fn]` (richiesta `[fn]`, poi `[fn]` -> SceneDrawRaise).
+- Richiesta `{"drawMedalTypeId", "count"}` (count = lotCount); payType e prezzo li prende il server dal suo catalogo.
+- Risposta (dispatcher ramo 76 a 0x7c46bc; parser `[fn]`, `[fn]`, `[fn]`): `userData.userPoint`,
+  `userMedals`, `userSkills`, `userMaterials`, `gachaBonus` `{addType: 1, number: 0, userMedalIds: []}` (addType 0
+  apre il popup bonus con un layout mancante), `firstGetUserMedalIds`, `userMedalIds` (ogni id deve esistere dopo la
+  fusione di `userMedals`), `effectNumbers` (uno per medaglia, solo 0: 1/2 cercano LWF mancanti),
+  `guiltBurstFirstUserMedalIds`, `guiltBurstMaxUserMedalIds`. Niente jewel nella risposta: dopo la risposta il client
+  chiede `GET /user/stone`; OK nel risultato (`[fn]` -> `[fn]`) -> `GET /gacha/list` e ritorno allo Shop.
+- Scena (`[fn]`, popup `[fn]`): `lwf/raisedraw/demo/raidgacha_result_display_%02d` con %02d = numero
+  di medaglie (manca = crash; nessuna _11, massimo 10), per medaglia `lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare>`.
+- WebView Details (`[fn]`, url del master `detailUrl`): la chiusura (`[fn]`) azzera solo owner+0x991,
+  **nessuna nuova /gacha/list** (confermato al banco, sotto).
+- Draw Odds: link globale `odds` del login (+0xf0, `[fn]`); il client **accoda il drawMedalTypeId della
+  piastra** all'url (banco: `GET /web/gacha/odds9001`), percio' il link e' `/web/gacha/odds/` e la rotta
+  `/web/gacha/odds/<id>` mostra le probabilita' di quel banner (tutti per la piastra Catalog 9001).
+
+<a id="piastre"></a>
+## Regole delle piastre
+
+- **payType**: 1 jewel (free+pay, unico usato per i jewel), 3 solo payStone (sempre 0: mai), 4-6 drawTicket1-3
+  (sempre 0), 7/8 limitedDrawTicket1/2 (Platinum/Draw Ticket, `userPoint` +0x74..), **9 = crash** al disegno (testo
+  106240303 assente). payType 1 -> DrawButton1 con il testo del prezzo; 4-9 con biglietti < price -> pulsante
+  grigio (`But07_Disable`, dalla risorse 39).
+- **price** mai 0 (estrazione senza conferma); **benefitId** sempre 0 (piastra bloccata: lucchetto, il tocco va in
+  crash, I-134).
+- **comment** del master come formato printf con userWarrantDisplayOfTime (striscia scorrevole sotto il banner, con
+  warrantDisplayOfTime 1, userWarrantDisplayOfTime 1, validComment 1); name/description della lista non compaiono.
+- Testo dei pulsanti: drawType 1/3/5 + payType -> testi 1061404xx / 1061803xx; il Catalog usa il Gold Ticket
+  (payType 6, price 1, nessuno ne ha) con i testi 106140420-424 riscritti da `recon/tools/make_shop_art.py`
+  («Open Details to browse the Banner Catalog») e l'icona Star7_Ticket_39 senza «仮».
+- Piastra Catalog: tocco sul pulsante grigio = nessuna azione, nessuna richiesta (banco).
+
+<a id="risorse"></a>
+## Risorse raisedraw
+
+- `recon/tools/import_jp_raisedraw.py` (lanciato da `build-resources.ps1` nelle versioni complete o se manca la
+  cartella) copia dai dati JP 4.3.1 le LWF `raidgacha_result_display_02..10` e `Medal_D_*` complete di texture (le
+  texture tolte dall'estrazione JP prese dalla `_01` servita allineando le tabelle delle texture) in
+  `D:\Progetto_Restauro_KH_UX\raisedraw_gen\files`; rapporto in `raisedraw_gen\raisedraw_report.json`.
+- **Pacchetto statico `raisedraw_gen`** (come enemy_gen): ~33 MB (701 file, 72-78 texture per cartella), nel
+  pacchetto generato lo portavano a 136,5 MB, oltre la riserva di 128 MiB. Pezzo d0038 della risorse 40, generato
+  d0039, `packs.txt` con `raisedraw_gen`; `-Quick` lo rimette nell'indice se la versione installata lo contiene;
+  `-NoRaisedraw` per una versione senza.
+- Risorse 40: `_02`..`_10` ok, Medal_D_Up1-12, Rev1-7, None7 ok; **Medal_D_None1-6 incomplete** (texture assente:
+  i pool escludono le medaglie darklight 3). `KHUX_GACHA_SIZES = "1,2,3,4,5,6,7,8,9,10"` in `run-server.ps1`.
+
+<a id="avvio"></a>
+## Avvio
+
+- `run-server.ps1` / `relogin.ps1 -GachaTest`: `KHUX_GACHA_TEST=1`, mostra il banner di prova Platinum Ticket Draw
+  (payType 7, 1 biglietto = 5 medaglie 6★). Senza, il server lo nasconde e ne rifiuta l'estrazione.
+- `KHUX_GACHA_SIZES`: numeri di medaglie per estrazione con animazione completa; un banner con lotCount fuori
+  dall'elenco non si puo' estrarre.
+- Biglietti per le prove: a server fermo `limitedDrawTicket1` nel salvataggio (`server\save\player.json`); a fine
+  prova rimetterlo a 0.
+
+<a id="prove"></a>
+## Prove al banco (16-10-2026, risorse 40, master BASE 118)
+
+Copia del salvataggio prima: `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-gacha\`; prima della prova dei
+biglietti: `tmp\player_before_gachatest.json`. Screenshot in `D:\Progetto_Restauro_KH_UX\screenshots`.
+
+1. **Piastre** (`shop_t6_shop0`, `shop_t6_s1_scroll`): Catalog in cima con il banner nostro, pulsante grigio «Open
+   Details to browse the Banner Catalog» con l'icona nuova e contatore 0, striscia «Open Details to browse all
+   banners»; sotto DAILY DEAL! («Spend 600 Jewels to get 3 Medals», «Chances left today: 1»), SMALL DEAL! («Spend
+   300 Jewels to get 1 Medal»), Epic Medal Carnival («Spend 3000 Jewels to get 10 Medals») con immagini e didascalie
+   scorrevoli («3 Medals: 1x 4★+, 2x 3★+ - once per day», ...).
+2. **Pulsante grigio del Catalog** (`shop_t6_s2_greytap`): nessun popup, nessuna richiesta nel log.
+3. **Details del Catalog** (`shop_t6_s3_catalog`, `shop_t6_s3_bannerdetail`, `shop_t6_s3_closed`): `GET
+   /web/gacha/catalog`, tocco su DAILY DEAL! -> `/web/gacha/detail/10001` (probabilita' ricostruite, pool). Chiusa
+   con la X: **nessuna nuova `GET /gacha/list`** (come l'analisi statica): la scelta di un gruppo dal catalogo
+   (sotto-progetto 3) dovra' dire «esci e rientra nello Shop».
+4. **Draw Odds** (`shop_t6_s4_odds`, `shop_t6_s4_odds2`): prima «Banner not found.» (`GET /web/gacha/odds9001`, id
+   accodato dal client); corretto il link (`/web/gacha/odds/`), poi `GET /web/gacha/odds/10001` = pagina con le
+   probabilita' del DAILY DEAL!.
+5. **SMALL DEAL! x1** (`shop_t6_s5_confirm`, `shop_t6_s5_anim1-5`, `shop_t6_s5_back`, `shop_t6_s5_medallist`):
+   conferma «Spend 300 Jewels to get 1 Medal? 2076/2263 Held 3560», animazione del Moogle, risultato con 1 medaglia
+   (Yuffie 3★, gia' posseduta: niente NEW, giusto), OK -> Shop, jewel 3560 -> 3260. Log: `POST /gacha/draw`
+   («B0027 SMALL DEAL!: -300 freeStone, medaglie 32043»), `GET /user/stone`, `GET /gacha/list`. Medal List: slot
+   2095/2267 dopo tutte le prove (2076 + 1 + 3 + 10 + 5).
+6. **DAILY DEAL! x3** (`shop_t6_s6_confirm`, `shop_t6_s6_anim1-6`, `shop_t6_s6_back`, `shop_t6_s6_greytap`): 3 medaglie
+   (4★ + due 3★) in una riga, jewel 3260 -> 2660. Tornati nello Shop il pulsante del DAILY DEAL! e' **grigio** e
+   senza «Chances left today»; il tocco non fa niente (nessuna richiesta). Resta grigio anche dopo un relogin.
+7. **Epic Medal Carnival x10** (`shop_t6_s7_confirm`, `shop_t6_s7_anim1-8`, `shop_t6_s7_back`): +1000 jewel dati a
+   server fermo per la prova (3660), conferma 3000, animazione da 10, **due righe di 5 tessere** (5x 3★, 4x 4★, 1x
+   5★), jewel 660.
+8. **10 aperture dello Shop** (Home <-> Shop con MENU > Home; `shop_t6_s8_shop1-10`, `shop_t6_s8_home0-10`): nessun
+   crash.
+9. **Biglietti** (`relogin.ps1 -GachaTest`, `limitedDrawTicket1 = 2`; `shop_t6_s9_plate`, `shop_t6_s9_confirm`,
+   `shop_t6_s9_anim1-8`, `shop_t6_s9_back`): piastra Platinum Ticket Draw con 2 biglietti (icona con «仮», I-135),
+   conferma «Use 1 Platinum Ticket to get 5 Medals», 5 medaglie 6★ in una riga, biglietti 2 -> 1 («-1
+   limitedDrawTicket1» nel log). Poi biglietti a 0 e relogin normale (revisione 118, senza GachaTest).
+10. **Notices** (`shop_t6_s10_notices`, `shop_t6_s10_shopnews`, `shop_t6_s10_diff`): notizia «Shop» (Catalog e
+    probabilita') e nelle «Differences from the original game» la riga «Shop draw rates are reconstructed...».
+
+Effetti sul salvataggio: -3900 jewel (+1000 dati per la prova: 3560 -> 660), 19 medaglie nuove, DAILY DEAL! gia'
+usato oggi, biglietti 0.
+
+### Da verificare al banco (analisi statica): esiti
+
+1. Il cambio di scena aspetta la risposta 76: si' (nessun errore, la scena parte con i dati della risposta).
+2. Medal_D_* mancanti: non osservato (pool senza darklight 3; le None1-6 non servono).
+3. LWF raisedraw nell'indice: servite dalla risorse 40 (raisedraw_gen), animazioni da 1, 3, 5 e 10 viste.
+4. Id ripetuti e Icon_New: non osservato (nessuna medaglia nuova nelle estrazioni fatte; nessun id ripetuto).
+5. Popup 0xd del box pieno, errore di /user/stone: non provati.
+6. `[fn]` (solo analytics): nessun effetto visibile con payType 1.
+7. Rifiuto del server («200 ERROR :76»): non provato al banco (coperto da `test-gacha-server.js`).

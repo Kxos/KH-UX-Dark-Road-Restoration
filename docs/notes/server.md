@@ -10,7 +10,8 @@ Di solito si usa `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` ([banco
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "117"                    # BASE della revisione dei master: alzarla a ogni modifica
+$env:KHUX_REVISION      = "118"                    # BASE della revisione dei master: alzarla a ogni modifica
+# KHUX_GACHA_SIZES = "1,2,...,10" (medaglie per estrazione con animazione), KHUX_GACHA_TEST=1 banner di prova (shop.md)
 # KHUX_REAL_NOW = istante ISO (prove): l'ora reale del server parte da li' (orologio finto, #orologio)
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # vedi sotto
