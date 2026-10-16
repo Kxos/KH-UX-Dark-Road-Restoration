@@ -48,7 +48,15 @@ venerdi' 16/10/2020 15:00.
   (il piu' recente). Per quel mese giorno della settimana e scadenza settimanale finti sono sfasati;
   la Weekly usa comunque la scadenza calcolata sul calendario finto, quindi resta coerente con il
   conto alla rovescia mostrato. Per un febbraio bisestile reale il 29 cade nel 1° marzo finto.
-- La data finta e' una **funzione pura** dell'ora reale: niente da salvare, uguale dopo ogni riavvio.
+- **Gemello fissato al login.** Il client prende l'ora del server al login e poi la fa scorrere da
+  solo. Il server sceglie quindi il gemello a ogni login (`/khux/login`) e tiene quello scostamento
+  (data finta = data reale + scostamento) fino al login successivo. Se la sessione attraversa la fine
+  del mese, la data finta prosegue nel mese successivo del calendario finto (31/10/2020 ->
+  1/11/2020) invece di saltare al gemello del nuovo mese reale (che puo' essere, ad esempio, giugno
+  2019): client e server vedono sempre la stessa data, AP, training e regali restano coerenti. Le
+  scadenze si calcolano nello stesso riferimento. Lo scostamento si salva (`player.clockOffset`)
+  solo per sopravvivere a un riavvio del server a gioco aperto; a ogni login si ricalcola.
+- Fuori dalle sessioni la data finta resta una funzione dell'ora reale (gemello del mese corrente).
 
 ### 3.2 Scadenze calcolate, non salvate
 
@@ -97,6 +105,29 @@ Il client riscarica il master solo al login. Alla scadenza vera il server **camb
   dopo la scadenza (elenco missioni, /mypage, Presents), una sola volta per missione e periodo
   (`player.missions[id].received`).
 - Febbraio senza gemello: il ripiego del 3.1 va bene all'utente (16-10).
+
+### 3.6b Velocita' del login (richiesta dell'utente)
+
+Misure di oggi (banco LDPlayer, 16-10): login senza master nuovo 14-26 s; con il master riscaricato
+(106 tabelle, 18 MB) 19-77 s secondo lo stato dell'emulatore. Lavoro del server per servire il
+master: ~0,35 s (lettura, JSON, doppia cifratura di 18 MB) piu' la convalida dello schema, ripetuto
+a ogni richiesta.
+
+Regole del design:
+
+- il master si riscarica solo quando cambia la revisione, cioe' a una scadenza settimanale o mensile
+  passata (o a un nostro cambio dei master): al massimo ~5 volte al mese, mai a ogni login;
+- il gemello e le scadenze al login sono calcoli di pochi microsecondi;
+- **cache per revisione**: tabelle convalidate, cifrate e con md5 calcolati una volta per revisione
+  (la `mission` con le scadenze applicate compresa), poi servite dalla memoria; oggi le si rifa' a
+  ogni richiesta;
+- la consegna dei premi non riscossi nei Presents avviene una volta per periodo, non a ogni login.
+
+Prova: script di misura (`tools/ldplayer/session/login-time.ps1`, da scrivere) che fa N relogin e
+riporta il tempo fino a `/khux/login` e fino alla home (prima richiesta `/mypage`). Criteri: login
+senza master nuovo non piu' lento di oggi (+1 s al massimo, media di 5); login con il master nuovo
+non piu' lento di oggi a parita' di emulatore; lavoro del server per `/system/master` < 50 ms con la
+cache.
 
 ### 3.7 Orari salvati
 
