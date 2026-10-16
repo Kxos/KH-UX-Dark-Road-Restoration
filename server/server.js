@@ -3099,7 +3099,7 @@ function handler(scheme) {
       if (kind === 'infolist') return send(res, 200, { ret: ret(), ...infoAlbum.informationList(SESSION_BASE) });
       if (kind === 'infopopup') return send(res, 200, { ret: ret(), ...infoAlbum.informationPopup(SESSION_BASE) });
       if (kind === 'noticespage') {
-        const buf = Buffer.from(infoAlbum.noticesPage(), 'utf8');
+        const buf = Buffer.from(infoAlbum.noticesPage(realNow()), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
         return res.end(buf);
       }

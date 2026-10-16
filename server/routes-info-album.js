@@ -23,10 +23,48 @@
 // guiltStatus qui: 0 = nessuna copia con Special Attack Bonus, 1 = almeno una, 2 = una copia al
 // bonus massimo del tier (ricostruzione: i valori originali non sono noti).
 
+const clock = require('./clock');
+
+// Ogni funzione che differisce dall'originale ha una notizia (docs/notes/home_profilo.md#notices-album)
+const DIFFERENCES_BODY = [
+  'The in-game date is set between 2016 and 2021 so that the original game keeps working. Missions reset at the real times shown in their countdowns.',
+  'Completed missions that you did not collect before they end are sent to your Presents.',
+  'Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.',
+  'A few Spirit parts without original graphics are replaced by a similar part.',
+  'There are no purchases: Jewels and items come from quests, missions and presents.',
+];
+
+// Notizia fissa sugli aggiornamenti dei dati (lunedi' e giorno 1, 08:00 UTC): il conto alla rovescia
+// e' calcolato dal server sull'ora reale, perche' l'orologio del dispositivo e' fermo al 2021.
+// Per aggiungere una frase (es. download interrotti) basta una riga in updateBody().
+function lastUpdateMs(realMs) {
+  return Math.max(clock.weekStartOf(clock.weekIndex(realMs)), clock.monthEndOf(clock.monthIndex(realMs) - 1));
+}
+function countdownText(ms) {
+  const h = Math.floor(ms / 3600000);
+  if (h < 1) return 'in less than an hour';
+  const d = Math.floor(h / 24), hh = h % 24;
+  const pl = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+  return d >= 1 ? 'in ' + pl(d, 'day') + ' ' + pl(hh, 'hour') : 'in ' + pl(hh, 'hour');
+}
+function updateBody(realMs) {
+  const next = Math.min(clock.weekEnd(realMs), clock.monthEnd(realMs));
+  return [
+    'Every Monday and on the 1st of each month, the game downloads updated game data (missions and events).',
+    'The first time you open the game after an update, loading takes longer than usual. Please keep the app open until the home screen appears. Later logins are fast again.',
+    'Next update: ' + countdownText(next - realMs),
+  ];
+}
+function updateNotice(realMs) {
+  const today = clock.dayIndex(lastUpdateMs(realMs)) === clock.dayIndex(realMs);
+  return { date: '10/16', tag: 'IMPORTANT', title: today ? 'Game data updated today' : 'About game data updates',
+    body: updateBody(realMs) };
+}
+
 const NOTICES = [
   { date: '10/14', tag: 'IMPORTANT', title: 'About this restoration server',
     body: ['This is a private, offline restoration of KINGDOM HEARTS Union χ[Cross].',
-      'Your data is saved only on this server. There are no purchases: Jewels and items come from quests, missions and presents.'] },
+      'Your data is saved only on this server.'] },
   { date: '10/14', tag: 'INFORMATION', title: 'Supernova and Dual Meow Wow',
     body: ['Equipping a Supernova Medal lets you unleash its powerful Supernova once per quest: tap the button under the Burst gauge during your turn.',
       'Five of the same Dual Meow Wow Medals are needed to grant Supernova or strengthen the Supernova of a specific Medal (Evolve, with the base Medal at max level).'] },
@@ -36,6 +74,8 @@ const NOTICES = [
     body: ['Special Attacks raise and lower STR and DEF again, with the buff and debuff icons shown in battle.'] },
   { date: '10/13', tag: 'INFORMATION', title: 'Daily and Weekly Missions',
     body: ['Open the scroll under your avatar on the home screen to see your missions, then tap Receive to collect the rewards.'] },
+  { date: '10/16', tag: 'INFORMATION', title: 'Differences from the original game',
+    body: DIFFERENCES_BODY },
 ];
 const TAG_COLOR = { EVENT: '#36c9d6', CAMPAIGN: '#8a3fc4', UPDATE: '#9fb85a', IMPORTANT: '#e0405a', INFORMATION: '#3f7fd0' };
 
@@ -53,12 +93,13 @@ function informationPopup(sessionBase) {
 // Pagina /web/notices, come l'elenco originale (reference\other_menu\notices_list_yt_02.jpg: data,
 // etichetta colorata, titolo, freccia rossa) e il dettaglio (notices_detail_yt_03.jpg: titoletti con
 // il quadratino, pulsante BACK)
-function noticesPage() {
+function noticesPage(realMs = Date.now()) {
+  const notices = [updateNotice(realMs), ...NOTICES];
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const rows = NOTICES.map((n, i) => `<a class="row" href="#n${i}" onclick="show(${i});return false">`
+  const rows = notices.map((n, i) => `<a class="row" href="#n${i}" onclick="show(${i});return false">`
     + `<span class="d">${esc(n.date)}</span><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
     + `<span class="x">${esc(n.title)}</span><span class="a">&#9654;</span></a>`).join('');
-  const details = NOTICES.map((n, i) => `<div class="det" id="d${i}"><h2>&#9632; ${esc(n.title)}</h2>`
+  const details = notices.map((n, i) => `<div class="det" id="d${i}"><h2>&#9632; ${esc(n.title)}</h2>`
     + n.body.map((p) => `<p>${esc(p)}</p>`).join('') + '<a class="back" href="#" onclick="show(-1);return false">BACK &#8617;</a></div>').join('');
   return '<!doctype html><html><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -70,7 +111,7 @@ function noticesPage() {
     + '.back{position:fixed;left:16px;bottom:12px;background:#2f7fd6;color:#fff;padding:8px 22px;border-radius:8px;'
     + 'text-decoration:none;font-weight:bold;border:2px solid #cfe8ff}</style>'
     + '<script>function show(i){document.getElementById("list").style.display=i<0?"block":"none";'
-    + 'for(var k=0;k<' + NOTICES.length + ';k++)document.getElementById("d"+k).style.display=k===i?"block":"none";'
+    + 'for(var k=0;k<' + notices.length + ';k++)document.getElementById("d"+k).style.display=k===i?"block":"none";'
     + 'window.scrollTo(0,0)}</script></head><body>'
     + `<div id="list">${rows}</div>${details}</body></html>`;
 }
