@@ -24,7 +24,7 @@ const { _test: t } = quiet(() => require('./server'));
 const errors = []; const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const p = t.player;
 const fmt = /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/;
-check(p.clockVersion === 1, 'migrazione non fatta');
+check(p.clockVersion === 2, 'migrazione non fatta');
 check(p.medals[1].getDatetime === now && p.medals[0].getDatetime === now - 86400000, `getDatetime ${p.medals.map((m) => m.getDatetime)}`);
 check(p.presents[0].limitDatetime === now + 29 * 86400000, 'regalo: +29 giorni');
 check(p.beginnerSince === now, 'beginnerSince');
@@ -49,6 +49,32 @@ check(sent && sent.party && fmt.test(sent.party.leaderAppointDate) && fmt.test(s
 // seconda volta: nessun cambiamento
 const before = JSON.stringify(p); quiet(() => t.migrateClock());
 check(JSON.stringify(p) === before, 'migrazione ripetuta');
+
+// clockVersion 2: numeri in ms dell'ora finta vecchia (maggio 2021) spostati in blocco, numeri reali intatti
+const REAL = Date.parse('2026-10-10T10:00:00Z');
+Object.assign(p, {
+  clockVersion: 1,
+  medals: [
+    { userMedalId: 201, medalId: 1, level: 1, getDatetime: Date.parse('2021-05-16T06:00:00Z') },
+    { userMedalId: 202, medalId: 1, level: 1, getDatetime: Date.parse('2021-05-15T06:00:00Z') },
+    { userMedalId: 203, medalId: 1, level: 1, getDatetime: REAL }],
+  keyblades: [{ userKeybladeId: 7, keybladeId: 0, getDatetime: Date.parse('2021-05-14T06:00:00Z'), burst: 0 }],
+  presents: [{ userPresentId: 2, resourceType: 2, resourceId: 0, number: 10, limitDatetime: Date.parse('2021-06-10T00:00:00Z'), comment: 'y', created: Date.parse('2021-05-15T00:00:00Z') },
+    { userPresentId: 3, resourceType: 2, resourceId: 0, number: 10, limitDatetime: REAL + 86400000, comment: 'z', created: REAL }],
+  beginnerSince: Date.parse('2021-05-15T00:00:00Z'),
+});
+p.pet.parts = { 3001001: Date.parse('2021-05-16T06:00:00Z') };
+quiet(() => t.migrateClock());
+check(p.clockVersion === 2, 'v2: clockVersion');
+check(p.medals[0].getDatetime === now && p.medals[1].getDatetime === now - 86400000, `v2: medaglie ${p.medals.map((m) => m.getDatetime)}`);
+check(p.medals[2].getDatetime === REAL, 'v2: orario reale cambiato');
+check(p.keyblades[0].getDatetime === now - 2 * 86400000, 'v2: keyblade');
+check(p.pet.parts[3001001] === now, 'v2: parti');
+check(p.presents[0].limitDatetime === now + 29 * 86400000 && p.presents[0].created === now, 'v2: regalo vecchio');
+check(p.presents[1].limitDatetime === REAL + 86400000 && p.presents[1].created === REAL, 'v2: regalo reale cambiato');
+check(p.beginnerSince === now, 'v2: beginnerSince');
+const before2 = JSON.stringify(p); quiet(() => t.migrateClock());
+check(JSON.stringify(p) === before2, 'v2 ripetuta');
 Date.now = realNowFn;
 try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }

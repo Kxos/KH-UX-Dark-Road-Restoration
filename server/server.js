@@ -780,7 +780,10 @@ if (player.created && player.spherePoint === undefined) {
 // piu' recente = adesso (l'ordine resta), regali +29 giorni, Beginner da adesso, training pronto,
 // contatori dei periodi azzerati (cambiano scala).
 function migrateClock() {
-  if (player.clockVersion === 1) return;
+  if (!player.clockVersion) migrateClockV1();
+  if (player.clockVersion === 1) migrateClockV2();
+}
+function migrateClockV1() {
   const now = realNow();
   const holders = [
     ...(player.medals || []), ...(player.keyblades || []), ...Object.values(player.sphere || {}),
@@ -800,7 +803,32 @@ function migrateClock() {
   player.clockVersion = 1;
   savePlayer();
 }
-if (player.created) migrateClock(); else player.clockVersion = 1; // nuovo giocatore: gia' in ms reali
+// clockVersion 2: alcuni orari erano gia' numeri prima della v1, ma in ms dell'ORA FINTA vecchia
+// (maggio 2021, es. 1621144800000): la v1 (solo stringhe) li ha lasciati e risultavano del 2016.
+// Ogni numero prima del 2022 e' ora finta vecchia: spostati in blocco come la v1 (il piu' recente =
+// adesso, l'ordine resta), regali +29 giorni, Beginner da adesso. I numeri gia' reali non cambiano.
+const OLD_FAKE_BEFORE = Date.UTC(2022, 0, 1);
+function migrateClockV2() {
+  const now = realNow();
+  const old = (v) => typeof v === 'number' && v < OLD_FAKE_BEFORE;
+  // [oggetto, campo] con un istante salvato
+  const slots = [
+    ...(player.medals || []), ...(player.keyblades || []), ...Object.values(player.sphere || {}),
+    ...Object.values(player.medalSkills || {}), ...Object.values(player.medalTraits || {}).flat(),
+  ].filter((o) => o && old(o.getDatetime)).map((o) => [o, 'getDatetime']);
+  if (player.pet?.parts) for (const k of Object.keys(player.pet.parts)) if (old(player.pet.parts[k])) slots.push([player.pet.parts, k]);
+  if (player.party && old(player.party.createDate)) slots.push([player.party, 'createDate']);
+  const max = Math.max(0, ...slots.map(([o, k]) => o[k]));
+  for (const [o, k] of slots) o[k] = now - (max - o[k]);
+  for (const p of player.presents || []) {
+    if (old(p.limitDatetime)) p.limitDatetime = now + 29 * 86400000;
+    if (old(p.created)) p.created = now;
+  }
+  if (old(player.beginnerSince)) player.beginnerSince = now;
+  player.clockVersion = 2;
+  savePlayer();
+}
+if (player.created) migrateClock(); else player.clockVersion = 2; // nuovo giocatore: gia' in ms reali
 
 function savePlayer() {
   fs.mkdirSync(path.dirname(SAVE_FILE), { recursive: true });

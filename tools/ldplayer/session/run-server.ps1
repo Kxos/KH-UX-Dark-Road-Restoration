@@ -16,7 +16,7 @@ $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
 $env:KHUX_PUBLIC_URL = 'https://192.168.1.185'
 $env:KHUX_REVISION = "$Revision"                      # BASE: alzarla dopo ogni modifica dei master
-if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow }
+if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow } else { Remove-Item Env:KHUX_REAL_NOW -ErrorAction SilentlyContinue }
 if ($TutorialFinished) { $env:KHUX_TUTORIAL_FINISHED = '1' }
 if ($KbFree) { $env:KHUX_KB_FREE = '1' }
 # -Pet: sistema dei pet e 6o slot (KHUX_PET=1, server/pet.js; I-005)
