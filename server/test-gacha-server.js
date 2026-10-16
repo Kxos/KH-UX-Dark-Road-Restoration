@@ -96,6 +96,10 @@ let w = raw(t.respondGachaWeb, '/web/gacha/detail/10001');
 check(String(w.body).includes('DAILY DEAL!') && /text\/html/.test(w.headers['Content-Type']), 'pagina dettagli');
 w = raw(t.respondGachaWeb, '/web/gacha/odds');
 check(String(w.body).includes('Draw Odds'), 'pagina odds');
+w = raw(t.respondGachaWeb, '/web/gacha/odds/10011');
+check(String(w.body).includes('Epic Medal Carnival') && !String(w.body).includes('DAILY DEAL!'), 'odds di una piastra (id accodato dal client)');
+w = raw(t.respondGachaWeb, '/web/gacha/odds/9001');
+check(String(w.body).includes('Epic Medal Carnival') && String(w.body).includes('DAILY DEAL!'), 'odds della piastra Catalog: tutti i banner');
 w = raw(t.respondGachaWeb, '/web/gacha/catalog');
 check(String(w.body).includes('/web/gacha/detail/10011'), 'pagina catalogo');
 w = raw(t.respondGachaWeb, '/web/gacha/detail/77');
@@ -105,7 +109,7 @@ check(!w.headers || w.headers['Content-Type'] !== 'image/png', 'immagine: niente
 
 // login: link Draw Odds
 const login = call(t.respondLogin, {});
-check(/\/web\/gacha\/odds$/.test(login.odds || ''), 'login: odds');
+check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client accoda il drawMedalTypeId)');
 
 // catalogo assente: solo la piastra Catalog
 fs.writeFileSync(BANNERS, 'non json');

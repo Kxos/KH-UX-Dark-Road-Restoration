@@ -355,8 +355,9 @@ function respondLogin(res) {
   // Legal Information: User Agreement (+0x78) e License (+0x90), WebView (server/legal-pages.js)
   body.agreement = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/agreement`;
   body.license = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/license`;
-  // Draw Odds dello Shop (pulsante su ogni piastra, link globale +0xf0, FUN_00791070)
-  body.odds = `${WEB_BASE}/web/gacha/odds`;
+  // Draw Odds dello Shop (pulsante su ogni piastra, link globale +0xf0, FUN_00791070): il client
+  // accoda il drawMedalTypeId della piastra all'url (banco 16-10: GET /web/gacha/odds9001), da qui la «/»
+  body.odds = `${WEB_BASE}/web/gacha/odds/`;
   send(res, 200, body);
 }
 
@@ -1177,7 +1178,14 @@ function respondGachaWeb(res, url) {
     return res.end(b);
   }
   if (/^\/web\/gacha\/catalog$/i.test(p)) return html(gacha.catalogPage(gachaBanners(), { test: GACHA_TEST }));
-  if (/^\/web\/gacha\/odds$/i.test(p)) return html(gacha.oddsPage(gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST })));
+  // /web/gacha/odds/<drawMedalTypeId> (id accodato dal client): le probabilita' di quel banner;
+  // senza id o con la piastra Catalog (9001) quelle di tutti i banner
+  const odds = /^\/web\/gacha\/odds\/?(\d*)$/i.exec(p);
+  if (odds) {
+    const all = gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST });
+    const one = all.filter((b) => b.drawMedalTypeId === Number(odds[1]));
+    return html(gacha.oddsPage(one.length ? one : all));
+  }
   const det = /^\/web\/gacha\/detail\/(\d+)$/i.exec(p);
   const banner = det && gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST }).find((b) => b.drawMedalTypeId === Number(det[1]));
   if (!banner) return html('<!doctype html><meta charset="utf-8"><body style="background:#174a5c;color:#fff;font:18px sans-serif">Banner not found.</body>', 404);

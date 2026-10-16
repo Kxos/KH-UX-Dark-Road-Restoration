@@ -46,7 +46,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - Altri script di sessione (`tools/ldplayer/session/`):
   - `cycle.ps1 -Tag x`: da NUOVO giocatore (cancella il salvataggio);
   - `run-server.ps1 -Revision 81 [-TutorialFinished]`: solo il server (parte staccato con
-    `Win32_Process.Create`: con `Start-Process` moriva con lo script);
+    `Win32_Process.Create`: con `Start-Process` moriva con lo script); `-GachaTest` (anche in `relogin.ps1`):
+    banner di prova dello Shop a biglietti (`KHUX_GACHA_TEST=1`, [shop.md](shop.md#avvio));
   - `update-resources.ps1`: fa scaricare l'ultima versione completa (~5 min) e attende la fine
     dell'installazione (interromperla lascia `files/r` a meta': crash su `MyPageScene_ver340`);
   - `build-resources.ps1 -Version N` / `-Quick`: vedi [-Quick](#quick);

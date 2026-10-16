@@ -17,8 +17,13 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 39**, **revisione master: BASE 117** (default degli script di sessione; il server manda
-`117*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto.
+Stato del banco: **risorse 40**, **revisione master: BASE 118** (default degli script di sessione; il server manda
+`118*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto.
+
+**Shop > Draw (16-10 sera): sotto-progetto 1 fatto e provato** ([shop.md](docs/notes/shop.md)): piastra Banner
+Catalog + DAILY DEAL! / SMALL DEAL! / Epic Medal Carnival in jewel (x1, x3, x10), banner di prova a biglietti con
+`relogin.ps1 -GachaTest`; LWF del risultato nel pacchetto statico `raisedraw_gen` (risorse 40). Prossimo: sotto-progetti
+2-3 (altri banner, scelta del gruppo dal catalogo: la chiusura dei Details non ricarica la lista). Aperti I-134, I-135.
 
 ```powershell
 # emulatore (se spento)
@@ -118,8 +123,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `/khux/login`; periodi e scadenze sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00).
   Daily/Weekly/Limited mostrano il tempo vero (banco: 22 hours / 2 days / 15 days il venerdi' 16-10).
 - **Revisione del master = BASE*100000 + scadenze settimanali/mensili passate dal 1/1/2026** (oggi 11700051):
-  `-Revision` degli script e' la BASE (117, da alzare come prima dopo ogni modifica dei master). Il client
-  riscarica il master una volta a settimana/mese, mai le risorse (`darkVersionRes` resta 117).
+  `-Revision` degli script e' la BASE (118 dal 16-10 sera, da alzare come prima dopo ogni modifica dei master). Il client
+  riscarica il master una volta a settimana/mese, mai le risorse (`darkVersionRes` resta la BASE).
 - Nuovo `-RealNow <ISO>` in `run-server.ps1`/`relogin.ps1` (`KHUX_REAL_NOW`): sposta l'ora reale del server per
   provare un cambio di settimana (`relogin.ps1 -Tag x -RealNow 2026-10-19T09:00:00Z`), poi `relogin.ps1` senza per
   tornare all'ora vera. Attenzione: al ritorno `settleClock` rimette `player.clockSettled` sull'ora vera alla prima
@@ -207,6 +212,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 | [docs/notes/mappe_storia.md](docs/notes/mappe_storia.md) | formato STG/MAP, uscite, generatore, stanze, nemici |
 | [docs/notes/medaglie.md](docs/notes/medaglie.md) | Medal List, vendita, Sort/Filter, Level Up, Evolve, grafica |
 | [docs/notes/moogle_shop.md](docs/notes/moogle_shop.md) | Moogle Shop e trait |
+| [docs/notes/shop.md](docs/notes/shop.md) | Shop > Draw: /gacha/list, /gacha/draw, piastre, raisedraw, prove |
 | [docs/notes/bacheche.md](docs/notes/bacheche.md) | Avatar Boards |
 | [docs/notes/home_profilo.md](docs/notes/home_profilo.md) | home, Other, Profilo, Missioni, pet, Presents |
 | [docs/notes/analisi.md](docs/notes/analisi.md) | Ghidra headless e strumenti `recon/tools` |
