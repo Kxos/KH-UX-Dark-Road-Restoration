@@ -111,6 +111,77 @@ check(!w.headers || w.headers['Content-Type'] !== 'image/png', 'immagine: niente
 const login = call(t.respondLogin, {});
 check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client accoda il drawMedalTypeId)');
 
+// banner con uno slot senza medaglie alla sua stella o sotto (3★ solo impilabile): tolto, niente eccezioni
+{
+  const bad = { drawMedalTypeId: 10099, rowId: 'BX', name: 'Vuoto', payType: 1, price: 1, lotCount: 1, isDayLimited: 0, rarityMix: [[3, 1]],
+    pool: { 3: [90041], 4: [11014] }, test: false, sortId: 1, comment: 'x', startDate: '', endDate: '', image: '' };
+  fs.writeFileSync(BANNERS, JSON.stringify({ banners: [bad, ...banners] }));
+  t.reloadGachaBanners();
+  check(!call(t.respondGachaList).gachaList.some((x) => x.drawMedalTypeId === 10099), 'banner con slot senza pool: fuori dalla lista');
+  p.freeStone = 100;
+  let thrown = null;
+  try { r = call(t.respondGachaDraw, { drawMedalTypeId: 10099, count: 1 }); } catch (e) { thrown = e; }
+  check(!thrown && !r.userMedalIds && p.freeStone === 100, 'banner con slot senza pool: estrazione rifiutata, niente eccezioni, jewel intatti');
+  // anche se un banner del genere arrivasse fino a rollDraw: risposta {ret}, niente addebito
+  const gd = require('./gacha-data');
+  p.freeStone = 3000; p.medals = [];
+  const orig = gd.rollDraw; gd.rollDraw = () => { throw new Error('prova'); };
+  thrown = null;
+  try { r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 }); } catch (e) { thrown = e; }
+  gd.rollDraw = orig;
+  check(!thrown && !r.userMedalIds && p.freeStone === 3000 && p.medals.length === 0, 'rollDraw che lancia: risposta {ret}, jewel intatti');
+  fs.writeFileSync(BANNERS, JSON.stringify({ banners }));
+  t.reloadGachaBanners();
+}
+
+// posti liberi: contano le celle che il client vede, non le copie vendute/fuse rimaste in player.medals
+{
+  p.freeStone = 3000;
+  p.medals = [];
+  p.medalState = p.medalState || {};
+  for (let i = 0; i < 3000; i++) {
+    const id = 50000 + i;
+    p.medals.push({ userMedalId: id, medalId: 11013, level: 1, exp: 0 });
+    if (i >= 10) p.medalState[id] = { removed: true };
+  }
+  check(t.maxMedal() === 3000, 'tetto 3000 raggiunto con le copie rimosse');
+  r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
+  check(r.userMedalIds && r.userMedalIds.length === 10, 'celle visibili con spazio: estrazione consentita anche a 3000 copie in elenco');
+  // pieno davvero (tutte visibili): rifiutata
+  p.freeStone = 3000;
+  p.medalState = {};
+  p.medals = p.medals.slice(0, 2995);
+  r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
+  check(!r.userMedalIds, 'celle visibili piene: estrazione rifiutata');
+  p.medals = []; p.medalState = {};
+}
+
+// payType sconosciuto nelle pagine: niente eccezioni
+{
+  const g = require('./gacha');
+  let ok = true;
+  try { g.detailPage({ ...banners[0], payType: 99 }, new Map()); } catch { ok = false; }
+  check(ok, 'detailPage: payType sconosciuto non lancia');
+}
+
+// riga drawMedalType senza bannerUrl/detailUrl: non lancia
+{
+  let ok = true;
+  try { t.servedMasterRows('drawMedalType', Date.now()); } catch { ok = false; }
+  check(ok, 'servedMasterRows drawMedalType non lancia');
+}
+
+// gestore HTTP: un errore in una rotta non abbatte il server, risposta {ret}
+{
+  const EventEmitter = require('events');
+  const req = new EventEmitter(); req.url = '/gacha/draw'; req.method = 'POST'; req.headers = {};
+  let sent = null, calls = 0;
+  const res = { headersSent: false, writeHead() { if (calls++ === 0) throw new Error('rotta guasta'); }, end(x) { sent = JSON.parse(x.toString('utf8')); } };
+  let thrown = null;
+  quiet(() => { try { t.handler('http')(req, res); req.emit('end'); } catch (e) { thrown = e; } });
+  check(!thrown && sent && sent.ret !== undefined, 'handler: errore in rotta -> risposta {ret}, nessuna eccezione');
+}
+
 // catalogo assente: solo la piastra Catalog
 fs.writeFileSync(BANNERS, 'non json');
 t.reloadGachaBanners();
