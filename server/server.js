@@ -238,23 +238,27 @@ function respondStatus(res) {
   });
 }
 
-// Ora del server consegnata al client: deve stare prima della chiusura del
-// 29/6/2021, come l'orologio del guest. Scorre da quando il server e' partito.
-const SERVER_TIME_START = Date.parse(process.env.KHUX_SERVER_TIME || '2021-05-15T12:00:00Z');
+// Ora del server (docs/superpowers/specs/2026-10-16-orologio-finto-design.md): data reale nel suo
+// mese gemello (clock.js), con lo scostamento fissato a /khux/login (player.clockOffset) perche' il
+// client fa scorrere da solo l'ora ricevuta al login. KHUX_SERVER_TIME (prove): data finta fissa
+// all'avvio del server, come prima.
+const clock = require('./clock');
 const STARTED_AT = Date.now();
-const REVISION = Number(process.env.KHUX_REVISION || 0);
-
+const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE della revisione del master
+const realNow = () => Date.now();
+function clockOffset() {
+  if (process.env.KHUX_SERVER_TIME) return Date.parse(process.env.KHUX_SERVER_TIME) - STARTED_AT;
+  return Number.isFinite(player.clockOffset) ? player.clockOffset : clock.twinOffset(realNow());
+}
 function serverTime() {
-  return serverTimeAt(Date.now());
+  return serverTimeAt(realNow());
 }
-
-// L'ora del server corrispondente a un istante reale (ms): per i tempi salvati
-// (player.apTime), che restano coerenti anche dopo un riavvio del server.
+// L'ora del server corrispondente a un istante reale (ms). Formato letto da [fn].
 function serverTimeAt(realMs) {
-  // Formato letto da [fn]: "YYYY-MM-DD HH:MM:SS".
-  const t = new Date(SERVER_TIME_START + (realMs - STARTED_AT));
-  return t.toISOString().slice(0, 19).replace('T', ' ');
+  return clock.fakeString(realMs, clockOffset());
 }
+// istante reale salvato (numero) -> data finta; stringhe dei salvataggi vecchi lasciate com'erano
+const outTime = (v, fallback) => (typeof v === 'number' ? serverTimeAt(v) : v || fallback);
 
 /**
  * L'involucro "ret" di ogni risposta di gioco, letto da [fn]. Il client
@@ -647,6 +651,9 @@ function respondTutorialStatus(res, req) {
 function respondKhuxLogin(res) {
   // POST /khux/login (azione 252), solo per un giocatore esistente: dopo
   // /system/coppa. Letto da [fn]: gameLogin.acquirableLoginBonus (bool).
+  // nuovo login: il client riprende l'ora da qui, il gemello del mese corrente vale fino al prossimo
+  player.clockOffset = clock.twinOffset(realNow());
+  savePlayer();
   send(res, 200, { ret: ret(), gameLogin: { acquirableLoginBonus: false } });
 }
 
@@ -905,7 +912,7 @@ function maxAp() {
 }
 
 // AP attuale e istante (ms reali) da cui conta il prossimo punto
-function apState(nowMs = Date.now()) {
+function apState(nowMs = realNow()) {
   const max = maxAp();
   if (typeof player.ap !== 'number') return { ap: max, time: nowMs };
   let ap = player.ap, time = Number(player.apTime) || nowMs;
@@ -918,7 +925,7 @@ function apState(nowMs = Date.now()) {
 
 // Cambia l'AP di delta (negativo = spesa). Se prima era pieno la ricarica parte da
 // adesso, altrimenti conserva il punto parziale gia' maturato.
-function changeAp(delta, nowMs = Date.now()) {
+function changeAp(delta, nowMs = realNow()) {
   const st = apState(nowMs);
   player.ap = Math.max(0, st.ap + delta);
   player.apTime = st.ap >= maxAp() ? nowMs : st.time;
@@ -1346,7 +1353,7 @@ function respondApRecover(res) {
     player.freeStone -= cost;
     const st = apState();
     player.ap = st.ap + maxAp();
-    player.apTime = Date.now();
+    player.apTime = realNow();
     // «Fills special attack gauges of all Keyblades.» (testo del popup; dopo: «AP and special
     // attack gauges are fully restored!»): gauge di ogni keyblade al massimo della sua riga
     for (const k of ownedKeyblades()) {
@@ -1415,7 +1422,7 @@ function respondStageClear(res, req) {
   // oltre il massimo (il client lo ammette: [fn] non ricarica sopra maxAp)
   if (luxRankFor(player.lux) > rankBefore) {
     player.ap = apBefore + maxAp();
-    player.apTime = Date.now();
+    player.apTime = realNow();
     console.log(`[ap] level up ${rankBefore} -> ${luxRankFor(player.lux)}: AP ${apBefore} -> ${player.ap}/${maxAp()}`);
   }
   missionCount('quest', 1);
@@ -1678,11 +1685,11 @@ const LIMITED_GROUP = new Map();
 LIMITED_ROTATION.monthly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.set(id, { kind: 'monthly', index: i })));
 LIMITED_ROTATION.weekly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.set(id, { kind: 'weekly', index: i })));
 const LIMITED_WEEK0 = Date.UTC(2018, 0, 1, 8); // lunedi'
-function limitedPeriod(kind, realMs = Date.now()) {
+function limitedPeriod(kind, realMs = realNow()) {
   if (kind === 'monthly') { const d = new Date(realMs); return d.getUTCFullYear() * 12 + d.getUTCMonth(); }
   return Math.floor((realMs - LIMITED_WEEK0) / (7 * 86400000));
 }
-function limitedActive(id, realMs = Date.now()) {
+function limitedActive(id, realMs = realNow()) {
   const g = LIMITED_GROUP.get(id);
   if (!g) return false;
   const n = LIMITED_ROTATION[g.kind].length;
@@ -1881,7 +1888,7 @@ function seedTestPresents() {
   player.presents = player.presents || [];
   if (player.presents.some((p) => p.test)) return;
   const now = serverTime();
-  const limit = serverTimeAt(Date.now() + 29 * 86400000);
+  const limit = serverTimeAt(realNow() + 29 * 86400000);
   const medalId = masterRows('medal').some((m) => m.medalId === 90041) ? 90041 : masterRows('medal')[0]?.medalId;
   const materialId = masterRows('material')[0]?.materialId;
   const rows = [
@@ -1907,7 +1914,7 @@ function addPresent(resourceType, resourceId, number, comment) {
   player.presents = player.presents || [];
   const id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId)) + 1;
   player.presents.push({ userPresentId: id, resourceType, resourceId, number,
-    limitDatetime: serverTimeAt(Date.now() + 30 * 86400000), comment, created: serverTime() });
+    limitDatetime: serverTimeAt(realNow() + 30 * 86400000), comment, created: serverTime() });
   player.presentLastId = id;
 }
 
@@ -3268,6 +3275,8 @@ module.exports._test = {
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear,
+  // server/test-clock-server.js
+  serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet,
 };
