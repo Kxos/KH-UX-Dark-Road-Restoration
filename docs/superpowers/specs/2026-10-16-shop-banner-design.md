@@ -13,7 +13,7 @@ Rendere disponibili nello Shop tutti i banner di estrazione originali della vers
 - ogni settimana succeda qualcosa (rotazione dei banner a tempo, stagionali nel loro periodo);
 - i biglietti ottenuti (Platinum, Draw Ticket, Spooky Cookie, ...) si possano spendere.
 
-Criteri di successo: con la storia attuale (quest 1-525) si estrae dai banner fino a dicembre 2016;
+Criteri di successo: con la storia attuale (quest 1-525) si estrae dai banner fino all'11/01/2017 (78);
 lo Shop mostra al massimo una decina di piastre; dal catalogo si trova qualunque banner e il suo
 stato; nessun pulsante dello Shop porta a un acquisto in-app o a un crash.
 
@@ -176,7 +176,7 @@ Ogni sotto-progetto ha il suo piano e le sue prove (offline + banco).
 
 - Offline: disponibilita' e rotazione a date fisse (debutto, 2+1 posti, precedenza a chi e' fermo da
   piu' tempo, stagionali con la versione piu' recente sbloccata, scelta stabile dopo un riavvio);
-  sblocchi (quest 525 -> solo banner fino al 8/12/2016; quest 1 -> solo i primi); estrazione
+  sblocchi (quest 525 -> solo i 78 banner fino all'11/01/2017; quest 1 -> solo i primi); estrazione
   (biglietti/gemme scalati una volta, garanzie, nessuna estrazione con fondi insufficienti); Limited
   con biglietti escluse finche' il banner non e' sbloccato.
 - Banco: Shop con Catalog + banner veri, Details -> catalogo, scelta di un gruppo -> Shop aggiornato,
@@ -189,12 +189,98 @@ Ogni sotto-progetto ha il suo piano e le sue prove (offline + banco).
   Shop non si ricarica vale la riserva del 4.9 (la pagina dice di uscire e rientrare).
 - **Pool per epoca e probabilita' per tipo:** tabelle proposte nel piano 2 e approvate dall'utente
   prima del codice.
-- **Banner senza data di fine (40):** se esce dopo un banner della stessa serie, finisce il giorno
-  prima; altrimenti per tipo: Free Deal del lunedi'/del giorno 1 giorno, Supernova Deal settimanali
-  2019 7 giorni, banner del giorno 1 fino a fine mese; Beginner's permanenti. Il catalogo indica le
-  date ricostruite.
+- **Banner senza data di fine (60):** regola sostituita il 16-10 dalla decisione 9.8 (i notice
+  smentiscono la regola «stessa serie / 7 giorni»: quei deal duravano un giorno).
 - **Small Deal:** due righe. Deal a tempo 24/6/2016-8/7/2016 (notice 19084) e deal permanente dal
   4/7/2016 («07/04/16» della wiki in formato USA) fino al 14/3/2019.
 - **«Common Medal Carnival»:** escluso (nessun dato, uscita WW non verificata).
 - **Spirit Blind Box (`/gacha/petdraw`):** fuori da questa specifica, design proprio dopo il piano 3;
   fino ad allora le sue righe non compaiono nel catalogo.
+
+## 9. Decisioni del sotto-progetto 2 (approvate dall'utente il 16-10)
+
+Ricerca completa: `D:\Progetto_Restauro_KH_UX\tmp\sp2\research.md` (file di appoggio nella stessa cartella).
+esearch.md` (file di appoggio nella stessa cartella).
+
+### 9.1 Tipi
+13 tipi: SN (Supernova/SN+/SN++) 213, FEATURED (vetrina o garanzia) 168, FALLING (prezzo calante) 129,
+SKILL 69, DAILY 64, SEVEN (7★/Prime) 48, FREE 36, STANDARD 23, T_TICKET (Draw Ticket e valute
+stagionali) 21, ITEM (medaglie oggetto) 20, T_POINTS (Draw Points) 7, BEGINNER 5, T_EVOLVE (biglietti
+Bronze/Silver/Gold/Platinum) 5. Esclusi: 4 Spirit Blind Box e il banner del tutorial (B0813). Flag
+indipendenti dal tipo: DAY_LIMITED, VIP, FIRST_FREE, SEASONAL, EVENT, PERMANENT, INCOMPLETE. Le 42
+righe senza prezzo o dimensione si completano dal banner della stessa serie (11) o dal notice (31);
+quelle che non si completano restano solo nel catalogo.
+
+### 9.2 Probabilita' ricostruite
+- Composizione degli slot (rarity_mix), pity «If bought N» e probabilita' delle abilita' sono
+  originali; il resto e' ricostruito e Draw Odds/dettagli lo dicono («reconstructed»).
+- Slot r★: da' r★, con probabilita' di salire di una stella solo se quella stella era estraibile alla
+  data d'inizio del banner: 3->4 10%, 4->5 6%, 5->6 4%, 6->7 3%. Banner con «higher chance ... Epic»
+  (Epic Medal Carnival 2016, DAILY/SMALL DEAL Epic): 3★/4★->5★ 15%.
+- Slot a lista («one of the following»): uniforme, medaglia in vetrina peso ×2.
+- Pity per giocatore e per banner: alla N-esima estrazione senza vetrina lo slot garantito da' la
+  vetrina; «within N draws» uguale; «every 3rd draw» = ogni 3a estrazione lo slot a lista.
+- Non riprodotti: medaglie «boosted», Trait Medal, Imitation Medal (non esistono nel master). Magic
+  Mirror e gemme dei bonus vanno nel Present Box.
+- SKILL: lo slot con abilita' usa la tabella del notice 50106; le altre medaglie senza abilita'.
+- T_EVOLVE: Bronze LV1-3, Silver LV4-8 (LV3-8 prima del 14/09/2018), Gold LV5-8, Platinum Dual Meow
+  Wow LV7-9; livello piu' alto della fascia 10%, gli altri in parti uguali.
+- T_TICKET: pool d'attacco dell'epoca + medaglie di supporto 5★.
+
+### 9.3 Pool
+- Note «Draws from sets ...» (513 banner): unione esatta dei sotto-set citati, con i filtri citati.
+- «Draws from the following medals» (6): lista esplicita.
+- Note mancanti (288): lista dell'ultimo banner documentato dello stesso tipo (o di qualunque tipo)
+  + medaglie standard uscite dopo ed entro l'inizio + liste delle garanzie.
+- Vetrina e liste di garanzia entrano sempre.
+- Rarita': solo quelle del rarity_mix, ogni variante solo se uscita entro l'inizio (6★ estraibili dal
+  15/07/2016, 7★ dal 25/05/2018, SN dal 05/10/2018, SN+ dal 2019-09, SN++ dall'08/11/2019).
+- Banner permanenti: pool alla data del punto nella storia del giocatore, limitata a [inizio, fine].
+- Le medaglie con id >= 300000 sono incluse (senza, 448 banner avrebbero rarita' vuote); prova al
+  banco della scena di risultato con questi id.
+- Corregge gli anacronismi del sotto-progetto 1: B0011 senza 6★ e senza set 2.2; B0001/B0027 con pool
+  che cresce con la storia; B0456 con Dual Meow Wow LV7-9.
+
+### 9.4 Estrazioni gratuite
+Mai prezzo 0: payType 1, price 1 (1 Jewel scalato davvero). isDayLimited dove l'originale aveva
+«once per day». FIRST_FREE e FALLING: prezzo dinamico per giocatore in `/gacha/list` (contatore delle
+estrazioni del banner in `player.gacha`): 1a estrazione 1 Jewel, poi prezzo pieno o lo scalino.
+
+### 9.5 VIP
+- 41 banner VIP con un gemello normale nella stessa data: nascosti (nel catalogo «VIP variant, not
+  reproduced»).
+- 27 senza gemello: banner normali per tutti.
+- 17 Free Deal VIP 2020-21: tenute, ma **una sola estrazione gratuita al giorno fra tutte quelle
+  attive**, e **bilanciate come tutti gli altri banner** (richiesta dell'utente): stesso sblocco con la
+  storia (4.4), pool e rarita' della loro data (9.3), probabilita' delle tabelle 9.2, nessun aiuto in
+  piu' rispetto all'originale. Cosi' non danno medaglie forti o di livello alto a inizio gioco.
+
+### 9.6 Gold Ticket
+Opzione A: Ticket Draw Bronze/Silver/Gold solo nel catalogo («Requires PvP tickets — coming with a
+future update») finche' non c'e' il PvP; la piastra Catalog resta su payType 6. Con il PvP: opzione B
+(verificare se i testi del pulsante dipendono dal drawType e separare Catalog e Gold Ticket Draw);
+riserva C (niente Gold Ticket, Gold Ticket Draw pagato con 2 Silver Ticket, spiegato nelle Notices).
+
+### 9.7 Valute stagionali e Draw Points
+Spooky Cookie, Moogle Point, Holiday Draw Ticket e Draw Ticket usano payType 8 (limitedDrawTicket2):
+contatori separati nel salvataggio; la lista non elenca mai insieme banner payType 8 di valute
+diverse, e `limitedDrawTicket2` riporta il contatore della valuta elencata. Prezzi nelle unita'
+originali. Draw Points (payType 9, oggi crash per il testo 106240303 mancante): rinviati, solo
+catalogo.
+
+### 9.8 Date di fine
+Le 60 righe senza fine: 51 prendono il periodo dal notice in cache; le altre della stessa serie
+(Supernova Deal settimanali 2019, Free Deal, FFBE Campaign Rewards Draw) durano 1 giorno; Beginner's
+B0623 fino all'11/10/2020, B0735 fino al 24/02/2021; Draw Points B0794 fino al 29/06/2021. Il catalogo
+segna le date ricostruite.
+
+### 9.9 Immagini
+Tutte 640x140 in PNG a 256 colori (~32 MB invece di ~129): ridimensionamento LANCZOS per le 80 di
+altre misure. Le 14 mancanti: immagine del banner della stessa serie, oppure piastra generata (nome
+su fondo neutro, script nel repo, output fuori). Prima prova al banco che il client legga un PNG a
+palette; se no, PNG a colori pieni.
+
+### 9.10 File dei pool
+Per ogni banner una ricetta (sotto-set, liste di nomi, rarita', data di riferimento) piu' la tabella
+dei sotto-set; il server la espande all'avvio (~0,3 MB invece di 2,7). Tutti i dati derivati restano
+fuori dal repo (`server/game_data/`).
