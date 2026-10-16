@@ -1231,6 +1231,8 @@ function grantItem(type, id, num) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
   } else if (type === 13 && id) grantKeyblade(id); // keyblade (tabella keyblade)
+  // 33 parte dello Spirit (itemId = petPartsId; [fn] caso 0x21: img/petParts/pi%d)
+  else if (type === 33 && id) { if (!PET_ENABLED || !pet().grantPart(id)) console.log(`  [inventario] parte dello Spirit ${id} gia' posseduta o assente`); }
   else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
 }
 
@@ -1406,6 +1408,7 @@ function respondStageClear(res, req) {
   }
   missionCount('quest', 1);
   missionCount('lux', lux);
+  missionCount('enemy', Number(req?.enemyDeadNumber) || 0); // Limited «Defeat 100 enemies»
   weeklyLux(lux);
   const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
   (stage?.submissionRequire || []).forEach((kind, i) => {
@@ -1435,7 +1438,7 @@ function respondStageClear(res, req) {
     getLux: lux, // uint64
     // stage normale: anche [fn] (pet.userPetParts[]) e [fn]
     // (emblemIds[]), entrambi obbligatori (senza: «200 ERROR :116»)
-    pet: { userPetParts: [] },
+    pet: { userPetParts: PET_ENABLED ? pet().ownedParts() : [] },
     emblemIds: [],
     // poi, tutti obbligatori e in quest'ordine, l'inventario aggiornato:
     // userMaterials ([fn]), userMedals ([fn]), userSkills
@@ -1623,7 +1626,7 @@ function inventoryBlocks(now, snap = null) {
     userDecks: userDecksData(),
     userAvatarParts: userAvatarPartsData(),
     userTitles: userTitlesData(),
-    pet: { userPetParts: [] },
+    pet: { userPetParts: PET_ENABLED ? pet().ownedParts() : [] },
     emblemIds: [],
     subslotMaxNum: kbEvo().subslotMaxNum(),
     userKeybladeSubslots: userKeybladeSubslotsData(),
@@ -1650,8 +1653,29 @@ function userTitlesData() {
 // 4/9 Lux, 12 Union Cross, 28 PVP (6, 9 e 12 sono del party: senza party si contano quelli
 // del giocatore).
 // ---------------------------------------------------------------------------
-const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp' };
-const MISSION_SPAN = { 2: 86400000, 3: 7 * 86400000 }; // 1 e 4: nessun azzeramento
+const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp', 50: 'enemy' };
+const MISSION_SPAN = { 2: 86400000, 3: 7 * 86400000 }; // 1: nessun azzeramento; 4: limitedPeriod
+// Limited (missionType 4, make-limited-missions.js): una campagna mensile dei Lux e una breve
+// settimanale a rotazione, dall'ORA REALE (quella del server riparte dal 15-5-2021 a ogni avvio:
+// la rotazione resterebbe ferma). Il periodo di una riga = numero del mese/della settimana reale,
+// cosi' una campagna che ritorna riparte da zero. Settimana da lunedi' 08:00 UTC.
+const LIMITED_ROTATION = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'limited_rotation.json'), 'utf8')); } catch { return { monthly: [], weekly: [] }; }
+})();
+const LIMITED_GROUP = new Map();
+LIMITED_ROTATION.monthly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.set(id, { kind: 'monthly', index: i })));
+LIMITED_ROTATION.weekly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.set(id, { kind: 'weekly', index: i })));
+const LIMITED_WEEK0 = Date.UTC(2018, 0, 1, 8); // lunedi'
+function limitedPeriod(kind, realMs = Date.now()) {
+  if (kind === 'monthly') { const d = new Date(realMs); return d.getUTCFullYear() * 12 + d.getUTCMonth(); }
+  return Math.floor((realMs - LIMITED_WEEK0) / (7 * 86400000));
+}
+function limitedActive(id, realMs = Date.now()) {
+  const g = LIMITED_GROUP.get(id);
+  if (!g) return false;
+  const n = LIMITED_ROTATION[g.kind].length;
+  return limitedPeriod(g.kind, realMs) % n === g.index;
+}
 // Condizioni delle Beginner (make-beginner-missions.js) calcolate dallo stato del giocatore a ogni elenco,
 // non da un contatore: 30 storia superata fino alla quest targetId, 31 STR del keyblade preferito,
 // 32 livello +N della serie di keyblade targetId (category), 33 Lux totali, 34 medaglie con lo Special
@@ -1683,6 +1707,7 @@ const BEGINNER_DAYS = Number(process.env.KHUX_BEGINNER_DAYS || 30);
 const masterDateMs = (d) => Date.parse(String(d).replace(' ', 'T') + 'Z');
 
 function missionPeriod(row, nowMs) {
+  if (row.missionType === 4 && LIMITED_GROUP.has(row.id)) return limitedPeriod(LIMITED_GROUP.get(row.id).kind);
   const span = MISSION_SPAN[row.missionType];
   return span ? Math.floor((nowMs - masterDateMs(row.startDate)) / span) : 0;
 }
@@ -1693,6 +1718,7 @@ function missionActive(row, nowMs) {
   if (!(row.missionType >= 1 && row.missionType <= 4)) return false;
   if (nowMs < masterDateMs(row.startDate) || nowMs >= masterDateMs(row.endDate)) return false;
   if (row.missionType === 1) return nowMs < masterDateMs(beginnerLimitTime());
+  if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id);
   return true;
 }
 
@@ -3230,4 +3256,6 @@ module.exports._test = {
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear,
+  // server/test-limited.js
+  missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet,
 };
