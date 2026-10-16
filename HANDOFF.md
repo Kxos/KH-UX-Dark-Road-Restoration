@@ -111,6 +111,23 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Prossimo**: i punti rimasti dalla lista del 15-10 qui sopra (Limited I-118 e Blue Fairy I-126 da decidere,
   crash intermittenti; monete degli slot I-093: comportamento del client, chiuso il 16-10), NPC JP con parti mancanti (52, home_profilo.md).
 
+### Decisioni dell'utente (16-10 sera) per i prossimi lavori
+
+- **Limited (I-118), design in corso (brainstorming, percorso «bounded»)**: come l'originale, due livelli nella scheda
+  Limited: (a) la campagna **mensile dei Lux** (35 originali, 5-6 missioni «Obtain a total of N Lux», 04/2018-02/2021)
+  ruota **ogni mese**; (b) le campagne brevi a tema ruotano **ogni settimana**, una campagna originale intera per volta,
+  solo quelle completabili oggi (Story Quest fino alla 525; Proud/Raid/Union Cross quando ci saranno). Fonte
+  `reference\missions\limited_all_khuxwiki.tsv` (320 righe, 64 campagne). Premi: 170 sono **parti dello Spirit**
+  (Lambstar, Foxstar, ...), che vanno **recuperate** (decisione dell'utente): nel JP 4.3.1 ci sono 348
+  `lwf/pet/part/NNN` e `img/petParts`, ma `master_data/petParts.json` e' vuoto (serve la tabella nome -> id). Ordine:
+  1) recupero parti Spirit, 2) presentare il design breve delle Limited in chat e attendere il si', 3) implementare.
+- **PvP (I-126 Blue Fairy), percorso «architectural» (spec scritto + piano prima del codice)**: avversari generati
+  (copie del giocatore) con build di medaglie **sensate** (anche la posizione negli slot conta), difficolta' che sale
+  poco a poco a ogni vittoria e resta uguale se perde; evento **settimanale**, **5 tentativi al giorno** (35 a
+  settimana); premi = **ticket PvP** per pescare nei banner PvP (da cui le Blue Fairy) in base al **numero di
+  vittorie** (soglie da bilanciare: oneste e divertenti), non piu' sul ranking. Ancora da fare: domande una alla volta,
+  approcci, spec in `docs/superpowers/specs/`, piano.
+
 ## Regole del lavoro (dell'utente)
 
 - **Commit + push a ogni passo verificato**, senza chiedere; `git pull --rebase` prima del push
