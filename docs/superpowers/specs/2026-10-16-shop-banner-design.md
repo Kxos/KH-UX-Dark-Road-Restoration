@@ -71,7 +71,7 @@ Dati (fuori dal repo):
 Prima piastra, sempre in cima. Banner nostro 640x140, `comment` con la didascalia («Open Details to
 browse all banners»), `detailUrl` = pagina del catalogo. Estrazione innocua: drawType 1, payType 6
 (Gold Ticket, `drawTicket3`, che il server non assegna mai), price 1, benefitId 0. I testi e l'icona
-del Gold Ticket (106180321-335, `Star7_Ticket_39` col segno «仮») vengono riscritti nelle risorse
+del Gold Ticket (106140420-424, `Star7_Ticket_39` col segno «仮») vengono riscritti nelle risorse
 cosi' che il riquadro grigio dica «Open Details to browse the Banner Catalog» con un'icona adatta. Se
 un giorno il Gold Ticket servisse, la piastra passa a un altro biglietto inutilizzato.
 
