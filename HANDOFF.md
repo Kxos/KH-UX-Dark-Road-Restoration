@@ -109,7 +109,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   sulle Supernova (master 113, tutte provate dall'utente), bolla della home «Quest 132» e Weekly Lux settimanale.
   Salvataggio: party rimesso, materiali a 9999.
 - **Prossimo**: i punti rimasti dalla lista del 15-10 qui sopra (Limited I-118 e Blue Fairy I-126 da decidere,
-  monete degli slot vuoti I-093, crash intermittenti), NPC JP con parti mancanti (52, home_profilo.md).
+  crash intermittenti; monete degli slot I-093: comportamento del client, chiuso il 16-10), NPC JP con parti mancanti (52, home_profilo.md).
 
 ## Regole del lavoro (dell'utente)
 
