@@ -360,11 +360,22 @@ function makePet(ctx) {
 
   // POST /pet/coordinate/update (173, corpo [fn]: myCoordinateNo, defaultFlag, parti):
   // il ramo legge pet.equipCoordinateNo (uint) e pet.userPetCoordinates ([fn])
+  // I campi stanno in updatePetCoordinateData[] ([fn] ne scrive uno per coordinato:
+  // myCoordinateNo, defaultFlag, le 11 parti); prima si leggevano dalla radice e il Save non
+  // cambiava nulla (banco 16-10). Indossato: quello con defaultFlag 1, se no l'ultimo.
   function respondCoordinateUpdate(res, body) {
-    const no = Number(body?.myCoordinateNo) || 1;
-    const c = {};
-    for (const k of Object.keys(coordinate(no))) if (k !== 'myCoordinateNo' && k in (body || {})) c[k] = Number(body[k]) || 0;
-    state().coordinates[no] = { ...(state().coordinates[no] || {}), ...c };
+    const raw = body?.updatePetCoordinateData ?? body;
+    const list = (Array.isArray(raw) ? raw : [raw]).filter((e) => e && typeof e === 'object');
+    console.log(`  [pet] coordinate/update ${JSON.stringify(list)}`);
+    let no = 0;
+    for (const e of list) {
+      const n = Number(e.myCoordinateNo) || 1;
+      const c = {};
+      for (const k of Object.keys(COORD_TYPE)) if (k in e) c[k] = Number(e[k]) || 0;
+      state().coordinates[n] = { ...(state().coordinates[n] || {}), ...c };
+      if (!no || Number(e.defaultFlag) === 1) no = n;
+    }
+    no = no || 1;
     state().coordinateNo = no;
     ctx.savePlayer();
     ctx.send(res, 200, { ret: ctx.ret(), pet: { equipCoordinateNo: no, userPetCoordinates: coordinatesList() } });
