@@ -101,7 +101,7 @@ function routePet(p) {
 }
 
 // ctx: { ret, send, serverTime, masterRows, player, savePlayer, userMedalList, userMedalElement,
-//        schemaResponse }
+//        schemaResponse, realNow, outTime, monthIndex, weekEnd, monthEnd }
 function makePet(ctx) {
   const { player } = ctx;
 
@@ -146,7 +146,7 @@ function makePet(ctx) {
     for (const id of STARTER_PARTS) if (!have.has(id)) have.set(id, '2017-09-21 00:00:00');
     if (ALL_PARTS) for (const id of rows.keys()) if (!have.has(id)) have.set(id, '2017-09-21 00:00:00');
     return [...have].filter(([id]) => rows.has(id)).sort((a, b) => a[0] - b[0])
-      .map(([id, t]) => ({ petPartsId: id, partsType: rows.get(id).partsType, getDatetime: t }));
+      .map(([id, t]) => ({ petPartsId: id, partsType: rows.get(id).partsType, getDatetime: ctx.outTime(t) }));
   }
 
   // premio (missioni, presents): aggiunge la parte; false se gia' posseduta o senza riga
@@ -156,7 +156,7 @@ function makePet(ctx) {
     const st = state();
     if (!st.parts) st.parts = {};
     if (st.parts[id] || STARTER_PARTS.includes(id)) return false;
-    st.parts[id] = ctx.serverTime();
+    st.parts[id] = ctx.realNow();
     return true;
   }
 
@@ -191,15 +191,13 @@ function makePet(ctx) {
     };
   }
 
-  // Spirit Training: stato in player.pet.training {total, monthly, month 'AAAA-MM', readyAt
-  // (ms dell'ora del server), medals [userMedalId]}
+  // Spirit Training: stato in player.pet.training {total, monthly, month (clock.monthIndex), readyAt
+  // (ms reali), medals [userMedalId]}
   const HOUR = 3600 * 1000;
-  // ora del server (ctx.serverTime, «AAAA-MM-GG hh:mm:ss» UTC) <-> ms
-  const serverMs = () => Date.parse(ctx.serverTime().replace(' ', 'T') + 'Z');
-  const fmt = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+  // istanti salvati in ms reali (ctx.realNow); verso il client ctx.outTime li rende in ora finta
   function training() {
     const t = (state().training ||= { total: 0, monthly: 0, month: '', readyAt: 0, medals: [] });
-    const month = ctx.serverTime().slice(0, 7);
+    const month = ctx.monthIndex(ctx.realNow());
     if (t.month !== month) { t.month = month; t.monthly = 0; }   // conteggio del mese
     return t;
   }
@@ -222,7 +220,7 @@ function makePet(ctx) {
       },
       // recoverDatetime = quando il prossimo allenamento e' pronto ([fn]: passato =
       // «Train», futuro = «Train Now» + «Training Ready in»), contatori del dialog SPIRIT
-      recoverDatetime: t.readyAt > serverMs() ? fmt(t.readyAt) : now, recoverStoneNum: TRAIN_STONES,
+      recoverDatetime: t.readyAt > ctx.realNow() ? ctx.outTime(t.readyAt) : now, recoverStoneNum: TRAIN_STONES,
       expeditionTotalNum: t.total, expeditionMonthlyNum: t.monthly,
     });
   }
@@ -290,7 +288,7 @@ function makePet(ctx) {
     if (list.length >= 6) list.length = 5;          // al massimo 6 trait per medaglia ([fn])
     player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
     list.unshift({ userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,
-      getDatetime: ctx.serverTime() });
+      getDatetime: ctx.realNow() });
     player.medalTraits[userMedalId] = list;
     t.spirit[userMedalId] = player.nextShuffleSkillId;
     return row.shuffleSkillId;
@@ -298,7 +296,7 @@ function makePet(ctx) {
 
   function respondExpedition(res, method, body, path) {
     const t = training();
-    const nowMs = serverMs();
+    const nowMs = ctx.realNow();
     if (String(path || '').toLowerCase().startsWith('/pet/expedition/recover')) {
       t.readyAt = 0;
       ctx.savePlayer();
@@ -323,17 +321,15 @@ function makePet(ctx) {
       });
     }
     // GET: slot 2..TRAIN_SLOTS aperti fino a fine mese; scadenze settimana/mese
-    const d = new Date(nowMs);
-    const day = d.getUTCDay();                                   // 0 = domenica
-    const weekEnd = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + ((7 - day) % 7), 23, 59, 59);
-    const monthEnd = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0, 23, 59, 59);
+    const weekEnd = ctx.weekEnd(nowMs);
+    const monthEnd = ctx.monthEnd(nowMs);
     const slots = [];
-    for (let n = 2; n <= TRAIN_SLOTS; n++) slots.push({ openMedalSlotNumber: n, openMedalSlotLimitDatetime: fmt(monthEnd) });
+    for (let n = 2; n <= TRAIN_SLOTS; n++) slots.push({ openMedalSlotNumber: n, openMedalSlotLimitDatetime: ctx.outTime(monthEnd) });
     return ctx.send(res, 200, {
       ret: ctx.ret(),
       openMedalSlotDatas: slots,
-      limitDateimeWeekEnd: fmt(weekEnd),
-      limitDateimeMonthEnd: fmt(monthEnd),
+      limitDateimeWeekEnd: ctx.outTime(weekEnd),
+      limitDateimeMonthEnd: ctx.outTime(monthEnd),
       remainingDrawCount: 10,
     });
   }
