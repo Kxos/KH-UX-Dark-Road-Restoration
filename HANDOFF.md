@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 37**, **revisione master 111** (default degli script di sessione); dettagli sotto.
+Stato del banco: **risorse 37**, **revisione master 112** (default degli script di sessione); dettagli sotto.
 
 ```powershell
 # emulatore (se spento)
@@ -100,6 +100,12 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - La rete del guest e' caduta due volte oggi: «7 ERROR» -> `ldconsole reboot`, `phaseb-guest.sh`, relogin.
 - Salvataggio di prova: 999 di ogni materiale, tutti i keyblade a +35, party creato, HD Roxas condivisa; copie in
   `tmp\player_before_*.json`.
+
+## 16 ottobre 2026
+
+- **Master 112**: keyblade oltre +35 fino a +60 (passi da 0,1, Bad Guy Breaker a interi), provati sul banco: BGB a +60
+  («Keyblade level max.»), Starlight a +35.5 (home_profilo.md#keyblade-oltre-35). Salvataggio di prova: materiali a 9999.
+- **Prossimo**: «Quest 0» nella bolla della home, poi i punti rimasti dalla lista del 15-10 qui sopra.
 
 ## Regole del lavoro (dell'utente)
 
