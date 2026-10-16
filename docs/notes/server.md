@@ -112,6 +112,11 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   `mission` a 116 e le altre 105 a 115 (md5 invariati) il client ha riscaricato tutte le 106 tabelle
   (18 MB). Il download pesa poco: login di 18,7 s con il master riscaricato (rev 117), 25-77 s in
   altre prove a seconda dell'emulatore.
+- **Orologio del dispositivo e ora del server** (prova del 16-10): con il guest al 10/1/2021 17:30 CET e
+  il server al 15/5/2021 12:00 UTC il login va e le Daily mostrano «19 hours left», cioe' il tempo fino
+  alle 08:00 UTC dell'**ora del server** (col dispositivo sarebbero state ~15 ore). Il dispositivo
+  conta solo per il popup «End of Service» (deve restare prima del 29/6/2021, protector.md); i conti
+  alla rovescia seguono l'ora che manda il server, che puo' quindi essere una data finta diversa.
 - 106 tabelle (nomi nel loader a `0x20a0b80`, passo 0x80). Ogni tabella = **array di righe**; ogni
   campo dello schema e' obbligatorio, chiavi in piu' ignorate; riga nulla = «Master data error».
   Schema: `recon/out/master_types_ww431.json` (1.739 campi, `recon/tools/master_types.py`); il
