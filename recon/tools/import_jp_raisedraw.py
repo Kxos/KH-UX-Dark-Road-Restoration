@@ -24,16 +24,29 @@ Fonti di ogni texture, in ordine (16 ott 2026, mai una texture assente):
      raidgacha_result_display_01 servita (BTF, copiata cosi' com'e'). NON per nome: le esportazioni
      02-10 rinumerano le «ビットマップ N» (la 73 di _10 e' la 75 di _01, entrambe 109x109), quindi la
      ricerca per <esadecimale del nome> come make_jp_enemies.py darebbe immagini sbagliate (verificato:
-     le omonime di gacha_result_display_01 JP hanno altre dimensioni). Si allineano invece le tabelle
-     delle texture (stesso ordine di esportazione; difflib sulle dimensioni dichiarate): una texture
-     in un blocco uguale prende quella di _01 nella stessa posizione. Controllo: dove le dimensioni
-     individuano un solo contenuto in _01, l'allineamento deve dare quello (02-10: 50-56 su 50-56,
-     nessun disaccordo); se no e' un conflitto. Fuori dai blocchi allineati: un solo contenuto con
-     quelle dimensioni in _01, oppure stesso nome non «ビットマップ» (yellow.png) con stesse dimensioni.
+     le omonime di gacha_result_display_01 JP hanno altre dimensioni).
+     Firma di una texture = dimensioni dichiarate + matrici di registrazione delle bitmap che la usano
+     (Data[10] bitmap {matrixId, fragmentId} -> Data[9] frammento {.., textureId, ..}; matrixId con
+     bit 31 = Data[3] matrice 6 float, senza = Data[2] traslazione 2 float). I rettangoli dei
+     frammenti non distinguono nulla (un frammento per texture, sempre 0,0,w,h); le registrazioni si'
+     (es. 54x54: -27,-54.05; 109x109: -54.6,-54.6) e sono identiche fra _01 e 02-10.
+     Si allineano le due tabelle delle texture sulle firme (stesso ordine di esportazione; difflib).
+     Classi (contate nel rapporto):
+       - «unique-anchor»: la firma individua un solo contenuto in _01 (se la texture e' anche
+         allineata, l'allineamento deve dare quel contenuto, se no conflitto);
+       - «position-corroborated»: firma condivisa da piu' contenuti in _01 (es. 4 x 390x373 con le
+         stesse registrazioni a coppie), allineata, e il suo blocco allineato ha un'ancora univoca
+         prima e una dopo (stesso scarto di indice);
+       - «position-only»: allineata ma senza ancore su entrambi i lati: NON si usa (cartella
+         incompleta);
+       - fuori dai blocchi allineati: l'ancora univoca, oppure «name-corroborated»: stesso nome
+         dato a mano (non «ビットマップ N») e stessa firma in _01 (solo yellow.png, che ha la
+         firma di white_back.png). Niente ripiego per sole dimensioni.
 Le Medal_D_* non hanno riferimento WW della stessa immagine (Medal_D_Up3 e' un'altra medaglia):
 solo (1). Le dimensioni del file trovato devono essere quelle dichiarate nella LWF.
 Una cartella entra solo se TUTTE le texture sono trovate; rapporto JSON per cartella (lo legge il
-server: lotCount solo fra le raidgacha_result_display_NN servite od ok).
+server: lotCount solo fra le raidgacha_result_display_NN servite od ok). Senza --check, le
+cartelle gestite qui che non sono piu' ok si tolgono da <out>/lwf/raisedraw.
 """
 import argparse
 import difflib
@@ -42,6 +55,7 @@ import io
 import json
 import os
 import re
+import shutil
 import struct
 import sys
 
@@ -53,7 +67,7 @@ D = r'D:\Progetto_Restauro_KH_UX'
 JP = os.path.join(D, 'thethiny_data', ' KHUx data shared', 'khux_dev_data', 'data',
                   'khux_dev_jp_final_4.3.1', 'data', 'jp_final_4.3.1', 'lwf', 'raisedraw')
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
-BITMAP = 'ビットマップ '
+GENERIC = re.compile(r'^ビットマップ \d+\.png$')
 
 WANTED = ([f'demo/raidgacha_result_display_{n:02d}' for n in range(1, 11)]
           + [f'Medal/Medal_D_Up{n}' for n in range(1, 13)]
@@ -84,26 +98,45 @@ def latest(folder, base, ext):
 
 
 def lwf_textures(path):
-    """[(nome file della texture, (larghezza, altezza))] dalla tabella texture della LWF, in ordine.
-    Header: 'LWF\\0', 3 byte di versione, opzione, 6 int, poi Data {offset, numero} (int32):
-    [0] byte delle stringhe, [8] texture (20 byte l'una), [35] stringhe {offset, lunghezza}."""
+    """[(nome file della texture, (larghezza, altezza), firma)] dalla tabella texture della LWF, in
+    ordine. Header: 'LWF\\0', 3 byte di versione, opzione, 6 int, poi Data {offset, numero} (int32):
+    [0] byte delle stringhe, [2] traslazioni (2 float), [3] matrici (6 float), [8] texture (20 byte),
+    [9] frammenti (9 int), [10] bitmap {matrixId, fragmentId}, [35] stringhe {offset, lunghezza}.
+    Firma = registrazioni (arrotondate al millesimo) delle bitmap che usano la texture, ordinate."""
     d = open(path, 'rb').read()
     if d[:4] != b'LWF\0':
-        raise ValueError(f'{path}: non LWF')
+        raise ValueError(f'{os.path.basename(path)}: non LWF')
     data = struct.unpack_from('<72i', d, 32)
-    sb = data[0]
-    so, sn = data[70], data[71]
+    sec = lambda i: (data[2 * i], data[2 * i + 1])  # noqa: E731
+    sb, _ = sec(0)
+    so, sn = sec(35)
     if so + 8 * sn != len(d):
-        raise ValueError(f'{path}: tabella stringhe inattesa')
+        raise ValueError(f'{os.path.basename(path)}: tabella stringhe inattesa')
     strs = []
     for i in range(sn):
         o, n = struct.unpack_from('<2i', d, so + 8 * i)
         strs.append(d[sb + o:sb + o + n].decode('utf-8'))
-    to, tn = data[16], data[17]
+    to, tn = sec(8)
+    fo, fn = sec(9)
+    bo, bn = sec(10)
+    tro, _ = sec(2)
+    mo, _ = sec(3)
+
+    def matrix(m):
+        if m & 0x80000000:
+            vals = struct.unpack_from('<6f', d, mo + 24 * (m & 0x7fffffff))
+            return ('M',) + tuple(round(x, 3) for x in vals)
+        return ('T',) + tuple(round(x, 3) for x in struct.unpack_from('<2f', d, tro + 8 * m))
+
+    frag_tex = [struct.unpack_from('<2i', d, fo + 36 * i)[1] for i in range(fn)]
+    sigs = {}
+    for i in range(bn):
+        m, f = struct.unpack_from('<2i', d, bo + 8 * i)
+        sigs.setdefault(frag_tex[f], []).append(matrix(m & 0xffffffff))
     out = []
     for i in range(tn):
         sid, _fmt, w, h = struct.unpack_from('<4i', d, to + 20 * i)
-        out.append((strs[sid], (w, h)))
+        out.append((strs[sid], (w, h), tuple(sorted(sigs.get(i, [])))))
     return out
 
 
@@ -126,40 +159,48 @@ def img_size(data):
 
 
 def ref_map(target, ref):
-    """Texture della LWF target -> file corrispondente della LWF di riferimento WW (vedi docstring).
-    Restituisce ({nome target: nome ref}, [conflitti])."""
-    rbase = os.path.basename(ref['dir'])
-    md5 = {k: hashlib.md5(open(os.path.join(ref['dir'], k), 'rb').read()).hexdigest()
-           for k, _ in ref['tex']}
-    bydim = {}
-    for k, wh in ref['tex']:
-        bydim.setdefault(wh, {}).setdefault(md5[k], k)
-    sm = difflib.SequenceMatcher(None, [wh for _, wh in ref['tex']], [wh for _, wh in target['tex']],
+    """Texture della LWF target -> texture della LWF di riferimento WW (regole nel docstring).
+    target['tex'], ref['tex'] = [(nome, dim, firma)]; ref['md5'] = {nome ref: contenuto}.
+    Restituisce ({nome target: (nome ref, classe)}, [conflitti], [position-only])."""
+    rtex, md5 = ref['tex'], ref['md5']
+    key = lambda t: (t[1], t[2])  # noqa: E731
+    bykey = {}
+    for t in rtex:
+        bykey.setdefault(key(t), {}).setdefault(md5[t[0]], t[0])
+    by_name = {orig_name(ref['base'], t[0]): t for t in rtex}
+    anchor = [len(bykey.get(key(t), {})) == 1 and bool(t[2]) for t in target['tex']]
+    sm = difflib.SequenceMatcher(None, [key(t) for t in rtex], [key(t) for t in target['tex']],
                                  autojunk=False)
-    aligned = {}
+    aligned, block = {}, {}
     for op, a1, a2, b1, b2 in sm.get_opcodes():
         if op == 'equal':
             for i in range(a2 - a1):
                 aligned[b1 + i] = a1 + i
-    tbase = target['base']
-    by_orig = {orig_name(rbase, k): (k, wh) for k, wh in ref['tex']}
-    out, conflict = {}, []
-    for j, (k, wh) in enumerate(target['tex']):
-        uniq = bydim.get(wh, {})
-        if j in aligned:
-            rk = ref['tex'][aligned[j]][0]
-            if len(uniq) == 1 and md5[rk] not in uniq:
-                conflict.append(orig_name(tbase, k))
-                continue
-            out[k] = rk
-        elif len(uniq) == 1:
-            out[k] = next(iter(uniq.values()))
+                block[b1 + i] = (b1, b2)
+    out, conflict, pos_only = {}, [], []
+    for j, t in enumerate(target['tex']):
+        k = t[0]
+        if anchor[j]:
+            uniq = next(iter(bykey[key(t)].values()))
+            if j in aligned and md5[rtex[aligned[j]][0]] != md5[uniq]:
+                conflict.append(k)
+            else:
+                out[k] = (rtex[aligned[j]][0] if j in aligned else uniq, 'unique-anchor')
         else:
-            name = orig_name(tbase, k)
-            hit = by_orig.get(name)
-            if not name.startswith(BITMAP) and hit and hit[1] == wh:
-                out[k] = hit[0]
-    return out, conflict
+            # firma condivisa da piu' contenuti di _01
+            name = orig_name(target['base'], k)
+            hit = by_name.get(name)
+            if not GENERIC.match(name) and hit and key(hit) == key(t):
+                # stesso nome dato a mano (non «ビットマップ N», che le esportazioni rinumerano) e
+                # stessa firma: yellow.png, che ha la firma di white_back.png (540x540, -22,-22)
+                out[k] = (hit[0], 'name-corroborated')
+            elif j in aligned:
+                b1, b2 = block[j]
+                if any(anchor[b1:j]) and any(anchor[j + 1:b2]):
+                    out[k] = (rtex[aligned[j]][0], 'position-corroborated')
+                else:
+                    pos_only.append(k)
+    return out, conflict, pos_only
 
 
 def main():
@@ -169,15 +210,19 @@ def main():
     ap.add_argument('--report', required=True)
     ap.add_argument('--check', action='store_true')
     a = ap.parse_args()
+    Image = None
+    if not a.check:
+        from PIL import Image
     served = served_names()
     refs = {}
     for prefix, rel in REFS.items():
         rdir = os.path.join(a.ww, 'lwf', 'raisedraw', *rel.split('/'))
-        rbase = rel.split('/')[-1]
-        rl = os.path.join(rdir, rbase + '.lwf')
+        rl = os.path.join(rdir, rel.split('/')[-1] + '.lwf')
         if not os.path.exists(rl):
             raise SystemExit(f'manca il riferimento WW {rl} (estrarlo con res_bulk.py)')
-        refs[prefix] = {'dir': rdir, 'tex': lwf_textures(rl)}
+        rtex = lwf_textures(rl)
+        md5 = {t[0]: hashlib.md5(open(os.path.join(rdir, t[0]), 'rb').read()).hexdigest() for t in rtex}
+        refs[prefix] = {'dir': rdir, 'base': rel.split('/')[-1], 'tex': rtex, 'md5': md5}
     report = {}
     for rel in WANTED:
         base = rel.split('/')[-1]
@@ -189,19 +234,27 @@ def main():
         if not lwf:
             report[rel] = {'status': 'missing-lwf'}
             continue
-        tex = lwf_textures(lwf)
-        ref = next((r for p, r in refs.items() if rel.startswith(p)), None)
-        mapped, conflict = ref_map({'base': base, 'tex': tex}, ref) if ref else ({}, [])
-        files, missing, src_count = {}, [], {'jp': 0, 'ww': 0}
-        for k, wh in tex:
+        try:
+            tex = lwf_textures(lwf)
+            ref = next((r for p, r in refs.items() if rel.startswith(p)), None)
+            mapped, conflict, pos_only = ref_map({'base': base, 'tex': tex}, ref) if ref else ({}, [], [])
+        except (ValueError, struct.error, IndexError, UnicodeDecodeError) as e:
+            report[rel] = {'status': 'incomplete', 'error': str(e), 'missing': [], 'conflict': []}
+            continue
+        files, missing = {}, []
+        count = {'own-jp': 0, 'unique-anchor': 0, 'position-corroborated': 0, 'name-corroborated': 0,
+                 'position-only': len(pos_only)}
+        bad = set(conflict) | set(pos_only)
+        conflict = [orig_name(base, k) for k in conflict]
+        for k, wh, _sig in tex:
             name = orig_name(base, k)
-            if name in conflict:
+            if k in bad:
                 continue
             own = os.path.join(folder, k)
             if os.path.exists(own):
-                cand = ('jp', own)
+                cand, cls = ('jp', own), 'own-jp'
             elif k in mapped:
-                cand = ('ww', os.path.join(ref['dir'], mapped[k]))
+                cand, cls = ('ww', os.path.join(ref['dir'], mapped[k][0])), mapped[k][1]
             else:
                 missing.append(name)
                 continue
@@ -209,12 +262,13 @@ def main():
                 conflict.append(f'{name} (dimensioni diverse da {wh[0]}x{wh[1]})')
                 continue
             files[k] = cand
-            src_count[cand[0]] += 1
-        entry = {'lwf': os.path.basename(lwf), 'textures': len(tex)}
-        if missing or conflict:
-            report[rel] = {'status': 'incomplete', **entry, 'missing': missing, 'conflict': conflict}
+            count[cls] += 1
+        entry = {'lwf': os.path.basename(lwf), 'textures': len(tex), 'count': count}
+        if missing or conflict or pos_only:
+            report[rel] = {'status': 'incomplete', **entry, 'missing': missing, 'conflict': conflict,
+                           'position_only': [orig_name(base, k) for k in pos_only]}
             continue
-        report[rel] = {'status': 'ok', **entry, 'from_jp': src_count['jp'], 'from_ww': src_count['ww']}
+        report[rel] = {'status': 'ok', **entry}
         if a.check:
             continue
         dst = os.path.join(a.out, 'lwf', 'raisedraw', *rel.split('/'))
@@ -224,19 +278,29 @@ def main():
         for k, (kind, src) in files.items():
             data = open(src, 'rb').read()
             if kind == 'jp' and not data.startswith(b'\x89BTF'):
-                from PIL import Image
                 data = btf.encode(Image.open(io.BytesIO(data)).convert('RGBA'))
             with open(os.path.join(dst, k), 'wb') as d:
                 d.write(data)
+    if not a.check:
+        # cartelle scritte da una corsa precedente e non piu' ok: via (solo quelle di WANTED)
+        for rel, r in report.items():
+            dst = os.path.join(a.out, 'lwf', 'raisedraw', *rel.split('/'))
+            if r['status'] != 'ok' and os.path.isdir(dst):
+                shutil.rmtree(dst)
+                print(f'{rel}: tolta la copia precedente')
     os.makedirs(os.path.dirname(os.path.abspath(a.report)), exist_ok=True)
     with open(a.report, 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=1)
     for rel, r in report.items():
         extra = ''
-        if r['status'] == 'ok':
-            extra = f" ({r['lwf']}, {r['textures']} texture: {r['from_jp']} JP, {r['from_ww']} WW)"
-        elif r['status'] == 'incomplete':
-            extra = f" mancanti {r['missing']} conflitti {r['conflict']}"
+        if 'count' in r:
+            c = r['count']
+            extra = (f" ({r['lwf']}, {r['textures']} texture: {c['own-jp']} JP, {c['unique-anchor']}"
+                     f" ancore, {c['position-corroborated']} posizione corroborata,"
+                     f" {c['name-corroborated']} nome corroborato, {c['position-only']} solo posizione)")
+        if r['status'] == 'incomplete':
+            extra += (f" mancanti {r['missing']} conflitti {r['conflict']}"
+                      + (f" errore {r['error']}" if 'error' in r else ''))
         print(f"{rel}: {r['status']}{extra}")
     return 0
 
