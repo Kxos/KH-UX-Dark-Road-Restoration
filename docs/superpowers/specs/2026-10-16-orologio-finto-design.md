@@ -1,6 +1,6 @@
 # Orologio finto del server: mesi gemelli e scadenze vere
 
-Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10).
+Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisione 16-10: calcoli in ora reale, scadenze precalcolate).
 
 ## 1. Obiettivo
 
@@ -56,16 +56,25 @@ venerdi' 16/10/2020 15:00.
   2019): client e server vedono sempre la stessa data, AP, training e regali restano coerenti. Le
   scadenze si calcolano nello stesso riferimento. Lo scostamento si salva (`player.clockOffset`)
   solo per sopravvivere a un riavvio del server a gioco aperto; a ogni login si ricalcola.
-- Fuori dalle sessioni la data finta resta una funzione dell'ora reale (gemello del mese corrente).
+- Lo scostamento dipende **solo dal mese reale del login**: due login nello stesso mese danno lo
+  stesso scostamento, quindi il master in cache nel client resta valido; cambia solo a un cambio di
+  mese, che e' anche una scadenza mensile (nuova revisione, 3.3).
+- Limite di sicurezza: se una sessione lunghissima portasse la data finta oltre il 28/6/2021, il
+  server la ferma al 28/6/2021 23:59 fino al login successivo.
 
-### 3.2 Scadenze calcolate, non salvate
+### 3.2 Due regole: calcoli in ora reale, ora finta solo verso il client
 
-- `fineSettimana(reale)` = prossimo lunedi' 08:00 UTC; `fineMese(reale)` = primo giorno del mese
-  successivo 08:00 UTC. Entrambe si traducono in data finta con la funzione del 3.1 (per la fine
-  mese: il giorno 1 del gemello del mese successivo, che puo' non essere il mese dopo nel
-  calendario finto).
-- Nessuna `data_weekly`/`data_monthly` salvata: si ricalcolano dall'ora reale (niente stato da
-  riparare dopo un crash). La «data_locale» dell'idea originale e' la data finta del 3.1.
+- **Ogni periodo e ogni scadenza si calcolano sull'ora reale**: giorno = da 08:00 UTC reali, settimana
+  = da lunedi' 08:00 UTC reali, mese = dal giorno 1 08:00 UTC reale. Contatori delle missioni,
+  rotazione Limited, consegna nei Presents, `weeklyLux` usano solo questi indici.
+- **L'ora finta serve solo a cio' che si manda al client**: `serverTime`, orari delle risposte
+  (`lastApDatetime`, `recoverDatetime`, `limitDatetime`, `getDatetime`) ed `endDate` del master =
+  istante reale + scostamento della sessione (3.1).
+- Cosi' il ripiego di febbraio (3.1) non sposta mai un azzeramento: sfasa solo il giorno della
+  settimana mostrato, mentre i conti alla rovescia restano esatti perche' scadenza e «adesso» sono
+  traslati dello stesso scostamento.
+- Niente `data_weekly`/`data_monthly` salvate: si ricalcolano (la «data_locale» dell'idea originale
+  e' la data finta del 3.1).
 
 ### 3.3 Revisione del master calcolata e scadenze scritte al volo
 
@@ -74,21 +83,30 @@ venerdi' 16/10/2020 15:00.
   passo grande (es. `BASE * 100000`) perche' le due parti non si scavalchino. Gli script di sessione
   smettono di imporre la revisione: la passano solo come `BASE`.
 - Quando il client chiede le tabelle, il server riscrive **in memoria** `endDate` delle righe
-  Weekly (missionType 3) e Limited (4) attive con la fine settimana/mese finta corrente. I file di
-  `server/master_data` e `server/tables` non cambiano.
+  Weekly (missionType 3) e Limited (4). I file di `server/master_data` e `server/tables` non
+  cambiano.
+- **Scadenze precalcolate per il cambio a gioco aperto**: la rotazione e' nota in anticipo, quindi
+  ogni gruppo Limited riceve la scadenza della sua **prossima** occorrenza (quello attivo la propria,
+  quello della settimana/mese dopo la fine della settimana/mese dopo). Le Weekly (stesse righe ogni
+  settimana) diventano due serie alternate A/B (3001-3010 settimane pari, 3011-3020 dispari), ognuna
+  con la scadenza della sua prossima settimana. Risultato: quando una scadenza passa a gioco aperto,
+  le missioni nuove hanno gia' nel master in cache il conto alla rovescia giusto, senza relogin.
+- La revisione conta anche le scadenze dentro la sessione, ma il client la vede solo al login: al
+  login successivo riscarica il master (una volta per settimana al massimo).
+- Ovunque il server confronta la revisione (`/system/resourcesize`, `respondMaster`, `versionDat`...)
+  usa la revisione calcolata al momento, non una costante.
 - Il client scarica il master una volta a settimana e una al mese in piu' (~20 s), non a ogni login.
 
 ### 3.4 Daily
 
 Nessuna modifica: con un'ora del server che non riparte e ha l'ora UTC reale, il conto alla rovescia
-del client (`startDate + k giorni`) diventa corretto da solo; il periodo lato server si calcola
-sull'ora finta come oggi.
+del client (`startDate + k giorni`) diventa corretto da solo (lo scostamento e' di giorni interi,
+l'ora del giorno coincide); il periodo lato server si calcola sull'ora reale (3.2).
 
 ### 3.5 Limited
 
-La rotazione oggi usa mese e settimana reali (`limitedPeriod`): resta cosi', e con i gemelli coincide
-con il calendario finto. Le righe attive ricevono `endDate` = fine mese (mensile) o fine settimana
-(breve), come al 3.3.
+La rotazione usa gia' mese e settimana reali (`limitedPeriod`): resta cosi' (3.2). Le righe
+ricevono `endDate` come al 3.3 (prossima occorrenza del gruppo).
 
 ### 3.6 Cambio di settimana o mese a gioco aperto (deciso con l'utente)
 
@@ -118,7 +136,8 @@ Regole del design:
 - il master si riscarica solo quando cambia la revisione, cioe' a una scadenza settimanale o mensile
   passata (o a un nostro cambio dei master): al massimo ~5 volte al mese, mai a ogni login;
 - il gemello e le scadenze al login sono calcoli di pochi microsecondi;
-- **cache per revisione**: tabelle convalidate, cifrate e con md5 calcolati una volta per revisione
+- **cache per revisione e data dei file**: tabelle lette, convalidate, cifrate e con md5 calcolati una
+  volta (ricalcolo solo se cambia la revisione o un file di `master_data`)
   (la `mission` con le scadenze applicate compresa), poi servite dalla memoria; oggi le si rifa' a
   ogni richiesta;
 - la consegna dei premi non riscossi nei Presents avviene una volta per periodo, non a ogni login.
@@ -142,13 +161,16 @@ Da convertire una volta (migrazione al primo avvio con la nuova versione):
 | pet training `readyAt` | ms dell'ora finta | ms reali | pronto subito |
 | `getDatetime` di medaglie, keyblade, parti, sfere | stringa finta | invariato | nessuna (solo visualizzazione) |
 
-`player.missions[].period` e `player.weeklyLux.period` sono indici di periodo: cambiano scala una
-volta (al primo avvio si azzerano i contatori del periodo corrente).
+`player.missions[].period` e `player.weeklyLux.period` diventano indici sull'ora reale (3.2):
+cambiano scala una volta (al primo avvio si azzerano i contatori del periodo corrente, senza
+consegne nei Presents per quel passaggio).
 
 ### 3.8 Componenti
 
-- `server/clock.js` (nuovo, senza dipendenze): `fakeMs(realMs)`, `fakeString(realMs)`,
+- `server/clock.js` (nuovo, senza dipendenze, ora reale iniettabile per le prove):
+  `twinOffset(realMs)`, `fake(realMs, offset)`, `dayIndex/weekIndex/monthIndex(realMs)`,
   `weekEnd(realMs)`, `monthEnd(realMs)`, `masterRevision(base, realMs)`, tabella dei gemelli.
+- `server/tables/mission.json`: Weekly in due serie A/B (3.3).
 - `server/server.js`: `serverTime()`/`serverTimeAt()` usano `clock`; `respondMaster`/`masterBody`
   applicano le scadenze al volo e la revisione calcolata; migrazione del 3.7.
 - `server/pet.js`: training in ms reali.
