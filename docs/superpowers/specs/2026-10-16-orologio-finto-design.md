@@ -1,6 +1,6 @@
 # Orologio finto del server: mesi gemelli e scadenze vere
 
-Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisioni 16-10: calcoli in ora reale, scadenze precalcolate, confine mensile alle 08:00, date salvate in ora reale).
+Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisioni 16-10: calcoli in ora reale, scadenze precalcolate, confine mensile alle 08:00, date salvate in ora reale, revisioni delle risorse separate).
 
 ## 1. Obiettivo
 
@@ -96,8 +96,15 @@ venerdi' 16/10/2020 15:00.
   le missioni nuove hanno gia' nel master in cache il conto alla rovescia giusto, senza relogin.
 - La revisione conta anche le scadenze dentro la sessione, ma il client la vede solo al login: al
   login successivo riscarica il master (una volta per settimana al massimo).
-- Ovunque il server confronta la revisione (`/system/resourcesize`, `respondMaster`, `versionDat`...)
-  usa la revisione calcolata al momento, non una costante.
+- La revisione calcolata vale **solo per i campi del master** (`masterRevision` di
+  `/system/resourcesize`, `master.revision`/`commonRevision` di `respondMaster` e quelli che il
+  piano verifichera' essere del master). Oggi lo stesso numero finisce anche in campi delle
+  **risorse** (`darkVersionRes` e simili, `/system/status`): quelli restano costanti, altrimenti il
+  client potrebbe riscaricare ogni settimana i ~2,3 GB di risorse. Il piano verifica campo per campo
+  cosa legge il client.
+- Il master servito dipende **solo dalla revisione**: le scadenze si calcolano con lo scostamento del
+  mese a cui appartiene la revisione (3.1), quindi a ogni revisione corrisponde un solo contenuto,
+  che si puo' tenere in cache (3.6b).
 - Il client scarica il master una volta a settimana e una al mese in piu' (~20 s), non a ogni login.
 
 ### 3.4 Daily
@@ -128,7 +135,10 @@ Il client riscarica il master solo al login. Alla scadenza vera il server **camb
   giorno/settimana/mese reali con quelli dell'ultima chiusura salvata (`player.clockSettled`);
   se uno e' avanzato, chiude i periodi passati (premi completati e non riscossi -> Presents, una
   volta per missione e periodo, `player.missions[id].received`) e aggiorna `clockSettled`.
-  Costo a regime: tre confronti di interi per richiesta.
+  Costo a regime: tre confronti di interi per richiesta. Il controllo gira **all'inizio** di ogni
+  richiesta, prima di qualunque altra elaborazione (Node e' a un solo thread): una riscossione che
+  arriva proprio sul confine trova la missione gia' chiusa e il premio gia' nei Presents, mai
+  pagato due volte.
 - Febbraio senza gemello: il ripiego del 3.1 va bene all'utente (16-10).
 
 ### 3.6b Velocita' del login (richiesta dell'utente)
@@ -169,7 +179,9 @@ Da convertire una volta (migrazione al primo avvio con la nuova versione):
 | `player.pet.expedition` mese del training («This Month's Training») | mese finto | indice del mese reale | si tiene il conteggio del mese corrente |
 
 Con i `getDatetime` in ms reali, cambiare gemello fra due login non mescola l'ordine «piu'
-recenti» della Medal List: tutto si converte con lo scostamento della sessione corrente.
+recenti» della Medal List: tutto si converte con lo scostamento della sessione corrente. Effetto
+accettato: fra molti anni le date di oggetti molto vecchi, convertite con il gemello di allora,
+possono risultare anteriori al 2016 (solo visualizzazione).
 
 `player.missions[].period` e `player.weeklyLux.period` diventano indici sull'ora reale (3.2):
 cambiano scala una volta (al primo avvio si azzerano i contatori del periodo corrente, senza
@@ -194,7 +206,10 @@ consegne nei Presents per quel passaggio).
   settimana/mese, revisione che cambia solo alle scadenze, data sempre fra 5/2016 e 28/6/2021,
   confine del mese alle 08:00 del giorno 1 (scostamento e revisione cambiano insieme), chiusura dei
   periodi una sola volta (nessun premio doppio nei Presents, anche dopo un riavvio).
-- Prova delle scadenze al volo: tabelle `mission` servite con `endDate` = fine settimana/mese.
+- Prova delle scadenze al volo: tabelle `mission` servite con `endDate` = fine settimana/mese, stesso
+  contenuto per la stessa revisione.
+- Prova delle revisioni: le versioni delle risorse non cambiano quando cambia quella del master
+  (nessun download delle risorse al banco dopo un cambio di settimana simulato).
 - Banco: Daily/Weekly/Limited con i giorni veri; riavvio del server -> stessi valori; un cambio di
   settimana simulato (`KHUX_REAL_NOW` per spostare l'ora reale nelle prove) -> master riscaricato,
   nuova campagna.
