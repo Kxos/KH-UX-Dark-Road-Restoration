@@ -246,6 +246,10 @@ const clock = require('./clock');
 const STARTED_AT = Date.now();
 const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE della revisione del master
 // KHUX_REAL_NOW (prove al banco): l'ora reale parte da quell'istante all'avvio del server
+// (una data che non si legge ferma subito l'avvio: meglio che un orologio NaN a banco acceso)
+if (process.env.KHUX_REAL_NOW && !Number.isFinite(Date.parse(process.env.KHUX_REAL_NOW))) {
+  throw new Error(`KHUX_REAL_NOW non valido: «${process.env.KHUX_REAL_NOW}» (serve una data ISO, es. 2026-10-19T07:55:00Z)`);
+}
 const REAL_SHIFT = process.env.KHUX_REAL_NOW ? Date.parse(process.env.KHUX_REAL_NOW) - STARTED_AT : 0;
 const realNow = () => Date.now() + REAL_SHIFT;
 function clockOffset() {
@@ -403,6 +407,11 @@ function masterKey(name) {
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
 const masterRevisionNow = () => clock.masterRevision(REVISION, realNow());
 
+// Weekly A/B (make-weekly-series.js): 3001-3010 settimane pari (serie 0), 3011-3020 dispari (serie 1),
+// sull'ora reale. Unica regola, usata dal master servito e da missionActive.
+const weeklySeriesOf = (row) => (row.id >= 3011 ? 1 : 0);
+const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeriesOf(row);
+
 // righe servite: per «mission» le scadenze delle Weekly A/B e dei gruppi Limited (prossima
 // occorrenza), in ora finta con lo scostamento del mese della revisione
 function servedMasterRows(name, realMs) {
@@ -414,7 +423,7 @@ function servedMasterRows(name, realMs) {
   const nextMonth = (i, n) => { let k = mi; while (k % n !== i) k++; return clock.monthEndOf(k); };
   return rows.map((r) => {
     let endMs = null;
-    if (r.missionType === 3) endMs = nextWeek(r.id >= 3011 ? 1 : 0, 2);
+    if (r.missionType === 3) endMs = nextWeek(weeklySeriesOf(r), 2);
     const g = LIMITED_GROUP.get(r.id);
     if (r.missionType === 4 && g) {
       endMs = g.kind === 'monthly' ? nextMonth(g.index, LIMITED_ROTATION.monthly.length) : nextWeek(g.index, LIMITED_ROTATION.weekly.length);
@@ -896,6 +905,8 @@ function respondUserCreate(res, req) {
     player.gender = player.avatar?.gender ?? player.gender;
   }
   player.created = true;
+  // primo ingresso: lo scostamento dell'ora finta si fissa qui come a /khux/login
+  player.clockOffset = clock.twinOffset(realNow());
   grantMissingKeyblades(); // I-087: keyblade senza premio nel master
   savePlayer();
   send(res, 200, {
@@ -1841,8 +1852,7 @@ function missionActive(row, realMs) {
     return realMs < player.beginnerSince + BEGINNER_DAYS * 86400000;
   }
   if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id, realMs);
-  // Weekly A/B (make-weekly-series.js): 3001-3010 settimane pari, 3011-3020 dispari (ora reale)
-  if (row.missionType === 3) return clock.weekIndex(realMs) % 2 === (row.id >= 3011 ? 1 : 0);
+  if (row.missionType === 3) return weeklyActive(row, realMs);
   return true;
 }
 

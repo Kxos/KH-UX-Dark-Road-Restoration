@@ -1,6 +1,12 @@
 // Master servito con l'orologio finto: node server/test-master-clock.js
 'use strict';
+const fs = require('fs'); const os = require('os'); const path = require('path');
+// salvataggio temporaneo: mai server/save/
+const SAVE = path.join(os.tmpdir(), `khux-test-master-clock-${process.pid}.json`);
+try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
+process.env.KHUX_SAVE = SAVE;
 process.env.KHUX_REVISION = '117';
+delete process.env.KHUX_REAL_NOW;
 delete process.env.KHUX_SERVER_TIME;
 const realNowFn = Date.now; const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
 at('2026-10-16T15:00:00Z');
@@ -8,6 +14,8 @@ const log = console.log; const quiet = (fn) => { console.log = () => {}; try { r
 const { _test: t } = quiet(() => require('./server'));
 const errors = []; const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, ...a)); return b; };
+call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
+check(Number.isFinite(t.player.clockOffset), 'clockOffset non fissato da /user/create');
 
 const rev = t.masterRevisionNow();
 check(rev > 117 * 100000, `revisione ${rev}`);
@@ -36,5 +44,11 @@ at('2026-10-19T09:00:00Z');
 check(t.masterRevisionNow() === rev + 1, 'revisione +1 al lunedi');
 
 Date.now = realNowFn;
+try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
+// KHUX_REAL_NOW illeggibile: il server non parte, con un errore chiaro
+const bad = require('child_process').spawnSync(process.execPath, ['-e', "require('./server')"],
+  { cwd: __dirname, env: { ...process.env, KHUX_REAL_NOW: 'lunedi', KHUX_SAVE: SAVE }, encoding: 'utf8' });
+check(bad.status !== 0 && /KHUX_REAL_NOW non valido/.test(bad.stderr), `KHUX_REAL_NOW non valido accettato (${bad.status})`);
+try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 log('OK: master con l\'orologio');
