@@ -205,6 +205,25 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   generate in `make_textures.py`. `Mask_Area` (avviso «Join a party» delle settimanali) deve coprire
   solo l'elenco: stesa sulla finestra mangiava i tocchi delle schede (Daily morta dopo Weekly, I-058).
 
+<a id="limited"></a>
+### Limited a rotazione (16 ottobre, banco OK)
+
+- `server/make-limited-missions.js` da `server/limited_missions.tsv` (originali khuxwiki): 207 righe
+  missionType 4 (id 4001-4207), 35 campagne mensili dei Lux (M01-M35) e 6 brevi completabili (W01-W06:
+  «Complete quest x1/x2», «Nearly 10M downloads», «Defeat 100 enemies», Story Quest Campaign fino alla
+  500, le due speciali sui Lux totali). Rotazione in `server/limited_rotation.json`: il server
+  (`limitedActive`) manda solo la campagna del mese e quella della settimana, dall'**ora reale**
+  (quella del server riparte dal 15-5-2021 a ogni avvio); periodo = numero del mese/della settimana
+  reale (lunedi' 08:00 UTC), quindi una campagna che ritorna riparte da zero.
+- Condizioni: 4 Lux del periodo, 33 Lux totali (speciali), 30 storia fino alla quest N, 1 quest, 50
+  nemici sconfitti (`enemyDeadNumber` di `/stage/clear`). `missions[].numUpper/numLower` sono uint64
+  (FUN_00797de0): i 10/100 miliardi ci stanno.
+- Premi: rewardType 33 = parte dello Spirit (itemId = petPartsId; FUN_00753370/FUN_0074bee0 caso 0x21),
+  materiali, medaglie, Jewel; le 4 parti senza grafica hanno un sostituto (SUBST). Platinum Ticket,
+  Draw Ticket e il Title restano rewardType 0 finche' non sono mappati (REWARDS).
+- Conto alla rovescia: «28719 days left» (endDate fisso del master, come le Weekly).
+- Prova offline `node server/test-limited.js`; al banco la scheda mostra icone e nomi delle parti.
+
 <a id="missioni-schede"></a>
 ### Schede Daily / Weekly / Beginner / Limited (14 ottobre, offline)
 
