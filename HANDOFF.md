@@ -17,7 +17,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 38**, **revisione master: BASE 117** (default degli script di sessione; il server manda
+Stato del banco: **risorse 39**, **revisione master: BASE 117** (default degli script di sessione; il server manda
 `117*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto.
 
 ```powershell

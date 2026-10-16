@@ -1,4 +1,5 @@
-"""Lucchetto delle piastre di Shop > Draw: img/ui/ShopBut_Lock.png e ShopBut_Lock_Disable.png (I-133).
+"""Texture delle piastre di Shop > Draw assenti dalle risorse (I-133): lucchetto img/ui/ShopBut_Lock.png e
+ShopBut_Lock_Disable.png, pulsante rosso di estrazione spento img/ui/But07_Disable.png.
 
     python -I recon/tools/make_shop_lock.py <cartella catalogo estratto> <uscita>
 
@@ -13,6 +14,13 @@ ImageView::loadTexture all'apertura dello Shop con una piastra. La texture dello
 dell'icona delle missioni (QuestBut_Lock, 118x118) e' identica a dark_Icon_Lock: si copiano le due
 originali di Dark Road (lucchetto azzurro e la sua versione grigia), lette dal catalogo locale al
 momento del build. Nel repository solo questo script, mai le bitmap.
+
+Piastra bloccata (benefitId del master DrawMedalType che il giocatore non ha): i pulsanti di
+estrazione DrawButton1 (But07, rosso) e DrawButton3 (But24, oro) passano a spento con
+FUN_008d6034(btn, 1) -> FUN_008d5c20, che carica «img/ui/%s_Disable.png» su un ImageView con
+9-slice: But24_Disable esiste, But07_Disable no (crash 0x2c, banco 16-10, stringa di 24 caratteri
+nel tombstone). Le due texture hanno la stessa sagoma 60x118 (9-slice a meta', capInsetsX 30) e
+lo spento originale e' grigio: But07_Disable = copia di But24_Disable.
 """
 import os
 import shutil
@@ -23,12 +31,15 @@ import btf  # noqa: E402
 
 src, out = sys.argv[1:3]
 PAIRS = {'img/ui/ShopBut_Lock.png': 'img/ui/dark_Icon_Lock.png',
-         'img/ui/ShopBut_Lock_Disable.png': 'img/ui/dark_Icon_Lock_Disable.png'}
+         'img/ui/ShopBut_Lock_Disable.png': 'img/ui/dark_Icon_Lock_Disable.png',
+         'img/ui/But07_Disable.png': 'img/ui/But24_Disable.png'}
+SIZES = {'img/ui/But07_Disable.png': (60, 118)}
 for dst, s in PAIRS.items():
     sp = os.path.join(src, *s.split('/'))
     im = btf.decode(open(sp, 'rb').read())      # controllo: BTF valida e della misura del layout
-    if im.size != (118, 118):
-        sys.exit('%s: misura %s invece di 118x118' % (s, im.size))
+    want = SIZES.get(dst, (118, 118))
+    if im.size != want:
+        sys.exit('%s: misura %s invece di %s' % (s, im.size, want))
     dp = os.path.join(out, *dst.split('/'))
     os.makedirs(os.path.dirname(dp), exist_ok=True)
     shutil.copyfile(sp, dp)

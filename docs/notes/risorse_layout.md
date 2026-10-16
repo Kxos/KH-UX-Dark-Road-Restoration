@@ -73,7 +73,9 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   (`FUN_00a1509c`) carica sempre in `Lock_icon` (118x118, figlio di `LockMask`) `img/ui/ShopBut_Lock.png`
   (flag +0x350 di `FUN_00b8a18c` acceso) o `ShopBut_Lock_Disable.png`, anche senza blocco; Dark Road le ha
   rinominate `dark_Icon_Lock` / `_Disable` (stessa grafica di `QuestBut_Lock`): `make_shop_lock.py` le copia
-  dal catalogo (risorse 39, I-133).
+  dal catalogo (risorse 39, I-133). Una piastra bloccata spegne i pulsanti di estrazione con
+  `FUN_008d6034(btn, 1)` -> `FUN_008d5c20`, che carica `img/ui/%s_Disable.png` (anche `_Off`/`_On`) su un ImageView
+  con 9-slice: `But07_Disable` mancava (copia di `But24_Disable`, stessa sagoma). Tocco sul lucchetto: I-134.
 - Un ImageView di cui il codice prende la texture (renderer +0x598, texture +0x4e8, es. `Image_3`
   del banner Events) deve essere senza 9-slice e con una texture servita.
 - `FUN_008d6230` accetta il tocco in un rettangolo grande quanto il bersaglio ma **centrato sulla
