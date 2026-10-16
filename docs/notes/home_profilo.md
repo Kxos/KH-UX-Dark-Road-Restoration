@@ -409,6 +409,21 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   l'avatar; le parti 001 guardano a sinistra (avanti = -x). Nelle risorse c'e' solo la serie
   001 (9 parti, Kitstar rosa): niente `lwf/pet/motion`, niente accessori, niente ear_front2/
   tail_front/bag. `lwf/ability/hit_effect` ha solo eff_0001/eff_0002 (names_v4 e names_addnl).
+- **Parti dello Spirit** (16 ottobre, banco OK): tabella `petParts` di 668 righe
+  (`server/make-pet-parts.js` da `server/pet_parts.tsv`; nomi khuxwiki, metodo in
+  `reference\pet\spirit_parts_names.md`). petPartsId 3TTNNN (serie NNN = specie+colore, cartella
+  `lwf/pet/part/NNN`) o 4TTNNN (accessorio, cartella con l'id intero); TT = partsType = scheda
+  dell'editor ([fn]: 4 Head, 3 Ears, 8 Body, 6 Legs, 9 Tail, 1/2/5/7/10/11 Accessories;
+  combinationFlag 1 = esclusa). `userPetParts[]` = {petPartsId, partsType, getDatetime}
+  ([fn]); possesso in `player.pet.parts`, serie 001 sempre, `-AllParts` per le prove;
+  `grantPart` per i premi. Grafica e icone dal JP (`recon/tools/jp_pet_parts.py`, da
+  import_jp_coco.py): 445 LWF che thethiny ha tenuto una volta sola si riprendono dalla serie
+  gemella (stessa texture e dimensioni); 38 accessori senza texture nemmeno nel JP restano fuori
+  (fra questi Starlight Bow/Glasses e quasi tutti i Balloon delle Limited). Anche **25 movimenti
+  originali** `lwf/pet/motion` (wait, walk, battle_normal...: hanno i movie degli accessori; ombra
+  97x24 = NPC_SHADOW) al posto dei nostri; restano generati battle_all, pvp_start/total_*,
+  recovery_skill, rolling3 (texture di effetti assenti). `petPartsOffset` resta vuota (posizioni
+  di riposo). `GET /pet/coordinate/members` (pet dei membri del party) non e' gestita.
 - **Pet visibile** (11 ottobre sera, da provare al banco): `make_pet_motions.py` scrive ogni
   movimento come radice con 9 movie vuoti chiamati come le parti di 001 (solo quelle: nessun
   load verso file assenti) e una posa per fotogramma (PLACE al primo, MOVEM dopo; stringhe,

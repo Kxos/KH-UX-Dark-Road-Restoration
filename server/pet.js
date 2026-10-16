@@ -62,6 +62,19 @@ const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS === '1';
 // Parti della serie 001 per il pet visibile (default). KHUX_PET_PARTS=0 = ripiego: id 0, pet
 // invisibile come prima (i movimenti mandano comunque gli eventi e i pet_eff restano visibili).
 const DEFAULT_PART = process.env.KHUX_PET_PARTS === '0' ? 0 : 1;
+// Parti dello Spirit (master petParts, make-pet-parts.js). petPartsId = 3TTNNN (specie/colore NNN,
+// grafica lwf/pet/part/NNN) o 4TTNNN (accessorio, cartella lwf/pet/part/<id>); TT = partsType,
+// cioe' la scheda dell'editor ([fn]): 4 Head, 3 Ears, 8 Body, 6 Legs, 9 Tail, accessori
+// 1 mask, 2 hat, 5 necklace, 7 backpack, 10 special, 11 mouth.
+// campo del coordinato -> partsType ([fn])
+const COORD_TYPE = {
+  accessoryMask: 1, accessoryHat: 2, earPartsId: 3, facePartsId: 4, accessoryNecklace: 5, legPartsId: 6,
+  accessoryBackpack: 7, bodyPartsId: 8, tailPartsId: 9, accessorySpecial: 10, accessoryMouth: 11,
+};
+// la serie 001 (Pink Kitstar, l'unica servita dal WW) la possiede chiunque
+const STARTER_PARTS = [303001, 304001, 306001, 308001, 309001];
+// KHUX_PET_ALL_PARTS=1: tutte le parti della tabella (prove al banco)
+const ALL_PARTS = process.env.KHUX_PET_ALL_PARTS === '1';
 // Spirit Training (I-082). Valori NOSTRI: nessun dump delle risposte originali.
 // - attesa tra due allenamenti (khwiki: un trait ogni 20 ore), in ore
 const TRAIN_HOURS = Number(process.env.KHUX_PET_TRAIN_HOURS || 20);
@@ -104,17 +117,47 @@ function makePet(ctx) {
   // (make_pet_motions.py): le risorse hanno solo la serie 001 (orecchie, muso, zampe, corpo,
   // coda), quindi quelle parti valgono 1 se il giocatore non ne ha scelte altre; accessori 0
   // (nessun movie per loro, nessun file cercato). Con 0 ovunque il pet restava invisibile.
+  // Gli id sono quelli veri del master (303001...): i salvataggi di prima avevano 1 (= serie 001,
+  // id % 1000), che diventa 300000 + tipo*1000 + 1 perche' l'editor riconosca la parte in uso.
   function coordinate(no) {
     const c = state().coordinates[no] || {};
-    const part = (v) => (v === undefined ? DEFAULT_PART : Number(v) || 0);
+    const part = (k) => {
+      let v = c[k] === undefined ? DEFAULT_PART : Number(c[k]) || 0;
+      if (v > 0 && v < 1000) v = 300000 + COORD_TYPE[k] * 1000 + v;
+      return v;
+    };
     return {
       myCoordinateNo: no, accessoryMask: c.accessoryMask || 0, accessoryHat: c.accessoryHat || 0,
-      earPartsId: part(c.earPartsId), facePartsId: part(c.facePartsId),
-      accessoryNecklace: c.accessoryNecklace || 0, legPartsId: part(c.legPartsId),
-      accessoryBackpack: c.accessoryBackpack || 0, bodyPartsId: part(c.bodyPartsId),
-      tailPartsId: part(c.tailPartsId), accessorySpecial: c.accessorySpecial || 0,
+      earPartsId: part('earPartsId'), facePartsId: part('facePartsId'),
+      accessoryNecklace: c.accessoryNecklace || 0, legPartsId: part('legPartsId'),
+      accessoryBackpack: c.accessoryBackpack || 0, bodyPartsId: part('bodyPartsId'),
+      tailPartsId: part('tailPartsId'), accessorySpecial: c.accessorySpecial || 0,
       accessoryMouth: c.accessoryMouth || 0,
     };
+  }
+
+  // Parti possedute: player.pet.parts {petPartsId: getDatetime}, sempre con la serie 001; solo
+  // quelle della tabella petParts (senza riga l'editor dereferenzia NULL, [fn]).
+  function ownedParts() {
+    const rows = new Map(ctx.masterRows('petParts').map((r) => [r.petPartsId, r]));
+    const st = state();
+    if (!st.parts) st.parts = {};
+    const have = new Map(Object.entries(st.parts).map(([k, v]) => [Number(k), v]));
+    for (const id of STARTER_PARTS) if (!have.has(id)) have.set(id, '2017-09-21 00:00:00');
+    if (ALL_PARTS) for (const id of rows.keys()) if (!have.has(id)) have.set(id, '2017-09-21 00:00:00');
+    return [...have].filter(([id]) => rows.has(id)).sort((a, b) => a[0] - b[0])
+      .map(([id, t]) => ({ petPartsId: id, partsType: rows.get(id).partsType, getDatetime: t }));
+  }
+
+  // premio (missioni, presents): aggiunge la parte; false se gia' posseduta o senza riga
+  function grantPart(id) {
+    id = Number(id);
+    if (!ctx.masterRows('petParts').some((r) => r.petPartsId === id)) return false;
+    const st = state();
+    if (!st.parts) st.parts = {};
+    if (st.parts[id] || STARTER_PARTS.includes(id)) return false;
+    st.parts[id] = ctx.serverTime();
+    return true;
   }
 
   // Gear del pet: al massimo 6 medaglie possedute (vendute/fuse spariscono da sole)
@@ -296,9 +339,10 @@ function makePet(ctx) {
   }
 
   // GET /pet/coordinate/parts (171, [fn]): pet.userPetParts[], elemento [fn]
-  // (24 byte, chiave petPartsId). Nessuna parte: la tabella petParts e' vuota.
+  // (24 byte: petPartsId, partsType, getDatetime). L'editor degli outfit mette nelle schede le
+  // parti con combinationFlag != 1 della riga master.
   function respondParts(res) {
-    ctx.send(res, 200, { ret: ctx.ret(), pet: { userPetParts: [] } });
+    ctx.send(res, 200, { ret: ctx.ret(), pet: { userPetParts: ownedParts() } });
   }
 
   // GET /pet/coordinate/all (172, [fn]): pet.userPetCoordinates[] (12 int ciascuno),
@@ -366,6 +410,7 @@ function makePet(ctx) {
   return {
     respondProfile, respondParts, respondCoordinateAll, respondCoordinateUpdate, respondName,
     respondSubslot, respondPreremove, onMedalRemoved, petSubslotData, respondExpedition,
+    ownedParts, grantPart,
   };
 }
 
