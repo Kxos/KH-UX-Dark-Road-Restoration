@@ -475,6 +475,8 @@ function respondMaster(res) {
   const body = { ret: ret() };
   const tables = masterTables();
   body.master = { revision: REVISION, commonRevision: REVISION, count: tables.length };
+  // Revisione per tabella: il client riscarica comunque TUTTE le tabelle quando cambia quella
+  // globale (prova del 16-10: 106 su 106 con la sola mission a 116 e le altre a 115)
   for (const name of tables) {
     body[name] = {
       revision: REVISION,
@@ -1004,7 +1006,10 @@ function userPointData(now) {
     // lo crea a 0): +1 alla prima guilt di ogni medaglia, +5 alla prima guilt massima
     guiltBurstLv: guiltBurst().level(), multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
     drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
-    limitedDrawTicket1: 0, limitedDrawTicket2: 0, limitedDrawTicket3: 0,
+    // biglietti dei banner a tempo (Shop, payType 7/8/9 -> limitedDrawTicket1-3, [fn]):
+    // premi 40 Platinum Ticket e 41 Draw Ticket (anche Holiday Draw Ticket, Moogle Point, Spooky
+    // Cookie: stessa valuta rinominata dall'evento); reference/missions/limited_rewards_map.md
+    limitedDrawTicket1: player.limitedDrawTicket1 || 0, limitedDrawTicket2: player.limitedDrawTicket2 || 0, limitedDrawTicket3: 0,
   };
 }
 
@@ -1231,6 +1236,13 @@ function grantItem(type, id, num) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
   } else if (type === 13 && id) grantKeyblade(id); // keyblade (tabella keyblade)
+  // 40 Platinum Ticket, 41 Draw Ticket (nomi dei tipi 37-42 in [fn]: Bronze, Silver, Gold,
+  // Platinum, Draw, Premium Ticket); si spendono nei banner (rotte /gacha/*, non ancora fatte)
+  else if (type === 40) player.limitedDrawTicket1 = (player.limitedDrawTicket1 || 0) + num;
+  else if (type === 41) player.limitedDrawTicket2 = (player.limitedDrawTicket2 || 0) + num;
+  // 7 titolo (userTitles), 20 parte dell'avatar (accessorio, userAvatarParts)
+  else if (type === 7 && id) { player.titles = [...new Set([...(player.titles || []), id])]; }
+  else if (type === 20 && id) { player.avatarParts = [...new Set([...(player.avatarParts || []), id])]; }
   // 33 parte dello Spirit (itemId = petPartsId; [fn] caso 0x21: img/petParts/pi%d)
   else if (type === 33 && id) { if (!PET_ENABLED || !pet().grantPart(id)) console.log(`  [inventario] parte dello Spirit ${id} gia' posseduta o assente`); }
   else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
