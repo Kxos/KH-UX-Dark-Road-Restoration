@@ -127,7 +127,9 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   solo nei campi del master; `darkVersionRes` resta `KHUX_REVISION`. Il master e' servito come JSON
   compatto, in cache per revisione e data dei file (`mission` con `endDate` di Weekly A/B e Limited
   riscritti al volo). `KHUX_REAL_NOW` (`-RealNow` di `run-server.ps1`/`relogin.ps1`) sposta l'ora reale
-  per le prove; `KHUX_SERVER_TIME` resta (data finta fissa).
+  per le prove; `KHUX_SERVER_TIME` resta (data finta fissa). Migrazione del salvataggio: `clockVersion` 1
+  (stringhe finte -> ms reali) e 2 (numeri prima del 2022 = ms dell'ora finta vecchia, spostati in blocco
+  con il piu' recente = adesso; `server/test-clock-migration.js`).
 - **Banco 16-10**: master compatto accettato (106 tabelle, nessun errore); Daily «22 hours left» alle 09:58
   UTC, Weekly «2 days», Limited mensile «15 days»; riavvio -> stessi valori, 0 tabelle; `-RealNow
   2026-10-19T09:00:00Z` -> 106 tabelle, **0 `GET /resource/`**, Daily azzerate, 3 premi Daily non
@@ -144,9 +146,20 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   dopo il lancio). Dal log `server/logs/requests.ndjson`, dalla prima richiesta (`PUT /system/status`)
   a `/khux/login`: 4,5-5,2 s prima e dopo (invariato); il server risponde in ~50 ms a richiesta; con il
   master nuovo la home arriva in 31-33 s dalla prima richiesta (21-56 s prima). Lavoro del server per il
-  master con la cache < 50 ms (`server/test-master-clock.js`). Da notare: dal 16-10 09:57 UTC (primo
-  avvio con l'orologio finto) l'attesa del client fra `/ranking/parade` e `/web/notices` e' sempre 8-12 s
-  (prima di solito 1,5-2 s, a volte 7-42 s): tempo del client, da capire (contenuti legati alla data?).
+  master con la cache < 50 ms (`server/test-master-clock.js`).
+- **Criterio «login non piu' lento di oggi, +1 s al massimo»: NON verificato.** La misura dal lancio
+  dell'app e' dominata dall'emulatore. Il riferimento 14-26 s veniva dalle stesse righe di
+  `relogin.ps1`/`bench_start.ps1` (tempo dal lancio), ma con l'emulatore che quel giorno avviava l'app
+  molto piu' in fretta: i due numeri non sono confrontabili. Confrontabile e' solo la parte del server
+  (prima richiesta -> `/khux/login`, invariata).
+- **Attesa del client di ~10 s prima della home (aperto)**: dal 16-10 09:57 UTC il client aspetta 8-12 s fra
+  `/ranking/parade` e `/web/notices` (prima di solito 1,5-2 s, a volte 7-42 s). Prova A/B del 16-10: con
+  il server alla data finta vecchia (`KHUX_SERVER_TIME=2021-05-15T12:00:00Z`, Daily «19 hours left») 10,0 /
+  9,8 / 11,6 s; con l'orologio finto 11,0 / 10,0 s. **Non dipende dalla data finta**: e' tempo del client
+  (stato dell'emulatore o del salvataggio), da capire.
+- `KHUX_REAL_NOW` insieme a `KHUX_SERVER_TIME`: anche la data finta fissa scorre dall'istante spostato
+  (lo scostamento e' calcolato su `STARTED_AT`, `realNow` include `REAL_SHIFT`), quindi la data finta
+  risulta spostata di `KHUX_REAL_NOW - avvio`. Usarne una sola alla volta.
 - 106 tabelle (nomi nel loader a `0x20a0b80`, passo 0x80). Ogni tabella = **array di righe**; ogni
   campo dello schema e' obbligatorio, chiavi in piu' ignorate; riga nulla = «Master data error».
   Schema: `recon/out/master_types_ww431.json` (1.739 campi, `recon/tools/master_types.py`); il
