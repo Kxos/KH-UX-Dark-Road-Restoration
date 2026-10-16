@@ -283,10 +283,10 @@ function ret() {
     // server ne dichiarasse un'altra, riproporrebbe il download a ogni avvio.
     versionRes: latestResourceVersion(),
     versionResLow: latestResourceVersion(),
-    versionDat: REVISION,
-    commonVersionDat: REVISION,
+    versionDat: masterRevisionNow(),
+    commonVersionDat: masterRevisionNow(),
     darkVersionRes: REVISION,
-    darkVersionDat: REVISION,
+    darkVersionDat: masterRevisionNow(),
     functionFlags: 0,
     serverTime: serverTime(),
     // "error" (con "viewUrl") e "isCommunicationMaintenance" sono facoltativi
@@ -373,7 +373,7 @@ function respondResourceSize(res, req) {
   // manda in crash» del 7 ottobre riguardava un client senza master, revisione 0.)
   // Il crash dopo un aggiornamento dei master per chi rientra (0x12c1ee0) NON dipende da
   // qui: vedi HANDOFF, «Il crash dopo l'aggiornamento dei master».
-  const upToDate = Number(req?.masterRevision) >= REVISION
+  const upToDate = Number(req?.masterRevision) >= masterRevisionNow()
     && Number(req?.resourceRevision) >= latestResourceVersion();
   send(res, 200, { ret: ret(), size: upToDate ? 0 : Number(process.env.KHUX_RESOURCE_SIZE || 0) });
 }
@@ -398,12 +398,42 @@ function masterKey(name) {
   return crypto.createHash('sha256').update('khux-master:' + name).digest('hex').slice(0, 32);
 }
 
+// revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
+const masterRevisionNow = () => clock.masterRevision(REVISION, realNow());
+
+// righe servite: per «mission» le scadenze delle Weekly A/B e dei gruppi Limited (prossima
+// occorrenza), in ora finta con lo scostamento del mese della revisione
+function servedMasterRows(name, realMs) {
+  const rows = masterRows(name);
+  if (name !== 'mission') return rows;
+  const off = clock.twinOffset(realMs);
+  const w = clock.weekIndex(realMs), mi = clock.monthIndex(realMs);
+  const nextWeek = (i, n) => { let k = w; while (k % n !== i) k++; return clock.weekStartOf(k + 1); };
+  const nextMonth = (i, n) => { let k = mi; while (k % n !== i) k++; return clock.monthEndOf(k); };
+  return rows.map((r) => {
+    let endMs = null;
+    if (r.missionType === 3) endMs = nextWeek(r.id >= 3011 ? 1 : 0, 2);
+    const g = LIMITED_GROUP.get(r.id);
+    if (r.missionType === 4 && g) {
+      endMs = g.kind === 'monthly' ? nextMonth(g.index, LIMITED_ROTATION.monthly.length) : nextWeek(g.index, LIMITED_ROTATION.weekly.length);
+    }
+    return endMs === null ? r : { ...r, endDate: clock.fakeString(endMs, off) };
+  });
+}
+
+const masterBodyCache = new Map(); // nome -> {key, body, md5}
 function masterBody(name) {
   const file = path.join(MASTER_DIR, name + '.json');
   if (!/^[A-Za-z0-9]+$/.test(name) || !fs.existsSync(file)) return null;
+  const st = fs.statSync(file);
+  const key = `${masterRevisionNow()}:${st.mtimeMs}:${st.size}`;
+  const hit = masterBodyCache.get(name);
+  if (hit && hit.key === key) return hit.body;
+  const json = Buffer.from(JSON.stringify(servedMasterRows(name, realNow())), 'utf8');
   const c = crypto.createCipheriv('aes-256-cbc', Buffer.from(masterKey(name), 'utf8'), Buffer.alloc(16));
-  const enc = Buffer.concat([c.update(fs.readFileSync(file)), c.final()]);
-  return Buffer.from(enc.toString('base64'), 'utf8');
+  const body = Buffer.from(Buffer.concat([c.update(json), c.final()]).toString('base64'), 'utf8');
+  masterBodyCache.set(name, { key, body, md5: crypto.createHash('md5').update(body).digest('hex') });
+  return body;
 }
 
 // Lo schema (recon/out/master_types_ww431.json, ricavato dai lettori di riga)
@@ -458,35 +488,45 @@ function checkMasterTable(name, rows) {
   return errors;
 }
 
+const masterValidCache = new Map(); // nome -> {mtimeMs, size, ok}
 function masterTables() {
   if (!fs.existsSync(MASTER_DIR)) return [];
   const names = fs.readdirSync(MASTER_DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
   return names.filter((name) => {
+    const file = path.join(MASTER_DIR, name + '.json');
+    const st = fs.statSync(file);
+    const hit = masterValidCache.get(name);
+    if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size) return hit.ok;
     let errors;
     try {
-      errors = checkMasterTable(name, JSON.parse(fs.readFileSync(path.join(MASTER_DIR, name + '.json'), 'utf8')));
+      errors = checkMasterTable(name, JSON.parse(fs.readFileSync(file, 'utf8')));
     } catch (e) {
       errors = ['JSON non valido: ' + e.message];
     }
-    if (errors.length === 0) return true;
-    console.warn(`[master] ${name}: ${errors.length} errori, es. ${errors.slice(0, 3).join('; ')}`
-      + (MASTER_SERVE_INVALID ? ' — la servo lo stesso' : ' — non la servo'));
-    return MASTER_SERVE_INVALID;
+    if (errors.length) {
+      console.warn(`[master] ${name}: ${errors.length} errori, es. ${errors.slice(0, 3).join('; ')}`
+        + (MASTER_SERVE_INVALID ? ' — la servo lo stesso' : ' — non la servo'));
+    }
+    const ok = errors.length === 0 || MASTER_SERVE_INVALID;
+    masterValidCache.set(name, { mtimeMs: st.mtimeMs, size: st.size, ok });
+    return ok;
   });
 }
 
 function respondMaster(res) {
   const body = { ret: ret() };
   const tables = masterTables();
-  body.master = { revision: REVISION, commonRevision: REVISION, count: tables.length };
+  const rev = masterRevisionNow();
+  body.master = { revision: rev, commonRevision: rev, count: tables.length };
   // Revisione per tabella: il client riscarica comunque TUTTE le tabelle quando cambia quella
   // globale (prova del 16-10: 106 su 106 con la sola mission a 116 e le altre a 115)
   for (const name of tables) {
+    masterBody(name);
     body[name] = {
-      revision: REVISION,
+      revision: rev,
       url: `${SESSION_BASE}/master/${name}`,
       key: masterKey(name),
-      md5: crypto.createHash('md5').update(masterBody(name)).digest('hex'),
+      md5: masterBodyCache.get(name).md5,
     };
   }
   send(res, 200, body);
@@ -3313,4 +3353,6 @@ module.exports._test = {
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet,
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER,
+  // server/test-master-clock.js
+  masterRevisionNow, servedMasterRows, masterBody, respondMaster, respondResourceSize, respondStatus,
 };
