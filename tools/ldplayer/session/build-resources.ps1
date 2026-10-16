@@ -62,6 +62,10 @@ $env:BGAD_KEY = $key
 # bitmap dei LWF lwf/avatar/keyblade (estratte una volta in catalog\keyblade_lwf)
 $kl = "$D\catalog\keyblade_lwf"
 if (-not (Test-Path "$kl\img\carouselDeck")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $kl lwf/avatar/keyblade/ lwf/medal/medaltype/ lwf/medal/medaldeck/ img/carouselDeck/ rule/ cocostudio/publish/Deck_KeyBlade_0701_05.png }
+# LWF del risultato delle estrazioni servite (raidgacha_result_display_01, Medal_D_Up3): fonte delle
+# texture tolte dall'estrazione JP per le cartelle 02-10 (import_jp_raisedraw.py)
+$rw = "$D\catalog\raisedraw_ww"
+if (-not (Test-Path "$rw\lwf\raisedraw")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $rw lwf/raisedraw/ }
 # deck per keyblade (img/carouselDeck/Deck%03d...) e bagliore dell'attributo nel deck
 # (MedalDeck_Type1/2/11/21/31/01): servite solo 001 e Type3, crash di «Select a Keyblade»
 python recon\tools\make_keyblade_decks.py server\master_data\keyblade.json $kl "$sg\files"
@@ -101,6 +105,11 @@ foreach ($t in Get-ChildItem "$D\layouts\ui_texts\text\ui" -File) {
 $jpOpt = @(); if ($NoJp) { $jpOpt = @('--none') }
 python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt
 if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
+# LWF del risultato delle estrazioni (Shop > Draw, raidgacha_result_display_02..10 e Medal_D_*):
+# dai dati JP, complete di texture (le tolte dall'estrazione JP prese dalla _01 servita allineando
+# le tabelle delle texture); rapporto in $sg\raisedraw_report.json (Pillow: senza -I)
+python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$sg\files" --report "$sg\raisedraw_report.json"
+if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
