@@ -1802,9 +1802,9 @@ COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%
 COPIES.update({'img/ui/But30_%s.png' % s: PUB + 'But01_%s.png' % s for s in ('Off', 'On')})
 # Banner della scheda Events (FUN_009c1374): ImageButton But15 di «Details» (al tocco carica
 # img/ui/But15_On, che esiste solo come dark_But15_On), lucchetto e icona di completamento
-# caricati da img/ui (assenti: dal lucchetto di cocostudio e da AchievedComplete)
+# caricati da img/ui (assenti: dal lucchetto di cocostudio e da AchievedComplete; ShopBut_Lock_Disable
+# lo scrive make_shop_lock.py, I-133)
 COPIES.update({'img/ui/But15_On.png': PUB + 'dark_But15_On.png', 'img/ui/QuestBut_Lock.png': PUB + 'QuestBut_Lock.png',
-               'img/ui/ShopBut_Lock_Disable.png': PUB + 'QuestBut_Lock.png',
                'img/ui/Complete_icon1.png': PUB + 'AchievedComplete.png',
                'img/ui/Complete_icon2.png': PUB + 'AchievedComplete.png'})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n

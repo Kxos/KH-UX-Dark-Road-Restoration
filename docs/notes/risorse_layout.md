@@ -68,6 +68,12 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   `Countdown_panel` (Plate21) di `PopupNormal_Continue_Multi` (Continue, AP_Recovery, Ability_MAX)
   e `Win_Over` (Panel07) di `MedalInfo_ReleaseWindow`; stessa trappola negli originali serviti
   `PassiveResult`, `DeckEdit_SubSlot_Select_Medal_ver260`, `StartDeckProud_*`, `ActionMap_Multi*`.
+- **Texture caricate dal codice e assenti = crash** in `ImageView::loadTexture` (SIGSEGV 0x2c, stack
+  `FUN_0125194c` -> `FUN_012dafc0`), anche fuori da GUIReader. Caso: la piastra di Shop > Draw
+  (`FUN_00a1509c`) carica sempre in `Lock_icon` (118x118, figlio di `LockMask`) `img/ui/ShopBut_Lock.png`
+  (flag +0x350 di `FUN_00b8a18c` acceso) o `ShopBut_Lock_Disable.png`, anche senza blocco; Dark Road le ha
+  rinominate `dark_Icon_Lock` / `_Disable` (stessa grafica di `QuestBut_Lock`): `make_shop_lock.py` le copia
+  dal catalogo (risorse 39, I-133).
 - Un ImageView di cui il codice prende la texture (renderer +0x598, texture +0x4e8, es. `Image_3`
   del banner Events) deve essere senza 9-slice e con una texture servita.
 - `FUN_008d6230` accetta il tocco in un rettangolo grande quanto il bersaglio ma **centrato sulla
