@@ -711,6 +711,9 @@ eference\other_menu\notices_list_yt_02.jpg (data, etichetta colorata EVENT/CAMPA
 otices_detail_yt_03.jpg (titoletti
   col quadratino, BACK). Notizie del restauro (server privato, Supernova e Dual Meow Wow, grafiche dei
   nemici, buff degli speciali, missioni), nessuna notizia originale inventata.
+  Due notizie del 16-10: «About game data updates» (fissa in cima, titolo «Game data updated today» il giorno
+  dell'aggiornamento; conto alla rovescia calcolato dal server sull'ora reale, mai orari assoluti) e
+  «Differences from the original game». Regola: ogni funzione che differisce dall'originale ha una notizia.
 - **Album**: GET /user/album/161102 (azione 17, costruttore FUN_007def64, parser FUN_00777110):
   userAlbum {lbumMedals[] {medalId uint, guiltStatus uint letto come byte}, llMedalCount
   int}, tutto obbligatorio (risposta generica = risultato nullo, SIGSEGV a 0x170, 	mp\repro\album).
