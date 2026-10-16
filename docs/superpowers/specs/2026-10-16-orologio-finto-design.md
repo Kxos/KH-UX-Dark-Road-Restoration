@@ -1,6 +1,6 @@
 # Orologio finto del server: mesi gemelli e scadenze vere
 
-Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisioni 16-10: calcoli in ora reale, scadenze precalcolate, confine mensile alle 08:00, date salvate in ora reale, revisioni delle risorse separate).
+Data: 16 ottobre 2026. Stato: **approvato dall'utente il 16-10** (piano: docs/superpowers/plans/2026-10-16-orologio-finto.md) (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisioni 16-10: calcoli in ora reale, scadenze precalcolate, confine mensile alle 08:00, date salvate in ora reale, revisioni delle risorse separate).
 
 ## 1. Obiettivo
 
