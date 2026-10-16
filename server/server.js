@@ -1746,6 +1746,8 @@ function missionActive(row, realMs) {
     return fakeMs < masterDateMs(beginnerLimitTime());
   }
   if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id, realMs);
+  // Weekly A/B (make-weekly-series.js): 3001-3010 settimane pari, 3011-3020 dispari (ora reale)
+  if (row.missionType === 3) return clock.weekIndex(realMs) % 2 === (row.id >= 3011 ? 1 : 0);
   return true;
 }
 
