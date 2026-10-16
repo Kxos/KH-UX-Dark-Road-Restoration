@@ -274,7 +274,7 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   l'etichetta delle missionType 1). Aggiungerle = nuove righe del master (khuxwiki: 34 Beginner) e
   bump di revisione.
 - **Beginner (15-10, I-118, provato sul banco)**: le 34 della khuxwiki («Mission», 2019; fonti e Limited in
-  `reference\missionseginner_limited.md` e `limited_all_khuxwiki.tsv`), `server/make-beginner-missions.js` (righe
+  `reference\missions\beginner_limited.md` e `limited_all_khuxwiki.tsv`), `server/make-beginner-missions.js` (righe
   1001-1034 in `tables/mission.json` e `master_data/mission.json`, master revisione 111). Scheda valida 30 giorni
   (avviso ufficiale «Introducing Missions!», 9-11-2017). conditionId originali ignoti: 30-44 (nessun effetto nel
   client), avanzamento calcolato dallo stato (`MISSION_DERIVED`: 30 storia, 31 STR del keyblade preferito, 32 livello
@@ -690,15 +690,15 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
 
 - **Notices**: il pulsante ([fn], evento 2) manda POST /system/information/list/151203
   (azione 31, costruttore [fn]); parser [fn]: popUpViewUrl = array di stringhe,
-  obbligatorio. Il ramo del dispatcher ( x7c3c78) mette il vettore nella sessione +0x3c0; la callback
+  obbligatorio. Il ramo del dispatcher (0x7c3c78) mette il vettore nella sessione +0x3c0; la callback
   [fn] legge il primo elemento senza controlli e apre la WebView [fn] (titolo testo
   0x5ff08d2) sull'URL con i parametri di sessione aggiunti da [fn]. Con la risposta generica
-  il vettore era nullo: SIGSEGV a  x9f9010 (banco 14-10, 	mp\repro\notices). Serve almeno un URL.
+  il vettore era nullo: SIGSEGV a 0x9f9010 (banco 14-10, tmp\repro\notices). Serve almeno un URL.
 - **Notizie al login** (come l'originale): la stessa azione 31 parte dalla home ([fn] ->
   [fn], callback [fn]); [fn] mostra in sequenza una WebView per ogni
   elemento di popUpViewUrl (il primo con i parametri di sessione). Con un solo URL la pagina delle
   notizie si apre a ogni ingresso nella home (894 richieste 31 nel log: il client la chiede sempre).
-- GET /system/information/list (azione 30, parser [fn]): iewUrl stringa; non vista
+- GET /system/information/list (azione 30, parser [fn]): viewUrl stringa; non vista
   sul banco, stessa pagina.
 - Layout della WebView ([fn]): Information2_Base.json, o dark_Information2_Base.json se
   il flag +0x1a9 di [fn] e' acceso (la Beginner's Guide si apre: probabilmente oggi vale il dark, da verificare).
@@ -715,23 +715,23 @@ otices_detail_yt_03.jpg (titoletti
   dell'aggiornamento; conto alla rovescia calcolato dal server sull'ora reale, mai orari assoluti) e
   «Differences from the original game». Regola: ogni funzione che differisce dall'originale ha una notizia.
 - **Album**: GET /user/album/161102 (azione 17, costruttore [fn], parser [fn]):
-  userAlbum {lbumMedals[] {medalId uint, guiltStatus uint letto come byte}, llMedalCount
+  userAlbum {albumMedals[] {medalId uint, guiltStatus uint letto come byte}, allMedalCount
   int}, tutto obbligatorio (risposta generica = risultato nullo, SIGSEGV a 0x170, 	mp\repro\album).
   Scena AlbumScene_ver130 -> Album_Base_ver130 ([fn]: Win_Bottom, Txt_MedalGet*,
   Txt_MedalComp*, Scroll_Area, Txt_Challenge, Button_Challenge), cella Album_Medal_ver140
-  ([fn]): medaglia posseduta = in lbumMedals, altrimenti Medal_S_0 e «?» in
+  ([fn]): medaglia posseduta = in albumMedals, altrimenti Medal_S_0 e «?» in
   Txt_Medal_Label; icona AlbumGuilt_1/2/3 per guiltStatus 0/1/2, solo se userDetail.isGuilt e il
   tier della medaglia (+0x4c0) non e' 0. Sfide: Album_Challenge_ver112 ([fn]), pannello
   [fn] (crea Set_Reward da Album_Reward_Set_ver112 se manca), premi [fn],
   ricevuta [fn]; POST /user/album/challenge/update (azione 168). **Non raggiungibile nel WW 4.3.1**
   (15-10): [fn] nasconde e disattiva sempre Button_Challenge (vtable +0x160 setVisible(false),
-  +0x520 setTouchEnabled(false), senza condizioni), come nei video dell'originale (`referencelbum`): niente da servire.
+  +0x520 setTouchEnabled(false), senza condizioni), come nei video dell'originale (`reference\album`): niente da servire.
 - Nessun layout dell'Album e' servito nel WW: gli originali JP sono in jp_coco_layouts.txt (prova
   --check: 7 radici ok). La cella JP non ha Txt_Medal_Label, che il codice WW usa senza controllo:
   nuova opzione clone=Txt_Medal_Num_Label>Txt_Medal_Label@Medal_S di import_jp_coco.py (copia del
   widget, tag nuovo, alla posizione di Medal_S).
 - guiltStatus nostro (i valori originali non sono noti): 0 = nessuna copia con Special Attack Bonus,
   1 = almeno una, 2 = una copia al bonus massimo del tier (GUILT_RANGES di medal-guilt.js).
-  llMedalCount = righe della tabella medal tranne la medaglia 1 (originale: «Medals 1837/1930»,
+  allMedalCount = righe della tabella medal tranne la medaglia 1 (originale: «Medals 1837/1930»,
   
 eference\album\album_yt_01.jpg).
