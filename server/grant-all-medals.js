@@ -24,7 +24,7 @@ const owned = new Set(player.medals.map((m) => m.medalId));
 // mai riusare un id (come la creazione delle medaglie in server.js: medalState resta per id)
 let next = Math.max(100, ...player.medals.map((m) => m.userMedalId),
   ...Object.keys(player.medalState || {}).map(Number)) + 1;
-const now = '2021-05-15 12:00:00';
+const now = Date.now();
 let added = 0;
 for (const m of medals) {
   if (owned.has(m.medalId)) continue;

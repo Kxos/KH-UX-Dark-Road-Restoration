@@ -773,6 +773,32 @@ if (player.created && player.spherePoint === undefined) {
   console.log(`[save] Avatar Coin degli obiettivi gia' compiuti: ${player.spherePoint}`);
 }
 
+// Migrazione all'orologio finto (spec 3.7): orari salvati in ms reali. Le stringhe finte vecchie
+// (ora che ripartiva dal 15/5/2021) non hanno un istante reale: getDatetime spostati in blocco con la
+// piu' recente = adesso (l'ordine resta), regali +29 giorni, Beginner da adesso, training pronto,
+// contatori dei periodi azzerati (cambiano scala).
+function migrateClock() {
+  if (player.clockVersion === 1) return;
+  const now = realNow();
+  const holders = [
+    ...(player.medals || []), ...(player.keyblades || []), ...Object.values(player.sphere || {}),
+    ...Object.values(player.medalSkills || {}), ...Object.values(player.medalTraits || {}).flat(),
+  ].filter((o) => o && typeof o.getDatetime === 'string');
+  const ms = (s) => Date.parse(s.replace(' ', 'T') + 'Z');
+  const max = Math.max(0, ...holders.map((o) => ms(o.getDatetime)).filter(Number.isFinite));
+  for (const o of holders) { const v = ms(o.getDatetime); o.getDatetime = Number.isFinite(v) ? now - (max - v) : now; }
+  if (player.pet?.parts) for (const k of Object.keys(player.pet.parts)) player.pet.parts[k] = now;
+  for (const p of player.presents || []) { p.limitDatetime = now + 29 * 86400000; p.created = now; }
+  if (player.beginnerSince) player.beginnerSince = now;
+  player.missions = {};
+  delete player.weeklyLux;
+  delete player.clockSettled;
+  if (player.pet?.training) { player.pet.training.readyAt = 0; player.pet.training.month = clock.monthIndex(now); }
+  player.clockVersion = 1;
+  savePlayer();
+}
+if (player.created) migrateClock(); else player.clockVersion = 1; // nuovo giocatore: gia' in ms reali
+
 function savePlayer() {
   fs.mkdirSync(path.dirname(SAVE_FILE), { recursive: true });
   fs.writeFileSync(SAVE_FILE + '.tmp', JSON.stringify(player, null, 1));
@@ -1270,7 +1296,7 @@ function grantItem(type, id, num) {
       // mai riusare un id (vendite e Level Up tolgono medaglie; medalState resta per id)
       const used = [100, ...player.medals.map((m) => m.userMedalId), ...Object.keys(player.medalState || {}).map(Number)];
       const userMedalId = Math.max(...used) + 1;
-      player.medals.push({ userMedalId, medalId: id, level: 1, getDatetime: serverTime() });
+      player.medals.push({ userMedalId, medalId: id, level: 1, getDatetime: realNow() });
     }
     if (!masterRows('medal').some((m) => m.medalId === id)) console.log(`  [inventario] medaglia ${id} assente dalla tabella medal`);
   } else if (type === 2) player.freeStone = (player.freeStone || 0) + num;
@@ -1566,7 +1592,7 @@ function sphereBoards() {
   for (const b of masterRows('sphere')) {
     if (b.price || b.openParam > level || player.sphere[b.sphereBoardId]) continue;
     const id = Math.max(0, ...Object.values(player.sphere).map((s) => s.id)) + 1;
-    player.sphere[b.sphereBoardId] = { id, unlock: [], getDatetime: serverTime() };
+    player.sphere[b.sphereBoardId] = { id, unlock: [], getDatetime: realNow() };
   }
   return player.sphere;
 }
@@ -1576,7 +1602,7 @@ function userSphereData(sphereBoardId) {
   const board = masterRows('sphere').find((r) => r.sphereBoardId === Number(sphereBoardId));
   const done = board && sphereNodes(board).every((n) => s.unlock.includes(n));
   return { userSphereBoardId: s.id, sphereBoardId: Number(sphereBoardId), isBuy: 1, status: done ? 3 : 1,
-    unlockMasuIds: s.unlock.slice(0, 23), getDatetime: s.getDatetime };
+    unlockMasuIds: s.unlock.slice(0, 23), getDatetime: outTime(s.getDatetime, serverTime()) };
 }
 
 function userSphereAll() {
@@ -1781,9 +1807,7 @@ function missionActive(row, realMs) {
   if (fakeMs < masterDateMs(row.startDate) || fakeMs >= masterDateMs(row.endDate)) return false;
   if (row.missionType === 1) {
     beginnerLimitTime(); // fissa beginnerSince al primo elenco
-    const bs = player.beginnerSince;
-    if (typeof bs === 'number') return realMs < bs + BEGINNER_DAYS * 86400000;
-    return fakeMs < masterDateMs(beginnerLimitTime());
+    return realMs < player.beginnerSince + BEGINNER_DAYS * 86400000;
   }
   if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id, realMs);
   // Weekly A/B (make-weekly-series.js): 3001-3010 settimane pari, 3011-3020 dispari (ora reale)
@@ -1796,9 +1820,8 @@ function missionActive(row, realMs) {
 // scheda, BEGINNER_DAYS dal primo elenco (player.beginnerSince)
 function beginnerLimitTime() {
   if (!masterRows('mission').some((r) => r.missionType === 1)) return null;
-  if (!player.beginnerSince) player.beginnerSince = serverTime();
-  return new Date(masterDateMs(player.beginnerSince) + BEGINNER_DAYS * 86400000)
-    .toISOString().slice(0, 19).replace('T', ' ');
+  if (!player.beginnerSince) player.beginnerSince = realNow();
+  return serverTimeAt(player.beginnerSince + BEGINNER_DAYS * 86400000);
 }
 
 // contatori del periodo corrente di ogni missione: player.missions[id] = {period, count, received}
@@ -1957,8 +1980,8 @@ function seedTestPresents() {
   testPresentsSeeded = true;
   player.presents = player.presents || [];
   if (player.presents.some((p) => p.test)) return;
-  const now = serverTime();
-  const limit = serverTimeAt(realNow() + 29 * 86400000);
+  const now = realNow();
+  const limit = now + 29 * 86400000;
   const medalId = masterRows('medal').some((m) => m.medalId === 90041) ? 90041 : masterRows('medal')[0]?.medalId;
   const materialId = masterRows('material')[0]?.materialId;
   const rows = [
@@ -1984,16 +2007,16 @@ function addPresent(resourceType, resourceId, number, comment) {
   player.presents = player.presents || [];
   const id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId)) + 1;
   player.presents.push({ userPresentId: id, resourceType, resourceId, number,
-    limitDatetime: serverTimeAt(realNow() + 30 * 86400000), comment, created: serverTime() });
+    limitDatetime: realNow() + 30 * 86400000, comment, created: realNow() });
   player.presentLastId = id;
 }
 
 // regali ancora validi: quelli scaduti (limitDatetime passato, ora del server) si tolgono
 function livePresents() {
   seedTestPresents();
-  const now = serverTime();
+  const now = realNow();
   const all = player.presents || [];
-  const live = all.filter((p) => !p.limitDatetime || p.limitDatetime > now);
+  const live = all.filter((p) => (typeof p.limitDatetime === 'number' ? p.limitDatetime : Infinity) > now);
   if (live.length !== all.length) { player.presents = live; savePlayer(); }
   return live;
 }
@@ -2007,7 +2030,7 @@ function userPresentData() {
     // i piu' recenti in alto
     userPresentDatas: list.slice().reverse().map((p) => ({
       userPresentId: p.userPresentId, resourceType: p.resourceType, resourceId: p.resourceId || 0,
-      number: p.number, limitDatetime: p.limitDatetime, comment: p.comment || '', created: p.created,
+      number: p.number, limitDatetime: outTime(p.limitDatetime), comment: p.comment || '', created: outTime(p.created),
     })),
     presentCount: list.length - stones, presentCountMax: PRESENT_MAX,
     stonePresentCount: stones, stonePresentCountMax: PRESENT_MAX,
@@ -2117,7 +2140,7 @@ function userMedalElement(m, now) {
     // skill (I-088, server/medal-skill.js): solo l'id, l'oggetto va nella lista userSkills
     userSkills: [medalSkillOf(m)].filter(Boolean).map((s) => s.userSkillId),
     userShuffleSkills: medalTraits(m.userMedalId),
-    getDatetime: m.getDatetime || now,
+    getDatetime: outTime(m.getDatetime, now),
   };
 }
 
@@ -2152,7 +2175,7 @@ function medalSkillOf(m) {
 // elemento di userSkills (FUN_0078e7b8)
 function userSkillElement(m, s, now) {
   return { userSkillId: s.userSkillId, skillId: s.skillId, level: s.level, exp: s.exp || 0,
-    userMedalId: m.userMedalId, getDatetime: s.getDatetime || m.getDatetime || now };
+    userMedalId: m.userMedalId, getDatetime: outTime(s.getDatetime || m.getDatetime, now) };
 }
 
 // lista userSkills (FUN_0078e934): tutte le skill delle medaglie possedute, perche' il client
@@ -2277,7 +2300,7 @@ function respondMedalEnhance(res, body) {
         player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
         player.medalSkills = player.medalSkills || {};
         const { skillId, level: lv, exp: sexp } = overwrite.skill;
-        player.medalSkills[base.userMedalId] = { userSkillId: player.nextUserSkillId, skillId, level: lv, exp: sexp || 0, getDatetime: now };
+        player.medalSkills[base.userMedalId] = { userSkillId: player.nextUserSkillId, skillId, level: lv, exp: sexp || 0, getDatetime: realNow() };
       }
     }
   }
@@ -2434,7 +2457,7 @@ function respondMoogleshopBuy(res, body) {
     }
     player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
     list[at] = { userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,
-      getDatetime: now };
+      getDatetime: realNow() };
     player.medalTraits[medal.userMedalId] = list;
     changed.push(medal);
     console.log(`  [moogle shop] trait ${row.shuffleSkillId} sulla medaglia ${medal.userMedalId} (${mrow.name})` +
@@ -2598,7 +2621,7 @@ function respondMedalRemove(res, body) {
 function ownedKeyblades() {
   return [
     { userKeybladeId: USER_KEYBLADE_ID, keybladeId: kbEvo().starlightKeybladeId(startingInventory().keybladeId), burst: player.keybladeBurst || 0,
-      getDatetime: serverTime() },
+      getDatetime: realNow() },
     ...(player.keyblades || []).map((k) => ({ ...k, burst: k.burst || 0 })),
   ];
 }
@@ -2668,7 +2691,7 @@ function grantKeyblade(keybladeId) {
   }
   player.keyblades = player.keyblades || [];
   const userKeybladeId = Math.max(...ownedKeyblades().map((k) => k.userKeybladeId)) + 1;
-  player.keyblades.push({ userKeybladeId, keybladeId, getDatetime: serverTime(), burst: 0 });
+  player.keyblades.push({ userKeybladeId, keybladeId, getDatetime: realNow(), burst: 0 });
   console.log(`  [keyblade] ottenuto ${row.name} (${keybladeId}): userKeybladeId ${userKeybladeId}`);
 }
 
@@ -2697,7 +2720,7 @@ function userKeybladeData(k) {
     isFavorite: k.userKeybladeId === favoriteKeybladeId() ? 1 : 0,
     skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
     skillUpperTotalDefence: 0, subslotRate: kbEvo().keybladeSubslotRate(k.keybladeId), // uint
-    getDatetime: k.getDatetime || serverTime(),
+    getDatetime: outTime(k.getDatetime, serverTime()),
   };
 }
 
@@ -3207,6 +3230,7 @@ var petInstance = null;
 function pet() {
   return petInstance ??= makePet({
     ret, send, serverTime, masterRows, player, savePlayer, userMedalList, userMedalElement, schemaResponse,
+    realNow, outTime, monthIndex: clock.monthIndex, weekEnd: clock.weekEnd, monthEnd: clock.monthEnd,
   });
 }
 // petSubslot per i rami 55/56: spento = il segnaposto di prima (tutto a 0)
@@ -3347,6 +3371,8 @@ module.exports._test = {
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear,
+  // server/test-clock-migration.js
+  migrateClock, clockMonthIndex: clock.monthIndex,
   // server/test-clock-server.js
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-limited.js
