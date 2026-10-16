@@ -758,6 +758,49 @@ if os.path.isdir(_gen_npc) and os.path.isdir(_npc_root):
     print('NPC originali JP: %d importati (%s), %d con parti mancanti restano vuoti'
           % (len(_npc_ok), ' '.join(_npc_ok), len(_npc_skip)))
 
+# ---- parti dello Spirit (lwf/pet/part, img/petParts) -------------------------------------------
+# Le risorse WW servono solo la serie 001: le altre (specie, colori, accessori) e le icone
+# dell'editor degli outfit vengono dal JP; jp_pet_parts.py ricostruisce i file che la copia di
+# thethiny ha tenuto una volta sola. Gli accessori con texture assenti anche li' restano fuori
+# (server/make-pet-parts.js non li mette nella tabella petParts).
+if os.path.isdir(os.path.join(JP_ROOT, 'lwf', 'pet', 'part')):
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import jp_pet_parts
+    _pp, _pp_rep = jp_pet_parts.collect(JP_ROOT, _served_all)
+    for _name, _src in sorted(_pp.items()):
+        writes.setdefault(_name, ('jp', _src, None))
+    print('parti dello Spirit JP: %d file (%d LWF e %d texture dalle gemelle), %d parti saltate'
+          % (len(_pp), len(_pp_rep['lwf_twin']), len(_pp_rep['png_twin']), len(_pp_rep['skipped'])))
+    # Movimenti originali (lwf/pet/motion/<nome>): i nostri di make_pet_motions.py hanno solo i
+    # movie delle 9 parti base, quindi gli accessori (ac_mask, ac_hat1-4, bag_*, ac_necklace1-3,
+    # ac_special, ac_mouth) non si vedevano. Si prendono gli originali a cui manca al massimo
+    # l'ombra 97x24 (quella degli NPC, NPC_SHADOW); restano i nostri dove mancano effetti veri
+    # (battle_all, pvp_start/total_*, recovery_skill, rolling3).
+    _mot_root = os.path.join(JP_ROOT, 'lwf', 'pet', 'motion')
+    _mot_ok, _mot_keep = [], []
+    for _n in sorted(os.listdir(_mot_root)) if os.path.isdir(_mot_root) else []:
+        _files = latest(os.path.join(_mot_root, _n))
+        _lwf = _files.get(_n + '.lwf')
+        if not _lwf:
+            continue
+        _tex = _lwf_textures(_lwf)
+        _miss = {k: v for k, v in _tex.items() if k not in _files}
+        if any(tuple(v) != (97, 24) for v in _miss.values()):
+            _mot_keep.append(_n)
+            continue
+        if _miss and _shadow is None:
+            _shadow = _served_bytes(NPC_SHADOW) or b''
+        if _miss and not _shadow:
+            _mot_keep.append(_n)
+            continue
+        _base = 'lwf/pet/motion/%s/' % _n
+        writes[_base + _n + '.lwf'] = ('jp', _lwf, None)
+        for _k in _tex:
+            writes[_base + _k] = ('jp', NPC_SHADOW, _shadow) if _k in _miss else ('jp', _files[_k], None)
+        _mot_ok.append(_n)
+    print('movimenti del pet originali JP: %d (%s), restano i generati: %s'
+          % (len(_mot_ok), ' '.join(_mot_ok), ' '.join(_mot_keep)))
+
 # ---- armature originali JP su un plist libero -------------------------------------------------
 # Armature che il client WW crea e che nessuna risorsa serve: senza ExportJson la creazione va in
 # crash (FUN_011843c4). Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle
