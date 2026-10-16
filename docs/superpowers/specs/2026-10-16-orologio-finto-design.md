@@ -114,8 +114,8 @@ Il client riscarica il master solo al login. Alla scadenza vera il server **camb
 
 - l'avanzamento della campagna vecchia si ferma esattamente alla scadenza (Lux, quest e nemici da li'
   contano solo per la nuova): niente premi doppi tenendo il gioco aperto per giorni;
-- `/user/mission/list` manda subito le righe della campagna nuova; fino al prossimo login il client
-  le mostra con la scadenza del master che ha in cache (difetto solo di visualizzazione);
+- `/user/mission/list` manda subito le righe della campagna nuova, che nel master in cache hanno
+  gia' la scadenza giusta (precalcolo del 3.3);
 - la riscossione di una missione della campagna vecchia viene rifiutata;
 - **i premi delle missioni completate e non riscosse prima della scadenza vanno nei Presents**
   (comment «Limited Mission reward» / «Weekly Mission reward», scadenza dei regali come gli altri):
