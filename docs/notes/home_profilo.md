@@ -278,8 +278,11 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   1001-1034 in `tables/mission.json` e `master_data/mission.json`, master revisione 111). Scheda valida 30 giorni
   (avviso ufficiale «Introducing Missions!», 9-11-2017). conditionId originali ignoti: 30-44 (nessun effetto nel
   client), avanzamento calcolato dallo stato (`MISSION_DERIVED`: 30 storia, 31 STR del keyblade preferito, 32 livello
-  della serie di keyblade, 33 Lux, 34 Special Attack Bonus al massimo) o contatore 3 (Raid Boss); 35-44 (draw, quest
-  speciali, eventi, Nova, Spirit, Proud, Coliseum, Union Cross) restano a 0. Premio «Skip Ticket+» = tipo 26 (il
+  della serie di keyblade, 33 Lux, 34 Special Attack Bonus al massimo, 39 Nova = livello del Guilt Burst, 40 rango dello
+  Spirit = rango della Gear) o contatore (35 Draw Medal: una per estrazione `/gacha/draw` riuscita, non retroattivo).
+  Restano a 0 perche' manca la funzione: 3 Raid Boss, 36-38 quest speciali e Proud Quest, 41 Proud Mode, 42 eventi,
+  43 Colosseo, 44 Union Cross (16-10, `test-beginner.js`; la 30 usa la storia piu' avanzata, non lastClearStageId che i
+  Tour portano oltre). Premio «Skip Ticket+» = tipo 26 (il
   client scrive «Skip Ticket», icona del jewel: immagine da cercare), `player.stageSkipTicket`. Banco: 12/34 complete
   sul salvataggio di prova, Collect All -> +1000 jewel e «All rewards have been collected.». Limited non aggiunte
   (tutte legate a date 2017-2021: da decidere).

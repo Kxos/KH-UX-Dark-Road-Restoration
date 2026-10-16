@@ -1171,6 +1171,7 @@ function respondGachaDraw(res, body) {
     userMedalIds.push(id);
     if (!owned.has(medalId)) { first.push(id); owned.add(medalId); }
   }
+  missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
   savePlayer();
   console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${banner.price} ${gacha.WALLET[banner.payType]}, medaglie ${medalIds.join(',')}`);
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first) });
@@ -1918,7 +1919,8 @@ function userTitlesData() {
 // 4/9 Lux, 12 Union Cross, 28 PVP (6, 9 e 12 sono del party: senza party si contano quelli
 // del giocatore).
 // ---------------------------------------------------------------------------
-const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp', 50: 'enemy' };
+// 35 (Beginner «Draw Medal x N»): un'unita' per ogni POST /gacha/draw riuscita, di qualunque taglia (respondGachaDraw).
+const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp', 50: 'enemy', 35: 'draw' };
 // Limited (missionType 4, make-limited-missions.js): una campagna mensile dei Lux e una breve
 // settimanale a rotazione, dall'ORA REALE (quella del server riparte dal 15-5-2021 a ogni avvio:
 // la rotazione resterebbe ferma). Il periodo di una riga = numero del mese/della settimana reale,
@@ -1941,9 +1943,14 @@ function limitedActive(id, realMs = realNow()) {
 // Condizioni delle Beginner (make-beginner-missions.js) calcolate dallo stato del giocatore a ogni elenco,
 // non da un contatore: 30 storia superata fino alla quest targetId, 31 STR del keyblade preferito,
 // 32 livello +N della serie di keyblade targetId (category), 33 Lux totali, 34 medaglie con lo Special
-// Attack Bonus al massimo del tier. 35-44 non hanno ancora una funzione: restano a 0.
+// Attack Bonus al massimo del tier, 39 livello del Nova (= Guilt Burst, userPoint.guiltBurstLv: +1 alla prima guilt di
+// ogni medaglia, +5 alla prima guilt massima), 40 rango dello Spirit (rango della Gear di pet.js, 17 gradini da petRank).
+// 35 (Draw Medal) e' un contatore ('draw'). 36-38 e 41-44 (quest speciali, Proud, eventi, Colosseo, Union Cross) non
+// hanno ancora la funzione nel server (nessuno stage di quel tipo, tabelle evStage/colosseum vuote, Union Cross senza
+// Photon) e restano a 0, come il 3 (Raid Boss: nessun contatore 'raid' chiamato).
 const MISSION_DERIVED = {
-  30: (r) => (stageNumber(player.lastClearStageId) >= (r.targetId?.[0] || 0) ? 1 : 0),
+  // la storia piu' avanzata dagli stage superati (1-525), non lastClearStageId: i Tour (id 91xx) lo portano oltre la storia
+  30: (r) => (stageNumber(lastStoryStageId()) >= (r.targetId?.[0] || 0) ? 1 : 0),
   31: () => keybladeDeckStats(favoriteKeybladeId()).attack || 0,
   32: (r) => {
     const rows = masterRows('keyblade');
@@ -1961,6 +1968,8 @@ const MISSION_DERIVED = {
       return max > 0 && (u.guiltFactor || 0) >= max;
     }).length;
   },
+  39: () => guiltBurst().level(),
+  40: () => petSubslotNow().rank || 0,
 };
 const missionProgress = (row, s) => (MISSION_DERIVED[row.conditionId] ? MISSION_DERIVED[row.conditionId](row) : s.count);
 // Durata della scheda Beginner dal primo elenco (ipotesi: il valore originale non e' noto)
@@ -3567,7 +3576,7 @@ module.exports._test = {
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet,
   // server/test-mission-settle.js
-  settleClock, MISSION_COUNTER,
+  settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-gacha-server.js
