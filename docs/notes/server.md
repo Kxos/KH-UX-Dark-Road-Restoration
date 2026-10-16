@@ -10,7 +10,8 @@ Di solito si usa `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` ([banco
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "82"                     # revisione dei master: alzarla a ogni modifica
+$env:KHUX_REVISION      = "117"                    # BASE della revisione dei master: alzarla a ogni modifica
+# KHUX_REAL_NOW = istante ISO (prove): l'ora reale del server parte da li' (orologio finto, #orologio)
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # vedi sotto
 # KHUX_NEWCOMER=0/1 forza giocatore esistente/nuovo; KHUX_SAVE = file del salvataggio
@@ -117,6 +118,35 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   alle 08:00 UTC dell'**ora del server** (col dispositivo sarebbero state ~15 ore). Il dispositivo
   conta solo per il popup «End of Service» (deve restare prima del 29/6/2021, protector.md); i conti
   alla rovescia seguono l'ora che manda il server, che puo' quindi essere una data finta diversa.
+<a id="orologio"></a>
+- **Orologio finto (16-10, `server/clock.js`, spec `docs/superpowers/specs/2026-10-16-orologio-finto-design.md`)**:
+  ora del server = data reale nel mese gemello 2016-2021 (stesso giorno della settimana e lunghezza),
+  scostamento fissato a `/khux/login` (`player.clockOffset`); periodi, scadenze e consegne nei Presents
+  sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00). Revisione del master calcolata:
+  `KHUX_REVISION*100000 + scadenze (lunedi'/inizio mese 08:00) passate dal 1/1/2026` (16-10: 11700051)
+  solo nei campi del master; `darkVersionRes` resta `KHUX_REVISION`. Il master e' servito come JSON
+  compatto, in cache per revisione e data dei file (`mission` con `endDate` di Weekly A/B e Limited
+  riscritti al volo). `KHUX_REAL_NOW` (`-RealNow` di `run-server.ps1`/`relogin.ps1`) sposta l'ora reale
+  per le prove; `KHUX_SERVER_TIME` resta (data finta fissa).
+- **Banco 16-10**: master compatto accettato (106 tabelle, nessun errore); Daily «22 hours left» alle 09:58
+  UTC, Weekly «2 days», Limited mensile «15 days»; riavvio -> stessi valori, 0 tabelle; `-RealNow
+  2026-10-19T09:00:00Z` -> 106 tabelle, **0 `GET /resource/`**, Daily azzerate, 3 premi Daily non
+  riscossi nei Presents, nuova campagna breve, Weekly «6 days»; ritorno all'ora vera -> 106 tabelle
+  (revisione di nuovo 11700051).
+- **Misura del login** (`tools\ldplayer\session\login-time.ps1 -N 5`, tempi dal lancio dell'app):
+
+  | | /khux/login | totale (home ferma) | tabelle |
+  |---|---|---|---|
+  | prima (valori gia' annotati, 16-10) | 14-26 s senza master nuovo; 18,7-77 s con master | - | 0 / 106 |
+  | dopo (16-10 12:53-13:00, senza master nuovo) | 52,5 / 86,6 / 83,4 / 60,7 / 55,6 (media 67,8 s) | 64 / 99 / 114 / 92 / 87 (media 91,2 s) | 0 |
+
+  Il tempo dal lancio e' dominato dall'avvio dell'app nell'emulatore (la prima richiesta arriva 45-80 s
+  dopo il lancio). Dal log `server/logs/requests.ndjson`, dalla prima richiesta (`PUT /system/status`)
+  a `/khux/login`: 4,5-5,2 s prima e dopo (invariato); il server risponde in ~50 ms a richiesta; con il
+  master nuovo la home arriva in 31-33 s dalla prima richiesta (21-56 s prima). Lavoro del server per il
+  master con la cache < 50 ms (`server/test-master-clock.js`). Da notare: dal 16-10 09:57 UTC (primo
+  avvio con l'orologio finto) l'attesa del client fra `/ranking/parade` e `/web/notices` e' sempre 8-12 s
+  (prima di solito 1,5-2 s, a volte 7-42 s): tempo del client, da capire (contenuti legati alla data?).
 - 106 tabelle (nomi nel loader a `0x20a0b80`, passo 0x80). Ogni tabella = **array di righe**; ogni
   campo dello schema e' obbligatorio, chiavi in piu' ignorate; riga nulla = «Master data error».
   Schema: `recon/out/master_types_ww431.json` (1.739 campi, `recon/tools/master_types.py`); il
