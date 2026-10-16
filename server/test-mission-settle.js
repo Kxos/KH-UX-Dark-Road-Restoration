@@ -42,6 +42,14 @@ quiet(() => t.missionCount('quest', 1));
 at('2026-10-18T08:00:00Z');
 check(quiet(() => t.missionsData()).find((m) => m.id === daily.id).numUpper === 0, 'azzeramento alle 08:00');
 
+// Weekly A/B: una sola serie attiva per settimana, alternata
+at('2026-10-14T12:00:00Z');
+const wk = quiet(() => t.missionsData()).map((m) => m.id).filter((id) => id >= 3001 && id <= 3020);
+at('2026-10-21T12:00:00Z');
+const wk2 = quiet(() => t.missionsData()).map((m) => m.id).filter((id) => id >= 3001 && id <= 3020);
+check(wk.length === 10 && wk2.length === 10, `Weekly attive ${wk.length}/${wk2.length}`);
+check(!wk.some((id) => wk2.includes(id)), 'serie A/B non alternate');
+
 Date.now = realNowFn;
 try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
