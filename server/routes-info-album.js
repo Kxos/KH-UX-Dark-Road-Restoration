@@ -32,6 +32,7 @@ const DIFFERENCES_BODY = [
   'Completed missions that you did not collect before they end are sent to your Presents.',
   'Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.',
   'A few Spirit parts without original graphics are replaced by a similar part.',
+  'Shop draw rates are reconstructed where the original game did not publish them: Draw Odds and each banner\'s Details say so.',
   'There are no purchases: Jewels and items come from quests, missions and presents.',
 ];
 
@@ -71,6 +72,9 @@ const NOTICES = [
   { date: '10/16', tag: 'INFORMATION', title: 'Missions',
     body: ['Open the scroll under your avatar on the home screen to see your Beginner, Daily, Weekly and Limited Missions, then tap Receive to collect the rewards.',
       'Daily Missions reset every day, Weekly Missions every Monday and Limited Missions with their campaign: the time left is shown on each tab.'] },
+  { date: '10/16', tag: 'INFORMATION', title: 'Shop',
+    body: ['The first banner in the Shop, Banner Catalog, cannot be drawn: tap its Details to see the banners and the Medals they contain.',
+      'Draws cost Jewels or Tickets earned in the game. Draw Odds shows the rates used by this restoration.'] },
   { date: '10/14', tag: 'INFORMATION', title: 'Supernova and Dual Meow Wow',
     body: ['Equipping a Supernova Medal lets you unleash its powerful Supernova once per quest: tap the button under the Burst gauge during your turn.',
       'Five of the same Dual Meow Wow Medals are needed to grant Supernova or strengthen the Supernova of a specific Medal (Evolve, with the base Medal at max level).'] },

@@ -32,6 +32,8 @@ const infoAlbum = require('./routes-info-album');
 const legalPages = require('./legal-pages');
 const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
 const medalSkill = require('./medal-skill');
+const gachaData = require('./gacha-data');
+const gacha = require('./gacha');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
 const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
 
@@ -143,6 +145,9 @@ function parseBody(buf, headers) {
 function route(url) {
   const p = url.split('?')[0].toLowerCase();
   if (p === '/web/passive') return 'passivepage';
+  if (p === '/gacha/list') return 'gachalist';
+  if (p === '/gacha/draw') return 'gachadraw';
+  if (p.startsWith('/web/gacha/')) return 'gachaweb'; // catalogo, dettagli, odds, immagini dei banner
   if (p.includes('system/status')) return 'status';
   if (p.includes('system/login')) return 'login';
   if (p.includes('system/coppa')) return 'coppa';
@@ -350,6 +355,8 @@ function respondLogin(res) {
   // Legal Information: User Agreement (+0x78) e License (+0x90), WebView (server/legal-pages.js)
   body.agreement = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/agreement`;
   body.license = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/license`;
+  // Draw Odds dello Shop (pulsante su ogni piastra, link globale +0xf0, [fn])
+  body.odds = `${WEB_BASE}/web/gacha/odds`;
   send(res, 200, body);
 }
 
@@ -433,6 +440,12 @@ const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeri
 // occorrenza), in ora finta con lo scostamento del mese della revisione
 function servedMasterRows(name, realMs) {
   const rows = masterRows(name);
+  // drawMedalType: bannerUrl/detailUrl sono percorsi (server/make-banners.js); l'indirizzo http si
+  // aggiunge qui (max 128 byte, strncpy del client)
+  if (name === 'drawMedalType') {
+    return rows.map((r) => ({ ...r, bannerUrl: r.bannerUrl.startsWith('/') ? WEB_BASE + r.bannerUrl : r.bannerUrl,
+      detailUrl: r.detailUrl.startsWith('/') ? WEB_BASE + r.detailUrl : r.detailUrl }));
+  }
   if (name !== 'mission') return rows;
   const off = clock.twinOffset(realMs);
   const w = clock.weekIndex(realMs), mi = clock.monthIndex(realMs);
@@ -1087,6 +1100,73 @@ function respondMedalMax(res, body) {
     console.log(`  [increase storage] +${n * MEDAL_MAX_STEP} posti (${maxMedal()}), -${cost} jewel`);
   } else console.log(`  [increase storage] rifiutato: count ${body?.count}, jewel ${player.freeStone || 0}, posti ${maxMedal()}`);
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
+}
+
+// Shop > Draw (docs/notes/shop.md). Catalogo dei banner scritto da server/make-banners.js; senza
+// catalogo la lista ha solo la piastra Banner Catalog. KHUX_GACHA_TEST=1 mostra i banner di prova
+// (Platinum Ticket Draw). KHUX_GACHA_SIZES: numeri di medaglie con l'animazione del risultato nelle
+// risorse (lwf/raisedraw/demo/raidgacha_result_display_NN, recon/tools/import_jp_raisedraw.py).
+const GACHA_FILE = process.env.KHUX_GACHA_BANNERS || path.join(__dirname, 'game_data', 'gacha_banners.json');
+const GACHA_IMG = path.join(__dirname, 'game_data', 'gacha_img');
+const GACHA_TEST = process.env.KHUX_GACHA_TEST === '1';
+const GACHA_SIZES = new Set((process.env.KHUX_GACHA_SIZES || '1,3,10').split(',').map(Number));
+const WEB_BASE = SESSION_BASE.replace(/^https:/, 'http:'); // https: la WebView rifiuta il certificato
+let gachaBannerList = null;
+const gachaBanners = () => (gachaBannerList ??= gachaData.loadBanners(GACHA_FILE));
+function reloadGachaBanners() { gachaBannerList = null; }
+
+function respondGachaList(res) {
+  send(res, 200, { ret: ret(), ...gacha.gachaListData(gachaBanners(), player, { realMs: realNow(), webBase: WEB_BASE, test: GACHA_TEST, sizes: GACHA_SIZES }) });
+}
+
+// POST /gacha/draw (azione 76): ramo 0x7c46bc di [fn], parser [fn] (userPoint),
+// [fn] (userMedals, userSkills, userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds,
+// effectNumbers: tutti obbligatori) e [fn] (guiltBurstFirst/MaxUserMedalIds). Un rifiuto
+// risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop ([fn]).
+function respondGachaDraw(res, body) {
+  const now = serverTime(), realMs = realNow();
+  const banner = gachaData.bannerById(gachaBanners(), body?.drawMedalTypeId);
+  const why = gacha.checkDraw(banner, player, body, { realMs, test: GACHA_TEST, freeSlots: maxMedal() - player.medals.length, sizes: GACHA_SIZES });
+  if (why) {
+    console.log(`  [gacha] estrazione rifiutata: ${why} (corpo ${JSON.stringify(body)})`);
+    return send(res, 200, { ret: ret() });
+  }
+  const snap = inventorySnapshot(now);
+  const owned = new Set(player.medals.map((m) => m.medalId));
+  const medalIds = gachaData.rollDraw(banner, Math.random);
+  gacha.payDraw(banner, player, realMs);
+  const userMedalIds = [], first = [];
+  for (const medalId of medalIds) {
+    grantItem(3, medalId, 1);
+    const id = player.medals[player.medals.length - 1].userMedalId;
+    userMedalIds.push(id);
+    if (!owned.has(medalId)) { first.push(id); owned.add(medalId); }
+  }
+  savePlayer();
+  console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${banner.price} ${gacha.WALLET[banner.payType]}, medaglie ${medalIds.join(',')}`);
+  send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first) });
+}
+
+// Pagine WebView dello Shop (Details della piastra Catalog e di ogni banner, Draw Odds) e immagini
+// 640x140 dei banner (bannerUrl, scaricate dal client via http)
+function respondGachaWeb(res, url) {
+  const p = url.split('?')[0];
+  const html = (s, code = 200) => { const b = Buffer.from(s, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
+  const img = /^\/web\/gacha\/img\/(\d+)\.png$/i.exec(p);
+  if (img) {
+    const file = path.join(GACHA_IMG, `${Number(img[1])}.png`);
+    if (!fs.existsSync(file)) return html('not found', 404);
+    const b = fs.readFileSync(file);
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
+    return res.end(b);
+  }
+  if (/^\/web\/gacha\/catalog$/i.test(p)) return html(gacha.catalogPage(gachaBanners(), { test: GACHA_TEST }));
+  if (/^\/web\/gacha\/odds$/i.test(p)) return html(gacha.oddsPage(gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST })));
+  const det = /^\/web\/gacha\/detail\/(\d+)$/i.exec(p);
+  const banner = det && gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST }).find((b) => b.drawMedalTypeId === Number(det[1]));
+  if (!banner) return html('<!doctype html><meta charset="utf-8"><body style="background:#174a5c;color:#fff;font:18px sans-serif">Banner not found.</body>', 404);
+  const names = new Map(masterRows('medal').map((m) => [m.medalId, m.name]));
+  return html(gacha.detailPage(banner, names));
 }
 
 // POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo
@@ -3098,6 +3178,10 @@ function handler(scheme) {
       // Notices (azioni 30/31, WebView /web/notices) e Album (17): server/routes-info-album.js
       if (kind === 'infolist') return send(res, 200, { ret: ret(), ...infoAlbum.informationList(SESSION_BASE) });
       if (kind === 'infopopup') return send(res, 200, { ret: ret(), ...infoAlbum.informationPopup(SESSION_BASE) });
+      // Shop > Draw (azioni 75/76) e pagine/immagini dei banner
+      if (kind === 'gachalist') return respondGachaList(res);
+      if (kind === 'gachadraw') return respondGachaDraw(res, entry.bodyDecoded);
+      if (kind === 'gachaweb') return respondGachaWeb(res, req.url);
       if (kind === 'noticespage') {
         const buf = Buffer.from(infoAlbum.noticesPage(realNow()), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
@@ -3444,4 +3528,6 @@ module.exports._test = {
   settleClock, MISSION_COUNTER,
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
+  // server/test-gacha-server.js
+  respondGachaList, respondGachaDraw, respondGachaWeb, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };
