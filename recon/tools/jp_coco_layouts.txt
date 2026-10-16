@@ -89,7 +89,9 @@ Emblem_Base.json                        need=Close_Button,Scroll_Area,Txt_None
 Emblem_Panel.json                       need=Emblem_Base,Panel_Emblem,Txt_Emblem_Name_Label,Area_Ticker_Emblem_Name,mask,Txt_Emblem_Detail_Label,Txt_Storage_Date_Label,Txt_Storage_Date_Title
 TresCommu_CommunicationUser.json
 TresCommu_CommunicationOther.json
-MyPage_ChirishiBaloon.json
+# nuvoletta di Chirithy: il JP chiede Cinema_Calligraphy_Web.ttf (assente: il «!» usciva come «/», banco 16-10);
+# font delle nuvolette WW (MyPage_AvatarBaloon_ver240 servito)
+MyPage_ChirishiBaloon.json  set=Txt_Name.fontName=DFPSoGei-W5.TTF
 MyPageMission_Base_ver320.json
 MyPageMission_Panel.json                need=Panel_Present,Gauge_Base,Gauge,Button_Challenge,Button_Receive
 MenuDialog_ver300.json

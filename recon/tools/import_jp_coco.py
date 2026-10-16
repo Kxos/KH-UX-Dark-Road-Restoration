@@ -679,6 +679,85 @@ for _name, _src in sorted(_rank_img.items()):
     if os.path.exists(_src) and _name not in _served_all:
         writes.setdefault(_name, ('jp', _src, None))
 
+
+# ---- NPC originali (lwf/character/npc/<id>/wait) ------------------------------------------------
+# make_layouts.py mette LWF vuoti per gli NPC non serviti (la home e gli stage li caricano senza
+# controllo): Chirithy della home (999, ISSUES I-016) era invisibile. Il JP 4.3.1 ha l'animazione
+# originale di 89 dei 93; nella copia di thethiny mancano alcune parti (file uguali scartati?). Si
+# importano gli NPC con tutte le parti, o a cui manca solo l'ombra 97x24: quella e' identica alla
+# wait_7 dell'NPC 4001 servito dal WW (BTF letto dalle risorse originali). Gli altri restano vuoti.
+def _lwf_textures(path):
+    """{nome texture: (w, h)} dalla tabella texture di un LWF (formato di make_pet_motions.py)."""
+    import struct
+    from make_pet_motions import SECTIONS
+    d = open(path, 'rb').read()
+    sec = {n: struct.unpack_from('<2i', d, 32 + 8 * i) for i, n in enumerate(SECTIONS)}
+    sb = sec['stringBytes'][0]
+    so, sn = sec['stringData']
+    strs = [d[sb + a:sb + a + b].decode() for a, b in (struct.unpack_from('<2i', d, so + 8 * k) for k in range(sn))]
+    to, tn = sec['texture']
+    return {strs[t[0]]: (t[2], t[3]) for t in (struct.unpack_from('<4if', d, to + 20 * k) for k in range(tn))}
+
+
+def _served_bytes(name):
+    """Contenuto di un file delle risorse originali (indice names_v4.tsv, dati resource_data\\7\\data)."""
+    import bgad
+    ddir = os.path.join(D, 'resource_data', '7', 'data')
+    off = None
+    for line in open(os.path.join(D, 'resource_data', 'names_v4.tsv'), encoding='utf-8'):
+        n, _, o = line.rstrip('\n').partition('\t')
+        if n == name:
+            off = int(o)
+            break
+    if off is None or not os.path.isdir(ddir):
+        return None
+    for path in [os.path.join(ddir, f) for f in sorted(os.listdir(ddir))]:
+        size = os.path.getsize(path)
+        if off < size:
+            break
+        off -= size
+    with open(path, 'rb') as fh:
+        fh.seek(off)
+        h = bgad.parse(fh.read(bgad.HDR.size))
+        fh.seek(off)
+        buf = fh.read(h['hsize'] + h['nlen'] + h['size'])
+    lib = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'ext', 'ww431', 'libcocos2dcpp.so')
+    key = bytes.fromhex(os.environ['BGAD_KEY']) if os.environ.get('BGAD_KEY') else bgad.lib_key(lib)
+    return bgad.decode(buf, bgad.parse(buf), key)
+
+
+NPC_SHADOW = 'lwf/character/npc/4001/wait/wait_7.png'
+_npc_root = os.path.join(JP_ROOT, 'lwf', 'character', 'npc')
+_gen_npc = os.path.join(OUT, 'lwf', 'character', 'npc')
+_npc_ok, _npc_skip, _shadow = [], [], None
+if os.path.isdir(_gen_npc) and os.path.isdir(_npc_root):
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    for _id in sorted(os.listdir(_gen_npc)):
+        _dir = os.path.join(_npc_root, _id, 'wait')
+        _lwf = os.path.join(_dir, 'wait.lwf')
+        _base = 'lwf/character/npc/%s/wait/' % _id
+        if _base + 'wait.lwf' in _served_all or not os.path.exists(_lwf):
+            continue
+        _tex = _lwf_textures(_lwf)
+        _miss = {k: v for k, v in _tex.items() if not os.path.exists(os.path.join(_dir, k))}
+        if any(v != (97, 24) for v in _miss.values()):
+            _npc_skip.append(_id)
+            continue
+        if _miss and _shadow is None:
+            _shadow = _served_bytes(NPC_SHADOW) or b''
+        if _miss and not _shadow:
+            _npc_skip.append(_id)
+            continue
+        writes[_base + 'wait.lwf'] = ('jp', _lwf, None)
+        for _k in _tex:
+            if _k in _miss:
+                writes[_base + _k] = ('jp', NPC_SHADOW, _shadow)
+            else:
+                writes[_base + _k] = ('jp', os.path.join(_dir, _k), None)
+        _npc_ok.append(_id)
+    print('NPC originali JP: %d importati (%s), %d con parti mancanti restano vuoti'
+          % (len(_npc_ok), ' '.join(_npc_ok), len(_npc_skip)))
+
 # ---- armature originali JP su un plist libero -------------------------------------------------
 # Armature che il client WW crea e che nessuna risorsa serve: senza ExportJson la creazione va in
 # crash ([fn]). Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle

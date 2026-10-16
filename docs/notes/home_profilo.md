@@ -14,7 +14,12 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
   `lwf/pet/motion/<30 nomi>` e `lwf/character/npc/<id>/wait/wait.lwf` (`[fn]`, NULL se manca)
   senza controllo: nel pacchetto ci sono LWF vuoti per le 30 animazioni (ora LWF nostri con
   «end», `make_pet_motions.py`, vedi [pet](#pet)) e i 74 id NPC di
-  `img/stage_npc/npc_rule.bin` (tranne 4001). Quindi Chirithy (NPC 999) e' invisibile (ISSUES I-016).
+  `img/stage_npc/npc_rule.bin` (tranne 4001). Quindi Chirithy (NPC 999) era invisibile (ISSUES I-016).
+- 16-10: `import_jp_coco.py` importa le animazioni originali JP 4.3.1 degli NPC (`lwf/character/npc/<id>/wait`):
+  37 su 93 (Chirithy compreso), quelli con tutte le parti o a cui manca solo l'ombra 97x24 (uguale a
+  `4001/wait_7.png` servita dal WW, letta dalle risorse 7). Agli altri 52 la copia di thethiny toglie parti
+  (forse i file uguali): restano vuoti. Nuvoletta `MyPage_ChirishiBaloon` JP con `fontName` WW
+  (`DFPSoGei-W5.TTF`): col calligrafico JP il «!» usciva «/». Banco: Chirithy e nuvoletta ok (`chir_tap2`).
 - Tocco sulla piazza (`SceneMyPage::init` $_10 -> `[fn]` -> `[fn]`): chi non e' in
   party (`userParty.isJoin` 0) vede Chirithy con la nuvoletta `MyPage_ChirishiBaloon.json`
   (`Txt_Name`, testo 101000022, «Join a party and make new friends!»), generata da
