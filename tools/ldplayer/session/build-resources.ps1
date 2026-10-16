@@ -97,6 +97,10 @@ foreach ($t in Get-ChildItem "$D\layouts\ui_texts\text\ui" -File) {
     if ((Test-Path $dst) -and ([IO.File]::ReadAllText($t.FullName) -match '^\[\d+\]$')) { continue }
     Copy-Item $t.FullName $dst -Force
 }
+# piastra «Banner Catalog» dello Shop: testi del pulsante Gold Ticket (106140420-424) e icona
+# Star7_Ticket_39 (aveva il segno «仮»), dopo i testi IPA; banner 9001 in server\game_data\gacha_img
+python recon	ools\make_shop_art.py "$sgiles" server\game_data
+if ($LASTEXITCODE) { throw 'make_shop_art fallito' }
 # layout originali dai dati JP 4.3.1 al posto dei nostri generati (I-117): elenco versionato in
 # recon\tools\jp_coco_layouts.txt (togliere una riga = torna il generato), sopra l'uscita di
 # make_layouts/make_textures; rapporto e manifest in $sg\jp_import (Pillow: senza -I)
