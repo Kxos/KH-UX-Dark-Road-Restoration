@@ -282,7 +282,8 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   Spirit = rango della Gear) o contatore (35 Draw Medal: una per estrazione `/gacha/draw` riuscita, non retroattivo).
   Restano a 0 perche' manca la funzione: 3 Raid Boss, 36-38 quest speciali e Proud Quest, 41 Proud Mode, 42 eventi,
   43 Colosseo, 44 Union Cross (16-10, `test-beginner.js`; la 30 usa la storia piu' avanzata, non lastClearStageId che i
-  Tour portano oltre). Premio «Skip Ticket+» = tipo 26 (il
+  Tour portano oltre; banco 16-10 sera: Nova, Spirit e Draw avanzano e si riscuotono correttamente, verificato
+  dall'utente). Premio «Skip Ticket+» = tipo 26 (il
   client scrive «Skip Ticket», icona del jewel: immagine da cercare), `player.stageSkipTicket`. Banco: 12/34 complete
   sul salvataggio di prova, Collect All -> +1000 jewel e «All rewards have been collected.». Limited non aggiunte
   (tutte legate a date 2017-2021: da decidere).
