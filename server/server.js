@@ -1080,7 +1080,7 @@ function changeAp(delta, nowMs = realNow()) {
 const MEDAL_MAX_LIMIT = 3000;        // «(Max: 3000 slots)» del popup
 const MEDAL_MAX_STEP = 5, MEDAL_MAX_COST = 100;   // «Spend 100 Jewels ... by 5 slots?»
 function maxMedal() {
-  const base = Math.max(Number(process.env.KHUX_MAX_MEDAL || 300), player.medals.length + 50);
+  const base = Math.max(Number(process.env.KHUX_MAX_MEDAL || 300), (player.medals || []).length + 50);
   return Math.min(MEDAL_MAX_LIMIT, base + (player.medalMaxExtra || 0));
 }
 
@@ -1112,7 +1112,22 @@ const GACHA_TEST = process.env.KHUX_GACHA_TEST === '1';
 const GACHA_SIZES = new Set((process.env.KHUX_GACHA_SIZES || '1,3,10').split(',').map(Number));
 const WEB_BASE = SESSION_BASE.replace(/^https:/, 'http:'); // https: la WebView rifiuta il certificato
 let gachaBannerList = null;
-const gachaBanners = () => (gachaBannerList ??= gachaData.loadBanners(GACHA_FILE));
+// Le medaglie impilabili (validPack) non si estraggono: stackedMedalList fonde la copia nuova nella
+// cella con l'id della prima, e l'id restituito non comparirebbe in userMedals (crash del client).
+// Le toglie dai pool al caricamento; un banner rimasto senza medaglie sparisce.
+function sanitizeBanners(list) {
+  const packed = new Set(masterRows('medal').filter((m) => m.validPack === 1).map((m) => m.medalId));
+  return list.map((b) => {
+    const pool = {};
+    for (const [rare, ids] of Object.entries(b.pool || {})) {
+      const keep = ids.filter((id) => !packed.has(id));
+      if (keep.length < ids.length) console.log(`  [gacha] ${b.rowId}: tolte ${ids.length - keep.length} medaglie impilabili dal pool ${rare}`);
+      pool[rare] = keep;
+    }
+    return { ...b, pool };
+  }).filter((b) => Object.values(b.pool).some((ids) => ids.length));
+}
+const gachaBanners = () => (gachaBannerList ??= sanitizeBanners(gachaData.loadBanners(GACHA_FILE)));
 function reloadGachaBanners() { gachaBannerList = null; }
 
 function respondGachaList(res) {
@@ -1124,6 +1139,7 @@ function respondGachaList(res) {
 // effectNumbers: tutti obbligatori) e FUN_007a5dec (guiltBurstFirst/MaxUserMedalIds). Un rifiuto
 // risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop (FUN_00a1f658).
 function respondGachaDraw(res, body) {
+  player.medals = player.medals || []; // salvataggio nuovo: l'elenco nasce alla prima medaglia
   const now = serverTime(), realMs = realNow();
   const banner = gachaData.bannerById(gachaBanners(), body?.drawMedalTypeId);
   const why = gacha.checkDraw(banner, player, body, { realMs, test: GACHA_TEST, freeSlots: maxMedal() - player.medals.length, sizes: GACHA_SIZES });
@@ -1132,7 +1148,7 @@ function respondGachaDraw(res, body) {
     return send(res, 200, { ret: ret() });
   }
   const snap = inventorySnapshot(now);
-  const owned = new Set(player.medals.map((m) => m.medalId));
+  const owned = new Set(userMedalList().map((m) => m.medalId)); // quello che vede il client
   const medalIds = gachaData.rollDraw(banner, Math.random);
   gacha.payDraw(banner, player, realMs);
   const userMedalIds = [], first = [];
