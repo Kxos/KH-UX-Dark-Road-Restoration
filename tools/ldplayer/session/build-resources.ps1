@@ -20,9 +20,11 @@
 # -NoRooms: versione completa senza il pacchetto delle stanze recuperate (rooms_gen, make_jp_rooms.py).
 # -NoEnemies: versione completa senza le grafiche originali dei nemici (enemy_gen, make_jp_enemies.py);
 #   il master va rigenerato con KHUX_NO_ENEMY_GEN=1, altrimenti i nemici citano grafiche assenti (crash).
+# -NoRaisedraw: versione completa senza le LWF del risultato delle estrazioni (raisedraw_gen,
+#   import_jp_raisedraw.py); KHUX_GACHA_SIZES va ridotto a 1 (solo raidgacha_result_display_01 servita).
 # I pacchetti statici di una versione completa sono scritti in resource_data\<N>\packs.txt: -Quick e
 # -DryRun usano quelli della versione installata (senza packs.txt: niente stanze, versioni <= 34).
-param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies)
+param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 Set-Location $repo
@@ -109,11 +111,6 @@ if ($LASTEXITCODE) { throw 'make_shop_art fallito' }
 $jpOpt = @(); if ($NoJp) { $jpOpt = @('--none') }
 python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt
 if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
-# LWF del risultato delle estrazioni (Shop > Draw, raidgacha_result_display_02..10 e Medal_D_*):
-# dai dati JP, complete di texture (le tolte dall'estrazione JP prese dalla _01 servita allineando
-# le tabelle delle texture); rapporto in $sg\raisedraw_report.json (Pillow: senza -I)
-python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$sg\files" --report "$sg\raisedraw_report.json"
-if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
@@ -162,14 +159,38 @@ if ($Quick) {
 } elseif ($NoEnemies -and (Test-Path "$eg\files")) {
   Write-Warning 'senza enemy_gen: il master deve essere rigenerato con KHUX_NO_ENEMY_GEN=1'
 }
-$staticPacks = $medalPack + $roomsPack + $enemyPack
+# pacchetto delle LWF del risultato delle estrazioni (Shop > Draw, raidgacha_result_display_02..10 e
+# Medal_D_*): dai dati JP con import_jp_raisedraw.py, complete di texture (le tolte dall'estrazione JP prese
+# dalla _01 servita allineando le tabelle delle texture). Nel generato (16-10) lo portavano a 136,5 MB, oltre
+# la riserva di 128 MiB (~33 MB: 72-78 texture per cartella): pacchetto statico come enemy_gen, dopo i nemici e
+# prima del generato. Importato nelle versioni complete o se manca raisedraw_gen\files; rapporto in
+# raisedraw_gen\raisedraw_report.json (Pillow: senza -I)
+$xg = "$D\raisedraw_gen"
+$raisedrawPack = @()
+if (-not $NoRaisedraw -and (-not $Quick -or -not (Test-Path "$xg\files"))) {
+  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json"
+  if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
+}
+if ($Quick) {
+  if ((Test-Path "$v\packs.txt") -and ((Get-Content "$v\packs.txt") -contains 'raisedraw_gen')) {
+    if (-not (Test-Path "$xg\gen.png")) { throw "la versione $Version contiene raisedraw_gen ma manca $xg\gen.png" }
+    $raisedrawPack = @("$xg\gen.png", "$xg\gen.mp4")
+  }
+} elseif (-not $NoRaisedraw -and (Test-Path "$xg\files")) {
+  python recon\tools\btf_fix.py "$xg\files"
+  if ($LASTEXITCODE) { throw 'btf_fix raisedraw fallito' }
+  python -I recon\tools\resource_pack.py --cache "$xg\files" $key "$xg\gen.mp4" "$xg\gen.png"
+  if ($LASTEXITCODE) { throw 'resource_pack raisedraw fallito' }
+  $raisedrawPack = @("$xg\gen.png", "$xg\gen.mp4")
+}
+$staticPacks = $medalPack + $roomsPack + $enemyPack + $raisedrawPack
 # Dimensioni fisse: il client confronta le dimensioni dei file installati con quelle del
 # download e, se cambiano, butta le risorse e riscarica tutto (resourceRevision 0). Il
 # pacchetto generato si riempie di zeri fino a una riserva (letto per offset, la coda non
 # e' mai letta) e l'indice ha un nome di riempimento (resource_merge.py): una versione
 # completa riserva 16 MiB e 64 KiB, -Quick ritorna alle dimensioni installate.
 # l'ultimo pezzo dei dati e' il pacchetto generato: d0035 + uno per pacchetto statico (medaglie
-# d0035, stanze d0036, nemici d0037, generato d0038)
+# d0035, stanze d0036, nemici d0037, estrazioni raisedraw d0038, generato d0039)
 $genName = if ($Quick) { (Get-ChildItem "$v\data" | Sort-Object Name | Select-Object -Last 1).Name } else { 'd{0:D4}' -f (35 + $staticPacks.Count / 2) }
 if ($Quick) {
   $dataSize = (Get-Item "$v\data\$genName").Length
@@ -181,7 +202,7 @@ if ($Quick) {
     ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
   # pacchetti statici come pezzi d0035.. (copie: le versioni dopo li ricostruiscono)
   for ($i = 1; $i -lt $staticPacks.Count; $i += 2) { Copy-Item $staticPacks[$i] ("$v\data\d{0:D4}" -f (35 + ($i - 1) / 2)) }
-  $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }
+  $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }; if ($raisedrawPack) { $names += 'raisedraw_gen' }
   Set-Content -Encoding ascii "$v\packs.txt" $names
   $dataSize = 128MB  # 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre), 32 MiB con la musica delle BGM Medals (15 ottobre, ~55 MB di audio)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
