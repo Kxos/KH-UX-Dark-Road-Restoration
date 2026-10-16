@@ -1,6 +1,6 @@
 # Orologio finto del server: mesi gemelli e scadenze vere
 
-Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat).
+Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10).
 
 ## 1. Obiettivo
 
@@ -82,16 +82,21 @@ La rotazione oggi usa mese e settimana reali (`limitedPeriod`): resta cosi', e c
 con il calendario finto. Le righe attive ricevono `endDate` = fine mese (mensile) o fine settimana
 (breve), come al 3.3.
 
-### 3.6 Cambio di settimana o mese a gioco aperto
+### 3.6 Cambio di settimana o mese a gioco aperto (deciso con l'utente)
 
-Il client riscarica il master solo al login. Se una scadenza passa a gioco aperto:
+Il client riscarica il master solo al login. Alla scadenza vera il server **cambia subito**:
 
-- **Proposta: la campagna vecchia resta valida fino al prossimo login** (il server la tratta come
-  attiva per quella sessione finche' il client non ha la nuova revisione; il conto alla rovescia
-  arriva a zero e basta).
-- Alternativa: forzare il ritorno al titolo (come la manutenzione originale). Piu' brusca.
-
-Da confermare con l'utente.
+- l'avanzamento della campagna vecchia si ferma esattamente alla scadenza (Lux, quest e nemici da li'
+  contano solo per la nuova): niente premi doppi tenendo il gioco aperto per giorni;
+- `/user/mission/list` manda subito le righe della campagna nuova; fino al prossimo login il client
+  le mostra con la scadenza del master che ha in cache (difetto solo di visualizzazione);
+- la riscossione di una missione della campagna vecchia viene rifiutata;
+- **i premi delle missioni completate e non riscosse prima della scadenza vanno nei Presents**
+  (comment «Limited Mission reward» / «Weekly Mission reward», scadenza dei regali come gli altri):
+  nessuno perde un premio guadagnato, niente da sfruttare. La consegna avviene alla prima richiesta
+  dopo la scadenza (elenco missioni, /mypage, Presents), una sola volta per missione e periodo
+  (`player.missions[id].received`).
+- Febbraio senza gemello: il ripiego del 3.1 va bene all'utente (16-10).
 
 ### 3.7 Orari salvati
 
