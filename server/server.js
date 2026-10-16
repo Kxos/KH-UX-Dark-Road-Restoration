@@ -1673,7 +1673,6 @@ function userTitlesData() {
 // del giocatore).
 // ---------------------------------------------------------------------------
 const MISSION_COUNTER = { 1: 'quest', 3: 'raid', 6: 'raid', 4: 'lux', 9: 'lux', 12: 'union', 28: 'pvp', 50: 'enemy' };
-const MISSION_SPAN = { 2: 86400000, 3: 7 * 86400000 }; // 1: nessun azzeramento; 4: limitedPeriod
 // Limited (missionType 4, make-limited-missions.js): una campagna mensile dei Lux e una breve
 // settimanale a rotazione, dall'ORA REALE (quella del server riparte dal 15-5-2021 a ogni avvio:
 // la rotazione resterebbe ferma). Il periodo di una riga = numero del mese/della settimana reale,
@@ -1684,10 +1683,8 @@ const LIMITED_ROTATION = (() => {
 const LIMITED_GROUP = new Map();
 LIMITED_ROTATION.monthly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.set(id, { kind: 'monthly', index: i })));
 LIMITED_ROTATION.weekly.forEach((ids, i) => ids.forEach((id) => LIMITED_GROUP.set(id, { kind: 'weekly', index: i })));
-const LIMITED_WEEK0 = Date.UTC(2018, 0, 1, 8); // lunedi'
 function limitedPeriod(kind, realMs = realNow()) {
-  if (kind === 'monthly') { const d = new Date(realMs); return d.getUTCFullYear() * 12 + d.getUTCMonth(); }
-  return Math.floor((realMs - LIMITED_WEEK0) / (7 * 86400000));
+  return kind === 'monthly' ? clock.monthIndex(realMs) : clock.weekIndex(realMs);
 }
 function limitedActive(id, realMs = realNow()) {
   const g = LIMITED_GROUP.get(id);
@@ -1725,19 +1722,30 @@ const BEGINNER_DAYS = Number(process.env.KHUX_BEGINNER_DAYS || 30);
 
 const masterDateMs = (d) => Date.parse(String(d).replace(' ', 'T') + 'Z');
 
-function missionPeriod(row, nowMs) {
-  if (row.missionType === 4 && LIMITED_GROUP.has(row.id)) return limitedPeriod(LIMITED_GROUP.get(row.id).kind);
-  const span = MISSION_SPAN[row.missionType];
-  return span ? Math.floor((nowMs - masterDateMs(row.startDate)) / span) : 0;
+// indici di periodo sull'ORA REALE (clock.js): giorno e settimana da 08:00 UTC, mese dal giorno 1 08:00
+function missionPeriod(row, realMs) {
+  if (row.missionType === 4 && LIMITED_GROUP.has(row.id)) {
+    return LIMITED_GROUP.get(row.id).kind === 'monthly' ? clock.monthIndex(realMs) : clock.weekIndex(realMs);
+  }
+  if (row.missionType === 2) return clock.dayIndex(realMs);
+  if (row.missionType === 3) return clock.weekIndex(realMs);
+  return 0;
 }
 
 // Righe che il client puo' mostrare: scheda 1-4 (le altre le ignora), gia' iniziate, non
 // scadute; le Beginner solo fino a beginnerLimitTime.
-function missionActive(row, nowMs) {
+// Le date del master sono finte: si confrontano con l'ora finta.
+function missionActive(row, realMs) {
   if (!(row.missionType >= 1 && row.missionType <= 4)) return false;
-  if (nowMs < masterDateMs(row.startDate) || nowMs >= masterDateMs(row.endDate)) return false;
-  if (row.missionType === 1) return nowMs < masterDateMs(beginnerLimitTime());
-  if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id);
+  const fakeMs = clock.fake(realMs, clockOffset());
+  if (fakeMs < masterDateMs(row.startDate) || fakeMs >= masterDateMs(row.endDate)) return false;
+  if (row.missionType === 1) {
+    beginnerLimitTime(); // fissa beginnerSince al primo elenco
+    const bs = player.beginnerSince;
+    if (typeof bs === 'number') return realMs < bs + BEGINNER_DAYS * 86400000;
+    return fakeMs < masterDateMs(beginnerLimitTime());
+  }
+  if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id, realMs);
   return true;
 }
 
@@ -1752,9 +1760,9 @@ function beginnerLimitTime() {
 }
 
 // contatori del periodo corrente di ogni missione: player.missions[id] = {period, count, received}
-function missionState(row, nowMs) {
+function missionState(row, realMs) {
   player.missions = player.missions || {};
-  const period = missionPeriod(row, nowMs);
+  const period = missionPeriod(row, realMs);
   let s = player.missions[row.id];
   if (!s || s.period !== period) s = player.missions[row.id] = { period, count: 0, received: false };
   return s;
@@ -1763,10 +1771,7 @@ function missionState(row, nowMs) {
 // Lux della settimana (bolla della home «Weekly Lux» dei membri del party, userRanking.lux): stessa settimana
 // delle missioni settimanali (missionType 3), player.weeklyLux = {period, lux}. weeklyLux(n) aggiunge, weeklyLux() legge.
 function weeklyLux(n = 0) {
-  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
-  const row = masterRows('mission').find((r) => r.missionType === 3);
-  const base = row ? masterDateMs(row.startDate) : Date.UTC(2021, 0, 4);
-  const period = Math.floor((nowMs - base) / (7 * 86400000));
+  const period = clock.weekIndex(realNow());
   if (!player.weeklyLux || player.weeklyLux.period !== period) player.weeklyLux = { period, lux: 0 };
   player.weeklyLux.lux += n;
   return player.weeklyLux.lux;
@@ -1774,7 +1779,7 @@ function weeklyLux(n = 0) {
 
 function missionCount(counter, n) {
   if (!n) return;
-  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  const nowMs = realNow();
   for (const row of masterRows('mission')) {
     if (MISSION_COUNTER[row.conditionId] === counter && missionActive(row, nowMs)) missionState(row, nowMs).count += n;
   }
@@ -1783,7 +1788,7 @@ function missionCount(counter, n) {
 // missions[] di /user/mission/list e /user/mission/receive: solo id del master (altrimenti il
 // client va in crash), status 0 in corso, 1 da riscuotere, 2 riscossa
 function missionsData() {
-  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  const nowMs = realNow();
   return masterRows('mission').filter((r) => missionActive(r, nowMs)).map((r) => {
     const s = missionState(r, nowMs);
     const goal = r.targetNum?.[0] || 1;
@@ -1798,7 +1803,7 @@ function missionsData() {
 function respondMissionReceive(res, req) {
   const now = serverTime();
   const snap = inventorySnapshot(now); // solo le voci toccate dai premi (vedi inventoryBlocks)
-  const nowMs = Date.parse(now.replace(' ', 'T') + 'Z');
+  const nowMs = realNow();
   const rows = new Map(masterRows('mission').map((r) => [r.id, r]));
   for (const id of req?.receiveMissionIds || []) {
     const r = rows.get(id);
@@ -1816,6 +1821,29 @@ function respondMissionReceive(res, req) {
     userSphere: userSphereAll(),
     ...inventoryBlocks(now, snap),
   });
+}
+
+// Chiusura dei periodi (spec 3.6): a ogni richiesta, se il giorno/settimana/mese reale e' avanzato
+// dall'ultima chiusura, i premi delle missioni completate e non riscosse del periodo finito vanno nei
+// Presents, una volta (s.received). Prima volta: si registra solo l'istante, nessuna consegna.
+const SETTLE_COMMENT = { 2: 'Daily Mission reward', 3: 'Weekly Mission reward', 4: 'Limited Mission reward' };
+function settleClock(realMs = realNow()) {
+  const cur = { day: clock.dayIndex(realMs), week: clock.weekIndex(realMs), month: clock.monthIndex(realMs) };
+  const st = player.clockSettled;
+  if (st && st.day === cur.day && st.week === cur.week && st.month === cur.month) return;
+  if (st) {
+    for (const row of masterRows('mission')) {
+      const s = (player.missions || {})[row.id];
+      if (!s || s.received || !SETTLE_COMMENT[row.missionType] || s.period === missionPeriod(row, realMs)) continue;
+      if (s.count >= (row.targetNum?.[0] || 1) || (MISSION_DERIVED[row.conditionId] && missionProgress(row, s) >= (row.targetNum?.[0] || 1))) {
+        s.received = true;
+        addPresent(row.rewardType, row.itemId, row.itemNum, SETTLE_COMMENT[row.missionType]);
+        console.log(`[missioni] ${row.id} non riscossa a fine periodo: premio nei Presents`);
+      }
+    }
+  }
+  player.clockSettled = cur;
+  savePlayer();
 }
 
 // GET /user/mission (azione 187, all'ingresso della home): parser FUN_007976d8 legge solo
@@ -2884,6 +2912,8 @@ function handler(scheme) {
         ...parseBody(buf, req.headers),
       };
       logRequest(entry);
+      // chiusura dei periodi delle missioni prima di ogni altra elaborazione (spec 3.6)
+      if (player.created) settleClock();
 
       if (kind === 'status') return respondStatus(res);
       if (kind === 'login') return respondLogin(res);
@@ -3279,4 +3309,6 @@ module.exports._test = {
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet,
+  // server/test-mission-settle.js
+  settleClock, MISSION_COUNTER,
 };
