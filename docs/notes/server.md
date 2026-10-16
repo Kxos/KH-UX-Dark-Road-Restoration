@@ -113,6 +113,13 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   `mission` a 116 e le altre 105 a 115 (md5 invariati) il client ha riscaricato tutte le 106 tabelle
   (18 MB). Il download pesa poco: login di 18,7 s con il master riscaricato (rev 117), 25-77 s in
   altre prove a seconda dell'emulatore.
+- **Download interrotto** (prova del 16-10, app chiusa dopo 30, 96 e 52 tabelle su 106): il client salva
+  le tabelle una alla volta, ma azzera la sua revisione prima di scaricare (al rilancio manda
+  `masterRevision` 0) e la riscrive solo dopo l'ultima tabella. Al login dopo riscarica tutte le 106
+  tabelle e arriva alla home: un insieme a meta' non viene mai preso per buono. Vale anche se nel
+  frattempo il server e' passato alla settimana dopo. Il master servito dipende solo dalla revisione
+  della sessione, quindi corpi e md5 restano uguali per tutta la settimana. Prove in
+  `D:\Progetto_Restauro_KH_UX\tmp\interrupt\`. Notice «About game data updates» aggiornata.
 - **Orologio del dispositivo e ora del server** (prova del 16-10): con il guest al 10/1/2021 17:30 CET e
   il server al 15/5/2021 12:00 UTC il login va e le Daily mostrano «19 hours left», cioe' il tempo fino
   alle 08:00 UTC dell'**ora del server** (col dispositivo sarebbero state ~15 ore). Il dispositivo
