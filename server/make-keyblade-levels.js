@@ -59,6 +59,16 @@ function extract(ref) {
         mat: (l.materialsToNext || []).map((x) => [x.id, x.num, x.name]),
       })),
     };
+    // refusi della khuxwiki oltre +35 (Darkgnaw: 50.6..50.9 scritti «50.1», friend sempre +0.0024): un livello non
+    // maggiore del precedente diventa precedente + 0.1
+    const lv = out[name].levels;
+    for (let i = 1; i < lv.length; i++) {
+      if (lv[i].lv > MAX_LV && lv[i].lv <= lv[i - 1].lv) {
+        const fixed = Math.round(lv[i - 1].lv * 10 + 1) / 10;
+        console.log(`! ${name}: livello ${lv[i].lv} dopo ${lv[i - 1].lv} nella khuxwiki, letto come ${fixed}`);
+        lv[i].lv = fixed;
+      }
+    }
   }
   return out;
 }

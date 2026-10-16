@@ -1,5 +1,5 @@
 // Prova dei keyblade (I-087) senza client: possesso di tutte le serie, «Strengthen» (POST
-// /keyblade/enhance, azione 54) da +0 a +35 per ognuna, con le evoluzioni di design, i
+// /keyblade/enhance, azione 54) da +0 a +60 per ognuna (passi da 0.1 oltre +35, Bad Guy Breaker interi), con le evoluzioni di design, i
 // materiali e i controlli sulle tabelle. Chiama le funzioni di server.js / keyblade-evo.js su un
 // salvataggio temporaneo:
 //
@@ -31,11 +31,13 @@ const byId = new Map(kb.map((r) => [r.keybladeId, r]));
 const series = [...new Set(kb.map((r) => r.category))].sort((a, b) => a - b);
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
+// livello*10: lv10 oltre +35 (make-keyblade-levels.js), lv intero fino a +35
+const L10 = (r) => r.lv10 ?? r.lv * 10;
 
 // tabella khuxwiki ridotta (make-keyblade-levels.js): materiali per il livello dopo
 const wiki = JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'keyblade_levels.json'), 'utf8'));
 
-// ---- 1. tabelle: catene +0..+35 per serie ---------------------------------------------------
+// ---- 1. tabelle: catene +0..+60 per serie ---------------------------------------------------
 const chains = new Map();
 const freeSteps = [];
 for (const c of series) {
@@ -50,7 +52,8 @@ for (const c of series) {
     if (!n) { errors.push(`${r.name}: evolveId ${r.evolveId} assente`); break; }
     if (seen.has(n.keybladeId)) { errors.push(`${r.name}: ciclo su ${n.keybladeId}`); break; }
     check(n.category === c, `${r.name} -> ${n.name}: serie diversa`);
-    check(n.lv === r.lv + 1, `${r.name} (+${r.lv}) -> ${n.name} (+${n.lv}): salto di livello`);
+    const step = L10(n) - L10(r);
+    check(step === 10 || (L10(r) >= 350 && step === 1), `${r.name} -> ${n.name}: salto di livello (${step / 10})`);
     check((n.validConsist || 0) >= (r.validConsist || 0), `${n.name}: slot ${r.validConsist} -> ${n.validConsist}`);
     check((n.maxBurstGauge || 0) >= (r.maxBurstGauge || 0), `${n.name}: gauge ${r.maxBurstGauge} -> ${n.maxBurstGauge}`);
     check(n.validConsist >= 3 && n.validConsist <= 5, `${n.name}: validConsist ${n.validConsist}`);
@@ -61,13 +64,13 @@ for (const c of series) {
   }
   check(chain.length === rows.length, `${base.name}: ${rows.length} righe, catena di ${chain.length}`);
   const top = chain[chain.length - 1];
-  check(top.lv === 35 && top.evolveId === 0, `${base.name}: massimo +${top.lv}, evolveId ${top.evolveId}`);
+  check(L10(top) === 600 && top.evolveId === 0 && !top.validNeedMaterial, `${base.name}: massimo +${L10(top) / 10}, evolveId ${top.evolveId}`);
   // materiali di ogni livello (non del massimo)
   const w = wiki[base.name];
   check(w, `${base.name}: assente dalla tabella khuxwiki`);
   for (const r of chain.slice(0, -1)) {
     const n = r.validNeedMaterial || 0;
-    const wl = w?.levels.find((l) => l.lv === r.lv);
+    const wl = w?.levels.find((l) => Math.round(l.lv * 10) === L10(r));
     // Bad Guy Breaker +4/+9/+14/+19/+24/+29/+30: solo Trophy NI/CS/CK, assenti da material
     // (make-keyblade-levels.js li toglie): passo senza materiali, voluto
     const onlyTrophy = wl && wl.mat.length > 0 && wl.mat.every(([id]) => !id || !materials.has(id));
@@ -117,7 +120,7 @@ log(`KHUX_KB_ALL=1: ${ownedCats().length}/${series.length} serie`);
 quiet(() => t.grantKeyblade(2000));
 check(ownedCats().length === series.length, 'grantKeyblade 2000 ha duplicato Treasure Trove');
 
-// ---- 3. Strengthen di ogni keyblade fino a +35 -----------------------------------------------
+// ---- 3. Strengthen di ogni keyblade fino a +60 -----------------------------------------------
 const evo = t.kbEvo();
 function enhance(userKeybladeId) {
   let out;
@@ -170,22 +173,22 @@ for (const k of t.ownedKeyblades()) {
   // al massimo: nessun cambio, nessun materiale tolto
   p.materials = { 1: 99 };
   enhance(k.userKeybladeId);
-  check(userKb(k.userKeybladeId).keybladeId === top.keybladeId && p.materials[1] === 99, `${name}: passo oltre +35`);
+  check(userKb(k.userKeybladeId).keybladeId === top.keybladeId && p.materials[1] === 99, `${name}: passo oltre +60`);
   // gauge oltre il massimo della riga: tagliata (solo per i keyblade di player.keyblades)
   const subs = evo.userKeybladeSubslotsData().find((s) => s.keybladeSubslotId === k.userKeybladeId);
   check(subs && subs.subslots.length === evo.subslotMaxNum(), `${name}: sub-slot ${subs?.subslots.length}/${evo.subslotMaxNum()}`);
-  log(`${name.padEnd(18)} +0 -> +${top.lv} in ${chain.length - 1} passi, ${evolutions} evoluzioni, slot ${chain[0].validConsist}->${top.validConsist}, `
+  log(`${name.padEnd(18)} +0 -> +${L10(top) / 10} in ${chain.length - 1} passi, ${evolutions} evoluzioni, slot ${chain[0].validConsist}->${top.validConsist}, `
     + `gauge ${chain[0].maxBurstGauge}->${top.maxBurstGauge}, materiali ${Object.entries(need).map(([id, n]) => `${materials.get(Number(id))?.name || id} x${n}`).join(', ')}`);
 }
 
-// ---- 4. passive di +35 dopo il potenziamento ---------------------------------------------------
+// ---- 4. passive di +60 dopo il potenziamento ---------------------------------------------------
 let passives;
 quiet(() => evo.respondPassiveList({ writeHead: () => {}, end: () => {} }, { isList: 1 }));
 passives = p.passiveSettingIds || [];
 const kbPassives = t.masterRows('passiveSetting').filter((s) => s.passiveConditions === 2);
-const reach = kbPassives.filter((s) => s.passiveValue2 <= 350);
-check(reach.every((s) => passives.includes(s.passiveSettingId)), `passive di +35 mancanti: ${reach.filter((s) => !passives.includes(s.passiveSettingId)).map((s) => s.passiveSettingId)}`);
-log(`passive dei keyblade a +35: ${reach.filter((s) => passives.includes(s.passiveSettingId)).length}/${reach.length}`);
+const reach = kbPassives.filter((s) => s.passiveValue2 <= 600);
+check(reach.every((s) => passives.includes(s.passiveSettingId)), `passive di +60 mancanti: ${reach.filter((s) => !passives.includes(s.passiveSettingId)).map((s) => s.passiveSettingId)}`);
+log(`passive dei keyblade a +60: ${reach.filter((s) => passives.includes(s.passiveSettingId)).length}/${reach.length}`);
 
 // ---- 5. burst: gauge oltre il massimo tagliata al passo ----------------------------------------
 {

@@ -541,7 +541,7 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   del terzo obiettivo di quelle quest; BGB stesso si otteneva alla quest 880.
 
 <a id="keyblade-oltre-35"></a>
-### Oltre +35 (15 ottobre, analisi offline; DA PROVARE)
+### Oltre +35 (15 ottobre analisi, 16 ottobre provato sul banco)
 
 - Nell'originale WW si andava oltre +35: passi da 0,1 fino a +60, Bad Guy Breaker a interi (screenshot
   `reference\equipment`: «Starlight +52.2», «Bad Guy Breaker +41»); dati in `reference\keyblades\keyblade_levels.json`.
@@ -559,6 +559,14 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   Da fare: rigenerare (`node server\make-keyblade-levels.js <keyblade_levels.json>`, la tabella ridotta va rifatta
   dal riferimento), confrontare il master, alzare la revisione, provare sul banco (tempi di caricamento, titolo
   «+35.1», passive a +35.5, «Keyblade level max.» a +60).
+- 16-10, **master 112**, provato sul banco: rigenerato (4351 righe keyblade); la khuxwiki ha un refuso in Darkgnaw
+  (50.6..50.9 scritti «50.1», il moltiplicatore partner cresce sempre di 0.0024): `extract` lo corregge. Bad Guy
+  Breaker +35 -> +60 a interi (confronto «+36», popup «You learned a passive effect!» a +37, «Not enough materials.»
+  a +55 col salvataggio di prova, a +60 «Keyblade level max.» e Strengthen grigio); Starlight +35 -> +35.1 ... +35.5
+  (titolo «Starlight +35.1», moltiplicatori +0.02, passiva 101355 a +35.5). `test-keyblades.js` ora va a +60 (OK,
+  passive 791/791). Login piu' lento al primo avvio (77 s con master piu' grande, poi 18 s). Script del banco
+  `D:\Progetto_Restauro_KH_UX	mp\kb_loop2.ps1 -N <passi>` (chiude anche il popup della passiva). Salvataggio di prova:
+  materiali a 9999, copia prima in `tmp\player_before_kb60.json`.
 
 ### Sblocco alla missione (12 ottobre, offline)
 
