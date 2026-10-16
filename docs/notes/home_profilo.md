@@ -20,6 +20,11 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
   `4001/wait_7.png` servita dal WW, letta dalle risorse 7). Agli altri 52 la copia di thethiny toglie parti
   (forse i file uguali): restano vuoti. Nuvoletta `MyPage_ChirishiBaloon` JP con `fontName` WW
   (`DFPSoGei-W5.TTF`): col calligrafico JP il «!» usciva «/». Banco: Chirithy e nuvoletta ok (`chir_tap2`).
+- Senza party, toccando la piazza (16-10): Rankings + Party Search; con il bonus del primo party non riscosso
+  (`userParty.flagFirstReward` 0) anche il banner «Join a party and earn Jewels!» (`MyPage_JewelGet_Big_ver240`).
+  Segnaposto originali in `MyPageScene_ver340` (dentro RightUI x 350): JewelGet_Big -189/430, Rank_Solo1 -345/450
+  (col banner), Rank_Solo2 86/470 (senza), RightUI_Solo 302/470 (Party Search). Rankings copre il bordo sinistro del
+  banner gia' nei dati originali: si lascia (decisione dell'utente, I-097).
 - Tocco sulla piazza (`SceneMyPage::init` $_10 -> `FUN_00bc0b08` -> `FUN_00bc1028`): chi non e' in
   party (`userParty.isJoin` 0) vede Chirithy con la nuvoletta `MyPage_ChirishiBaloon.json`
   (`Txt_Name`, testo 101000022, «Join a party and make new friends!»), generata da
