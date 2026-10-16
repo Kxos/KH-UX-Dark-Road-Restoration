@@ -112,7 +112,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Prossimo**: i punti rimasti dalla lista del 15-10 qui sopra (Limited I-118 e Blue Fairy I-126 da decidere,
   crash intermittenti; monete degli slot I-093: comportamento del client, chiuso il 16-10), NPC JP con parti mancanti (52, home_profilo.md).
 
-### Orologio finto (16-10, fatto e provato sul banco)
+### Orologio finto (16-10: in funzione sul banco, due punti aperti sotto)
 
 - Ora del server = data reale nel **mese gemello** 2016-2021 (`server/clock.js`), scostamento fissato a ogni
   `/khux/login`; periodi e scadenze sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00).
@@ -128,6 +128,18 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `tools\ldplayer\session\login-time.ps1 -N 5` ([server.md](docs/notes/server.md#orologio)).
 - Copia del salvataggio all'inizio delle prove: `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-clock\` (era gia'
   migrato, clockVersion 1: il server con il codice nuovo era gia' stato avviato alle 11:46 del 16-10).
+- `KHUX_REAL_NOW` + `KHUX_SERVER_TIME` insieme spostano anche la data finta fissa: usarne uno solo.
+- **Chiuso**: date delle medaglie/keyblade del 2016 (numeri in ms dell'ora finta vecchia, saltati dalla v1):
+  migrazione `clockVersion` 2 (numeri prima del 2022 spostati in blocco, il piu' recente = adesso). Salvataggio vero
+  migrato il 16-10 (medaglie dal 13-10 al 16-10 2026); copia prima: `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-clock-v2\`.
+- **Aperto**: criterio «login +1 s al massimo» NON verificato (la misura dal lancio dell'app, 52-87 s, e' dominata
+  dall'emulatore; i 14-26 s di riferimento avevano la stessa misura ma un emulatore piu' rapido; la parte del server,
+  prima richiesta -> `/khux/login`, e' invariata a 4,5-5 s).
+- **Aperto**: attesa del client di ~10 s fra `/ranking/parade` e `/web/notices` (prima ~2 s). A/B del 16-10: uguale
+  con la data finta vecchia (`KHUX_SERVER_TIME`) e con l'orologio finto, quindi **non dipende dalla data**; da capire.
+- Effetti delle prove sul salvataggio: 300 jewel spesi dai «continue» automatici di `story.ps1` (Lady Luck e altri
+  keyblade hanno il deck di medaglie vuoto: il giocatore perde); keyblade scelto passato a Treasure Trove; 3 premi
+  Daily nei Presents (da riscuotere).
 
 ### Decisioni dell'utente (16-10 sera) per i prossimi lavori
 
@@ -139,7 +151,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   (Lambstar, Foxstar, ...), che vanno **recuperate** (decisione dell'utente): nel JP 4.3.1 ci sono 348
   `lwf/pet/part/NNN` e `img/petParts`, ma `master_data/petParts.json` e' vuoto (serve la tabella nome -> id). Ordine:
   1) recupero parti Spirit (fatto 16-10: 668 parti, home_profilo.md; 38 accessori premio senza grafica), 2) design Limited approvato e implementato 16-10 (home_profilo.md#limited; premi tutti mappati, reference/missions/limited_rewards_map.md; i biglietti si accumulano finche' non ci sono i banner /gacha/*).
-- **Orologio finto (mesi gemelli)**: FATTO il 16-10 (sezione sopra). Design approvato (`docs/superpowers/specs/2026-10-16-orologio-finto-design.md`),
+- **Orologio finto (mesi gemelli)**: implementato il 16-10 (sezione sopra, punti aperti). Design approvato (`docs/superpowers/specs/2026-10-16-orologio-finto-design.md`),
   piano in 7 task (`docs/superpowers/plans/2026-10-16-orologio-finto.md`) da far rivedere all'utente e scegliere il
   modo di esecuzione (subagent-driven o nativo). Fatti verificati il 16-10: conti alla rovescia sull'ora del server,
   master riscaricato per intero a ogni cambio di revisione (login 19-77 s), I-128 data del dispositivo aperto.
