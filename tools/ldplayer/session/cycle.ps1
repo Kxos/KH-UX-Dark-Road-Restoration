@@ -1,6 +1,7 @@
 # Giro completo da NUOVO giocatore: cancella il salvataggio, riavvia il server, tutorial,
 # Prologue seguendo lo schermo (-Seek), risultati, SKIP del dialogo, home.
 #   .\cycle.ps1 -Tag <prefisso screenshot> [-Revision N]
+# -Revision = BASE della revisione del master (run-server.ps1)
 param([string]$Tag = 'c', [int]$Revision = 117)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $log = 'D:\Progetto_Restauro_KH_UX\logs\server.log'
