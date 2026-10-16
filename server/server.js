@@ -790,6 +790,7 @@ function migrateClock() {
   if (player.pet?.parts) for (const k of Object.keys(player.pet.parts)) player.pet.parts[k] = now;
   for (const p of player.presents || []) { p.limitDatetime = now + 29 * 86400000; p.created = now; }
   if (player.beginnerSince) player.beginnerSince = now;
+  if (player.party && typeof player.party.createDate === 'string') player.party.createDate = now;
   player.missions = {};
   delete player.weeklyLux;
   delete player.clockSettled;
@@ -2190,7 +2191,7 @@ function userSkillsData(now = serverTime(), medals = userMedalList()) {
 }
 
 function medalTraits(userMedalId) {
-  return (player.medalTraits?.[userMedalId] || []).map((t) => ({ ...t, userMedalId }));
+  return (player.medalTraits?.[userMedalId] || []).map((t) => ({ ...t, userMedalId, getDatetime: outTime(t.getDatetime, serverTime()) }));
 }
 
 function userMedalsData(now) {
@@ -3049,7 +3050,7 @@ function handler(scheme) {
         (t) => (medalGuilt.GUILT_RANGES[t] || {}).max || 0) });
       // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
       if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail', 'partyupdate', 'partyleave', 'partyemptylist'].includes(kind)) {
-        return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer, addPresent,
+        return respondPartyRanking({ send, ret, serverTime, realNow, outTime, player, userObject, userDetailData, userAvatarData, savePlayer, addPresent,
           selfElement: (now, partyId) => selfPlayerElement(now, userMedalsData(now)[0], partyId),
           keyblade: () => userKeybladeData(favoriteKeyblade()), lastStoryQuest: () => stageNumber(lastStoryStageId()), weeklyLux: () => weeklyLux() },
           res, kind, req.url.split('?')[0].toLowerCase(), entry.bodyDecoded);
@@ -3372,7 +3373,7 @@ module.exports._test = {
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear,
   // server/test-clock-migration.js
-  migrateClock, clockMonthIndex: clock.monthIndex,
+  migrateClock, clockMonthIndex: clock.monthIndex, userSkillElement, userSphereData, userKeybladeData,
   // server/test-clock-server.js
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-limited.js
