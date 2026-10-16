@@ -213,7 +213,7 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   «Complete quest x1/x2», «Nearly 10M downloads», «Defeat 100 enemies», Story Quest Campaign fino alla
   500, le due speciali sui Lux totali). Rotazione in `server/limited_rotation.json`: il server
   (`limitedActive`) manda solo la campagna del mese e quella della settimana, dall'**ora reale**
-  (quella del server riparte dal 15-5-2021 a ogni avvio); periodo = numero del mese/della settimana
+  (dal 16-10 tutti i periodi si calcolano sull'ora reale, server/clock.js); periodo = numero del mese/della settimana
   reale (lunedi' 08:00 UTC), quindi una campagna che ritorna riparte da zero.
 - Condizioni: 4 Lux del periodo, 33 Lux totali (speciali), 30 storia fino alla quest N, 1 quest, 50
   nemici sconfitti (`enemyDeadNumber` di `/stage/clear`). `missions[].numUpper/numLower` sono uint64
@@ -224,7 +224,18 @@ Prova a secco (14-10): pacchetto 81,6% della riserva, indice = installato: basta
   Spooky Cookie) -> `limitedDrawTicket2` (banner Shop payType 7/8, `/gacha/*` non ancora fatte), 7
   titolo (12601 «With Gratitude»), 20 parte avatar (Snuggly). Mappa e prove:
   `reference\missions\limited_rewards_map.md`.
-- Conto alla rovescia: «28719 days left» (endDate fisso del master, come le Weekly).
+- Conto alla rovescia vero dal 16-10 (orologio finto, `docs/superpowers/specs/2026-10-16-orologio-finto-design.md`):
+  il server riscrive al volo `endDate` delle righe Limited (prossima occorrenza del gruppo) e Weekly (serie A
+  3001-3010 settimane pari, B 3011-3020 dispari), nell'ora finta del mese gemello. Banco 16-10 (venerdi' 09:58
+  UTC): Daily «22 hours left», Weekly e Limited settimanale «2 days left», Limited mensile «15 days left»; dopo
+  un riavvio stessi valori (21 h alle 10:47) e master non riscaricato (`ck2_*`). Prima: «28719 days left».
+- **Premi non riscossi nei Presents**: al cambio di giorno/settimana/mese reale (08:00 UTC; lunedi'; giorno 1)
+  le missioni Daily/Weekly/Limited completate e non riscosse vanno nei Presents («Daily Mission reward»,
+  «Weekly Mission reward», «Limited Mission reward», scadenza 30 giorni). Banco 16-10 con
+  `relogin.ps1 -RealNow 2026-10-19T09:00:00Z`: i 3 premi Daily (Jewel x30) completati e lasciati il venerdi'
+  sono comparsi nei Presents («Expires in 29 days»), Daily azzerate, Weekly «6 days left», nuova campagna breve
+  («Special Campaign: Defeat 100 enemies!», 6 days), mensile «12 days left»; master riscaricato (106
+  tabelle), nessuna risorsa (`ck3_*`).
 - Prova offline `node server/test-limited.js`; al banco la scheda mostra icone e nomi delle parti.
 
 <a id="missioni-schede"></a>

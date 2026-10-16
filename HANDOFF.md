@@ -17,7 +17,8 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 38**, **revisione master 117** (default degli script di sessione); dettagli sotto.
+Stato del banco: **risorse 38**, **revisione master: BASE 117** (default degli script di sessione; il server manda
+`117*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto.
 
 ```powershell
 # emulatore (se spento)
@@ -111,6 +112,23 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Prossimo**: i punti rimasti dalla lista del 15-10 qui sopra (Limited I-118 e Blue Fairy I-126 da decidere,
   crash intermittenti; monete degli slot I-093: comportamento del client, chiuso il 16-10), NPC JP con parti mancanti (52, home_profilo.md).
 
+### Orologio finto (16-10, fatto e provato sul banco)
+
+- Ora del server = data reale nel **mese gemello** 2016-2021 (`server/clock.js`), scostamento fissato a ogni
+  `/khux/login`; periodi e scadenze sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00).
+  Daily/Weekly/Limited mostrano il tempo vero (banco: 22 hours / 2 days / 15 days il venerdi' 16-10).
+- **Revisione del master = BASE*100000 + scadenze settimanali/mensili passate dal 1/1/2026** (oggi 11700051):
+  `-Revision` degli script e' la BASE (117, da alzare come prima dopo ogni modifica dei master). Il client
+  riscarica il master una volta a settimana/mese, mai le risorse (`darkVersionRes` resta 117).
+- Nuovo `-RealNow <ISO>` in `run-server.ps1`/`relogin.ps1` (`KHUX_REAL_NOW`): sposta l'ora reale del server per
+  provare un cambio di settimana (`relogin.ps1 -Tag x -RealNow 2026-10-19T09:00:00Z`), poi `relogin.ps1` senza per
+  tornare all'ora vera. Attenzione: dopo un salto in avanti `player.clockSettled` resta nel futuro finche' l'ora
+  vera non lo raggiunge (le consegne nei Presents di quei giorni saltano).
+- Premi completati e non riscossi -> Presents al cambio di periodo (provato: 3 Daily). Misura del login:
+  `tools\ldplayer\session\login-time.ps1 -N 5` ([server.md](docs/notes/server.md#orologio)).
+- Copia del salvataggio all'inizio delle prove: `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-clock\` (era gia'
+  migrato, clockVersion 1: il server con il codice nuovo era gia' stato avviato alle 11:46 del 16-10).
+
 ### Decisioni dell'utente (16-10 sera) per i prossimi lavori
 
 - **Limited (I-118), design in corso (brainstorming, percorso «bounded»)**: come l'originale, due livelli nella scheda
@@ -121,7 +139,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   (Lambstar, Foxstar, ...), che vanno **recuperate** (decisione dell'utente): nel JP 4.3.1 ci sono 348
   `lwf/pet/part/NNN` e `img/petParts`, ma `master_data/petParts.json` e' vuoto (serve la tabella nome -> id). Ordine:
   1) recupero parti Spirit (fatto 16-10: 668 parti, home_profilo.md; 38 accessori premio senza grafica), 2) design Limited approvato e implementato 16-10 (home_profilo.md#limited; premi tutti mappati, reference/missions/limited_rewards_map.md; i biglietti si accumulano finche' non ci sono i banner /gacha/*).
-- **Orologio finto (mesi gemelli)**: design approvato (`docs/superpowers/specs/2026-10-16-orologio-finto-design.md`),
+- **Orologio finto (mesi gemelli)**: FATTO il 16-10 (sezione sopra). Design approvato (`docs/superpowers/specs/2026-10-16-orologio-finto-design.md`),
   piano in 7 task (`docs/superpowers/plans/2026-10-16-orologio-finto.md`) da far rivedere all'utente e scegliere il
   modo di esecuzione (subagent-driven o nativo). Fatti verificati il 16-10: conti alla rovescia sull'ora del server,
   master riscaricato per intero a ogni cambio di revisione (login 19-77 s), I-128 data del dispositivo aperto.
