@@ -138,7 +138,7 @@ function respondPartyRanking(deps, res, kind, p, body) {
   if (kind === 'partymembers') {
     const partyUserList = pt ? [{
       ...deps.selfElement(now, PARTY_ID),
-      userKeyblade: deps.keyblade(), userRanking: { lux: player.lux || 0, rank: 1 }, lastStageId: 0,
+      userKeyblade: deps.keyblade(), userRanking: { lux: deps.weeklyLux(), rank: 1 }, lastStageId: deps.lastStoryQuest(),
       comment: player.comment || '', linkPlatformId: '', userColosseumRanking: 0, userPvpRanking: 0, raidHelpNumber: 0,
     }] : [];
     return send(res, 200, withParty({ partyUserList }));
