@@ -9,7 +9,10 @@ let p = n.noticesPage(U(2026, 10, 16, 15));
 check(p.includes('About game data updates'), 'titolo base');
 check(!p.includes('Game data updated today'), 'non e il giorno dell aggiornamento');
 check(p.includes('Next update: in 2 days 17 hours'), 'venerdi 15:00 -> 2 giorni 17 ore');
-check(p.indexOf('About game data updates') < p.indexOf('About this restoration server'), 'notizia fissa in cima');
+const pos = (s) => p.indexOf(`<span class="x">${s}</span>`);
+check(pos('About game data updates') >= 0 && pos('About game data updates') < pos('Differences from the original game')
+  && pos('Differences from the original game') < pos('Missions'), 'ordine: dati aggiornati, differenze, poi il resto');
+check(!p.includes('restored'), 'niente elenchi di modifiche');
 check(p.includes('Differences from the original game') && p.includes('Limited Missions rotate'), 'notizia differenze');
 check(p.includes('<a class="row" href="#n0"') && p.includes('id="d0"'), 'struttura elenco');
 
@@ -26,8 +29,6 @@ check(p.includes('Next update: in 23 hours'), 'ore al singolare/plurale');
 p = n.noticesPage(U(2026, 10, 19, 7) + 30 * 60000);
 check(p.includes('Next update: in less than an hour'), 'meno di un ora');
 
-const sum = n.NOTICES.find((x) => x.title === 'About this restoration server');
-check(sum && sum.body.length === 2 && !/purchases/.test(sum.body.join(' ')), 'riassunto senza acquisti');
 check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && /no purchases/.test(x.body.join(' '))), 'acquisti nelle differenze');
 
 n.NOTICES.push({ date: '1', tag: 'X', title: 'a<b>"&', body: ['<script>'] });

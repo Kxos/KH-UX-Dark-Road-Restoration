@@ -27,6 +27,7 @@ const clock = require('./clock');
 
 // Ogni funzione che differisce dall'originale ha una notizia (docs/notes/home_profilo.md#notices-album)
 const DIFFERENCES_BODY = [
+  'This is a private restoration of KINGDOM HEARTS Union χ[Cross]. Your progress is saved only on this restoration server.',
   'The in-game date is set between 2016 and 2021 so that the original game keeps working. Missions reset at the real times shown in their countdowns.',
   'Completed missions that you did not collect before they end are sent to your Presents.',
   'Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.',
@@ -62,21 +63,17 @@ function updateNotice(realMs) {
     body: updateBody(realMs) };
 }
 
+// Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
+// elenchi di modifiche. Le prime due (dati aggiornati e differenze) restano fisse in cima.
 const NOTICES = [
-  { date: '10/14', tag: 'IMPORTANT', title: 'About this restoration server',
-    body: ['This is a private, offline restoration of KINGDOM HEARTS Union χ[Cross].',
-      'Your data is saved only on this server.'] },
+  { date: '10/16', tag: 'INFORMATION', title: 'Differences from the original game',
+    body: DIFFERENCES_BODY },
+  { date: '10/16', tag: 'INFORMATION', title: 'Missions',
+    body: ['Open the scroll under your avatar on the home screen to see your Beginner, Daily, Weekly and Limited Missions, then tap Receive to collect the rewards.',
+      'Daily Missions reset every day, Weekly Missions every Monday and Limited Missions with their campaign: the time left is shown on each tab.'] },
   { date: '10/14', tag: 'INFORMATION', title: 'Supernova and Dual Meow Wow',
     body: ['Equipping a Supernova Medal lets you unleash its powerful Supernova once per quest: tap the button under the Burst gauge during your turn.',
       'Five of the same Dual Meow Wow Medals are needed to grant Supernova or strengthen the Supernova of a specific Medal (Evolve, with the base Medal at max level).'] },
-  { date: '10/14', tag: 'UPDATE', title: 'Original enemy graphics restored',
-    body: ['Most enemies of the story quests now use their original graphics.'] },
-  { date: '10/14', tag: 'UPDATE', title: 'Special Attack effects restored',
-    body: ['Special Attacks raise and lower STR and DEF again, with the buff and debuff icons shown in battle.'] },
-  { date: '10/13', tag: 'INFORMATION', title: 'Daily and Weekly Missions',
-    body: ['Open the scroll under your avatar on the home screen to see your missions, then tap Receive to collect the rewards.'] },
-  { date: '10/16', tag: 'INFORMATION', title: 'Differences from the original game',
-    body: DIFFERENCES_BODY },
 ];
 const TAG_COLOR = { EVENT: '#36c9d6', CAMPAIGN: '#8a3fc4', UPDATE: '#9fb85a', IMPORTANT: '#e0405a', INFORMATION: '#3f7fd0' };
 
