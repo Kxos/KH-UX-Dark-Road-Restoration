@@ -1,6 +1,6 @@
 # Shop: banner delle estrazioni, catalogo, sblocchi e rotazione — design
 
-Stato: bozza da rivedere (16-10-2026). Decisioni prese con l'utente nella discussione del 16-10.
+Stato: approvata (16-10-2026). Decisioni prese con l'utente nella discussione del 16-10.
 
 ## 1. Obiettivo
 
@@ -129,8 +129,7 @@ quel biglietto**. Prima non escono (modifica di `limitedActive`/rotazione in ser
   normale e si ritoccano i premi di missioni e quest (non i prezzi).
 
 ### 4.9 Catalogo (WebView)
-Pagina servita dal nostro server, aperta da Details della piastra Catalog (e dai Details di ogni
-banner, con un collegamento in cima). Contenuto:
+Pagina servita dal nostro server, aperta solo da Details della piastra Catalog. Contenuto:
 - elenco di tutti i banner con immagine, nome, date originali, stato (disponibile ora / in un'altra
   settimana o stagione / bloccato con la condizione);
 - filtri: periodo di uscita, **anniversario** (Y1 7/4/2016-6/4/2017 ... Y5, Final dal 7/4/2021),
@@ -184,11 +183,18 @@ Ogni sotto-progetto ha il suo piano e le sue prove (offline + banco).
   estrazione x1/x10 con gemme e con biglietti, animazione e medaglie nuove nell'elenco, salvataggio
   coerente; nessun crash in 10 aperture dello Shop.
 
-## 8. Punti aperti
+## 8. Punti risolti (16-10)
 
-- Il client ricarica lo Shop alla chiusura della WebView? (piano 3)
-- Composizione dei pool per epoca e tabelle di probabilita' per tipo: proposta nel piano 2, da
-  approvare.
-- 40 banner senza data di fine; conflitto sulla data d'inizio dello Small Deal; «Common Medal
-  Carnival» forse solo JP (banners_ww.md).
-- Banner Spirit Blind Box (parti dello Spirit, `/gacha/petdraw`): fuori da questo design, dopo.
+- **Ricarica dello Shop alla chiusura della WebView:** prova al banco anticipata al piano 1. Se lo
+  Shop non si ricarica vale la riserva del 4.9 (la pagina dice di uscire e rientrare).
+- **Pool per epoca e probabilita' per tipo:** tabelle proposte nel piano 2 e approvate dall'utente
+  prima del codice.
+- **Banner senza data di fine (40):** se esce dopo un banner della stessa serie, finisce il giorno
+  prima; altrimenti per tipo: Free Deal del lunedi'/del giorno 1 giorno, Supernova Deal settimanali
+  2019 7 giorni, banner del giorno 1 fino a fine mese; Beginner's permanenti. Il catalogo indica le
+  date ricostruite.
+- **Small Deal:** due righe. Deal a tempo 24/6/2016-8/7/2016 (notice 19084) e deal permanente dal
+  4/7/2016 («07/04/16» della wiki in formato USA) fino al 14/3/2019.
+- **«Common Medal Carnival»:** escluso (nessun dato, uscita WW non verificata).
+- **Spirit Blind Box (`/gacha/petdraw`):** fuori da questa specifica, design proprio dopo il piano 3;
+  fino ad allora le sue righe non compaiono nel catalogo.
