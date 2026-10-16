@@ -52,6 +52,7 @@ function updateBody(realMs) {
   return [
     'Every Monday and on the 1st of each month, the game downloads updated game data (missions and events).',
     'The first time you open the game after an update, loading takes longer than usual. Please keep the app open until the home screen appears. Later logins are fast again.',
+    'If the app is closed during the download, nothing is lost: the download simply starts again the next time you open the game.',
     'Next update: ' + countdownText(next - realMs),
   ];
 }
