@@ -151,6 +151,7 @@ Ultima revisione: 13 ottobre 2026.
 
 | ID | Stato | Titolo | Dettaglio | Prova |
 |---|---|---|---|---|
+| I-128 | APERTO | Data del dispositivo: il client mostra da solo «End of Service» e non si connette se l'orologio del telefono e' dopo il 29/6/2021 (sul banco `phaseb-guest.sh` porta l'emulatore al 2021). Far cambiare la data all'utente e' escluso (decisione dell'utente 16-10): va trovata un'altra strada, insieme alla scelta di dove girera' il server (PC di casa, telefono, APK modificato). I conti alla rovescia invece seguono l'ora del server | [server](notes/server.md#master), [protector](notes/protector.md) | banco 16-10 |
 | I-029 | APERTO | Contatti esterni (thethiny, Roboloid, r/KHUx, Arena7664, Traverse Town): compito dell'utente | [ricerca_esterna](notes/ricerca_esterna.md#contatti) | 10-09 |
 
 ## Chiusi
