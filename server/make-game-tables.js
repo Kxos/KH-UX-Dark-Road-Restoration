@@ -223,9 +223,12 @@ if (process.env.KHUX_MEDALS_ALL === '1') {
 const MEDAL_BGM = JSON.parse(fs.readFileSync(path.join(__dirname, 'medal_bgm.json'), 'utf8')).medals;
 const bgmKey = (s) => String(s).toLowerCase().replace(/\(ex(\+?)\)/, '[ex$1]').replace(/[^a-z0-9[\]+&]/g, '');
 const bgmByName = new Map(Object.entries(MEDAL_BGM).map(([n, id]) => [bgmKey(n), id]));
+// Supernova (SN/SN+/SN++ - X, Supernova - X): il brano della medaglia base X (decisione dell'utente 16-10; nell'originale
+// e' documentata solo Supernova - Sephiroth)
 let bgmRows = 0;
 for (const m of medals) {
-  const id = bgmByName.get(bgmKey(m.name)) || bgmByName.get(bgmKey(String(m.name).replace(/ A$/, '')));
+  const base = String(m.name).replace(/^(SN\+{0,2}|Supernova) - /, '');
+  const id = bgmByName.get(bgmKey(m.name)) || bgmByName.get(bgmKey(base)) || bgmByName.get(bgmKey(base.replace(/ A$/, '')));
   if (id) { m.bgm = id; bgmRows++; }
 }
 // Cid: khuxwiki «max 20 riduzioni dalla 2.0.0»: le 6★/7★ d'attacco con cost - minCost = 10

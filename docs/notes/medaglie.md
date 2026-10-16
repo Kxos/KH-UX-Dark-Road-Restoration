@@ -221,6 +221,11 @@ destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Su
   Sephiroth [EX] -> One-Winged Angel (sentiti dall'utente). Senza file: HD King Mickey [EX] (Vim and Vigor).
   Crash intermittente della home dopo il -Quick (pet `wait.lwf` non caricato, `[fn]`): non riprodotto
   con le stesse risorse dopo un riavvio, da tenere d'occhio.
+  16-10 (master 113): le Supernova (SN/SN+/SN++ - X) prendono il brano della medaglia base X (decisione
+  dell'utente; nell'originale documentata solo Supernova - Sephiroth): +7 righe (SN++ - Final Boss Xion, SN++ - HD
+  Roxas, SN++ - Illustrated Xion, SN/SN+ - Casual Roxas, SN/SN+ - HD Xion [EX]), 78 in tutto. Prova mirata:
+  `D:\Progetto_Restauro_KH_UX	mpgm_save.js` (a server fermo) lascia nel salvataggio solo le 78 medaglie con
+  musica; salvataggio vero in `tmp\player_before_bgmtest.json`, da rimettere dopo la prova.
 - Unequip: `POST /user/medal/remove` (237); prima il client chiede `GET /user/medal/preremove`, a cui
   il server da' una risposta generica (ISSUES I-038).
 
