@@ -1,6 +1,6 @@
 # Orologio finto del server: mesi gemelli e scadenze vere
 
-Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisione 16-10: calcoli in ora reale, scadenze precalcolate).
+Data: 16 ottobre 2026. Stato: **bozza da rivedere** (idea dell'utente, raffinata in chat; 3.6 deciso il 16-10; revisioni 16-10: calcoli in ora reale, scadenze precalcolate, confine mensile alle 08:00, date salvate in ora reale).
 
 ## 1. Obiettivo
 
@@ -27,7 +27,8 @@ fine mese reale; dopo un riavvio del server i valori restano coerenti.
   Limited: mostra `endDate` della riga. Le scadenze di Weekly e Limited vengono quindi **solo dal
   master**.
 - Il client riscarica **tutte** le 106 tabelle quando cambia la revisione globale (la revisione per
-  tabella e' ignorata); costo misurato: login di ~19-50 s secondo l'emulatore.
+  tabella e' ignorata); costo misurato: login di 19-77 s secondo lo stato dell'emulatore (14-26 s
+  senza master nuovo).
 - Il dispositivo deve restare prima del 29/6/2021 (popup «End of Service» locale): problema
   separato, **fuori da questo design** (ISSUES I-128).
 
@@ -45,9 +46,8 @@ venerdi' 16/10/2020 15:00.
   gemelli si prende il piu' recente.
 - **Ripiego per febbraio** (28 giorni con inizio martedi'/sabato/domenica, 29 giorni con inizio
   diverso da sabato; primo caso reale: febbraio 2028): si usa un febbraio di 28 giorni qualunque
-  (il piu' recente). Per quel mese giorno della settimana e scadenza settimanale finti sono sfasati;
-  la Weekly usa comunque la scadenza calcolata sul calendario finto, quindi resta coerente con il
-  conto alla rovescia mostrato. Per un febbraio bisestile reale il 29 cade nel 1° marzo finto.
+  (il piu' recente). Per quel mese il giorno della settimana mostrato e' sfasato; azzeramenti e conti
+  alla rovescia restano esatti (3.2). Per un febbraio bisestile reale il 29 cade nel 1° marzo finto.
 - **Gemello fissato al login.** Il client prende l'ora del server al login e poi la fa scorrere da
   solo. Il server sceglie quindi il gemello a ogni login (`/khux/login`) e tiene quello scostamento
   (data finta = data reale + scostamento) fino al login successivo. Se la sessione attraversa la fine
@@ -56,9 +56,11 @@ venerdi' 16/10/2020 15:00.
   2019): client e server vedono sempre la stessa data, AP, training e regali restano coerenti. Le
   scadenze si calcolano nello stesso riferimento. Lo scostamento si salva (`player.clockOffset`)
   solo per sopravvivere a un riavvio del server a gioco aperto; a ogni login si ricalcola.
-- Lo scostamento dipende **solo dal mese reale del login**: due login nello stesso mese danno lo
-  stesso scostamento, quindi il master in cache nel client resta valido; cambia solo a un cambio di
-  mese, che e' anche una scadenza mensile (nuova revisione, 3.3).
+- Lo scostamento dipende **solo dal mese reale del login**, contato con lo stesso confine della
+  scadenza mensile (dal giorno 1 alle 08:00 UTC, cioe' il mese di «adesso - 8 ore»): due login nello
+  stesso mese danno lo stesso scostamento e il master in cache nel client resta valido; cambia
+  esattamente insieme alla revisione mensile (3.3). Con il confine a mezzanotte, chi entrava fra le
+  00:00 e le 08:00 del giorno 1 avrebbe avuto ora nuova e master vecchio (scadenze sbagliate per 8 ore).
 - Limite di sicurezza: se una sessione lunghissima portasse la data finta oltre il 28/6/2021, il
   server la ferma al 28/6/2021 23:59 fino al login successivo.
 
@@ -68,8 +70,9 @@ venerdi' 16/10/2020 15:00.
   = da lunedi' 08:00 UTC reali, mese = dal giorno 1 08:00 UTC reale. Contatori delle missioni,
   rotazione Limited, consegna nei Presents, `weeklyLux` usano solo questi indici.
 - **L'ora finta serve solo a cio' che si manda al client**: `serverTime`, orari delle risposte
-  (`lastApDatetime`, `recoverDatetime`, `limitDatetime`, `getDatetime`) ed `endDate` del master =
-  istante reale + scostamento della sessione (3.1).
+  (`lastApDatetime`, `recoverDatetime`, `limitDatetime`, `getDatetime`, `beginnerLimitTime`) ed
+  `endDate` del master = istante reale + scostamento della sessione (3.1). Il server salva solo
+  istanti reali (3.7).
 - Cosi' il ripiego di febbraio (3.1) non sposta mai un azzeramento: sfasa solo il giorno della
   settimana mostrato, mentre i conti alla rovescia restano esatti perche' scadenza e «adesso» sono
   traslati dello stesso scostamento.
@@ -116,12 +119,16 @@ Il client riscarica il master solo al login. Alla scadenza vera il server **camb
   contano solo per la nuova): niente premi doppi tenendo il gioco aperto per giorni;
 - `/user/mission/list` manda subito le righe della campagna nuova, che nel master in cache hanno
   gia' la scadenza giusta (precalcolo del 3.3);
-- la riscossione di una missione della campagna vecchia viene rifiutata;
+- la riscossione di una missione della campagna vecchia viene rifiutata (risposta normale, senza
+  premio; la missione sparisce dall'elenco);
 - **i premi delle missioni completate e non riscosse prima della scadenza vanno nei Presents**
   (comment «Limited Mission reward» / «Weekly Mission reward», scadenza dei regali come gli altri):
-  nessuno perde un premio guadagnato, niente da sfruttare. La consegna avviene alla prima richiesta
-  dopo la scadenza (elenco missioni, /mypage, Presents), una sola volta per missione e periodo
-  (`player.missions[id].received`).
+  nessuno perde un premio guadagnato, niente da sfruttare. Vale anche per le Daily (stessa regola,
+  una sola). **Un solo punto di controllo**: a ogni richiesta il server confronta gli indici di
+  giorno/settimana/mese reali con quelli dell'ultima chiusura salvata (`player.clockSettled`);
+  se uno e' avanzato, chiude i periodi passati (premi completati e non riscossi -> Presents, una
+  volta per missione e periodo, `player.missions[id].received`) e aggiorna `clockSettled`.
+  Costo a regime: tre confronti di interi per richiesta.
 - Febbraio senza gemello: il ripiego del 3.1 va bene all'utente (16-10).
 
 ### 3.6b Velocita' del login (richiesta dell'utente)
@@ -137,9 +144,8 @@ Regole del design:
   passata (o a un nostro cambio dei master): al massimo ~5 volte al mese, mai a ogni login;
 - il gemello e le scadenze al login sono calcoli di pochi microsecondi;
 - **cache per revisione e data dei file**: tabelle lette, convalidate, cifrate e con md5 calcolati una
-  volta (ricalcolo solo se cambia la revisione o un file di `master_data`)
-  (la `mission` con le scadenze applicate compresa), poi servite dalla memoria; oggi le si rifa' a
-  ogni richiesta;
+  volta, `mission` con le scadenze applicate compresa, poi servite dalla memoria (ricalcolo solo se
+  cambia la revisione o un file di `master_data`); oggi le si rifa' a ogni richiesta;
 - la consegna dei premi non riscossi nei Presents avviene una volta per periodo, non a ogni login.
 
 Prova: script di misura (`tools/ldplayer/session/login-time.ps1`, da scrivere) che fa N relogin e
@@ -159,7 +165,11 @@ Da convertire una volta (migrazione al primo avvio con la nuova versione):
 | `player.presents[].limitDatetime` | stringa finta | ms reali | +29 giorni da adesso per quelli non scaduti |
 | `player.beginnerSince` | stringa finta | ms reali | adesso (riparte la finestra Beginner di 30 giorni) |
 | pet training `readyAt` | ms dell'ora finta | ms reali | pronto subito |
-| `getDatetime` di medaglie, keyblade, parti, sfere | stringa finta | invariato | nessuna (solo visualizzazione) |
+| `getDatetime` di medaglie, keyblade, parti dello Spirit, sfere | stringa finta | ms reali | spostate in blocco in modo che la piu' recente sia l'istante della migrazione (l'ordine resta) |
+| `player.pet.expedition` mese del training («This Month's Training») | mese finto | indice del mese reale | si tiene il conteggio del mese corrente |
+
+Con i `getDatetime` in ms reali, cambiare gemello fra due login non mescola l'ordine «piu'
+recenti» della Medal List: tutto si converte con lo scostamento della sessione corrente.
 
 `player.missions[].period` e `player.weeklyLux.period` diventano indici sull'ora reale (3.2):
 cambiano scala una volta (al primo avvio si azzerano i contatori del periodo corrente, senza
@@ -173,7 +183,7 @@ consegne nei Presents per quel passaggio).
 - `server/tables/mission.json`: Weekly in due serie A/B (3.3).
 - `server/server.js`: `serverTime()`/`serverTimeAt()` usano `clock`; `respondMaster`/`masterBody`
   applicano le scadenze al volo e la revisione calcolata; migrazione del 3.7.
-- `server/pet.js`: training in ms reali.
+- `server/pet.js`: training e `getDatetime` delle parti in ms reali, mese del training reale.
 - Script di sessione: `-Revision` diventa la `BASE`.
 - `KHUX_SERVER_TIME` resta per le prove (data finta fissa, come oggi).
 
@@ -181,7 +191,9 @@ consegne nei Presents per quel passaggio).
 
 - `server/test-clock.js` (offline): gemelli per tutti i mesi 2026-2035 (giorno della settimana,
   giorno del mese, lunghezza, ripiego di febbraio), funzione monotona dentro un mese, fine
-  settimana/mese, revisione che cambia solo alle scadenze, data sempre fra 5/2016 e 5/2021.
+  settimana/mese, revisione che cambia solo alle scadenze, data sempre fra 5/2016 e 28/6/2021,
+  confine del mese alle 08:00 del giorno 1 (scostamento e revisione cambiano insieme), chiusura dei
+  periodi una sola volta (nessun premio doppio nei Presents, anche dopo un riavvio).
 - Prova delle scadenze al volo: tabelle `mission` servite con `endDate` = fine settimana/mese.
 - Banco: Daily/Weekly/Limited con i giorni veri; riavvio del server -> stessi valori; un cambio di
   settimana simulato (`KHUX_REAL_NOW` per spostare l'ora reale nelle prove) -> master riscaricato,
