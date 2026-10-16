@@ -25,6 +25,13 @@ Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). To
   Segnaposto originali in `MyPageScene_ver340` (dentro RightUI x 350): JewelGet_Big -189/430, Rank_Solo1 -345/450
   (col banner), Rank_Solo2 86/470 (senza), RightUI_Solo 302/470 (Party Search). Rankings copre il bordo sinistro del
   banner gia' nei dati originali: si lascia (decisione dell'utente, I-097).
+- Bolla dei membri del party in home (16-10, banco): il pulsante con le due frecce cambia il valore mostrato
+  (Quest Progress, Weekly Lux, Raid Support, PVE Ranking, PVP Ranking) da `partyUserList` di `/party/member/list`.
+  Quest Progress = `lastStageId` mostrato com'e' (numero della quest, non lo stageId: con lo stageId «Quest 5020»):
+  ora la storia (id 1-525) piu' avanzata superata (`lastStoryStageId`, «Quest 132»). Weekly Lux = `userRanking.lux`:
+  prima i Lux totali, ora `player.weeklyLux` {period, lux} (settimana delle missioni settimanali, sommato a ogni
+  /stage/clear). Raid Support `raidHelpNumber` 0, PVE/PVP «---» (`userColosseumRanking`/`userPvpRanking` 0): giusti
+  finche' raid, Colosseum e PvP non ci sono.
 - Tocco sulla piazza (`SceneMyPage::init` $_10 -> `[fn]` -> `[fn]`): chi non e' in
   party (`userParty.isJoin` 0) vede Chirithy con la nuvoletta `MyPage_ChirishiBaloon.json`
   (`Txt_Name`, testo 101000022, «Join a party and make new friends!»), generata da

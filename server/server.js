@@ -1240,6 +1240,18 @@ function userMaterialsData() {
     .map(([id, n]) => ({ userMaterialId: Number(id), materialId: Number(id), number: n }));
 }
 
+// Missione di storia (id 1-525) piu' avanzata gia' superata. Il suo numero (stageNumber) va in lastStageId dei
+// membri del party: la bolla della home in Quest Progress mostra il valore com'e' («Quest 5020» con lo stageId,
+// «Quest 0» con 0; banco 16-10).
+function lastStoryStageId() {
+  const done = new Set(Object.keys(player.stageScores || {}).map(Number));
+  let best = null;
+  for (const r of masterRows('stage')) {
+    if (done.has(r.stageId) && r.id >= 1 && r.id <= 525 && (!best || r.id > best.id)) best = r;
+  }
+  return best ? best.stageId : 0;
+}
+
 function stageNumber(stageId) {
   if (!stageId) return 0;
   return masterRows('stage').find((r) => r.stageId === stageId)?.id ?? 0;
@@ -1394,6 +1406,7 @@ function respondStageClear(res, req) {
   }
   missionCount('quest', 1);
   missionCount('lux', lux);
+  weeklyLux(lux);
   const cleared = Array.isArray(req?.clearMissionIds) ? [...req.clearMissionIds] : [];
   (stage?.submissionRequire || []).forEach((kind, i) => {
     if (kind === 29 && lux >= (stage.submissionNum?.[i] ?? Infinity) && !cleared.includes(i + 1)) cleared.push(i + 1);
@@ -1700,6 +1713,18 @@ function missionState(row, nowMs) {
   let s = player.missions[row.id];
   if (!s || s.period !== period) s = player.missions[row.id] = { period, count: 0, received: false };
   return s;
+}
+
+// Lux della settimana (bolla della home «Weekly Lux» dei membri del party, userRanking.lux): stessa settimana
+// delle missioni settimanali (missionType 3), player.weeklyLux = {period, lux}. weeklyLux(n) aggiunge, weeklyLux() legge.
+function weeklyLux(n = 0) {
+  const nowMs = Date.parse(serverTime().replace(' ', 'T') + 'Z');
+  const row = masterRows('mission').find((r) => r.missionType === 3);
+  const base = row ? masterDateMs(row.startDate) : Date.UTC(2021, 0, 4);
+  const period = Math.floor((nowMs - base) / (7 * 86400000));
+  if (!player.weeklyLux || player.weeklyLux.period !== period) player.weeklyLux = { period, lux: 0 };
+  player.weeklyLux.lux += n;
+  return player.weeklyLux.lux;
 }
 
 function missionCount(counter, n) {
@@ -2886,7 +2911,7 @@ function handler(scheme) {
       if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail', 'partyupdate', 'partyleave', 'partyemptylist'].includes(kind)) {
         return respondPartyRanking({ send, ret, serverTime, player, userObject, userDetailData, userAvatarData, savePlayer, addPresent,
           selfElement: (now, partyId) => selfPlayerElement(now, userMedalsData(now)[0], partyId),
-          keyblade: () => userKeybladeData(favoriteKeyblade()) },
+          keyblade: () => userKeybladeData(favoriteKeyblade()), lastStoryQuest: () => stageNumber(lastStoryStageId()), weeklyLux: () => weeklyLux() },
           res, kind, req.url.split('?')[0].toLowerCase(), entry.bodyDecoded);
       }
       // Avatar Boards: GET /user/sphere (azione 10, sostituisce l'elenco), POST /user/sphere/check e

@@ -105,7 +105,11 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 - **Master 112**: keyblade oltre +35 fino a +60 (passi da 0,1, Bad Guy Breaker a interi), provati sul banco: BGB a +60
   («Keyblade level max.»), Starlight a +35.5 (home_profilo.md#keyblade-oltre-35). Salvataggio di prova: materiali a 9999.
-- **Prossimo**: «Quest 0» nella bolla della home, poi i punti rimasti dalla lista del 15-10 qui sopra.
+- Fatto anche: Chirithy visibile (I-016, NPC originali JP), I-097 chiuso (sovrapposizione originale), BGM Medals
+  sulle Supernova (master 113, tutte provate dall'utente), bolla della home «Quest 132» e Weekly Lux settimanale.
+  Salvataggio: party rimesso, materiali a 9999.
+- **Prossimo**: i punti rimasti dalla lista del 15-10 qui sopra (Limited I-118 e Blue Fairy I-126 da decidere,
+  monete degli slot vuoti I-093, crash intermittenti), NPC JP con parti mancanti (52, home_profilo.md).
 
 ## Regole del lavoro (dell'utente)
 
