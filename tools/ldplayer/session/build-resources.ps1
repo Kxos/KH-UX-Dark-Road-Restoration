@@ -45,8 +45,8 @@ python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
 python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_textures fallito' }
-# lucchetto delle piastre di Shop > Draw (img/ui/ShopBut_Lock e _Disable, caricato sempre dalla
-# piastra: senza, crash 0x2c; I-133), copia di dark_Icon_Lock / _Disable del catalogo
+# piastre di Shop > Draw (I-133): lucchetto img/ui/ShopBut_Lock e _Disable (caricato sempre dalla
+# piastra) e But07_Disable (pulsante spento di una piastra bloccata); senza, crash 0x2c
 python -I recon\tools\make_shop_lock.py "$D\catalog\files" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_shop_lock fallito' }
 # Stock Medal (medaglia 1 degli slot vuoti, immagine 90000; I-075)
