@@ -100,8 +100,11 @@ venerdi' 16/10/2020 15:00.
   `/system/resourcesize`, `master.revision`/`commonRevision` di `respondMaster` e quelli che il
   piano verifichera' essere del master). Oggi lo stesso numero finisce anche in campi delle
   **risorse** (`darkVersionRes` e simili, `/system/status`): quelli restano costanti, altrimenti il
-  client potrebbe riscaricare ogni settimana i ~2,3 GB di risorse. Il piano verifica campo per campo
-  cosa legge il client.
+  client potrebbe riscaricare ogni settimana i ~2,3 GB di risorse. Fatto osservato (16-10): oggi
+  `versionDat`, `commonVersionDat`, `darkVersionRes` e `darkVersionDat` di `/system/status` valgono
+  gia' come la revisione del master, e nei quattro aumenti 114 -> 117 il client ha riscaricato solo
+  il master, mai le risorse (le risorse WW seguono `versionRes`/`versionResLow`). La separazione
+  resta come precauzione; il piano verifica campo per campo cosa legge il client.
 - Il master servito dipende **solo dalla revisione**: le scadenze si calcolano con lo scostamento del
   mese a cui appartiene la revisione (3.1), quindi a ogni revisione corrisponde un solo contenuto,
   che si puo' tenere in cache (3.6b).
