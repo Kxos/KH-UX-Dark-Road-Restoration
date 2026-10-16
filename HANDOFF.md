@@ -22,8 +22,15 @@ Stato del banco: **risorse 40**, **revisione master: BASE 118** (default degli s
 
 **Shop > Draw (16-10 sera): sotto-progetto 1 fatto e provato** ([shop.md](docs/notes/shop.md)): piastra Banner
 Catalog + DAILY DEAL! / SMALL DEAL! / Epic Medal Carnival in jewel (x1, x3, x10), banner di prova a biglietti con
-`relogin.ps1 -GachaTest`; LWF del risultato nel pacchetto statico `raisedraw_gen` (risorse 40). Prossimo: sotto-progetti
-2-3 (altri banner, scelta del gruppo dal catalogo: la chiusura dei Details non ricarica la lista). Aperti I-134, I-135.
+`relogin.ps1 -GachaTest`; LWF del risultato nel pacchetto statico `raisedraw_gen` (risorse 40). Missioni Beginner
+Draw/Nova/Spirit collegate (e3aeec1). Aperti I-134, I-135, I-136.
+
+**Prossimo (ripresa del 17-10): sotto-progetto 2 «Elenco dei banner originali».** Decisioni approvate nella spec
+(sezione 9 di [shop-banner-design](docs/superpowers/specs/2026-10-16-shop-banner-design.md)), piano scritto:
+[2026-10-16-shop-banner-originali.md](docs/superpowers/plans/2026-10-16-shop-banner-originali.md) (9 task). Manca
+la conferma dell'utente sul piano e sul modo di esecuzione (consigliato subagent-driven). Ricerca e script da portare
+in `D:\Progetto_Restauro_KH_UX\tmp\sp2` (research.md, scripts\). Poi sotto-progetto 3 (catalogo con filtri, sblocchi,
+rotazione, stagionali; la chiusura dei Details non ricarica la lista).
 
 ```powershell
 # emulatore (se spento)
