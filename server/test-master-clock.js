@@ -1,6 +1,6 @@
 // Master servito con l'orologio finto: node server/test-master-clock.js
 'use strict';
-const fs = require('fs'); const os = require('os'); const path = require('path');
+const fs = require('fs'); const os = require('os'); const path = require('path'); const crypto = require('crypto');
 // salvataggio temporaneo: mai server/save/
 const SAVE = path.join(os.tmpdir(), `khux-test-master-clock-${process.pid}.json`);
 try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
@@ -29,6 +29,10 @@ check(new Set([a, b]).size === 2 && [a, b].includes('2020-10-19 08:00:00') && [a
 // Limited: la mensile attiva scade il 1/11 08:00 finto
 const activeMonthly = t.LIMITED_ROTATION.monthly.find((ids) => ids.every((id) => t.limitedActive(id)));
 check(end(activeMonthly[0]) === '2020-11-01 08:00:00', `Limited mensile ${end(activeMonthly[0])}`);
+// rewardEndTime (conto alla rovescia delle missioni COMPLETE) uguale a endDate nelle righe riscritte
+check(rows.filter((r) => r.missionType === 3 || (r.missionType === 4 && r.endDate !== '2099-12-31 23:59:59'))
+  .every((r) => r.rewardEndTime === r.endDate), 'rewardEndTime diverso da endDate');
+check(rows.find((r) => r.id === activeMonthly[0]).rewardEndTime === '2020-11-01 08:00:00', 'rewardEndTime della Limited mensile');
 // stesso contenuto per la stessa revisione, e servito in meno di 50 ms dalla cache
 const b1 = t.masterBody('mission'); const t0 = process.hrtime.bigint();
 call(t.respondMaster);
@@ -42,6 +46,32 @@ check(st.darkVersionRes === 117 && st.versionDat === rev, `status ${st.versionDa
 // la settimana dopo: nuova revisione, nuove scadenze
 at('2026-10-19T09:00:00Z');
 check(t.masterRevisionNow() === rev + 1, 'revisione +1 al lunedi');
+
+// Revisione fissata per la sessione (/system/login): una scadenza passata a gioco aperto non cambia
+// ret().versionDat ne' il master servito (il client tornerebbe al titolo, banco 16-10)
+const raw = (fn, ...a) => { let b = null; quiet(() => fn(...a, { writeHead() {}, end(x) { b = x; } })); return b; };
+at('2026-10-26T07:55:00Z');
+call(t.respondLogin);
+const r0 = t.sessionRevision();
+check(r0 === t.masterRevisionNow(), `revisione della sessione ${r0}`);
+const m0 = call(t.respondMaster); const body0 = t.masterBody('mission');
+at('2026-10-26T08:01:00Z');
+check(t.masterRevisionNow() === r0 + 1, 'scadenza non passata');
+const m1 = call(t.respondMaster);
+check(m1.ret.versionDat === r0 && m1.ret.commonVersionDat === r0 && m1.ret.darkVersionDat === r0, `ret dopo la scadenza ${m1.ret.versionDat}`);
+check(m1.master.revision === r0 && m1.mission.md5 === m0.mission.md5, 'master cambiato a sessione aperta');
+// download a cavallo della scadenza: il corpo scaricato dopo corrisponde all'md5 dato prima
+const file = raw(t.respondMasterFile, { url: '/master/mission' });
+check(file.equals(body0) && crypto.createHash('md5').update(file).digest('hex') === m0.mission.md5, 'md5/corpo diversi dopo la scadenza');
+process.env.KHUX_RESOURCE_SIZE = '5';
+const rs = call(t.respondResourceSize, { masterRevision: r0, resourceRevision: 1e9 });
+const rsOld = call(t.respondResourceSize, { masterRevision: r0 - 1, resourceRevision: 1e9 });
+delete process.env.KHUX_RESOURCE_SIZE;
+check(rs.size === 0 && rsOld.size === 5, `resourcesize a sessione aperta: ${rs.size} / ${rsOld.size}`);
+// login successivo: revisione e master nuovi
+call(t.respondLogin);
+check(t.sessionRevision() === r0 + 1 && call(t.respondMaster).ret.versionDat === r0 + 1, 'revisione nuova al login');
+check(!t.masterBody('mission').equals(body0), 'master uguale dopo il nuovo login');
 
 Date.now = realNowFn;
 try { fs.unlinkSync(SAVE); } catch { /* tolto */ }

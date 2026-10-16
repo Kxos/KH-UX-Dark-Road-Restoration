@@ -289,10 +289,13 @@ function ret() {
     // server ne dichiarasse un'altra, riproporrebbe il download a ogni avvio.
     versionRes: latestResourceVersion(),
     versionResLow: latestResourceVersion(),
-    versionDat: masterRevisionNow(),
-    commonVersionDat: masterRevisionNow(),
+    // master: la revisione della sessione (fissata a /system/login), non quella del momento: se una
+    // scadenza passa a gioco aperto il client, vista una versionDat diversa, torna al titolo con
+    // «Game data has been updated» (banco 16-10, docs/notes/server.md#orologio)
+    versionDat: sessionRevision(),
+    commonVersionDat: sessionRevision(),
     darkVersionRes: REVISION,
-    darkVersionDat: masterRevisionNow(),
+    darkVersionDat: sessionRevision(),
     functionFlags: 0,
     serverTime: serverTime(),
     // "error" (con "viewUrl") e "isCommunicationMaintenance" sono facoltativi
@@ -329,6 +332,8 @@ function respondLogin(res) {
   // libcocos2dcpp.so: il server originale ci controllava l'integrita' del client.
   // Il ramo 0xfb di FUN_007c3204 pretende systemLogin (FUN_0077f650) e data
   // (FUN_0077f830); i link li legge FUN_00791070.
+  startSession(); // revisione del master fissa fino al prossimo login
+  if (player.created) savePlayer();
   const body = {
     ret: ret(),
     // Un nuovo giocatore NON scarica le risorse all'avvio (FUN_00ecd988): fa il
@@ -379,7 +384,7 @@ function respondResourceSize(res, req) {
   // manda in crash» del 7 ottobre riguardava un client senza master, revisione 0.)
   // Il crash dopo un aggiornamento dei master per chi rientra (0x12c1ee0) NON dipende da
   // qui: vedi HANDOFF, «Il crash dopo l'aggiornamento dei master».
-  const upToDate = Number(req?.masterRevision) >= masterRevisionNow()
+  const upToDate = Number(req?.masterRevision) >= sessionRevision()
     && Number(req?.resourceRevision) >= latestResourceVersion();
   send(res, 200, { ret: ret(), size: upToDate ? 0 : Number(process.env.KHUX_RESOURCE_SIZE || 0) });
 }
@@ -406,6 +411,18 @@ function masterKey(name) {
 
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
 const masterRevisionNow = () => clock.masterRevision(REVISION, realNow());
+// Revisione della sessione: fissata all'inizio di ogni login (POST /system/login, la prima risposta
+// con ret() della sequenza) e usata da ret(), /system/resourcesize e dal master servito per tutta la
+// sessione. Il master cambia cosi' solo al login successivo, e il contenuto servito (scadenze dei
+// gruppi) e' quello dell'istante della revisione, anche se il download scavalca una scadenza.
+// Senza login (salvataggi vecchi, test): la revisione del momento.
+function startSession() {
+  player.sessionRevision = masterRevisionNow();
+  player.sessionRealMs = realNow();
+}
+const sessionFixed = () => Number.isFinite(player.sessionRevision) && Number.isFinite(player.sessionRealMs);
+const sessionRevision = () => (sessionFixed() ? player.sessionRevision : masterRevisionNow());
+const sessionRealMs = () => (sessionFixed() ? player.sessionRealMs : realNow());
 
 // Weekly A/B (make-weekly-series.js): 3001-3010 settimane pari (serie 0), 3011-3020 dispari (serie 1),
 // sull'ora reale. Unica regola, usata dal master servito e da missionActive.
@@ -428,7 +445,12 @@ function servedMasterRows(name, realMs) {
     if (r.missionType === 4 && g) {
       endMs = g.kind === 'monthly' ? nextMonth(g.index, LIMITED_ROTATION.monthly.length) : nextWeek(g.index, LIMITED_ROTATION.weekly.length);
     }
-    return endMs === null ? r : { ...r, endDate: clock.fakeString(endMs, off) };
+    if (endMs === null) return r;
+    // rewardEndTime: per le missioni COMPLETE non riscosse il client conta fino a questo campo, non a
+    // endDate (banco 16-10: «28920 days left», il 2099 del master). Il premio non riscosso va nei
+    // Presents alla scadenza (settleClock), quindi la riscossione finisce con la missione.
+    const end = clock.fakeString(endMs, off);
+    return { ...r, endDate: end, rewardEndTime: end };
   });
 }
 
@@ -437,10 +459,10 @@ function masterBody(name) {
   const file = path.join(MASTER_DIR, name + '.json');
   if (!/^[A-Za-z0-9]+$/.test(name) || !fs.existsSync(file)) return null;
   const st = fs.statSync(file);
-  const key = `${masterRevisionNow()}:${st.mtimeMs}:${st.size}`;
+  const key = `${sessionRevision()}:${st.mtimeMs}:${st.size}`;
   const hit = masterBodyCache.get(name);
   if (hit && hit.key === key) return hit.body;
-  const json = Buffer.from(JSON.stringify(servedMasterRows(name, realNow())), 'utf8');
+  const json = Buffer.from(JSON.stringify(servedMasterRows(name, sessionRealMs())), 'utf8');
   const c = crypto.createCipheriv('aes-256-cbc', Buffer.from(masterKey(name), 'utf8'), Buffer.alloc(16));
   const body = Buffer.from(Buffer.concat([c.update(json), c.final()]).toString('base64'), 'utf8');
   masterBodyCache.set(name, { key, body, md5: crypto.createHash('md5').update(body).digest('hex') });
@@ -527,7 +549,7 @@ function masterTables() {
 function respondMaster(res) {
   const body = { ret: ret() };
   const tables = masterTables();
-  const rev = masterRevisionNow();
+  const rev = sessionRevision();
   body.master = { revision: rev, commonRevision: rev, count: tables.length };
   // Revisione per tabella: il client riscarica comunque TUTTE le tabelle quando cambia quella
   // globale (prova del 16-10: 106 su 106 con la sola mission a 116 e le altre a 115)
@@ -3421,5 +3443,5 @@ module.exports._test = {
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER,
   // server/test-master-clock.js
-  masterRevisionNow, servedMasterRows, masterBody, respondMaster, respondResourceSize, respondStatus,
+  masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
 };
