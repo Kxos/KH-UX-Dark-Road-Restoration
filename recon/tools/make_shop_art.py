@@ -55,6 +55,9 @@ def banner():
 
 
 def main():
+    if len(sys.argv) != 3:
+        print('uso: make_shop_art.py <stage_gen\\files> <server\\game_data>', file=sys.stderr)
+        return 2
     sg, game_data = sys.argv[1], sys.argv[2]
     for tid in TEXT_IDS:
         p = os.path.join(sg, 'text', 'ui', f'{tid}.txt')
