@@ -46,7 +46,14 @@ Le Medal_D_* non hanno riferimento WW della stessa immagine (Medal_D_Up3 e' un'a
 solo (1). Le dimensioni del file trovato devono essere quelle dichiarate nella LWF.
 Una cartella entra solo se TUTTE le texture sono trovate; rapporto JSON per cartella (lo legge il
 server: lotCount solo fra le raidgacha_result_display_NN servite od ok). Senza --check, le
-cartelle gestite qui che non sono piu' ok si tolgono da <out>/lwf/raisedraw.
+cartelle gestite qui che non sono piu' ok si tolgono da <out>.
+
+Radice JP = jp_final_4.3.1; WANTED e il rapporto usano il percorso pubblicato completo (lwf/...). Le
+cartelle del popup del Nova (GuiltBonus_BurstLvup, _num, Wfix0-9) e Draw_StatusBonus non hanno
+riferimento WW: solo la fonte (1). STATIC = img/ui/*_SB.png (targhette rosse delle boosted), copiate come
+texture. `--replace <percorso pubblicato>=<png>` (ripetibile) sostituisce una texture dopo la copia (il
+logo NOVA: Burst_Logo / Burst_Logo_B 422x142): il PNG deve avere le dimensioni dichiarate dalla LWF,
+altrimenti la cartella non e' ok; un percorso sconosciuto e' un errore.
 """
 import argparse
 import difflib
@@ -65,16 +72,25 @@ import btf  # noqa: E402
 sys.stdout.reconfigure(encoding='utf-8')
 D = r'D:\Progetto_Restauro_KH_UX'
 JP = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                  '[local reference data]', 'data', 'jp_final_4.3.1', 'lwf', 'raisedraw')
+                  '[local reference data]', 'data', 'jp_final_4.3.1')
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 GENERIC = re.compile(r'^ビットマップ \d+\.png$')
 
-WANTED = ([f'demo/raidgacha_result_display_{n:02d}' for n in range(1, 11)]
-          + [f'Medal/Medal_D_Up{n}' for n in range(1, 13)]
-          + [f'Medal/Medal_D_Rev{n}' for n in range(1, 8)]
-          + [f'Medal/Medal_D_None{n}' for n in range(1, 8)])
+RD = 'lwf/raisedraw/'
+GB = 'lwf/medal/guilt_bonus/'
+# percorsi completi dalla radice JP (= percorso pubblicato della cartella)
+WANTED = ([f'{RD}demo/raidgacha_result_display_{n:02d}' for n in range(1, 11)]
+          + [f'{RD}Medal/Medal_D_Up{n}' for n in range(1, 13)]
+          + [f'{RD}Medal/Medal_D_Rev{n}' for n in range(1, 8)]
+          + [f'{RD}Medal/Medal_D_None{n}' for n in range(1, 8)]
+          # popup del Nova e animazione «BONUS» delle boosted (sp. 2b, task 8): solo fonte (1)
+          + [GB + 'GuiltBonus_BurstLvup', GB + 'GuiltBonus_BurstLvup_num']
+          + [f'{GB}GuiltBonus_Wfix{n}' for n in range(10)]
+          + [RD + 'demo/Draw_StatusBonus'])
+# immagini singole (targhette rosse delle boosted), copiate come le texture: PNG vero -> BTF
+STATIC = ['img/ui/Minfo_Def12_SB.png', 'img/ui/Deck_Panel_SB.png']
 # cartella WW servita della stessa animazione (riferimento per le texture tolte dall'estrazione JP)
-REFS = {'demo/raidgacha_result_display_': 'demo/raidgacha_result_display_01'}
+REFS = {RD + 'demo/raidgacha_result_display_': RD + 'demo/raidgacha_result_display_01'}
 
 
 def served_names():
@@ -203,20 +219,36 @@ def ref_map(target, ref):
     return out, conflict, pos_only
 
 
-def main():
+def parse_replace(items):
+    """['<percorso pubblicato>=<png>'] -> {percorso: png}."""
+    out = {}
+    for it in items:
+        pub, sep, src = it.partition('=')
+        if not sep or not pub or not src or not os.path.isfile(src):
+            raise SystemExit(f'--replace {it!r}: serve <percorso pubblicato>=<png esistente>')
+        out[pub.replace('\\', '/')] = src
+    return out
+
+
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--ww', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--report', required=True)
     ap.add_argument('--check', action='store_true')
-    a = ap.parse_args()
+    ap.add_argument('--replace', action='append', default=[], metavar='PERCORSO=PNG',
+                    help='sostituisce la texture pubblicata (es. lwf/.../X_<hex>.png) con un PNG, dopo la '
+                         'copia; le dimensioni devono essere quelle dichiarate dalla LWF')
+    a = ap.parse_args(argv)
+    replaces = parse_replace(a.replace)
+    usati = set()
     Image = None
     if not a.check:
         from PIL import Image
     served = served_names()
     refs = {}
     for prefix, rel in REFS.items():
-        rdir = os.path.join(a.ww, 'lwf', 'raisedraw', *rel.split('/'))
+        rdir = os.path.join(a.ww, *rel.split('/'))
         rl = os.path.join(rdir, rel.split('/')[-1] + '.lwf')
         if not os.path.exists(rl):
             raise SystemExit(f'manca il riferimento WW {rl} (estrarlo con res_bulk.py)')
@@ -226,7 +258,7 @@ def main():
     report = {}
     for rel in WANTED:
         base = rel.split('/')[-1]
-        if f'lwf/raisedraw/{rel}/{base}.lwf' in served:
+        if f'{rel}/{base}.lwf' in served:
             report[rel] = {'status': 'served'}
             continue
         folder = os.path.join(JP, *rel.split('/'))
@@ -251,7 +283,10 @@ def main():
             if k in bad:
                 continue
             own = os.path.join(folder, k)
-            if os.path.exists(own):
+            if f'{rel}/{k}' in replaces:
+                cand, cls = ('jp', replaces[f'{rel}/{k}']), 'own-jp'
+                usati.add(f'{rel}/{k}')
+            elif os.path.exists(own):
                 cand, cls = ('jp', own), 'own-jp'
             elif k in mapped:
                 cand, cls = ('ww', os.path.join(ref['dir'], mapped[k][0])), mapped[k][1]
@@ -259,7 +294,8 @@ def main():
                 missing.append(name)
                 continue
             if tuple(img_size(open(cand[1], 'rb').read()) or ()) != wh:
-                conflict.append(f'{name} (dimensioni diverse da {wh[0]}x{wh[1]})')
+                conflict.append(f'{name} (dimensioni diverse da {wh[0]}x{wh[1]}'
+                                + (', file di --replace)' if f'{rel}/{k}' in replaces else ')'))
                 continue
             files[k] = cand
             count[cls] += 1
@@ -271,7 +307,7 @@ def main():
         report[rel] = {'status': 'ok', **entry}
         if a.check:
             continue
-        dst = os.path.join(a.out, 'lwf', 'raisedraw', *rel.split('/'))
+        dst = os.path.join(a.out, *rel.split('/'))
         os.makedirs(dst, exist_ok=True)
         with open(lwf, 'rb') as s, open(os.path.join(dst, base + '.lwf'), 'wb') as d:
             d.write(s.read())
@@ -281,18 +317,42 @@ def main():
                 data = btf.encode(Image.open(io.BytesIO(data)).convert('RGBA'))
             with open(os.path.join(dst, k), 'wb') as d:
                 d.write(data)
+    # immagini singole: devono esserci; il file di --replace deve avere le dimensioni del PNG JP
+    for pub in STATIC:
+        orig = os.path.join(JP, *pub.split('/'))
+        src = replaces.get(pub) or orig
+        usati.add(pub)
+        if not os.path.isfile(src) or not os.path.isfile(orig):
+            report[pub] = {'status': 'missing'}
+            continue
+        data = open(src, 'rb').read()
+        wh = img_size(data)
+        if not wh or tuple(wh) != tuple(img_size(open(orig, 'rb').read()) or ()):
+            report[pub] = {'status': 'incomplete', 'error': 'non PNG/BTF o dimensioni diverse da JP'}
+            continue
+        report[pub] = {'status': 'ok', 'size': list(wh)}
+        if a.check:
+            continue
+        if not data.startswith(b'\x89BTF'):
+            data = btf.encode(Image.open(io.BytesIO(data)).convert('RGBA'))
+        os.makedirs(os.path.join(a.out, *pub.split('/')[:-1]), exist_ok=True)
+        with open(os.path.join(a.out, *pub.split('/')), 'wb') as d:
+            d.write(data)
+    ignoti = sorted(set(replaces) - usati)
+    if ignoti:
+        raise SystemExit(f'--replace: nessuna texture con questo percorso pubblicato: {ignoti}')
     if not a.check:
         # cartelle scritte da una corsa precedente e non piu' ok: via (solo quelle di WANTED)
         for rel, r in report.items():
-            dst = os.path.join(a.out, 'lwf', 'raisedraw', *rel.split('/'))
-            if r['status'] != 'ok' and os.path.isdir(dst):
+            dst = os.path.join(a.out, *rel.split('/'))
+            if rel in WANTED and r['status'] != 'ok' and os.path.isdir(dst):
                 shutil.rmtree(dst)
                 print(f'{rel}: tolta la copia precedente')
     os.makedirs(os.path.dirname(os.path.abspath(a.report)), exist_ok=True)
     with open(a.report, 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=1)
     for rel, r in report.items():
-        extra = ''
+        extra = f" {r['size']}" if 'size' in r else ''
         if 'count' in r:
             c = r['count']
             extra = (f" ({r['lwf']}, {r['textures']} texture: {c['own-jp']} JP, {c['unique-anchor']}"
