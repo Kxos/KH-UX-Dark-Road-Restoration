@@ -16,6 +16,7 @@ const GAME = process.env.KHUX_GAME_DATA || path.join(__dirname, 'game_data');
 
 // Striscia scorrevole: composizione e limite o garanzia (stringa printf: drawMedalTypeRow raddoppia i %).
 function commentOf(b) {
+  if (!b.lotCount) return 'Banner Catalog only'; // banner INCOMPLETE senza dettagli originali
   const mix = (b.rarityMix || []).map(([r, n]) => `${n}x ${r}★+`).join(', ');
   const extra = b.guarantee?.pity ? ` - featured Medal guaranteed within ${b.guarantee.pity} draws`
     : b.vipFree ? ' - one free VIP draw per day' : b.dayLimit ? ` - ${b.dayLimit === 1 ? 'once' : `${b.dayLimit} times`} per day` : '';

@@ -31,6 +31,7 @@ check(m.commentOf(catalog.banners[0]) === '3 Medals: 1x 4★+, 2x 3★+ - once p
 check(m.commentOf({ ...base, dayLimit: 3 }) === '10 Medals: 1x 5★+, 9x 4★+ - 3 times per day', '3 times per day');
 check(m.commentOf({ ...base, vipFree: true }) === '10 Medals: 1x 5★+, 9x 4★+ - one free VIP draw per day', 'VIP');
 check(m.commentOf({ ...base, lotCount: 1, rarityMix: [[5, 1]] }) === '1 Medal: 1x 5★+', 'singolare');
+check(m.commentOf({ ...base, lotCount: undefined }) === 'Banner Catalog only' && m.commentOf({ ...base, lotCount: null }) === 'Banner Catalog only', 'lotCount mancante');
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: make-banners');

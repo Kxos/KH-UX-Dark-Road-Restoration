@@ -1,7 +1,7 @@
 // Prova della logica dello Shop: node server/test-gacha.js
-// (le prove delle pagine WebView tornano col Task 7 del sotto-progetto 2)
 'use strict';
 const g = require('./gacha');
+const gd = require('./gacha-data');
 const clock = require('./clock');
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
@@ -144,6 +144,64 @@ check(q.limitedDrawTicket1 === 2, 'biglietto Platinum scalato');
 const r = g.drawResultFields([501, 502], [501]);
 check(JSON.stringify(r) === JSON.stringify({ gachaBonus: { addType: 1, number: 0, userMedalIds: [] }, firstGetUserMedalIds: [501], userMedalIds: [501, 502], effectNumbers: [0, 0] }), 'campi del risultato');
 check(g.catalogRow().drawMedalTypeId === 9001 && g.catalogRow().payType === 6 && g.catalogPlate('http://h').price === 1, 'piastra Catalog');
+
+// piccole correzioni del Task 6
+check((() => { try { return g.shopBanners([inside], { storyQuest: 525, storyDay: '2016-12-08', sizes }).length === 1; } catch { return false; } })(), 'shopBanners senza show');
+const pNan = { drawTickets: {} };
+g.payDraw(tSpooky, pNan, t0, false);
+check(pNan.drawTickets.spooky === -1, 'spend su valuta assente: -1, non NaN');
+
+// stato di un banner (spec 4.4)
+check(g.RESTORED_QUEST === 525, 'RESTORED_QUEST 525');
+const sctx = { storyQuest: 300, storyDay: '2016-05-12', sizes, show: new Set(), shown: new Set() };
+const sb = (o) => mk({ endSource: 'original', unlockQuest: 200, start: '2016-05-01', end: '2016-05-30', ...o });
+const inShop = sb({});
+const st = (b, c = {}) => g.stateOf(b, { ...sctx, shown: new Set([inShop.drawMedalTypeId]), ...c });
+check(JSON.stringify(st(inShop)) === '{"key":"now","text":"In the Shop now"}', `stato now: ${JSON.stringify(st(inShop))}`);
+check(JSON.stringify(st(sb({ unlockQuest: 450 }))) === '{"key":"locked","text":"Unlocks after Story Quest 450"}', 'stato locked 450');
+check(JSON.stringify(st(sb({ unlockQuest: 600 }))) === '{"key":"locked","text":"Unlocks after Story Quest 600 — coming with a future update"}', 'stato locked 600');
+check(st(sb({ catalogOnly: 'PVP_TICKETS' })).text === 'Requires PvP tickets — coming with a future update', 'stato PvP');
+check(st(sb({ catalogOnly: 'DRAW_POINTS' })).text === 'Draw Points — coming with a future update', 'stato Draw Points');
+check(st(sb({ catalogOnly: 'VIP_TWIN' })).text === 'VIP variant, not reproduced', 'stato VIP_TWIN');
+check(st(sb({ catalogOnly: 'INCOMPLETE' })).text === 'Original details missing — not available', 'stato INCOMPLETE');
+check(st(sb({ lotCount: 5 })).text === 'This draw size is not available yet', 'stato dimensione');
+const notNow = sb({});
+check(JSON.stringify(g.stateOf(notNow, sctx)) === '{"key":"later","text":"Not in the Shop now"}', 'stato fuori periodo');
+
+// pagine
+const medalNames = new Map([[1, 'Alpha'], [2, 'Beta'], [3, 'Gamma'], [301495, 'Fairy LV1'], [301496, 'Fairy LV2'], [301497, 'Fairy LV3']]);
+const cb = [sb({ name: 'A <b>bold</b>' }), sb({ name: 'Second', catalogOnly: 'VIP_TWIN', start: '2016-06-01', endSource: 'estimated' }), inShop];
+const cp = g.catalogPage(cb, { ...sctx, shown: new Set([inShop.drawMedalTypeId]) });
+check((cp.match(/loading="lazy"/g) || []).length === 3, 'catalogo: 3 immagini lazy');
+check(cp.includes('A &lt;b&gt;bold&lt;/b&gt;') && !cp.includes('<b>bold'), 'catalogo: escape del nome');
+check(cp.includes('In the Shop now') && cp.includes('VIP variant, not reproduced'), 'catalogo: stati');
+check(cp.includes(`/web/gacha/detail/${cb[0].drawMedalTypeId}`), 'catalogo: link ai dettagli');
+check(cp.includes('3 original banners. Banners unlock with the Story, as in the original game.'), 'catalogo: intestazione');
+check(cp.includes('(end date reconstructed)') && (cp.match(/end date reconstructed/g) || []).length === 1, 'catalogo: data fine ricostruita solo dove serve');
+
+const exA = { pool: { 5: [1], 4: [2, 3] }, featuredIds: [1], listIds: [1], listNames: [['Alpha', 2, { 5: [1] }]], featuredNames: [['Alpha', 1, { 5: [1] }]], weighted: [] };
+const bA = sb({ rarityMix: [[5, 1], [4, 2]], lotCount: 3, guarantee: { list: ['Alpha'], count: 1, pity: 7, every: 3 } });
+const dp = g.detailPage(bA, exA, medalNames, sctx);
+check(dp.includes('Draw rates') && /reconstructed/.test(dp), 'dettagli: Draw rates e reconstructed');
+check(dp.includes('Medal rarities of each draw: original'), 'dettagli: composizione original');
+check(dp.includes('Featured Medal guaranteed within 7 draws (original)'), 'dettagli: pity');
+check(dp.includes('every 3rd draw') && dp.includes('one of the listed Medals, featured Medals twice as likely'), 'dettagli: slot a lista con every');
+check(dp.includes('Beta') && dp.includes('Gamma') && dp.includes('Alpha'), 'dettagli: medaglie');
+check(dp.includes('4★ 94%') && dp.includes('5★ 6%'), 'dettagli: percentuali dello slot');
+const bS = sb({ skill: { table: '50106', slots: 'first' } });
+const dS = g.detailPage(bS, exA, medalNames, sctx);
+check(dS.includes('(original rates, notice)') && dS.includes('Attack Boost II') && dS.includes('No Cost'), 'dettagli skill: tabella');
+const dS2 = g.detailPage(bS, exA, medalNames, { ...sctx, skillNames: new Set(['Lux Plus']) });
+check(dS2.includes('Lux Plus') && !dS2.includes('Attack Boost II'), 'dettagli skill: solo le presenti');
+const bE = sb({ type: 'T_EVOLVE', payType: 4, currency: 'bronze', pool: { mode: 'evolve', evolve: [[301495, 1], [301496, 2], [301497, 3]] } });
+const exE = gd.expandPool(bE, {}, bE.start);
+const dE = g.detailPage(bE, exE, medalNames, sctx);
+check(dE.includes('Fairy LV3') && dE.includes('10%') && dE.includes('45%'), 'dettagli evolve: livelli con percentuali');
+const op = g.oddsPage([{ banner: bA, ex: exA }, { banner: bE, ex: exE, medalNames }]);
+check(op.includes('Draw Odds') && op.includes('Second') === false && op.includes(esc2(bA.name)), 'odds: sezione per banner');
+check((op.match(/class="b"/g) || []).length === 2, 'odds: una sezione per banner');
+check(op.includes('Medal 1') && op.includes('Medal 3') && op.includes('every 3rd draw') && op.includes('Fairy LV3'), 'odds: righe degli slot');
+function esc2(s) { return s; }
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');
