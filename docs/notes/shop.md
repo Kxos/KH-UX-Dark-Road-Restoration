@@ -346,8 +346,13 @@ Schemi dell'originale (dai testi e dalle immagini dei banner) e confronto col se
   estrazione» resi come pity (31);
 - **178 banner con un limite di Tier** (D12), riproducibile: `medal.json.guiltValue` e' il Tier (verificato sulle 24
   medaglie 7★ della riserva di B0306, tutte Tier 4);
-- **non riproducibili**: Trait Medal (89), Special Attack rinforzato (104), boosted (40), skill al massimo (62),
-  Imitation (3), Epic e set del 2016 (17 + 17): scritti nelle Notices.
+- **boosted (40), riproducibili** (scoperta del 17-10): «with 1000 more base strength and defense» e' la medaglia gia'
+  al tetto di Chip/Dale. `addMaxAttack`/`addMaxDefense` del master (1000 su Illustrated Kairi [EX] 301172/301173) sono
+  il tetto di `attackUpperNumber`/`defenseUpperNumber` della medaglia del giocatore (`server/medal-guilt.js`, [Chip e
+  Dale](medaglie.md)): basta crearla con quei due valori al tetto (solo l'attacco per «more base strength»). Manca la
+  probabilita' («small chance» nelle note), da ricostruire;
+- **non riproducibili**: Trait Medal (89), Special Attack rinforzato (104), skill al massimo (62), Imitation (3), Epic e
+  set del 2016 (17 + 17): scritti nelle Notices.
 
 Proposta di campi (retro-compatibile: `guarantee.list/count/slot` restano la prima riserva a lista):
 
@@ -363,4 +368,11 @@ solo a 7★ (circa 100 banner del 2019-20): lasciare il 7★ o limitare ai nomi 
 lista in due (3 SN+/SN++ e 7 KH III) come nell'immagine; (3) i 31 banner D13: «ogni N-esima» come i notice o pity come
 la wiki; (4) B0419/B0421 (scambio Gula/Aced dichiarato come errore dal notice): riprodurre l'errore o la versione
 corretta; (5) B0319, B0402, B0403, B0412 (pity a 6★ con slot 0 a 7★): quale slot sostituisce la pity.
+
+Decisioni dell'utente gia' prese per il 2b (17-10): medaglie boosted riprodotte come sopra; data d'inizio di
+B0199-B0203 (deal delle HD [EX], novembre 2017) corretta al **24/11/2017** con un override dal notice, al posto della
+regola allargata di `align_debut_dates` («primo banner estraibile che le nomina»).
+
+Il report completo dell'audit (tabelle per schema, regole di estrazione, esiti attesi) e' fuori dal repo:
+`D:\Progetto_Restauro_KH_UX\tmp\sp2\audit-guarantees.md`.
 
