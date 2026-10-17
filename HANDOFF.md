@@ -19,7 +19,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 ## Ripartire
 
 Stato del banco: **risorse 41**, **revisione master: BASE 122** (default dei 4 script di sessione dal fix 1 del Task 10 del sotto-progetto 2b
-del 17-10; il server manda `120*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+del 17-10; il server manda `122*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -48,39 +48,25 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 ## Stato al 17 ottobre 2026 e prossimo passo
 
-- **Shop sotto-progetto 1** (16-10) e **sotto-progetto 2 «Elenco dei banner originali» (17-10): fatti**
-  ([shop.md#sp2](docs/notes/shop.md#sp2), piano
-  [2026-10-16-shop-banner-originali.md](docs/superpowers/plans/2026-10-16-shop-banner-originali.md)): catalogo di
-  808 banner, sblocco con la storia, `relogin.ps1 -GachaShow B0306,B0456` per mostrare banner bloccati; prove 1-8
-  al banco fatte con la revisione 119. **Correzione finale** (commit b9e23cc,
-  [shop.md#correzione-finale](docs/notes/shop.md#correzione-finale)): vetrina e lista dei banner di debutto,
-  `totalLimit` e una al giorno per le gratuite senza limite, `guarantee.slot` (B0306-B0308/B0355), «This guarantee is
-  not reproduced yet.», tre righe nuove nelle Notices; master cambiato -> revisione 120, **provata al banco** il 17-10 (4 prove OK, dubbi minori in I-145).
-- Generazione, nell'ordine:
-
-```powershell
-python recon/tools/make_banner_catalog.py; python recon/tools/make_banner_images.py --mode palette; node server/make-banners.js
-```
-
+- **Shop**: sotto-progetto 1 (16-10), 2 «Elenco dei banner originali» (17-10, [shop.md#sp2](docs/notes/shop.md#sp2),
+  correzione finale [shop.md#correzione-finale](docs/notes/shop.md#correzione-finale)) e **2b «Garanzie»**
+  (17-10, [shop.md#sp2b](docs/notes/shop.md#sp2b), I-144/I-148/I-149 chiusi, commit 2ef2c14..1ca30d7): **fatti**, manca
+  solo la revisione finale del 2b. Slot/Tier/pity/striscia gialla, boosted come righe del master, preset (B0306-B0308
+  con guilt al massimo sulla 7★, dal testo di B0310), popup del Nova acceso (LWF JP + logo NOVA, risorse 41;
+  `KHUX_GUILT_BURST_POPUP=0` lo spegne), livelli del Nova nelle righe medal (`make-nova-rows.js`); comandi di
+  generazione, nell'ordine, in [shop.md#sp2b](docs/notes/shop.md#sp2b).
 - Aperti dello Shop: I-139 (24 INCOMPLETE), I-140 (filtro Epic), I-141 (immagine di B0612), I-142 (Blue Fairy Deal),
-  I-143 (tocco perso dopo le Notices), **I-144 garanzie** (audit: 171 banner con discrepanze, 178 con Tier).
-- **Sotto-progetto 2b «Garanzie» (17-10): fatto** (I-144 chiuso, [shop.md#sp2b](docs/notes/shop.md#sp2b), commit
-  2ef2c14..bad55f1): slot/Tier/pity/striscia gialla, boosted come righe del master, preset, popup del Nova acceso
-  (LWF JP + logo NOVA, risorse 41; `KHUX_GUILT_BURST_POPUP=0` lo spegne). Prove al banco OK (rev 121); U1-U7 in
-  shop.md. Fix 1 (commit 2bf8b4b, rev 122): B0306-B0308 con guilt al massimo sulla 7★ (testo di B0310) e livelli del
-  Nova nelle righe medal (I-148, I-149 chiusi): popup da estrazione provato al banco. Aperti nuovi: I-150, I-151.
-  **Manca solo la prova 7 dell'utente** (popup del Nova da B0306 col salvataggio ridotto).
-  Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la chiusura dei Details non
-  ricarica la lista).
-- **Banco al 17-10 sera (dopo il Task 10)**: salvataggio RIDOTTO (25 medaglie, Nova 6, 100000 jewel) rimesso per la
-  prova dell'utente, server rev 122 con `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow B0306,B0307,B0308`, home.
-  Salvataggio completo: `D:\Progetto_Restauro_KH_UX	mp\save-backup-before-nova-test\player.json` (il ridotto in
-  `tmp\save-backup-before-2b`); rimettere il completo prima di altri lavori.
+  I-143 (tocco perso dopo le Notices), I-145, I-146 (abilita' mancanti), I-150 (nomi guasti del catalogo), I-151
+  (liste che salgono di stella). Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la
+  chiusura dei Details non ricarica la lista).
+- **Banco (17-10 sera)**: salvataggio RIDOTTO (25 medaglie, Nova 6, 100000 jewel), server rev 122 con
+  `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow B0306,B0307,B0308`, home: **in attesa della prova 7
+  dell'utente** (popup del Nova da B0306). Salvataggio completo:
+  `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json` (livello 100, materiali a 9999,
+  keyblade a +35/+60; il ridotto in `tmp\save-backup-before-2b`, altre copie in `tmp\save-backup-*`): rimetterlo
+  prima di altri lavori.
 - Altri lavori in attesa (Limited I-118, Blue Fairy e PvP I-126, NPC JP, crash intermittenti, decisioni dell'utente
   del 16-10): [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md) e [ISSUES](docs/ISSUES.md).
-- Salvataggio di prova: livello 100, materiali a 9999, keyblade a +35/+60, party creato, HD Roxas condivisa, 43
-  medaglie estratte e `player.gacha` dalle prove del 17-10; copie in `D:\Progetto_Restauro_KH_UX\tmp\save-backup-*` e
-  `tmp\player_before_*.json`.
 
 ## Regole del lavoro (dell'utente)
 

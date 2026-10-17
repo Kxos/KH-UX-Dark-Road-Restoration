@@ -399,10 +399,10 @@ riserva a lista) per compatibilita'.
 
 ```powershell
 python recon/tools/make_banner_catalog.py
-$env:KHUX_MEDALS_ALL='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # righe boosted (in fondo)
+$env:KHUX_MEDALS_ALL='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # boosted e righe del Nova (in fondo)
 node server/make-banners.js                                  # drawMedalType: striscia, validComment, warrant
 .\tools\ldplayer\session\build-resources.ps1 -Version 41     # LWF JP del Nova + logo NOVA, Draw_StatusBonus, *_SB.png
-.\tools\ldplayer\session\update-resources.ps1 -Revision 121
+.\tools\ldplayer\session\update-resources.ps1 -Revision 122   # BASE 122 dal fix 1 (righe del Nova)
 ```
 
 `make-game-tables.js` va lanciato con `KHUX_MEDALS_ALL=1` (senza scrive solo 522 medaglie) e rifa' anche
@@ -450,7 +450,8 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
 - **U2** (`groupId` e Level Up): la normale e' materiale «da pallino» della boosted. Anteprima con un pallino giallo
   e LV 1 -> 42; risultato pallini 0 -> 1, LV 51 (Great Success del client, EXP x1,5); nessun crash
   (2b_t5_u2_preview, 2b_t5_u2_anim2). Nessun cambio.
-- **U3** («&» nella striscia): leggibile, `WARRANT_XML_SAFE` resta spento, niente revisione 122.
+- **U3** («&» nella striscia): leggibile, `WARRANT_XML_SAFE` resta spento; il master non cambia per U3 (la revisione
+  122 arriva dopo, dal fix 1, per le righe del Nova).
 - **U4** (riquadro del +1): il +1 mostra il riquadro «Unlocked ...», il +5 «Maxed out ...» (2b_t3f_5, 2b_t3d_max_5).
   Il numero d'arrivo era sbagliato: corretto in `guilt-burst.js gained()` (commit bad55f1, nessun cambio di master).
 - **U5** (`displayId` 1 per le boosted senza badge): Iago boosted (displayId 1) mostrata senza crash in Medal List,
@@ -463,8 +464,7 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
 
 **Rimandati** (note qui; i difetti veri sono in ISSUES):
 
-- I-146 (maxSkill), I-148 (nessun preset `max` estraibile), I-149 (livelli del popup dalle estrazioni), I-150 (nomi
-  guasti del catalogo), I-151 (liste che salgono a 7★, pity senza bersaglio alla `pityStar` in 161 banner);
+- I-146 (maxSkill), I-150 (nomi guasti del catalogo), I-151 (liste che salgono a 7★, pity senza bersaglio alla `pityStar` in 161 banner);
 - 16 date di banner con la pity senza bersaglio: striscia nascosta;
 - bagliore del logo NOVA di 8 px contro i ~16-20 del JP (Task 9, solo estetica);
 - durante la prova U2 sul salvataggio completo, «Unequip» dal dettaglio di una medaglia in un sottoslot del keyblade
@@ -483,7 +483,9 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
   delle prime - `addGuiltBurstLvMax` +0x4c8 delle massime; `FUN_00b44918`/`FUN_00b441b0` riaggiungono a ogni passo).
   Con 0 nel master il popup mostrava lo stesso livello due volte. `server/make-nova-rows.js` (in fondo a
   `make-game-tables.js`, idempotente, `test-nova-rows.js`) mette 1/5 solo sulle righe d'attacco con Tier che un preset
-  «guilt: max» puo' consegnare e sulle loro boosted: oggi 1669 righe (le 7★ con Tier, slot 0 di B0306-B0308). Il
+  «guilt: max» puo' consegnare e sulle loro boosted: oggi 1669 righe, cioe' **tutte** le 7★ d'attacco con Tier > 0 e
+  le loro boosted (slot 0 di B0306-B0308). E' un'approssimazione voluta, piu' larga dello slot 0 di B0306 (Tier <= 4):
+  filtrare per `tierMin`/`tierMax` avrebbe chiesto un'altra revisione del master (decisione del controller). Il
   popup parte solo quando il server manda le liste, quindi le estrazioni normali non lo mostrano; altri lettori del
   campo nel client (`FUN_00e35458`, `FUN_00e37014`, `FUN_00b52c3c`) non sono stati capiti: per questo non si e' messo
   1/5 su tutte le medaglie.
