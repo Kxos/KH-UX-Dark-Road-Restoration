@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 41**, **revisione master: BASE 121** (default dei 4 script di sessione dal sotto-progetto 2b
+Stato del banco: **risorse 41**, **revisione master: BASE 122** (default dei 4 script di sessione dal fix 1 del Task 10 del sotto-progetto 2b
 del 17-10; il server manda `120*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
@@ -67,13 +67,13 @@ python recon/tools/make_banner_catalog.py; python recon/tools/make_banner_images
 - **Sotto-progetto 2b «Garanzie» (17-10): fatto** (I-144 chiuso, [shop.md#sp2b](docs/notes/shop.md#sp2b), commit
   2ef2c14..bad55f1): slot/Tier/pity/striscia gialla, boosted come righe del master, preset, popup del Nova acceso
   (LWF JP + logo NOVA, risorse 41; `KHUX_GUILT_BURST_POPUP=0` lo spegne). Prove al banco OK (rev 121); U1-U7 in
-  shop.md. Aperti nuovi: I-148 (nessun banner estraibile con guilt al massimo: B0310 INCOMPLETE), I-149 (livelli del
-  popup dalle estrazioni: `addGuiltBurstLv/Max` 0 nel master), I-150, I-151. **Manca la prova 7 dell'utente** (popup
-  del Nova da estrazione col salvataggio ridotto): bloccata da I-148/I-149; il popup dal Level Up funziona.
+  shop.md. Fix 1 (commit 2bf8b4b, rev 122): B0306-B0308 con guilt al massimo sulla 7★ (testo di B0310) e livelli del
+  Nova nelle righe medal (I-148, I-149 chiusi): popup da estrazione provato al banco. Aperti nuovi: I-150, I-151.
+  **Manca solo la prova 7 dell'utente** (popup del Nova da B0306 col salvataggio ridotto).
   Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la chiusura dei Details non
   ricarica la lista).
 - **Banco al 17-10 sera (dopo il Task 10)**: salvataggio RIDOTTO (25 medaglie, Nova 6, 100000 jewel) rimesso per la
-  prova dell'utente, server rev 121 con `relogin.ps1 -Tag 2b_end -Revision 121 -GachaShow B0306,B0651`, home.
+  prova dell'utente, server rev 122 con `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow B0306,B0307,B0308`, home.
   Salvataggio completo: `D:\Progetto_Restauro_KH_UX	mp\save-backup-before-nova-test\player.json` (il ridotto in
   `tmp\save-backup-before-2b`); rimettere il completo prima di altri lavori.
 - Altri lavori in attesa (Limited I-118, Blue Fairy e PvP I-126, NPC JP, crash intermittenti, decisioni dell'utente

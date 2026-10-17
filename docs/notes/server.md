@@ -10,7 +10,7 @@ Di solito si usa `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` ([banco
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "121"                    # BASE della revisione dei master: alzarla a ogni modifica
+$env:KHUX_REVISION      = "122"                    # BASE della revisione dei master: alzarla a ogni modifica
 # KHUX_GACHA_SIZES = "1,2,...,10" (medaglie per estrazione con animazione), KHUX_GACHA_SHOW = "B0306,B0456" rowId del
 # catalogo aggiunti alla lista dello Shop anche se bloccati o fuori data (prove; shop.md#sp2)
 # KHUX_GUILT_BURST_POPUP=0 spegne il popup «NOVA LEVEL UP!» (acceso per default dal 2b, LWF JP nelle risorse 41;

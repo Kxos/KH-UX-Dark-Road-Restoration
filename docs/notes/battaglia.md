@@ -134,7 +134,7 @@ Codice: `CarouselGuiltBurst`, setup `FUN_00b0fbd0` (battaglia) -> `FUN_00aee878`
   Level Up il 17-10 (+1 «Unlocked X's Special Attack Bonus!», +5 «Maxed out X's Special Attack Bonus!», TAP SCREEN;
   [shop.md#sp2b](shop.md#sp2b)). Il Level Up manda il livello d'arrivo ([guilt.md](guilt.md)); per le liste
   `guiltBurst*UserMedalIds` (draw, /stage/clear) il client calcola i livelli dalla riga medal
-  (`addGuiltBurstLv/Max`, 0 nelle nostre tabelle): I-149. Registro per `groupId || medalId`.
+  (`addGuiltBurstLv/Max` +0x4c4/+0x4c8, `FUN_00b42db8`): 1/5 sulle righe che un preset «guilt: max» puo' consegnare (`make-nova-rows.js`, I-149 chiuso, [shop.md#sp2b](shop.md#sp2b)). Registro per `groupId || medalId`.
 - **Super Burst** (`setupSuperGuiltBurst` `FUN_00aef124`, sempre chiamato): per ogni medaglia del
   deck con `validSuperBurst` (+0x500) e `superBurstId` (+0x504) != 0 (`FUN_00af14e0`) aggiunge un
   pannello a `ActionMap_SuperBurst_SelectWindow/SelectPanel` (serviti). Nessuna medaglia delle
