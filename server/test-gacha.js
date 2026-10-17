@@ -354,9 +354,15 @@ try {
   check(dBg.includes('boosted version guaranteed (+2000 STR)'), 'T7: boosted garantita');
   const dPs = g.detailPage(g6({ enhance: { preset: [{ on: { slots: [0] }, dots: 'max', guilt: 'max' }] } }), ex6, medalNames, sctx);
   check(dPs.includes('comes with its Special Attack Bonus maxed (original)'), 'T7: preset');
-  // decisione 13-bis: con i preset elencati e slot 7★, la riga della regola generale Tier 9-10; senza preset nessuna riga
-  check(dPs.includes('Any 7★ Tier 9-10 Medal: comes with its Special Attack Bonus maxed (original)'), 'T7: riga 13-bis con i preset');
-  check(!d6.includes('Tier 9-10'), 'T7: niente riga 13-bis senza preset');
+  // decisione 13-bis: con i preset elencati e slot 7★, la riga della regola generale alle date dei notice (Tier 9 dal
+  // 2019-01-01, Tier 10 dal 2019-09-01); prima del 2019 e senza preset nessuna riga
+  const dPsAt = (start) => g.detailPage({ ...g6({ enhance: { preset: [{ on: { slots: [0] }, dots: 'max', guilt: 'max' }] } }), start, end: '2021-06-30' }, ex6, medalNames, sctx);
+  check(!/Tier 9/.test(dPs), 'T7: niente riga 13-bis su un banner del 2016');
+  check(!/Tier 9/.test(dPsAt('2018-12-31')), 'T7: niente riga 13-bis il 2018-12-31');
+  check(dPsAt('2019-01-01').includes('Any 7★ Tier 9 Medal: comes with its Special Attack Bonus maxed (original)'), 'T7: riga 13-bis Tier 9 dal 2019-01-01');
+  check(!dPsAt('2019-08-31').includes('Tier 9-10'), 'T7: riga 13-bis senza Tier 10 il 2019-08-31');
+  check(dPsAt('2019-09-01').includes('Any 7★ Tier 9-10 Medal: comes with its Special Attack Bonus maxed (original)'), 'T7: riga 13-bis Tier 9-10 dal 2019-09-01');
+  check(!/Tier 9/.test(g.detailPage({ ...g6(), start: '2019-09-01', end: '2021-06-30' }, ex6, medalNames, sctx)), 'T7: niente riga 13-bis senza preset');
   const dMs = g.detailPage(g6({ enhance: { maxSkill: [{ on: { names: ['zexion [+]'] }, skills: ['paralysis+ ii max'] }] } }), ex6, medalNames, sctx);
   check(/Max-level Skill/.test(dMs) && dMs.includes('Zexion [+]'), 'T7: maxSkill');
   const dEr = g.detailPage(g6({ guarantee: { erratum: 'Original text: <b>5 draws</b>' } }), ex6, medalNames, sctx);
