@@ -17,20 +17,27 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 40**, **revisione master: BASE 118** (default degli script di sessione; il server manda
-`118*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto.
+Stato del banco: **risorse 40**, **revisione master: BASE 119** (default degli script di sessione dal 17-10; il server
+manda `119*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto.
 
 **Shop > Draw (16-10 sera): sotto-progetto 1 fatto e provato** ([shop.md](docs/notes/shop.md)): piastra Banner
-Catalog + DAILY DEAL! / SMALL DEAL! / Epic Medal Carnival in jewel (x1, x3, x10), banner di prova a biglietti con
-`relogin.ps1 -GachaTest`; LWF del risultato nel pacchetto statico `raisedraw_gen` (risorse 40). Missioni Beginner
-Draw/Nova/Spirit collegate (e3aeec1). Aperti I-134, I-135, I-136.
+Catalog + DAILY DEAL! / SMALL DEAL! / Epic Medal Carnival in jewel (x1, x3, x10); LWF del risultato nel pacchetto
+statico `raisedraw_gen` (risorse 40). Missioni Beginner Draw/Nova/Spirit collegate (e3aeec1). Aperti I-134, I-135, I-136.
 
-**Prossimo (ripresa del 17-10): sotto-progetto 2 «Elenco dei banner originali».** Decisioni approvate nella spec
-(sezione 9 di [shop-banner-design](docs/superpowers/specs/2026-10-16-shop-banner-design.md)), piano scritto:
-[2026-10-16-shop-banner-originali.md](docs/superpowers/plans/2026-10-16-shop-banner-originali.md) (9 task). Manca
-la conferma dell'utente sul piano e sul modo di esecuzione (consigliato subagent-driven). Ricerca e script da portare
-in `D:\Progetto_Restauro_KH_UX\tmp\sp2` (research.md, scripts\). Poi sotto-progetto 3 (catalogo con filtri, sblocchi,
-rotazione, stagionali; la chiusura dei Details non ricarica la lista).
+**Shop sotto-progetto 2 «Elenco dei banner originali» (17-10): codice e documentazione fatti, banco FERMO su I-138**
+([shop.md#sp2](docs/notes/shop.md#sp2), piano
+[2026-10-16-shop-banner-originali.md](docs/superpowers/plans/2026-10-16-shop-banner-originali.md)). Catalogo di 808
+banner, sblocco con la storia (prima quest della tranche - 1), revisione 119, `relogin.ps1 -GachaShow B0306,B0456`
+(al posto di `-GachaTest`). **Lo Shop da' «200 ERROR :75»**: le piastre dei banner del catalogo escono senza
+`sortId` (I-138; con il sortId lo Shop si apre, provato con una patch temporanea). Da correggere, poi le prove 1-8 del
+Task 9 (brief in `.superpowers/sdd/2026-10-16-shop-banner-originali/task-9-brief.md`). Aperti anche I-139..I-142.
+Generazione, nell'ordine:
+
+```powershell
+python recon/tools/make_banner_catalog.py; python recon/tools/make_banner_images.py --mode palette; node server/make-banners.js
+```
+
+Poi sotto-progetto 3 (catalogo con filtri, sblocchi, rotazione, stagionali; la chiusura dei Details non ricarica la lista).
 
 ```powershell
 # emulatore (se spento)

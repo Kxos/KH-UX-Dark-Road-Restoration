@@ -179,7 +179,7 @@ check((cp.match(/loading="lazy"/g) || []).length === 3, 'catalogo: 3 immagini la
 check(cp.includes('A &lt;b&gt;bold&lt;/b&gt;') && !cp.includes('<b>bold'), 'catalogo: escape del nome');
 check(cp.includes('In the Shop now') && cp.includes('VIP variant, not reproduced'), 'catalogo: stati');
 check(cp.includes(`/web/gacha/detail/${cb[0].drawMedalTypeId}`), 'catalogo: link ai dettagli');
-check(cp.includes('3 original banners. Banners unlock with the Story, as in the original game.'), 'catalogo: intestazione');
+check(cp.includes('3 original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'catalogo: intestazione');
 check(cp.includes('(end date reconstructed)') && (cp.match(/end date reconstructed/g) || []).length === 1, 'catalogo: data fine ricostruita solo dove serve');
 
 const exA = { pool: { 5: [1], 4: [2, 3] }, featuredIds: [1], listIds: [1], listNames: [['Alpha', 2, { 5: [1] }]], featuredNames: [['Alpha', 1, { 5: [1] }]], weighted: [] };

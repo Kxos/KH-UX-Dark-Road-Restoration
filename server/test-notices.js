@@ -42,7 +42,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
     check(diff.includes(s), `differenze: «${s.slice(0, 40)}...»`);
   }
   check(!diff.some((s) => s.startsWith('Shop draw rates are reconstructed where the original game did not publish them: ')), 'differenze: vecchia riga delle probabilita tolta');
-  check(shop.includes('Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story; banners unlock with the Story, as in the original game.'), 'Shop: banner originali e storia');
+  check(shop.includes('Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'Shop: banner originali e storia');
 }
 
 n.NOTICES.push({ date: '1', tag: 'X', title: 'a<b>"&', body: ['<script>'] });
