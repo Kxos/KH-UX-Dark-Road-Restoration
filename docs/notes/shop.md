@@ -352,8 +352,11 @@ Schemi dell'originale (dai testi e dalle immagini dei banner) e confronto col se
   serve un altro modo di alzare la base di +1000 lasciando libero Chip/Dale (campo della medaglia del giocatore da
   cercare nel decompilato, oppure medaglie distinte nel master: verificare). Manca anche la probabilita' («small
   chance» nelle note);
-- **non riproducibili**: Trait Medal (89), Special Attack rinforzato (104), skill al massimo (62), Imitation (3), Epic e
-  set del 2016 (17 + 17): scritti nelle Notices.
+- **skill al massimo (62), riproducibili in parte** (decisione dell'utente del 17-10): abilita' della lista creata a
+  `level = maxLv` di `skill.json` invece di 1; vale solo per le abilita' presenti nel master, che oggi ne ha 12
+  (le altre: I-146);
+- **non riproducibili**: Trait Medal (89), Special Attack rinforzato (104), Imitation (3), Epic e set del 2016 (17 +
+  17): scritti nelle Notices.
 
 Proposta di campi (retro-compatibile: `guarantee.list/count/slot` restano la prima riserva a lista):
 
