@@ -149,6 +149,11 @@ def rarity_mix(mix):
     return [[int(s), int(n)] for s, n in re.findall(r'(\d)★:(\d+)', mix)]
 
 
+def unusable(prices, lot, mix):
+    """senza prezzo, dimensione o composizione degli slot un banner non si puo' estrarre (spec 9.1): solo catalogo"""
+    return not prices or not lot or not mix
+
+
 def first_rarity(rows):
     out = {}
     for r in rows:
@@ -758,7 +763,7 @@ def build_catalog(inputs):
             only = 'PVP_TICKETS'
         elif pay == 9:
             only = 'DRAW_POINTS'
-        elif not prices or not lot:
+        elif unusable(prices, lot, rarity_mix(r['rarity_mix'])):
             only = 'INCOMPLETE'
         else:
             only = None

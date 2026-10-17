@@ -4,17 +4,17 @@ B0036	draw_size	x5	notice 19884
 B0036	rarity_mix	5★:1	notice 19884 (5 Medals, una 5★ garantita; le altre non sono dette)
 B0153	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 31346
 B0153	draw_size	x10	notice 31346
-B0153	rarity_mix	6★:1 5★:9	notice 31346 (9 Medals 5★ o piu'; la Medal Tier 5 garantita come 6★, come le Falling Price Deal gemelle)
+B0153	rarity_mix	6★:1 5★:9	TSV B0155 (serie gemella, rarity_mix 6★:1 5★:9); prezzo e dimensione: notice 31346
 B0158	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 31413
 B0158	draw_size	x10	notice 31413
-B0158	rarity_mix	6★:1 5★:9	notice 31413 (9 Medals 5★ o piu'; la Medal Tier 4/5 garantita come 6★, come le Falling Price Deal gemelle)
+B0158	rarity_mix	6★:1 5★:9	TSV B0154 (serie gemella, rarity_mix 6★:1 5★:9); prezzo e dimensione: notice 31413
 B0166	draw_size	x10	notice 32026
 B0182	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 33005
 B0182	draw_size	x10	notice 33005
-B0182	rarity_mix	6★:1 5★:9	notice 33005 (9 Medals 5★ o piu'; la Medal Tier 4/5 garantita come 6★, come le Falling Price Deal gemelle)
+B0182	rarity_mix	6★:1 5★:9	TSV B0180 (serie gemella, rarity_mix 6★:1 5★:9); prezzo e dimensione: notice 33005
 B0204	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 34471
 B0204	draw_size	x10	notice 34471
-B0204	rarity_mix	6★:1 5★:9	notice 34471 (9 Medals 5★ o piu'; la Medal Tier 4+ garantita come 6★, come le Falling Price Deal gemelle)
+B0204	rarity_mix	6★:1 5★:9	TSV B0212 (serie gemella, rarity_mix 6★:1 5★:9); prezzo e dimensione: notice 34471
 B0205	draw_size	x10	notice 34475
 B0220	price	Free	notice 35148 (una estrazione gratis al giorno; i 1000 Jewels sono il premio per medaglia)
 B0220	draw_size	x1	notice 35148
