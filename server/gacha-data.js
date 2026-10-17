@@ -12,6 +12,9 @@ const CATALOG_ID = 9001;
 const UPGRADE = { 3: 0.10, 4: 0.06, 5: 0.04, 6: 0.03 };
 const EPIC_UPGRADE = 0.15;
 const FEATURED_WEIGHT = 2;
+// Boosted «small chance» (sotto-progetto 2b): la percentuale non e' scritta nei notice, RICOSTRUITA al 5%
+// per slot idoneo (Notices); «guaranteed» = sempre.
+const BOOST_SMALL_CHANCE = 0.05;
 const EMPTY = () => ({ banners: [], subsets: {}, medals: {}, firstRarity: {}, story: [] });
 
 // «4★:1 3★:2 Other:1» -> [[4,1],[3,2]]: le voci senza ★ (Other) sono ignorate; ordine decrescente.
@@ -62,17 +65,25 @@ function asOf(banner, day) {
 // (se gia' uscite: firstRarity) piu' la stella sopra se gia' uscita; ogni variante solo se uscita entro `at`.
 // listNames/featuredNames: [[nome, peso, {rare: [ids]}]] per gli slot a lista e della pity (solo i nomi con
 // almeno una variante nel pool; in lista la vetrina pesa FEATURED_WEIGHT, nella pity tutte 1).
+// Catalogo v3 (sotto-progetto 2b): slotNames[j] = i nomi della riserva guarantee.slots[j] (lista, o nomi
+// alternativi del Tier; [] per il Trait), pityNames = i bersagli della pity, pityIds = tutte le loro varianti;
+// per questi nomi riservati entrano anche pityStar e le stelle degli slot, solo se gia' uscite alla data
+// (firstRarity <= at). tiers: Map id -> Tier (4o campo di ids); medalInfo: Map id -> {name, rare}.
 function expandPool(banner, catalog, at) {
   const p = banner.pool || {};
+  const g = banner.guarantee || {};
+  const res = Array.isArray(g.slots) ? g.slots : [];
   if (p.mode === 'evolve') {
     const ev = p.evolve || [];
     const top = Math.max(...ev.map(([, lv]) => lv));
     const rest = ev.length > 1 ? 0.9 / (ev.length - 1) : 1;
     const weighted = ev.map(([id, lv]) => [id, ev.length > 1 ? (lv === top ? 0.1 : rest) : 1]);
-    return { pool: {}, featuredIds: [], listIds: [], listNames: [], featuredNames: [], weighted };
+    return { pool: {}, featuredIds: [], listIds: [], listNames: [], featuredNames: [], weighted,
+      slotNames: res.map(() => []), pityNames: [], pityIds: [], tiers: new Map(), medalInfo: new Map() };
   }
   const medals = catalog.medals || {};
-  const names = new Set([...(p.names || []), ...(p.featured || []), ...(banner.guarantee?.list || [])]);
+  const reserved = new Set([...res.flatMap((s) => s.names || []), ...(g.pityNames || [])]);
+  const names = new Set([...(p.names || []), ...(p.featured || []), ...(g.list || []), ...reserved]);
   const filter = p.filter || [];
   const passes = (m) => !filter.length || filter.includes(m.origin) || filter.includes(m.att);
   for (const s of p.sets || []) {
@@ -88,25 +99,38 @@ function expandPool(banner, catalog, at) {
   const out = (r) => first[r] && first[r] > at;
   const rarities = new Set(banner.rarityMix.map(([r]) => r).filter((r) => !out(r)));
   for (const [r] of banner.rarityMix) if (first[r + 1] && first[r + 1] <= at) rarities.add(r + 1);
-  const feat = new Set(p.featured || []), list = new Set(banner.guarantee?.list || []);
-  const pool = {}, featuredIds = new Set(), listIds = new Set(), byName = new Map();
+  // stelle dei nomi riservati: quelle del pool piu' pityStar e le stelle degli slot gia' uscite
+  const resRarities = new Set(rarities);
+  for (const r of [g.pityStar, ...res.map((s) => s.star)]) if (r && !out(r)) resRarities.add(r);
+  const feat = new Set(p.featured || []), list = new Set(g.list || []);
+  const pool = {}, featuredIds = new Set(), listIds = new Set(), byName = new Map(), resByName = new Map();
+  const tiers = new Map(), medalInfo = new Map();
+  const add = (m, n, rare, id) => { if (!m.has(n)) m.set(n, {}); (m.get(n)[rare] ||= new Set()).add(id); };
   for (const n of names) {
-    for (const [id, rare, rd] of medals[n]?.ids || []) {
-      if (!rarities.has(rare) || rd > at) continue;
+    for (const [id, rare, rd, tier] of medals[n]?.ids || []) {
+      if (rd > at) continue;
+      const inPool = rarities.has(rare), inRes = reserved.has(n) && resRarities.has(rare);
+      if (!inPool && !inRes) continue;
+      tiers.set(id, tier || 0);
+      medalInfo.set(id, { name: n, rare });
+      if (inRes) add(resByName, n, rare, id);
+      if (!inPool) continue;
       (pool[rare] ||= new Set()).add(id);
-      if (!byName.has(n)) byName.set(n, {});
-      (byName.get(n)[rare] ||= new Set()).add(id);
+      add(byName, n, rare, id);
       if (feat.has(n)) featuredIds.add(id);
       if (list.has(n)) listIds.add(id);
     }
   }
   const sorted = (s) => [...s].sort((a, b) => a - b);
   const bySets = (o) => Object.fromEntries(Object.entries(o).map(([r, s]) => [r, sorted(s)]));
-  const named = (ns, w) => [...new Set(ns)].filter((n) => byName.has(n)).map((n) => [n, w(n), bySets(byName.get(n))]);
+  const named = (ns, w, m = byName) => [...new Set(ns)].filter((n) => m.has(n)).map((n) => [n, w(n), bySets(m.get(n))]);
+  const pityNames = named(g.pityNames || [], () => 1, resByName);
   return {
     pool: bySets(pool), featuredIds: sorted(featuredIds), listIds: sorted(listIds),
-    listNames: named(banner.guarantee?.list || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1)),
+    listNames: named(g.list || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1)),
     featuredNames: named(p.featured || [], () => 1), weighted: [],
+    slotNames: res.map((s) => named(s.names || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1), resByName)),
+    pityNames, pityIds: sorted(new Set(pityNames.flatMap(([, , v]) => Object.values(v).flat()))), tiers, medalInfo,
   };
 }
 
@@ -149,38 +173,187 @@ function pickNamed(banner, names, rare, rng) {
 
 // Slot a lista: count slot da guarantee.slot (indice in slotRarities, default 0; 1 su B0306-B0308/B0355, dove
 // lo slot 7★ e' di una garanzia di stella con Tier e la lista sta sullo slot 6★: correzione finale C).
+// Percorso vecchio (catalogo del sotto-progetto 2, senza guarantee.slots).
 const isListSlot = (g, i, n) => n > 0 && i >= (g.slot || 0) && i < (g.slot || 0) + n;
 
+// --- Riserve degli slot (catalogo v3, sotto-progetto 2b) ---
+const hasSlots = (g) => Array.isArray(g?.slots);
+// indici di una riserva: slotsUsed (solo sui conflitti) o slot..slot+count-1
+const slotsOf = (s) => s.slotsUsed || Array.from({ length: Math.max(1, s.count || 1) }, (_, k) => s.slot + k);
+const reservationIndex = (g, i) => (hasSlots(g) ? g.slots.findIndex((s) => slotsOf(s).includes(i)) : -1);
+// riserva che copre lo slot i, o null
+function reservationOf(banner, i) {
+  const g = banner.guarantee || {};
+  const j = reservationIndex(g, i);
+  return j >= 0 ? g.slots[j] : null;
+}
+// variante di una medaglia per nome alla stella `star`: la piu' alta sotto (o uguale), altrimenti la piu'
+// bassa sopra (comunque gia' uscita alla data: expandPool tiene solo quelle)
+function pickVariant(v, star, rng) {
+  const have = Object.keys(v).map(Number).filter((r) => poolOf(v, r).length);
+  const below = have.filter((r) => r <= star), above = have.filter((r) => r > star);
+  const list = poolOf(v, below.length ? Math.max(...below) : Math.min(...above));
+  return list[pickIndex(list.length, rng)];
+}
+const pickName = (names, rng) => names[pickWeighted(names.map((x, i) => [i, x[1]]), rng)][2];
+const hasAtOrBelow = (v, star) => Object.keys(v).some((r) => Number(r) <= star && poolOf(v, r).length);
+// Riserva a lista: solo i nomi con una variante alla stella dello slot o sotto (decisione 1: una lista a 6★
+// non da' le medaglie che hanno solo la 7★), niente salita; se nessun nome ce l'ha, tutta la lista.
+function pickList(names, rare, rng) {
+  const ok = names.filter(([, , v]) => hasAtOrBelow(v, rare));
+  return pickVariant(pickName(ok.length ? ok : names, rng), rare, rng);
+}
+// medaglie dello slot «tier» alla stella r: il pool della stella filtrato per Tier, piu' i nomi alternativi
+function tierIds(ex, s, j, r) {
+  const ok = (id) => {
+    const t = ex.tiers?.get(id) ?? 0;
+    return (s.tierMin == null || t >= s.tierMin) && (s.tierMax == null || t <= s.tierMax);
+  };
+  const ids = new Set(poolOf(ex.pool, r).filter(ok));
+  for (const [, , v] of ex.slotNames?.[j] || []) for (const id of poolOf(v, r)) ids.add(id);
+  return [...ids].sort((a, b) => a - b);
+}
+const tierLabel = (s) => (s.tierMin == null ? `<=${s.tierMax}` : s.tierMax == null ? `>=${s.tierMin}`
+  : s.tierMin === s.tierMax ? `${s.tierMin}` : `${s.tierMin}-${s.tierMax}`);
+const tierWarned = new Set(); // una riga di log per banner e riserva
+// Slot «tier»: la salita dello slot normale, poi la medaglia fra quelle del Tier alla stella estratta (se la
+// stella sopra non ha medaglie del Tier resta la stella dello slot); Tier vuoto alla data: slot senza filtro.
+function pickTier(banner, ex, s, j, rare, rng) {
+  const up = upgradeOf(banner, ex.pool, rare);
+  const r = up && rng() < up.p ? up.to : rare;
+  let ids = tierIds(ex, s, j, r);
+  if (!ids.length && r !== rare) ids = tierIds(ex, s, j, rare);
+  if (ids.length) return ids[pickIndex(ids.length, rng)];
+  const key = `${banner.drawMedalTypeId}:${j}`;
+  if (!tierWarned.has(key)) {
+    tierWarned.add(key);
+    console.log(`  [gacha] ${banner.rowId}: nessuna medaglia del Tier ${tierLabel(s)} a ${rare}★ alla data, slot ${s.slot} senza filtro`);
+  }
+  return pickSlot(banner, ex.pool, rare, rng);
+}
+// pity: alla pity-esima estrazione senza bersaglio lo slot pitySlot da' un bersaglio alla stella fissa
+// pityStar (se non ancora uscita alla data, la variante piu' alta sotto); con pityGift (medaglia di
+// supporto, Present Box nel Task 6) nessuno slot viene sostituito
+function pityOf(g, ex, state, n) {
+  const gift = !!g.pityGift;
+  const on = !!g.pity && (gift || (ex.pityNames || []).length > 0) && (state.sinceFeatured || 0) + 1 >= g.pity;
+  const slot = on && !gift ? (g.pitySlot != null && g.pitySlot < n ? g.pitySlot : 0) : -1;
+  return { on, slot };
+}
+function rollReserved(banner, ex, rng, state) {
+  const g = banner.guarantee;
+  const rares = slotRarities(banner);
+  const listOn = g.every ? ((state.draws || 0) + 1) % g.every === 0 : true;
+  const pity = pityOf(g, ex, state, rares.length);
+  const medalIds = rares.map((rare, i) => {
+    if (i === pity.slot) return pickVariant(pickName(ex.pityNames, rng), g.pityStar || rare, rng);
+    const j = reservationIndex(g, i), s = j >= 0 ? g.slots[j] : null;
+    if (s?.kind === 'list' && listOn && (ex.slotNames?.[j] || []).length) return pickList(ex.slotNames[j], rare, rng);
+    if (s?.kind === 'tier') return pickTier(banner, ex, s, j, rare, rng);
+    return pickSlot(banner, ex.pool, rare, rng); // trait (slot generico riservato) e slot liberi
+  });
+  return { medalIds, featured: pity.on || medalIds.some((id) => (ex.pityIds || []).includes(id)), pityFired: pity.on };
+}
+
+// Potenziamenti per slot (banner.enhance), dopo la scelta delle medaglie (cosi' i tiri delle medaglie non
+// cambiano): boosted (opts.boostedOf(normale, str, def) -> id della riga boosted; solo una medaglia gia'
+// estratta dal pool, la boosted non entra mai da sola), preset {dots, guilt} e skills (maxSkill).
+// on: {slots}, {names} o {star} con tierMin/tierMax/excludePrime (decisione 8, medal-boost.tierMatch).
+function enhanceOn(on, id, i, ex) {
+  if (!on) return false;
+  if (on.slots) return on.slots.includes(i);
+  const info = ex.medalInfo?.get(id);
+  if (on.names) return !!info && on.names.includes(info.name);
+  if ('star' in on || 'tierMin' in on) {
+    const { tierMatch } = require('./medal-boost'); // qui e non in cima: medal-boost richiede gacha-data
+    return !!info && tierMatch(on, { rare: info.rare, guiltValue: ex.tiers?.get(id) || 0, name: info.name });
+  }
+  return false;
+}
+const dotsOf = (d, rng) => (Array.isArray(d) ? d[0] + pickIndex(d[1] - d[0] + 1, rng) : d);
+function enhanceDraw(banner, ex, medalIds, rng, opts) {
+  const e = banner.enhance || {};
+  const extras = [];
+  const ids = medalIds.map((id, i) => {
+    const x = { boostedFrom: null, preset: null, skills: null };
+    let out = id;
+    // voci idonee con la riga boosted nel master: una «guaranteed» vince, altrimenti un solo tiro per slot
+    // (BOOST_SMALL_CHANCE anche se lo slot e' coperto da piu' voci «small»: vince la prima)
+    const ok = (opts.boostedOf ? e.boosted || [] : []).filter((b) => enhanceOn(b.on, id, i, ex))
+      .map((b) => [b.chance, opts.boostedOf(id, b.str, b.def)]).filter(([c, bid]) => bid && (c === 'small' || c === 'guaranteed'));
+    const hit = ok.find(([c]) => c === 'guaranteed') || (ok.length && rng() < BOOST_SMALL_CHANCE ? ok[0] : null);
+    if (hit) { out = hit[1]; x.boostedFrom = id; }
+    const p = (e.preset || []).find((q) => enhanceOn(q.on, id, i, ex));
+    if (p) x.preset = { dots: dotsOf(p.dots, rng), guilt: p.guilt ?? null };
+    const m = (e.maxSkill || []).find((q) => enhanceOn(q.on, id, i, ex));
+    if (m) x.skills = [...m.skills];
+    extras.push(x);
+    return out;
+  });
+  return { medalIds: ids, extras };
+}
+
 // Estrazione di un banner espanso (ex = expandPool). state = estrazioni gia' fatte dal giocatore su
-// quel banner: draws (totale) e sinceFeatured (di fila senza vetrina). Pity: alla pity-esima estrazione
-// senza vetrina il primo slot (sempre lo slot 0) da' la vetrina; every: ogni every-esima estrazione gli slot a lista.
-function rollDraw(banner, ex, rng, state = { draws: 0, sinceFeatured: 0 }) {
+// quel banner: draws (totale) e sinceFeatured (di fila senza vetrina). Con guarantee.slots (v3) ogni riserva
+// pesca dalla sua (list, tier, trait), poi la pity su pitySlot; senza, il percorso vecchio: pity sullo slot 0
+// con la vetrina, every: ogni every-esima estrazione gli slot a lista. Poi i potenziamenti (enhanceDraw).
+// Risultato: {medalIds, featured, extras, pityFired}. featured = uscito un bersaglio della pity (v3: pityIds;
+// vecchio: la vetrina) o pity scattata (azzera la pity in payDraw); pityFired = la pity e' scattata in questa
+// estrazione, anche con pityGift (nessuno slot sostituito: il Task 6 da' il regalo nel Present Box).
+// extras[i] = {boostedFrom: id normale | null, preset: {dots, guilt} | null, skills: [nomi] | null}.
+function rollDraw(banner, ex, rng, state = { draws: 0, sinceFeatured: 0 }, opts = {}) {
+  let r;
   if (banner.pool?.mode === 'evolve') {
     if (!ex.weighted.length) throw new Error(`banner ${banner.drawMedalTypeId}: evolve senza medaglie`);
-    return { medalIds: Array.from({ length: banner.lotCount }, () => pickWeighted(ex.weighted, rng)), featured: false };
+    r = { medalIds: Array.from({ length: banner.lotCount }, () => pickWeighted(ex.weighted, rng)), featured: false, pityFired: false };
+  } else if (hasSlots(banner.guarantee)) {
+    r = rollReserved(banner, ex, rng, state || {});
+  } else {
+    const g = banner.guarantee || {};
+    const n = (state.draws || 0) + 1;
+    const listOn = (ex.listNames || []).length > 0 && (g.every ? n % g.every === 0 : true);
+    const listSlots = listOn ? Math.max(1, g.count || 1) : 0;
+    const pityOn = !!g.pity && (ex.featuredNames || []).length > 0 && (state.sinceFeatured || 0) + 1 >= g.pity;
+    const medalIds = slotRarities(banner).map((rare, i) => {
+      if (i === 0 && pityOn) return pickNamed(banner, ex.featuredNames, rare, rng);
+      if (isListSlot(g, i, listSlots)) return pickNamed(banner, ex.listNames, rare, rng);
+      return pickSlot(banner, ex.pool, rare, rng);
+    });
+    r = { medalIds, featured: medalIds.some((id) => ex.featuredIds.includes(id)), pityFired: pityOn };
   }
-  const g = banner.guarantee || {};
-  const n = (state.draws || 0) + 1;
-  const listOn = (ex.listNames || []).length > 0 && (g.every ? n % g.every === 0 : true);
-  const listSlots = listOn ? Math.max(1, g.count || 1) : 0;
-  const pityOn = !!g.pity && (ex.featuredNames || []).length > 0 && (state.sinceFeatured || 0) + 1 >= g.pity;
-  const medalIds = slotRarities(banner).map((rare, i) => {
-    if (i === 0 && pityOn) return pickNamed(banner, ex.featuredNames, rare, rng);
-    if (isListSlot(g, i, listSlots)) return pickNamed(banner, ex.listNames, rare, rng);
-    return pickSlot(banner, ex.pool, rare, rng);
-  });
-  return { medalIds, featured: medalIds.some((id) => ex.featuredIds.includes(id)) };
+  return { ...r, ...enhanceDraw(banner, ex, r.medalIds, rng, opts || {}) };
 }
 
 // Probabilita' per slot (percento, 2 decimali) per Draw Odds; negli slot a lista le stesse salite dello
-// slot normale, con list: true su ogni voce.
+// slot normale, con list: true su ogni voce. v3: kind su ogni voce degli slot riservati ('list': la stella
+// dello slot al 100%, 'tier' con tier '<=4' / '>=5' / '3-4', 'trait'; 'pity' sullo slot della pity senza riserva).
 function slotOdds(banner, ex) {
-  const listSlots = (ex.listNames || []).length ? Math.max(1, banner.guarantee?.count || 1) : 0;
   const r2 = (x) => Math.round(x * 10000) / 100;
-  return slotRarities(banner).map((rare, i) => {
+  const g = banner.guarantee || {};
+  const base = (rare) => {
     const up = upgradeOf(banner, ex.pool, rare);
-    const odds = up ? [{ rare, pct: r2(1 - up.p) }, { rare: up.to, pct: r2(up.p) }] : [{ rare, pct: 100 }];
-    return isListSlot(banner.guarantee || {}, i, listSlots) ? odds.map((o) => ({ list: true, ...o })) : odds;
+    return up ? [{ rare, pct: r2(1 - up.p) }, { rare: up.to, pct: r2(up.p) }] : [{ rare, pct: 100 }];
+  };
+  if (!hasSlots(g)) {
+    const listSlots = (ex.listNames || []).length ? Math.max(1, g.count || 1) : 0;
+    return slotRarities(banner).map((rare, i) => {
+      const odds = base(rare);
+      return isListSlot(g, i, listSlots) ? odds.map((o) => ({ list: true, ...o })) : odds;
+    });
+  }
+  const rares = slotRarities(banner);
+  const pitySlot = !g.pity || g.pityGift ? -1 : g.pitySlot != null && g.pitySlot < rares.length ? g.pitySlot : 0;
+  return rares.map((rare, i) => {
+    const j = reservationIndex(g, i), s = j >= 0 ? g.slots[j] : null;
+    if (s?.kind === 'list' && (ex.slotNames?.[j] || []).length) return [{ list: true, rare, pct: 100, kind: 'list' }];
+    if (s?.kind === 'tier') {
+      // la salita conta solo se la stella sopra ha medaglie del Tier
+      const up = upgradeOf(banner, ex.pool, rare);
+      const odds = up && tierIds(ex, s, j, up.to).length ? base(rare) : [{ rare, pct: 100 }];
+      return odds.map((o) => ({ ...o, kind: 'tier', tier: tierLabel(s) }));
+    }
+    if (s?.kind === 'trait') return base(rare).map((o) => ({ ...o, kind: 'trait' }));
+    return i === pitySlot ? base(rare).map((o) => ({ ...o, kind: 'pity' })) : base(rare);
   });
 }
 
@@ -233,6 +406,6 @@ const limitText = (b) => (b.totalLimit ? (b.totalLimit === 1 ? 'once' : `${b.tot
 const bannerById = (list, id) => list.find((b) => b.drawMedalTypeId === Number(id));
 
 module.exports = {
-  CATALOG_ID, UPGRADE, EPIC_UPGRADE, FEATURED_WEIGHT, SKILL_TABLES, parseRarityMix, slotRarities, loadCatalog, storyDay,
-  asOf, expandPool, limitText, slotOdds, rollDraw, rollSkill, drawMedalTypeRow, bannerById,
+  CATALOG_ID, UPGRADE, EPIC_UPGRADE, FEATURED_WEIGHT, BOOST_SMALL_CHANCE, SKILL_TABLES, parseRarityMix, slotRarities, loadCatalog,
+  storyDay, asOf, expandPool, limitText, slotOdds, rollDraw, reservationOf, rollSkill, drawMedalTypeRow, bannerById,
 };
