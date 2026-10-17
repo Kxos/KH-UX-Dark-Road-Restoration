@@ -455,16 +455,21 @@ e `node server/make-nova-rows.js` (idempotenti), poi `make-banners.js` e la revi
   le Tier-family (+1000/+1000) sono ricostruite (la frase non da' i valori), spiegate nelle Notices;
 - preset: pallini fino a `maxEnhanceCount`, guilt al massimo del Tier (con `guilt: 'max'` anche i pallini); la guilt
   del preset vale per il Nova anche prima di Power Bangle (probabilmente come l'originale);
-- 7★ di Tier 9-10 (decisione 13-bis, regola originale): ogni 7★ con `guiltValue` >= 9 estratta da **qualsiasi**
-  banner, boosted comprese (Tier della normale via `groupId` se la boosted non lo ha), arriva con i pallini a
-  `maxEnhanceCount` e la guilt al massimo del Tier (T9 28000, T10 32000). Fonti: notice 48236 (01-01-2019) «7★ Tier 9
-  Medals come with the maximum bonus percentage of 280%» e notice 56838 (01-09-2019) «7★ Tier 10 Medals come with the
-  maximum bonus percentage of 320%»; ricerca in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\guilt-rule.md`. Le 7★ di Tier
+- 7★ di Tier 9-10 (decisione 13-bis, regola originale, alle date dei notice): una 7★ di Tier 9 estratta da un banner
+  con data dal **2019-01-01** e una 7★ di Tier 10 dal **2019-09-01**, da qualsiasi banner, boosted comprese (Tier della
+  normale via `groupId` se la boosted non lo ha), arriva con i pallini a `maxEnhanceCount` e la guilt al massimo del
+  Tier (T9 28000, T10 32000). Data dell'estrazione = `gacha-data.asOf` del banner, la stessa delle medaglie del pool:
+  l'inizio del banner, per i PERMANENT la data della storia limitata a inizio-fine. Date e notice in una costante,
+  `gacha-data.MAX_GUILT_FROM`. Prima di quelle date le 7★ di Tier 9-10 arrivano al massimo solo col preset del banner.
+  Fonti: notice 48236 (01-01-2019, «Birth by Sleep Falling Price Deals!») «7★ Tier 9 Medals come with the maximum
+  bonus percentage of 280%» e notice 56838 (01-09-2019, «Supernova+ Foreteller Deals!») «7★ Tier 10 Medals come with
+  the maximum bonus percentage of 320%»; ricerca in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\guilt-rule.md`. Le 7★ di Tier
   piu' basso restano al massimo solo col preset del banner; preset e regola insieme: il massimo dei due
   (`respondGachaDraw` in server.js, test 13-bis in test-gacha-server.js). Il Nova sale (+1/+5, `make-nova-rows.js` ha
   gia' 1/5 su tutte le 7★ con Tier) e il popup compare. Comportamento originale: niente riga nelle Notices; nei
-  Details, solo dove sono elencati dei preset su un banner con slot 7★, la riga «Any 7★ Tier 9-10 Medal: comes with
-  its Special Attack Bonus maxed (original)», perche' il preset su un solo slot non faccia pensare il contrario;
+  Details, solo dove sono elencati dei preset su un banner con slot 7★ e solo dalle date della regola, la riga «Any 7★
+  Tier 9 Medal: ...» (dal 2019-01-01) o «Any 7★ Tier 9-10 Medal: comes with its Special Attack Bonus maxed
+  (original)» (dal 2019-09-01), perche' il preset su un solo slot non faccia pensare il contrario;
 - maxSkill: 80 banner estraibili, 0 coperti (skill.json ha 12 abilita', nessuna «... Max»): I-146 resta aperto.
 
 **Prove al banco (17-10, risorse 41, master BASE 121, nessun crash del gioco).** Copia del salvataggio ridotto in
@@ -519,8 +524,9 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
   deal avevano `enhance.preset` vuoto. Campo nuovo `preset` in `recon/tools/banner_overrides.tsv` (`slots=0;dots=max;
   guilt=max`, con la fonte), applicato da `make_banner_catalog.apply_enhance_overrides`. E' il comportamento
   originale (Details: «comes with its Special Attack Bonus maxed (original)»), niente riga nelle Notices. Non sono
-  piu' gli unici: dalla decisione 13-bis ogni 7★ di Tier 9-10 estratta arriva al massimo da qualsiasi banner (regola
-  sopra, nelle Regole); il preset di B0306-B0308 resta per le loro 7★ di Tier 1-4.
+  piu' gli unici: dalla decisione 13-bis le 7★ di Tier 9 (banner dal 2019-01-01) e di Tier 10 (dal 2019-09-01)
+  estratte arrivano al massimo da qualsiasi banner (regola sopra, nelle Regole); il preset di B0306-B0308 (2018) resta
+  per le loro 7★ di Tier 1-4.
 - **Livelli del popup dopo un'estrazione**: con `guiltBurstFirst/MaxUserMedalIds` il client calcola i livelli dalle
   righe medal delle copie elencate (`[fn]`: partenza = `userPoint.guiltBurstLv` - `addGuiltBurstLv` +0x4c4
   delle prime - `addGuiltBurstLvMax` +0x4c8 delle massime; `[fn]`/`[fn]` riaggiungono a ogni passo).
@@ -530,7 +536,7 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
   le loro boosted (slot 0 di B0306-B0308). E' un'approssimazione voluta, piu' larga dello slot 0 di B0306 (Tier <= 4):
   filtrare per `tierMin`/`tierMax` avrebbe chiesto un'altra revisione del master (decisione del controller). Il
   popup parte solo quando il server manda le liste, quindi le estrazioni normali non lo mostrano (salvo le 7★ di Tier
-  9-10, che dalla decisione 13-bis arrivano sempre al massimo); altri lettori del
+  9-10 dalle date della decisione 13-bis, che arrivano al massimo); altri lettori del
   campo nel client (`[fn]`, `[fn]`, `[fn]`) non sono stati capiti: per questo non si e' messo
   1/5 su tutte le medaglie.
 - **Banco (17-10, rev 122, salvataggio completo)**: estrazione normale su B0629 -> nessun popup (2bf_n1_after1-4);

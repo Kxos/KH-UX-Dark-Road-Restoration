@@ -350,8 +350,12 @@ const NOT_REPRODUCED_KINDS = {
   pity: 'Pity Medal: not reproduced, the target Medal is not available in this restoration.',
   imitation: 'Imitation Medal bonus: not reproduced.',
 };
-const T910_LINE = 'Any 7★ Tier 9-10 Medal: comes with its Special Attack Bonus maxed (original)';
-function guaranteeSection(banner, ex, medalNames) {
+// riga della regola 13-bis alla data del banner (gacha-data.MAX_GUILT_FROM); '' prima del 2019-01-01
+function ruleLine(at) {
+  const tiers = Object.keys(gd.MAX_GUILT_FROM).filter((k) => gd.maxGuiltRule(7, Number(k), at));
+  return tiers.length ? `Any 7★ Tier ${tiers.length > 1 ? `${tiers[0]}-${tiers[tiers.length - 1]}` : tiers[0]} Medal: comes with its Special Attack Bonus maxed (original)` : '';
+}
+function guaranteeSection(banner, ex, medalNames, at) {
   const nm = namer(ex, medalNames);
   const g = banner.guarantee || {}, e = banner.enhance || {}, out = [];
   for (const s of g.slots || []) {
@@ -361,9 +365,9 @@ function guaranteeSection(banner, ex, medalNames) {
     else out.push(`${n}x one of the listed Medals (${s.star}★)`);
   }
   for (const p of e.preset || []) out.push(`${onText(p.on, nm)}: comes with its Special Attack Bonus maxed (original)`);
-  // decisione 13-bis: con i preset elencati, la regola generale delle 7★ di Tier 9-10 (server.js respondGachaDraw), perche'
-  // i preset su altri slot non facciano pensare il contrario
-  if ((e.preset || []).length && (banner.rarityMix || []).some(([r]) => r >= 7)) out.push(T910_LINE);
+  // decisione 13-bis: con i preset elencati, la regola generale delle 7★ di Tier 9-10 alla data del banner (server.js
+  // respondGachaDraw), perche' i preset su altri slot non facciano pensare il contrario
+  if ((e.preset || []).length && (banner.rarityMix || []).some(([r]) => r >= 7) && ruleLine(at)) out.push(ruleLine(at));
   for (const b of e.boosted || []) {
     const stats = [b.str ? `+${b.str} STR` : '', b.def ? `+${b.def} DEF` : ''].filter(Boolean).join(', ');
     const rec = b.on && ('star' in b.on || 'tierMin' in b.on) ? ', reconstructed' : ''; // valori nostri: la frase non li dava
@@ -380,7 +384,7 @@ function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
   const pity = banner.guarantee?.pity ? `<p>${pityText(banner, ex, medalNames)}</p>` : '';
-  const garanzie = !evolve && ex && banner.rarityMix?.length ? guaranteeSection(banner, ex, medalNames) : '';
+  const garanzie = !evolve && ex && banner.rarityMix?.length ? guaranteeSection(banner, ex, medalNames, gd.asOf(banner, ctx?.storyDay || banner.start)) : '';
   const gtext = [banner.guaranteesText, listLost(banner, ex) ? NOT_REPRODUCED : ''].filter(Boolean).map(esc).join(' ');
   const rated = !!(ex && banner.rarityMix?.length) && banner.catalogOnly !== 'INCOMPLETE';
   const pool = evolve || !rated ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {

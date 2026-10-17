@@ -1226,6 +1226,7 @@ function respondGachaDraw(res, body) {
     const skills = skillRowsById();
     const skillByName = new Map([...skills.values()].map((r) => [medalBoost.norm(r.name), r]));
     let bursts = null; // masterRows('burst') solo se serve (7 MB)
+    const drawAt = gachaData.asOf(banner, ctx.storyDay); // data dell'estrazione per la regola 13-bis
     draw.medalIds.forEach((medalId, i) => {
       grantItem(3, medalId, 1);
       const newId = player.medals[player.medals.length - 1].userMedalId;
@@ -1243,10 +1244,11 @@ function respondGachaDraw(res, body) {
       const x = draw.extras?.[i], row = medalRows.get(medalId);
       // Tier della riga; una boosted senza Tier prende quello della normale (groupId)
       const tier = row ? row.guiltValue || medalRows.get(row.groupId)?.guiltValue || 0 : 0;
-      // decisione 13-bis, regola originale (notice 48236 del 01-01-2019: «7★ Tier 9 Medals come with the maximum
-      // bonus percentage of 280%»; notice 56838 del 01-09-2019, Tier 10 al 320%): ogni 7★ di Tier 9-10 estratta,
-      // da qualsiasi banner e boosted comprese, arriva con pallini e guilt al massimo. Le altre solo col preset.
-      const rule = !!row && row.rare === 7 && tier >= 9;
+      // decisione 13-bis, regola originale (gacha-data.MAX_GUILT_FROM: notice 48236, Tier 9 dal 2019-01-01; notice
+      // 56838, Tier 10 dal 2019-09-01): una 7★ di quel Tier estratta da un banner con data (asOf, la stessa delle
+      // medaglie del pool) da quel giorno, boosted comprese, arriva con pallini e guilt al massimo. Prima, e per le
+      // altre, solo col preset.
+      const rule = !!row && gachaData.maxGuiltRule(row.rare, tier, drawAt);
       if ((x?.preset || rule) && row && !packed.has(medalId)) {
         bursts ??= new Map(masterRows('burst').map((b) => [b.burstId, b]));
         const maxDots = row.validBurst ? bursts.get(row.burstId)?.maxEnhanceCount || 0 : 0;
