@@ -1162,10 +1162,21 @@ function expandFor(b, ctx = storyCtx()) {
 const gachaShopList = (ctx = storyCtx()) => gacha.shopBanners(gachaCatalog().banners, { ...ctx, sizes: GACHA_SIZES, show: GACHA_SHOW });
 
 // Piastre con la striscia della garanzia (gacha.warrantFields): il pool alla data del giocatore da' i bersagli della pity.
+const gachaListWarned = new Set(); // banner il cui pool non si espande per /gacha/list (log una volta)
 function respondGachaList(res) {
   const migrate = !player.drawTickets, listed = player.gacha?.listedCurrency, ctx = storyCtx();
-  const exFor = (b) => { try { return expandFor(b, ctx); } catch { return undefined; } };
-  const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW, ...ctx, exFor });
+  // expandFor che lancia: niente pool, warrantMedalIds dal catalogo (gacha.warrantFields), una riga di log per banner
+  const exFor = (b) => {
+    try { return expandFor(b, ctx); } catch (e) {
+      if (!gachaListWarned.has(b.drawMedalTypeId)) {
+        gachaListWarned.add(b.drawMedalTypeId);
+        console.log(`  [gacha] ${b.rowId} ${b.name}: pool per la striscia della pity non espandibile (${e.message})`);
+      }
+      return undefined;
+    }
+  };
+  const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW,
+    ...ctx, exFor, catalog: gachaCatalog() });
   if (migrate || player.gacha.listedCurrency !== listed) savePlayer();
   send(res, 200, { ret: ret(), ...data });
 }
