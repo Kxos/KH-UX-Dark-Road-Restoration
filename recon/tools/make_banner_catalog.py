@@ -488,8 +488,8 @@ def medal_origin(page):
 
 
 FAMILIES = [('sn++ - ', '2019-11-08'), ('supernova+ - ', '2019-09-01'), ('sn+ - ', '2019-09-01'),
-            ('supernova - ', '2018-10-05'), ('sn - ', '2018-10-05'), ('', '')]
-FAMILY_RE = re.compile(r'^(sn\+\+|supernova\+|sn\+|supernova|sn) - ')
+            ('supernova - ', '2018-10-05'), ('sn - ', '2018-10-05'), ('prime - ', '2018-06-01'), ('', '')]
+FAMILY_RE = re.compile(r'^(sn\+\+|supernova\+|sn\+|supernova|sn|prime) - ')
 NON_MEDAL = re.compile(r'\b(boost|atk|def|attack|defense|lux\+*|gauge|triple threat|second chance|poison\+?|paralysis\+?|'
                        r'sleep\+?|prize\+?|coins?|gems?|tickets?|jewels?|avatars?|trait medal|imitation|following|skills?|'
                        r'tier)\b|^with |:|^blue fairy \[|^dual meow wow \[', re.I)  # ultime due: medaglie oggetto (type 6)
@@ -531,6 +531,8 @@ def resolve_name(name, start, medals, rd):
             cands.append(k)
     if not cands:  # «Key Art #16» -> «key art #16 [ex+]», «Zack» -> «zack a»: solo se l'alternativa e' unica
         alt = [bare + s for s in (' a', ' [ex]', ' [ex+]', ' [+]') if bare + s in medals]
+        if len(alt) > 1 and bare + ' a' in alt:  # «Xion» (8.2, 2016) = «Xion A»: le B/[EX+] escono dopo
+            return bare + ' a'
         return alt[0] if len(alt) == 1 else None
     ok =[k for k in cands if medals[k]['date'] <= start]
     return ok[0] if ok else min(cands, key=lambda k: medals[k]['date'])
@@ -575,7 +577,8 @@ def extend_medals(medals, M, rd, debut):
     return added
 
 
-STD_CLS = {'', 'SR', 'L'}
+STD_CLS = {'', 'SR', 'L-SR', 'L'}  # = DRAW_CLS
+STD_CLASS2 = {'Attack', '', 'Rare', 'Super Rare'}  # 'Rare'/'Super Rare': class2 scritto male nella wiki (vanitas, ...)
 
 
 def mark_std(medals):
@@ -587,7 +590,7 @@ def mark_std(medals):
         v = medals[k]
         ids = {i[0] for i in v['ids']}
         std = ('alias' not in v and not FAMILY_RE.match(k) and not k.startswith('prime - ')
-               and v['cls'] in STD_CLS and v['class2'] in ('Attack', '') and not (ids & seen))
+               and v['cls'] in STD_CLS and v['class2'] in STD_CLASS2 and not (ids & seen))
         v['std'] = std
         if std:
             seen |= ids
@@ -777,6 +780,10 @@ def build_catalog(inputs):
             debut.setdefault(clean_name(n), b['start'] or FIRST_DAY)
     added = extend_medals(medals, M, rd, debut)
     mark_std(medals)
+    # nomi dei sotto-set -> chiavi di `medals` alla data del sotto-set ({{KA|19}} 31.5a -> supernova - key art #19,
+    # «Xion» 8.2 -> xion a, «SN - KH III Xion» -> redirect sn - kh iii xion a); gli irrisolti restano come sono
+    for k, v in sub_members.items():
+        sub_members[k] = _dedup(resolve_name(n, sub_date.get(k, FIRST_DAY), medals, rd) or n for n in v)
     mats = {norm(x['name']) for x in MAT}
     unresolved = collections.Counter()
     for b in out:
