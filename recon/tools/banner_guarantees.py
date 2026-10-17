@@ -314,13 +314,38 @@ def _target_names(seg, trait):
     return mbc._dedup(out)
 
 
+def tier_boost(seg):
+    """bersagli `on` di una boosted per Tier («a 7★ Tier 4, 5, 6, or 7 Medal (excluding Prime Medals)», «a 7★ Tier 4+ Medal»,
+    «a Tier 4 or higher Medal»): [{star, tierMin, tierMax} (+ excludePrime: True)]; star None se la frase non la scrive.
+    «(excluding Tier 4 Prime Medals)» esclude le Prime solo al Tier 4: l'intervallo si spezza (4 senza Prime, 5 con)"""
+    excl = re.search(r'\(excluding (?:Tier (\d+) )?Prime Medals?\)', seg)
+    body = re.sub(r'\(.*?\)', '', seg)
+    star = re.search(r'(\d)★', body)
+    star = int(star.group(1)) if star else None
+    m = re.search(r'\bTier (\d+)\+', body)
+    tmin, tmax = (int(m.group(1)), None) if m else _tier(body)
+    if not excl:
+        return [{'star': star, 'tierMin': tmin, 'tierMax': tmax}]
+    if not excl.group(1):
+        return [{'star': star, 'tierMin': tmin, 'tierMax': tmax, 'excludePrime': True}]
+    x = int(excl.group(1))
+    out = []
+    if tmin < x:
+        out.append({'star': star, 'tierMin': tmin, 'tierMax': x - 1})
+    if tmin <= x and (tmax is None or x <= tmax):
+        out.append({'star': star, 'tierMin': x, 'tierMax': x, 'excludePrime': True})
+    if tmax is None or tmax > x:
+        out.append({'star': star, 'tierMin': max(tmin, x + 1), 'tierMax': tmax})
+    return out
+
+
 def enhance_of(text, slots, featured, medal_rows, skill_rows, mix=None):
     """blocco `enhance` del catalogo v3 (contratto in global-constraints.md): {preset, boosted, maxSkill, notReproduced}.
     Bersaglio di ogni potenziamento: la riserva della stessa frase (`slots`, nell'ordine delle frasi come
     parse_reservations), altrimenti i nomi della frase («When drawing X»), «the N★ Medal» -> star, un pronome -> la
-    vetrina (`featured`); «All [other] Medals» -> gli slot del mix (`mix`, facoltativo). maxSkill: solo le abilita' di
+    vetrina (`featured`); «All [other] Medals» -> gli slot del mix (`mix`, facoltativo); boosted per Tier -> tier_boost. maxSkill: solo le abilita' di
     `skill_rows` (skill.json, nomi normalizzati), le altre -> 'skill'. notReproduced: 'trait' (Trait Medal e slot Trait),
-    'imitation', 'epic', 'skill', 'boosted' (boosted per Tier, senza nomi), 'traitSlots' («5 Trait Slots»); 'pity'
+    'imitation', 'epic', 'skill', 'traitSlots' («5 Trait Slots»); 'pity'
     (bersaglio assente) lo aggiunge build_catalog dopo la risoluzione dei nomi."""
     del medal_rows  # i nomi restano quelli delle note: li risolve build_catalog come quelli delle riserve
     known = {mbc.norm(r['name']) for r in skill_rows}
@@ -433,7 +458,8 @@ def enhance_of(text, slots, featured, medal_rows, skill_rows, mix=None):
             seen = []
             for seg, st, df in clauses:
                 if TIER_TARGET.search(seg):
-                    nr.add('boosted')
+                    for on in tier_boost(seg):
+                        add('boosted', {'on': on, 'str': st, 'def': df, 'chance': 'small'})
                     continue
                 if AFORE.search(seg):
                     names = [n for n in (last_list or featured) if n not in seen] if 'other' in seg else list(last_list or featured)

@@ -1027,7 +1027,36 @@ def main():
               'maxSkill', len(skill_b), 'coperti del tutto', full, 'in parte', part, 'nessuno', len(skill_b) - full - part,
               'con pityGift', sum(1 for g in gs if g['pityGift']),
               'notReproduced', dict(C(k for e in es for k in e['notReproduced']).most_common()))
+    for lab, (cat_p, master_p) in boost_pairs(cat['medals'], inp['medals'], bs).items():
+        print(f'coppie boosted (medaglia, str, def) {lab}: catalogo {len(cat_p)} medal.json {len(master_p)}')
     print('scritto', inp['out'], os.path.getsize(inp['out']), 'byte')
+
+
+def _tier_ok(on, rare, tier, name):
+    return ((on.get('star') is None or rare == on['star']) and tier >= on['tierMin']
+            and (on.get('tierMax') is None or tier <= on['tierMax']) and not (on.get('excludePrime') and name.startswith('prime - ')))
+
+
+def boost_pairs(medals, medal_rows, banners):
+    """coppie distinte (medalId, str, def) che le voci boosted implicano (righe da creare nel Task 3):
+    {'per Tier': (catalogo, medal.json), 'per nome': (...)}. Catalogo: varianti in `medals` uscite entro la fine
+    del banner; medal.json: righe d'attacco non boosted, senza date (per Tier: rare, guiltValue, Prime per nome)."""
+    rows = [r for r in medal_rows if r.get('type', 1) == 1 and not is_boosted(r)]
+    out = {'per Tier': (set(), set()), 'per nome': (set(), set())}
+    for b in banners:
+        at = b['end'] or b['start'] or '9999'
+        for x in b['enhance']['boosted']:
+            on, sd = x['on'], (x['str'], x['def'])
+            if 'tierMin' in on:
+                cp, mp = out['per Tier']
+                cp.update((i[0],) + sd for n, v in medals.items() for i in v['ids'] if i[2] <= at and _tier_ok(on, i[1], i[3], n))
+                mp.update((r['medalId'],) + sd for r in rows if _tier_ok(on, r['rare'], r.get('guiltValue') or 0, norm(r['name'])))
+            elif 'names' in on:
+                cp, mp = out['per nome']
+                names = set(on['names'])
+                cp.update((i[0],) + sd for n in names for i in medals.get(n, {}).get('ids', []))
+                mp.update((r['medalId'],) + sd for r in rows if norm(r['name']) in names)
+    return out
 
 
 if __name__ == '__main__':
