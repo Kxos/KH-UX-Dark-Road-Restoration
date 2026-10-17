@@ -145,6 +145,190 @@ const eex = g.expandPool(EB, CAT, '2016-06-01');
 check(g.rollDraw(EB, eex, seq(0.5, 0.0), { draws: 2, sinceFeatured: 0 }).medalIds[0] === 42, 'every 3: terza estrazione, Hades 4★');
 check(g.rollDraw(EB, eex, seq(0.5, 0.0), { draws: 0, sinceFeatured: 0 }).medalIds[0] === 41, 'every 3: prima estrazione normale');
 
+// un'eccezione nei casi 2b conta come errore (non ferma i controlli vecchi)
+try {
+// --- sotto-progetto 2b: riserve degli slot (guarantee.slots), Tier, pity a stella fissa, potenziamenti ---
+// Catalogo v3: ids = [id, rare, data, Tier]
+const TCAT = { firstRarity: CAT.firstRarity, story: CAT.story, subsets: {}, medals: {
+  'hd axel': { date: '2016-05-01', std: false, ids: [[51, 5, '2016-05-01', 4], [71, 7, '2018-05-14', 4]] },
+  zack: { date: '2018-05-14', std: false, ids: [[72, 7, '2018-05-14', 7]] },
+  kairi: { date: '2017-01-01', std: false, ids: [[61, 6, '2017-01-01', 3], [73, 7, '2018-05-14', 3]] },
+  'sn only': { date: '2018-10-05', std: false, ids: [[74, 7, '2018-10-05', 10]] },
+} };
+const RES = (o) => ({ kind: 'list', slot: 0, count: 1, star: 6, names: [], tierMin: null, tierMax: null, ...o });
+const G3 = (o) => ({ list: ['kairi', 'sn only'], count: 1, slot: 1, pity: 5, every: null,
+  slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMax: 4 }), RES({ slot: 1, names: ['kairi', 'sn only'] })],
+  pityNames: ['hd axel'], pityStar: 7, pitySlot: 0, pityGift: null, erratum: null, source: null, ...o });
+const EN = (o) => ({ preset: [], boosted: [], maxSkill: [], notReproduced: [], ...o });
+const B3 = (o) => B({ rowId: 'B0306', drawMedalTypeId: 10306, start: '2018-11-01', end: '2018-11-07', lotCount: 10,
+  rarityMix: [[7, 1], [6, 1], [5, 8]], pool: P({ sets: [], names: ['zack', 'sn only'], featured: ['hd axel'] }),
+  guarantee: G3({}), enhance: EN({}), ...o });
+const consts = [0, 0.01, 0.02, 0.2, 0.5, 0.97, 0.99, 0.999];
+const rngs = [...consts.map((c) => () => c), ...Array(300).fill(Math.random)];
+const NOPITY = { draws: 0, sinceFeatured: 0 }, PITY = { draws: 4, sinceFeatured: 4 };
+// rng che da' 0.0 alle prime n chiamate (le scelte delle medaglie) e poi v (i tiri dei potenziamenti)
+const after = (n, v) => { let k = 0; return () => (k++ < n ? 0.0 : v); };
+const calls = (fn) => { let k = 0; fn(() => { k++; return 0.0; }); return k; };
+
+check(g.BOOST_SMALL_CHANCE === 0.05, 'BOOST_SMALL_CHANCE 0.05');
+const b3 = B3({}), x3 = g.expandPool(b3, TCAT, '2018-11-01');
+check(J(x3.pool) === '{"5":[51],"6":[61],"7":[71,72,73,74]}', `pool di B0306 sintetico (${J(x3.pool)})`);
+check(x3.slotNames.length === 2 && J(x3.slotNames[0]) === '[]' && J(x3.slotNames[1]) === '[["kairi",1,{"6":[61],"7":[73]}],["sn only",1,{"7":[74]}]]',
+  `slotNames per riserva (${J(x3.slotNames)})`);
+check(J(x3.pityNames) === '[["hd axel",1,{"5":[51],"7":[71]}]]' && J(x3.pityIds) === '[51,71]', `pityNames/pityIds (${J(x3.pityNames)} ${J(x3.pityIds)})`);
+check(x3.tiers instanceof Map && x3.tiers.get(74) === 10 && x3.tiers.get(71) === 4 && x3.tiers.get(61) === 3, 'tiers dal 4o campo');
+check(g.reservationOf(b3, 0)?.kind === 'tier' && g.reservationOf(b3, 1)?.kind === 'list' && g.reservationOf(b3, 2) === null, 'reservationOf');
+const bUsed = B3({ guarantee: G3({ slots: [RES({ slot: 0, count: 2, slotsUsed: [3, 5], conflict: true, names: ['kairi'] })] }) });
+check(g.reservationOf(bUsed, 5)?.slot === 0 && g.reservationOf(bUsed, 3) && g.reservationOf(bUsed, 1) === null && g.reservationOf(bUsed, 0) === null, 'reservationOf: slotsUsed rispettato');
+
+// Tier (Review Focus 2) e decisione 1 (Review Focus 1): con ogni rng lo slot 0 e' 71 o 73 (Tier <= 4), mai 72/74;
+// lo slot 1 (lista a 6★) e' sempre 61: «sn only» non ha la 6★, kairi non sale a 7★
+let bad = 0, bad1 = 0;
+for (const r of rngs) {
+  const d = g.rollDraw(b3, x3, r, NOPITY);
+  if (![71, 73].includes(d.medalIds[0])) bad++;
+  if (d.medalIds[1] !== 61) bad1++;
+}
+check(bad === 0, `slot tier di B0306: ${bad} estrazioni fuori dal Tier <= 4`);
+check(bad1 === 0, `slot lista a 6★ di B0306: ${bad1} estrazioni diverse da 61`);
+const d3 = g.rollDraw(b3, x3, seq(0.99), NOPITY);
+check(d3.featured === d3.medalIds.some((id) => [51, 71].includes(id)) && d3.pityFired === false && Array.isArray(d3.extras) && d3.extras.length === 10, 'estrazione v3: featured, pityFired, extras');
+check(J(d3.extras[0]) === '{"boostedFrom":null,"preset":null,"skills":null}', `extras vuoti (${J(d3.extras[0])})`);
+// pity alla quinta estrazione senza vetrina: hd axel 7★ sullo slot 0
+for (const r of rngs.slice(0, 20)) {
+  const d = g.rollDraw(b3, x3, r, PITY);
+  check(d.medalIds[0] === 71 && d.featured === true && d.pityFired === true, `pity di B0306: slot 0 = ${d.medalIds[0]}, featured ${d.featured}`);
+}
+check(g.rollDraw(b3, x3, seq(0.5), NOPITY).medalIds.slice(2).includes(51) && g.rollDraw(b3, x3, seq(0.5), NOPITY).featured === true,
+  'featured anche quando hd axel 5★ esce in uno slot generico');
+
+// Tier vuoto alla data: slot senza filtro, una riga di log, nessuna eccezione
+const bT = B3({ drawMedalTypeId: 19001, guarantee: G3({ slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMin: 8, tierMax: 9 })] }) });
+const xT = g.expandPool(bT, TCAT, '2018-11-01');
+const logs = [], origLog = console.log;
+console.log = (...a) => logs.push(a.join(' '));
+let tThrew = false, tIds = [];
+try { for (let k = 0; k < 20; k++) tIds.push(g.rollDraw(bT, xT, Math.random, NOPITY).medalIds[0]); } catch (e) { tThrew = e.message; }
+console.log = origLog;
+check(!tThrew && tIds.every((id) => [71, 72, 73, 74].includes(id)), `Tier vuoto: slot 0 senza filtro (${tThrew || tIds})`);
+check(logs.length === 1 && /Tier/.test(logs[0]), `Tier vuoto: una riga di log (${J(logs)})`);
+
+// pity a stella fissa prima della data (Review Focus 1): a 2018-01-10 non ci sono 7★, la pity da' 51
+const bE = B3({ start: '2018-01-10', end: '2018-01-17' }), xE = g.expandPool(bE, TCAT, '2018-01-10');
+check(!x3.pool[8] && !xE.pool[7] && J(xE.pityIds) === '[51]', `prima delle 7★: niente 7★ (${J(xE.pool)} ${J(xE.pityIds)})`);
+for (const r of rngs.slice(0, 20)) {
+  const d = g.rollDraw(bE, xE, r, PITY);
+  check(d.medalIds[0] === 51 && d.featured, `pity 7★ prima della data: ${d.medalIds[0]}`);
+  check(d.medalIds.every((id) => ![71, 72, 73, 74].includes(id)), `nessuna 7★ futura (${d.medalIds})`);
+}
+// 6★ fissa su un banner 5★ del 2016 (D8): la variante piu' alta gia' uscita
+const b16 = B3({ start: '2016-06-01', end: '2016-06-07', lotCount: 3, rarityMix: [[5, 1], [4, 2]], pool: P({ sets: [], names: ['sora'], featured: ['hd axel'] }),
+  guarantee: G3({ list: [], slots: [], pityStar: 6, pitySlot: 0 }) });
+const x16 = g.expandPool(b16, { ...TCAT, medals: { ...TCAT.medals, sora: CAT.medals.sora } }, '2016-06-01');
+check(g.rollDraw(b16, x16, seq(0.0), PITY).medalIds[0] === 51, 'pity 6★ su un banner del 2016: 51');
+// stella della pity fuori dal mix: entra solo nei nomi riservati, non nel pool
+const bO = B3({ lotCount: 3, rarityMix: [[5, 3]], pool: P({ sets: [], names: ['kairi'], featured: [] }), guarantee: G3({ list: [], slots: [], pityStar: 7 }) });
+const xO = g.expandPool(bO, TCAT, '2018-11-01');
+check(!xO.pool[7] && J(xO.pityNames) === '[["hd axel",1,{"5":[51],"7":[71]}]]', `pityStar fuori dal mix: solo nei nomi riservati (${J(xO.pool)})`);
+check(g.rollDraw(bO, xO, seq(0.5), PITY).medalIds[0] === 71, 'pityStar 7 fuori dal mix: 71');
+
+// pity sullo slot di una riserva a lista che non contiene il bersaglio: la lista cede lo slot solo per quella estrazione
+const bL = B3({ guarantee: G3({ pitySlot: 1 }) }), xL = g.expandPool(bL, TCAT, '2018-11-01');
+check(g.rollDraw(bL, xL, seq(0.5), PITY).medalIds[1] === 71, 'pity sullo slot della lista senza il bersaglio: 71');
+check(g.rollDraw(bL, xL, seq(0.5), NOPITY).medalIds[1] === 61, 'estrazione dopo: la lista torna');
+// bersaglio nella lista: lo slot da' il bersaglio, che e' della lista (la lista resta garantita)
+const bLin = B3({ guarantee: G3({ pitySlot: 1, slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMax: 4 }), RES({ slot: 1, names: ['kairi', 'hd axel'] })] }) });
+const xLin = g.expandPool(bLin, TCAT, '2018-11-01');
+const lin = g.rollDraw(bLin, xLin, seq(0.5), PITY).medalIds[1];
+check(lin === 71 && xLin.slotNames[1].some(([, , v]) => Object.values(v).flat().includes(lin)), `bersaglio nella lista: ${lin}`);
+// B0321 sintetico: pitySlot 1, lo slot 0 resta del Tier
+let b321 = 0;
+for (const r of rngs) {
+  const d = g.rollDraw(bLin, xLin, r, PITY);
+  if (![71, 73].includes(d.medalIds[0]) || d.medalIds[1] !== 71) b321++;
+}
+check(b321 === 0, `B0321: slot 0 del Tier e pity sullo slot 1 (${b321} errori)`);
+// pityGift: nessuno slot sostituito, pityFired per il regalo (Task 6), featured azzera la pity
+const bG = B3({ guarantee: G3({ pityNames: ['dual meow wow'], pityStar: null, pitySlot: null, pityGift: [3, 301684, 1] }) });
+const xG = g.expandPool(bG, TCAT, '2018-11-01');
+const dG = g.rollDraw(bG, xG, seq(0.3), PITY), dG0 = g.rollDraw(bG, xG, seq(0.3), NOPITY);
+check(dG.pityFired === true && dG.featured === true && J(dG.medalIds) === J(dG0.medalIds) && dG0.pityFired === false, `pityGift: niente sostituito (${dG.medalIds} / ${dG0.medalIds})`);
+// banner v3 con slots [] (solo pity): la pity va su pitySlot
+const bS = B3({ guarantee: G3({ list: [], slots: [], pitySlot: 2, pityStar: 7 }) }), xS = g.expandPool(bS, TCAT, '2018-11-01');
+check(g.rollDraw(bS, xS, seq(0.5), PITY).medalIds[2] === 71, 'slots vuoto: pity su pitySlot 2');
+
+// boosted
+const BOOST = new Map([['71:1000:1000', 2000071], ['61:1000:1000', 2000061], ['72:1000:1000', 2000072]]);
+const opts = { boostedOf: (id, s, d) => BOOST.get(`${id}:${s}:${d}`) };
+const bB = B3({ enhance: EN({ boosted: [{ on: { slots: [0] }, str: 1000, def: 1000, chance: 'small' }] }) });
+const nB = calls((r) => g.rollDraw(bB, x3, r, NOPITY));
+const dB = g.rollDraw(bB, x3, after(nB, 0.01), NOPITY, opts);
+check(dB.medalIds[0] === 2000071 && dB.extras[0].boostedFrom === 71, `boosted small, rng 0.01: ${dB.medalIds[0]} da ${dB.extras[0].boostedFrom}`);
+const dB5 = g.rollDraw(bB, x3, after(nB, 0.5), NOPITY, opts);
+check(dB5.medalIds[0] === 71 && dB5.extras[0].boostedFrom === null, `boosted small, rng 0.5: ${dB5.medalIds[0]}`);
+check(g.rollDraw(bB, x3, after(nB, 0.01), NOPITY).medalIds[0] === 71, 'senza opts.boostedOf: niente boosted');
+const dBp = g.rollDraw(bB, x3, after(calls((r) => g.rollDraw(bB, x3, r, PITY)), 0.01), PITY, opts);
+check(dBp.medalIds[0] === 2000071 && dBp.featured === true, 'boosted della pity: featured calcolato sulla normale');
+const bBg = B3({ enhance: EN({ boosted: [{ on: { slots: [1] }, str: 1000, def: 1000, chance: 'guaranteed' }] }) });
+check(rngs.slice(0, 30).every((r) => { const d = g.rollDraw(bBg, x3, r, NOPITY, opts); return d.medalIds[1] === 2000061 && d.extras[1].boostedFrom === 61; }),
+  'boosted guaranteed sulla riserva lista: sempre la boosted');
+const bBn = B3({ enhance: EN({ boosted: [{ on: { slots: [0, 1] }, str: 2000, def: 2000, chance: 'guaranteed' }] }) });
+let nThrew = false, dBn;
+try { dBn = g.rollDraw(bBn, x3, seq(0.0), NOPITY, opts); } catch { nThrew = true; }
+check(!nThrew && dBn.medalIds[0] === 71 && dBn.medalIds[1] === 61 && dBn.extras[0].boostedFrom === null, 'senza riga boosted: la normale');
+// forma per Tier (decisione 8): solo una medaglia gia' estratta, 7★ Tier >= 4, niente Prime
+const bBt = B3({ enhance: EN({ boosted: [{ on: { star: 7, tierMin: 4, tierMax: null, excludePrime: true }, str: 1000, def: 1000, chance: 'guaranteed' }] }) });
+let tb = 0;
+for (const r of rngs) {
+  const d = g.rollDraw(bBt, x3, r, NOPITY, opts);
+  const n0 = d.extras[0].boostedFrom ?? d.medalIds[0];
+  if ((n0 === 71) !== (d.medalIds[0] === 2000071)) tb++;
+  if (d.medalIds.includes(2000072) || d.medalIds.includes(2000061)) tb++; // 72 mai estratta dallo slot Tier; 61 e' 6★
+}
+check(tb === 0, `boosted per Tier: ${tb} errori`);
+const xPr = g.expandPool(bBt, { ...TCAT, medals: { ...TCAT.medals, 'prime - hd axel': TCAT.medals['hd axel'] } }, '2018-11-01');
+xPr.medalInfo.set(71, { name: 'prime - hd axel', rare: 7 });
+check(g.rollDraw(bBt, xPr, seq(0.0), NOPITY, opts).medalIds[0] === 71, 'boosted per Tier: Prime escluse');
+
+// preset e abilita' al massimo
+const bP = B3({ enhance: EN({ preset: [{ on: { slots: [0] }, dots: [1, 3], guilt: null }] }) });
+const dots = new Set();
+for (const r of rngs) {
+  const d = g.rollDraw(bP, x3, r, NOPITY);
+  const p0 = d.extras[0].preset;
+  if (p0 && Number.isInteger(p0.dots) && p0.dots >= 1 && p0.dots <= 3 && p0.guilt === null) dots.add(p0.dots); else dots.add('bad');
+  if (d.extras.slice(1).some((x) => x.preset)) dots.add('altri slot');
+}
+check(J([...dots].sort()) === '[1,2,3]', `preset dots [1, 3] sullo slot 0 (${J([...dots])})`);
+const bPn = B3({ enhance: EN({ preset: [{ on: { names: ['hd axel'] }, dots: 'max', guilt: 'max' }], maxSkill: [{ on: { names: ['kairi'] }, skills: ['paralysis+ ii max'] }] }) });
+let pnErr = 0;
+for (const r of rngs) {
+  const d = g.rollDraw(bPn, x3, r, NOPITY);
+  d.medalIds.forEach((id, i) => {
+    const axel = [51, 71].includes(id), kai = [61, 73].includes(id);
+    if (axel !== !!d.extras[i].preset || (axel && J(d.extras[i].preset) !== '{"dots":"max","guilt":"max"}')) pnErr++;
+    if (kai !== !!d.extras[i].skills || (kai && J(d.extras[i].skills) !== '["paralysis+ ii max"]')) pnErr++;
+  });
+}
+check(pnErr === 0, `preset per nome e maxSkill: ${pnErr} errori`);
+const bPs = B3({ enhance: EN({ preset: [{ on: { star: 6 }, dots: 3, guilt: null }] }) });
+check(g.rollDraw(bPs, x3, seq(0.5), NOPITY).extras.map((x) => x.preset?.dots ?? 0).join('') === '0300000000', 'preset per stella');
+
+// slotOdds di B0306
+const o3 = g.slotOdds(b3, x3);
+check(J(o3[0]) === '[{"rare":7,"pct":100,"kind":"tier","tier":"<=4"}]', `odds slot tier (${J(o3[0])})`);
+check(o3[1].every((o) => o.kind === 'list' && o.list === true) && J(o3[1].map((o) => o.rare)) === '[6]', `odds slot lista (${J(o3[1])})`);
+check(o3.slice(2).every((s) => J(s) === '[{"rare":5,"pct":96},{"rare":6,"pct":4}]'), `odds slot 2-9 come oggi (${J(o3[2])})`);
+const oS = g.slotOdds(bS, xS);
+check(oS[2].every((o) => o.kind === 'pity') && !oS[0][0].kind, `odds: pitySlot senza riserva -> kind pity (${J(oS[2])})`);
+const oTr = g.slotOdds(B3({ guarantee: G3({ slots: [RES({ kind: 'trait', slot: 3, star: 5 })] }) }), x3);
+check(oTr[3].every((o) => o.kind === 'trait'), 'odds: slot trait');
+check(J(g.slotOdds(B3({ guarantee: G3({ slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMin: 3, tierMax: 4 })] }) }), x3)[0][0].tier) === '"3-4"', 'odds: Tier 3-4');
+// compatibilita': banner senza slots -> extras presenti, featured dalla vetrina
+const cd = g.rollDraw(B({}), ex, seq(0.5, 0.0));
+check(Array.isArray(cd.extras) && cd.extras.length === 3 && cd.pityFired === false, 'percorso vecchio: extras e pityFired');
+} catch (e) { errors.push(`2b: eccezione ${e.message}`); }
+
 // abilita'
 const rows = new Map([[1100, { skillId: 1100, name: 'Attack Boost I' }], [1102, { name: 'Attack Boost All I', skillId: 1102 }], [1101, { name: 'Attack Boost II', skillId: 1101 }]]);
 check(g.rollSkill({ table: '72415', slots: 'all' }, 1, rows, () => 0.0) === 1100, 'skill 72415 rng 0');
