@@ -1,4 +1,5 @@
 // Prova della logica dello Shop: node server/test-gacha.js
+// (le prove delle pagine WebView tornano col Task 7 del sotto-progetto 2)
 'use strict';
 const g = require('./gacha');
 const clock = require('./clock');
@@ -6,65 +7,143 @@ const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const U = (y, mo, d, h = 0) => Date.UTC(y, mo - 1, d, h);
 
-const daily = { drawMedalTypeId: 10001, rowId: 'B0001', name: 'DAILY DEAL!', payType: 1, price: 600, lotCount: 3, isDayLimited: 1,
-  rarityMix: [[4, 1], [3, 2]], pool: { 3: [11013], 4: [11014] }, test: false, sortId: 10, comment: '3 Medals', startDate: '2016-04-07', endDate: '2018-01-31', image: 'a.png' };
-const plat = { ...daily, drawMedalTypeId: 10456, name: 'Platinum Ticket Draw', payType: 7, price: 1, lotCount: 5, isDayLimited: 0, test: true, sortId: 90 };
-const big = { ...daily, drawMedalTypeId: 10011, name: 'Epic Medal Carnival', price: 3000, lotCount: 10, isDayLimited: 0, sortId: 30 };
-const banners = [daily, big, plat];
+// banner sintetici con i campi del contratto del catalogo
+let nextId = 10100;
+const mk = (o = {}) => ({
+  rowId: `B${nextId - 10000}`, drawMedalTypeId: nextId++, name: 'Banner', type: 'TIME_LIMITED', flags: [], start: '2016-12-01', end: '2016-12-15',
+  unlockQuest: 200, payType: 1, currency: 'jewel', prices: [3000], lotCount: 10, rarityMix: [[5, 1], [4, 9]], epicBoost: false,
+  dayLimit: 0, vipFree: false, pool: { mode: 'released' }, guarantee: { list: [], count: 0, pity: null, every: null },
+  skill: null, catalogOnly: null, ...o,
+});
 const sizes = new Set([1, 3, 10]);
 const t0 = U(2026, 10, 16, 15);
+const next = clock.dayEnd(t0) + 1;
 
-// lista
-let l = g.gachaListData(banners, { freeStone: 0 }, { realMs: t0, webBase: 'http://h', test: false, sizes });
+// prezzi dinamici
+const first = mk({ prices: [0, 3000] });
+const pl = { gacha: {} };
+check(g.priceFor(first, pl) === 1, 'FIRST_FREE: 1 alla prima');
+pl.gacha.count = { [first.drawMedalTypeId]: 1 };
+check(g.priceFor(first, pl) === 3000, 'FIRST_FREE: prezzo pieno dopo');
+const fall = mk({ prices: [3000, 2500, 2200, 1900] });
+const seq = [0, 1, 2, 3, 4].map((n) => g.priceFor(fall, { gacha: { count: { [fall.drawMedalTypeId]: n } } }));
+check(JSON.stringify(seq) === '[3000,2500,2200,1900,1900]', `FALLING: ${seq}`);
+const free = mk({ prices: [0] });
+check(g.priceFor(free, {}) === 1 && g.priceFor(free, { gacha: { count: { [free.drawMedalTypeId]: 5 } } }) === 1, 'prices [0]: sempre 1');
+
+// lista provvisoria
+const opt = { storyQuest: 525, storyDay: '2016-12-08', sizes, show: new Set() };
+const inside = mk({ unlockQuest: 525 });
+const locked = mk({ unlockQuest: 540 });
+const past = mk({ start: '2016-11-20', end: '2016-11-30' });
+const perm = mk({ flags: ['PERMANENT'], start: '2016-04-07', end: '2018-01-31', name: 'DAILY DEAL!' });
+const onlyCat = mk({ catalogOnly: 'VIP_TWIN' });
+const five = mk({ lotCount: 5 });
+let s = g.shopBanners([inside, locked, past, perm, onlyCat, five], opt);
+check(s.includes(inside), 'banner attivo e sbloccato: entra');
+check(!s.includes(locked), 'unlockQuest 540: non entra');
+check(!s.includes(past), 'finito il 30/11: non entra');
+check(s.includes(perm), 'PERMANENT nella sua epoca: entra');
+check(!s.includes(onlyCat) && !s.includes(five), 'catalogOnly e lotCount 5: non entrano');
+check(s[0] === inside && s[1] === perm, 'ordine per start decrescente');
+s = g.shopBanners([inside, locked, past, onlyCat, five], { ...opt, show: new Set([locked.rowId, past.rowId, onlyCat.rowId, five.rowId]) });
+check(s.includes(locked) && s.includes(past) && !s.includes(onlyCat) && !s.includes(five), 'show: solo se drawable');
+const many = Array.from({ length: 12 }, (_, i) => mk({ start: `2016-12-0${(i % 7) + 1}` }));
+s = g.shopBanners(many, opt);
+check(s.length === g.SHOP_MAX && g.SHOP_MAX === 8, 'al massimo SHOP_MAX');
+check(s.every((b, i) => i === 0 || s[i - 1].start >= b.start), 'ordine decrescente con molti banner');
+const tDraw = mk({ payType: 8, currency: 'draw', prices: [1], start: '2016-12-05' });
+const tSpooky = mk({ payType: 8, currency: 'spooky', prices: [1], start: '2016-12-03' });
+s = g.shopBanners([tSpooky, tDraw], opt);
+check(s.includes(tDraw) && !s.includes(tSpooky), 'payType 8: una sola valuta, la prima in ordine');
+check(g.drawable(inside, sizes) && !g.drawable(mk({ payType: 9 }), sizes) && !g.drawable(mk({ payType: 4 }), sizes), 'drawable');
+
+// valute
+const old = { limitedDrawTicket2: 7 };
+const tk = g.ticketsOf(old);
+check(JSON.stringify(tk) === '{"draw":7,"holiday":0,"spooky":0,"moogle":0}' && !('limitedDrawTicket2' in old), 'migrazione di limitedDrawTicket2');
+old.limitedDrawTicket2 = 3;
+check(g.ticketsOf(old).draw === 7, 'migrazione una volta sola');
+const pw = { drawTickets: { draw: 1, holiday: 0, spooky: 4, moogle: 0 }, freeStone: 50 };
+check(g.balance(pw, tSpooky) === 4 && g.balance(pw, inside) === 50, 'balance');
+check(g.walletName(tSpooky) === 'drawTickets.spooky' && g.walletName(inside) === 'freeStone' && g.walletName(mk({ payType: 7 })) === 'limitedDrawTicket1', 'walletName');
+
+// lista dello Shop
+const pList = { freeStone: 0 };
+let l = g.gachaListData([tSpooky, inside, first], pList, { realMs: t0, webBase: 'http://h', ...opt });
 check(l.petGachaList.length === 0 && l.gachaList[0].drawMedalTypeId === 9001, 'Catalog in cima');
-check(l.gachaList.length === 3 && !l.gachaList.some((x) => x.drawMedalTypeId === 10456), 'banner di prova nascosto');
-const e = l.gachaList.find((x) => x.drawMedalTypeId === 10001);
-check(e.isDayLimited === 1 && e.userLimitedCount === 1 && e.lotCount === 3 && e.bannerUrl === 'http://h/web/gacha/img/10001.png', 'elemento Daily');
+check(pList.gacha.listedCurrency === 'spooky', 'listedCurrency della valuta elencata');
+check(pList.drawTickets && pList.drawTickets.draw === 0, 'ticketsOf nella lista');
+const e = l.gachaList.find((x) => x.drawMedalTypeId === first.drawMedalTypeId);
+check(e.price === 1 && e.userLimitedCount === 0 && e.isDayLimited === 0, 'piastra: price da priceFor');
 check(['validAdd', 'drawMedalTypeId', 'drawType', 'sortId', 'payType', 'price', 'lotCount', 'isDayLimited', 'userLimitedCount',
   'userWarrantDisplayOfTime', 'name', 'description', 'bannerUrl', 'warrantMedalIds', 'drawTicketlimitDate'].every((k) => k in e), 'campi obbligatori');
+check(e.bannerUrl === `http://h/web/gacha/img/${first.drawMedalTypeId}.png`, 'bannerUrl');
 const cat = l.gachaList[0];
 check(cat.payType === 6 && cat.price === 1 && cat.drawType === 1, 'Catalog innocuo');
-l = g.gachaListData(banners, {}, { realMs: t0, webBase: 'http://h', test: true, sizes: new Set([1, 3, 5, 10]) });
-check(l.gachaList.some((x) => x.drawMedalTypeId === 10456), 'banner di prova con KHUX_GACHA_TEST');
-l = g.gachaListData(banners, {}, { realMs: t0, webBase: 'http://h', test: false, sizes: new Set([1, 3]) });
-check(!l.gachaList.some((x) => x.drawMedalTypeId === 10011), 'x10 senza animazione: nascosto');
+check(l.gachaList.every((x) => x.price >= 1 && x.payType !== 3 && x.payType !== 9), 'mai prezzo 0, payType 3 o 9');
+l = g.gachaListData([inside], {}, { realMs: t0, webBase: 'http://h', ...opt });
+check(l.gachaList.length === 2, 'senza payType 8');
+const pNone = {};
+g.gachaListData([inside], pNone, { realMs: t0, webBase: 'http://h', ...opt });
+check(pNone.gacha.listedCurrency === 'draw', 'listedCurrency predefinita draw');
+
+// limiti giornalieri
+const lim3 = mk({ dayLimit: 3, prices: [100] });
+const pd = { freeStone: 10000 };
+const dopt = { realMs: t0, freeSlots: 100, sizes, storyQuest: 525, show: new Set() };
+for (let i = 0; i < 3; i++) {
+  check(g.checkDraw(lim3, pd, { count: 10 }, dopt) === null, `dayLimit 3: estrazione ${i + 1}`);
+  g.payDraw(lim3, pd, t0, false);
+}
+check(g.checkDraw(lim3, pd, { count: 10 }, dopt) === 'limite giornaliero raggiunto', 'dayLimit 3: la quarta rifiutata');
+check(g.checkDraw(lim3, pd, { count: 10 }, { ...dopt, realMs: next }) === null, 'dayLimit 3: il giorno dopo');
+const vip1 = mk({ vipFree: true, prices: [0] });
+const vip2 = mk({ vipFree: true, prices: [0] });
+const pv = { freeStone: 10 };
+const plate = (pp, b, ms) => g.gachaListData([b], pp, { realMs: ms, webBase: 'http://h', ...opt }).gachaList[1];
+check(plate(pv, vip1, t0).userLimitedCount === 1 && plate(pv, vip1, t0).isDayLimited === 1, 'VIP: disponibile');
+check(g.checkDraw(vip1, pv, { count: 10 }, dopt) === null, 'VIP: prima estrazione');
+g.payDraw(vip1, pv, t0, false);
+check(pv.freeStone === 9, 'VIP: 1 Jewel scalato');
+check(g.checkDraw(vip2, pv, { count: 10 }, dopt) === 'estrazione gratuita VIP gia\' usata oggi', 'VIP: seconda Free Deal rifiutata');
+check(plate(pv, vip1, t0).userLimitedCount === 0 && plate(pv, vip2, t0).userLimitedCount === 0, 'VIP: userLimitedCount 0 per entrambi');
+check(plate(pv, vip2, next).userLimitedCount === 1 && g.checkDraw(vip2, pv, { count: 10 }, { ...dopt, realMs: next }) === null, 'VIP: il giorno dopo di nuovo 1');
 
 // controlli dell'estrazione
-const p = { freeStone: 1000, limitedDrawTicket1: 0 };
-const opt = { realMs: t0, test: false, freeSlots: 100, sizes };
-check(g.checkDraw(daily, p, { drawMedalTypeId: 10001, count: 3 }, opt) === null, 'Daily ok');
-check(g.checkDraw(undefined, p, { drawMedalTypeId: 1 }, opt) !== null, 'banner sconosciuto');
-check(g.checkDraw({ drawMedalTypeId: 9001, payType: 6 }, p, {}, opt) !== null, 'Catalog rifiutato');
-check(g.checkDraw(big, p, { count: 10 }, opt) !== null, 'jewel insufficienti');
-check(g.checkDraw(daily, p, { count: 3 }, { ...opt, freeSlots: 2 }) !== null, 'box senza posti per 3');
-check(g.checkDraw(plat, { limitedDrawTicket1: 5 }, { count: 5 }, opt) !== null, 'prova senza KHUX_GACHA_TEST');
-check(g.checkDraw(plat, { limitedDrawTicket1: 5 }, { count: 5 }, { ...opt, test: true, sizes: new Set([1, 3, 5, 10]) }) === null, 'Platinum con biglietti');
-check(g.checkDraw(plat, { limitedDrawTicket1: 0 }, { count: 5 }, { ...opt, test: true, sizes: new Set([5]) }) !== null, 'Platinum senza biglietti');
-check(g.checkDraw(big, { freeStone: 9999 }, { count: 10 }, { ...opt, sizes: new Set([1, 3]) }) !== null, 'dimensione senza animazione');
+const pc = { freeStone: 1000, limitedDrawTicket1: 0 };
+const cheap = mk({ prices: [600], lotCount: 3 });
+check(g.checkDraw(cheap, pc, { count: 3 }, dopt) === null, 'estrazione ok');
+check(g.checkDraw(undefined, pc, { drawMedalTypeId: 1 }, dopt) !== null, 'banner sconosciuto');
+check(g.checkDraw({ ...cheap, catalogOnly: 'VIP_TWIN' }, pc, { count: 3 }, dopt) === 'banner solo nel catalogo', 'catalogOnly');
+check(g.checkDraw({ ...cheap, unlockQuest: 540 }, pc, { count: 3 }, dopt) === 'banner bloccato', 'banner bloccato');
+check(g.checkDraw({ ...cheap, unlockQuest: 540 }, pc, { count: 3 }, { ...dopt, show: new Set([cheap.rowId]) }) === null, 'show sblocca');
+for (const pt of [4, 5, 6, 9]) check(g.checkDraw({ ...cheap, payType: pt }, pc, { count: 3 }, dopt) === `payType ${pt} non estraibile`, `payType ${pt}`);
+check(g.checkDraw(mk({ prices: [3000] }), pc, { count: 10 }, dopt) !== null, 'jewel insufficienti');
+check(g.checkDraw(first, { freeStone: 1 }, { count: 10 }, dopt) === null, 'FIRST_FREE: basta 1 Jewel');
+check(g.checkDraw(cheap, pc, { count: 3 }, { ...dopt, freeSlots: 2 }) !== null, 'box senza posti per 3');
+check(g.checkDraw(mk({ prices: [10] }), pc, { count: 10 }, { ...dopt, sizes: new Set([1, 3]) }) !== null, 'dimensione senza animazione');
+check(g.checkDraw(tSpooky, { drawTickets: { draw: 5, spooky: 0 } }, { count: 10 }, dopt) !== null, 'spooky: senza cookie');
+check(g.checkDraw(tSpooky, { drawTickets: { draw: 0, spooky: 1 } }, { count: 10 }, dopt) === null, 'spooky: con cookie');
 
-// pagamento e limite giornaliero
-g.payDraw(daily, p, t0);
-check(p.freeStone === 400, 'jewel scalati una volta');
-check(g.dayLeft(p, daily, t0) === 0 && g.checkDraw(daily, { ...p, freeStone: 5000 }, { count: 3 }, opt) !== null, 'Daily: seconda volta rifiutata');
-const next = clock.dayEnd(t0) + 1;
-check(g.dayLeft(p, daily, next) === 1, 'Daily: il giorno dopo di nuovo disponibile');
+// pagamento
+const pp = { freeStone: 5000, drawTickets: { draw: 2, holiday: 0, spooky: 3, moogle: 0 } };
+check(g.payDraw(fall, pp, t0, false) === 3000 && pp.freeStone === 2000, 'FALLING: prima 3000');
+check(g.payDraw(fall, pp, t0, true) === 2500 && pp.freeStone === -500, 'FALLING: poi 2500');
+check(pp.gacha.count[fall.drawMedalTypeId] === 2, 'count incrementato');
+check(pp.gacha.sinceFeatured[fall.drawMedalTypeId] === 0, 'sinceFeatured azzerato con la vetrina');
+g.payDraw(fall, pp, t0, false);
+check(JSON.stringify(g.drawState(pp, fall)) === '{"draws":3,"sinceFeatured":1}', 'drawState');
+check(g.payDraw(tSpooky, pp, t0, false) === 1 && pp.drawTickets.spooky === 2 && pp.drawTickets.draw === 2, 'spooky: scala la valuta giusta');
+check(JSON.stringify(g.drawState({}, fall)) === '{"draws":0,"sinceFeatured":0}', 'drawState vuoto');
 const q = { limitedDrawTicket1: 3 };
-g.payDraw(plat, q, t0);
-check(q.limitedDrawTicket1 === 2, 'biglietto scalato');
+g.payDraw(mk({ payType: 7, prices: [1], lotCount: 5 }), q, t0, false);
+check(q.limitedDrawTicket1 === 2, 'biglietto Platinum scalato');
 
 // campi del risultato
 const r = g.drawResultFields([501, 502], [501]);
 check(JSON.stringify(r) === JSON.stringify({ gachaBonus: { addType: 1, number: 0, userMedalIds: [] }, firstGetUserMedalIds: [501], userMedalIds: [501, 502], effectNumbers: [0, 0] }), 'campi del risultato');
-
-// pagine
-const names = new Map([[11013, 'Wakka'], [11014, 'Wakka']]);
-const d = g.detailPage(daily, names);
-check(d.includes('DAILY DEAL!') && d.includes('Wakka') && d.includes('reconstructed') && d.includes('once per day'), 'pagina dettagli');
-const o = g.oddsPage(banners.filter((b) => !b.test));
-check(o.includes('DAILY DEAL!') && o.includes('92%') && o.includes('8%'), 'pagina odds');
-const c = g.catalogPage(banners, { test: false });
-check(c.includes('/web/gacha/detail/10001') && !c.includes('10456'), 'pagina catalogo');
-check(!g.detailPage({ ...daily, name: '<b>' }, names).includes('<b>'), 'escape HTML');
+check(g.catalogRow().drawMedalTypeId === 9001 && g.catalogRow().payType === 6 && g.catalogPlate('http://h').price === 1, 'piastra Catalog');
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');
