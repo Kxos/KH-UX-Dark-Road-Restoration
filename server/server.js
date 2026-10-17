@@ -1177,9 +1177,12 @@ function respondGachaList(res) {
   };
   // validComment della riga drawMedalType servita (gacha.guardWarrant: con 0 warrantMedalIds non e' mai vuota)
   const comments = new Map(masterRows('drawMedalType').map((r) => [r.drawMedalTypeId, r.validComment]));
-  const safeMedalId = masterRows('medal').find((r) => r.type === 1 && !r.groupId)?.medalId;
+  const medalRows = masterRows('medal');
+  const safeMedalId = medalRows.find((r) => r.type === 1 && !r.groupId)?.medalId;
+  // I-153: nomi della tabella medal servita (un id per nome nella striscia, lunghezza oltre il limite del client)
+  const nameOf = new Map(medalRows.map((r) => [r.medalId, r.name]));
   const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW,
-    ...ctx, exFor, catalog: gachaCatalog(), validCommentOf: (b) => comments.get(b.drawMedalTypeId), safeMedalId });
+    ...ctx, exFor, catalog: gachaCatalog(), validCommentOf: (b) => comments.get(b.drawMedalTypeId), safeMedalId, nameOf });
   if (migrate || player.gacha.listedCurrency !== listed) savePlayer();
   send(res, 200, { ret: ret(), ...data });
 }

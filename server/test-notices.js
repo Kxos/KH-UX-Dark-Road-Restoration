@@ -50,6 +50,10 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
   check(!diff.some((s) => /not enforced yet|^Trait Medals, boosted Medals/.test(s)), 'differenze: righe vecchie dei Tier e delle Trait tolte');
   check(shop.includes('Guarantees work as on the original banners: the yellow line under a banner counts down the draws left to its guaranteed Medal.'), 'Shop: riga delle garanzie');
   check(!diff.some((s) => s.startsWith('Shop draw rates are reconstructed where the original game did not publish them: ')), 'differenze: vecchia riga delle probabilita tolta');
+  // I-153: la striscia di categoria e' un testo nostro
+  check(shop.includes('When a guarantee covers too many Medals to name them all, the yellow line names the kind of Medal from the banner\'s original notice instead (for example "A SN or higher Medal is guaranteed! Draws left: 3"). This wording is written by this restoration.')
+    && shop.findIndex((s) => s.startsWith('Guarantees work as on')) + 1 === shop.findIndex((s) => s.startsWith('When a guarantee covers')),
+  'Shop: riga della striscia di categoria, dopo quella delle garanzie');
   check(shop.includes('Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'Shop: banner originali e storia');
 }
 

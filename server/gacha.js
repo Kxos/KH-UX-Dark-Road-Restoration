@@ -95,6 +95,38 @@ function plate(b, webBase, userLimitedCount, price, sortId, warrant = warrantFie
 // primo id del pool, solo perche' la lista non sia vuota. Senza pool (ex undefined: expandFor ha lanciato, log in
 // server.js) o con il pool vuoto (log qui, una riga per banner) gli id vengono dal catalogo: prima le varianti dei
 // pityNames, poi una medaglia qualsiasi del banner (vetrina, nomi, liste, sotto-set), infine la prima del catalogo.
+// I-153 (analisi in docs/notes/shop.md#i153): con piu' nomi il client unisce «<important>nome</important>» con «, »
+// e «, or » prima dell'ultimo (testi 106180302/305/306) e formatta tutto in buffer da 0x400 byte ([fn],
+// [fn] con «<xml>%s</xml>»): oltre J = 963 byte la striscia esce «A  guaranteed in !». Un id per nome
+// (nameOf = nome della riga medal del master servito; il client toglie gia' i doppioni, si tiene il primo, come lui);
+// J <= WARRANT_LIST_MAX: lista dei nomi (validComment 0); oltre, make-banners.warrantOf scrive validComment 1 e un
+// testo di categoria; guardWarrant nasconde la striscia se un master vecchio ha ancora validComment 0 oltre il limite.
+const WARRANT_LIST_MAX = 900; // margine sotto il limite duro (un «&» escapato costerebbe 4 byte in piu')
+const WARRANT_HARD_MAX = 963; // limite del client per N fino a 99: J <= 965 - cifre di N
+const utf8Bytes = (s) => Buffer.byteLength(String(s), 'utf8');
+const nameGetter = (nameOf) => (typeof nameOf === 'function' ? nameOf : nameOf instanceof Map ? (id) => nameOf.get(id) : null);
+// un id per nome, il primo nell'ordine dato (senza nameOf: gli id come sono); un id senza riga medal resta
+function warrantDedupe(ids, nameOf) {
+  const get = nameGetter(nameOf);
+  if (!get) return [...ids];
+  const seen = new Set();
+  return ids.filter((id) => {
+    const n = get(id), k = n === undefined ? `#${id}` : `=${n}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+// J = byte UTF-8 della lista unita dal client: 1 nome = il nome; k >= 2 nomi distinti = somma(23 + byte(nome))
+// + 2·(k-2) + 5 (23 = «<important></important>», «, » fra i nomi, «, or » prima dell'ultimo); 0 senza nameOf
+function warrantStripBytes(ids, nameOf) {
+  const get = nameGetter(nameOf);
+  if (!get) return 0;
+  const names = [...new Set((ids || []).map(get).filter((n) => n !== undefined))];
+  if (names.length < 2) return names.length ? utf8Bytes(names[0]) : 0;
+  return names.reduce((sum, n) => sum + 23 + utf8Bytes(n), 0) + 2 * (names.length - 2) + 5;
+}
+
 const NO_WARRANT = { userWarrantDisplayOfTime: 1, warrantMedalIds: [] };
 const warrantWarned = new Set();
 function bannerMedalIds(b, catalog) {
@@ -107,13 +139,13 @@ function bannerMedalIds(b, catalog) {
   const any = ids(names)[0];
   return any ? [any] : [];
 }
-function warrantFields(b, ex, state = {}, catalog = null) {
+function warrantFields(b, ex, state = {}, catalog = null, nameOf = null) {
   const g = b.guarantee || {};
   if (!g.pity) return { ...NO_WARRANT, warrantMedalIds: [] };
   const left = Math.max(1, g.pity - (state.sinceFeatured || 0));
   if (g.pityGift) return { userWarrantDisplayOfTime: left, warrantMedalIds: [g.pityGift[1]] };
   const targets = (ex?.pityIds || []).length ? ex.pityIds : Array.isArray(g.slots) ? [] : ex?.featuredIds || [];
-  if (targets.length) return { userWarrantDisplayOfTime: left, warrantMedalIds: [...targets] };
+  if (targets.length) return { userWarrantDisplayOfTime: left, warrantMedalIds: warrantDedupe(targets, nameOf) };
   const any = Object.values(ex?.pool || {}).flat()[0];
   if (any) return { userWarrantDisplayOfTime: 0, warrantMedalIds: [any] };
   const ids = bannerMedalIds(b, catalog);
@@ -129,9 +161,23 @@ function warrantFields(b, ex, state = {}, catalog = null) {
 // con validComment 0 puo' incontrare NO_WARRANT: lista vuota = crash del client. Allora striscia nascosta
 // (userWarrantDisplayOfTime 0) e una medaglia per la lista: la vetrina alla data (ex.featuredIds), poi gli id del
 // catalogo (bannerMedalIds), il primo id del pool, infine safeMedalId del master; una riga di log per banner.
+// I-153: con validComment 0 e J > WARRANT_HARD_MAX (master non rigenerato dopo I-153) striscia nascosta e un solo id,
+// una riga di log per banner; con validComment 1 e pity il client non legge warrantMedalIds ([fn]: sprintf del
+// comment con userWarrantDisplayOfTime): basta il primo id.
 const commentWarned = new Set();
-function guardWarrant(w, b, ex, catalog, validComment, safeMedalId) {
-  if (validComment !== 0 || (w.warrantMedalIds || []).length) return w;
+const stripWarned = new Set();
+function guardWarrant(w, b, ex, catalog, validComment, safeMedalId, nameOf = null) {
+  const list = w.warrantMedalIds || [];
+  if (validComment === 0 && list.length && warrantStripBytes(list, nameOf) > WARRANT_HARD_MAX) {
+    if (!stripWarned.has(b.drawMedalTypeId)) {
+      stripWarned.add(b.drawMedalTypeId);
+      console.log(`  [gacha] ${b.rowId} ${b.name}: striscia della pity di ${warrantStripBytes(list, nameOf)} byte con validComment 0 `
+        + `(oltre ${WARRANT_HARD_MAX}, I-153: master da rigenerare con make-banners.js): striscia nascosta, warrantMedalIds [${list[0]}]`);
+    }
+    return { userWarrantDisplayOfTime: 0, warrantMedalIds: [list[0]] };
+  }
+  if (validComment === 1 && b.guarantee?.pity && list.length > 1) return { ...w, warrantMedalIds: [list[0]] };
+  if (validComment !== 0 || list.length) return w;
   const pick = (ex?.featuredIds || [])[0] ?? bannerMedalIds(b, catalog)[0] ?? Object.values(ex?.pool || {}).flat()[0] ?? safeMedalId;
   const ids = pick != null ? [pick] : [];
   if (!commentWarned.has(b.drawMedalTypeId)) {
@@ -167,14 +213,15 @@ function drawsLeft(player, b, realMs) {
 
 // exFor(banner) -> expandPool del banner alla data del giocatore (server.js expandFor) e catalog (ripiego senza pool):
 // per la striscia della garanzia; validCommentOf(banner) = validComment della riga drawMedalType servita, safeMedalId =
-// ultimo ripiego per warrantMedalIds (guardWarrant)
-function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor, catalog, validCommentOf, safeMedalId }) {
+// ultimo ripiego per warrantMedalIds (guardWarrant), nameOf(medalId) = nome della riga medal servita (I-153: un id per
+// nome e lunghezza della striscia)
+function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor, catalog, validCommentOf, safeMedalId, nameOf }) {
   ticketsOf(player);
   const list = shopBanners(banners, { storyQuest, storyDay, sizes, show });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
   const warrantOfList = (b) => {
     const ex = exFor?.(b);
-    return guardWarrant(warrantFields(b, ex, drawState(player, b), catalog), b, ex, catalog, validCommentOf?.(b), safeMedalId);
+    return guardWarrant(warrantFields(b, ex, drawState(player, b), catalog, nameOf), b, ex, catalog, validCommentOf?.(b), safeMedalId, nameOf);
   };
   // Catalog sortId 1, poi 10, 20, ... nell'ordine di shopBanners (i piu' recenti prima, spec 4.3).
   return {
@@ -416,5 +463,5 @@ function catalogPage(banners, ctx) {
 
 module.exports = {
   SHOP_MAX, WALLET, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
 };

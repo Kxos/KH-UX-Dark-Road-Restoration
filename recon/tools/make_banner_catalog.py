@@ -731,6 +731,15 @@ def apply_enhance_overrides(enh, ov_row):
     return enh
 
 
+def apply_pity_label(g, ov_row):
+    """I-153: guarantee.pityLabel = categoria dei bersagli della pity (campo «pity_label» di banner_overrides.tsv,
+    dal notice del banner o, se il notice non la dice, dai pityNames: la fonte e' nel TSV). La legge
+    server/make-banners.js per la striscia di categoria quando la lista dei nomi supera il limite del client;
+    None senza override."""
+    g['pityLabel'] = ((ov_row or {}).get('pity_label') or '').strip() or None
+    return g
+
+
 # ---------- righe incomplete: fratello di serie (porta di incomplete.py) e override ----------
 def sib_key(n):
     return re.sub(r'\s+', ' ', re.sub(r'\(\d+/\d+\)|returns!?|is back!?|limited time:|!|\(ex\+?\)|\[ex\+?\]', '', n.lower())).strip()
@@ -845,8 +854,11 @@ def build_catalog(inputs):
     twins = vip_twins(incl)
     ov = collections.defaultdict(dict)
     ov_src = collections.defaultdict(dict)
+    labels = collections.defaultdict(dict)  # pity_label (I-153): fuori da `ov`, che si fonde nella riga del TSV
     for o in inputs['overrides']:
-        if o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset'):
+        if o.get('field') == 'pity_label':
+            labels[o['row_id']]['pity_label'] = o['value']
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -901,6 +913,7 @@ def build_catalog(inputs):
             lst = next((s for s in g['slots'] if s['kind'] == 'list' and not s['names']), None)
             if lst:
                 lst['names'] = list(g['list'])
+        apply_pity_label(g, labels.get(rid))
         # potenziamenti per banner (guilt, pallini, boosted, abilita' al massimo): nomi risolti piu' sotto
         enh = bg.enhance_of(bg.enhance_text(notes, r['guarantees']), g['slots'], pool['featured'], M, inputs.get('skills') or [],
                             mix=rarity_mix(r['rarity_mix']))
