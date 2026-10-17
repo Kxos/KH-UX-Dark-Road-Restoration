@@ -236,9 +236,142 @@ gv = g.guarantee_v3(R(row_id='B0419'), 'Guarantees one Tier 6, Tier 7, or Tier 8
 check(gv['pityNames'] == ['hd aced [ex+]'] and gv['pityStar'] == 7 and gv['pitySlot'] == 0 and gv['erratum']
       and [x['kind'] for x in gv['slots']] == ['tier', 'trait'], f'B0419 {gv}')
 
+# ---------- Task 2: potenziamenti per banner (enhance) e regalo della pity (ricerca §3) ----------
+# M: righe del master (medaglie di supporto per pityGift); S: righe di skill.json con i nomi delle frasi
+M = MR + [{'medalId': 301684, 'name': 'Dual Meow Wow [SAB LV 9]', 'rare': 6, 'type': 6},
+          {'medalId': 301502, 'name': 'Blue Fairy [SA Bonus LV 8]', 'rare': 6, 'type': 6}]
+SK7 = ['Attack Boost VI Max', 'Defense Boost I Max', 'Defense Boost II Max', 'Defense Boost III Max', 'ATK B V Max & GA 1',
+       'ATK B V Max & Lux+', 'Triple Threat II']
+S = [{'skillId': 2000 + i, 'name': n, 'maxLv': 10} for i, n in enumerate(SK7 + ['Paralysis+ II Max'])]
+
+e = g.enhance_of("Even better, the 7★ Medal you receive is guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus!", [], [], M, S)
+check(e['preset'] == [{'on': {'star': 7}, 'dots': 'max', 'guilt': 'max'}], f'B0310 {e}')
+check(set(e) == {'preset', 'boosted', 'maxSkill', 'notReproduced'} and e['boosted'] == [] and e['maxSkill'] == [] and e['notReproduced'] == [],
+      f'blocco enhance completo {e}')
+s = g.assign_slots(g.parse_reservations("Guarantees one Tier 4 or higher Medal with its special attack strengthened 1 to 3 times."), [[6, 1], [5, 9]])
+check(g.enhance_of("Guarantees one Tier 4 or higher Medal with its special attack strengthened 1 to 3 times.", s, [], M, S)['preset']
+      == [{'on': {'slots': [0]}, 'dots': [1, 3], 'guilt': None}], 'B0131')
+check(g.enhance_of("When drawing an HD Terra [EX], it comes with its special attack strengthened 5 times", [], [], M, S)['preset']
+      == [{'on': {'names': ['hd terra [ex]']}, 'dots': 5, 'guilt': None}], 'B0243')
+check(g.enhance_of("she is also guaranteed to come pre-strengthened to 3 Special Attack dots!", [], ['hd naminé'], M, S)['preset']
+      == [{'on': {'names': ['hd naminé']}, 'dots': 3, 'guilt': None}], 'B0166 pronome = vetrina')
+check(g.enhance_of("When drawing a Trait Medal #6, it comes with its special attack strengthened 0 times", [], [], M, S)['preset'] == [], 'B0280')
+check(g.enhance_of("Guarantees at least three medals with a SAB of 3 or higher", [], [], M, S)['preset'] == [], 'B0051 solo Tier')
+b = g.enhance_of("Has a small chance of drawing a boosted Iago or Monstro with 1000 more base strength, or a boosted Illustrated KH II Kairi or Illustrated KH II Sora with 1000 more base strength and defense", [], [], M, S)['boosted']
+check(b == [{'on': {'names': ['iago', 'monstro']}, 'str': 1000, 'def': 0, 'chance': 'small'},
+            {'on': {'names': ['illustrated kh ii kairi', 'illustrated kh ii sora']}, 'str': 1000, 'def': 1000, 'chance': 'small'}], f'B0106 {b}')
+# B0106 vero: la frase del TSV e' troncata a «... and d»
+b = g.enhance_of("Has a small chance of drawing a boosted Iago or Monstro with 1000 more base strength, or a boosted Illustrated KH II Kairi or Illustrated KH II Sora with 1000 more base strength and d", [], [], M, S)['boosted']
+check(b[1]['def'] == 1000, f'B0106 troncata {b}')
+b = g.enhance_of("Has a small chance of drawing a boosted Dark Riku or World of Chaos with 1000 more base strength and defense.", [], [], M, S)['boosted']
+check(b == [{'on': {'names': ['dark riku', 'world of chaos']}, 'str': 1000, 'def': 1000, 'chance': 'small'}], f'B0104 {b}')
+T14 = ("Guarantees two of the following Medals: [[SN - Blitz Form Sora]], [[SN - KH III Anti-Aqua]], [[Key Art #20]]. Has a small chance of drawing a "
+       "boosted version of SN - Blitz Form Sora with 2000 more base strength and defense or one of the other aforementioned Medals with 1000 more base strength and defense.")
+s = g.assign_slots(g.parse_reservations(T14), [[7, 2], [6, 1], [5, 7]])
+b = g.enhance_of(T14, s, [], M, S)['boosted']
+check(b == [{'on': {'names': ['sn - blitz form sora']}, 'str': 2000, 'def': 2000, 'chance': 'small'},
+            {'on': {'names': ['sn - kh iii anti-aqua', 'key art #20']}, 'str': 1000, 'def': 1000, 'chance': 'small'}], f'B0514 {b}')
+T31 = 'Guarantees one boosted version of the following Medals: [[SN++ - KH CoM Sora]], [[SN++ - Fiend]], {{KA|22}}.'
+s = g.assign_slots(g.parse_reservations(T31), [[7, 1]])
+b = g.enhance_of(T31, s, [], M, S)['boosted']
+check(b == [{'on': {'slots': [0]}, 'str': 1000, 'def': 1000, 'chance': 'guaranteed'}], f'B0631 {b}')
+s = g.assign_slots(g.parse_reservations('Guarantees ten boosted SN+ or SN++ Medals.'), [[7, 10]])
+check(g.enhance_of('Guarantees ten boosted SN+ or SN++ Medals.', s, [], M, S)['boosted'][0]['on'] == {'slots': list(range(10))}, 'B0730 dieci boosted')
+b = g.enhance_of('When drawing an {{EX|Illustrated Xion}}, it comes boosted with 1000 more base strength and defense, and with its special attack strengthened 3 times.',
+                 [], [], M, S)
+check(b['boosted'] == [{'on': {'names': ['illustrated xion [ex]']}, 'str': 1000, 'def': 1000, 'chance': 'guaranteed'}]
+      and b['preset'] == [{'on': {'names': ['illustrated xion [ex]']}, 'dots': 3, 'guilt': None}], f'B0282 boosted e pallini {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of 6★ or 7★ Prime - Illustrated Axel or 7★ Key Art #17 with 1000 more base strength and defense.', [], [], M, S)
+check(b['boosted'][0]['on'] == {'names': ['prime - illustrated axel', 'key art #17']}, f'stelle davanti ai nomi {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of a 7★ Tier 4, 5, 6, or 7 Medal (excluding Prime Medals).', [], [], M, S)
+check(b['boosted'] == [] and b['notReproduced'] == ['boosted'], f'boosted per Tier: non riprodotta {b}')
+b = g.enhance_of('Guarantees ten Imitation Medals. Has a small chance of drawing a boosted version of an Imitation Medal with 1000 more base strength and defense.', [], [], M, S)
+check(b['boosted'] == [] and b['notReproduced'] == ['imitation'], f'Imitation {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of Xion [EX+] with 2000 more base strength and defense, and 5 Trait Slots.', [], [], M, S)
+check(b['boosted'] == [{'on': {'names': ['xion [ex+]']}, 'str': 2000, 'def': 2000, 'chance': 'small'}] and b['notReproduced'] == ['traitSlots'], f'5 Trait Slots {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted Tyro, Dr. Mog, or Ulala with 1000 more base strength or a booster FFRK Terra with 1000 more base strength and defense.', [], [], M, S)
+check([x['on']['names'] for x in b['boosted']] == [['tyro', 'dr. mog', 'ulala'], ['ffrk terra']] and b['boosted'][1]['def'] == 1000, f'«booster» {b}')
+
+# frase troncata dal TSV (senza «with N more»): l'ultimo nome si completa dalla vetrina o si toglie; «The World ...» resta intero
+b = g.enhance_of('Has a small chance of drawing a boosted HD Ventus or S', [], ['hd ventus', 'sp ansem'], M, S)['boosted']
+check(b == [{'on': {'names': ['hd ventus', 'sp ansem']}, 'str': 1000, 'def': 1000, 'chance': 'small'}], f'troncata completata {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted K', [], ['kh 0.2 kairi', 'key art #8'], M, S)['boosted']
+check(b == [], f'troncata ambigua tolta {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted The World Ends with You Art 2 with 1000 more base strength and defense.', [], [], M, S)['boosted']
+check(b[0]['on'] == {'names': ['the world ends with you art 2']}, f'«The» nel nome {b}')
+
+# maxSkill: solo le abilita' presenti in skill.json; le altre -> notReproduced 'skill'; Trait Medal ignorata -> 'trait'
+e = g.enhance_of("When drawing a Zexion [+] or Trait Medal #18, it comes with the [[Paralysis+ II Max]] skill at max level", [], [], M, S)
+check(e['maxSkill'] == [{'on': {'names': ['zexion [+]']}, 'skills': ['paralysis+ ii max']}] and e['notReproduced'] == ['trait'], f'B0324 {e}')
+T48 = ('Guarantees one 7★ Tier 4 Medal with one of the following Skills at max level: [[Attack Boost VI Max]], [[Defense Boost I Max]], '
+       '[[Defense Boost II Max]], [[Defense Boost III Max]], [[ATK B V Max & GA 1]], [[ATK B V Max & Lux+]], [[Triple Threat II]].')
+s = g.assign_slots(g.parse_reservations(T48), [[7, 1], [5, 9]])
+e = g.enhance_of(T48, s, [], M, S)
+check(e['maxSkill'] == [{'on': {'slots': [0]}, 'skills': [x.lower() for x in SK7]}] and e['notReproduced'] == [], f'B0348 {e}')
+e = g.enhance_of(T48, s, [], M, S[:2])
+check(e['maxSkill'] == [{'on': {'slots': [0]}, 'skills': ['attack boost vi max', 'defense boost i max']}] and e['notReproduced'] == ['skill'],
+      f'B0348 coperta in parte {e}')
+e = g.enhance_of(T48, s, [], M, [])
+check(e['maxSkill'] == [] and e['notReproduced'] == ['skill'], f'B0348 senza abilita {e}')
+e = g.enhance_of(T48 + ' When drawing an HD Ava [EX+], it comes with one of the aforementioned skills at max level.', s, [], M, S)
+check(e['maxSkill'][1] == {'on': {'names': ['hd ava [ex+]']}, 'skills': [x.lower() for x in SK7]}, f'«aforementioned skills» {e}')
+T60 = ('Guarantees one 7★ Tier 7 or 8 Medal. The guaranteed Tier 7 and any Tier 8 Medal comes with one of the following skills at max level: '
+       '[[Attack Boost VI Max]], [[Triple Threat II]].')
+s = g.assign_slots(g.parse_reservations(T60), [[7, 5]])
+check(g.enhance_of(T60, s, [], M, S)['maxSkill'] == [{'on': {'slots': [0]}, 'skills': ['attack boost vi max', 'triple threat ii']}], 'B0460 «The guaranteed»')
+
+# pallini: le altre forme delle note
+e = g.enhance_of('★ Get 3-Dot HD Naminé within 5 Draws!', [], ['hd naminé'], M, S)
+check(e['preset'] == [{'on': {'names': ['hd naminé']}, 'dots': 3, 'guilt': None}], f'«3-Dot X» {e}')
+s = g.assign_slots(g.parse_reservations('In addition, each pull from this deal guarantees at least one recent Tier 5 Medal pre-strengthened to 1, 2, or 3 Special Attack dots!'), [[6, 2], [5, 8]])
+check(g.enhance_of('In addition, each pull from this deal guarantees at least one recent Tier 5 Medal pre-strengthened to 1, 2, or 3 Special Attack dots!', s, [], M, S)['preset']
+      == [{'on': {'slots': [0]}, 'dots': [1, 3], 'guilt': None}], 'B0153 «1, 2, or 3» dots')
+check(g.enhance_of('Only draws Epic Medals, and guarantees two 6★ Medals with their Special Attack strengthened three times.', [], [], M, S)['preset']
+      == [{'on': {'star': 6}, 'dots': 3, 'guilt': None}], 'due 6★ (non riserva) -> stella')
+T31b = ('Guarantees at least 2 6★ Medals that have their special attacks strengthened 3 times. '
+        'All other medals have a chance of having their special attacks strengthened between 1 and 3 times.')
+e = g.enhance_of(T31b, [], [], M, S, mix=[[6, 2], [4, 5], [3, 3]])
+check(e['preset'] == [{'on': {'star': 6}, 'dots': 3, 'guilt': None}, {'on': {'slots': list(range(2, 10))}, 'dots': [0, 3], 'guilt': None}], f'B0031 {e}')
+check(g.enhance_of('Only draws Tier 2 Medals. All Medals have their special attack strengthened 3 times.', [], [], M, S, mix=[[6, 10]])['preset']
+      == [{'on': {'slots': list(range(10))}, 'dots': 3, 'guilt': None}], 'B0119 tutte')
+T00 = ('Guarantees either HD Valor Form Sora, HD Master Form Sora, or HD Limit Form Sora with its special attack strengthened 1 to 3 times, '
+       'or HD Antiform Sora or Sora Art [EX] with its special attack strengthened 3 times.')
+s = g.assign_slots(g.parse_reservations(T00), [[6, 1], [5, 9]])
+check(g.enhance_of(T00, s, [], M, S)['preset'] == [
+    {'on': {'names': ['hd valor form sora', 'hd master form sora', 'hd limit form sora']}, 'dots': [1, 3], 'guilt': None},
+    {'on': {'names': ['hd antiform sora', 'sora art [ex]']}, 'dots': 3, 'guilt': None}], 'due pallini nella stessa frase -> nomi')
+T49 = ('Guarantees at least one of the following medals, with its Special Attack strengthened 3 times: Black Coat King Mickey, Zack, Mr. Smee.')
+s = g.assign_slots(g.parse_reservations(T49), [[5, 3], [4, 7]])
+check(g.enhance_of(T49, s, [], M, S)['preset'] == [{'on': {'slots': [0]}, 'dots': 3, 'guilt': None}], 'B0049 lista')
+check(g.enhance_of('If bought 5 times, at least one Illustrated KH II Kairi with its special attack strengthened 3 times is guaranteed.', [], [], M, S)['preset']
+      == [{'on': {'names': ['illustrated kh ii kairi']}, 'dots': 3, 'guilt': None}], 'pity coi pallini')
+check(g.enhance_of('When drawing a Riku Art [EX] or Illustrated Aqua B, it comes with its special attack strengthened', [], [], M, S)['preset'] == [],
+      'frase troncata senza numero')
+check(g.enhance_of('After this Epic Medal Carnival ended, players who unlocked the Special Attack Bonus for Illustrated Kairi got a gift.', [], [], M, S)['preset'] == [],
+      'Special Attack Bonus senza preset')
+# frasi doppie (note + colonna guarantees troncata): una voce sola
+e = g.enhance_of('When drawing an HD Terra [EX], it comes with its special attack strengthened 5 times. | When drawing an HD Terra [EX], it comes with its special attack strengthened 5 times.', [], [], M, S)
+check(len(e['preset']) == 1, f'voci doppie {e}')
+# Trait: slot riservati a una Trait Medal -> notReproduced 'trait'
+s = g.assign_slots(g.parse_reservations('Guarantees one Trait Medal #48.'), [[6, 2], [5, 8]])
+check(g.enhance_of('Guarantees one Trait Medal #48.', s, [], M, S)['notReproduced'] == ['trait'], 'slot Trait')
+check(g.enhance_of('Guarantees at least one Epic Medal.', [], [], M, S)['notReproduced'] == ['epic'], 'Epic')
+check(g.enhance_text('A. When drawing an HD Terra [EX], it comes with its special attack strengthened 5 times.',
+                     'When drawing an HD Terra [EX], it comes with its spec. If bought 5 times, one X is guaranteed.')
+      == 'A | When drawing an HD Terra [EX], it comes with its special attack strengthened 5 times | If bought 5 times, one X is guaranteed',
+      f"enhance_text: note + frasi nuove della colonna {g.enhance_text('A. When drawing an HD Terra [EX], it comes with its special attack strengthened 5 times.', 'When drawing an HD Terra [EX], it comes with its spec. If bought 5 times, one X is guaranteed.')}")
+
+# regalo della pity: medaglia di supporto del master -> Present Box
+check(g.pity_gift("If bought 10 times, one Dual Meow Wow [SAB LV 9] is included", M) == [3, 301684, 1], 'B0472 pityGift')
+check(g.pity_gift("If bought 10 times, at least one Blue Fairy [SA Bonus LV 8] is guaranteed.", M) == [3, 301502, 1], 'B0370 pityGift')
+check(g.pity_gift("If bought 5 times, at least one 7★ HD Axel is guaranteed.", M) is None, 'medaglia d attacco: nessun regalo')
+check(g.pity_gift("As Trait Medal #2 is guaranteed within 5 draws from this banner", M) is None, 'Trait: nessun regalo')
+check(g.pity_gift("Guarantees one of the following Medals: A.", M) is None, 'senza pity')
+
 if errori:
     print(f'ERRORI ({len(errori)})')
     for e in errori:
         print(' -', e)
     sys.exit(1)
-print('OK: riserve (lista, nominata, Tier, Trait, SN+), assegnazione, pity, decisione 1 e 5, override')
+print('OK: riserve (lista, nominata, Tier, Trait, SN+), assegnazione, pity, decisione 1 e 5, override, '
+      'potenziamenti (pallini, guilt, boosted, abilita), regalo della pity')

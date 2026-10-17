@@ -5,8 +5,11 @@ Medals: ...», «Guarantees one 6★ Prime - KH Cloud.», «Guarantees one Trait
 one 7★ HD Axel is guaranteed.») e scrive il blocco `guarantee` del catalogo v3:
 
     slots[]   riserve in ordine di testo {kind, slot, count, star, names, tierMin, tierMax} (+ conflict se True)
-    pity, pityNames, pityStar, pitySlot, pityGift (Task 2), erratum, source
+    pity, pityNames, pityStar, pitySlot, pityGift, erratum, source
     list, count, slot   = prima riserva a lista (compatibilita' col sotto-progetto 2), every come prima
+
+e il blocco `enhance` (enhance_of: guilt e pallini preimpostati, boosted, abilita' al livello massimo, notReproduced)
+con pity_gift (pity su una medaglia di supporto del master -> regalo nel Present Box).
 
 Regole dall'audit delle garanzie del 17-10 (tmp/sp2/audit-guarantees.md, sezione 4) e decisioni dell'utente
 (tmp/sp2b/decisioni.md): 1 (liste sugli slot 6★ solo coi nomi con variante 6★), 2 (B0733 due liste),
@@ -231,6 +234,250 @@ def pity_of(text, featured, slots, mix):
     «X is guaranteed within N draws»: pityNames = X (default `featured`), pityStar = S (default la stella di pitySlot).
     Le frasi «every Nth draw» restano pity (decisione 3)."""
     return _pity(text, featured, slots, mix)[0]
+
+
+# ---------- potenziamenti per banner (blocco `enhance`, ricerca §3) ----------
+# pallini: «strengthened N times» / «1 to 3 times» / «between 1 and 3 times», «pre-strengthened to 1, 2, or 3 ... dots», «3-Dot X»;
+# guilt: «maximum Special Attack Bonus» / «Special Attack Bonus maxed» (pallini pieni insieme alla guilt, ricerca §3)
+DOTS_RE = re.compile(r'(?<!pre-)strengthened (?:between )?(' + NUMW + r')(?: (?:to|and) (\d+))? times?\b')
+PRE_RE = re.compile(r'pre-strengthened to ((?:\d+,? )*(?:or )?\d+) Special Attack dots')
+NDOT_RE = re.compile(r'\b(\d+)-Dot (.+?)(?:\s+within\b|$)')
+MAXSAB_RE = re.compile(r'maximum Special Attack Bonus|Special Attack Bonus maxed', re.I)
+WHEN_RE = re.compile(r'[Ww]hen drawing (?:an? )?(.+?),?\s+(?:it|the [Mm]edal) comes\b')
+PRONOUN = re.compile(r'^(?:\w+ )?(?:she|he|they|it)\b|\b(?:she|he) is (?:also )?guaranteed', re.I)
+STAR_ON = re.compile(r'(?:\bthe|including a|\d+|\bone|\btwo|\bthree|\ba) (\d)★(?: Medals?)?\b')
+# boosted: «small chance of drawing a boosted [version of] X with 1000 more base strength[ and defense][, or a boosted Y with ...]»
+SMALL_RE = re.compile(r'small chance of drawing a boost(?:ed|er) ')
+CLAUSE_RE = re.compile(r'(?:,?\s*(?:or|and)\s+)?(?:an? )?(?:boost(?:ed|er) )?(?:version of )?(.+?)\s+with (\d+) more bases? strength'
+                       r'( and d(?:efense|\w*$|$))?')
+BOOST_RES = re.compile(r'boosted (?:versions? of|SN\+)|Boosted Ver\b')
+COMES_BOOSTED = re.compile(r'comes boosted with (\d+) more bases? strength( and defense)?')
+AFORE = re.compile(r'\b(?:aforementioned|these) [Mm]edals\b')
+TIER_TARGET = re.compile(r'\bTier \d')
+# abilita' al livello massimo: «with one of the following skills at max level: A, B», «with the X skill at max level»,
+# «with one of the aforementioned skills at max level»
+SKILLS_RE = re.compile(r'one of the following [Ss]kills at max level:\s*(.*)$')
+SKILL1_RE = re.compile(r'\bthe (.+?) skill at max level')
+SKILLS_AFORE = re.compile(r'one of the aforementioned skills at max level')
+EPIC_RE = re.compile(r'[Gg]uarantee\w*\b[^|]*?\bEpic Medals?\b')
+IMIT_RE = re.compile(r'\bImitation Medals?\b')
+
+
+def enhance_text(notes, guarantees):
+    """testo delle frasi per enhance_of: le note ripulite, piu' le frasi della colonna guarantees che le note non hanno
+    (la stessa frase troncata dal TSV a 500 caratteri non conta due volte; se e' piu' lunga prende il posto di quella
+    delle note)"""
+    out = sentences(clean_markup(notes or ''))
+
+    def same(a, b):
+        k = 0
+        while k < min(len(a), len(b)) and a[k] == b[k]:
+            k += 1
+        return k >= min(len(a), len(b), 60)
+    for s in sentences(clean_markup(guarantees or '')):
+        i = next((i for i, n in enumerate(out) if same(n, s)), None)
+        if i is None:
+            out.append(s)
+        elif len(s) > len(out[i]):
+            out[i] = s
+    return ' | '.join(out)
+
+
+def _dots(s):
+    """[(valore, inizio, fine)] dei pallini della frase: intero, [min, max] o 'max'; 0 -> niente"""
+    out = []
+    for m in DOTS_RE.finditer(s):
+        a = _num(m.group(1))
+        v = [a, int(m.group(2))] if m.group(2) else a
+        out.append((v, m.start(), m.end()))
+    for m in PRE_RE.finditer(s):
+        nums = [int(x) for x in re.findall(r'\d+', m.group(1))]
+        out.append(([min(nums), max(nums)] if len(nums) > 1 else nums[0], m.start(), m.end()))
+    m = NDOT_RE.search(s)
+    if m:
+        out.append((int(m.group(1)), m.start(), m.end()))
+    m = MAXSAB_RE.search(s)
+    if m:
+        out.append(('max', m.start(), m.end()))
+    return [x for x in sorted(out, key=lambda x: x[1]) if x[0] not in (0, [0, 0])]
+
+
+def _target_names(seg, trait):
+    """nomi di medaglia di un elenco senza le Trait Medal (non riproducibili: trait[0] = True) e senza i resti generici"""
+    out = []
+    for n in mbc.list_names(seg):
+        n = re.sub(r'^(?:an?|version of) ', '', re.sub(r'\s*\d★\s*', ' ', n).strip())  # «The World Ends with You Art 2» resta
+        if n.startswith('trait medal'):
+            trait[0] = True
+        elif n and not GENERIC.search(n):
+            out.append(n)
+    return mbc._dedup(out)
+
+
+def enhance_of(text, slots, featured, medal_rows, skill_rows, mix=None):
+    """blocco `enhance` del catalogo v3 (contratto in global-constraints.md): {preset, boosted, maxSkill, notReproduced}.
+    Bersaglio di ogni potenziamento: la riserva della stessa frase (`slots`, nell'ordine delle frasi come
+    parse_reservations), altrimenti i nomi della frase («When drawing X»), «the N★ Medal» -> star, un pronome -> la
+    vetrina (`featured`); «All [other] Medals» -> gli slot del mix (`mix`, facoltativo). maxSkill: solo le abilita' di
+    `skill_rows` (skill.json, nomi normalizzati), le altre -> 'skill'. notReproduced: 'trait' (Trait Medal e slot Trait),
+    'imitation', 'epic', 'skill', 'boosted' (boosted per Tier, senza nomi), 'traitSlots' («5 Trait Slots»); 'pity'
+    (bersaglio assente) lo aggiunge build_catalog dopo la risoluzione dei nomi."""
+    del medal_rows  # i nomi restano quelli delle note: li risolve build_catalog come quelli delle riserve
+    known = {mbc.norm(r['name']) for r in skill_rows}
+    rar = [r for r, n in (mix or []) for _ in range(n)]
+    out = {'preset': [], 'boosted': [], 'maxSkill': [], 'notReproduced': []}
+    nr = set()
+    trait = [any(s['kind'] == 'trait' or any(n.startswith('trait medal') for n in s['names']) for s in slots)]
+    k = 0
+    last_list, last_skills, last_res, done = [], [], None, set()
+
+    def add(key, item):
+        if item not in out[key]:
+            out[key].append(item)
+
+    for s in sentences(clean_markup(text)):
+        res = _parse_one(s)
+        slot = None
+        if res is not None:
+            if k < len(slots):
+                slot = slots[k]
+                last_res = slot
+                if slot['names']:
+                    last_list = slot['names']
+            k += 1
+        imit = bool(IMIT_RE.search(s) and re.search(r'[Gg]uarantee|boosted', s))  # Imitation: nessun bersaglio
+        if imit:
+            nr.add('imitation')
+        if res is None and EPIC_RE.search(s) and not re.search(r'[Oo]nly draws Epic', s):
+            nr.add('epic')
+        when = WHEN_RE.search(s)
+        when_names = _target_names(when.group(1), trait) if when else []
+        pity = PITY_SENT.search(s)
+
+        def target():
+            """bersaglio della frase (None se non si capisce)"""
+            m = re.search(r'including an? (\d)★', s)
+            if m:
+                return {'star': int(m.group(1))}
+            if when:
+                return {'names': when_names} if when_names else None
+            if slot is not None:
+                return {'slots': covered(slot)}
+            if re.match(r'[Tt]he guaranteed\b', s) and last_res is not None:
+                return {'slots': covered(last_res)}
+            m = NDOT_RE.search(s)
+            if m:
+                return {'names': _target_names(m.group(2), trait) or list(featured)}
+            if re.match(r'[Aa]ll (?:other )?[Mm]edals\b', s) and rar:
+                idx = [i for i in range(len(rar)) if i not in done] if re.match(r'[Aa]ll other', s) else list(range(len(rar)))
+                return {'slots': idx}
+            m = STAR_ON.search(s)
+            if m:
+                return {'star': int(m.group(1))}
+            if pity:
+                names = [n for n in mbc.guarantee_of({'guarantees': '', 'featured_medals': ''}, s)['featured']]
+                names = _target_names(', '.join(names), trait) if names else []
+                return {'names': names or list(featured)} if (names or featured) else None
+            if PRONOUN.search(s) and featured:
+                return {'names': list(featured)}
+            return None
+
+        # pallini e guilt
+        ds = [] if imit else _dots(s)
+        if len({repr(d[0]) for d in ds}) > 1 and not MAXSAB_RE.search(s):
+            # due valori nella stessa frase («A, B with ... 1 to 3 times, or C with ... 3 times»): i nomi davanti a ciascuno
+            prev = 0
+            for v, a, b in ds:
+                seg = re.sub(r'^.*?(?:[Gg]uarantees (?:either )?|,?\s*or )', '', s[prev:a].split(' with ')[0], count=1)
+                names = _target_names(seg, trait)
+                if names:
+                    add('preset', {'on': {'names': names}, 'dots': v, 'guilt': None})
+                prev = b
+        elif ds:
+            v = ds[0][0]
+            if isinstance(v, list) and re.search(r'\bhave a chance of\b', s):  # «All other medals have a chance of ... 1 and 3»
+                v = [0, v[1]]
+            on = target()
+            if on:
+                add('preset', {'on': on, 'dots': v, 'guilt': 'max' if v == 'max' else None})
+                if 'slots' in on:
+                    done.update(on['slots'])
+                elif 'star' in on:
+                    done.update(i for i, r in enumerate(rar) if r == on['star'])
+
+        # boosted
+        m = None if imit else COMES_BOOSTED.search(s)
+        if m and when_names:
+            st = int(m.group(1))
+            add('boosted', {'on': {'names': when_names}, 'str': st, 'def': st if m.group(2) else 0, 'chance': 'guaranteed'})
+        elif slot is not None and not imit and BOOST_RES.search(s):
+            m = re.search(r'with (\d+) more bases? strength( and defense)?', s)
+            st = int(m.group(1)) if m else 1000
+            add('boosted', {'on': {'slots': covered(slot)}, 'str': st, 'def': st if (not m or m.group(2)) else 0, 'chance': 'guaranteed'})
+        m = None if imit else SMALL_RE.search(s)
+        if m:
+            rest = s[m.end():]
+            clauses = []
+            while True:
+                c = CLAUSE_RE.match(rest)
+                if not c:
+                    break
+                st = int(c.group(2))
+                clauses.append((c.group(1), st, st if c.group(3) else 0))
+                rest = rest[c.end():]
+            cut = not clauses
+            if cut:  # «... a boosted version of a 7★ Tier 4 or Tier 5 Medal» o frase troncata dal TSV: 1000/1000
+                clauses = [(rest, 1000, 1000)]
+            elif re.search(r'[Tt]rait [Ss]lots?', rest):  # «, and 5 Trait Slots» / «an extra trait slot»
+                nr.add('traitSlots')
+            seen = []
+            for seg, st, df in clauses:
+                if TIER_TARGET.search(seg):
+                    nr.add('boosted')
+                    continue
+                if AFORE.search(seg):
+                    names = [n for n in (last_list or featured) if n not in seen] if 'other' in seg else list(last_list or featured)
+                else:
+                    names = _target_names(seg, trait)
+                    if cut and names and names[-1] not in featured:
+                        # senza «with N more» la frase e' troncata dal TSV a 500 caratteri («... a boosted Lord of the De»):
+                        # l'ultimo nome si completa con l'unico nome della vetrina che lo continua, altrimenti si toglie
+                        full = [f for f in featured if f.startswith(names[-1])]
+                        names = names[:-1] + full if len(full) == 1 else names[:-1]
+                seen += names
+                if names:
+                    add('boosted', {'on': {'names': names}, 'str': st, 'def': df, 'chance': 'small'})
+
+        # abilita' al livello massimo
+        m = SKILLS_RE.search(s)
+        m1 = SKILL1_RE.search(s)
+        skills = mbc._dedup(mbc.list_names(m.group(1))) if m else [mbc.norm(m1.group(1))] if m1 else \
+            list(last_skills) if SKILLS_AFORE.search(s) else []
+        if skills:
+            last_skills = skills
+            have = [x for x in skills if x in known]
+            if len(have) < len(skills):
+                nr.add('skill')
+            on = None if imit else target()
+            if have and on:
+                add('maxSkill', {'on': on, 'skills': have})
+    if trait[0]:
+        nr.add('trait')
+    out['notReproduced'] = sorted(nr)
+    return out
+
+
+def pity_gift(text, medal_rows):
+    """[3, medalId, 1] se il bersaglio della pity e' una medaglia di supporto del master (type != 1: «If bought 10 times,
+    one Dual Meow Wow [SAB LV 9] is included» -> 301684, va nel Present Box), altrimenti None"""
+    p, _ = _pity(text, [], [], [])
+    if not p['pity']:
+        return None
+    sup = {}
+    for r in sorted(medal_rows, key=lambda r: r['medalId']):
+        if r.get('type', 1) != 1 and not mbc.is_boosted(r):
+            sup.setdefault(mbc.norm(r['name']), r['medalId'])
+    return next(([3, sup[n], 1] for n in p['pityNames'] if n in sup), None)
 
 
 # ---------- override scritti a mano (casi visti solo nelle immagini o nei notice) ----------

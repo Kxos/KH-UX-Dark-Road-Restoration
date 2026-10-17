@@ -394,7 +394,7 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     for b in bs:
         gq = b['guarantee']
         rr = [x for x, n in b['rarityMix'] for _ in range(n)]
-        if gq['pity'] and rr and _bgm._pity(b['notes'] + ' | ' + b['guaranteesText'], b['pool']['featured'], [], b['rarityMix'])[1] is None \
+        if gq['pity'] and not gq['pityGift'] and rr and _bgm._pity(b['notes'] + ' | ' + b['guaranteesText'], b['pool']['featured'], [], b['rarityMix'])[1] is None \
                 and gq['pityStar'] != rr[gq['pitySlot']]:
             bad.append(b['rowId'])
     check(not bad, f'pityStar non scritta diversa dallo slot finale {bad[:8]}')
@@ -404,6 +404,38 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
            and any(n in med and 6 in {i[1] for i in med[n]['ids']} for n in s['names'])]
     check(not bad, f'decisione 1 {bad[:5]}')
     check(all('slot' in b['guarantee'] for b in bs), 'guarantee.slot sempre presente')
+
+    # Task 2: potenziamenti per banner (enhance) e regalo della pity
+    ek = {'preset', 'boosted', 'maxSkill', 'notReproduced'}
+    check(all(set(b['enhance']) == ek and all(isinstance(b['enhance'][k], list) for k in ek) for b in bs), 'enhance sempre presente')
+    check(B['B0310']['enhance']['preset'] == [{'on': {'star': 7}, 'dots': 'max', 'guilt': 'max'}], f"B0310 {B['B0310']['enhance']}")
+    check({'on': {'slots': [0]}, 'dots': [1, 3], 'guilt': None} in B['B0131']['enhance']['preset'], f"B0131 {B['B0131']['enhance']}")
+    check({'on': {'names': ['hd terra [ex]']}, 'dots': 5, 'guilt': None} in B['B0243']['enhance']['preset'], f"B0243 {B['B0243']['enhance']}")
+    check(B['B0166']['enhance']['preset'] == [{'on': {'names': ['hd naminé']}, 'dots': 3, 'guilt': None}], f"B0166 {B['B0166']['enhance']}")
+    check(B['B0104']['enhance']['boosted'] == [{'on': {'names': ['dark riku', 'world of chaos']}, 'str': 1000, 'def': 1000, 'chance': 'small'}],
+          f"B0104 {B['B0104']['enhance']['boosted']}")
+    check(any(x['str'] == 2000 and x['def'] == 2000 and x['on'] == {'names': ['sn - blitz form sora']} for x in B['B0514']['enhance']['boosted']), 'B0514 2000')
+    check(B['B0631']['enhance']['boosted'] == [{'on': {'slots': [0]}, 'str': 1000, 'def': 1000, 'chance': 'guaranteed'}], 'B0631 guaranteed')
+    check(all(x['chance'] in ('small', 'guaranteed') and (x['str'], x['def']) in ((1000, 0), (1000, 1000), (2000, 2000))
+              for b in bs for x in b['enhance']['boosted']), 'boosted: chance e varianti del contratto')
+    # nomi dei bersagli = chiavi del catalogo dove si risolvono; mai una Trait Medal
+    check(not [b['rowId'] for b in bs for k in ('preset', 'boosted', 'maxSkill') for x in b['enhance'][k]
+               if any(n.startswith('trait medal') for n in x['on'].get('names', []))], 'nessuna Trait Medal fra i bersagli')
+    check({'on': {'names': ['illustrated kh ii kairi', 'illustrated kh ii sora']}, 'str': 1000, 'def': 1000, 'chance': 'small'}
+          in B['B0106']['enhance']['boosted'], f"B0106 {B['B0106']['enhance']['boosted']}")
+    check(all('trait' in B[r]['enhance']['notReproduced'] for r in ('B0324', 'B0280')), 'Trait non riprodotte')
+    # pity su una medaglia di supporto del master -> regalo nel Present Box (D11 B0472/B0481); senza bersaglio -> pity null
+    for r in ('B0472', 'B0481', 'B0485', 'B0521'):
+        gq = B[r]['guarantee']
+        check(gq['pityGift'] == [3, 301684, 1] and gq['pity'] in (5, 10) and gq['pitySlot'] is None, f'{r} pityGift {gq["pityGift"]} {gq["pitySlot"]}')
+    check(B['B0370']['guarantee']['pityGift'] == [3, 301502, 1], 'B0370 Blue Fairy LV 8 in regalo')
+    for r in ('B0259', 'B0266', 'B0267', 'B0269', 'B0278', 'B0283', 'B0292'):
+        gq, en = B[r]['guarantee'], B[r]['enhance']
+        check(gq['pity'] is None and gq['pitySlot'] is None and gq['pityStar'] is None and 'pity' in en['notReproduced']
+              and 'trait' in en['notReproduced'], f'{r} pity su una Trait Medal: non riprodotta {gq["pity"]} {en}')
+    check(not [b['rowId'] for b in bs if b['guarantee']['pity'] and not b['guarantee']['pityGift']
+               and not any(n in med for n in b['guarantee']['pityNames'])], 'ogni pity ha un bersaglio nel catalogo o un regalo')
+    check(sum(1 for b in bs if b['guarantee']['pityGift']) == 9, f"pityGift {[b['rowId'] for b in bs if b['guarantee']['pityGift']]}")
 
     # F: nessuna medaglia del catalogo con darklight 3 (la scena del risultato va in crash: docs/notes/shop.md)
     dl3 = {r['medalId'] for r in m.default_inputs()['medals'] if r.get('darklight') == 3}

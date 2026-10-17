@@ -35,6 +35,7 @@ DEFAULTS = {
     'notices': os.path.join(ROOT, 'reference', 'banners', 'notices.json'),
     'medals': os.path.join(REPO, 'server', 'master_data', 'medal.json'),
     'materials': os.path.join(REPO, 'server', 'master_data', 'material.json'),
+    'skills': os.path.join(REPO, 'server', 'master_data', 'skill.json'),
     'overrides': os.path.join(HERE, 'banner_overrides.tsv'),
     'out': os.path.join(REPO, 'server', 'game_data', 'gacha_catalog.json'),
 }
@@ -760,6 +761,7 @@ def default_inputs():
     return {'wiki': load(p['wiki']), 'rows': read_tsv(p['banners']), 'story': story,
             'notices': {x['id']: x for x in load(p['notices'])}, 'medals': load(p['medals']),
             'materials': load(p['materials']),
+            'skills': load(p['skills']) if os.path.exists(p['skills']) else [],
             'overrides': read_tsv(p['overrides']) if os.path.exists(p['overrides']) else [], 'out': p['out']}
 
 
@@ -875,6 +877,9 @@ def build_catalog(inputs):
             lst = next((s for s in g['slots'] if s['kind'] == 'list' and not s['names']), None)
             if lst:
                 lst['names'] = list(g['list'])
+        # potenziamenti per banner (guilt, pallini, boosted, abilita' al massimo): nomi risolti piu' sotto
+        enh = bg.enhance_of(bg.enhance_text(notes, r['guarantees']), g['slots'], pool['featured'], M, inputs.get('skills') or [],
+                            mix=rarity_mix(r['rarity_mix']))
         total = total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)
@@ -897,7 +902,7 @@ def build_catalog(inputs):
             'unlockQuest': unlock_quest(r['start_pt'], story), 'payType': pay, 'currency': cur,
             'prices': prices, 'lotCount': lot, 'rarityMix': rarity_mix(r['rarity_mix']), 'epicBoost': epic_boost(notes),
             'dayLimit': day, 'totalLimit': total, 'vipFree': vip_free,
-            'pool': pool, 'guarantee': g, 'skill': skill_of(typ, r['start_pt']), 'bonus': found,
+            'pool': pool, 'guarantee': g, 'enhance': enh, 'skill': skill_of(typ, r['start_pt']), 'bonus': found,
             'catalogOnly': only, 'completedFrom': completed, 'image': img, 'imageFrom': img_from,
             'notes': notes, 'guaranteesText': r['guarantees'], 'notesSource': nsrc,
         })
@@ -921,8 +926,9 @@ def build_catalog(inputs):
         if own:
             b['pool']['featured'] = _dedup([own] + b['pool']['featured'])
         g = b['guarantee']
+        targets = [x['on'] for k in ('preset', 'boosted', 'maxSkill') for x in b['enhance'][k] if 'names' in x['on']]
         for lst, key, count in ([(g, 'pityNames', True), (b['pool'], 'featured', True), (b['pool'], 'names', False)]
-                                + [(s, 'names', 'prefix' not in s) for s in g['slots']]):
+                                + [(s, 'names', 'prefix' not in s) for s in g['slots']] + [(on, 'names', False) for on in targets]):
             res = []
             for n in lst[key]:
                 k = resolve_name(n, st, medals, rd)
@@ -952,6 +958,20 @@ def build_catalog(inputs):
         written = g.pop('_pityStarWritten', None)
         if g['pity']:  # senza stella scritta, pityStar = stella dello slot finale (dopo la decisione 1)
             g['pitySlot'], g['pityStar'] = bg.pity_slot(g['pityNames'], written, g['slots'], b['rarityMix'])
+        if g['pity'] and not any(n in medals for n in g['pityNames']):
+            # bersaglio fuori dal catalogo: medaglia di supporto del master -> regalo nel Present Box (nessuno slot
+            # sostituito, D11 B0472/B0481); altrimenti (Trait Medal, nomi del notice) pity non riprodotta
+            gift = bg.pity_gift(b['notes'] + ' | ' + (b['guaranteesText'] or ''), inputs['medals'])
+            g['pitySlot'] = g['pityStar'] = None
+            nr = set(b['enhance']['notReproduced'])
+            if gift:
+                g['pityGift'] = gift
+            else:
+                g['pity'] = None
+                nr.add('pity')
+                if any(n.startswith('trait medal') for n in g['pityNames']):
+                    nr.add('trait')
+            b['enhance']['notReproduced'] = sorted(nr)
     out.sort(key=lambda b: b['rowId'])
     return {
         'version': 3,
@@ -997,6 +1017,16 @@ def main():
               'pity per stella', dict(C(g['pityStar'] for g in gs if g['pity'])),
               'conflitti', sum(1 for g in gs if any(s.get('conflict') for s in g['slots'])),
               'override', sum(1 for g in gs if g['source']))
+        es = [b['enhance'] for b in xs]
+        skill_b = [b for b in xs if re.search(r'[Ss]kills? at max level', b['notes'] + ' ' + (b['guaranteesText'] or ''))]
+        full = sum(1 for b in skill_b if b['enhance']['maxSkill'] and 'skill' not in b['enhance']['notReproduced'])
+        part = sum(1 for b in skill_b if b['enhance']['maxSkill'] and 'skill' in b['enhance']['notReproduced'])
+        print(f'potenziamenti ({lab})', 'con preset', sum(1 for e in es if e['preset']),
+              'con boosted', sum(1 for e in es if e['boosted']),
+              'boosted per chance', dict(C(x['chance'] for e in es for x in e['boosted'])),
+              'maxSkill', len(skill_b), 'coperti del tutto', full, 'in parte', part, 'nessuno', len(skill_b) - full - part,
+              'con pityGift', sum(1 for g in gs if g['pityGift']),
+              'notReproduced', dict(C(k for e in es for k in e['notReproduced']).most_common()))
     print('scritto', inp['out'], os.path.getsize(inp['out']), 'byte')
 
 
