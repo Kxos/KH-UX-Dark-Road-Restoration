@@ -395,19 +395,50 @@ Spec [2026-10-17-shop-garanzie-2b-design.md](../superpowers/specs/2026-10-17-sho
 idoneo, `guaranteed`), `enhance.maxSkill`, `enhance.notReproduced`. `guarantee.list/count/slot` restano (prima
 riserva a lista) per compatibilita'.
 
-**Comandi, nell'ordine** (master -> revisione nuova; risorse complete solo a banco fermo):
+**Comandi, nell'ordine** (master -> revisione nuova; risorse complete solo a banco fermo). Ordine verificato
+leggendo gli script (final review, I2): il catalogo legge `medal.json`/`material.json`/`skill.json` del master; le
+immagini leggono il catalogo; `make-game-tables.js` riscrive `medal.json` e in fondo chiama `make-boosted-medals.js`
+e `make-nova-rows.js`, che leggono il catalogo; `make-banners.js` legge catalogo e master.
 
 ```powershell
-python recon/tools/make_banner_catalog.py
-$env:KHUX_MEDALS_ALL='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # boosted e righe del Nova (in fondo)
+python recon/tools/make_banner_catalog.py                    # server/game_data/gacha_catalog.json
+python recon/tools/make_banner_images.py --mode palette      # server/game_data/gacha_img/<id>.png
+$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # boosted e Nova in fondo
+Remove-Item Env:KHUX_MEDALS_ALL, Env:KHUX_WORLDTOUR          # non lasciarle alla sessione PowerShell
 node server/make-banners.js                                  # drawMedalType: striscia, validComment, warrant
-.\tools\ldplayer\session\build-resources.ps1 -Version 41     # LWF JP del Nova + logo NOVA, Draw_StatusBonus, *_SB.png
-.\tools\ldplayer\session\update-resources.ps1 -Revision 122   # BASE 122 dal fix 1 (righe del Nova)
+.\tools\ldplayer\session\relogin.ps1 -Tag x -Revision <BASE+1>   # oggi BASE 122 -> 123, anche nei 4 script di sessione
 ```
 
-`make-game-tables.js` va lanciato con `KHUX_MEDALS_ALL=1` (senza scrive solo 522 medaglie) e rifa' anche
-`keyblade_levels.json`/`stage.json`, che poi altri script ritoccano. Nel Task 10 e' stato provato su una copia
-(`tmp\master_t10`): `medal.json` e' risultato identico a quello in uso, quindi il master vero non e' stato riscritto.
+Solo se cambiano LWF o immagini del client: `build-resources.ps1 -Version <N+1>` a banco fermo (oggi installata la
+41), poi `update-resources.ps1 -Revision <BASE>`.
+
+Variabili di `make-game-tables.js` (lette nello script, righe 148-215 e 616-690): `KHUX_MEDALS_ALL=1` (senza: 522
+medaglie normali invece di 2.107, 3.233 righe con le boosted; con loro spariscono boosted e righe del Nova); `KHUX_WORLDTOUR=1` (righe 991001-991008 dei tour dei
+mondi: senza, `stage.json` le perde, perche' lo script lo rifa' ogni volta da `stage_base.json`); `KHUX_STORY_MAX`
+(default 525, quello in uso). `KHUX_TOURS_V2=1` **non** va messa per rifare il master in uso: aggiunge 57 righe
+992xxx dei tour v2 (`stage.json` da 535 a 592 righe), che sono da parte, solo per le prove dei componenti originali
+(decisione dell'utente, journal fino-al-2026-10-16): il comando con `KHUX_TOURS_V2` di
+[mappe_storia.md#tour-v2](mappe_storia.md#tour-v2) e' quello delle prove; guilt.md usa le stesse due variabili di qui. Niente `KHUX_ZOO` (0 righe 99000x nel master in uso).
+
+Dopo `make-game-tables.js` non serve nessuno script di correzione:
+- `stage.json`: lo scrive solo `make-game-tables.js` (da `stage_base.json`, missioni di storia di thethiny, tour
+  delle variabili sopra); nessun altro script lo ritocca. `import_orig_stages.py` e `make_quest_thumbs.py` lavorano
+  sulle risorse (`stage_gen`), non sul master;
+- `keyblade_levels.json` del master e' solo la copia di `server/tables/keyblade_levels.json` (lo script copia
+  tutta `server/tables`): non e' una tabella del client e il server non la serve (`masterBody` accetta solo nomi
+  `[A-Za-z0-9]`). Le tabelle vere dei keyblade (`keyblade`, `keybladeSubslot` di `make-keyblade-levels.js`;
+  `passive`, `passiveSetting` di `make-passives.js`) `make-game-tables.js` non le tocca;
+- `mission.json` copiato da `server/tables` e' gia' uguale al master (`make-limited-missions.js` scrive entrambi).
+
+Prova (17-10, fix finale): `make-game-tables.js` con `KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1` su una copia del master
+(`D:\Progetto_Restauro_KH_UX\tmp\master_fix_i2`): tutti i file identici byte per byte al master in uso, tranne
+`keyblade_levels.json` (copia inerte, quella del master era del 11-10). Con anche `KHUX_TOURS_V2=1`
+(`tmp\master_fix_i2b`): `stage.json` +57 righe. Il master vero non e' stato riscritto.
+
+Strada piu' corta, se cambia solo il catalogo dei banner: sul master in uso bastano `node server/make-boosted-medals.js`
+e `node server/make-nova-rows.js` (idempotenti), poi `make-banners.js` e la revisione nuova. Se invece
+`make-game-tables.js` cambia le righe normali (medaglie o Tier nuovi), rilanciare dopo `make_banner_catalog.py`
+(Tier = `guiltValue` del master), poi i due patcher e `make-banners.js`.
 
 **Regole** (server/gacha.js, gacha-data.js, medal-boost.js):
 

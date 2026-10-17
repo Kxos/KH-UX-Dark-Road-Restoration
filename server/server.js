@@ -1175,8 +1175,11 @@ function respondGachaList(res) {
       return undefined;
     }
   };
+  // validComment della riga drawMedalType servita (gacha.guardWarrant: con 0 warrantMedalIds non e' mai vuota)
+  const comments = new Map(masterRows('drawMedalType').map((r) => [r.drawMedalTypeId, r.validComment]));
+  const safeMedalId = masterRows('medal').find((r) => r.type === 1 && !r.groupId)?.medalId;
   const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW,
-    ...ctx, exFor, catalog: gachaCatalog() });
+    ...ctx, exFor, catalog: gachaCatalog(), validCommentOf: (b) => comments.get(b.drawMedalTypeId), safeMedalId });
   if (migrate || player.gacha.listedCurrency !== listed) savePlayer();
   send(res, 200, { ret: ret(), ...data });
 }
@@ -2663,6 +2666,11 @@ function respondMedalEvolve(res, body) {
   const before = userMedalElement(base, now);
   setMedalState(base.userMedalId, { medalId: row.evolveId, level: 1, exp: 0 });
   for (const m of comps) setMedalState(m.userMedalId, { removed: true });
+  // la guilt resta (guilt.md) e l'evoluta e' un medalId nuovo: il Nova sale (+1/+5) in silenzio, letto da
+  // userPoint. Il ramo 56 non legge guiltBurstFirst/MaxUserMedalIds: le copie in attesa si scartano qui,
+  // altrimenti la risposta dopo con le liste (stage clear, draw, Moogle Shop) mostrava «NOVA LEVEL UP!»
+  // fuori contesto, e il Level Up dopo le sommava al suo popup (final review 2b, I1)
+  guiltBurst().lists();
   player.money = Math.max(0, (player.money || 0) - (row.evolveMoney || 0));
   savePlayer();
   console.log(`  [evolve] ${base.userMedalId} ${row.name} ${row.medalId} -> ${row.evolveId}, ` +
@@ -3669,7 +3677,7 @@ if (require.main === module) start();
 module.exports = { SESSION, parseBody, start, route, multi };
 // per i test senza client (server/test-medal-enhance.js, con KHUX_SAVE e KHUX_MASTER_DIR propri)
 module.exports._test = {
-  player, respondMedalEnhance, userMedalList, userMedalElement, userPointData, isGuiltUnlocked, userSkillsData,
+  player, respondMedalEnhance, respondMedalEvolve, userMedalList, userMedalElement, userPointData, isGuiltUnlocked, userSkillsData,
   // server/test-keyblades.js
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js

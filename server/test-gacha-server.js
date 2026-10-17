@@ -429,6 +429,34 @@ try {
   delete process.env.KHUX_GUILT_BURST_POPUP;
 } catch (err) { errors.push(`2b: eccezione ${err.stack}`); }
 
+// final review 2b, M2: master e catalogo disallineati (catalogo rigenerato senza make-banners, o il contrario). La riga
+// drawMedalType servita ha validComment 0 ma il catalogo non ha pity per quel banner: warrantMedalIds mai vuota (con
+// validComment 0 il client legge i nomi: lista vuota = crash), striscia nascosta, una riga di log
+{
+  writeCatalog(catalog);
+  t.reloadGachaBanners();
+  setQuest(200);
+  const dmtFile = path.join(MASTER, 'drawMedalType.json');
+  const dmtOrig = fs.readFileSync(dmtFile, 'utf8');
+  const dmt = JSON.parse(dmtOrig).filter((x) => x.drawMedalTypeId !== 10001);
+  dmt.push({ ...JSON.parse(dmtOrig).find((x) => x.drawMedalTypeId === 10001), drawMedalTypeId: 10001, validComment: 0 });
+  fs.writeFileSync(dmtFile, JSON.stringify(dmt));
+  logs.length = 0;
+  let d1, d2;
+  try {
+    d1 = plate(call(t.respondGachaList), 10001);
+    d2 = plate(call(t.respondGachaList), 10001);
+  } finally { fs.writeFileSync(dmtFile, dmtOrig); }
+  check(d1 && d1.warrantMedalIds.length > 0 && d1.userWarrantDisplayOfTime === 0,
+    `validComment 0 senza pity nel catalogo: piastra ${JSON.stringify(d1 && [d1.userWarrantDisplayOfTime, d1.warrantMedalIds])}`);
+  check(d1 && d1.warrantMedalIds.every((id) => t.masterRows('medal').some((m) => m.medalId === id)), 'validComment 0: id del master');
+  check(d2 && d2.warrantMedalIds.length > 0, 'validComment 0: seconda lista non vuota');
+  const lines = logs.filter((x) => x.includes('B0001') && /validComment 0/.test(x));
+  check(lines.length === 1, `validComment 0: una riga di log per banner (${lines.length}: ${logs.join(' | ')})`);
+  const d3 = plate(call(t.respondGachaList), 10001);
+  check(d3 && d3.warrantMedalIds.length === 0 && d3.userWarrantDisplayOfTime === 1, 'master riallineato: piastra di prima');
+}
+
 // catalogo assente: solo la piastra Catalog, estrazione rifiutata
 writeCatalog('non json');
 t.reloadGachaBanners();
