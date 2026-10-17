@@ -245,3 +245,42 @@ nome di istanza `key` (parte 30 della tabella 0x1f18970, FUN_00ad0394, percorso
 ha `key`/`shadow`/faccia. `recon/tools/prefer_addnl.py` (in `build-resources.ps1`) copia in
 `stage_gen\files` le versioni 4.3.1 di wait e win_levelup con le loro texture. Gli altri motion
 diversi (bwait, btlEnd, knockback, dead1-3) hanno `key` e `shadow` in entrambe le versioni.
+
+<a id="suoni-jp"></a>
+## Effetti sonori dei LWF dal JP 4.3.1 (I-152)
+
+- **Client**: `AudioLWFNode` (`FUN_00b26928` -> init `FUN_00b26a5c`) registra gli eventi dei LWF; un evento
+  `se_<nome>` arriva a `FUN_00b273cc`: id = `FUN_00ac89f4(<nome>)` (testo `text/audio/<nome>`, es.
+  `ui2_se_000039` -> `509000390`), se 0 `atoi(<nome>)`; poi `FUN_00ac4894` carica `audio/%09d.akb`. Senza
+  file non suona nulla e non c'e' errore. `playBGM_<nome>` (FUN_00b274f0) risolve allo stesso modo.
+  Nessun campo del server coinvolto.
+- **Caso visto** (17-10): l'estrazione x10 (`raidgacha_result_display_10`, evento `se_ui2_se_000039`) e il
+  popup del Nova (`GuiltBonus_BurstLvup`, `se_ui2_se_000074`) erano muti; x1-x9 usano `509000370`, servito.
+  I LWF sono identici a quelli JP; mancano gli AKB 509000390 e 509000740 da OBB 5.0.1 + addnl. Servite
+  solo 40/90 `ui2_se` e 4/80 `ui_se`. Indagine: `D:\Progetto_Restauro_KH_UX\tmp\sound_draw\report.md`.
+- **Strumento** `recon/tools/jp_sound_effects.py` (test `test_jp_sound_effects.py`), chiamato da
+  `import_jp_coco.py` dopo tutte le altre scelte (anche con `-NoJp`), come le BGM Medals
+  ([medaglie.md#bgm-medals](medaglie.md#bgm-medals)):
+  - LWF effettivi: i serviti di `names_v4.tsv` (letti da `resource_data\7\data`), poi `medal_gen`,
+    `rooms_gen`, `enemy_gen`, `raisedraw_gen` (`files\`), poi `stage_gen\files` e i LWF JP che l'import sta
+    per scrivere (a nome ripetuto vince l'ultimo, come nell'indice unito);
+  - eventi dalla sezione `eventName` (indice 25 dell'intestazione: un id di stringa per evento), nomi
+    `se_*` e `playBGM_*`; id come il client (testo servito, poi del generato, poi JP; se 0 `atoi`);
+  - `audio/%09d.akb` gia' servito, in un pacchetto statico o scritto da un altro generatore: nulla;
+    altrimenti la revisione piu' alta del JP (`<id>.<8 cifre>.akb`) nel pacchetto generato. Se manca il
+    `text/audio/<nome>` servito si copia anche quello (senza testo l'id sarebbe 0);
+  - deterministico (nomi ordinati), manifest e pulizia di `import_jp_coco.py`; rapporto
+    `stage_gen\jp_import\sound_effects.json` (id, byte, LWF che li citano, assenti, non risolti); cache
+    degli eventi dei serviti in `served_lwf_sounds.json` (impronta di indice e dati; prima corsa ~45 s,
+    poi ~5 s). Da solo (`python -I recon/tools/jp_sound_effects.py`) e' un resoconto che non scrive nulla.
+- **Prova a secco** (17-10, copia di `stage_gen` in `tmp\se_dry`, risorse 41): 1.395 LWF con suoni, 627 nomi;
+  **216 AKB nuovi, 4.327.702 byte**: 509000390/740 (x10, Nova), 509000700 (`BurstGauge_Recovery`),
+  509100190/220 (motion `dash`, `excavate` dell'avatar), 509100250 (`Sburst`), 509100310/320
+  (`card_evolution_result_*`, animazione dell'Evolve), 508000020-080 (eff_se dei
+  nemici), 198 id 504xxxxxx (ene_se dei nemici JP di `enemy_gen` ed effetti `hit_effect_fla`), 503005003,
+  505001110, 506002010/020 (boss 7002-7005 e 1023); piu' 4 testi `text/audio` (ene_se_153401-403, npc_se_000503); nessun AKB assente anche
+  nel JP. Non risolti (nessun testo ne' id, muti anche nell'originale servito): `bgm_boss0112`,
+  `kh2_Laughter` (drama), `ene_se_165101` (nemico 8021), `player_se_000101` (dutch_roll). Pacchetto
+  generato 108.128.458 byte su 134.217.728 di riserva (80,6%); indice: entra nella dimensione installata
+  della 41 (restano ~57,6 KB di riserva): basta un `-Quick`.
+- I suoni sono originali: nessuna riga nelle Notices.

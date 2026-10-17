@@ -825,8 +825,26 @@ for _arm, (_slot, _src) in sorted(JP_ARM.items()):
     writes[_slot + '.png'] = ('jp', os.path.join(_jp_pub, _src + '.png'), None)
 
 
+# ---- effetti sonori originali citati dai LWF (I-152) -------------------------------------------
+# Gli eventi se_<nome>/playBGM_<nome> dei LWF serviti e generati (compresi i LWF JP decisi qui sopra)
+# suonano audio/%09d.akb (id da text/audio/<nome>): quelli che nessuna risorsa serve si copiano dal JP,
+# come la musica delle BGM Medals (x10 draw 509000390, popup del Nova 509000740, nemici JP...).
+# Rapporto in <report>/sound_effects.json; jp_sound_effects.py, docs/notes/risorse_layout.md#suoni-jp.
+sys.path.insert(0, HERE)
+import jp_sound_effects  # noqa: E402
+_se = jp_sound_effects.collect(
+    OUT, _served_all, writes=writes, owned=set(old), jp_root=JP_ROOT,
+    served=jp_sound_effects.Served(args.served, os.path.join(D, 'resource_data', '7', 'data'))
+    if os.path.exists(args.served) else None,
+    cache_path=os.path.join(REPORT, 'served_lwf_sounds.json'))
+for _name, _src in sorted(list(_se['add'].items()) + list(_se['texts'].items())):
+    writes.setdefault(_name, ('jp', _src, None))
+json.dump(_se, open(os.path.join(REPORT, 'sound_effects.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+print(jp_sound_effects.summary(_se))
+
+
 def out_path(name):
-    return os.path.join(OUT if name.startswith(('lwf/', 'img/', 'audio/')) else pub_out, *name.split('/'))
+    return os.path.join(OUT if name.startswith(('lwf/', 'img/', 'audio/', 'text/')) else pub_out, *name.split('/'))
 
 
 # ---- scrittura --------------------------------------------------------------------------------
@@ -883,6 +901,12 @@ if not args.check:
                 os.remove(dst)
             removed.append(name)
     json.dump(manifest, open(man_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    # stima del pacchetto generato (file senza intestazioni BGAD) contro la riserva delle versioni complete;
+    # il controllo vero e' in build-resources.ps1 (gen.mp4 contro la dimensione installata)
+    _tot = sum(os.path.getsize(p) for p in jp_sound_effects.walk_names(OUT).values())
+    print('pacchetto generato stimato: %d byte di file su %d di riserva (%.1f%%)%s' % (
+        _tot, jp_sound_effects.RESERVE, 100.0 * _tot / jp_sound_effects.RESERVE,
+        '' if _tot < jp_sound_effects.RESERVE else ' -- OLTRE LA RISERVA'))
 
 # ---- rapporto ---------------------------------------------------------------------------------
 rep = dict(roots=results, undecided=[dict(root=a, why=b) for a, b in undecided], removed=removed)
