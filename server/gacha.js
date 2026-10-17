@@ -176,6 +176,8 @@ const FUTURE = ' — coming with a future update';
 const CATALOG_ONLY_TEXT = {
   PVP_TICKETS: `Requires PvP tickets${FUTURE}`, DRAW_POINTS: `Draw Points${FUTURE}`,
   VIP_TWIN: 'VIP variant, not reproduced', INCOMPLETE: 'Original details missing — not available',
+  // messo da server.js (sanitizeBanners): uno slot senza medaglie, es. le Blue Fairy che arrivano col PvP
+  NO_MEDALS: `Medals not available yet${FUTURE}`,
 };
 // Stato di un banner per catalogo e dettagli. ctx = {storyQuest, sizes, show, shown}: shown = drawMedalTypeId nella lista dello Shop.
 function stateOf(b, ctx) {

@@ -11,17 +11,21 @@ process.env.KHUX_SAVE = SAVE;
 process.env.KHUX_PET = '1';
 process.env.KHUX_GACHA_BANNERS = BANNERS;
 process.env.KHUX_GACHA_SIZES = '1,3,10';
-delete process.env.KHUX_GACHA_TEST; delete process.env.KHUX_REAL_NOW; delete process.env.KHUX_SERVER_TIME;
+delete process.env.KHUX_GACHA_SHOW; delete process.env.KHUX_REAL_NOW; delete process.env.KHUX_SERVER_TIME;
 delete process.env.KHUX_GUILT_BURST_LV;
 const realNowFn = Date.now;
 Date.now = () => Date.parse('2026-10-16T15:00:00Z');
+// catalogo sintetico nel formato di gacha_catalog.json (test-gacha-server.js); giocatore nuovo: storia a 0
+const banner = (o) => ({ type: 'TIME_LIMITED', flags: [], start: '2016-04-07', end: '2016-04-30', endSource: 'original', unlockQuest: 0, payType: 1,
+  currency: 'jewel', epicBoost: false, dayLimit: 0, vipFree: false, pool: { mode: 'released', sets: [], names: [], featured: [], filter: [] },
+  guarantee: { list: [], count: 0, pity: null, every: null }, skill: null, bonus: [], catalogOnly: null, ...o });
 const banners = [
-  { drawMedalTypeId: 10001, rowId: 'B0001', name: 'DAILY DEAL!', payType: 1, price: 600, lotCount: 3, isDayLimited: 1, rarityMix: [[4, 1], [3, 2]],
-    pool: { 3: [11013], 4: [11014] }, test: false, sortId: 10, comment: 'x', startDate: '2016-04-07', endDate: '2018-01-31', image: 'a.png' },
-  { drawMedalTypeId: 10011, rowId: 'B0011', name: 'Epic Medal Carnival', payType: 1, price: 3000, lotCount: 10, isDayLimited: 0, rarityMix: [[3, 10]],
-    pool: { 3: [11013] }, test: false, sortId: 30, comment: 'x', startDate: '2016-05-13', endDate: '2016-05-19', image: 'b.png' },
+  banner({ drawMedalTypeId: 10001, rowId: 'B0001', name: 'DAILY DEAL!', flags: ['PERMANENT', 'DAY_LIMITED'], end: '2018-01-31', prices: [600], lotCount: 3, rarityMix: [[4, 1], [3, 2]], dayLimit: 1 }),
+  banner({ drawMedalTypeId: 10011, rowId: 'B0011', name: 'Epic Medal Carnival', prices: [3000], lotCount: 10, rarityMix: [[3, 10]] }),
 ];
-fs.writeFileSync(BANNERS, JSON.stringify({ banners }));
+const catalog = { firstRarity: { 3: '2016-04-07', 4: '2016-04-07', 5: '2016-04-07' }, story: [[1, 525, '2016-04-07']], subsets: {},
+  medals: { wakka: { date: '2016-04-07', ids: [[11013, 3, '2016-04-07'], [11014, 4, '2016-04-07']], std: true } }, banners };
+fs.writeFileSync(BANNERS, JSON.stringify(catalog));
 const log = console.log;
 const quiet = (fn) => { console.log = () => {}; try { return fn(); } finally { console.log = log; } };
 const { _test: t } = quiet(() => require('./server'));

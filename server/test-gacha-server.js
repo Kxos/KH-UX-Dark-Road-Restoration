@@ -1,4 +1,5 @@
-// Prova delle rotte dello Shop in server.js: node server/test-gacha-server.js
+// Prova delle rotte dello Shop in server.js: node server/test-gacha-server.js [cartella master]
+// Catalogo sintetico nel formato di gacha_catalog.json (contract-ext.md), medaglie con gli id veri di medal.json.
 'use strict';
 const fs = require('fs'), os = require('os'), path = require('path');
 const SAVE = path.join(os.tmpdir(), `khux-test-gacha-${process.pid}.json`);
@@ -9,99 +10,198 @@ process.env.KHUX_MASTER_DIR = path.resolve(process.argv[2] || path.join(__dirnam
 process.env.KHUX_REVISION = '118';
 process.env.KHUX_GACHA_BANNERS = BANNERS;
 process.env.KHUX_GACHA_SIZES = '1,3,10';
-delete process.env.KHUX_GACHA_TEST; delete process.env.KHUX_REAL_NOW; delete process.env.KHUX_SERVER_TIME;
+process.env.KHUX_GACHA_SHOW = 'B0005,B0008';
+delete process.env.KHUX_REAL_NOW; delete process.env.KHUX_SERVER_TIME;
 const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
 at('2026-10-16T15:00:00Z');
+
+const v = (base, date, rares = [3, 4, 5]) => rares.map((r) => [base + r, r, date]);
+const medals = {
+  wakka: { date: '2016-04-07', ids: v(11010, '2016-04-07'), std: true, origin: 'ffkh', att: 'power' },
+  tidus: { date: '2016-04-07', ids: v(12010, '2016-04-07'), std: true, origin: 'ffkh', att: 'speed' },
+  'kh cloud': { date: '2016-04-15', ids: v(21070, '2016-04-15'), std: true, origin: 'ffkh', att: 'power' },
+  minnie: { date: '2016-04-15', ids: v(33070, '2016-04-15'), std: true, origin: 'disney', att: 'magic' },
+  'blue fairy': { date: '2018-05-25', ids: [[301495, 6, '2018-05-25']], std: false, origin: 'disney', att: 'magic' },
+};
+const LATER = new Set([...medals['kh cloud'].ids, ...medals.minnie.ids].map(([id]) => id));
+let nextId = 1;
+const mk = (o = {}) => {
+  const n = nextId++;
+  return {
+    rowId: `B000${n}`, drawMedalTypeId: 10000 + n, name: `Banner ${n}`, type: 'TIME_LIMITED', flags: [], start: '2016-04-07', end: '2016-04-30',
+    endSource: 'original', unlockQuest: 200, payType: 1, currency: 'jewel', prices: [3000], lotCount: 10, rarityMix: [[4, 1], [3, 9]],
+    epicBoost: false, dayLimit: 0, vipFree: false, pool: { mode: 'released', sets: [], names: [], featured: [], filter: [], inheritAfter: null, evolve: null },
+    guarantee: { list: [], count: 0, pity: null, every: null }, skill: null, bonus: [], catalogOnly: null, guaranteesText: '', ...o,
+  };
+};
 const banners = [
-  { drawMedalTypeId: 10001, rowId: 'B0001', name: 'DAILY DEAL!', payType: 1, price: 600, lotCount: 3, isDayLimited: 1, rarityMix: [[4, 1], [3, 2]],
-    pool: { 3: [11013], 4: [11014] }, test: false, sortId: 10, comment: 'x', startDate: '2016-04-07', endDate: '2018-01-31', image: 'a.png' },
-  { drawMedalTypeId: 10011, rowId: 'B0011', name: 'Epic Medal Carnival', payType: 1, price: 3000, lotCount: 10, isDayLimited: 0, rarityMix: [[3, 10]],
-    pool: { 3: [11013] }, test: false, sortId: 30, comment: 'x', startDate: '2016-05-13', endDate: '2016-05-19', image: 'b.png' },
-  // 90041 e' impilabile (validPack 1): non deve mai uscire
-  { drawMedalTypeId: 10021, rowId: 'B0021', name: 'Stack Test', payType: 1, price: 3000, lotCount: 10, isDayLimited: 0, rarityMix: [[3, 10]],
-    pool: { 3: [90041, 11013] }, test: false, sortId: 40, comment: 'x', startDate: '2016-05-13', endDate: '2016-05-19', image: 'c.png' },
+  mk({ name: 'DAILY DEAL!', type: 'DAILY', flags: ['PERMANENT', 'DAY_LIMITED'], end: '2018-01-31', prices: [600], lotCount: 3, rarityMix: [[4, 1], [3, 2]], dayLimit: 1 }),
+  mk({ name: 'Epic Medal Carnival', prices: [3000, 2500], pool: { mode: 'sets', sets: ['1.1', '1.2'], names: [], featured: [], filter: [] } }),
+  mk({ name: 'VIP Free Deal', unlockQuest: 1, vipFree: true, prices: [0], lotCount: 1, rarityMix: [[5, 1]] }),
+  mk({ name: 'Bonus Skill Deal', prices: [300], lotCount: 3, rarityMix: [[3, 3]], bonus: [[5, 48, 2]], skill: { table: '50106', slots: 'first' } }),
+  mk({ name: 'Platinum Ticket Draw', type: 'T_EVOLVE', flags: ['PERMANENT'], start: '2019-01-25', end: '2019-03-31', unlockQuest: 825, payType: 7,
+    currency: 'platinum', prices: [1], lotCount: 3, rarityMix: [[6, 3]], pool: { mode: 'evolve', evolve: [[301682, 7], [301683, 8], [301684, 9]] } }),
+  mk({ name: 'VIP Twin Deal', catalogOnly: 'VIP_TWIN', prices: [100], lotCount: 1, rarityMix: [[5, 1]] }),
+  mk({ name: 'Later Deal', unlockQuest: 1, start: '2016-06-01', end: '2016-06-30', prices: [10], lotCount: 1, rarityMix: [[3, 1]],
+    pool: { mode: 'sets', sets: [], names: ['wakka'], featured: [], filter: [] } }),
+  // solo Blue Fairy (6★) per uno slot 5★: sanitizeBanners lo scarta (resta nel catalogo WebView)
+  mk({ name: 'Blue Fairy Deal', unlockQuest: 1, start: '2018-06-01', end: '2018-06-30', prices: [10], lotCount: 1, rarityMix: [[5, 1]],
+    pool: { mode: 'sets', sets: [], names: ['blue fairy'], featured: [], filter: [] } }),
+  mk({ name: 'Unknown Deal', catalogOnly: 'INCOMPLETE', flags: ['INCOMPLETE'], prices: [], lotCount: null, rarityMix: [] }),
 ];
-fs.writeFileSync(BANNERS, JSON.stringify({ banners }));
-const log = console.log;
-const quiet = (fn) => { console.log = () => {}; try { return fn(); } finally { console.log = log; } };
+const catalog = {
+  version: 1, firstRarity: { 3: '2016-04-07', 4: '2016-04-07', 5: '2016-04-07', 6: '2016-07-15', 7: '2018-05-25' },
+  story: [[1, 200, '2016-04-07'], [201, 250, '2016-04-21'], [251, 525, '2016-05-05']],
+  subsets: { '1.1': { date: '2016-04-07', names: ['wakka', 'tidus'] }, '1.2': { date: '2016-04-15', names: ['kh cloud', 'minnie'] } },
+  medals, banners,
+};
+const writeCatalog = (c) => fs.writeFileSync(BANNERS, typeof c === 'string' ? c : JSON.stringify(c));
+writeCatalog(catalog);
+const log = console.log, logs = [];
+const quiet = (fn) => { console.log = (...a) => logs.push(a.join(' ')); try { return fn(); } finally { console.log = log; } };
 const { _test: t } = quiet(() => require('./server'));
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, ...a)); return b; };
 const raw = (fn, ...a) => { let b = null, h = null; quiet(() => fn({ writeHead(c, hd) { h = hd; }, end(x) { b = x; } }, ...a)); return { body: b, headers: h }; };
+const page = (url) => String(raw(t.respondGachaWeb, url).body);
+const saved = () => JSON.parse(fs.readFileSync(SAVE, 'utf8'));
 call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
 const p = t.player;
+const questStage = (q) => t.masterRows('stage').find((r) => r.id === q).stageId;
+const setQuest = (q) => { p.stageScores = { [questStage(q)]: 1 }; };
+setQuest(200);
+const ids = (l) => l.gachaList.map((x) => x.drawMedalTypeId);
+const plate = (l, id) => l.gachaList.find((x) => x.drawMedalTypeId === id);
+const inMedals = (r) => r.userMedalIds.every((id) => r.userMedals.some((m) => m.userMedalId === id));
+const neutral = (r) => r.effectNumbers.every((x) => x === 0) && r.effectNumbers.length === r.userMedalIds.length
+  && JSON.stringify(r.gachaBonus) === '{"addType":1,"number":0,"userMedalIds":[]}' && r.userMedalIds.length <= 10;
 
-// lista
+const missing = ['gachaCatalog', 'sanitizeBanners', 'reloadGachaBanners'].filter((k) => typeof t[k] !== 'function');
+if (missing.length) { console.log(`ERRORI (${missing.length}):\n  export mancante: ${missing.join(', ')}`); process.exit(1); }
+
+// catalogo: il banner Blue Fairy (slot senza medaglie) e' scartato
+check(quiet(() => t.sanitizeBanners(t.gachaCatalog())).banners.length === banners.length, 'sanitizeBanners: nessun banner sparisce dal catalogo');
+check(logs.some((x) => /B0008/.test(x)), 'sanitizeBanners: log del banner scartato');
+check(t.gachaCatalog().banners.find((b) => b.rowId === 'B0008').catalogOnly, 'Blue Fairy: solo catalogo');
+
+// lista alla quest 200 (storia al 2016-04-07): show B0005 per primo (start 2019), poi start uguale per id
 let l = call(t.respondGachaList);
-check(Array.isArray(l.petGachaList) && l.gachaList[0].drawMedalTypeId === 9001 && l.gachaList.length === 4, 'lista: Catalog + 3 banner');
+check(Array.isArray(l.petGachaList) && JSON.stringify(ids(l)) === '[9001,10005,10001,10002,10003,10004]', `lista: ${ids(l)}`);
+check(plate(l, 10002).price === 3000 && plate(l, 10003).price === 1, 'lista: prezzi dinamici (3000, VIP 1)');
 
-// estrazione x3 pagata in jewel
+// estrazioni rifiutate senza addebito: catalogOnly, fuori periodo, scartato, sconosciuto, Catalog
 p.freeStone = 1000;
-check(!p.medals, 'salvataggio nuovo: nessuna lista medaglie');
-const before = 0;
-let r = call(t.respondGachaDraw, { drawMedalTypeId: 10001, count: 3 });
-check(r.userMedalIds && p.freeStone === 400 && p.medals.length === before + 3, 'salvataggio nuovo: estrazione senza eccezioni, -600 jewel, +3 medaglie');
-check(r.userMedalIds.length === 3 && new Set(r.userMedalIds).size === 3, 'x3: 3 id distinti');
-const sent = new Set(r.userMedals.map((m) => m.userMedalId));
-check(r.userMedalIds.every((id) => sent.has(id)), 'x3: ogni id in userMedals');
-check(r.effectNumbers.join() === '0,0,0' && r.gachaBonus.addType === 1, 'x3: effetti e bonus neutri');
-check(Array.isArray(r.guiltBurstFirstUserMedalIds) && Array.isArray(r.guiltBurstMaxUserMedalIds) && Array.isArray(r.userSkills) && Array.isArray(r.userMaterials), 'x3: liste obbligatorie');
-check(r.userData.userPoint && typeof r.userData.userPoint.limitedDrawTicket1 === 'number', 'x3: userPoint');
-{
+for (const [id, what] of [[10006, 'catalogOnly'], [10007, 'fuori periodo'], [10008, 'Blue Fairy scartato'], [10009, 'INCOMPLETE'], [77, 'sconosciuto'], [9001, 'Catalog']]) {
+  const r = call(t.respondGachaDraw, { drawMedalTypeId: id, count: 1 });
+  check(!r.userMedalIds && Object.keys(r).join() === 'ret' && p.freeStone === 1000 && !(p.medals || []).length, `${what}: rifiuto {ret} senza addebito`);
+}
+
+// PERMANENT alla quest 200: solo medaglie uscite entro il 2016-04-07
+p.freeStone = 600 * 20;
+let later = 0, ok = 0;
+for (let i = 0; i < 20; i++) {
+  p.gacha.used = {};
+  const r = call(t.respondGachaDraw, { drawMedalTypeId: 10001, count: 3 });
+  if (!r.userMedalIds || !inMedals(r) || !neutral(r)) continue;
+  ok++;
   const byId = new Map(p.medals.map((m) => [m.userMedalId, m.medalId]));
-  const want = new Set(r.userMedalIds.map((id) => byId.get(id))).size;
-  check(r.firstGetUserMedalIds.length === want && r.firstGetUserMedalIds.every((id) => r.userMedalIds.includes(id)), 'x3: una novita per ogni medalId distinto (tutte nuove)');
+  later += r.userMedalIds.filter((id) => LATER.has(byId.get(id))).length;
 }
+check(ok === 20 && p.freeStone === 0, `PERMANENT: 20 estrazioni riuscite (${ok}), -600 l'una`);
+check(later === 0, `PERMANENT alla quest 200: ${later} medaglie del 2016-04-15`);
 check(call(t.respondGachaList).gachaList.find((x) => x.drawMedalTypeId === 10001).userLimitedCount === 0, 'lista: Daily usato oggi');
+let d = page('/web/gacha/detail/10001');
+check(d.includes('Wakka') && !d.includes('KH Cloud'), 'dettagli PERMANENT alla quest 200: niente KH Cloud');
+setQuest(250);
+d = page('/web/gacha/detail/10001');
+check(d.includes('KH Cloud') && d.includes('Minnie'), 'dettagli PERMANENT alla quest 250: KH Cloud e Minnie');
+setQuest(200);
 
-// rifiuti: niente cambia
-const stone = p.freeStone, n = p.medals.length;
-r = call(t.respondGachaDraw, { drawMedalTypeId: 10001, count: 3 });
-check(!r.userMedalIds && p.freeStone === stone && p.medals.length === n, 'Daily: seconda volta rifiutata');
-r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
-check(!r.userMedalIds && p.freeStone === stone, 'x10 senza jewel: rifiutata');
-r = call(t.respondGachaDraw, { drawMedalTypeId: 9001, count: 1 });
-check(!r.userMedalIds, 'Catalog: rifiutata');
-
-// x10 con la stessa medaglia: una sola novita'
+// prezzo calante: lista e prezzo pagato coincidono
 p.freeStone = 3000;
-p.medals = p.medals.filter((m) => m.medalId !== 11013);
-r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
-check(r.userMedalIds.length === 10 && new Set(r.userMedalIds).size === 10 && r.firstGetUserMedalIds.length === 1, 'x10: 10 id, una novita');
-check(r.userMedalIds.every((id) => r.userMedals.some((m) => m.userMedalId === id)), 'x10: ogni id in userMedals');
-check(p.freeStone === 0, 'x10: -3000');
+let r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
+check(r.userMedalIds && r.userMedalIds.length === 10 && p.freeStone === 0 && inMedals(r) && neutral(r), 'x10: -3000, ogni id in userMedals');
+check(plate(call(t.respondGachaList), 10002).price === 2500, 'lista dopo la prima: 2500');
+p.freeStone = 2500;
+r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
+check(r.userMedalIds && p.freeStone === 0, 'seconda estrazione: -2500');
 
-// medaglie impilabili: tolte dal pool al caricamento, non escono mai
-p.medals = p.medals.filter((m) => m.medalId !== 11013);
-let packed = 0;
-for (let i = 0; i < 5; i++) {
-  p.freeStone = 3000;
-  r = call(t.respondGachaDraw, { drawMedalTypeId: 10021, count: 10 });
-  if (!r.userMedalIds) { packed = -1000; break; }
-  packed += p.medals.filter((m) => m.medalId === 90041).length;
-  check(r.userMedalIds.every((id) => r.userMedals.some((m) => m.userMedalId === id)), 'impilabili: ogni id in userMedals');
+// VIP gratuito: 1 Jewel, una volta al giorno
+p.freeStone = 5;
+r = call(t.respondGachaDraw, { drawMedalTypeId: 10003, count: 1 });
+check(r.userMedalIds && p.freeStone === 4, 'VIP: costa 1 Jewel');
+r = call(t.respondGachaDraw, { drawMedalTypeId: 10003, count: 1 });
+check(!r.userMedalIds && p.freeStone === 4, 'VIP: seconda rifiutata');
+
+// abilita' e bonus
+p.freeStone = 300;
+const presents = (p.presents || []).length;
+r = call(t.respondGachaDraw, { drawMedalTypeId: 10004, count: 3 });
+check(r.userMedalIds && p.freeStone === 0 && inMedals(r), 'Bonus Skill Deal: estrazione');
+{
+  const first = r.userMedalIds[0];
+  const sk = r.userSkills.find((s) => s.userMedalId === first);
+  check(sk && sk.level === 1 && p.medalSkills && p.medalSkills[first] && p.medalSkills[first].skillId === sk.skillId, 'skill: userSkills della prima medaglia, livello 1, in medalSkills');
+  check(r.userMedals.find((m) => m.userMedalId === first).userSkills.includes(sk && sk.userSkillId), 'skill: id nella medaglia');
+  check(r.userMedalIds.slice(1).every((id) => !p.medalSkills[id]), 'skill: solo la prima medaglia');
+  const bonus = p.presents.slice(presents);
+  check(bonus.length === 1 && bonus[0].resourceType === 5 && bonus[0].resourceId === 48 && bonus[0].number === 2 && /Bonus Skill Deal/.test(bonus[0].comment), 'bonus nei Presents');
 }
-check(packed === 0, 'impilabili: validPack mai estratta');
+
+// evolve (Dual Meow Wow, impilabili): l'id restituito e' quello della cella
+{
+  const rnd = Math.random;
+  Math.random = () => 0.5; // sempre il livello 8
+  p.limitedDrawTicket1 = 1;
+  const r1 = call(t.respondGachaDraw, { drawMedalTypeId: 10005, count: 3 });
+  p.limitedDrawTicket1 = 1;
+  const r2 = call(t.respondGachaDraw, { drawMedalTypeId: 10005, count: 3 });
+  Math.random = rnd;
+  check(r1.userMedalIds && r2.userMedalIds && p.limitedDrawTicket1 === 0, 'evolve: due estrazioni con 1 Platinum Ticket l\'una');
+  check(r1.userMedalIds && inMedals(r1) && inMedals(r2) && neutral(r1) && neutral(r2), 'evolve: ogni id in userMedals');
+  const cell = r1.userMedalIds && r1.userMedalIds[0];
+  check(r1.userMedalIds && [...r1.userMedalIds, ...r2.userMedalIds].every((id) => id === cell), 'evolve: stesso id di cella nelle due estrazioni');
+  check(r2.userMedals && r2.userMedals.find((m) => m.userMedalId === cell).number === 6, 'evolve: cella con 6 copie');
+  check(JSON.stringify(r1.firstGetUserMedalIds) === JSON.stringify([cell]) && r2.firstGetUserMedalIds.length === 0, 'evolve: novita una volta, con l\'id della cella');
+}
+
+// biglietti: vecchio salvataggio con limitedDrawTicket2
+delete p.drawTickets;
+p.limitedDrawTicket2 = 4;
+call(t.respondGachaList);
+check(t.userPointData(t.serverTime()).limitedDrawTicket2 === 4, 'migrazione: limitedDrawTicket2 = 4');
+check(saved().drawTickets && saved().drawTickets.draw === 4 && !('limitedDrawTicket2' in saved()), 'migrazione: salvataggio con drawTickets.draw 4');
+quiet(() => t.grantItem(41, 0, 3));
+check(p.drawTickets.draw === 7 && t.userPointData(t.serverTime()).limitedDrawTicket2 === 7, 'grantItem 41: drawTickets.draw +3');
 
 // box pieno
-p.freeStone = 3000;
+p.freeStone = 3000; p.gacha.count = {};
 p.medalMaxExtra = -100000;
-r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
+r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
 check(!r.userMedalIds && p.freeStone === 3000, 'box pieno: rifiutata');
 p.medalMaxExtra = 0;
 
 // pagine e immagini
 let w = raw(t.respondGachaWeb, '/web/gacha/detail/10001');
 check(String(w.body).includes('DAILY DEAL!') && /text\/html/.test(w.headers['Content-Type']), 'pagina dettagli');
+check(page('/web/gacha/detail/10005').includes('Dual Meow Wow [SAB LV 8]'), 'dettagli evolve: nomi da medal.json');
+check(page('/web/gacha/detail/10004').includes('Attack Boost II'), 'dettagli: skill presenti in skill.json');
+check(page('/web/gacha/detail/10006').includes('VIP variant'), 'dettagli di un banner solo catalogo');
+check(page('/web/gacha/detail/10009').includes('Original details missing'), 'dettagli INCOMPLETE senza eccezioni');
+check(page('/web/gacha/detail/10008').includes('Medals not available yet'), 'dettagli del banner scartato');
 w = raw(t.respondGachaWeb, '/web/gacha/odds');
-check(String(w.body).includes('Draw Odds'), 'pagina odds');
-w = raw(t.respondGachaWeb, '/web/gacha/odds/10011');
+check(String(w.body).includes('Draw Odds') && String(w.body).includes('DAILY DEAL!'), 'pagina odds');
+w = raw(t.respondGachaWeb, '/web/gacha/odds/10002');
 check(String(w.body).includes('Epic Medal Carnival') && !String(w.body).includes('DAILY DEAL!'), 'odds di una piastra (id accodato dal client)');
 w = raw(t.respondGachaWeb, '/web/gacha/odds/9001');
-check(String(w.body).includes('Epic Medal Carnival') && String(w.body).includes('DAILY DEAL!'), 'odds della piastra Catalog: tutti i banner');
+check(String(w.body).includes('Epic Medal Carnival') && String(w.body).includes('DAILY DEAL!') && !String(w.body).includes('VIP Twin Deal'), 'odds della piastra Catalog: i banner della lista');
 w = raw(t.respondGachaWeb, '/web/gacha/catalog');
-check(String(w.body).includes('/web/gacha/detail/10011'), 'pagina catalogo');
+{
+  const c = String(w.body);
+  check(banners.every((b) => c.includes(`/web/gacha/detail/${b.drawMedalTypeId}`)), 'catalogo: tutti i banner');
+  check(c.includes('In the Shop now') && c.includes('Not in the Shop now') && c.includes('Medals not available yet'), 'catalogo: stati');
+}
 w = raw(t.respondGachaWeb, '/web/gacha/detail/77');
 check(w.headers && String(w.body).includes('not found'), 'banner sconosciuto: pagina di errore');
 w = raw(t.respondGachaWeb, '/web/gacha/img/../../save/x.png');
@@ -111,32 +211,21 @@ check(!w.headers || w.headers['Content-Type'] !== 'image/png', 'immagine: niente
 const login = call(t.respondLogin, {});
 check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client accoda il drawMedalTypeId)');
 
-// banner con uno slot senza medaglie alla sua stella o sotto (3★ solo impilabile): tolto, niente eccezioni
+// rollDraw che lancia: risposta {ret}, niente addebito
 {
-  const bad = { drawMedalTypeId: 10099, rowId: 'BX', name: 'Vuoto', payType: 1, price: 1, lotCount: 1, isDayLimited: 0, rarityMix: [[3, 1]],
-    pool: { 3: [90041], 4: [11014] }, test: false, sortId: 1, comment: 'x', startDate: '', endDate: '', image: '' };
-  fs.writeFileSync(BANNERS, JSON.stringify({ banners: [bad, ...banners] }));
-  t.reloadGachaBanners();
-  check(!call(t.respondGachaList).gachaList.some((x) => x.drawMedalTypeId === 10099), 'banner con slot senza pool: fuori dalla lista');
-  p.freeStone = 100;
-  let thrown = null;
-  try { r = call(t.respondGachaDraw, { drawMedalTypeId: 10099, count: 1 }); } catch (e) { thrown = e; }
-  check(!thrown && !r.userMedalIds && p.freeStone === 100, 'banner con slot senza pool: estrazione rifiutata, niente eccezioni, jewel intatti');
-  // anche se un banner del genere arrivasse fino a rollDraw: risposta {ret}, niente addebito
   const gd = require('./gacha-data');
-  p.freeStone = 3000; p.medals = [];
+  p.freeStone = 3000; p.gacha.count = {};
+  const n = p.medals.length;
   const orig = gd.rollDraw; gd.rollDraw = () => { throw new Error('prova'); };
-  thrown = null;
-  try { r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 }); } catch (e) { thrown = e; }
+  let thrown = null;
+  try { r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 }); } catch (e) { thrown = e; }
   gd.rollDraw = orig;
-  check(!thrown && !r.userMedalIds && p.freeStone === 3000 && p.medals.length === 0, 'rollDraw che lancia: risposta {ret}, jewel intatti');
-  fs.writeFileSync(BANNERS, JSON.stringify({ banners }));
-  t.reloadGachaBanners();
+  check(!thrown && !r.userMedalIds && p.freeStone === 3000 && p.medals.length === n, 'rollDraw che lancia: risposta {ret}, jewel intatti');
 }
 
 // posti liberi: contano le celle che il client vede, non le copie vendute/fuse rimaste in player.medals
 {
-  p.freeStone = 3000;
+  p.freeStone = 3000; p.gacha.count = {};
   p.medals = [];
   p.medalState = p.medalState || {};
   for (let i = 0; i < 3000; i++) {
@@ -145,13 +234,12 @@ check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client ac
     if (i >= 10) p.medalState[id] = { removed: true };
   }
   check(t.maxMedal() === 3000, 'tetto 3000 raggiunto con le copie rimosse');
-  r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
+  r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
   check(r.userMedalIds && r.userMedalIds.length === 10, 'celle visibili con spazio: estrazione consentita anche a 3000 copie in elenco');
-  // pieno davvero (tutte visibili): rifiutata
-  p.freeStone = 3000;
+  p.freeStone = 3000; p.gacha.count = {};
   p.medalState = {};
   p.medals = p.medals.slice(0, 2995);
-  r = call(t.respondGachaDraw, { drawMedalTypeId: 10011, count: 10 });
+  r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
   check(!r.userMedalIds, 'celle visibili piene: estrazione rifiutata');
   p.medals = []; p.medalState = {};
 }
@@ -159,16 +247,16 @@ check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client ac
 // payType sconosciuto nelle pagine: niente eccezioni
 {
   const g = require('./gacha');
-  let ok = true;
-  try { g.detailPage({ ...banners[0], payType: 99 }, new Map()); } catch { ok = false; }
-  check(ok, 'detailPage: payType sconosciuto non lancia');
+  let okp = true;
+  try { g.detailPage({ ...banners[0], payType: 99 }, undefined, new Map(), { storyQuest: 0, sizes: new Set([3]) }); } catch { okp = false; }
+  check(okp, 'detailPage: payType sconosciuto non lancia');
 }
 
 // riga drawMedalType senza bannerUrl/detailUrl: non lancia
 {
-  let ok = true;
-  try { t.servedMasterRows('drawMedalType', Date.now()); } catch { ok = false; }
-  check(ok, 'servedMasterRows drawMedalType non lancia');
+  let okr = true;
+  try { t.servedMasterRows('drawMedalType', Date.now()); } catch { okr = false; }
+  check(okr, 'servedMasterRows drawMedalType non lancia');
 }
 
 // gestore HTTP: un errore in una rotta non abbatte il server, risposta {ret}
@@ -182,11 +270,15 @@ check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client ac
   check(!thrown && sent && sent.ret !== undefined, 'handler: errore in rotta -> risposta {ret}, nessuna eccezione');
 }
 
-// catalogo assente: solo la piastra Catalog
-fs.writeFileSync(BANNERS, 'non json');
+// catalogo assente: solo la piastra Catalog, estrazione rifiutata
+writeCatalog('non json');
 t.reloadGachaBanners();
 l = call(t.respondGachaList);
 check(l.gachaList.length === 1 && l.gachaList[0].drawMedalTypeId === 9001, 'catalogo assente: solo Catalog');
+p.freeStone = 3000; p.gacha.count = {};
+r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
+check(!r.userMedalIds && p.freeStone === 3000, 'catalogo assente: estrazione rifiutata');
+check(page('/web/gacha/catalog').includes('0 original banners'), 'catalogo assente: pagina vuota');
 
 fs.unlinkSync(BANNERS);
 try { fs.unlinkSync(SAVE); } catch { /* gia' tolto */ }
