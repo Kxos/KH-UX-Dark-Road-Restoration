@@ -755,6 +755,10 @@ if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemi
 require('./make-guilt-burst').patch(OUT);
 // Pet: petRank, petSkill, medal.addPetPt (make-pet-tables.js)
 require('./make-pet-tables').patch(OUT);
+// Boosted: righe a parte del master medal (groupId = normale) dalle voci enhance.boosted del catalogo
+// dei banner (make-boosted-medals.js); dopo supernova, blue-fairy, guilt-burst e pet, che non le vedono
+const gachaCatalog = path.join(__dirname, 'game_data', 'gacha_catalog.json');
+if (fs.existsSync(gachaCatalog)) require('./make-boosted-medals').patch(OUT, gachaCatalog);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
 // khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
 const TABLES = path.join(__dirname, 'tables');
