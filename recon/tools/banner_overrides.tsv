@@ -1,1 +1,36 @@
 row_id	field	value	source
+B0036	price	1000	notice 19884
+B0036	draw_size	x5	notice 19884
+B0036	rarity_mix	5★:1	notice 19884 (5 Medals, una 5★ garantita; le altre non sono dette)
+B0153	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 31346
+B0153	draw_size	x10	notice 31346
+B0153	rarity_mix	6★:1 5★:9	notice 31346 (9 Medals 5★ o piu'; la Medal Tier 5 garantita come 6★, come le Falling Price Deal gemelle)
+B0158	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 31413
+B0158	draw_size	x10	notice 31413
+B0158	rarity_mix	6★:1 5★:9	notice 31413 (9 Medals 5★ o piu'; la Medal Tier 4/5 garantita come 6★, come le Falling Price Deal gemelle)
+B0166	draw_size	x10	notice 32026
+B0182	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 33005
+B0182	draw_size	x10	notice 33005
+B0182	rarity_mix	6★:1 5★:9	notice 33005 (9 Medals 5★ o piu'; la Medal Tier 4/5 garantita come 6★, come le Falling Price Deal gemelle)
+B0204	price	1st: 3000 2nd: 2500 3rd: 2200 4th: 2000 5th: 1900	notice 34471
+B0204	draw_size	x10	notice 34471
+B0204	rarity_mix	6★:1 5★:9	notice 34471 (9 Medals 5★ o piu'; la Medal Tier 4+ garantita come 6★, come le Falling Price Deal gemelle)
+B0205	draw_size	x10	notice 34475
+B0220	price	Free	notice 35148 (una estrazione gratis al giorno; i 1000 Jewels sono il premio per medaglia)
+B0220	draw_size	x1	notice 35148
+B0255	draw_size	x4	notice 37765
+B0274	price	Free	notice 38663 (una estrazione gratis al giorno; i 1000 Jewels sono il premio per medaglia)
+B0274	draw_size	x1	notice 38663
+B0277	draw_size	x4	notice 38880
+B0287	draw_size	x4	notice 39404
+B0305	draw_size	x4	notice 40318
+B0310	draw_size	x10	notice 40734
+B0313	draw_size	x4	notice 40725
+B0340	price	1200	notice 41617
+B0340	draw_size	x5	notice 41617
+B0340	rarity_mix	7★:5	notice 41617
+B0497	price	Free	notice 52165 (una estrazione gratis al giorno; i Jewels sono premi del sorteggio, non un prezzo)
+B0497	draw_size	x1	notice 52165
+B0549	price	1500	notice 55473
+B0549	draw_size	x5	notice 55473
+B0549	rarity_mix	7★:5	notice 55473

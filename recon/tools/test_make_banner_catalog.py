@@ -187,6 +187,8 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     vt = sum(1 for b in bs if b['catalogOnly'] == 'VIP_TWIN')
     check(vt == 39, f'gemelli VIP {vt}')
     check(all(b['end'] for b in bs), 'tutte le date di fine')
+    inc = sum(1 for b in bs if b['catalogOnly'] == 'INCOMPLETE')  # 31 prima degli override dei notice (Task 4)
+    check(inc == 21, f'righe INCOMPLETE {inc}')
     b11 = next(b for b in bs if b['rowId'] == 'B0011')
     check(b11['pool']['sets'] == ['1.1', '1.2', '1.3', '2.1'] and b11['epicBoost'], 'B0011 senza 2.2 e Epic')
     check(cat['firstRarity'].get('6') == '2016-07-15' and cat['firstRarity'].get('7') == '2018-05-25', 'firstRarity')
