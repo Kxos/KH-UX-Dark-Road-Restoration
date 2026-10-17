@@ -2,7 +2,8 @@
 
 Sotto-progetto 1 delle estrazioni (16-10-2026): piastra «Banner Catalog» + tre banner originali del primo anno
 (DAILY DEAL!, SMALL DEAL!, Epic Medal Carnival) pagati in jewel, banner di prova a biglietti (Platinum Ticket Draw,
-solo con `KHUX_GACHA_TEST=1`). Codice: `server/gacha-data.js` (funzioni pure), `server/gacha.js` (lista, controlli,
+solo con `KHUX_GACHA_TEST=1`, sostituito nel sotto-progetto 2 da `KHUX_GACHA_SHOW`). Sotto-progetto 2 (17-10):
+elenco dei banner originali, [sotto](#sp2). Codice: `server/gacha-data.js` (funzioni pure), `server/gacha.js` (lista, controlli,
 pagamento, pagine web), `server/make-banners.js` (generatore -> `server/game_data/gacha_banners.json`,
 `server/master_data/drawMedalType.json`, immagini in `server/game_data/gacha_img`), rotte in `server/server.js`.
 Prove: `node server/test-gacha.js`, `node server/test-gacha-server.js`. Piano e spec:
@@ -20,7 +21,7 @@ Prove: `node server/test-gacha.js`, `node server/test-gacha-server.js`. Piano e 
   +0x4c userLimitedCount (estrazioni RIMASTE oggi), +0x50 userWarrantDisplayOfTime, +0x58 warrantMedalIds.
 - Il master **DrawMedalType** (parser `FUN_00ef4454`, getter `FUN_00ef4258`, tabella 0x5c) e' obbligatorio: la piastra
   legge la riga senza controllo (displayTimeLeft in `FUN_00a141c8`, detailUrl in `FUN_00a1509c`). Ogni cambio di
-  `drawMedalType.json` = revisione del master (BASE 118 dal 16-10).
+  `drawMedalType.json` = revisione del master (BASE 118 dal 16-10, 119 dal 17-10 con il catalogo dei banner).
 - `bannerUrl` scaricato in http dal client (`FUN_00a190e0` -> `FUN_00836bf8`), 640x140: `/web/gacha/img/<id>.png`.
   Le immagini delle piastre fuori schermo si scaricano solo quando la piastra entra nella vista (banco: la piastra
   Platinum mostrava il cuore segnaposto finche' `GET /web/gacha/img/10456.png` non era arrivato).
@@ -79,8 +80,8 @@ Prove: `node server/test-gacha.js`, `node server/test-gacha-server.js`. Piano e 
 <a id="avvio"></a>
 ## Avvio
 
-- `run-server.ps1` / `relogin.ps1 -GachaTest`: `KHUX_GACHA_TEST=1`, mostra il banner di prova Platinum Ticket Draw
-  (payType 7, 1 biglietto = 5 medaglie 6★). Senza, il server lo nasconde e ne rifiuta l'estrazione.
+- `run-server.ps1` / `relogin.ps1 -GachaShow B0306,B0456` (dal 17-10, al posto di `-GachaTest`): `KHUX_GACHA_SHOW`,
+  rowId del catalogo aggiunti alla lista anche se bloccati o fuori data; senza, la lista e' quella della storia.
 - `KHUX_GACHA_SIZES`: numeri di medaglie per estrazione con animazione completa; un banner con lotCount fuori
   dall'elenco non si puo' estrarre.
 - Biglietti per le prove: a server fermo `limitedDrawTicket1` nel salvataggio (`server\save\player.json`); a fine
@@ -137,3 +138,83 @@ usato oggi, biglietti 0.
 5. Popup 0xd del box pieno, errore di /user/stone: non provati.
 6. `FUN_00839e5c` (solo analytics): nessun effetto visibile con payType 1.
 7. Rifiuto del server («200 ERROR :76»): non provato al banco (coperto da `test-gacha-server.js`).
+
+<a id="sp2"></a>
+## Sotto-progetto 2: elenco dei banner originali (17-10-2026)
+
+Spec: [shop-banner-design](../superpowers/specs/2026-10-16-shop-banner-design.md) sezione 9 (vincolante); piano:
+`docs/superpowers/plans/2026-10-16-shop-banner-originali.md`. Ricerca e script di appoggio fuori repo in
+`D:\Progetto_Restauro_KH_UX\tmp\sp2`.
+
+### Catalogo generato
+
+`server/game_data/gacha_catalog.json` (2,7 MB, fuori repo) scritto da `recon/tools/make_banner_catalog.py` dalle fonti
+(tabella della wiki, notice, `recon/tools/banner_overrides.tsv` con la fonte di ogni numero): `version`, `firstRarity`
+(prima data di ogni rarita': 6★ dal 15/07/2016, 7★ dal 25/05/2018), `story` (tranche di quest con la data), `subsets`,
+`medals` (per nome: `ids` [id, rarita', data], `std`, `alias`, `origin`, `att`) e 808 `banners`: `rowId` B0001-B0808,
+`drawMedalTypeId`, `name`, `type`, `start`/`end`, `unlockQuest` (prima quest della tranche in corso all'inizio del
+banner - 1, decisione dell'utente del 17-10; 85 sbloccati entro la quest 525), `payType`/`currency`, `prices`
+(gradini), `lotCount`, `rarityMix`, `dayLimit`, `vipFree`, `pool` (`mode` sets/inherit/released/list/evolve,
+`filter`), `guarantee` (lista, pity, every), `skill`, `bonus`, `catalogOnly`. Estensioni del contratto (std, alias,
+filter, dayLimit 5/10, skill 72415 dal 20/12/2020): `.superpowers` del piano, riassunte qui. **Estraibile solo con
+`catalogOnly === null`** (mai guardare `flags`).
+
+Al 17-10: tipi SN 213, FEATURED 168, FALLING 129, SKILL 69, DAILY 64, SEVEN 48, FREE 36, STANDARD 23, T_TICKET 21,
+ITEM 20, T_POINTS 7, BEGINNER 5, T_EVOLVE 5; `catalogOnly` VIP_TWIN 39, INCOMPLETE 24 (I-139), DRAW_POINTS 7,
+PVP_TICKETS 4, piu' NO_MEDALS 2 messi dal server (B0370/B0418 Blue Fairy Deal, I-142). 17 Free Deal VIP.
+
+### Comandi, nell'ordine
+
+```powershell
+python recon/tools/make_banner_catalog.py              # gacha_catalog.json
+python recon/tools/make_banner_images.py --mode palette # 808 immagini 640x140 in server/game_data/gacha_img (31,5 MB)
+node server/make-banners.js                            # master drawMedalType.json (809 righe) -> alzare la revisione
+.\tools\ldplayer\session\relogin.ps1 -Tag x            # revisione 119 (default degli script dal 17-10)
+```
+
+**Immagini: decisione «palette»** (Task 1, banco): PNG a 256 colori quantizzato in RGBA (mode P con tRNS), angoli
+trasparenti come l'originale; 43 KB invece di 161 KB, nessun crash. Con `convert('RGB')` gli angoli diventano verdi.
+
+**Cache delle immagini nel client**: il client tiene ogni immagine dei banner in
+`/data/data/com.square_enix.android_googleplay.khuxww/cache/MM_...` (un file per URL, PNG + ~100-140 byte): un PNG
+cambiato sul server non si vede finche' quel file resta. Prima di provare immagini nuove:
+
+```powershell
+. .\tools\ldplayer\bench_lib.ps1; Sh "rm /data/data/com.square_enix.android_googleplay.khuxww/cache/MM_*"
+```
+
+poi relogin (o uscire e rientrare nello Shop: il client riscarica i file mancanti).
+
+### Lista provvisoria e regole (fino al sotto-progetto 3)
+
+- `shopBanners` (`server/gacha.js`): banner estraibili (payType 1/7/8, `lotCount` in `KHUX_GACHA_SIZES`) sbloccati
+  (`unlockQuest` <= ultima quest superata) e attivi alla data della tranche del giocatore, piu' quelli di
+  `KHUX_GACHA_SHOW`; al massimo 8, i piu' recenti prima; mai due valute payType 8 insieme. Piastra Catalog sempre
+  prima (9001, payType 6).
+- Prezzi (9.4): mai 0 (gratuita = 1 Jewel); FIRST_FREE e FALLING dal contatore del giocatore (`player.gacha.count`).
+- Valute (9.6-9.7): jewel = payType 1; Platinum = payType 7 (`limitedDrawTicket1`); payType 8 = valute stagionali in
+  `player.drawTickets` (draw, holiday, spooky, moogle); payType 4/5/6/9 solo nel catalogo.
+- Limiti: `dayLimit` per banner, una sola Free Deal VIP gratuita al giorno fra tutte (`player.gacha.used.vipFree`).
+- Pity e garanzie (9.2): slot a lista e vetrina scelgono prima la medaglia per nome, poi la variante alla stella
+  dello slot; `every` = ogni N estrazioni.
+- Rarita' e medaglie solo se uscite entro la data di riferimento del banner (9.3).
+- Abilita' (skill) dalle tabelle originali, bonus nei Presents.
+- Notices: «Banners unlock as you progress through the Story; in the original game they followed the calendar.»
+  (Shop) e le righe nuove delle «Differences» (Free Deal a 1 Jewel, VIP Free Deal per tutti, valute stagionali,
+  bonus nei Presents).
+
+### Prove al banco (Task 9, 17-10, risorse 40, revisione 119, quest 132)
+
+Copia del salvataggio: `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-sp2-t9` (e `save-backup-before-sp2` del
+Task 1). Cache `MM_*` cancellata prima delle prove. Screenshot in `D:\Progetto_Restauro_KH_UX\screenshots`.
+
+- Master: `GET /master/drawMedalType` al login, revisione 11900051, home raggiunta (`sp2t9_home`).
+- **Notices (prova 8, parte)**: `sp2_notice_shop` (testo nuovo dello Shop), `sp2_notice_diff`, `sp2_notice_diff2`
+  (righe nuove delle differenze). OK.
+- **Prova 1: FALLITA, I-138.** Shop > Draw: «A server error has occurred. (200 ERROR :75)» (`sp2_t9_shop1`). Le
+  piastre dei banner del catalogo non hanno `sortId`. Con una patch temporanea del sortId (tolta subito, non
+  committata) lo Shop si apre con Catalog + DAILY DEAL! + Daily Deal! + Get a 3★-5★ Medal! + la quarta piastra
+  (B0001-B0004, come `shopBanners` calcolato sul salvataggio) e immagini giuste dalla cache svuotata
+  (`sp2_diag_sortid`, `sp2_diag_sortid_scroll`).
+- Prove 2-7 e le dieci aperture dello Shop: **non fatte**, ferme su I-138.
+

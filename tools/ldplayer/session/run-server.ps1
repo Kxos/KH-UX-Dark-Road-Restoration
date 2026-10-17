@@ -10,8 +10,9 @@
 # dal 9 ottobre 2026 il server lo considera finito gia' dalla fase 995 (dopo il
 # Prologue), quindi serve solo a un giocatore fermo prima.
 # -KbFree: potenziamento dei keyblade senza materiali (KHUX_KB_FREE=1, prove dei livelli)
-# -GachaTest: banner di prova dello Shop (Platinum Ticket Draw a biglietti, KHUX_GACHA_TEST=1; docs/notes/shop.md)
-param([int]$Revision = 118, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [switch]$GachaTest)
+# -GachaShow: rowId del catalogo separati da virgola (es. B0306,B0456) aggiunti alla lista dello Shop anche
+# se non sbloccati o fuori data (KHUX_GACHA_SHOW, prove al banco; docs/notes/shop.md)
+param([int]$Revision = 119, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
@@ -20,7 +21,7 @@ $env:KHUX_REVISION = "$Revision"                      # BASE: alzarla dopo ogni 
 # numeri di medaglie per estrazione con l'animazione del risultato completa (raidgacha_result_display_NN,
 # raisedraw_gen\raisedraw_report.json: 01 servita, 02-10 ok dalla risorse 40)
 $env:KHUX_GACHA_SIZES = "1,2,3,4,5,6,7,8,9,10"
-if ($GachaTest) { $env:KHUX_GACHA_TEST = '1' } else { Remove-Item Env:KHUX_GACHA_TEST -ErrorAction SilentlyContinue }
+if ($GachaShow) { $env:KHUX_GACHA_SHOW = $GachaShow } else { Remove-Item Env:KHUX_GACHA_SHOW -ErrorAction SilentlyContinue }
 if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow } else { Remove-Item Env:KHUX_REAL_NOW -ErrorAction SilentlyContinue }
 if ($TutorialFinished) { $env:KHUX_TUTORIAL_FINISHED = '1' }
 if ($KbFree) { $env:KHUX_KB_FREE = '1' }

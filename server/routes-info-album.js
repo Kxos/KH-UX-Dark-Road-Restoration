@@ -78,7 +78,7 @@ const NOTICES = [
   { date: '10/16', tag: 'INFORMATION', title: 'Shop',
     body: ['The first banner in the Shop, Banner Catalog, cannot be drawn: tap its Details to see the banners and the Medals they contain.',
       'Draws cost Jewels or Tickets earned in the game. Draw Odds shows the rates used by this restoration.',
-      'Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story; banners unlock with the Story, as in the original game.'] },
+      'Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story. Banners unlock as you progress through the Story; in the original game they followed the calendar.'] },
   { date: '10/14', tag: 'INFORMATION', title: 'Supernova and Dual Meow Wow',
     body: ['Equipping a Supernova Medal lets you unleash its powerful Supernova once per quest: tap the button under the Burst gauge during your turn.',
       'Five of the same Dual Meow Wow Medals are needed to grant Supernova or strengthen the Supernova of a specific Medal (Evolve, with the base Medal at max level).'] },

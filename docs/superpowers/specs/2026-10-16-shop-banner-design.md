@@ -250,9 +250,9 @@ Mai prezzo 0: payType 1, price 1 (1 Jewel scalato davvero). isDayLimited dove l'
 estrazioni del banner in `player.gacha`): 1a estrazione 1 Jewel, poi prezzo pieno o lo scalino.
 
 ### 9.5 VIP
-- 41 banner VIP con un gemello normale nella stessa data: nascosti (nel catalogo «VIP variant, not
-  reproduced»).
-- 27 senza gemello: banner normali per tutti.
+- 39 banner VIP (righe) con un gemello normale nella stessa data: nascosti (nel catalogo «VIP variant, not
+  reproduced»). Le coppie sono 41: B0552 e B0554 hanno due gemelli (conteggio del catalogo, 17-10).
+- 29 senza gemello: banner normali per tutti.
 - 17 Free Deal VIP 2020-21: tenute, ma **una sola estrazione gratuita al giorno fra tutte quelle
   attive**, e **bilanciate come tutti gli altri banner** (richiesta dell'utente): stesso sblocco con la
   storia (4.4), pool e rarita' della loro data (9.3), probabilita' delle tabelle 9.2, nessun aiuto in

@@ -242,7 +242,7 @@ function oddsPage(entries) {
 
 function catalogPage(banners, ctx) {
   const sorted = [...banners].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.drawMedalTypeId - b.drawMedalTypeId));
-  return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock with the Story, as in the original game.</p>`
+  return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
     + sorted.map((b) => `<div class="b"><a href="/web/gacha/detail/${b.drawMedalTypeId}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
       + `<div class="n">${dates(b)}</div>${priceLine(b) ? `<div class="n">${priceLine(b)}</div>` : ''}`
       + `<div class="s">${esc(stateOf(b, ctx).text)}</div></div>`).join(''));
