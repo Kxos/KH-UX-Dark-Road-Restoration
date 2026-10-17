@@ -40,7 +40,10 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
     'Free draws cost 1 Jewel. VIP Free Deals are open to everyone, with one free VIP draw per day in total.',
     'Seasonal draw currencies (Spooky Cookies, Moogle Points, Holiday Draw Tickets) are kept separately; the Shop shows one of them at a time.',
     'Some 2016-17 banners only drew Epic Medals; the game data no longer says which Medals were Epic, so these banners draw from their full sets.',
-    'Blue Fairy Deal banners are in the Banner Catalog but cannot be drawn yet: Blue Fairies will come with a future update.']) {
+    'Blue Fairy Deal banners are in the Banner Catalog but cannot be drawn yet: Blue Fairies will come with a future update.',
+    'Some deals limited the guaranteed Medal to a Tier range (for example "Tier 4 or lower"); these Tier limits are not enforced yet.',
+    'Trait Medals, boosted Medals and Medals with strengthened Special Attacks or max-level Skills no longer exist: where a deal guaranteed one, you get a regular Medal of the same rarity.',
+    'Free deals that could be drawn only once (or once per day) keep that limit.']) {
     check(diff.includes(s), `differenze: «${s.slice(0, 40)}...»`);
   }
   check(!diff.some((s) => s.startsWith('Shop draw rates are reconstructed where the original game did not publish them: ')), 'differenze: vecchia riga delle probabilita tolta');

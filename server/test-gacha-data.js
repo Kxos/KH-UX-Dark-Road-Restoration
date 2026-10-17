@@ -108,6 +108,29 @@ check(g.rollDraw(UB, g.expandPool(UB, CAT, '2016-06-01'), seq(0.0, 0.5, 0.0)).me
 check(J(g.slotOdds(LB, lex)[0]) === '[{"list":true,"rare":4,"pct":94},{"list":true,"rare":5,"pct":6}]', 'odds slot a lista');
 check(J(g.slotOdds(LB, lex)[1]) === '[{"rare":3,"pct":90},{"rare":4,"pct":10}]', 'odds slot normale dopo la lista');
 
+// guarantee.slot (correzione finale C, B0306 7★ Medal Deal: «Guarantees one Tier 4 or lower 7★ Medal. Guarantees
+// one of the following Medals: ...», mix [[7,1],[6,1],[5,8]]): la lista va nello slot 1 (6★), lo slot 0 resta un 7★
+// qualsiasi del pool; la pity resta sullo slot 0
+const SCAT = { ...CAT, medals: { ...CAT.medals,
+  kairi: { date: '2018-05-01', std: false, ids: [[66, 6, '2018-05-01'], [76, 7, '2018-05-14']] },
+  axel: { date: '2018-05-01', std: false, ids: [[67, 6, '2018-05-01'], [77, 7, '2018-05-14']] } } };
+const SB = B({ start: '2018-06-01', end: '2018-06-07', lotCount: 10, rarityMix: [[7, 1], [6, 1], [5, 8]], pool: P({ sets: ['1.1'] }),
+  guarantee: G({ list: ['kairi', 'axel'], count: 1, slot: 1 }) });
+const sex = g.expandPool(SB, SCAT, SB.start);
+const tail = Array(8).fill([0.5, 0.0]).flat(); // slot 2-9: nessuna salita, primo id
+const sr = g.rollDraw(SB, sex, seq(0.0, 0.0, 0.5, 0.0, ...tail));
+check(sr.medalIds[0] === 71, `slot 0 di B0306: un 7★ qualsiasi del pool (${sr.medalIds[0]})`);
+check(sr.medalIds[1] === 66, `slot 1 di B0306: la variante 6★ di una medaglia della lista (${sr.medalIds[1]})`);
+check(sr.medalIds.slice(2).every((id) => id === 51), 'slot 2-9 di B0306: generici 5★');
+const so = g.slotOdds(SB, sex);
+check(!so[0][0].list && so[1].every((o) => o.list) && !so[2][0].list, 'odds: lista sullo slot 1');
+check(J(g.slotOdds({ ...SB, guarantee: G({ list: ['kairi'], count: 2, slot: 1 }) }, sex).map((s) => !!s[0].list)) === '[false,true,true,false,false,false,false,false,false,false]', 'odds: count 2 dallo slot 1');
+check(g.rollDraw({ ...SB, guarantee: G({ list: ['kairi', 'axel'], count: 1 }) }, sex, seq(0.0, 0.0)).medalIds[0] === 76, 'senza slot: lista sullo slot 0 (come prima)');
+const SP = { ...SB, pool: P({ sets: ['1.1'], featured: ['axel'] }), guarantee: G({ list: ['kairi', 'axel'], count: 1, slot: 1, pity: 2 }) };
+const spx = g.expandPool(SP, SCAT, SP.start);
+const spr = g.rollDraw(SP, spx, seq(0.0, 0.0, 0.0, 0.5, 0.0, ...tail), { draws: 1, sinceFeatured: 1 });
+check(spr.medalIds[0] === 77 && spr.medalIds[1] === 66, `pity sullo slot 0, lista sullo slot 1 (${spr.medalIds.slice(0, 2)})`);
+
 // pity
 const PB = B({ pool: P({ featured: ['hades'] }), guarantee: G({ pity: 3 }) });
 const pex = g.expandPool(PB, CAT, '2016-06-01');

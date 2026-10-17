@@ -180,6 +180,52 @@ nl_ = m.notice_list(R(source_url='https://x/detail/46740 https://x/detail/70907'
 check(nl_ == ['sn++ - key art #24', 'sn++ - illus. kh iii sora'], f'notice_list {nl_}')
 check(m.notice_list(R(source_url='nulla'), NT) == [], 'notice_list senza notice')
 
+# --- correzione finale A: varianti di vetrina/lista datate dopo l'inizio del banner del debutto
+FR = {'3': '2016-04-07', '4': '2016-04-07', '5': '2016-04-07', '6': '2016-07-15', '7': '2018-05-25'}
+MD = {'sephiroth': {'date': '2016-10-13', 'ids': [[1, 6, '2016-10-20'], [2, 7, '2018-05-14']]},
+      'ira': {'date': '2017-11-24', 'ids': [[3, 6, '2017-11-24']]},
+      'cloud': {'date': '2016-07-08', 'ids': [[4, 6, '2016-07-20']]},
+      'riku': {'date': '2016-10-01', 'ids': [[5, 5, '2016-10-30']]},  # non in vetrina: data intatta
+      'kairi': {'date': '2018-06-01', 'ids': [[6, 6, '2018-06-01'], [7, 7, '2018-06-09']]}}
+BN = [{'rowId': 'B1', 'start': '2016-10-14', 'rarityMix': [[5, 3], [4, 7]], 'catalogOnly': None,
+       'pool': {'featured': ['sephiroth']}, 'guarantee': {'list': []}},
+      {'rowId': 'B2', 'start': '2017-11-17', 'rarityMix': [[6, 1], [5, 9]], 'catalogOnly': None,  # debutto: la medaglia e' datata dopo
+       'pool': {'featured': ['ira']}, 'guarantee': {'list': []}},
+      {'rowId': 'B3', 'start': '2016-07-08', 'rarityMix': [[5, 2], [4, 8]], 'catalogOnly': None,  # 6★ prima del 15/07/2016: mai
+       'pool': {'featured': ['cloud']}, 'guarantee': {'list': []}},
+      {'rowId': 'B4', 'start': '2018-06-01', 'rarityMix': [[6, 1], [5, 9]], 'catalogOnly': None,
+       'pool': {'featured': []}, 'guarantee': {'list': ['kairi']}},
+      {'rowId': 'B5', 'start': '2017-12-01', 'rarityMix': [[6, 1], [5, 9]], 'catalogOnly': None,  # ira gia' uscita: niente da fare
+       'pool': {'featured': ['ira']}, 'guarantee': {'list': []}}]
+n_al = m.align_debut_dates(BN, MD, FR)
+check(MD['sephiroth']['ids'] == [[1, 6, '2016-10-14'], [2, 7, '2018-05-14']], f'debutto: 6★ alla data del banner, 7★ intatta {MD["sephiroth"]}')
+check(MD['ira']['ids'] == [[3, 6, '2017-11-17']], f'debutto: medaglia datata dopo il primo banner che la nomina {MD["ira"]}')
+check(MD['cloud']['ids'] == [[4, 6, '2016-07-20']], 'debutto: nessuna 6★ prima del 15/07/2016')
+check(MD['riku']['ids'] == [[5, 5, '2016-10-30']], 'debutto: medaglie fuori da vetrina/lista intatte')
+check(MD['kairi']['ids'] == [[6, 6, '2018-06-01'], [7, 7, '2018-06-01']], f'debutto: lista e stella sopra dopo il 25/05/2018 {MD["kairi"]}')
+check(n_al == 3, f'varianti spostate {n_al}')
+
+# --- correzione finale B: «Available once.» (formulazione reale delle note: B0510, B0511, B0604, SN 7★ del 2020)
+check(m.total_limit('Available once. Guarantees one of the following Medals: [[A]].') == 1, 'Available once -> 1')
+check(m.total_limit('This deal can only be drawn once.') == 1, 'can only be drawn once -> 1')
+check(m.total_limit('Available once per day.') == 0 and m.total_limit('Available once a day') == 0 and m.total_limit('') == 0,
+      'once per day non e un limite totale')
+check(m.free_day_limit('FREE', [0], 0, 0, False) == 1, 'FREE senza limiti -> una al giorno')
+check(m.free_day_limit('FREE', [0], 0, 1, False) == 0 and m.free_day_limit('FREE', [0], 0, 0, True) == 0
+      and m.free_day_limit('FREE', [0], 3, 0, False) == 3, 'FREE con totalLimit, vipFree o dayLimit: invariato')
+check(m.free_day_limit('SN', [0], 0, 0, False) == 1 and m.free_day_limit('SN', [0, 3000], 0, 0, False) == 0
+      and m.free_day_limit('SN', [3000], 0, 0, False) == 0, 'prezzo 0: una al giorno; FIRST_FREE e a pagamento no')
+
+# --- correzione finale C: lista nello slot della stella sotto una garanzia di stella esplicita (B0306, B0355)
+GT = 'Guarantees one Tier 4 or lower 7★ Medal. Guarantees one of the following Medals: Illustrated Kairi [EX], HD Axel.'
+check(m.guarantee_slot(GT, [[7, 1], [6, 1], [5, 8]]) == 1, 'B0306: lista nello slot 6★')
+check(m.guarantee_slot('Guarantees one 7★ Tier 3 or 4 Medal. Guarantees one of the following Medals: A, B.', [[7, 1], [6, 1], [5, 2]]) == 1, 'B0355')
+check(m.guarantee_slot('Guarantees two of the following Medals at 7★: A, B.', [[7, 2], [6, 1], [5, 7]]) == 0, 'lista sola: slot 0')
+check(m.guarantee_slot('Guarantees one of the following Medals: A. Guarantees one 7★ Tier 4 Medal.', [[7, 1], [6, 1], [5, 8]]) == 0,
+      'garanzia di stella dopo la lista: slot 0')
+check(m.guarantee_slot('Guarantees one Tier 4 7★ Medal.', [[7, 1], [6, 1], [5, 8]]) == 0, 'senza lista: slot 0')
+check(m.guarantee_slot(GT, [[5, 8], [7, 1], [6, 1]]) == 9, 'indice nell ordine del mix del catalogo')
+
 # --- integrazione sui dati veri
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
@@ -234,6 +280,55 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check('�' not in dump and 'saïx' in dump and 'lumière' in dump, 'nomi UTF-8 corretti')
     miss = sorted({n for s in cat['subsets'].values() for n in s['names'] if n not in med and not n.startswith('trait medal')})
     check(not miss, f'nomi dei sotto-set senza voce {miss}')  # «moogle & sora» -> redirect «sora & moogle»
+
+    # A: vetrina e lista non vuote alla data del banner (come expandPool in server/gacha-data.js a asOf(b, start))
+    first = cat['firstRarity']
+
+    def rarities(b, at):
+        r = {s for s, _ in b['rarityMix'] if not (first.get(str(s)) and first[str(s)] > at)}
+        return r | {s + 1 for s, _ in b['rarityMix'] if first.get(str(s + 1)) and first[str(s + 1)] <= at}
+
+    def named(b, names):
+        at, rs = b['start'], rarities(b, b['start'])
+        assert not ((6 in rs and at < '2016-07-15') or (7 in rs and at < '2018-05-25')), b['rowId']
+        return [n for n in names if any(i[1] in rs and i[2] <= at for i in med.get(n, {}).get('ids', []))]
+    drawn = [b for b in bs if not b['catalogOnly'] and b['pool']['mode'] != 'evolve']
+    # eccezioni: la stella della medaglia non e' nel mix (ne' la stella sopra) alla data del banner:
+    # 6★ prima del 15/07/2016 (B0023, B0029), 7★ prima del 25/05/2018 (B0280 Vexen [+], B0303 Lexaeus [+]),
+    # SN++ solo 7★ sui banner [[5,10]] dei biglietti (B0663, B0732, B0746, B0759, B0787, B0801);
+    # i nomi senza varianti d'attacco (Cid, Chip, Moogle, Blue Fairy, Magic Mirror...) non sono medaglie vere
+    STAR_OUT = {'B0023', 'B0029', 'B0280', 'B0303', 'B0663', 'B0732', 'B0746', 'B0759', 'B0787', 'B0801'}
+    empty_f = sorted(b['rowId'] for b in drawn if [n for n in b['pool']['featured'] if med.get(n, {}).get('ids')]
+                     and not named(b, b['pool']['featured']))
+    check(set(empty_f) == STAR_OUT, f'vetrina vuota alla data del banner: {sorted(set(empty_f) ^ STAR_OUT)}')
+    empty_l = sorted(b['rowId'] for b in drawn if [n for n in b['guarantee']['list'] if med.get(n, {}).get('ids')]
+                     and not named(b, b['guarantee']['list']))
+    check(not empty_l, f'lista vuota alla data del banner: {empty_l}')
+    FIX15 = ['B0054', 'B0068', 'B0084', 'B0086', 'B0089', 'B0106', 'B0176', 'B0184', 'B0199', 'B0200', 'B0201', 'B0202',
+             'B0203', 'B0230', 'B0246']
+    byid = {b['rowId']: b for b in bs}
+    check(all(named(byid[r], byid[r]['pool']['featured']) for r in FIX15), 'i 15 banner del debutto hanno la vetrina')
+    check(all(named(byid[r], byid[r]['guarantee']['list']) for r in ('B0230', 'B0246')), 'B0230/B0246 hanno la lista')
+
+    # B: limite totale e gratuite senza limite (Ruling 28)
+    check(byid['B0511']['totalLimit'] == 1 and byid['B0604']['totalLimit'] == 1, 'B0511/B0604 Available once')
+    check(all(b.get('totalLimit', None) is not None for b in bs), 'totalLimit sempre presente')
+    for r in ('B0417', 'B0437', 'B0521', 'B0721', 'B0725', 'B0726', 'B0734', 'B0739'):
+        check(byid[r]['dayLimit'] == 1, f'{r} gratuita: una al giorno')
+    nolim = [b['rowId'] for b in bs if (b['type'] == 'FREE' or (b['prices'] and not any(b['prices'])))
+             and not (b['dayLimit'] or b['totalLimit'] or b['vipFree'])]
+    check(not nolim, f'gratuite senza limite {nolim}')
+
+    # C: lista nello slot 6★ sotto la garanzia «Tier ... 7★» (B0306-B0308, B0355); nessun altro banner cambia slot
+    slot1 = sorted(b['rowId'] for b in bs if b['guarantee'].get('slot', 0) != 0)
+    check(slot1 == ['B0306', 'B0307', 'B0308', 'B0355'] and all(byid[r]['guarantee']['slot'] == 1 for r in slot1),
+          f'guarantee.slot {slot1}')
+    check(all('slot' in b['guarantee'] for b in bs), 'guarantee.slot sempre presente')
+
+    # F: nessuna medaglia del catalogo con darklight 3 (la scena del risultato va in crash: docs/notes/shop.md)
+    dl3 = {r['medalId'] for r in m.default_inputs()['medals'] if r.get('darklight') == 3}
+    cat_ids = {i[0] for v in med.values() for i in v['ids']} | {e[0] for b in bs for e in (b['pool'].get('evolve') or [])}
+    check(not (cat_ids & dl3), f'medaglie darklight 3 nel catalogo {sorted(cat_ids & dl3)[:5]}')
     integr = ', integrazione'
 else:
     integr = ' (integrazione saltata: dati veri assenti)'

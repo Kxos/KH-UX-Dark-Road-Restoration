@@ -147,9 +147,13 @@ function pickNamed(banner, names, rare, rng) {
   return list[pickIndex(list.length, rng)];
 }
 
+// Slot a lista: count slot da guarantee.slot (indice in slotRarities, default 0; 1 su B0306-B0308/B0355, dove
+// lo slot 7★ e' di una garanzia di stella con Tier e la lista sta sullo slot 6★: correzione finale C).
+const isListSlot = (g, i, n) => n > 0 && i >= (g.slot || 0) && i < (g.slot || 0) + n;
+
 // Estrazione di un banner espanso (ex = expandPool). state = estrazioni gia' fatte dal giocatore su
 // quel banner: draws (totale) e sinceFeatured (di fila senza vetrina). Pity: alla pity-esima estrazione
-// senza vetrina il primo slot da' la vetrina; every: ogni every-esima estrazione gli slot a lista.
+// senza vetrina il primo slot (sempre lo slot 0) da' la vetrina; every: ogni every-esima estrazione gli slot a lista.
 function rollDraw(banner, ex, rng, state = { draws: 0, sinceFeatured: 0 }) {
   if (banner.pool?.mode === 'evolve') {
     if (!ex.weighted.length) throw new Error(`banner ${banner.drawMedalTypeId}: evolve senza medaglie`);
@@ -162,7 +166,7 @@ function rollDraw(banner, ex, rng, state = { draws: 0, sinceFeatured: 0 }) {
   const pityOn = !!g.pity && (ex.featuredNames || []).length > 0 && (state.sinceFeatured || 0) + 1 >= g.pity;
   const medalIds = slotRarities(banner).map((rare, i) => {
     if (i === 0 && pityOn) return pickNamed(banner, ex.featuredNames, rare, rng);
-    if (i < listSlots) return pickNamed(banner, ex.listNames, rare, rng);
+    if (isListSlot(g, i, listSlots)) return pickNamed(banner, ex.listNames, rare, rng);
     return pickSlot(banner, ex.pool, rare, rng);
   });
   return { medalIds, featured: medalIds.some((id) => ex.featuredIds.includes(id)) };
@@ -176,7 +180,7 @@ function slotOdds(banner, ex) {
   return slotRarities(banner).map((rare, i) => {
     const up = upgradeOf(banner, ex.pool, rare);
     const odds = up ? [{ rare, pct: r2(1 - up.p) }, { rare: up.to, pct: r2(up.p) }] : [{ rare, pct: 100 }];
-    return i < listSlots ? odds.map((o) => ({ list: true, ...o })) : odds;
+    return isListSlot(banner.guarantee || {}, i, listSlots) ? odds.map((o) => ({ list: true, ...o })) : odds;
   });
 }
 
@@ -218,8 +222,10 @@ function drawMedalTypeRow({ drawMedalTypeId, name, payType, price, sortId, banne
   };
 }
 
-// «once per day» (dayLimit 1 o Free Deal VIP) o «N times per day»; '' senza limite
-const limitText = (b) => (b.vipFree || b.dayLimit === 1 ? 'once per day' : b.dayLimit ? `${b.dayLimit} times per day` : '');
+// «once» / «N times in total» (totalLimit, «Available once»: Ruling 28), «once per day» (dayLimit 1 o Free Deal
+// VIP) o «N times per day»; '' senza limite
+const limitText = (b) => (b.totalLimit ? (b.totalLimit === 1 ? 'once' : `${b.totalLimit} times in total`)
+  : b.vipFree || b.dayLimit === 1 ? 'once per day' : b.dayLimit ? `${b.dayLimit} times per day` : '');
 
 const bannerById = (list, id) => list.find((b) => b.drawMedalTypeId === Number(id));
 
