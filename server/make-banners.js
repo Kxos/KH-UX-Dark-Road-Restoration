@@ -18,8 +18,9 @@ const GAME = process.env.KHUX_GAME_DATA || path.join(__dirname, 'game_data');
 function commentOf(b) {
   if (!b.lotCount) return 'Banner Catalog only'; // banner INCOMPLETE senza dettagli originali
   const mix = (b.rarityMix || []).map(([r, n]) => `${n}x ${r}★+`).join(', ');
+  const lim = gd.limitText(b);
   const extra = b.guarantee?.pity ? ` - featured Medal guaranteed within ${b.guarantee.pity} draws`
-    : b.vipFree ? ' - one free VIP draw per day' : b.dayLimit ? ` - ${b.dayLimit === 1 ? 'once' : `${b.dayLimit} times`} per day` : '';
+    : b.vipFree ? ' - one free VIP draw per day' : lim ? ` - ${lim}` : '';
   return `${b.lotCount} Medal${b.lotCount === 1 ? '' : 's'}${mix ? `: ${mix}` : ''}${extra}`;
 }
 

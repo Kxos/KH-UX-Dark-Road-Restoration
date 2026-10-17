@@ -171,6 +171,12 @@ check(MS['phantom']['std'] and MS['vanitas']['std'] and not MS['chip']['std'] an
 check(m.resolve_name('xion', '2016-11-25', MS, {}) == 'xion a', 'alias xion -> xion a')
 check(m.resolve_name('key art #17', '2018-06-15', MS, {}) == 'prime - key art #17', 'alias key art #17 -> prime')
 
+# elenco «every Nth draw» solo nel testo del notice (B0742/B0765)
+NT = {70907: {'text': 'Info\nYou are guaranteed to get one of the following Medals every 3rd draw! \nSN++ - Key Art #24\nSN++ - Illus. KH III Sora\nSN++ - Illus. KH III Sora\n\u25a0 Campaign Period\nSN++ - Dopo'}}
+nl_ = m.notice_list(R(source_url='https://x/detail/46740 https://x/detail/70907'), NT)
+check(nl_ == ['sn++ - key art #24', 'sn++ - illus. kh iii sora'], f'notice_list {nl_}')
+check(m.notice_list(R(source_url='nulla'), NT) == [], 'notice_list senza notice')
+
 # --- integrazione sui dati veri
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
@@ -190,6 +196,9 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(all(b['end'] for b in bs), 'tutte le date di fine')
     inc = sum(1 for b in bs if b['catalogOnly'] == 'INCOMPLETE')  # 31 prima degli override dei notice (Task 4)
     check(inc == 24, f'righe INCOMPLETE {inc}')
+    for rid in ('B0742', 'B0765'):
+        bg = next(b for b in bs if b['rowId'] == rid)['guarantee']
+        check(bg['every'] == 3 and len(bg['list']) >= 15, f'{rid} garanzia every {bg}')
     b11 = next(b for b in bs if b['rowId'] == 'B0011')
     check(b11['pool']['sets'] == ['1.1', '1.2', '1.3', '2.1'] and b11['epicBoost'], 'B0011 senza 2.2 e Epic')
     check(cat['firstRarity'].get('6') == '2016-07-15' and cat['firstRarity'].get('7') == '2018-05-25', 'firstRarity')
