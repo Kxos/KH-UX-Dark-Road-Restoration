@@ -219,6 +219,36 @@ try {
 } finally { Math.random = rnd; }
 log('9d. probabilita\' 20%/40%/sostituzione/primo slot: ok');
 
+// 10. Evolve di una medaglia con guilt (final review 2b, I1): la guilt resta, l'evoluta e' un medalId nuovo
+// e alza il Nova in silenzio (userPoint); niente copie in attesa per il popup «NOVA LEVEL UP!» di una
+// risposta successiva (stage clear, draw, Moogle Shop) ne' sommate al popup di un Level Up dopo
+const gpAll = t.masterRows('guiltProb');
+const evoRow = medal.find((r) => r.validEvolve && !r.groupId && r.guiltValue > 0 && byId.get(r.evolveId)?.guiltValue > 0
+  && g.guiltRange(gpAll, byId.get(r.evolveId).guiltValue).max > 0);
+assert.ok(evoRow, 'una medaglia evolvibile con tier nel master');
+const ev = give(evoRow.medalId)[0];
+p.medalState[ev] = { ...(p.medalState[ev] || {}), guiltFactor: g.guiltRange(gpAll, byId.get(evoRow.evolveId).guiltValue).max };
+t.guiltBurst().lists();   // la prima guilt della medaglia prima dell'Evolve: scartata qui
+const lvEv0 = t.userPointData('2026-10-12 00:00:00').guiltBurstLv;
+function evolve(baseId, cells) {
+  let out;
+  const res = { writeHead: () => {}, end: (b2) => { out = JSON.parse(b2.toString('utf8')); } };
+  console.log = () => {};
+  try { t.respondMedalEvolve(res, { baseUserMedalId: baseId, attachmentMedalIds: cells }); }
+  finally { console.log = log; }
+  return out;
+}
+r = evolve(ev, []);
+assert.equal(state(ev).medalId, evoRow.evolveId, 'evoluta');
+assert.ok(state(ev).guiltFactor > 0, 'guilt conservata dall\'Evolve');
+assert.ok(r.userData.userPoint.guiltBurstLv > lvEv0, 'il Nova sale in silenzio con l\'evoluta');
+assert.deepEqual(t.guiltBurst().lists(), { guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [] },
+  'nessun popup del Nova fuori contesto dopo l\'Evolve');
+r = enhance(b, give(90056));
+assert.equal(r.guiltBurstFirstLv + r.guiltBurstMaxLv, 0, 'il Level Up dopo non somma le copie dell\'Evolve');
+log('10. Evolve', evoRow.name, '->', byId.get(evoRow.evolveId).name, ': Nova', lvEv0, '->',
+  t.userPointData('2026-10-12 00:00:00').guiltBurstLv, 'senza popup');
+
 // medaglia 1 (Stock Medal) intatta
 assert.equal(byId.get(1).imageId, 90000);
 try { fs.unlinkSync(SAVE); } catch {}

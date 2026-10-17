@@ -124,6 +124,24 @@ function warrantFields(b, ex, state = {}, catalog = null) {
   return { userWarrantDisplayOfTime: 0, warrantMedalIds: ids };
 }
 
+// Difesa (final review 2b, M2): validComment viene dal master servito (drawMedalType.json, make-banners.js), la
+// pity dal catalogo vivo. Se i due non sono allineati (catalogo rigenerato senza make-banners, o il contrario) una riga
+// con validComment 0 puo' incontrare NO_WARRANT: lista vuota = crash del client. Allora striscia nascosta
+// (userWarrantDisplayOfTime 0) e una medaglia per la lista: la vetrina alla data (ex.featuredIds), poi gli id del
+// catalogo (bannerMedalIds), il primo id del pool, infine safeMedalId del master; una riga di log per banner.
+const commentWarned = new Set();
+function guardWarrant(w, b, ex, catalog, validComment, safeMedalId) {
+  if (validComment !== 0 || (w.warrantMedalIds || []).length) return w;
+  const pick = (ex?.featuredIds || [])[0] ?? bannerMedalIds(b, catalog)[0] ?? Object.values(ex?.pool || {}).flat()[0] ?? safeMedalId;
+  const ids = pick != null ? [pick] : [];
+  if (!commentWarned.has(b.drawMedalTypeId)) {
+    commentWarned.add(b.drawMedalTypeId);
+    console.log(`  [gacha] ${b.rowId} ${b.name}: validComment 0 nel master ma nessun bersaglio della pity nel catalogo `
+      + `(master e catalogo da rigenerare insieme): striscia nascosta, warrantMedalIds [${ids.join(',')}]`);
+  }
+  return { userWarrantDisplayOfTime: 0, warrantMedalIds: ids };
+}
+
 function catalogPlate(webBase) {
   return plate({ drawMedalTypeId: gd.CATALOG_ID, payType: 6, lotCount: 1, name: 'Banner Catalog' }, webBase, 0, 1, 1);
 }
@@ -148,15 +166,20 @@ function drawsLeft(player, b, realMs) {
 }
 
 // exFor(banner) -> expandPool del banner alla data del giocatore (server.js expandFor) e catalog (ripiego senza pool):
-// per la striscia della garanzia
-function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor, catalog }) {
+// per la striscia della garanzia; validCommentOf(banner) = validComment della riga drawMedalType servita, safeMedalId =
+// ultimo ripiego per warrantMedalIds (guardWarrant)
+function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor, catalog, validCommentOf, safeMedalId }) {
   ticketsOf(player);
   const list = shopBanners(banners, { storyQuest, storyDay, sizes, show });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
+  const warrantOfList = (b) => {
+    const ex = exFor?.(b);
+    return guardWarrant(warrantFields(b, ex, drawState(player, b), catalog), b, ex, catalog, validCommentOf?.(b), safeMedalId);
+  };
   // Catalog sortId 1, poi 10, 20, ... nell'ordine di shopBanners (i piu' recenti prima, spec 4.3).
   return {
     gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, drawsLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1),
-      warrantFields(b, exFor?.(b), drawState(player, b), catalog)))],
+      warrantOfList(b)))],
     petGachaList: [],
   };
 }
