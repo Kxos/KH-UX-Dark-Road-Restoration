@@ -92,15 +92,21 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     return out;
   }
 
-  // guiltBurstFirstLv/MaxLv della risposta del Level Up (ramo 55): livelli appena dati. Con il
+  // guiltBurstFirstLv/MaxLv della risposta del Level Up (ramo 55): livello d'ARRIVO del popup, 0 = nessun
+  // popup. Il client mostra «LV <suo livello> » LV <campo>» (banco 17-10: con l'aumento al posto del livello
+  // usciva «LV 6 » LV 1»): prima guilt = livello dopo i +1, guilt massima = livello dopo anche i +5. Con il
   // popup spento (KHUX_GUILT_BURST_POPUP=0) 0 (le copie in attesa si scartano alla prossima lists()).
   function gained() {
     const { rows } = refresh();
     const out = { first: 0, max: 0 };
     if (process.env.KHUX_GUILT_BURST_POPUP === '0') return out;
     const medalOf = new Map(userMedalList().map((m) => [m.userMedalId, m.medalId]));
-    for (const id of pending.first) out.first += rows.get(medalOf.get(id))?.addGuiltBurstLv || FIRST_DEFAULT;
-    for (const id of pending.max) out.max += rows.get(medalOf.get(id))?.addGuiltBurstLvMax || MAX_DEFAULT;
+    let addFirst = 0, addMax = 0;
+    for (const id of pending.first) addFirst += rows.get(medalOf.get(id))?.addGuiltBurstLv || FIRST_DEFAULT;
+    for (const id of pending.max) addMax += rows.get(medalOf.get(id))?.addGuiltBurstLvMax || MAX_DEFAULT;
+    const after = level();
+    if (addFirst) out.first = after - addMax;
+    if (addMax) out.max = after;
     pending.first.length = 0;
     pending.max.length = 0;
     return out;
