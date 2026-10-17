@@ -69,9 +69,13 @@ if sr:
           and sr[0]['price'] == '100' and sr[0]['duration'] == '7 days' and sr[0]['notes'] == 'note one more',
           'shop: campi ' + repr(sr[0]))
 
+# --- redirects (pagine #REDIRECT della wiki, nomi normalizzati)
+RD = m.redirects({'SN+ - KH III Demyx': '#REDIRECT[[SN - KH III Demyx]]', 'X': '#REDIRECT [[Y|y]] ', 'Sora': 'text'})
+check(RD == {'sn+ - kh iii demyx': 'sn - kh iii demyx', 'x': 'y'}, f'redirects {RD}')
+
 if errori:
     print(f'ERRORI ({len(errori)})')
     for e in errori:
         print(' -', e)
     sys.exit(1)
-print('OK: norm, infomedals, english_subsets, medal_release, wiki_shop_rows')
+print('OK: norm, infomedals, english_subsets, medal_release, wiki_shop_rows, redirects')

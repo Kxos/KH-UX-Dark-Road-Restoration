@@ -124,6 +124,38 @@ check(p['mode'] == 'evolve' and p['evolve'] == [[301495, 1], [301496, 2], [30149
 p = m.pool_recipe(R(start_pt='2018-05-25', currency='Silver Ticket'), '', 'T_EVOLVE', [], SUB, medal_rows=EV)
 check([lv for _, lv in p['evolve']] == [3, 4, 5, 6, 7, 8], 'silver prima del 14/09/2018')
 
+# --- fix round 1: stella davanti al nome, filtri dei set, alias, completamento senza VIP
+p = m.pool_recipe(R(featured_medals='7★ Prime - KH Cloud'), '', 'SEVEN', [], {})
+check(p['featured'] == ['prime - kh cloud'], f'vetrina senza stella {p["featured"]}')
+p = m.pool_recipe(R(start_pt='2016-04-20'), 'Draws from Disney-based Medals in sets 1.1 and 1.2.', 'STANDARD', [], SUB)
+check(p['mode'] == 'sets' and p['sets'] == ['1.1', '1.2'] and p['filter'] == ['disney'], f'filtro disney {p}')
+check(m.set_filter('Draws from Final Fantasy - and Kingdom Hearts -based Medals in sets 1.1 and 1.2.') == ['ffkh'], 'filtro ffkh')
+check(m.set_filter('Draws from Power Medals in sets 1.1, 1.2.') == ['power'], 'filtro power')
+check(m.set_filter('Draws from sets 1.1 and 1.2.') == [], 'nessun filtro')
+check(m.pool_recipe(R(), '', 'STANDARD', [], {})['filter'] == [], 'filter sempre presente')
+check(m.medal_origin('[[Category:Hercules Characters]]') == 'disney', 'origine disney')
+check(m.medal_origin('[[Category:KINGDOM HEARTS II Characters]] [[Category:Final Fantasy Characters]]') == 'ffkh', 'origine ffkh')
+check(m.medal_origin('[[Category:Kingdom Hearts Characters]] [[Category:Steamboat Willie Characters]]') == 'disney', 'origine mista')
+check(m.medal_origin('') == '', 'origine ignota')
+g = m.guarantee_of(R(), 'Guarantees one of the following Medals with its special attack strengthened 1 to 3 times: [[HD Pete]], or [[Hercules B]].')
+check(g['list'] == ['hd pete', 'hercules b'] and g['count'] == 1, f'lista con qualifica {g}')
+MED = {'supernova - key art #20': {'date': '2018-12-01'}, 'supernova+ - key art #20': {'date': '2019-09-01'},
+       'sn++ - key art #20': {'date': '2019-11-08'}, 'sn++ - lingering will': {'date': '2020-01-01'},
+       'prime - mrs. incredible': {'date': '2019-01-01'}, 'illustrated xion [ex]': {'date': '2018-01-01'}}
+RD = {'sn++ - kh iii lingering will': 'sn++ - lingering will'}
+check(m.resolve_name('key art #20', '2019-10-01', MED, RD) == 'supernova+ - key art #20', 'key art SN+')
+check(m.resolve_name('key art #20', '2020-02-01', MED, RD) == 'sn++ - key art #20', 'key art SN++')
+check(m.resolve_name('key art #20', '2018-12-10', MED, RD) == 'supernova - key art #20', 'key art SN')
+check(m.resolve_name('sn++ - kh iii lingering will', '2020-02-01', MED, RD) == 'sn++ - lingering will', 'redirect')
+check(m.resolve_name('prime mrs. incredible', '2019-02-01', MED, RD) == 'prime - mrs. incredible', 'prime senza trattino')
+check(m.resolve_name('boosted illustrated xion (ex)', '2019-02-01', MED, RD) == 'illustrated xion [ex]', 'boosted e (ex)')
+check(m.resolve_name('attack boost vi max', '2019-02-01', MED, RD) is None, 'skill non risolta')
+check(m.non_medal('attack boost vi max', set()) and m.non_medal('power gem', {'power gem'}) and m.non_medal('limited vip coin', set())
+      and not m.non_medal('sn+ - kh iii foo', set()), 'non medaglie')
+c = m.complete_row(R(name='[WJE] Monday Only Free Deal! (9/14)'),
+                   R(name='Free Deal', currency='Free, VIP only', price='Free VIP only', draw_size='x10', rarity_mix='7★:1 5★:9'))
+check(c['currency'] == '' and c['price'] == 'Free' and c['draw_size'] == 'x10' and not m.is_vip(c), f'completamento senza VIP {c}')
+
 # --- integrazione sui dati veri
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
@@ -146,6 +178,16 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(cat['firstRarity'].get('6') == '2016-07-15' and cat['firstRarity'].get('7') == '2018-05-25', 'firstRarity')
     b456 = next(b for b in bs if b['rowId'] == 'B0456')
     check(b456['pool']['mode'] == 'evolve' and [lv for _, lv in b456['pool']['evolve']] == [7, 8, 9], 'B0456 Dual Meow Wow')
+    med = cat['medals']
+    mats = {m.norm(x['name']) for x in m.default_inputs()['materials']}
+    bad = [b['rowId'] for b in bs if b['type'] == 'SN' and not b['catalogOnly']
+           and any(not m.non_medal(n, mats) for n in b['pool']['featured'])
+           and not any(n in med for n in b['pool']['featured'])]
+    check(not bad, f'SN attivi con vetrina irrisolta {bad}')
+    check(sum(1 for b in bs if b['vipFree']) == 17, f'vipFree {sum(1 for b in bs if b["vipFree"])}')
+    b5 = next(b for b in bs if b['rowId'] == 'B0005')
+    check(b5['pool']['filter'] == ['disney'] and med['stitch']['origin'] == 'disney' and med['kh ii cloud']['origin'] == 'ffkh'
+          and med['kh ii cloud']['att'] in ('power', 'speed', 'magic'), 'B0005 filtro e campi medaglia')
     integr = ', integrazione'
 else:
     integr = ' (integrazione saltata: dati veri assenti)'

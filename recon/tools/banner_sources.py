@@ -181,6 +181,17 @@ def medal_release(S, w, M, rows):
     return out
 
 
+def redirects(w):
+    """pagine #REDIRECT della wiki: titolo normalizzato -> destinazione normalizzata (es. «SN+ - KH III Demyx»
+    -> «sn - kh iii demyx»; «SN++ - KH III Lingering Will» -> «sn++ - lingering will»)"""
+    out = {}
+    for k, s in w.items():
+        m = re.match(r'\s*#REDIRECT\s*\[\[([^\]|#]+)', s, re.I)
+        if m:
+            out[norm(k)] = norm(m.group(1))
+    return out
+
+
 def norm_img(s):
     return re.sub(r'[\s_]+', ' ', s).strip().lower()
 
