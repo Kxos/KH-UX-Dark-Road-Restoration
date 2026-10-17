@@ -157,3 +157,34 @@ WW). Nuova versione delle risorse.
 Test offline per ogni regola (frasi dell'audit come casi), integrazione sul catalogo vero (i 171 banner delle
 discrepanze tornano coerenti, 0 banner con slot riservati in conflitto), prove al banco del punto 6 con
 screenshot confrontati con i fotogrammi del video.
+
+## 8. Esiti della ricerca (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\research.md`) e decisioni che ne seguono
+
+Sostituiscono le ipotesi dei punti 4.4-4.6 dove differiscono.
+
+- **Boosted = riga distinta del master medal** (non uno stato della medaglia del giocatore): il client la riconosce da
+  `displayId` = quello della normale + 1 (`[fn]`); `groupId` (+0x510) punta alla normale e il dettaglio colora di
+  giallo STR/DEF/Cost migliori (`[fn]`); il Cost stampato e' quello della riga. Quindi: nuove righe boosted nel
+  master (`attack`/`maxAttack` +1000, `defense`/`maxDefense` +1000, `cost` -10, `displayId` +1, `groupId` della
+  normale), Chip/Dale indipendenti. Fascia «BOOSTED» (`[fn]`): `Bonus_Plate` + `Bonus_TextStatus.png` (gia'
+  servite) + LWF `Draw_StatusBonus` (da importare dal JP). Targhetta LV rossa (`[fn]`): `Minfo_Def12_SB.png`,
+  `Deck_Panel_SB.png` (da importare dal JP). Da verificare: `minCost` della riga boosted, effetto di `groupId` sui
+  pallini.
+- **Striscia della garanzia (sostituisce il «numero dorato»)**: testo ricco XML (`[fn]`, tag `<important>` =
+  giallo 255,255,0, `<big>`, `<middle>`, `<br>`). Testo originale gia' nei testi WW: «`<important>`Nome`</important>`
+  guaranteed in `<important>`N tries`</important>`!» (106180307/308, liste 106180302-306). **Decisione dell'utente
+  (17-10): giallo originale**, nessuna differenza da dichiarare. La striscia compare solo con `warrantDisplayOfTime` (la
+  soglia = pity) != 0 e `userWarrantDisplayOfTime` fra 1 e la soglia; con `validComment` 0 il client usa i nomi di
+  `warrantMedalIds` (lista vuota = crash), con 1 `sprintf(comment, userWarrantDisplayOfTime)`. `warrantNumberOfTime`
+  non e' letto. Proposta: `validComment` 0 + `warrantMedalIds` = vetrina per i banner con pity; da provare un nome
+  con «&».
+- **Guilt e SAB**: «maximum Special Attack Bonus»/«maxed» -> `guiltFactor` al massimo del tier (Tier 10 = 32000 =
+  +320%) con i pallini pieni; «strengthened N times»/«pre-strengthened N dots» -> `burstUpperNumber` = N (massimo
+  `maxEnhanceCount`: 3★ 1, 4★ 2, 5★ 3, 6-7★ 5); «SAB of N»/«Level N SAB»/«SAB Tier N» = filtro del Tier (`guiltValue`),
+  non uno stato; «Dual Meow Wow [SAB LV 9]» = medalId 301684.
+- **Popup del Nova**: i LWF JP hanno cio' che serve (`FromLv`, `ToLv`, `_root`; `_num` con `num1`..`num4`, etichette
+  `Lv0`..`Lv0000`). Logo `Burst_Logo.png` 422x142 RGBA e `Burst_Logo_B.png` (sagoma bianca del bagliore): rifatti
+  «NOVA». Da importare anche `GuiltBonus_Wfix0..9` (cifre, assenti da noi) e il layout `MedalInfo_Burst_Info.json`
+  (usa `Panel03.png`, gia' servita). Testi 101302059 «Maxed out %s's Special Attack Bonus!» e 101302058 gia' presenti.
+  Import: estendere `import_jp_raisedraw.py` a `lwf/medal/guilt_bonus` e `Draw_StatusBonus` (codifica `btf.encode`),
+  layout in `jp_coco_layouts.txt` per `import_jp_coco.py`, texture `_SB` copiate dal JP.
