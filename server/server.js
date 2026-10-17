@@ -1105,80 +1105,116 @@ function respondMedalMax(res, body) {
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
 }
 
-// Shop > Draw (docs/notes/shop.md). Catalogo dei banner scritto da server/make-banners.js; senza
-// catalogo la lista ha solo la piastra Banner Catalog. KHUX_GACHA_TEST=1 mostra i banner di prova
-// (Platinum Ticket Draw). KHUX_GACHA_SIZES: numeri di medaglie con l'animazione del risultato nelle
-// risorse (lwf/raisedraw/demo/raidgacha_result_display_NN, recon/tools/import_jp_raisedraw.py).
-const GACHA_FILE = process.env.KHUX_GACHA_BANNERS || path.join(__dirname, 'game_data', 'gacha_banners.json');
+// Shop > Draw (docs/notes/shop.md; spec 2026-10-16-shop-banner-design.md 9). Catalogo dei banner
+// originali scritto da recon/tools/make_banner_catalog.py (server/game_data/gacha_catalog.json); senza
+// catalogo la lista ha solo la piastra Banner Catalog. KHUX_GACHA_SHOW: rowId separati da virgola
+// mostrati nella lista anche se bloccati o fuori periodo (prove al banco). KHUX_GACHA_SIZES: numeri di
+// medaglie con l'animazione del risultato nelle risorse (lwf/raisedraw/demo/raidgacha_result_display_NN,
+// recon/tools/import_jp_raisedraw.py).
+const GACHA_FILE = process.env.KHUX_GACHA_BANNERS || path.join(__dirname, 'game_data', 'gacha_catalog.json');
 const GACHA_IMG = path.join(__dirname, 'game_data', 'gacha_img');
-const GACHA_TEST = process.env.KHUX_GACHA_TEST === '1';
+const GACHA_SHOW = new Set((process.env.KHUX_GACHA_SHOW || '').split(',').map((s) => s.trim()).filter(Boolean));
 const GACHA_SIZES = new Set((process.env.KHUX_GACHA_SIZES || '1,3,10').split(',').map(Number));
-let gachaBannerList = null;
-// Le medaglie impilabili (validPack) non si estraggono: stackedMedalList fonde la copia nuova nella
-// cella con l'id della prima, e l'id restituito non comparirebbe in userMedals (crash del client).
-// Le toglie dai pool al caricamento; un banner rimasto senza medaglie sparisce, e sparisce anche
-// quello in cui uno slot non trova nessuna medaglia alla sua stella o sotto (rollDraw lancerebbe).
-function sanitizeBanners(list) {
-  const packed = new Set(masterRows('medal').filter((m) => m.validPack === 1).map((m) => m.medalId));
-  return list.map((b) => {
-    const pool = {};
-    for (const [rare, ids] of Object.entries(b.pool || {})) {
-      const keep = ids.filter((id) => !packed.has(id));
-      if (keep.length < ids.length) console.log(`  [gacha] ${b.rowId}: tolte ${ids.length - keep.length} medaglie impilabili dal pool ${rare}`);
-      pool[rare] = keep;
-    }
-    return { ...b, pool };
-  }).filter((b) => {
-    if (!Object.values(b.pool).some((ids) => ids.length)) return false;
-    const poolOf = (r) => b.pool[r] || b.pool[String(r)] || [];
-    const bad = gachaData.slotRarities(b).find((rare) => ![1, 2, 3, 4, 5, 6, 7].filter((r) => r <= rare).some((r) => poolOf(r).length));
-    if (bad !== undefined) console.log(`  [gacha] ${b.rowId}: banner tolto, nessuna medaglia a ${bad}★ o sotto`);
-    return bad === undefined;
+const GACHA_WIDEST_DAY = '2021-06-29'; // ultimo giorno del gioco: il pool piu' largo di un banner permanente
+let gachaCatalogMemo = null;
+const gachaPoolCache = new Map(); // `${drawMedalTypeId}@${asOf}` -> expandPool
+// Un banner estraibile (non catalogOnly, non evolve) con uno slot senza medaglie alla sua stella o sotto
+// anche alla data piu' larga (rollDraw lancerebbe) passa a catalogOnly 'NO_MEDALS': fuori dalla lista e
+// non estraibile, ma resta nel catalogo WebView con il suo stato (oggi B0370 e B0418 «Blue Fairy Deal»:
+// le Blue Fairy arriveranno col PvP). Le medaglie impilabili non entrano nei pool (validPack, Task 3),
+// tranne i banner evolve: l'estrazione restituisce l'id della cella (respondGachaDraw).
+function sanitizeBanners(catalog) {
+  const banners = catalog.banners.map((b) => {
+    if (b.catalogOnly || b.pool?.mode === 'evolve') return b;
+    let pool = {};
+    try { pool = gachaData.expandPool(b, catalog, gachaData.asOf(b, GACHA_WIDEST_DAY)).pool; } catch { /* ricetta guasta: scartato */ }
+    const has = (r) => (pool[r] || pool[String(r)] || []).length > 0;
+    const bad = gachaData.slotRarities(b).find((rare) => ![1, 2, 3, 4, 5, 6, 7].filter((r) => r <= rare).some(has));
+    if (bad === undefined) return b;
+    console.log(`  [gacha] ${b.rowId} ${b.name}: banner tolto dallo Shop, nessuna medaglia a ${bad}★ o sotto`);
+    return { ...b, catalogOnly: 'NO_MEDALS' };
   });
+  return { ...catalog, banners };
 }
-const gachaBanners = () => (gachaBannerList ??= sanitizeBanners(gachaData.loadBanners(GACHA_FILE)));
-function reloadGachaBanners() { gachaBannerList = null; }
+const gachaCatalog = () => (gachaCatalogMemo ??= sanitizeBanners(gachaData.loadCatalog(GACHA_FILE)));
+function reloadGachaBanners() { gachaCatalogMemo = null; gachaPoolCache.clear(); }
+
+// Punto della storia del giocatore: ultima quest superata (1-525) e data della sua tranche.
+function storyCtx() {
+  const storyQuest = stageNumber(lastStoryStageId());
+  return { storyQuest, storyDay: gachaData.storyDay(gachaCatalog(), storyQuest) };
+}
+// Pool del banner alla data di riferimento (i PERMANENT seguono la storia); undefined per i banner
+// senza composizione (INCOMPLETE): detailPage li mostra senza probabilita'.
+function expandFor(b, ctx = storyCtx()) {
+  if (b.catalogOnly === 'INCOMPLETE' || !(b.rarityMix || []).length) return undefined;
+  const asOf = gachaData.asOf(b, ctx.storyDay), key = `${b.drawMedalTypeId}@${asOf}`;
+  if (!gachaPoolCache.has(key)) gachaPoolCache.set(key, gachaData.expandPool(b, gachaCatalog(), asOf));
+  return gachaPoolCache.get(key);
+}
+// Banner della lista attuale (stessa scelta di /gacha/list)
+const gachaShopList = (ctx = storyCtx()) => gacha.shopBanners(gachaCatalog().banners, { ...ctx, sizes: GACHA_SIZES, show: GACHA_SHOW });
 
 function respondGachaList(res) {
-  send(res, 200, { ret: ret(), ...gacha.gachaListData(gachaBanners(), player, { realMs: realNow(), webBase: WEB_BASE, test: GACHA_TEST, sizes: GACHA_SIZES }) });
+  const migrate = !player.drawTickets, listed = player.gacha?.listedCurrency;
+  const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW, ...storyCtx() });
+  if (migrate || player.gacha.listedCurrency !== listed) savePlayer();
+  send(res, 200, { ret: ret(), ...data });
 }
 
 // POST /gacha/draw (azione 76): ramo 0x7c46bc di [fn], parser [fn] (userPoint),
 // [fn] (userMedals, userSkills, userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds,
 // effectNumbers: tutti obbligatori) e [fn] (guiltBurstFirst/MaxUserMedalIds). Un rifiuto
-// risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop ([fn]).
+// risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop ([fn]). Si estrae solo dai
+// banner della lista attuale o di KHUX_GACHA_SHOW: una richiesta forgiata non arriva ai banner fuori periodo.
 function respondGachaDraw(res, body) {
   player.medals = player.medals || []; // salvataggio nuovo: l'elenco nasce alla prima medaglia
-  const now = serverTime(), realMs = realNow();
-  const banner = gachaData.bannerById(gachaBanners(), body?.drawMedalTypeId);
-  const why = gacha.checkDraw(banner, player, body, { realMs, test: GACHA_TEST, freeSlots: maxMedal() - stackedMedalList().length, sizes: GACHA_SIZES });
+  const now = serverTime(), realMs = realNow(), ctx = storyCtx();
+  const banner = gachaData.bannerById(gachaCatalog().banners, body?.drawMedalTypeId);
+  const freeSlots = maxMedal() - stackedMedalList().length;
+  let why = gacha.checkDraw(banner, player, body, { ...ctx, realMs, freeSlots, sizes: GACHA_SIZES, show: GACHA_SHOW });
+  if (!why && !GACHA_SHOW.has(banner.rowId) && !gachaShopList(ctx).includes(banner)) why = `${banner.rowId} non e' nella lista dello Shop`;
   if (why) {
     console.log(`  [gacha] estrazione rifiutata: ${why} (corpo ${JSON.stringify(body)})`);
     return send(res, 200, { ret: ret() });
   }
   const snap = inventorySnapshot(now);
   const owned = new Set(userMedalList().map((m) => m.medalId)); // quello che vede il client
-  let medalIds;
-  try { medalIds = gachaData.rollDraw(banner, Math.random); } catch (e) {
+  let draw;
+  try { draw = gachaData.rollDraw(banner, expandFor(banner, ctx), Math.random, gacha.drawState(player, banner)); } catch (e) {
     console.log(`  [gacha] estrazione impossibile, niente addebitato: ${e.message}`);
     return send(res, 200, { ret: ret() });
   }
-  gacha.payDraw(banner, player, realMs);
+  const price = gacha.payDraw(banner, player, realMs, draw.featured);
+  const packed = new Set(masterRows('medal').filter((m) => m.validPack).map((m) => m.medalId));
+  const skills = skillRowsById();
   const userMedalIds = [], first = [];
-  for (const medalId of medalIds) {
+  draw.medalIds.forEach((medalId, i) => {
     grantItem(3, medalId, 1);
-    const id = player.medals[player.medals.length - 1].userMedalId;
+    const newId = player.medals[player.medals.length - 1].userMedalId;
+    // [fn] cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
+    const cell = packed.has(medalId) ? stackedMedalList().find((c) => c.copies.includes(newId)) : null;
+    const id = cell ? cell.userMedalId : newId;
     userMedalIds.push(id);
     if (!owned.has(medalId)) { first.push(id); owned.add(medalId); }
-  }
+    // abilita' estratte (SKILL_TABLES): stesso formato dell'Overwrite, livello 1
+    const sk = gachaData.rollSkill(banner.skill, i, skills, Math.random);
+    if (sk && !packed.has(medalId)) {
+      player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
+      (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() };
+    }
+  });
+  // oggetti in omaggio dell'estrazione (Magic Mirror, gemme...): nel Present Box (spec 9.2)
+  for (const [type, itemId, n] of banner.bonus || []) addPresent(type, itemId, n, 'Bonus: ' + banner.name);
   missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
   savePlayer();
-  console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${banner.price} ${gacha.WALLET[banner.payType]}, medaglie ${medalIds.join(',')}`);
+  console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${price} ${gacha.walletName(banner)}, medaglie ${draw.medalIds.join(',')}`);
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first) });
 }
 
 // Pagine WebView dello Shop (Details della piastra Catalog e di ogni banner, Draw Odds) e immagini
-// 640x140 dei banner (bannerUrl, scaricate dal client via http)
+// 640x140 dei banner (bannerUrl, scaricate dal client via http). Nomi delle medaglie dal master
+// (gli id evolve, es. 301495, non sono in catalog.medals); skill solo se presenti in skill.json.
 function respondGachaWeb(res, url) {
   const p = url.split('?')[0];
   const html = (s, code = 200) => { const b = Buffer.from(s, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
@@ -1190,20 +1226,23 @@ function respondGachaWeb(res, url) {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
     return res.end(b);
   }
-  if (/^\/web\/gacha\/catalog$/i.test(p)) return html(gacha.catalogPage(gachaBanners(), { test: GACHA_TEST }));
+  const banners = gachaCatalog().banners, story = storyCtx(), shop = gachaShopList(story);
+  const ctx = { ...story, sizes: GACHA_SIZES, show: GACHA_SHOW, shown: new Set(shop.map((b) => b.drawMedalTypeId)) };
+  if (/^\/web\/gacha\/catalog$/i.test(p)) return html(gacha.catalogPage(banners, ctx));
+  const medalNames = new Map(masterRows('medal').map((m) => [m.medalId, m.name]));
   // /web/gacha/odds/<drawMedalTypeId> (id accodato dal client): le probabilita' di quel banner;
-  // senza id o con la piastra Catalog (9001) quelle di tutti i banner
+  // senza id o con la piastra Catalog (9001) quelle dei banner della lista
   const odds = /^\/web\/gacha\/odds\/?(\d*)$/i.exec(p);
   if (odds) {
-    const all = gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST });
-    const one = all.filter((b) => b.drawMedalTypeId === Number(odds[1]));
-    return html(gacha.oddsPage(one.length ? one : all));
+    const one = gachaData.bannerById(banners, odds[1]);
+    const list = one ? [one] : shop;
+    return html(gacha.oddsPage(list.map((banner) => ({ banner, ex: expandFor(banner, story), medalNames }))));
   }
   const det = /^\/web\/gacha\/detail\/(\d+)$/i.exec(p);
-  const banner = det && gacha.visibleBanners(gachaBanners(), { test: GACHA_TEST }).find((b) => b.drawMedalTypeId === Number(det[1]));
+  const banner = det && gachaData.bannerById(banners, det[1]);
   if (!banner) return html('<!doctype html><meta charset="utf-8"><body style="background:#174a5c;color:#fff;font:18px sans-serif">Banner not found.</body>', 404);
-  const names = new Map(masterRows('medal').map((m) => [m.medalId, m.name]));
-  return html(gacha.detailPage(banner, names));
+  const skillNames = new Set(masterRows('skill').map((r) => r.name));
+  return html(gacha.detailPage(banner, expandFor(banner, story), medalNames, { ...ctx, skillNames }));
 }
 
 // POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo
@@ -1260,10 +1299,11 @@ function userPointData(now) {
     // lo crea a 0): +1 alla prima guilt di ogni medaglia, +5 alla prima guilt massima
     guiltBurstLv: guiltBurst().level(), multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
     drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
-    // biglietti dei banner a tempo (Shop, payType 7/8/9 -> limitedDrawTicket1-3, [fn]):
+    // biglietti dei banner a tempo (Shop, payType 7/8/9 -> limitedDrawTicket1-3, [fn]); payType 8:
+    // la valuta stagionale elencata nello Shop (player.drawTickets, server/gacha.js ticketsOf; spec 9.7).
     // premi 40 Platinum Ticket e 41 Draw Ticket (anche Holiday Draw Ticket, Moogle Point, Spooky
     // Cookie: stessa valuta rinominata dall'evento); reference/missions/limited_rewards_map.md
-    limitedDrawTicket1: player.limitedDrawTicket1 || 0, limitedDrawTicket2: player.limitedDrawTicket2 || 0, limitedDrawTicket3: 0,
+    limitedDrawTicket1: player.limitedDrawTicket1 || 0, limitedDrawTicket2: gacha.ticketsOf(player)[player.gacha?.listedCurrency || 'draw'] || 0, limitedDrawTicket3: 0,
   };
 }
 
@@ -1491,9 +1531,10 @@ function grantItem(type, id, num) {
     player.materials[id] = (player.materials[id] || 0) + num;
   } else if (type === 13 && id) grantKeyblade(id); // keyblade (tabella keyblade)
   // 40 Platinum Ticket, 41 Draw Ticket (nomi dei tipi 37-42 in [fn]: Bronze, Silver, Gold,
-  // Platinum, Draw, Premium Ticket); si spendono nei banner (rotte /gacha/*, non ancora fatte)
+  // Platinum, Draw, Premium Ticket); si spendono nei banner dello Shop (rotte /gacha/*)
   else if (type === 40) player.limitedDrawTicket1 = (player.limitedDrawTicket1 || 0) + num;
-  else if (type === 41) player.limitedDrawTicket2 = (player.limitedDrawTicket2 || 0) + num;
+  // 41: Draw Ticket (le valute stagionali arrivano con le loro Limited, sotto-progetto 3)
+  else if (type === 41) gacha.ticketsOf(player).draw += num;
   // 7 titolo (userTitles), 20 parte dell'avatar (accessorio, userAvatarParts)
   else if (type === 7 && id) { player.titles = [...new Set([...(player.titles || []), id])]; }
   else if (type === 20 && id) { player.avatarParts = [...new Set([...(player.avatarParts || []), id])]; }
@@ -3580,5 +3621,5 @@ module.exports._test = {
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-gacha-server.js
-  handler, sanitizeBanners, respondGachaList, respondGachaDraw, respondGachaWeb, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
+  handler, sanitizeBanners, gachaCatalog, respondGachaList, respondGachaDraw, respondGachaWeb, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };
