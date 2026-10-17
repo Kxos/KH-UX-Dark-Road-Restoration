@@ -1127,7 +1127,9 @@ function sanitizeBanners(catalog) {
   const banners = catalog.banners.map((b) => {
     if (b.catalogOnly || b.pool?.mode === 'evolve') return b;
     let pool = {};
-    try { pool = gachaData.expandPool(b, catalog, gachaData.asOf(b, GACHA_WIDEST_DAY)).pool; } catch { /* ricetta guasta: scartato */ }
+    try { pool = gachaData.expandPool(b, catalog, gachaData.asOf(b, GACHA_WIDEST_DAY)).pool; } catch (e) {
+      console.log(`  [gacha] ${b.rowId} ${b.name}: ricetta del pool guasta (${e.message})`); // scartato qui sotto
+    }
     const has = (r) => (pool[r] || pool[String(r)] || []).length > 0;
     const bad = gachaData.slotRarities(b).find((rare) => ![1, 2, 3, 4, 5, 6, 7].filter((r) => r <= rare).some(has));
     if (bad === undefined) return b;
@@ -1185,28 +1187,39 @@ function respondGachaDraw(res, body) {
     console.log(`  [gacha] estrazione impossibile, niente addebitato: ${e.message}`);
     return send(res, 200, { ret: ret() });
   }
-  const price = gacha.payDraw(banner, player, realMs, draw.featured);
-  const packed = new Set(masterRows('medal').filter((m) => m.validPack).map((m) => m.medalId));
-  const skills = skillRowsById();
+  // consegna e addebito insieme: un errore a meta' riporta il giocatore com'era (copia JSON, la stessa
+  // forma del salvataggio), cosi' non resta addebitato con meta' delle medaglie; l'addebito va per ultimo
+  const undo = JSON.stringify(player);
   const userMedalIds = [], first = [];
-  draw.medalIds.forEach((medalId, i) => {
-    grantItem(3, medalId, 1);
-    const newId = player.medals[player.medals.length - 1].userMedalId;
-    // FUN_0078f1ac cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
-    const cell = packed.has(medalId) ? stackedMedalList().find((c) => c.copies.includes(newId)) : null;
-    const id = cell ? cell.userMedalId : newId;
-    userMedalIds.push(id);
-    if (!owned.has(medalId)) { first.push(id); owned.add(medalId); }
-    // abilita' estratte (SKILL_TABLES): stesso formato dell'Overwrite, livello 1
-    const sk = gachaData.rollSkill(banner.skill, i, skills, Math.random);
-    if (sk && !packed.has(medalId)) {
-      player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
-      (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() };
-    }
-  });
-  // oggetti in omaggio dell'estrazione (Magic Mirror, gemme...): nel Present Box (spec 9.2)
-  for (const [type, itemId, n] of banner.bonus || []) addPresent(type, itemId, n, 'Bonus: ' + banner.name);
-  missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
+  let price;
+  try {
+    const packed = new Set(masterRows('medal').filter((m) => m.validPack).map((m) => m.medalId));
+    const skills = skillRowsById();
+    draw.medalIds.forEach((medalId, i) => {
+      grantItem(3, medalId, 1);
+      const newId = player.medals[player.medals.length - 1].userMedalId;
+      // FUN_0078f1ac cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
+      const cell = packed.has(medalId) ? stackedMedalList().find((c) => c.copies.includes(newId)) : null;
+      const id = cell ? cell.userMedalId : newId;
+      userMedalIds.push(id);
+      if (!owned.has(medalId)) { first.push(id); owned.add(medalId); }
+      // abilita' estratte (SKILL_TABLES): stesso formato dell'Overwrite, livello 1
+      const sk = gachaData.rollSkill(banner.skill, i, skills, Math.random);
+      if (sk && !packed.has(medalId)) {
+        player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
+        (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() };
+      }
+    });
+    // oggetti in omaggio dell'estrazione (Magic Mirror, gemme...): nel Present Box (spec 9.2)
+    for (const [type, itemId, n] of banner.bonus || []) addPresent(type, itemId, n, 'Bonus: ' + banner.name);
+    missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
+    price = gacha.payDraw(banner, player, realMs, draw.featured);
+  } catch (e) {
+    for (const k of Object.keys(player)) delete player[k];
+    Object.assign(player, JSON.parse(undo));
+    console.log(`  [gacha] ${banner.rowId}: consegna fallita, niente addebitato ne' consegnato: ${e.message}`);
+    return send(res, 200, { ret: ret() });
+  }
   savePlayer();
   console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${price} ${gacha.walletName(banner)}, medaglie ${draw.medalIds.join(',')}`);
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first) });

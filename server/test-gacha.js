@@ -167,6 +167,9 @@ check(st(sb({ catalogOnly: 'INCOMPLETE' })).text === 'Original details missing �
 check(st(sb({ lotCount: 5 })).text === 'This draw size is not available yet', 'stato dimensione');
 const notNow = sb({});
 check(JSON.stringify(g.stateOf(notNow, sctx)) === '{"key":"later","text":"Not in the Shop now"}', 'stato fuori periodo');
+// banner del lancio (unlockQuest 0, Task 8b): mai «Unlocks after Story Quest 0», anche a inizio storia
+check(JSON.stringify(g.stateOf(sb({ unlockQuest: 0 }), { ...sctx, storyQuest: 0 })) === '{"key":"later","text":"Not in the Shop now"}', 'stato unlockQuest 0');
+check(g.shopBanners([sb({ unlockQuest: 0, start: '2016-04-07', end: '2016-04-30' })], { ...sctx, storyQuest: 0, storyDay: '2016-04-07' }).length === 1, 'unlockQuest 0: in lista dalla quest 0');
 
 // pagine
 const medalNames = new Map([[1, 'Alpha'], [2, 'Beta'], [3, 'Gamma'], [301495, 'Fairy LV1'], [301496, 'Fairy LV2'], [301497, 'Fairy LV3']]);

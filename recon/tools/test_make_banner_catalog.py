@@ -50,7 +50,10 @@ check(m.currency_of(R(row_id='B0787', currency='Holiday Draw Ticket'), 'T_TICKET
 
 # --- sblocco con la storia
 STORY = [[1, 200, '2016-04-07'], [201, 250, '2016-04-21'], [251, 300, '2016-05-12']]
-check(m.unlock_quest('2016-04-20', STORY) == 200 and m.unlock_quest('2016-05-12', STORY) == 300, 'sblocco')
+# prima quest della tranche in corso alla data del banner, meno 1 (decisione dell'utente del 17-10)
+check(m.unlock_quest('2016-04-20', STORY) == 0, 'sblocco nel lancio')
+check(m.unlock_quest('2016-04-21', STORY) == 200, 'sblocco tranche 201-250')
+check(m.unlock_quest('2016-05-12', STORY) == 250, 'sblocco tranche 251-300')
 
 # --- limite giornaliero
 check(m.day_limit('You may draw ONCE per day', 'FEATURED') == 1 and m.day_limit('Top-Drawer 3 times per day', 'DAILY') == 3,
@@ -188,7 +191,11 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     t = Counter(b['type'] for b in bs)
     check(t == Counter({'SN': 213, 'FEATURED': 168, 'FALLING': 129, 'SKILL': 69, 'DAILY': 64, 'SEVEN': 48, 'FREE': 36,
                         'STANDARD': 23, 'T_TICKET': 21, 'ITEM': 20, 'T_POINTS': 7, 'BEGINNER': 5, 'T_EVOLVE': 5}), f'tipi {t}')
-    check(sum(1 for b in bs if b['unlockQuest'] <= 525) == 78, 'sbloccati a 525')
+    # 85 = 78 della regola vecchia + i 7 banner della tranche 526-540 (12-01-2017 .. 08-02-2017, B0079-B0085),
+    # che ora si sbloccano a 525; i 6 del lancio (B0001-B0006) passano da 200 a 0
+    ub = sum(1 for b in bs if b['unlockQuest'] <= 525)
+    check(ub == 85, f'sbloccati a 525: {ub}')
+    check([b['rowId'] for b in bs if b['unlockQuest'] == 0] == ['B0001', 'B0002', 'B0003', 'B0004', 'B0005', 'B0006'], 'banner del lancio a 0')
     # 39 righe VIP con gemello (la ricerca e la spec 9.5 dicono 41: contavano le coppie, e B0552/B0554
     # «KH III Falling Price Deal» VIP hanno ciascuna due gemelli normali, B0551 e B0553)
     vt = sum(1 for b in bs if b['catalogOnly'] == 'VIP_TWIN')
