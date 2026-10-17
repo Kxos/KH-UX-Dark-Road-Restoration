@@ -340,7 +340,7 @@ try {
   const d6 = g.detailPage(g6(), ex6, medalNames, sctx);
   check(d6.includes('1x 7★ Tier 4 or lower'), 'T7: riga slot Tier');
   check(d6.includes('1x one of the listed Medals (6★)'), 'T7: riga slot lista');
-  check(d6.includes('HD Axel (7★) guaranteed within 5 draws (original)'), `T7: riga pity v3 (${d6.replace(/<[^>]+>/g, ' ').slice(0, 600)})`);
+  check(d6.includes('Alpha (7★) guaranteed within 5 draws (original)'), `T7: riga pity v3 (${d6.replace(/<[^>]+>/g, ' ').slice(0, 600)})`);
   check(!d6.includes('not reproduced yet'), 'T7: pity v3 con bersagli non e NOT_REPRODUCED (ex.pityNames)');
   const dNo = g.detailPage(g6(), { ...ex6, pityNames: [], pityIds: [] }, medalNames, sctx);
   check(dNo.includes('This guarantee is not reproduced yet.'), 'T7: pity v3 senza bersagli alla data: non riprodotta');
@@ -366,6 +366,19 @@ try {
   check(dGift.includes('Dual Meow Wow') && dGift.includes('sent to your Present Box (original: included in the draw)') && !dGift.includes('not reproduced yet'), 'T7: pityGift nel Present Box');
   const op6 = g.oddsPage([{ banner: g6(), ex: ex6, medalNames }]);
   check(op6.includes('Tier 4 or lower') && op6.includes('one of the listed Medals'), `T7: odds con kind (${op6.replace(/<[^>]+>/g, ' ').slice(0, 400)})`);
+  // fix 1: escape, nomi del master, boosted garantita a Tier
+  const mn = new Map([[1, 'Tifa & <Aerith>']]);
+  const exAmp = { ...ex6, pityNames: [['tifa & aerith', 1, { 7: [1] }]], pityIds: [1], medalInfo: new Map([[1, { name: 'tifa & aerith', rare: 7 }]]) };
+  const gAmp = g6({ guarantee: { pityNames: ['tifa & aerith'] }, enhance: { boosted: [{ on: { names: ['tifa & aerith'] }, str: 1000, def: 1000, chance: 'small' }] } });
+  const dAmp = g.detailPage(gAmp, exAmp, mn, sctx);
+  check(dAmp.includes('Tifa &amp; &lt;Aerith&gt; (7★) guaranteed within 5 draws') && !dAmp.includes('<Aerith>'), 'T7 fix1: pity con & e < escapata, nome dal master');
+  check(dAmp.includes('Tifa &amp; &lt;Aerith&gt;: Small chance'), 'T7 fix1: nome del master anche nei potenziamenti');
+  const oAmp = g.oddsPage([{ banner: gAmp, ex: exAmp, medalNames: mn }]);
+  check(oAmp.includes('Tifa &amp; &lt;Aerith&gt; (7★) guaranteed') && !oAmp.includes('<Aerith>'), 'T7 fix1: odds escapata');
+  const dFb = g.detailPage(gAmp, exAmp, new Map(), sctx);
+  check(dFb.includes('Tifa &amp; Aerith (7★) guaranteed'), 'T7 fix1: senza id risolto niceName');
+  const dBtg = g.detailPage(g6({ enhance: { boosted: [{ on: { star: 7, tierMin: 1, tierMax: 4 }, str: 1000, def: 1000, chance: 'guaranteed' }] } }), ex6, medalNames, sctx);
+  check(dBtg.includes('boosted version guaranteed (+1000 STR, +1000 DEF, reconstructed)') && dBtg.includes('7★ Tier 1-4 Medals'), 'T7 fix1: boosted garantita a Tier');
 } catch (err) { errors.push(`T7: eccezione ${err.stack}`); }
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }

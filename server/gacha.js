@@ -286,12 +286,22 @@ const pityHasTargets = (banner, ex) => !ex || (hasSlotsOf(banner)
 // nomi del catalogo in minuscolo -> «HD Axel», «Illustrated Kairi [EX]»
 const UPPER_WORDS = new Set(['hd', 'ex', 'sp', 'sn', 'dx', 'ii', 'iii', 'iv']);
 const niceName = (n) => String(n).replace(/[A-Za-z0-9+]+/g, (w) => (UPPER_WORDS.has(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)));
-const niceList = (a) => (a || []).map(niceName).join(', ');
-const pityText = (banner, ex) => {
+// nome del catalogo -> nome del master (medal.json) via gli id di ex (medalInfo, pityNames, slotNames); senza id, niceName
+function namer(ex, medalNames) {
+  const ids = new Map();
+  for (const [id, info] of ex?.medalInfo || []) if (!ids.has(info.name)) ids.set(info.name, id);
+  for (const [n, , v] of [...(ex?.pityNames || []), ...(ex?.slotNames || []).flat()]) {
+    const id = Object.values(v || {}).flat()[0];
+    if (id != null && !ids.has(n)) ids.set(n, id);
+  }
+  return (n) => (ids.has(n) && medalNames?.get(ids.get(n))) || niceName(n);
+}
+const niceList = (a, nm = niceName) => (a || []).map(nm).join(', ');
+const pityText = (banner, ex, medalNames) => {
   const g = banner.guarantee;
-  const who = hasSlotsOf(banner) && (g.pityNames || []).length ? `${niceList(g.pityNames)}${g.pityStar ? ` (${g.pityStar}★)` : ''}` : 'Featured Medal';
-  if (hasSlotsOf(banner) && g.pityGift) return `${who} is sent to your Present Box (original: included in the draw) within ${g.pity} draws.`;
-  return `${who} guaranteed within ${g.pity} draws (original).${pityHasTargets(banner, ex) ? '' : ` ${NOT_REPRODUCED}`}`;
+  const who = hasSlotsOf(banner) && (g.pityNames || []).length ? `${niceList(g.pityNames, namer(ex, medalNames))}${g.pityStar ? ` (${g.pityStar}★)` : ''}` : 'Featured Medal';
+  if (hasSlotsOf(banner) && g.pityGift) return esc(`${who} is sent to your Present Box (original: included in the draw) within ${g.pity} draws.`);
+  return esc(`${who} guaranteed within ${g.pity} draws (original).${pityHasTargets(banner, ex) ? '' : ` ${NOT_REPRODUCED}`}`);
 };
 // v3: una riserva a lista con nomi scritti ma nessuna medaglia estraibile alla data (ex.slotNames[j] vuoto)
 const listLost = (banner, ex) => !!ex && (hasSlotsOf(banner)
@@ -301,9 +311,9 @@ const listLost = (banner, ex) => !!ex && (hasSlotsOf(banner)
 // Righe dei Details per le garanzie v3 e i potenziamenti (catalogo version 3); vuoto senza guarantee.slots/enhance.
 const tierRange = (s) => (s.tierMin == null && s.tierMax == null ? '' : s.tierMin == null ? ` Tier ${s.tierMax} or lower`
   : s.tierMax == null ? ` Tier ${s.tierMin} or higher` : s.tierMin === s.tierMax ? ` Tier ${s.tierMin}` : ` Tier ${s.tierMin}-${s.tierMax}`);
-function onText(on) {
+function onText(on, nm) {
   if (on?.slots) return `Medal ${on.slots.map((i) => i + 1).join(', ')}`;
-  if (on?.names) return niceList(on.names);
+  if (on?.names) return niceList(on.names, nm);
   if (on && ('star' in on || 'tierMin' in on)) {
     return `${on.star ? `${on.star}★` : 'Any'}${tierRange(on)} Medals${on.excludePrime ? ' (not Prime)' : ''}`;
   }
@@ -317,22 +327,23 @@ const NOT_REPRODUCED_KINDS = {
   pity: 'Pity Medal: not reproduced, the target Medal is not available in this restoration.',
   imitation: 'Imitation Medal bonus: not reproduced.',
 };
-function guaranteeSection(banner) {
+function guaranteeSection(banner, ex, medalNames) {
+  const nm = namer(ex, medalNames);
   const g = banner.guarantee || {}, e = banner.enhance || {}, out = [];
   for (const s of g.slots || []) {
     const n = s.count || 1;
-    if (s.kind === 'tier') out.push(`${n}x ${s.star}★${tierRange(s)}${(s.names || []).length ? ` (or ${niceList(s.names)})` : ''}`);
+    if (s.kind === 'tier') out.push(`${n}x ${s.star}★${tierRange(s)}${(s.names || []).length ? ` (or ${niceList(s.names, nm)})` : ''}`);
     else if (s.kind === 'trait') out.push(`${n}x Trait Medal (${s.star}★)`);
     else out.push(`${n}x one of the listed Medals (${s.star}★)`);
   }
-  for (const p of e.preset || []) out.push(`${onText(p.on)}: comes with its Special Attack Bonus maxed (original)`);
+  for (const p of e.preset || []) out.push(`${onText(p.on, nm)}: comes with its Special Attack Bonus maxed (original)`);
   for (const b of e.boosted || []) {
     const stats = [b.str ? `+${b.str} STR` : '', b.def ? `+${b.def} DEF` : ''].filter(Boolean).join(', ');
     const rec = b.on && ('star' in b.on || 'tierMin' in b.on) ? ', reconstructed' : ''; // valori nostri: la frase non li dava
-    out.push(b.chance === 'guaranteed' ? `${onText(b.on)}: boosted version guaranteed (${stats}${rec})`
-      : `${onText(b.on)}: Small chance of a boosted version (${stats}${rec}): ${BOOST_PCT}% per eligible Medal (reconstructed)`);
+    out.push(b.chance === 'guaranteed' ? `${onText(b.on, nm)}: boosted version guaranteed (${stats}${rec})`
+      : `${onText(b.on, nm)}: Small chance of a boosted version (${stats}${rec}): ${BOOST_PCT}% per eligible Medal (reconstructed)`);
   }
-  for (const m of e.maxSkill || []) out.push(`${onText(m.on)}: Max-level Skill (${m.skills.map(niceName).join(', ')})`);
+  for (const m of e.maxSkill || []) out.push(`${onText(m.on, nm)}: Max-level Skill (${m.skills.map(niceName).join(', ')})`);
   for (const k of e.notReproduced || []) if (NOT_REPRODUCED_KINDS[k]) out.push(NOT_REPRODUCED_KINDS[k]);
   const box = g.erratum ? `<div class="box">${esc(g.erratum)}</div>` : '';
   return `${out.length ? `<h2>Guarantees and bonuses</h2><ul>${out.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${box}`;
@@ -341,8 +352,8 @@ function guaranteeSection(banner) {
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
-  const pity = banner.guarantee?.pity ? `<p>${pityText(banner, ex)}</p>` : '';
-  const garanzie = !evolve && ex && banner.rarityMix?.length ? guaranteeSection(banner) : '';
+  const pity = banner.guarantee?.pity ? `<p>${pityText(banner, ex, medalNames)}</p>` : '';
+  const garanzie = !evolve && ex && banner.rarityMix?.length ? guaranteeSection(banner, ex, medalNames) : '';
   const gtext = [banner.guaranteesText, listLost(banner, ex) ? NOT_REPRODUCED : ''].filter(Boolean).map(esc).join(' ');
   const rated = !!(ex && banner.rarityMix?.length) && banner.catalogOnly !== 'INCOMPLETE';
   const pool = evolve || !rated ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {
@@ -360,7 +371,7 @@ function detailPage(banner, ex, medalNames, ctx) {
 
 function oddsPage(entries) {
   return page('Draw Odds', '<p class="n">Medal rarities of each draw are original; the chances of one more star are reconstructed for this restoration.</p>'
-    + entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length).map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">${pityText(banner, ex)}</div>` : ''}`
+    + entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length).map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">${pityText(banner, ex, medalNames)}</div>` : ''}`
       + `<table>${oddsRows(banner, ex, medalNames)}</table></div>`).join(''));
 }
 
