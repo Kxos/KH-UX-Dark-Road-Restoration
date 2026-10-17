@@ -50,18 +50,31 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 - **Shop**: sotto-progetto 1 (16-10), 2 «Elenco dei banner originali» (17-10, [shop.md#sp2](docs/notes/shop.md#sp2),
   correzione finale [shop.md#correzione-finale](docs/notes/shop.md#correzione-finale)) e **2b «Garanzie»**
-  (17-10, [shop.md#sp2b](docs/notes/shop.md#sp2b), I-144/I-148/I-149 chiusi, commit 2ef2c14..1ca30d7): **fatti**, manca
-  solo la revisione finale del 2b. Slot/Tier/pity/striscia gialla, boosted come righe del master, preset (B0306-B0308
-  con guilt al massimo sulla 7★, dal testo di B0310), popup del Nova acceso (LWF JP + logo NOVA, risorse 41;
-  `KHUX_GUILT_BURST_POPUP=0` lo spegne), livelli del Nova nelle righe medal (`make-nova-rows.js`); comandi di
-  generazione, nell'ordine, in [shop.md#sp2b](docs/notes/shop.md#sp2b).
+  (17-10, [shop.md#sp2b](docs/notes/shop.md#sp2b), I-144/I-148/I-149 chiusi, commit cf1030b..fe280d8): **fatti e
+  revisionati** (revisione finale + correzioni approvate). Slot/Tier/pity/striscia gialla, boosted come righe del
+  master, preset (B0306-B0308 con guilt al massimo, notice 40734, confermato dall'utente), popup del Nova acceso
+  (LWF JP + logo NOVA, risorse 41; `KHUX_GUILT_BURST_POPUP=0` lo spegne), livelli del Nova nelle righe medal
+  (`make-nova-rows.js`); **regola originale 13-bis**: ogni 7★ di Tier 9 estratta da banner dal 2019-01-01 (notice
+  48236) e di Tier 10 dal 2019-09-01 (notice 56838) arriva con pallini e guilt al massimo (`gacha-data.MAX_GUILT_FROM`).
+  Prova 7 dell'utente fatta (popup del Nova da B0306). Comandi di generazione in [shop.md#sp2b](docs/notes/shop.md#sp2b).
+- **Suoni (I-152, APERTO)**: estrazione x10 e popup del Nova muti perche' mancano 509000390/509000740 (e 216 AKB in
+  tutto, ~4,3 MB) negli OBB 5.0.1; `recon/tools/jp_sound_effects.py` li copia dal JP (commit 6698a14, 38451c3,
+  approvati). **Da fare al banco**: `build-resources.ps1 -Quick`, poi provare a orecchio x10 e Nova.
+- **Prossima sessione al banco** (tutta insieme): build -Quick (suoni); estrazione su un banner SN++ (7★ Tier 10 a
+  +320% e popup del Nova, `-GachaShow` di un banner dal 2019-09); striscia gialla lunga di B0637 (~67 nomi, mai
+  provata); Evolve di una medaglia con guilt senza popup del Nova fuori posto.
+- **Audit dei banner contro i notice ufficiali** (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\notice_audit\`,
+  report.md + findings.tsv + overrides_proposed.tsv): 155 differenze su 122 banner (regole G1-G10: deal 7★/Prime
+  2018 con SA + SAB max + skill, «If you receive the following Medals ... N dots», «0 dots», Daily/Small Deal,
+  limiti, Power Gems, Tier massimi persi). **Prossimo: sotto-progetto 2c «Promesse dei notice»** (spec + piano),
+  con le decisioni dell'utente sulle regole.
 - Aperti dello Shop: I-139 (24 INCOMPLETE), I-140 (filtro Epic), I-141 (immagine di B0612), I-142 (Blue Fairy Deal),
   I-143 (tocco perso dopo le Notices), I-145, I-146 (abilita' mancanti), I-150 (nomi guasti del catalogo), I-151
   (liste che salgono di stella). Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la
   chiusura dei Details non ricarica la lista).
-- **Banco (17-10 sera)**: salvataggio RIDOTTO (25 medaglie, Nova 6, 100000 jewel), server rev 122 con
-  `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow B0306,B0307,B0308`, home: **in attesa della prova 7
-  dell'utente** (popup del Nova da B0306). Salvataggio completo:
+- **Banco (17-10 sera)**: salvataggio RIDOTTO (25 medaglie + estrazioni dell'utente), server rev 122 con
+  `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow B0306,B0307,B0308` (server avviato prima di fe280d8: al
+  prossimo relogin parte il codice nuovo). Salvataggio completo:
   `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json` (livello 100, materiali a 9999,
   keyblade a +35/+60; il ridotto in `tmp\save-backup-before-2b`, altre copie in `tmp\save-backup-*`): rimetterlo
   prima di altri lavori.
