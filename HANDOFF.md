@@ -24,13 +24,12 @@ manda `119*100000 + scadenze passate`, orologio finto qui sotto); dettagli sotto
 Catalog + DAILY DEAL! / SMALL DEAL! / Epic Medal Carnival in jewel (x1, x3, x10); LWF del risultato nel pacchetto
 statico `raisedraw_gen` (risorse 40). Missioni Beginner Draw/Nova/Spirit collegate (e3aeec1). Aperti I-134, I-135, I-136.
 
-**Shop sotto-progetto 2 «Elenco dei banner originali» (17-10): codice e documentazione fatti, banco FERMO su I-138**
+**Shop sotto-progetto 2 «Elenco dei banner originali» (17-10): FATTO e provato al banco**
 ([shop.md#sp2](docs/notes/shop.md#sp2), piano
 [2026-10-16-shop-banner-originali.md](docs/superpowers/plans/2026-10-16-shop-banner-originali.md)). Catalogo di 808
 banner, sblocco con la storia (prima quest della tranche - 1), revisione 119, `relogin.ps1 -GachaShow B0306,B0456`
-(al posto di `-GachaTest`). **Lo Shop da' «200 ERROR :75»**: le piastre dei banner del catalogo escono senza
-`sortId` (I-138; con il sortId lo Shop si apre, provato con una patch temporanea). Da correggere, poi le prove 1-8 del
-Task 9 (brief in `.superpowers/sdd/2026-10-16-shop-banner-originali/task-9-brief.md`). Aperti anche I-139..I-142.
+(al posto di `-GachaTest`). I-138 (sortId) chiuso in 264a8a6; prove 1-8 fatte (7★ Medal Deal, Platinum, Falling,
+Free Deal VIP, dieci aperture). Aperti I-139..I-143. **Prossimo: sotto-progetto 3.**
 Generazione, nell'ordine:
 
 ```powershell
