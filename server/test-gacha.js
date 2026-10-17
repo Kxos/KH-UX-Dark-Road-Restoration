@@ -354,6 +354,9 @@ try {
   check(dBg.includes('boosted version guaranteed (+2000 STR)'), 'T7: boosted garantita');
   const dPs = g.detailPage(g6({ enhance: { preset: [{ on: { slots: [0] }, dots: 'max', guilt: 'max' }] } }), ex6, medalNames, sctx);
   check(dPs.includes('comes with its Special Attack Bonus maxed (original)'), 'T7: preset');
+  // decisione 13-bis: con i preset elencati e slot 7★, la riga della regola generale Tier 9-10; senza preset nessuna riga
+  check(dPs.includes('Any 7★ Tier 9-10 Medal: comes with its Special Attack Bonus maxed (original)'), 'T7: riga 13-bis con i preset');
+  check(!d6.includes('Tier 9-10'), 'T7: niente riga 13-bis senza preset');
   const dMs = g.detailPage(g6({ enhance: { maxSkill: [{ on: { names: ['zexion [+]'] }, skills: ['paralysis+ ii max'] }] } }), ex6, medalNames, sctx);
   check(/Max-level Skill/.test(dMs) && dMs.includes('Zexion [+]'), 'T7: maxSkill');
   const dEr = g.detailPage(g6({ guarantee: { erratum: 'Original text: <b>5 draws</b>' } }), ex6, medalNames, sctx);

@@ -11,7 +11,7 @@ process.env.KHUX_SAVE = SAVE;
 // medal-guilt.guiltProbRows (Tier 10: massimo 32000); burst.json vero (7 MB) non si copia
 const SRC_MASTER = path.resolve(process.argv[2] || path.join(__dirname, 'master_data'));
 const MASTER = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-gacha-master-'));
-const AVA = 301880, AVA_BOOSTED = 2301880;
+const AVA = 301880, AVA_BOOSTED = 2301880, T8 = 301096; // T8: SN - Tsum Pooh & Pals, 7★ Tier 8 (decisione 13-bis)
 {
   const mb = require('./medal-boost'), mg = require('./medal-guilt');
   for (const f of fs.readdirSync(SRC_MASTER).filter((x) => x.endsWith('.json') && !['burst.json', 'medal.json', 'guiltProb.json'].includes(x))) {
@@ -21,7 +21,7 @@ const AVA = 301880, AVA_BOOSTED = 2301880;
   const ava = medalRows.find((r) => r.medalId === AVA);
   medalRows.push(mb.boostedRow(ava, 1000, 1000));
   fs.writeFileSync(path.join(MASTER, 'medal.json'), JSON.stringify(medalRows));
-  const burst = JSON.parse(fs.readFileSync(path.join(SRC_MASTER, 'burst.json'), 'utf8')).filter((b) => b.burstId === ava.burstId);
+  const burst = JSON.parse(fs.readFileSync(path.join(SRC_MASTER, 'burst.json'), 'utf8')).filter((b) => b.burstId === ava.burstId || b.burstId === medalRows.find((r) => r.medalId === T8).burstId);
   fs.writeFileSync(path.join(MASTER, 'burst.json'), JSON.stringify(burst.length ? burst.map((b) => ({ ...b, maxEnhanceCount: 5 })) : [{ burstId: ava.burstId, maxEnhanceCount: 5 }]));
   fs.writeFileSync(path.join(MASTER, 'guiltProb.json'), JSON.stringify(mg.guiltProbRows()));
 }
@@ -428,6 +428,61 @@ try {
   }
   delete process.env.KHUX_GUILT_BURST_POPUP;
 } catch (err) { errors.push(`2b: eccezione ${err.stack}`); }
+
+// decisione 13-bis (regola ufficiale, notice 48236 del 01-01-2019 e 56838 del 01-09-2019): ogni 7★ di Tier 9 o 10
+// estratta da qualsiasi banner arriva con i pallini al massimo e la guilt al massimo del Tier, boosted comprese;
+// le 7★ di Tier piu' basso restano come prima (massimo solo col preset del banner); preset e regola: il massimo dei due
+try {
+  const RES7 = { kind: 'tier', slot: 0, count: 1, star: 7, names: [], tierMin: null, tierMax: null };
+  const G = { list: [], count: 0, slot: 0, pity: null, every: null, slots: [RES7], pityNames: [], pityStar: null, pitySlot: null,
+    pityGift: null, erratum: null, source: null };
+  const EN = (o) => ({ preset: [], boosted: [], maxSkill: [], notReproduced: [], ...o });
+  let n7 = 700;
+  const b7 = (name, o = {}) => { const n = ++n7; return mk({ rowId: `B0${n}`, drawMedalTypeId: 10000 + n, name: `Banner ${n}`, start: '2018-06-01',
+    end: '2018-06-30', unlockQuest: 1, prices: [10], lotCount: 1, rarityMix: [[7, 1]],
+    pool: { mode: 'sets', sets: [], names: [name], featured: [], filter: [] }, guarantee: G, enhance: EN({}), ...o }); };
+  const bT10 = b7('supernova+ - ava'), bT8 = b7('sn - tsum pooh'), bT10B = b7('supernova+ - ava', { enhance: EN({ boosted: [{ on: { slots: [0] }, str: 1000, def: 1000, chance: 'guaranteed' }] }) });
+  const bT10P = b7('supernova+ - ava', { enhance: EN({ preset: [{ on: { slots: [0] }, dots: 2, guilt: null }] }) });
+  const bT8P = b7('sn - tsum pooh', { enhance: EN({ preset: [{ on: { slots: [0] }, dots: 'max', guilt: 'max' }] }) });
+  const cat7 = { ...catalog, version: 3, story: [[1, 525, '2018-06-10']], medals: { ...medals,
+    'supernova+ - ava': { date: '2018-05-25', ids: [[AVA, 7, '2018-05-25', 10]], std: false },
+    'sn - tsum pooh': { date: '2018-05-25', ids: [[T8, 7, '2018-05-25', 8]], std: false } },
+    banners: [bT10, bT8, bT10B, bT10P, bT8P] };
+  writeCatalog(cat7);
+  t.reloadGachaBanners();
+  process.env.KHUX_GUILT_BURST_POPUP = '1';
+  delete process.env.KHUX_GUILT_BURST_LV;
+  p.medals = []; p.medalState = {}; p.medalSkills = {}; p.gacha = {}; p.presents = [];
+  p.guiltBurst = { first: [], max: [] };
+  quiet(() => t.guiltBurst().lists());
+  const draw7 = (b) => { p.freeStone = 10; return call(t.respondGachaDraw, { drawMedalTypeId: b.drawMedalTypeId, count: 1 }); };
+  const got7 = (r) => { const id = r.userMedalIds && r.userMedalIds[0]; const m = id && r.userMedals.find((x) => x.userMedalId === id); return { id, m }; };
+  const st = (m) => JSON.stringify(m && { medalId: m.medalId, b: m.burstUpperNumber, g: m.guiltFactor });
+  const tierMax = (tier) => require('./medal-guilt').guiltRange(t.masterRows('guiltProb'), tier).max;
+  check(tierMax(10) === 32000 && tierMax(9) === 28000, `13-bis: guilt massima T9/T10 ${tierMax(9)}/${tierMax(10)}`);
+
+  // T10 senza preset: pallini 5, guilt 32000, Nova +1 +5 con la copia in guiltBurstFirst/MaxUserMedalIds
+  const lv0 = t.guiltBurst().level();
+  let r7 = draw7(bT10), g7 = got7(r7);
+  check(g7.m && g7.m.medalId === AVA && g7.m.burstUpperNumber === 5 && g7.m.guiltFactor === 32000, `13-bis: 7★ T10 al massimo (${st(g7.m)})`);
+  check(r7.guiltBurstFirstUserMedalIds && r7.guiltBurstFirstUserMedalIds.includes(g7.id) && r7.guiltBurstMaxUserMedalIds.includes(g7.id),
+    `13-bis: T10 nelle liste del Nova (${JSON.stringify([r7.guiltBurstFirstUserMedalIds, r7.guiltBurstMaxUserMedalIds])})`);
+  check(t.guiltBurst().level() === lv0 + 6, `13-bis: Nova +1 +5 (${lv0} -> ${t.guiltBurst().level()})`);
+  // T8 senza preset: come prima (nessun pallino, nessuna guilt)
+  r7 = draw7(bT8); g7 = got7(r7);
+  check(g7.m && g7.m.medalId === T8 && !g7.m.burstUpperNumber && !g7.m.guiltFactor, `13-bis: 7★ T8 invariata (${st(g7.m)})`);
+  check(r7.guiltBurstFirstUserMedalIds && !r7.guiltBurstFirstUserMedalIds.length && !r7.guiltBurstMaxUserMedalIds.length, '13-bis: T8 senza Nova');
+  // T8 col preset del banner: al massimo come prima (guilt 'max' del Tier 8)
+  r7 = draw7(bT8P); g7 = got7(r7);
+  check(g7.m && g7.m.burstUpperNumber === 5 && g7.m.guiltFactor === tierMax(8), `13-bis: T8 col preset al massimo (${st(g7.m)})`);
+  // boosted T10: al massimo anche lei
+  r7 = draw7(bT10B); g7 = got7(r7);
+  check(g7.m && g7.m.medalId === AVA_BOOSTED && g7.m.burstUpperNumber === 5 && g7.m.guiltFactor === 32000, `13-bis: boosted T10 al massimo (${st(g7.m)})`);
+  // preset piu' basso (dots 2, senza guilt) su una T10: vince il massimo dei due
+  r7 = draw7(bT10P); g7 = got7(r7);
+  check(g7.m && g7.m.burstUpperNumber === 5 && g7.m.guiltFactor === 32000, `13-bis: preset dots 2 su T10 -> massimo (${st(g7.m)})`);
+  delete process.env.KHUX_GUILT_BURST_POPUP;
+} catch (err) { errors.push(`13-bis: eccezione ${err.stack}`); }
 
 // final review 2b, M2: master e catalogo disallineati (catalogo rigenerato senza make-banners, o il contrario). La riga
 // drawMedalType servita ha validComment 0 ma il catalogo non ha pity per quel banner: warrantMedalIds mai vuota (con

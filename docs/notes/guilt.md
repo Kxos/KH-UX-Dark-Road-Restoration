@@ -56,6 +56,9 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
   `GuiltBonus_BurstLvup(_num)`, `GuiltBonus_Wfix0..9`, layout `MedalInfo_Burst_Info.json`, logo «NOVA» di
   `make_nova_logo.py`, risorse 41); `KHUX_GUILT_BURST_POPUP=0` lo spegne. Chiave del registro: `groupId ||
   medalId` (una boosted e la sua normale contano una volta, U7 provato al banco).
+- Estrazioni (`respondGachaDraw`, sotto-progetto 2b): guilt e pallini solo da un preset del banner, piu' la regola
+  originale delle 7★ di Tier 9-10 (decisione 13-bis, notice 48236 e 56838): sempre pallini e guilt al massimo del
+  Tier, boosted comprese ([shop.md#sp2b](shop.md#sp2b)).
 - `userDetail.isGuilt = isGuiltUnlocked()`: missione numero >= 34 (Power Bangle; `stageNumber` di
   `lastClearStageId`), oppure sempre 1 con `KHUX_GUILT_BURST_LV` > 0 (prove del Burst). Il client
   (FUN_00c81f30, FUN_00c7e498) permette sblocco/rilancio e Magic Mirror solo con `isGuilt`; il
