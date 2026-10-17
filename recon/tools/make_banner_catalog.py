@@ -255,18 +255,34 @@ KEEP_COMMA = re.compile(r'huey, dewey|terra, ven, aqua', re.I)  # nomi di medagl
 TAIL = re.compile(r'\s+(?:with (?:its|one|a)\b|pre-strengthened\b|at \d★|medals?$|is guaranteed\b).*$', re.I)
 
 
-def list_names(seg):
-    """nomi normalizzati di un elenco «A, [[B]], or {{KA|22}}.» (link e template resi come banner_sources.toks)"""
+def list_names(seg, keep_star=False):
+    """nomi normalizzati di un elenco «A, [[B]], or {{KA|22}}.» (link e template resi come banner_sources.toks);
+    la stella davanti («7★ Prime - KH Cloud») si toglie, salvo keep_star (bonus: sceglie la rarita')"""
     seg = seg[:_cut(seg)]
     seg = LINK.sub(lambda m: (bsrc.toks(m.group(0)) or [' '])[0], seg)
     seg = KEEP_COMMA.sub(lambda m: m.group(0).replace(',', '§'), seg)
     parts = re.split(r',\s*(?:or |and )?|\s+(?:or|and)\s+', seg)
-    return [n for n in (norm(TAIL.sub('', p.replace('§', ','))) for p in parts) if n]
+    out = (norm(TAIL.sub('', p.replace('§', ','))) for p in parts)
+    if not keep_star:
+        out = (re.sub(r'^\d★\s*', '', n) for n in out)
+    return [n for n in out if n]
 
 
 def featured_col(row):
     """medaglie della colonna featured_medals (voci «;», a volte elenchi «A, B, and C»)"""
     return [n for x in re.split(r';\s*', row['featured_medals']) if x.strip() for n in list_names(x)]
+
+
+SET_FILTERS = [('disney', r'disney'), ('ffkh', r'final fantasy|kingdom hearts'), ('power', r'\bpower\b'),
+               ('speed', r'\bspeed\b'), ('magic', r'\bmagic\b')]
+
+
+def set_filter(notes):
+    """filtri di «Draws from <X> Medals in sets ...»: disney (origin), ffkh (origin), power/speed/magic (att)"""
+    m = re.search(r'[Dd]raws from ([^.]*?) Medals in sets? \d', notes)
+    if not m:
+        return []
+    return [k for k, rx in SET_FILTERS if re.search(rx, m.group(1), re.I)]
 
 
 def setrefs(notes):
@@ -285,7 +301,7 @@ def _dedup(xs):
 
 # ---------- garanzie ----------
 LISTRE = re.compile(r'(?:[Gg]uarantees?|guaranteed to (?:get|receive)) (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) '
-                    r'(?:boosted versions? )?of the following [Mm]edals(?: at \d★)?(?: every (\d+)(?:st|nd|rd|th) draw)?[!:]?\s*')
+                    r'(?:boosted versions? )?of the following [Mm]edals(?:([^:!|.]{0,120}?)[:!]|)\s*')
 NOT_A_NAME = re.compile(r'\b(she|he|him|her|they|these|this|it|you)\b', re.I)
 
 
@@ -299,8 +315,9 @@ def guarantee_of(row, notes):
         v = m.group(1).lower()
         g['count'] = int(v) if v.isdigit() else NUM[v]
         g['list'] = _dedup(list_names(text[m.end():]))
-        if m.group(2):
-            g['every'] = int(m.group(2))
+        e = re.search(r'every (\d+)(?:st|nd|rd|th) draw', m.group(2) or '')
+        if e:  # «... Medals every 3rd draw! [[A]] ...»
+            g['every'] = int(e.group(1))
     if g['every'] is None:
         e = re.search(r'every (\d+)(?:st|nd|rd|th) draw', text)
         if e:
@@ -359,7 +376,7 @@ def _bonus(notes, medal_rows, material_rows):
     for m in BONUS.finditer(text):
         v = m.group(1).lower()
         n = int(v) if v.isdigit() else NUM[v]
-        for part in list_names(text[m.end():]):
+        for part in list_names(text[m.end():], keep_star=True):
             star = re.match(r'(\d)★\s*', part)
             name = part[star.end():] if star else part
             keys = [name] + ([name[:-1]] if name.endswith('s') else [])  # «[[Power Gem]]s»
@@ -417,7 +434,7 @@ def evolve_of(row, medal_rows):
 def pool_recipe(row, notes, typ, docs, sub_members, rel=(), medal_rows=()):
     """docs = [(inizio, sotto-set, nomi, tipo)] dei banner con «Draws from sets» precedenti."""
     start = row['start_pt'] or FIRST_DAY
-    p = {'mode': 'released', 'sets': [], 'names': [], 'featured': [], 'inheritAfter': None, 'evolve': None}
+    p = {'mode': 'released', 'sets': [], 'names': [], 'featured': [], 'filter': [], 'inheritAfter': None, 'evolve': None}
     refs = setrefs(notes)
     listed = names_listed(notes)
     if typ == 'T_EVOLVE':
@@ -426,6 +443,7 @@ def pool_recipe(row, notes, typ, docs, sub_members, rel=(), medal_rows=()):
     elif refs:
         p['mode'] = 'sets'
         p['sets'], p['names'] = expand_refs(refs, sub_members, rel, start)
+        p['filter'] = set_filter(notes)
     elif listed:
         p['mode'] = 'list'
         p['names'] = _dedup(listed)
@@ -456,6 +474,107 @@ def skill_of(typ, start):
     return None
 
 
+# ---------- medaglie: origine, attributo, alias dei nomi di vetrina e garanzia ----------
+FF_KH = re.compile(r'kingdom hearts|final fantasy|the world ends with you', re.I)
+
+
+def medal_origin(page):
+    """'disney' se la pagina della medaglia ha una categoria «<film Disney> Characters», 'ffkh' se solo
+    KINGDOM HEARTS / Final Fantasy, '' se nessuna (filtri «Disney-based» / «Final Fantasy- and Kingdom Hearts-based»)"""
+    cats = re.findall(r'\[\[Category:([^\]|]+?) Characters\s*(?:\|[^\]]*)?\]\]', page)
+    if any(not FF_KH.search(c) for c in cats):
+        return 'disney'
+    return 'ffkh' if cats else ''
+
+
+FAMILIES = [('sn++ - ', '2019-11-08'), ('supernova+ - ', '2019-09-01'), ('sn+ - ', '2019-09-01'),
+            ('supernova - ', '2018-10-05'), ('sn - ', '2018-10-05'), ('', '')]
+FAMILY_RE = re.compile(r'^(sn\+\+|supernova\+|sn\+|supernova|sn) - ')
+NON_MEDAL = re.compile(r'\b(boost|atk|def|attack|defense|lux\+*|gauge|triple threat|second chance|poison\+?|paralysis\+?|'
+                       r'sleep\+?|prize\+?|coins?|gems?|tickets?|jewels?|avatars?|trait medal|imitation|following|skills?|'
+                       r'tier)\b|^with |:|^blue fairy \[|^dual meow wow \[', re.I)  # ultime due: medaglie oggetto (type 6)
+
+
+def family_of(n):
+    m = FAMILY_RE.match(n)
+    p = m.group(0) if m else ''
+    return p, next(d for f, d in FAMILIES if f == p)
+
+
+def clean_name(n):
+    n = re.sub(r'^\d★\s*|^boosted (?:versions? of )?', '', n)
+    n = re.sub(r'\((ex\+?|\+)\)', r'[\1]', n)
+    n = re.sub(r'^[\[\]\s]+', '', n)
+    if n.endswith(']') and '[' not in n:
+        n = n[:-1]
+    n = re.sub(r'^prime (?!- )', 'prime - ', n.strip())
+    return n
+
+
+def resolve_name(name, start, medals, rd):
+    """chiave di `medals` per un nome di vetrina/garanzia, o None. Ordine: nome esatto, nome ripulito
+    («7★ », «boosted », «(EX+)»), redirect della wiki, poi le varianti SN/SN+/SN++/Supernova dello stesso
+    nome: la famiglia piu' alta gia' uscita all'inizio del banner (es. {{KA|20}} -> SN++ dal 08/11/2019)."""
+    for n in _dedup([name, clean_name(name)]):
+        for _ in range(3):
+            if n in medals:
+                return n
+            n = rd.get(n)
+            if not n:
+                break
+    bare = FAMILY_RE.sub('', clean_name(name))
+    cands = []
+    for f, _ in FAMILIES:
+        k = f + bare
+        k = k if k in medals else rd.get(k)
+        if k in medals and k not in cands:
+            cands.append(k)
+    if not cands:  # «Key Art #16» -> «key art #16 [ex+]», «Zack» -> «zack a»: solo se l'alternativa e' unica
+        alt = [bare + s for s in (' a', ' [ex]', ' [ex+]', ' [+]') if bare + s in medals]
+        return alt[0] if len(alt) == 1 else None
+    ok =[k for k in cands if medals[k]['date'] <= start]
+    return ok[0] if ok else min(cands, key=lambda k: medals[k]['date'])
+
+
+def non_medal(name, material_names):
+    """nomi delle liste che non sono medaglie: abilita', gemme, monete, avatar, Trait/Imitation, residui del testo"""
+    return name in material_names or bool(NON_MEDAL.search(name))
+
+
+def extend_medals(medals, M, rd, debut):
+    """aggiunge a `medals` le righe di medal.json (type 1, validPack != 1) che la wiki non elenca in NASets
+    (varianti SN+/Supernova+/SN++ come «SN+ - KH III Demyx», redirect nella wiki). Data = primo banner che
+    le nomina (`debut`), altrimenti l'uscita della famiglia (SN 05/10/2018, SN+ 01/09/2019, SN++ 08/11/2019),
+    mai prima della medaglia base; cls/class2/att/origin dalla base. Senza base e senza debutto: saltate
+    (nessuna data inventata). Senza base ma nominate: cls 'LIST' (solo dalle liste esplicite)."""
+    rows = collections.defaultdict(list)
+    for r in M:
+        if r['type'] == 1 and r.get('validPack') != 1:
+            rows[norm(r['name'])].append(r)
+    added = 0
+    for n, rs in sorted(rows.items()):
+        if n in medals or not re.search(r'[a-z0-9]', n):
+            continue
+        fam, epoch = family_of(n)
+        bare = n[len(fam):]
+        base = rd.get(n) if rd.get(n) in medals else None
+        if not base:
+            base = next((f + bare for f, _ in reversed(FAMILIES) if f + bare in medals and f + bare != n), None)
+        b = medals.get(base)
+        if n in debut:
+            date = max(debut[n], b['date']) if b else debut[n]
+        elif b:
+            date = max(epoch or b['date'], b['date'])
+        else:
+            continue
+        medals[n] = {'date': date, 'cls': b['cls'] if b else 'LIST', 'class2': b['class2'] if b else 'Attack',
+                     'att': b['att'] if b else '', 'origin': b['origin'] if b else '',
+                     'ids': [[r['medalId'], r['rare'], date] for r in sorted(rs, key=lambda r: r['medalId'])],
+                     'alias': base}
+        added += 1
+    return added
+
+
 # ---------- righe incomplete: fratello di serie (porta di incomplete.py) e override ----------
 def sib_key(n):
     return re.sub(r'\s+', ' ', re.sub(r'\(\d+/\d+\)|returns!?|is back!?|limited time:|!|\(ex\+?\)|\[ex\+?\]', '', n.lower())).strip()
@@ -463,6 +582,15 @@ def sib_key(n):
 
 def missing(r):
     return not r['draw_size'] or not r['price']
+
+
+def complete_row(row, sib):
+    """copia dal fratello solo prezzo, dimensione e rarity_mix mancanti (non la valuta ne' «VIP only»)"""
+    r = dict(row)
+    for f in ('price', 'draw_size', 'rarity_mix'):
+        if not r[f]:
+            r[f] = re.sub(r'\s*VIP [Oo]nly\s*', ' ', sib[f]).strip() if f == 'price' else sib[f]
+    return r
 
 
 def sibling_of(x, rows, types):
@@ -528,6 +656,28 @@ def build_catalog(inputs):
             rd = o['rare_date'].get(rare) or o['rare_date'].get(str(rare)) or o['date']
             ids.append([mid, rare, max(rd, o['date'])])
         medals[norm(o['name'])] = {'date': o['date'], 'cls': o['cls'], 'class2': o['class2'], 'ids': ids}
+    # attributo (att) e origine (origin) per i filtri dei set: InfoMedal e categorie della pagina della medaglia
+    info = {}
+    for f in bsrc.infomedals(wiki):
+        if f.get('name') and not f['_page'].startswith('Template:'):
+            info.setdefault(norm(f['name']), f)
+    pages = {norm(k): v for k, v in wiki.items() if '{{InfoMedal' in v}
+    attnum = collections.Counter()
+    for r in M:
+        f = info.get(norm(r['name']))
+        if f and f.get('att'):
+            attnum[(r['attribute'], f['att'].lower())] += 1
+    att_of = {}
+    for (a, v), _ in attnum.most_common():
+        att_of.setdefault(a, v)
+    by_name = collections.defaultdict(list)
+    for r in M:
+        by_name[norm(r['name'])].append(r)
+    for k, v in medals.items():
+        f = info.get(k)
+        v['att'] = ((f or {}).get('att') or '').lower() or next((att_of.get(r['attribute'], '') for r in by_name.get(k, [])), '')
+        v['origin'] = medal_origin(wiki.get(f['_page'], '') if f else pages.get(k, ''))
+    rd = bsrc.redirects(wiki)
 
     notes_of = {r['row_id']: full_notes(r, wsx) for r in rows}
     types = {r['row_id']: classify(r, notes_of[r['row_id']][0]) for r in rows}
@@ -548,9 +698,7 @@ def build_catalog(inputs):
         if missing(r0):
             s = sibling_of(r0, incl, types)
             if s:
-                for f in ('currency', 'price', 'draw_size', 'rarity_mix'):
-                    if not r[f]:
-                        r[f] = s[f]
+                r = complete_row(r0, s)
                 completed = s['row_id']
         if rid in ov:
             r.update(ov[rid])
@@ -603,6 +751,28 @@ def build_catalog(inputs):
             'catalogOnly': only, 'completedFrom': completed, 'image': img, 'imageFrom': img_from,
             'notes': notes, 'guaranteesText': r['guarantees'], 'notesSource': nsrc,
         })
+    # nomi di vetrina e garanzia -> chiavi di `medals` (alias, redirect, famiglie SN)
+    debut = {}
+    for b in sorted(out, key=lambda b: b['start'] or '9999'):
+        for n in b['guarantee']['list'] + b['pool']['featured']:
+            debut.setdefault(clean_name(n), b['start'] or FIRST_DAY)
+    added = extend_medals(medals, M, rd, debut)
+    mats = {norm(x['name']) for x in MAT}
+    unresolved = collections.Counter()
+    for b in out:
+        st = b['start'] or FIRST_DAY
+        # banner col nome di una medaglia («Supernova - Key Art #19», «SN++ - MoM Sora Deal Returns!»): e' la vetrina
+        own = resolve_name(re.sub(r'\s+deal$', '', series_key(b['name'])), st, medals, rd)
+        if own:
+            b['pool']['featured'] = _dedup([own] + b['pool']['featured'])
+        for lst, key in ((b['guarantee'], 'list'), (b['pool'], 'featured'), (b['pool'], 'names')):
+            res = []
+            for n in lst[key]:
+                k = resolve_name(n, st, medals, rd)
+                res.append(k or n)
+                if not k and key != 'names' and not b['catalogOnly']:
+                    unresolved['non medaglia' if non_medal(n, mats) else 'medaglia probabile'] += 1
+            lst[key] = _dedup(res)
     out.sort(key=lambda b: b['rowId'])
     return {
         'version': 2,
@@ -612,6 +782,7 @@ def build_catalog(inputs):
         'medals': medals,
         'banners': out,
         '_skippedBonus': skipped,
+        '_stats': {'medaglie aggiunte da medal.json': added, 'irrisolti (vetrina+garanzie, banner attivi)': dict(unresolved)},
     }
 
 
@@ -623,6 +794,7 @@ def main():
     inp = default_inputs()
     cat = build_catalog(inp)
     skipped = cat.pop('_skippedBonus')
+    stats = cat.pop('_stats')
     bs = cat['banners']
     os.makedirs(os.path.dirname(inp['out']), exist_ok=True)
     with open(inp['out'], 'w', encoding='utf-8') as f:
@@ -635,6 +807,7 @@ def main():
     print('pool', dict(C(b['pool']['mode'] for b in bs).most_common()))
     print('completate', sum(1 for b in bs if b['completedFrom']), 'fine ricostruita', sum(1 for b in bs if b['endSource'] != 'original'))
     print('bonus', sum(len(b['bonus']) for b in bs), 'bonus saltati', len(skipped))
+    print('medaglie', len(cat['medals']), stats)
     print('scritto', inp['out'], os.path.getsize(inp['out']), 'byte')
 
 
