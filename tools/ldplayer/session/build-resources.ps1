@@ -103,16 +103,40 @@ foreach ($t in Get-ChildItem "$D\layouts\ui_texts\text\ui" -File) {
 # Star7_Ticket_39 (aveva il segno «仮»), dopo i testi IPA; banner 9001 in server\game_data\gacha_img
 python recon\tools\make_shop_art.py "$sg\files" server\game_data
 if ($LASTEXITCODE) { throw 'make_shop_art fallito' }
+# LWF del risultato delle estrazioni (raisedraw_gen\files, pacchetto statico: vedi sotto) importati PRIMA di
+# import_jp_coco: i suoni dei loro eventi (x10 draw 509000390, popup del Nova 509000740, I-152) li cerca
+# jp_sound_effects.py, che deve vedere le cartelle gia' scritte anche partendo da raisedraw_gen vuoto. Le
+# cartelle files\ di rooms_gen ed enemy_gen non le scrive questo script (make_jp_rooms.py, make_jp_enemies.py):
+# ci sono gia' quando parte.
+$xg = "$D\raisedraw_gen"
+if (-not $NoRaisedraw -and (-not $Quick -or -not (Test-Path "$xg\files"))) {
+  # logo «NOVA» del popup del Nova al posto del «BURST» JP (make_nova_logo.py -> raisedraw_gen\nova, fuori
+  # da git): sostituisce Burst_Logo / Burst_Logo_B (422x142) di GuiltBonus_BurstLvup con --replace
+  python recon\tools\make_nova_logo.py --out "$xg\nova"
+  if ($LASTEXITCODE) { throw 'make_nova_logo fallito' }
+  $burst = 'lwf/medal/guilt_bonus/GuiltBonus_BurstLvup/GuiltBonus_BurstLvup_'
+  $novaReplace = @('--replace', "${burst}42757273745f4c6f676f2e706e67.png=$xg\nova\Burst_Logo.png",
+                   '--replace', "${burst}42757273745f4c6f676f5f422e706e67.png=$xg\nova\Burst_Logo_B.png")
+  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json" @novaReplace
+  if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
+}
 # layout originali dai dati JP 4.3.1 al posto dei nostri generati (I-117): elenco versionato in
 # recon\tools\jp_coco_layouts.txt (togliere una riga = torna il generato), sopra l'uscita di
 # make_layouts/make_textures; rapporto e manifest in $sg\jp_import (Pillow: senza -I)
 # Copia anche (pure con -NoJp) gli AKB delle BGM Medals e gli effetti sonori se_<nome> dei LWF serviti e
 # generati assenti dalle risorse (jp_sound_effects.py, I-152: x10 draw, popup del Nova, nemici JP; ~4,3 MB;
-# rapporto $sg\jp_import\sound_effects.json). Legge raisedraw_gen\files ed enemy_gen\files gia' presenti.
+# rapporto $sg\jp_import\sound_effects.json), leggendo anche i LWF dei pacchetti statici.
 # -NoJp: niente originali JP (tornano i generati; serve per un -Quick su una versione installata
 # prima degli originali: i ~250 nomi nuovi non stanno nella riserva dell'indice)
 $jpOpt = @(); if ($NoJp) { $jpOpt = @('--none') }
-python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt
+# pacchetti statici che non saranno nell'indice: esclusi dalla ricerca dei suoni (-NoRooms/-NoEnemies/
+# -NoRaisedraw; con -Quick quelli assenti da packs.txt della versione installata)
+$seOpt = @()
+$instPacks = if ($Quick -and (Test-Path "$D\resource_data\$Version\packs.txt")) { @(Get-Content "$D\resource_data\$Version\packs.txt") } else { @() }
+foreach ($sp in @(@('rooms_gen', $NoRooms), @('enemy_gen', $NoEnemies), @('raisedraw_gen', $NoRaisedraw))) {
+  if ($sp[1] -or ($Quick -and $instPacks -notcontains $sp[0])) { $seOpt += @('--no-static', $sp[0]) }
+}
+python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt @seOpt
 if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"
@@ -166,21 +190,9 @@ if ($Quick) {
 # Medal_D_*): dai dati JP con import_jp_raisedraw.py, complete di texture (le tolte dall'estrazione JP prese
 # dalla _01 servita allineando le tabelle delle texture). Nel generato (16-10) lo portavano a 136,5 MB, oltre
 # la riserva di 128 MiB (~33 MB: 72-78 texture per cartella): pacchetto statico come enemy_gen, dopo i nemici e
-# prima del generato. Importato nelle versioni complete o se manca raisedraw_gen\files; rapporto in
-# raisedraw_gen\raisedraw_report.json (Pillow: senza -I)
-$xg = "$D\raisedraw_gen"
+# prima del generato. Importato piu' sopra (prima di import_jp_coco, per i suoni di I-152) nelle versioni
+# complete o se manca raisedraw_gen\files; rapporto in raisedraw_gen\raisedraw_report.json (Pillow: senza -I)
 $raisedrawPack = @()
-if (-not $NoRaisedraw -and (-not $Quick -or -not (Test-Path "$xg\files"))) {
-  # logo «NOVA» del popup del Nova al posto del «BURST» JP (make_nova_logo.py -> raisedraw_gen\nova, fuori
-  # da git): sostituisce Burst_Logo / Burst_Logo_B (422x142) di GuiltBonus_BurstLvup con --replace
-  python recon\tools\make_nova_logo.py --out "$xg\nova"
-  if ($LASTEXITCODE) { throw 'make_nova_logo fallito' }
-  $burst = 'lwf/medal/guilt_bonus/GuiltBonus_BurstLvup/GuiltBonus_BurstLvup_'
-  $novaReplace = @('--replace', "${burst}42757273745f4c6f676f2e706e67.png=$xg\nova\Burst_Logo.png",
-                   '--replace', "${burst}42757273745f4c6f676f5f422e706e67.png=$xg\nova\Burst_Logo_B.png")
-  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json" @novaReplace
-  if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
-}
 if ($Quick) {
   if ((Test-Path "$v\packs.txt") -and ((Get-Content "$v\packs.txt") -contains 'raisedraw_gen')) {
     if (-not (Test-Path "$xg\gen.png")) { throw "la versione $Version contiene raisedraw_gen ma manca $xg\gen.png" }

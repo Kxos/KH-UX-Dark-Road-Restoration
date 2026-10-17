@@ -269,11 +269,26 @@ diversi (bwait, btlEnd, knockback, dead1-3) hanno `key` e `shadow` in entrambe l
   - `audio/%09d.akb` gia' servito, in un pacchetto statico o scritto da un altro generatore: nulla;
     altrimenti la revisione piu' alta del JP (`<id>.<8 cifre>.akb`) nel pacchetto generato. Se manca il
     `text/audio/<nome>` servito si copia anche quello (senza testo l'id sarebbe 0);
-  - deterministico (nomi ordinati), manifest e pulizia di `import_jp_coco.py`; rapporto
+  - **ordine nel build**: `make_nova_logo` + `import_jp_raisedraw` (raisedraw_gen\files) girano ora *prima*
+    di `import_jp_coco`, cosi' anche partendo da un raisedraw_gen vuoto i LWF dell'estrazione x10 e del
+    Nova ci sono quando si cercano i suoni (con `-Quick` stessa condizione di prima: solo se manca
+    `raisedraw_gen\files`). Le cartelle `files\` di rooms_gen ed enemy_gen le scrivono `make_jp_rooms.py` e
+    `make_jp_enemies.py`, fuori dal build: ci sono gia' all'inizio, il build ne fa solo il pacchetto;
+  - pacchetti statici esclusi: `--no-static <nome>` (dal build con `-NoRooms`/`-NoEnemies`/`-NoRaisedraw`
+    e, con `-Quick`, per quelli assenti da `packs.txt` della versione installata): i loro LWF e AKB non
+    contano;
+  - **addnl**: `names_v4.tsv` e' l'indice unito della versione 7 e contiene tutti i 19.806 nomi
+    dell'addnl: 13.148 con l'offset della copia OBB (vince, come nell'indice servito) e gli altri con
+    quello della copia addnl (fra questi 175 LWF). Leggere names_v4 da' quindi la copia che il client
+    carica davvero; le 654 copie addnl perdenti non si caricano mai (le due che servono, wait e
+    win_levelup, le mette `prefer_addnl.py` in stage_gen, letto come generato). Senza
+    `resource_data\7\data` o `names_v4.tsv` un avviso: si cercano solo i suoni dei LWF generati;
+  - deterministico (nomi ordinati), manifest e pulizia di `import_jp_coco.py`; con `--check` niente
+    `sound_effects.json` e cache solo letta; rapporto
     `stage_gen\jp_import\sound_effects.json` (id, byte, LWF che li citano, assenti, non risolti); cache
     degli eventi dei serviti in `served_lwf_sounds.json` (impronta di indice e dati; prima corsa ~45 s,
     poi ~5 s). Da solo (`python -I recon/tools/jp_sound_effects.py`) e' un resoconto che non scrive nulla.
-- **Prova a secco** (17-10, copia di `stage_gen` in `tmp\se_dry`, risorse 41): 1.395 LWF con suoni, 627 nomi;
+- **Prova a secco** (17-10, copia di `stage_gen` in `tmp\se_dry_r1`, risorse 41; ripetuta dopo la revisione con lo stesso esito): 1.395 LWF con suoni, 627 nomi;
   **216 AKB nuovi, 4.327.702 byte**: 509000390/740 (x10, Nova), 509000700 (`BurstGauge_Recovery`),
   509100190/220 (motion `dash`, `excavate` dell'avatar), 509100250 (`Sburst`), 509100310/320
   (`card_evolution_result_*`, animazione dell'Evolve), 508000020-080 (eff_se dei

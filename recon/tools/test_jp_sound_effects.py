@@ -2,6 +2,7 @@
 
     python -I recon/tools/test_jp_sound_effects.py        -> «OK: ...» oppure «ERRORI (n)», uscita 1
 """
+import json
 import os
 import struct
 import sys
@@ -118,6 +119,74 @@ with tempfile.TemporaryDirectory() as t:
                    owned=set(), jp_root=jp, served=None, static_roots=[st])
     check(p2['ids'] == [509000390], 'collect: scritture e file non owned contano come presenti %r' % p2['ids'])
 
+# --- Served.read / _read_at: indice sintetico, due pezzi, un record a cavallo del confine; cache degli eventi
+import bgad  # noqa: E402
+
+
+def record(nome, dati):
+    """Record BGAD in chiaro (enc 0, comp 0, senza nonce): decode() restituisce i dati cosi' come sono."""
+    n = nome.encode()
+    return bgad.HDR.pack(b'BGAD', 2, 0, bgad.HDR.size, len(n), 0, 0, len(dati), len(dati)) + n + dati
+
+
+with tempfile.TemporaryDirectory() as t:
+    lwf_a = lwf_eventi(['se_ui2_se_000039'])
+    lwf_b = lwf_eventi(['se_ui2_se_000074', 'isPlaySE_1'])
+    ra, rb, rt = (record('lwf/a/a.lwf', lwf_a), record('lwf/b/b.lwf', lwf_b),
+                  record('text/audio/ui2_se_000039', b'509000390'))
+    blob = b'\0' * 10 + ra + rb + rt
+    cut = 10 + len(ra) + 7                      # rb a cavallo dei due pezzi
+    data = os.path.join(t, 'data')
+    scrivi(os.path.join(data, 'd0000'), blob[:cut])
+    scrivi(os.path.join(data, 'd0001'), blob[cut:])
+    tsv = os.path.join(t, 'names.tsv')
+    righe = ['revision\t123', 'lwf/a/a.lwf\t10', 'lwf/b/b.lwf\t%d' % (10 + len(ra)),
+             'text/audio/ui2_se_000039\t%d' % (10 + len(ra) + len(rb))]
+    scrivi(tsv, '\n'.join(righe) + '\n')
+    sv = m.Served(tsv, data, key=bytes(32))
+    check('revision' not in sv.off and len(sv.off) == 3, 'Served: indice senza la riga revision')
+    check(sv._read_at(cut - 3, 6) == blob[cut - 3:cut + 3], '_read_at: lettura a cavallo dei pezzi')
+    check(sv._read_at(len(blob) - 2, 10) == blob[-2:], '_read_at: fine dei dati')
+    check(sv.read('lwf/a/a.lwf') == lwf_a, 'Served.read: record nel primo pezzo')
+    check(sv.read('lwf/b/b.lwf') == lwf_b, 'Served.read: record a cavallo dei pezzi')
+    check(sv.read('text/audio/ui2_se_000039') == b'509000390', 'Served.read: record nel secondo pezzo')
+    check(sv.read('non/servito') is None, 'Served.read: nome assente')
+    # cache: prima corsa scrive, seconda la legge (nessuna lettura), indice cambiato = nuova scansione
+    cache = os.path.join(t, 'rep', 'cache.json')
+    s1 = m.served_lwf_sounds(sv, cache)
+    check(s1 == {'lwf/a/a.lwf': ['ui2_se_000039'], 'lwf/b/b.lwf': ['ui2_se_000074']}, 'cache: scansione %r' % s1)
+    check(os.path.exists(cache), 'cache: scritta')
+
+    def vietato(name):
+        raise AssertionError('lettura con la cache valida')
+    sv.read = vietato
+    check(m.served_lwf_sounds(sv, cache) == s1, 'cache: letta senza rileggere i LWF')
+    sv2 = m.Served(tsv, data, key=bytes(32))
+    st1 = sv.stamp()
+    check(sv2.stamp() == st1, 'stamp: stesso indice e dati = stessa impronta')
+    scrivi(tsv, '\n'.join(righe[:2]) + '\n')    # indice cambiato (b tolto)
+    sv3 = m.Served(tsv, data, key=bytes(32))
+    check(sv3.stamp() != st1, 'stamp: indice cambiato')
+    s3 = m.served_lwf_sounds(sv3, cache, save_cache=False)
+    check(s3 == {'lwf/a/a.lwf': ['ui2_se_000039']}, 'cache: impronta diversa = nuova scansione %r' % s3)
+    with open(cache, encoding='utf-8') as fh:
+        c = json.load(fh)
+    check(c['stamp'] == st1 and c['sounds'] == s1, 'save_cache=False: cache di prima non toccata')
+    for x in (sv, sv2, sv3):
+        x.close()
+    # collect con i serviti: il LWF servito b cita 509000740, il testo servito risolve a
+    out, jp = os.path.join(t, 'out'), os.path.join(t, 'jp')
+    os.makedirs(out)
+    scrivi(os.path.join(jp, 'text', 'audio', 'ui2_se_000074'), '509000740')
+    for i in (509000390, 509000740):
+        scrivi(os.path.join(jp, 'audio', '%09d.akb' % i), b'x')
+    scrivi(tsv, '\n'.join(righe) + '\n')
+    sv4 = m.Served(tsv, data, key=bytes(32))
+    p = m.collect(out, set(sv4.off), jp_root=jp, served=sv4, static_roots=[])
+    sv4.close()
+    check(p['ids'] == [509000390, 509000740] and set(p['texts']) == {'text/audio/ui2_se_000074'},
+          'collect con i serviti: %r %r' % (p['ids'], p['texts']))
+
 # --- radice JP vera: i due suoni muti di I-152 ci sono
 if os.path.isdir(m.JP_ROOT):
     a = m.latest(os.path.join(m.JP_ROOT, 'audio'))
@@ -133,4 +202,5 @@ if errori:
     for e in errori:
         print(' -', e)
     sys.exit(1)
-print('OK: eventi LWF, id come FUN_00b273cc, revisioni JP, piano, collect (statici, owned, scritture), JP vero')
+print('OK: eventi LWF, id come FUN_00b273cc, revisioni JP, piano, collect (statici, owned, scritture), '
+      'Served.read/_read_at a cavallo dei pezzi, cache e impronta, JP vero')

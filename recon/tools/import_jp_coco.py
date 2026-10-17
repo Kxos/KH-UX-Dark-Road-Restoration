@@ -72,6 +72,10 @@ ap.add_argument('--served-files', default=os.path.join(D, 'catalog', 'files'))
 ap.add_argument('--en-text', action='append',
                 default=None, help='cartelle text/ui inglesi (la prima che ha l\'id vince)')
 ap.add_argument('--check', action='store_true', help='solo controlli e rapporto, nessuna scrittura')
+ap.add_argument('--no-static', action='append', default=[],
+                choices=('medal_gen', 'rooms_gen', 'enemy_gen', 'raisedraw_gen'),
+                help="pacchetto statico non nell'indice (build-resources -NoRooms/-NoEnemies/-NoRaisedraw o assente "
+                     'dalla versione installata): i suoi LWF e AKB non contano per gli effetti sonori')
 ap.add_argument('--none', action='store_true',
                 help='nessuna radice: toglie soltanto i file importati dalla corsa precedente (build-resources -NoJp)')
 args = ap.parse_args()
@@ -832,15 +836,19 @@ for _arm, (_slot, _src) in sorted(JP_ARM.items()):
 # Rapporto in <report>/sound_effects.json; jp_sound_effects.py, docs/notes/risorse_layout.md#suoni-jp.
 sys.path.insert(0, HERE)
 import jp_sound_effects  # noqa: E402
+if not os.path.exists(args.served):
+    print('jp_se: ATTENZIONE, indice servito %s assente: suoni dei soli LWF generati' % args.served)
 _se = jp_sound_effects.collect(
     OUT, _served_all, writes=writes, owned=set(old), jp_root=JP_ROOT,
     served=jp_sound_effects.Served(args.served, os.path.join(D, 'resource_data', '7', 'data'))
     if os.path.exists(args.served) else None,
-    cache_path=os.path.join(REPORT, 'served_lwf_sounds.json'))
+    static_roots=jp_sound_effects.static_dirs(args.no_static),
+    cache_path=os.path.join(REPORT, 'served_lwf_sounds.json'), save_cache=not args.check)
 for _name, _src in sorted(list(_se['add'].items()) + list(_se['texts'].items())):
     writes.setdefault(_name, ('jp', _src, None))
-json.dump(_se, open(os.path.join(REPORT, 'sound_effects.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-print(jp_sound_effects.summary(_se))
+if not args.check:
+    json.dump(_se, open(os.path.join(REPORT, 'sound_effects.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+print(jp_sound_effects.summary(_se) + (' [--check]' if args.check else ''))
 
 
 def out_path(name):

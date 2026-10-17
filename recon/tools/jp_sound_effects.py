@@ -154,6 +154,9 @@ class Served:
                 self.pieces.append(os.path.join(datadir, f))
                 self.starts.append(total)
                 total += os.path.getsize(self.pieces[-1])
+        else:
+            print('jp_se: ATTENZIONE, dati delle risorse servite assenti (%s): LWF e testi serviti non letti, '
+                  'suoni dei soli LWF generati' % datadir)
         self._fh = {}
 
     def key(self):
@@ -185,13 +188,25 @@ class Served:
             out, off, n, i = out + b, off + len(b), n - len(b), i + 1
         return out
 
+    def close(self):
+        for fh in self._fh.values():
+            fh.close()
+        self._fh = {}
+
     def stamp(self):
         st = os.stat(self.tsv)
         return '%s|%d|%d|%d' % (os.path.basename(self.tsv), st.st_size, st.st_mtime_ns, sum(map(os.path.getsize, self.pieces)))
 
 
-def served_lwf_sounds(served, cache_path=None):
-    """{lwf servito: [nomi audio]} (solo i LWF con suoni), con cache su disco (impronta di indice e dati)."""
+def served_lwf_sounds(served, cache_path=None, save_cache=True):
+    """{lwf servito: [nomi audio]} (solo i LWF con suoni), con cache su disco (impronta di indice e dati;
+    save_cache=False la legge soltanto, per --check).
+
+    names_v4.tsv e' l'indice unito della versione 7 (OBB 5.0.1 + addnl 4.3.1, a parita' di nome vince
+    l'OBB): tutti i 19.806 nomi dell'addnl ci sono, 13.148 con l'offset della copia OBB e gli altri con
+    quello della copia addnl (175 LWF). Leggere names_v4 da' quindi proprio la copia che il client carica;
+    le copie addnl perdenti (654 LWF) non si caricano mai, e le due che servono (wait, win_levelup) le
+    mette prefer_addnl.py in stage_gen, letto come generato."""
     stamp = served.stamp()
     if cache_path and os.path.exists(cache_path):
         try:
@@ -210,9 +225,10 @@ def served_lwf_sounds(served, cache_path=None):
         if s:
             out[name] = s
     out = dict(sorted(out.items()))
-    if cache_path:
+    if cache_path and save_cache:
         os.makedirs(os.path.dirname(os.path.abspath(cache_path)), exist_ok=True)
-        json.dump(dict(stamp=stamp, sounds=out), open(cache_path, 'w', encoding='utf-8'), indent=0)
+        with open(cache_path, 'w', encoding='utf-8') as fh:
+            json.dump(dict(stamp=stamp, sounds=out), fh, indent=0)
     return out
 
 
@@ -227,17 +243,19 @@ def walk_names(root):
 
 
 def collect(out, served_names, writes=None, owned=(), jp_root=JP_ROOT, served=None, static_roots=None,
-            cache_path=None):
+            cache_path=None, save_cache=True):
     """Piano per il pacchetto generato <out> (stage_gen\\files).
 
     served_names  nomi serviti (names_v4 + addnl)
     writes        {nome: ('jp', src, data)} gia' decisi da import_jp_coco (LWF JP in arrivo, BGM)
     owned         nomi in <out> scritti dalla corsa precedente dell'import (manifest): non contano
                   come «gia' nel pacchetto», altrimenti la pulizia li toglierebbe
+    static_roots  cartelle files\ dei pacchetti statici davvero nell'indice (predefinite: tutte e quattro;
+                  import_jp_coco toglie quelle escluse con --no-static)
     """
     writes = writes or {}
     if static_roots is None:
-        static_roots = [os.path.join(D, p, 'files') for p in STATIC_PACKS]
+        static_roots = static_dirs()
     # LWF effettivi: serviti < pacchetti statici < generato su disco < scritture di questa corsa
     lwf_src = {}
     for root in [r for r in static_roots if os.path.isdir(r)] + [out]:
@@ -249,7 +267,7 @@ def collect(out, served_names, writes=None, owned=(), jp_root=JP_ROOT, served=No
             lwf_src[n] = w[2] if isinstance(w[2], bytes) else w[1]
     sounds = {}
     if served is not None:
-        sounds.update({n: s for n, s in served_lwf_sounds(served, cache_path).items() if n not in lwf_src})
+        sounds.update({n: s for n, s in served_lwf_sounds(served, cache_path, save_cache).items() if n not in lwf_src})
     for n, p in sorted(lwf_src.items()):
         data = p if isinstance(p, bytes) else open(p, 'rb').read()
         s = sound_names(lwf_events(data))
@@ -281,6 +299,11 @@ def collect(out, served_names, writes=None, owned=(), jp_root=JP_ROOT, served=No
     return p
 
 
+def static_dirs(skip=()):
+    """Cartelle files\ dei pacchetti statici, senza quelli esclusi."""
+    return [os.path.join(D, p, 'files') for p in STATIC_PACKS if p not in skip]
+
+
 def summary(p):
     return ('suoni JP: %d AKB aggiunti (%d byte), %d testi text/audio, %d LWF con suoni, %d nomi; '
             'assenti anche nel JP: %d, non risolti: %d' % (
@@ -298,6 +321,8 @@ def main(argv=None):
     ap.add_argument('--manifest', default=None, help='manifest di import_jp_coco (predefinito: <out>/../jp_import)')
     ap.add_argument('--cache', default=None)
     ap.add_argument('--json', default=None, help='rapporto completo')
+    ap.add_argument('--no-static', action='append', default=[], choices=STATIC_PACKS,
+                    help="pacchetto statico non nell'indice (-NoRooms/-NoEnemies/-NoRaisedraw)")
     a = ap.parse_args(argv)
     rep_dir = os.path.join(os.path.dirname(os.path.abspath(a.out)), 'jp_import')
     man = a.manifest or os.path.join(rep_dir, 'manifest.json')
@@ -311,6 +336,7 @@ def main(argv=None):
     bgm = json.load(open(os.path.join(HERE, '..', '..', 'server', 'medal_bgm.json'), encoding='utf-8'))['medals']
     writes = {akb_name(i): ('jp', None, None) for i in set(bgm.values())}
     p = collect(a.out, names, writes=writes, owned=owned, jp_root=a.jp, served=served,
+                static_roots=static_dirs(a.no_static),
                 cache_path=a.cache or os.path.join(rep_dir, 'served_lwf_sounds.json'))
     # file gia' nel generato, senza quelli che il piano riscrive (corsa precedente dell'import)
     gen = sum(os.path.getsize(f) for n, f in walk_names(a.out).items() if n not in p['add'] and n not in p['texts'])
