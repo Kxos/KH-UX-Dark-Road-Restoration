@@ -6,7 +6,27 @@ const SAVE = path.join(os.tmpdir(), `khux-test-gacha-${process.pid}.json`);
 const BANNERS = path.join(os.tmpdir(), `khux-test-gacha-banners-${process.pid}.json`);
 try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
 process.env.KHUX_SAVE = SAVE;
-process.env.KHUX_MASTER_DIR = path.resolve(process.argv[2] || path.join(__dirname, 'master_data'));
+// master temporaneo: copia di quello vero (argv[2] o master_data) con una riga boosted sintetica (Supernova+ - Ava
+// 1000/1000, medal-boost.boostedRow), le sole righe burst che servono (maxEnhanceCount 5) e guiltProb da
+// medal-guilt.guiltProbRows (Tier 10: massimo 32000); burst.json vero (7 MB) non si copia
+const SRC_MASTER = path.resolve(process.argv[2] || path.join(__dirname, 'master_data'));
+const MASTER = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-gacha-master-'));
+const AVA = 301880, AVA_BOOSTED = 2301880;
+{
+  const mb = require('./medal-boost'), mg = require('./medal-guilt');
+  for (const f of fs.readdirSync(SRC_MASTER).filter((x) => x.endsWith('.json') && !['burst.json', 'medal.json', 'guiltProb.json'].includes(x))) {
+    fs.copyFileSync(path.join(SRC_MASTER, f), path.join(MASTER, f));
+  }
+  const medalRows = JSON.parse(fs.readFileSync(path.join(SRC_MASTER, 'medal.json'), 'utf8')).filter((r) => r.medalId !== AVA_BOOSTED);
+  const ava = medalRows.find((r) => r.medalId === AVA);
+  medalRows.push(mb.boostedRow(ava, 1000, 1000));
+  fs.writeFileSync(path.join(MASTER, 'medal.json'), JSON.stringify(medalRows));
+  const burst = JSON.parse(fs.readFileSync(path.join(SRC_MASTER, 'burst.json'), 'utf8')).filter((b) => b.burstId === ava.burstId);
+  fs.writeFileSync(path.join(MASTER, 'burst.json'), JSON.stringify(burst.length ? burst.map((b) => ({ ...b, maxEnhanceCount: 5 })) : [{ burstId: ava.burstId, maxEnhanceCount: 5 }]));
+  fs.writeFileSync(path.join(MASTER, 'guiltProb.json'), JSON.stringify(mg.guiltProbRows()));
+}
+process.on('exit', () => { try { fs.rmSync(MASTER, { recursive: true, force: true }); } catch { /* gia' tolta */ } });
+process.env.KHUX_MASTER_DIR = MASTER;
 process.env.KHUX_REVISION = '118';
 process.env.KHUX_GACHA_BANNERS = BANNERS;
 process.env.KHUX_GACHA_SIZES = '1,3,10';
@@ -286,6 +306,108 @@ check(/\/web\/gacha\/odds\/$/.test(login.odds || ''), 'login: odds (il client ac
   quiet(() => { try { t.handler('http')(req, res); req.emit('end'); } catch (e) { thrown = e; } });
   check(!thrown && sent && sent.ret !== undefined, 'handler: errore in rotta -> risposta {ret}, nessuna eccezione');
 }
+
+// --- sotto-progetto 2b, Task 6: consegna dei potenziamenti, pityGift, piastra col contatore, Nova per gruppo ---
+// catalogo v3 a parte (storia al 2018-06-10): 7★ di Tier 10 (Supernova+ - Ava) e Wakka 5★
+try {
+  const RES7 = { kind: 'tier', slot: 0, count: 1, star: 7, names: [], tierMin: 10, tierMax: 10 };
+  const G = (o) => ({ list: [], count: 0, slot: 0, pity: null, every: null, slots: [RES7], pityNames: [], pityStar: null, pitySlot: null,
+    pityGift: null, erratum: null, source: null, ...o });
+  const EN = (o) => ({ preset: [], boosted: [], maxSkill: [], notReproduced: [], ...o });
+  let n6 = 600;
+  const b6 = (o) => { const n = ++n6; return mk({ rowId: `B0${n}`, drawMedalTypeId: 10000 + n, name: `Banner ${n}`, start: '2018-06-01', end: '2018-06-30',
+    unlockQuest: 1, prices: [10], lotCount: 1, rarityMix: [[7, 1]], pool: { mode: 'sets', sets: [], names: ['supernova+ - ava'], featured: [], filter: [] },
+    guarantee: G({}), enhance: EN({}), ...o }); };
+  const PRESET = [{ on: { slots: [0] }, dots: 'max', guilt: 'max' }];
+  const BOOST = [{ on: { slots: [0] }, str: 1000, def: 1000, chance: 'guaranteed' }];
+  const bPre = b6({ enhance: EN({ preset: PRESET }) });
+  const bBoost = b6({ enhance: EN({ boosted: BOOST }) });
+  const bBoostPre = b6({ enhance: EN({ boosted: BOOST, preset: PRESET }) });
+  const bSkill = b6({ enhance: EN({ maxSkill: [{ on: { slots: [0] }, skills: ['abilita assente', 'paralysis'] }] }) });
+  const bNoSkill = b6({ enhance: EN({ maxSkill: [{ on: { slots: [0] }, skills: ['abilita assente'] }] }) });
+  const bGift = b6({ rarityMix: [[5, 1]], pool: { mode: 'sets', sets: [], names: ['wakka'], featured: [], filter: [] },
+    guarantee: G({ pity: 3, slots: [], pityGift: [3, 301684, 1] }) });
+  const bPity = b6({ rarityMix: [[5, 1]], pool: { mode: 'sets', sets: [], names: ['wakka'], featured: [], filter: [] },
+    guarantee: G({ pity: 3, slots: [], pityNames: ['supernova+ - ava'], pityStar: 7, pitySlot: 0 }) });
+  const cat6 = { ...catalog, version: 3, story: [[1, 525, '2018-06-10']], medals: { ...medals, 'supernova+ - ava': { date: '2018-05-25', ids: [[AVA, 7, '2018-05-25', 10]], std: false } },
+    banners: [bPre, bBoost, bBoostPre, bSkill, bNoSkill, bGift, bPity] };
+  writeCatalog(cat6);
+  t.reloadGachaBanners();
+  process.env.KHUX_GUILT_BURST_POPUP = '1';
+  delete process.env.KHUX_GUILT_BURST_LV;
+  p.medals = []; p.medalState = {}; p.medalSkills = {}; p.gacha = {}; p.presents = [];
+  p.guiltBurst = { first: [], max: [] };
+  quiet(() => t.guiltBurst().lists()); // copie in attesa delle prove precedenti
+  const draw6 = (b) => { p.freeStone = 10; return call(t.respondGachaDraw, { drawMedalTypeId: b.drawMedalTypeId, count: 1 }); };
+  const um = (r, id) => r.userMedals.find((m) => m.userMedalId === id);
+  const ids6 = ids(call(t.respondGachaList));
+  check([bPre, bBoost, bPity].every((b) => ids6.includes(b.drawMedalTypeId)), `2b: banner v3 nella lista (${ids6})`);
+
+  // preset dots 'max', guilt 'max' su una 7★ di Tier 10: pallini 5, guilt 32000, Nova +1 +5 con le copie nella risposta
+  const lv0 = t.guiltBurst().level();
+  r = draw6(bPre);
+  const idP = r.userMedalIds && r.userMedalIds[0];
+  const mP = idP && um(r, idP);
+  check(mP && mP.medalId === AVA && mP.burstUpperNumber === 5 && mP.guiltFactor === 32000, `preset: pallini 5 e guilt 32000 (${JSON.stringify(mP && { b: mP.burstUpperNumber, g: mP.guiltFactor })})`);
+  check(r.guiltBurstFirstUserMedalIds && r.guiltBurstFirstUserMedalIds.includes(idP) && r.guiltBurstMaxUserMedalIds.includes(idP),
+    `preset: copia in guiltBurstFirst/MaxUserMedalIds (${JSON.stringify([r.guiltBurstFirstUserMedalIds, r.guiltBurstMaxUserMedalIds])})`);
+  check(t.guiltBurst().level() === lv0 + 6, `preset: Nova +1 +5 (${lv0} -> ${t.guiltBurst().level()})`);
+
+  // Nova per gruppo: la boosted della stessa medaglia (gia' nel registro first e max) non aggiunge livelli
+  r = draw6(bBoostPre);
+  const idBP = r.userMedalIds && r.userMedalIds[0];
+  check(idBP && um(r, idBP).medalId === AVA_BOOSTED && um(r, idBP).guiltFactor === 32000, 'Nova per gruppo: boosted al massimo consegnata');
+  check(t.guiltBurst().level() === lv0 + 6 && !r.guiltBurstFirstUserMedalIds.length && !r.guiltBurstMaxUserMedalIds.length,
+    `Nova per gruppo: nessun livello in piu' (${t.guiltBurst().level()}, ${JSON.stringify([r.guiltBurstFirstUserMedalIds, r.guiltBurstMaxUserMedalIds])})`);
+
+  // boosted «guaranteed»: medalId boosted, cella propria, identica dopo un ricaricamento del salvataggio
+  r = draw6(bBoost);
+  const idB = r.userMedalIds && r.userMedalIds[0];
+  const mB = idB && um(r, idB);
+  check(mB && mB.medalId === AVA_BOOSTED && mB.number === 1 && inMedals(r), `boosted: medalId ${mB && mB.medalId} in userMedals`);
+  // la risposta ha solo le celle cambiate (inventoryBlocks): la copia di prima resta una cella a parte
+  const cells = quiet(() => t.inventoryBlocks(t.serverTime())).userMedals.filter((m) => m.medalId === AVA_BOOSTED);
+  check(idB !== idBP && cells.length === 2 && cells.every((m) => m.number === 1), `boosted: una cella per copia, validPack 0 (${cells.map((m) => `${m.userMedalId}x${m.number}`)})`);
+  {
+    const { execFileSync } = require('child_process');
+    const js = `const t=require(${JSON.stringify(path.join(__dirname, 'server'))})._test;const m=t.userMedalList().find((x)=>x.userMedalId===${idB});`
+      + 'const e=m&&t.userMedalElement(m,0);if(e)delete e.getDatetime;process.stdout.write("\\n@@"+JSON.stringify(e));';
+    let out = '';
+    try { out = execFileSync(process.execPath, ['-e', js], { env: process.env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { out = String(e.stdout || ''); }
+    const after = out.split('@@').pop();
+    const now = quiet(() => { const e = t.userMedalElement(t.userMedalList().find((x) => x.userMedalId === idB), 0); delete e.getDatetime; return JSON.stringify(e); });
+    check(after === now, `boosted: identica dopo il ricaricamento (${after.slice(0, 120)} / ${now.slice(0, 120)})`);
+  }
+
+  // maxSkill: la prima abilita' presente in skill.json al livello massimo; assente: nessuna skill, nessun errore
+  r = draw6(bSkill);
+  const idS = r.userMedalIds && r.userMedalIds[0];
+  const para = t.masterRows('skill').find((s) => s.name === 'Paralysis');
+  check(idS && p.medalSkills[idS] && p.medalSkills[idS].skillId === para.skillId && p.medalSkills[idS].level === para.maxLv,
+    `maxSkill: Paralysis al livello ${para && para.maxLv} (${JSON.stringify(idS && p.medalSkills[idS])})`);
+  check(idS && r.userSkills.some((s) => s.userMedalId === idS && s.level === para.maxLv) && um(r, idS).userSkills.length === 1, 'maxSkill: in userSkills e nella medaglia');
+  r = draw6(bNoSkill);
+  check(r.userMedalIds && r.userMedalIds.length === 1 && !p.medalSkills[r.userMedalIds[0]], 'maxSkill assente: nessuna skill, estrazione riuscita');
+
+  // pityGift [3, 301684, 1] alla 3a estrazione: un regalo nel Present Box, nessuna medaglia in piu'
+  const gifts = () => p.presents.filter((x) => x.resourceType === 3 && x.resourceId === 301684 && x.number === 1).length;
+  const g1 = draw6(bGift), g2 = draw6(bGift);
+  check(g1.userMedalIds && g2.userMedalIds && gifts() === 0, `pityGift: niente prima della 3a (${gifts()})`);
+  const g3 = draw6(bGift);
+  check(g3.userMedalIds && g3.userMedalIds.length === 1 && gifts() === 1, `pityGift: un regalo alla 3a, una medaglia (${gifts()}, ${g3.userMedalIds})`);
+  const gp = plate(call(t.respondGachaList), bGift.drawMedalTypeId);
+  check(gp.userWarrantDisplayOfTime === 3 && JSON.stringify(gp.warrantMedalIds) === '[301684]', `pityGift: piastra ${JSON.stringify(gp)}`);
+
+  // /gacha/list: il contatore scende a ogni estrazione senza bersaglio e torna alla pity quando il bersaglio esce
+  const seen = [];
+  const wp = () => plate(call(t.respondGachaList), bPity.drawMedalTypeId);
+  seen.push(wp().userWarrantDisplayOfTime);
+  const got = [];
+  for (let k = 0; k < 3; k++) { const x = draw6(bPity); got.push(x.userMedalIds && um(x, x.userMedalIds[0]).medalId); seen.push(wp().userWarrantDisplayOfTime); }
+  check(JSON.stringify(seen) === '[3,2,1,3]' && got[2] === AVA && got[0] !== AVA, `piastra: contatore ${seen} (medaglie ${got})`);
+  check(JSON.stringify(wp().warrantMedalIds) === `[${AVA}]`, 'piastra: warrantMedalIds = bersaglio alla pityStar');
+  delete process.env.KHUX_GUILT_BURST_POPUP;
+} catch (err) { errors.push(`2b: eccezione ${err.stack}`); }
 
 // catalogo assente: solo la piastra Catalog, estrazione rifiutata
 writeCatalog('non json');
