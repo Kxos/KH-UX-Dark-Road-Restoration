@@ -77,7 +77,7 @@ function catalogRow() {
 function plate(b, webBase, userLimitedCount, price, sortId) {
   return {
     validAdd: 0, drawMedalTypeId: b.drawMedalTypeId, drawType: 1, sortId, payType: b.payType, price,
-    lotCount: b.lotCount, isDayLimited: b.dayLimit || b.vipFree ? 1 : 0, userLimitedCount, userWarrantDisplayOfTime: 1,
+    lotCount: b.lotCount, isDayLimited: b.dayLimit || b.vipFree || b.totalLimit ? 1 : 0, userLimitedCount, userWarrantDisplayOfTime: 1,
     name: b.name, description: b.name, bannerUrl: `${webBase}/web/gacha/img/${b.drawMedalTypeId}.png`,
     warrantMedalIds: [], drawTicketlimitDate: '2030-12-31 23:59:59',
   };
@@ -97,6 +97,14 @@ function dayLeft(player, b, realMs) {
   if (!b.dayLimit) return 0;
   return Math.max(0, b.dayLimit - usedToday(player, b.drawMedalTypeId, realMs));
 }
+// Estrazioni rimaste per la piastra (userLimitedCount): il minore fra limite del giorno e limite totale
+// (totalLimit su player.gacha.count, Ruling 28); 0 se il banner non ha limiti (isDayLimited 0).
+function drawsLeft(player, b, realMs) {
+  const left = [];
+  if (b.vipFree || b.dayLimit) left.push(dayLeft(player, b, realMs));
+  if (b.totalLimit) left.push(Math.max(0, b.totalLimit - drawCount(player, b)));
+  return left.length ? Math.min(...left) : 0;
+}
 
 function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show }) {
   ticketsOf(player);
@@ -104,7 +112,7 @@ function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, st
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
   // Catalog sortId 1, poi 10, 20, ... nell'ordine di shopBanners (i piu' recenti prima, spec 4.3).
   return {
-    gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, dayLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1)))],
+    gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, drawsLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1)))],
     petGachaList: [],
   };
 }
@@ -116,6 +124,7 @@ function checkDraw(banner, player, body, { realMs, freeSlots, sizes, storyQuest,
   if (banner.unlockQuest > storyQuest && !show?.has(banner.rowId)) return 'banner bloccato';
   if (!sizes.has(banner.lotCount)) return `animazione per ${banner.lotCount} medaglie assente`;
   if (Number(body?.count) !== banner.lotCount) console.log(`  [gacha] count ${body?.count} diverso da lotCount ${banner.lotCount}: vale lotCount`);
+  if (banner.totalLimit && drawCount(player, banner) >= banner.totalLimit) return 'limite totale raggiunto';
   if (banner.vipFree && dayLeft(player, banner, realMs) < 1) return 'estrazione gratuita VIP gia\' usata oggi';
   if (!banner.vipFree && banner.dayLimit && dayLeft(player, banner, realMs) < 1) return 'limite giornaliero raggiunto';
   const price = priceFor(banner, player);
@@ -220,10 +229,18 @@ function skillSection(banner, skillNames) {
     + `<table>${rows.map(([n, pct]) => `<tr><td>${esc(n)}</td><td>${pct}%</td></tr>`).join('')}</table>`;
 }
 
+// Garanzia scritta ma senza medaglie estraibili alla data del banner (lista o vetrina vuote in expandPool):
+// i dettagli lo dicono invece di promettere una garanzia che non scatta (correzione finale D).
+const NOT_REPRODUCED = 'This guarantee is not reproduced yet.';
+const pityText = (banner, ex) => `Featured Medal guaranteed within ${banner.guarantee.pity} draws (original).`
+  + `${ex && !(ex.featuredNames || []).length ? ` ${NOT_REPRODUCED}` : ''}`;
+const listLost = (banner, ex) => !!(ex && (banner.guarantee?.list || []).length && !(ex.listNames || []).length);
+
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
-  const pity = banner.guarantee?.pity ? `<p>Featured Medal guaranteed within ${banner.guarantee.pity} draws (original).</p>` : '';
+  const pity = banner.guarantee?.pity ? `<p>${pityText(banner, ex)}</p>` : '';
+  const gtext = [banner.guaranteesText, listLost(banner, ex) ? NOT_REPRODUCED : ''].filter(Boolean).map(esc).join(' ');
   const rated = !!(ex && banner.rarityMix?.length) && banner.catalogOnly !== 'INCOMPLETE';
   const pool = evolve || !rated ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {
     const names = [...new Set(ids.map((id) => medalNames.get(id) || `#${id}`))].sort();
@@ -235,12 +252,12 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `<table>${oddsRows(banner, ex, medalNames)}</table>${pity}${skillSection(banner, ctx.skillNames)}${evolve ? '' : '<h2>Medals in this draw</h2>'}${pool}` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
     + `<p class="n">Original banner: ${dates(banner)}.</p><p class="s">${esc(st.text)}</p>`
-    + `${banner.guaranteesText ? `<p class="n">${esc(banner.guaranteesText)}</p>` : ''}${rates}`);
+    + `${gtext ? `<p class="n">${gtext}</p>` : ''}${rates}`);
 }
 
 function oddsPage(entries) {
   return page('Draw Odds', '<p class="n">Medal rarities of each draw are original; the chances of one more star are reconstructed for this restoration.</p>'
-    + entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length).map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">Featured Medal guaranteed within ${banner.guarantee.pity} draws (original)</div>` : ''}`
+    + entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length).map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">${pityText(banner, ex)}</div>` : ''}`
       + `<table>${oddsRows(banner, ex, medalNames)}</table></div>`).join(''));
 }
 
@@ -254,5 +271,5 @@ function catalogPage(banners, ctx) {
 
 module.exports = {
   SHOP_MAX, WALLET, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
-  dayLeft, gachaListData, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
+  dayLeft, drawsLeft, gachaListData, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
 };

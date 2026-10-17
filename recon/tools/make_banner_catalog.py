@@ -246,6 +246,23 @@ def day_limit(notes, typ):
     return 0
 
 
+# formulazione reale delle note: «Available once.» (B0510, B0511, B0604 e le SN 7★ del 2020); «can only be drawn
+# once» non compare nelle note ne' nei notice in cache, ma e' la stessa regola
+ONCE = re.compile(r'\b(?:available|can only be (?:drawn|pulled|purchased)) once\b(?!\s*(?:per|a|each) day)', re.I)
+
+
+def total_limit(notes):
+    """estrazioni in tutto (Ruling 28): 1 per «Available once», 0 = nessun limite"""
+    return 1 if ONCE.search(notes) else 0
+
+
+def free_day_limit(typ, prices, day, total, vip):
+    """Ruling 28: una gratuita (FREE o prezzo sempre 0) senza dayLimit, totalLimit ne' vipFree diventa una al
+    giorno: il server la porta a 1 Jewel e senza limite si estrarrebbe all'infinito"""
+    free = typ == 'FREE' or (bool(prices) and not any(prices))
+    return 1 if free and not (day or total or vip) else day
+
+
 # ---------- liste di medaglie nelle note ----------
 LINK = re.compile(r'\[\[[^\]]*\]\]|\{\{[^}]*\}\}')
 STOP = re.compile(r'(?<!\bIllus)(?<!\bIll)(?<!\bVer)(?<!\bJr)(?<!\bMr)(?<!\bMrs)(?<!\bDr)[.!|](?=\s|$|\*)|\|')
@@ -352,6 +369,56 @@ def guarantee_of(row, notes):
                 feat = list_names(f.group(1))
         g['featured'] = _dedup(feat)
     return g
+
+
+STAR_GUARANTEE = re.compile(r'[Gg]uarantees? (?:one|a|an) ([^.|]*?)(\d)★')
+
+
+def guarantee_slot(text, mix):
+    """indice (in slotRarities: il mix nell'ordine del catalogo) del primo slot a lista. Se il testo, prima di
+    «N of the following», garantisce una stella esplicita («Guarantees one Tier 4 or lower 7★ Medal.», B0306-B0308;
+    «one 7★ Tier 3 or 4 Medal», B0355), quello slot e' suo e la lista va sulla stella successiva del mix; altrimenti
+    0. Il limite di Tier non e' applicato (sotto-progetto 2b)."""
+    t = text.replace("'''", '')
+    m = LISTRE.search(t)
+    if not m:
+        return 0
+    slots = [r for r, n in mix for _ in range(n)]
+    for s in STAR_GUARANTEE.finditer(t[:m.start()]):
+        if 'of the following' in s.group(0):
+            continue
+        lower = [r for r in slots if r < int(s.group(2))]
+        return slots.index(max(lower)) if lower else 0
+    return 0
+
+
+def align_debut_dates(banners, medals, first):
+    """Vetrina e lista alla data del banner (correzione finale A). La data di una variante (rare_date di
+    banner_sources.medal_release) e' interpolata dal numero NA e cade a volte 3-11 giorni dopo l'inizio del banner
+    che ha introdotto la medaglia: per ogni nome di pool.featured o guarantee.list di un banner estraibile con
+    inizio S, se la medaglia e' uscita entro S (o S e' il primo banner estraibile che la nomina), le varianti
+    datate dopo S prendono S, ma solo alle stelle del mix (gia' uscite) e alla stella sopra se gia' uscita
+    (le stesse di expandPool in server/gacha-data.js: mai 6★ prima del 15/07/2016 ne' 7★ prima del 25/05/2018).
+    Le altre medaglie non cambiano. Restituisce il numero di varianti spostate."""
+    live = sorted((b for b in banners if not b['catalogOnly'] and b['start']), key=lambda b: b['start'])
+    debut = {}
+    for b in live:
+        for n in b['pool']['featured'] + b['guarantee']['list']:
+            debut.setdefault(n, b['start'])
+    moved = 0
+    for b in live:
+        s = b['start']
+        stars = {r for r, _ in b['rarityMix'] if not (first.get(str(r)) and first[str(r)] > s)}
+        stars |= {r + 1 for r, _ in b['rarityMix'] if first.get(str(r + 1)) and first[str(r + 1)] <= s}
+        for n in _dedup(b['pool']['featured'] + b['guarantee']['list']):
+            v = medals.get(n)
+            if not v or not (v['date'] <= s or debut.get(n) == s):
+                continue
+            for i in v['ids']:
+                if i[1] in stars and i[2] > s:
+                    i[2] = s
+                    moved += 1
+    return moved
 
 
 def notice_list(r, notices):
@@ -779,6 +846,10 @@ def build_catalog(inputs):
         if g['every'] and not g['list']:  # l'elenco sta solo nel testo del notice (B0742, B0765)
             g['list'] = notice_list(r, notices)
         g.pop('featured')
+        g['slot'] = guarantee_slot(r['guarantees'], rarity_mix(r['rarity_mix'])) if g['list'] else 0
+        total = total_limit(notes)
+        vip_free = typ == 'FREE' and 'VIP' in flags
+        day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)
         found, sk = _bonus(notes, M, MAT)
         skipped += [(rid, x) for x in sk]
         if rid in twins:
@@ -797,7 +868,7 @@ def build_catalog(inputs):
             'start': r['start_pt'], 'end': end, 'endSource': end_src,
             'unlockQuest': unlock_quest(r['start_pt'], story), 'payType': pay, 'currency': cur,
             'prices': prices, 'lotCount': lot, 'rarityMix': rarity_mix(r['rarity_mix']), 'epicBoost': epic_boost(notes),
-            'dayLimit': day_limit(notes, typ), 'vipFree': typ == 'FREE' and 'VIP' in flags,
+            'dayLimit': day, 'totalLimit': total, 'vipFree': vip_free,
             'pool': pool, 'guarantee': g, 'skill': skill_of(typ, r['start_pt']), 'bonus': found,
             'catalogOnly': only, 'completedFrom': completed, 'image': img, 'imageFrom': img_from,
             'notes': notes, 'guaranteesText': r['guarantees'], 'notesSource': nsrc,
@@ -829,6 +900,7 @@ def build_catalog(inputs):
                 if not k and key != 'names' and not b['catalogOnly']:
                     unresolved['non medaglia' if non_medal(n, mats) else 'medaglia probabile'] += 1
             lst[key] = _dedup(res)
+    aligned = align_debut_dates(out, medals, first_rarity(rows))
     out.sort(key=lambda b: b['rowId'])
     return {
         'version': 2,
@@ -838,7 +910,8 @@ def build_catalog(inputs):
         'medals': medals,
         'banners': out,
         '_skippedBonus': skipped,
-        '_stats': {'medaglie aggiunte da medal.json': added, 'irrisolti (vetrina+garanzie, banner attivi)': dict(unresolved)},
+        '_stats': {'medaglie aggiunte da medal.json': added, 'irrisolti (vetrina+garanzie, banner attivi)': dict(unresolved),
+                   'varianti di vetrina/lista alla data del debutto': aligned},
     }
 
 

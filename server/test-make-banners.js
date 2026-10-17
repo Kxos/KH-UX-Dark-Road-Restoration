@@ -30,6 +30,8 @@ check(m.commentOf(pity) === '10 Medals: 1x 6★+, 9x 5★+ - featured Medal guar
 check(m.commentOf(catalog.banners[0]) === '3 Medals: 1x 4★+, 2x 3★+ - once per day', 'once per day');
 check(m.commentOf({ ...base, dayLimit: 3 }) === '10 Medals: 1x 5★+, 9x 4★+ - 3 times per day', '3 times per day');
 check(m.commentOf({ ...base, vipFree: true }) === '10 Medals: 1x 5★+, 9x 4★+ - one free VIP draw per day', 'VIP');
+check(m.commentOf({ ...base, totalLimit: 1 }) === '10 Medals: 1x 5★+, 9x 4★+ - once', `totalLimit 1: ${m.commentOf({ ...base, totalLimit: 1 })}`);
+check(m.commentOf({ ...base, totalLimit: 2 }) === '10 Medals: 1x 5★+, 9x 4★+ - 2 times in total', 'totalLimit 2');
 check(m.commentOf({ ...base, lotCount: 1, rarityMix: [[5, 1]] }) === '1 Medal: 1x 5★+', 'singolare');
 check(m.commentOf({ ...base, lotCount: undefined }) === 'Banner Catalog only' && m.commentOf({ ...base, lotCount: null }) === 'Banner Catalog only', 'lotCount mancante');
 

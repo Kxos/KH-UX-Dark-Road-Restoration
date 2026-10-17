@@ -10,7 +10,7 @@ Di solito si usa `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` ([banco
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "119"                    # BASE della revisione dei master: alzarla a ogni modifica
+$env:KHUX_REVISION      = "120"                    # BASE della revisione dei master: alzarla a ogni modifica
 # KHUX_GACHA_SIZES = "1,2,...,10" (medaglie per estrazione con animazione), KHUX_GACHA_SHOW = "B0306,B0456" rowId del
 # catalogo aggiunti alla lista dello Shop anche se bloccati o fuori data (prove; shop.md#sp2)
 # KHUX_REAL_NOW = istante ISO (prove): l'ora reale del server parte da li' (orologio finto, #orologio)
@@ -132,7 +132,7 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
   ora del server = data reale nel mese gemello 2016-2021 (stesso giorno della settimana e lunghezza),
   scostamento fissato a `/khux/login` (`player.clockOffset`); periodi, scadenze e consegne nei Presents
   sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00). Revisione del master calcolata:
-  `KHUX_REVISION*100000 + scadenze (lunedi'/inizio mese 08:00) passate dal 1/1/2026` (con BASE 118, 16-10: 11800051; BASE 119 dal 17-10, catalogo dei banner: 11900051)
+  `KHUX_REVISION*100000 + scadenze (lunedi'/inizio mese 08:00) passate dal 1/1/2026` (con BASE 118, 16-10: 11800051; BASE 119 dal 17-10, catalogo dei banner: 11900051; BASE 120 dal 17-10, limiti delle gratuite e totalLimit nel commento: 12000051)
   solo nei campi del master; `darkVersionRes` resta `KHUX_REVISION`. Il master e' servito come JSON
   compatto, in cache per revisione e data dei file (`mission` con `endDate` di Weekly A/B e Limited
   riscritti al volo). `KHUX_REAL_NOW` (`-RealNow` di `run-server.ps1`/`relogin.ps1`) sposta l'ora reale

@@ -238,5 +238,37 @@ check(!g.catalogPage([inc], sctx).includes('? Medals'), 'catalogo INCOMPLETE: ni
 check(!g.oddsPage([{ banner: inc, ex: undefined }]).includes('Mancante'), 'odds: INCOMPLETE saltato');
 check(gd.limitText({ dayLimit: 5 }) === '5 times per day' && gd.limitText({ vipFree: true }) === 'once per day' && gd.limitText({}) === '', 'limitText');
 
+// correzione finale B: totalLimit («Available once», Ruling 28), contato su player.gacha.count
+const once = mk({ prices: [0], totalLimit: 1 });
+const po = { freeStone: 10 };
+check(plate(po, once, t0).isDayLimited === 1 && plate(po, once, t0).userLimitedCount === 1, 'totalLimit: disponibile, isDayLimited 1');
+check(g.checkDraw(once, po, { count: 10 }, dopt) === null, 'totalLimit: prima estrazione');
+g.payDraw(once, po, t0, false);
+check(g.checkDraw(once, po, { count: 10 }, dopt) === 'limite totale raggiunto', 'totalLimit: seconda rifiutata');
+check(g.checkDraw(once, po, { count: 10 }, { ...dopt, realMs: next }) === 'limite totale raggiunto', 'totalLimit: rifiutata anche il giorno dopo');
+check(po.freeStone === 9 && plate(po, once, next).userLimitedCount === 0, 'totalLimit: 1 Jewel scalato una volta, 0 rimanenti');
+const three = mk({ prices: [100], totalLimit: 3 });
+const p3 = { freeStone: 1000 };
+g.payDraw(three, p3, t0, false);
+check(plate(p3, three, t0).userLimitedCount === 2, 'totalLimit 3: 2 rimanenti');
+const both = mk({ prices: [100], totalLimit: 5, dayLimit: 1 });
+const pb = { freeStone: 1000, gacha: { count: { [both.drawMedalTypeId]: 4 } } };
+check(plate(pb, both, t0).userLimitedCount === 1, 'dayLimit e totalLimit: il minore');
+g.payDraw(both, pb, t0, false);
+check(g.checkDraw(both, pb, { count: 10 }, { ...dopt, realMs: next }) === 'limite totale raggiunto', 'dayLimit e totalLimit: il totale vince il giorno dopo');
+check(gd.limitText({ totalLimit: 1 }) === 'once' && gd.limitText({ totalLimit: 3 }) === '3 times in total' && gd.limitText({ dayLimit: 1, totalLimit: 0 }) === 'once per day', 'limitText totalLimit');
+check(g.detailPage(sb({ totalLimit: 1 }), exA, medalNames, sctx).includes('for 10 Medals, once.'), 'dettagli: once');
+
+// correzione finale D: garanzia non riprodotta (lista o vetrina vuote alla data del banner)
+const NR = 'This guarantee is not reproduced yet.';
+const exNo = { ...exA, listNames: [], featuredNames: [] };
+const dNL = g.detailPage(sb({ guarantee: { list: ['Alpha'], count: 1, pity: null, every: null }, guaranteesText: 'Guarantees one of the following Medals: Alpha.' }), exNo, medalNames, sctx);
+check(dNL.includes(NR), 'dettagli: lista vuota alla data -> non riprodotta');
+const dNP = g.detailPage(sb({ guarantee: { list: [], count: 0, pity: 10, every: null } }), exNo, medalNames, sctx);
+check(dNP.includes(`Featured Medal guaranteed within 10 draws (original). ${NR}`), 'dettagli: pity senza vetrina -> non riprodotta');
+check(!g.detailPage(bA, exA, medalNames, sctx).includes(NR), 'dettagli: garanzie risolte, nessun avviso');
+check(!g.detailPage(sb({}), exNo, medalNames, sctx).includes(NR), 'dettagli: nessuna garanzia, nessun avviso');
+check(g.oddsPage([{ banner: sb({ guarantee: { list: [], count: 0, pity: 10, every: null } }), ex: exNo }]).includes(NR), 'odds: pity non riprodotta');
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');
