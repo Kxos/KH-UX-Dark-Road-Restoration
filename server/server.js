@@ -1190,8 +1190,8 @@ function respondGachaList(res) {
 // posto della normale (cella propria, validPack 0); preset = pallini (fino a maxEnhanceCount della burst, gia'
 // corretto da burstDotFixes in make-game-tables) e guilt al massimo del Tier (guilt 'max': pallini sempre pieni,
 // ricerca §3); maxSkill = una delle abilita' presenti in skill.json (a caso), al livello massimo; pityGift = la
-// medaglia di supporto nel Present Box quando scatta la pity. Nova: guiltBurstFirst/MaxUserMedalIds (popup dietro
-// KHUX_GUILT_BURST_POPUP, guilt-burst.js).
+// medaglia di supporto nel Present Box quando scatta la pity. Nova: guiltBurstFirst/MaxUserMedalIds (popup acceso,
+// KHUX_GUILT_BURST_POPUP=0 lo spegne, guilt-burst.js).
 function respondGachaDraw(res, body) {
   player.medals = player.medals || []; // salvataggio nuovo: l'elenco nasce alla prima medaglia
   const now = serverTime(), realMs = realNow(), ctx = storyCtx();
@@ -2609,7 +2609,7 @@ function respondMedalEnhance(res, body) {
     (events.rolls.length ? ` (tiri ${events.rolls.join(',')})` : '') +
     `, STR +${state.attackUpperNumber}, DEF +${state.defenseUpperNumber}, costo -${state.upperCost}`);
   // livelli del Burst dati da questa fusione (prima guilt / guilt massima): solo con il popup
-  // GuiltBonus_BurstLvup (KHUX_GUILT_BURST_POPUP=1, LWF assente dalle risorse), come guilt-burst.js
+  // GuiltBonus_BurstLvup (acceso per default, KHUX_GUILT_BURST_POPUP=0 lo spegne), come guilt-burst.js
   const burstGain = guiltBurst().gained();
   send(res, 200, {
     ret: ret(),

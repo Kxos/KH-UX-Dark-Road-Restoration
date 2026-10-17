@@ -27,9 +27,10 @@
 //
 // guiltBurstFirstUserMedalIds / guiltBurstMaxUserMedalIds ([fn]: /stage/clear, draw,
 // moogle shop, raid reward) = le copie che hanno appena dato la prima guilt / guilt massima: il
-// client mostra il popup lwf/medal/guilt_bonus/GuiltBonus_BurstLvup(_num), ASSENTE dalle
-// risorse (LWF nullo = crash). Si mandano solo con KHUX_GUILT_BURST_POPUP=1, quando i LWF ci
-// saranno; altrimenti [] (il livello sale lo stesso, letto da userPoint).
+// client mostra il popup lwf/medal/guilt_bonus/GuiltBonus_BurstLvup(_num) «NOVA LEVEL UP!»: LWF JP
+// importati dalle risorse 41 (import_jp_raisedraw.py, logo «NOVA» di make_nova_logo.py; senza LWF = crash).
+// Popup acceso per default dal sotto-progetto 2b; KHUX_GUILT_BURST_POPUP=0 lo spegne (liste [] e
+// guiltBurstFirstLv/MaxLv 0: il livello sale lo stesso, letto da userPoint).
 // KHUX_GUILT_BURST_LV=<n>: livello fisso per le prove sul banco.
 'use strict';
 
@@ -82,7 +83,7 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
   function lists() {
     refresh();
     const out = { guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [] };
-    if (process.env.KHUX_GUILT_BURST_POPUP === '1') {
+    if (process.env.KHUX_GUILT_BURST_POPUP !== '0') {
       out.guiltBurstFirstUserMedalIds = pending.first.slice();
       out.guiltBurstMaxUserMedalIds = pending.max.slice();
     }
@@ -92,11 +93,11 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
   }
 
   // guiltBurstFirstLv/MaxLv della risposta del Level Up (ramo 55): livelli appena dati. Con il
-  // popup spento 0 (le copie in attesa si scartano alla prossima lists()).
+  // popup spento (KHUX_GUILT_BURST_POPUP=0) 0 (le copie in attesa si scartano alla prossima lists()).
   function gained() {
     const { rows } = refresh();
     const out = { first: 0, max: 0 };
-    if (process.env.KHUX_GUILT_BURST_POPUP !== '1') return out;
+    if (process.env.KHUX_GUILT_BURST_POPUP === '0') return out;
     const medalOf = new Map(userMedalList().map((m) => [m.userMedalId, m.medalId]));
     for (const id of pending.first) out.first += rows.get(medalOf.get(id))?.addGuiltBurstLv || FIRST_DEFAULT;
     for (const id of pending.max) out.max += rows.get(medalOf.get(id))?.addGuiltBurstLvMax || MAX_DEFAULT;
