@@ -148,10 +148,18 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const PAY = { 1: 'Jewels', 4: 'Bronze Tickets', 5: 'Silver Tickets', 6: 'Gold Tickets', 7: 'Platinum Tickets', 8: 'Draw Tickets' };
 const CURRENCY_NAME = { spooky: 'Spooky Cookies', moogle: 'Moogle Points', holiday: 'Holiday Draw Tickets', draw: 'Draw Tickets' };
 // payType sconosciuto: ripiega su Jewels (1) o Tickets, senza lanciare; payType 8: valuta del banner
-const priceText = (b, price) => {
-  const unit = b.payType === 8 ? CURRENCY_NAME[b.currency] || PAY[8] : PAY[b.payType] || (b.payType === 1 ? 'Jewels' : 'Tickets');
-  return `${price} ${price === 1 ? unit.replace(/s$/, '') : unit}`;
-};
+const unitOf = (b) => (b.payType === 8 ? CURRENCY_NAME[b.currency] || PAY[8] : PAY[b.payType] || (b.payType === 1 ? 'Jewels' : 'Tickets'));
+const priceText = (b, price) => `${price} ${price === 1 ? unitOf(b).replace(/s$/, '') : unitOf(b)}`;
+const num = (n) => n.toLocaleString('en-US');
+// Riga sui gradini di prezzo (FIRST_FREE o in calo a ogni estrazione); '' se il prezzo e' unico.
+function priceSteps(b) {
+  const p = b.prices || [];
+  if (p.length < 2) return '';
+  if (p[0] === 0) return `<p class="n">First draw: 1 ${unitOf(b).replace(/s$/, '')}, then ${num(p[1])} ${unitOf(b)}.</p>`;
+  return `<p class="n">Price falls with each draw: ${p.map(num).join(' → ')} ${unitOf(b)}.</p>`;
+}
+const priceLine = (b) => (b.catalogOnly === 'INCOMPLETE' ? ''
+  : `${esc(priceText(b, firstPrice(b)))}, ${b.lotCount ?? '?'} Medal${b.lotCount === 1 ? '' : 's'}`);
 const firstPrice = (b) => Math.max(1, (b.prices || [])[0] || 1);
 function page(title, body) {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -210,22 +218,23 @@ function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
   const pity = banner.guarantee?.pity ? `<p>Featured Medal guaranteed within ${banner.guarantee.pity} draws (original).</p>` : '';
-  const pool = evolve ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {
+  const rated = !!(ex && banner.rarityMix?.length) && banner.catalogOnly !== 'INCOMPLETE';
+  const pool = evolve || !rated ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {
     const names = [...new Set(ids.map((id) => medalNames.get(id) || `#${id}`))].sort();
     return `<h2>${r}★ (${names.length})</h2><p>${names.map(esc).join(', ')}</p>`;
   }).join('');
-  return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">`
-    + `<p>${esc(priceText(banner, firstPrice(banner)))} for ${banner.lotCount} Medal${banner.lotCount === 1 ? '' : 's'}${banner.dayLimit || banner.vipFree ? ', once per day' : ''}.</p>`
+  const lim = gd.limitText(banner);
+  const head = priceLine(banner) ? `<p>${priceLine(banner).replace(', ', ' for ')}${lim ? `, ${lim}` : ''}.</p>${priceSteps(banner)}` : '';
+  const rates = rated ? '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
+    + `<table>${oddsRows(banner, ex, medalNames)}</table>${pity}${skillSection(banner, ctx.skillNames)}${evolve ? '' : '<h2>Medals in this draw</h2>'}${pool}` : '';
+  return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
     + `<p class="n">Original banner: ${dates(banner)}.</p><p class="s">${esc(st.text)}</p>`
-    + `${banner.guaranteesText ? `<p class="n">${esc(banner.guaranteesText)}</p>` : ''}`
-    + '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
-    + `<table>${oddsRows(banner, ex, medalNames)}</table>${pity}${skillSection(banner, ctx.skillNames)}`
-    + `${evolve ? '' : '<h2>Medals in this draw</h2>'}${pool}`);
+    + `${banner.guaranteesText ? `<p class="n">${esc(banner.guaranteesText)}</p>` : ''}${rates}`);
 }
 
 function oddsPage(entries) {
   return page('Draw Odds', '<p class="n">Medal rarities of each draw are original; the chances of one more star are reconstructed for this restoration.</p>'
-    + entries.map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">Featured Medal guaranteed within ${banner.guarantee.pity} draws (original)</div>` : ''}`
+    + entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length).map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">Featured Medal guaranteed within ${banner.guarantee.pity} draws (original)</div>` : ''}`
       + `<table>${oddsRows(banner, ex, medalNames)}</table></div>`).join(''));
 }
 
@@ -233,7 +242,7 @@ function catalogPage(banners, ctx) {
   const sorted = [...banners].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.drawMedalTypeId - b.drawMedalTypeId));
   return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock with the Story, as in the original game.</p>`
     + sorted.map((b) => `<div class="b"><a href="/web/gacha/detail/${b.drawMedalTypeId}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
-      + `<div class="n">${dates(b)}</div><div class="n">${esc(priceText(b, firstPrice(b)))}, ${b.lotCount ?? '?'} Medal${b.lotCount === 1 ? '' : 's'}</div>`
+      + `<div class="n">${dates(b)}</div>${priceLine(b) ? `<div class="n">${priceLine(b)}</div>` : ''}`
       + `<div class="s">${esc(stateOf(b, ctx).text)}</div></div>`).join(''));
 }
 

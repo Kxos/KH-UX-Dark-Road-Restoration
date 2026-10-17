@@ -198,10 +198,24 @@ const exE = gd.expandPool(bE, {}, bE.start);
 const dE = g.detailPage(bE, exE, medalNames, sctx);
 check(dE.includes('Fairy LV3') && dE.includes('10%') && dE.includes('45%'), 'dettagli evolve: livelli con percentuali');
 const op = g.oddsPage([{ banner: bA, ex: exA }, { banner: bE, ex: exE, medalNames }]);
-check(op.includes('Draw Odds') && op.includes('Second') === false && op.includes(esc2(bA.name)), 'odds: sezione per banner');
+check(op.includes('Draw Odds') && op.includes('Second') === false && op.includes(bA.name), 'odds: sezione per banner');
 check((op.match(/class="b"/g) || []).length === 2, 'odds: una sezione per banner');
 check(op.includes('Medal 1') && op.includes('Medal 3') && op.includes('every 3rd draw') && op.includes('Fairy LV3'), 'odds: righe degli slot');
-function esc2(s) { return s; }
+
+// fix round 1
+const d3 = g.detailPage(sb({ dayLimit: 3 }), exA, medalNames, sctx);
+check(d3.includes('3 times per day') && !d3.includes('once per day'), 'dettagli: dayLimit 3');
+check(g.detailPage(sb({ dayLimit: 1 }), exA, medalNames, sctx).includes('once per day'), 'dettagli: dayLimit 1');
+const dF = g.detailPage(sb({ prices: [3000, 2500, 2200, 2000, 1900] }), exA, medalNames, sctx);
+check(dF.includes('Price falls with each draw: 3,000 → 2,500 → 2,200 → 2,000 → 1,900 Jewels'), 'dettagli: prezzo in calo');
+check(g.detailPage(sb({ prices: [0, 3000] }), exA, medalNames, sctx).includes('First draw: 1 Jewel, then 3,000 Jewels'), 'dettagli: FIRST_FREE');
+check(!g.detailPage(sb({}), exA, medalNames, sctx).includes('Price falls'), 'dettagli: prezzo unico senza riga');
+const inc = sb({ catalogOnly: 'INCOMPLETE', lotCount: null, prices: [], rarityMix: undefined, name: 'Mancante', guaranteesText: 'Nota X' });
+const dI = g.detailPage(inc, undefined, medalNames, sctx);
+check(dI.includes('Mancante') && dI.includes('Original details missing') && dI.includes('Nota X') && !dI.includes('Draw rates') && !dI.includes('? Medals'), 'dettagli INCOMPLETE');
+check(!g.catalogPage([inc], sctx).includes('? Medals'), 'catalogo INCOMPLETE: niente riga prezzo');
+check(!g.oddsPage([{ banner: inc, ex: undefined }]).includes('Mancante'), 'odds: INCOMPLETE saltato');
+check(gd.limitText({ dayLimit: 5 }) === '5 times per day' && gd.limitText({ vipFree: true }) === 'once per day' && gd.limitText({}) === '', 'limitText');
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

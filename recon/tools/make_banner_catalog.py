@@ -352,6 +352,26 @@ def guarantee_of(row, notes):
     return g
 
 
+def notice_list(r, notices):
+    """nomi dell'elenco «... one of the following Medals every 3rd draw!» che il TSV non ha (le righe 'notice'):
+    nel testo del notice sono una per riga dopo la frase, fino alla prima riga '■', '*' o vuota."""
+    for i in [int(i) for i in re.findall(r'detail/(\d+)', r['source_url'])]:
+        x = notices.get(i)
+        if not x:
+            continue
+        lines = x['text'].split('\n')
+        for k, ln in enumerate(lines):
+            if re.search(r'of the following [Mm]edals', ln):
+                names = []
+                for nx in lines[k + 1:]:
+                    nx = nx.strip()
+                    if not nx or nx[0] in '■*★':
+                        break
+                    names.append(nx)
+                return _dedup(n for q in names for n in list_names(q))
+    return []
+
+
 # ---------- gemelli VIP (spec 9.5) ----------
 def is_vip(r):
     return 'VIP' in r['currency'] or 'VIP' in r['price']
@@ -754,6 +774,8 @@ def build_catalog(inputs):
         if refs:
             docs.append((r['start_pt'] or FIRST_DAY, pool['sets'], pool['names'], typ))
         g = guarantee_of(r, notes)
+        if g['every'] and not g['list']:  # l'elenco sta solo nel testo del notice (B0742, B0765)
+            g['list'] = notice_list(r, notices)
         g.pop('featured')
         found, sk = _bonus(notes, M, MAT)
         skipped += [(rid, x) for x in sk]

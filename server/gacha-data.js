@@ -218,9 +218,12 @@ function drawMedalTypeRow({ drawMedalTypeId, name, payType, price, sortId, banne
   };
 }
 
+// «once per day» (dayLimit 1 o Free Deal VIP) o «N times per day»; '' senza limite
+const limitText = (b) => (b.vipFree || b.dayLimit === 1 ? 'once per day' : b.dayLimit ? `${b.dayLimit} times per day` : '');
+
 const bannerById = (list, id) => list.find((b) => b.drawMedalTypeId === Number(id));
 
 module.exports = {
   CATALOG_ID, UPGRADE, EPIC_UPGRADE, FEATURED_WEIGHT, SKILL_TABLES, parseRarityMix, slotRarities, loadCatalog, storyDay,
-  asOf, expandPool, slotOdds, rollDraw, rollSkill, drawMedalTypeRow, bannerById,
+  asOf, expandPool, limitText, slotOdds, rollDraw, rollSkill, drawMedalTypeRow, bannerById,
 };
