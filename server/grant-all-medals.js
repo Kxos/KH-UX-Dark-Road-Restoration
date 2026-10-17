@@ -17,6 +17,7 @@ if (process.argv.includes('--undo')) {
 }
 
 const player = JSON.parse(fs.readFileSync(SAVE, 'utf8'));
+const { isBoosted } = require('./medal-boost');
 const medals = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'medal.json'), 'utf8'));
 if (!fs.existsSync(BACKUP)) fs.copyFileSync(SAVE, BACKUP);
 
@@ -31,6 +32,8 @@ for (const m of medals) {
   // righe interne senza prezzo: 1 = «空き» (segnaposto, cella senza immagine nella vendita),
   // 2 = medaglia del Burst (make-guilt-burst.js)
   if (!m.sell) continue;
+  // boosted (medal-boost.js): varianti delle normali, solo dalle estrazioni dei banner
+  if (isBoosted(m)) continue;
   player.medals.push({ userMedalId: next++, medalId: m.medalId, level: 1, getDatetime: now });
   owned.add(m.medalId);
   added++;

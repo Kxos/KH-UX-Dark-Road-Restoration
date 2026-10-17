@@ -19,6 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const { petPartsRows } = require('./make-pet-parts');
+const { isBoosted } = require('./medal-boost');
 
 const D = __dirname;
 const SUBST = {
@@ -52,7 +53,8 @@ function resolver() {
   const master = (n) => JSON.parse(fs.readFileSync(path.join(D, 'master_data', n + '.json'), 'utf8'));
   const materials = byName(master('material'), 'materialId');
   const medals = new Map();
-  for (const m of master('medal')) if (!medals.has(m.name) || m.rare > medals.get(m.name).rare) medals.set(m.name, m);
+  // le boosted (medal-boost.js) hanno il nome della normale: mai bersaglio di una ricompensa
+  for (const m of master('medal')) if (!isBoosted(m) && (!medals.has(m.name) || m.rare > medals.get(m.name).rare)) medals.set(m.name, m);
   const parts = byName(petPartsRows(), 'petPartsId');
   return (text) => {
     const m = /^(.*?)\s*x\s*([\d,]+)$/.exec(text.trim());
