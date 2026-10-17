@@ -91,9 +91,22 @@ function plate(b, webBase, userLimitedCount, price, sortId, warrant = warrantFie
 // vuota (crash, Review Focus 4). N = estrazioni che mancano alla pity (pity - sinceFeatured, mai sotto 1);
 // warrantMedalIds = i bersagli alla stella promessa (ex.pityIds; catalogo vecchio senza slots: la vetrina), la
 // medaglia del pityGift (Present Box), oppure, se la pity non ha bersagli alla data, 0 (striscia nascosta) e il
-// primo id del pool, solo perche' la lista non sia vuota.
+// primo id del pool, solo perche' la lista non sia vuota. Senza pool (ex undefined: expandFor ha lanciato, log in
+// server.js) o con il pool vuoto (log qui, una riga per banner) gli id vengono dal catalogo: prima le varianti dei
+// pityNames, poi una medaglia qualsiasi del banner (vetrina, nomi, liste, sotto-set), infine la prima del catalogo.
 const NO_WARRANT = { userWarrantDisplayOfTime: 1, warrantMedalIds: [] };
-function warrantFields(b, ex, state = {}) {
+const warrantWarned = new Set();
+function bannerMedalIds(b, catalog) {
+  const medals = catalog?.medals || {}, g = b.guarantee || {}, p = b.pool || {};
+  const ids = (names) => names.flatMap((n) => (medals[n]?.ids || []).map(([id]) => id));
+  const pity = ids(g.pityNames || []);
+  if (pity.length) return [...new Set(pity)].sort((x, y) => x - y);
+  const names = [...(p.featured || []), ...(p.names || []), ...(g.list || []), ...(g.slots || []).flatMap((x) => x.names || []),
+    ...(p.sets || []).flatMap((k) => catalog?.subsets?.[k]?.names || []), ...Object.keys(medals)];
+  const any = ids(names)[0];
+  return any ? [any] : [];
+}
+function warrantFields(b, ex, state = {}, catalog = null) {
   const g = b.guarantee || {};
   if (!g.pity) return { ...NO_WARRANT, warrantMedalIds: [] };
   const left = Math.max(1, g.pity - (state.sinceFeatured || 0));
@@ -101,7 +114,13 @@ function warrantFields(b, ex, state = {}) {
   const targets = (ex?.pityIds || []).length ? ex.pityIds : Array.isArray(g.slots) ? [] : ex?.featuredIds || [];
   if (targets.length) return { userWarrantDisplayOfTime: left, warrantMedalIds: [...targets] };
   const any = Object.values(ex?.pool || {}).flat()[0];
-  return { userWarrantDisplayOfTime: 0, warrantMedalIds: any ? [any] : [] };
+  if (any) return { userWarrantDisplayOfTime: 0, warrantMedalIds: [any] };
+  const ids = bannerMedalIds(b, catalog);
+  if ((ex || !ids.length) && !warrantWarned.has(b.drawMedalTypeId)) {
+    warrantWarned.add(b.drawMedalTypeId);
+    console.log(`  [gacha] ${b.rowId} ${b.name}: striscia della pity senza pool${ids.length ? `, warrantMedalIds dal catalogo (${ids.slice(0, 3).join(',')})` : ' e nessuna medaglia nel catalogo: warrantMedalIds vuota'}`);
+  }
+  return { userWarrantDisplayOfTime: 0, warrantMedalIds: ids };
 }
 
 function catalogPlate(webBase) {
@@ -127,15 +146,16 @@ function drawsLeft(player, b, realMs) {
   return left.length ? Math.min(...left) : 0;
 }
 
-// exFor(banner) -> expandPool del banner alla data del giocatore (server.js expandFor): per la striscia della garanzia
-function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor }) {
+// exFor(banner) -> expandPool del banner alla data del giocatore (server.js expandFor) e catalog (ripiego senza pool):
+// per la striscia della garanzia
+function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor, catalog }) {
   ticketsOf(player);
   const list = shopBanners(banners, { storyQuest, storyDay, sizes, show });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
   // Catalog sortId 1, poi 10, 20, ... nell'ordine di shopBanners (i piu' recenti prima, spec 4.3).
   return {
     gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, drawsLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1),
-      warrantFields(b, exFor?.(b), drawState(player, b))))],
+      warrantFields(b, exFor?.(b), drawState(player, b), catalog)))],
     petGachaList: [],
   };
 }

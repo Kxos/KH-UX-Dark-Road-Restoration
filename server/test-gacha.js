@@ -308,6 +308,20 @@ try {
   check(pwB && pwB.userWarrantDisplayOfTime === 2 && JSON.stringify(pwB.warrantMedalIds) === '[71]', `lista: piastra con pity ${JSON.stringify(pwB)}`);
   check(pwF && pwF.userWarrantDisplayOfTime === 1 && pwF.warrantMedalIds.length === 0, 'lista: piastra senza pity {1, []}');
   check(lw.gachaList[0].userWarrantDisplayOfTime === 1 && lw.gachaList[0].warrantMedalIds.length === 0, 'lista: piastra Catalog {1, []}');
+  // fix 1: senza pool (expandFor lancia: ex undefined) o con il pool vuoto la lista resta non vuota (ids del
+  // catalogo dei pityNames, poi una medaglia qualsiasi del banner) e lo slot vuoto si scrive nel log
+  const wlog = [], olog = console.log;
+  console.log = (...a) => wlog.push(a.join(' '));
+  let fU, fE, fN;
+  try {
+    fU = g.warrantFields(bw, undefined, { sinceFeatured: 1 }, WCAT);
+    fE = g.warrantFields(bNo, { ...exNoW, pool: {} }, { sinceFeatured: 0 }, WCAT);
+    const bNames = wb({ guarantee: WG({ pityNames: ['nessuno'] }), pool: { mode: 'sets', sets: [], names: ['wakka'], featured: [], filter: [] } });
+    fN = g.warrantFields(bNames, { pool: {}, pityIds: [] }, { sinceFeatured: 0 }, WCAT);
+  } finally { console.log = olog; }
+  check(fU.userWarrantDisplayOfTime === 0 && JSON.stringify(fU.warrantMedalIds) === '[51,71]', `warrantFields senza pool: ids del catalogo dei pityNames (${JSON.stringify(fU)})`);
+  check(fN.userWarrantDisplayOfTime === 0 && JSON.stringify(fN.warrantMedalIds) === '[15]', `warrantFields senza pool ne' bersagli: una medaglia del banner (${JSON.stringify(fN)})`);
+  check(fE.warrantMedalIds.length > 0 && wlog.some((x) => new RegExp(bNo.rowId).test(x)), `warrantFields pool vuoto: lista non vuota e log (${JSON.stringify(fE)} | ${wlog.join(' | ')})`);
 } catch (err) { errors.push(`warrantFields: eccezione ${err.message}`); }
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }

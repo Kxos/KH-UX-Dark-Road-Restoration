@@ -406,6 +406,26 @@ try {
   for (let k = 0; k < 3; k++) { const x = draw6(bPity); got.push(x.userMedalIds && um(x, x.userMedalIds[0]).medalId); seen.push(wp().userWarrantDisplayOfTime); }
   check(JSON.stringify(seen) === '[3,2,1,3]' && got[2] === AVA && got[0] !== AVA, `piastra: contatore ${seen} (medaglie ${got})`);
   check(JSON.stringify(wp().warrantMedalIds) === `[${AVA}]`, 'piastra: warrantMedalIds = bersaglio alla pityStar');
+  // fix 1: expandFor che lancia su un banner con pity: piastra con warrantMedalIds non vuota (ids del catalogo dei
+  // pityNames), striscia nascosta, una riga di log per banner
+  {
+    const gdm = require('./gacha-data');
+    t.reloadGachaBanners();
+    t.gachaCatalog(); // sanitizeBanners con l'expandPool vero
+    const orig = gdm.expandPool;
+    gdm.expandPool = (b, ...a) => { if (b.drawMedalTypeId === bPity.drawMedalTypeId) throw new Error('ricetta di prova'); return orig(b, ...a); };
+    logs.length = 0;
+    let pl1, pl2;
+    try {
+      pl1 = plate(call(t.respondGachaList), bPity.drawMedalTypeId);
+      pl2 = plate(call(t.respondGachaList), bPity.drawMedalTypeId);
+    } finally { gdm.expandPool = orig; }
+    check(pl1 && JSON.stringify(pl1.warrantMedalIds) === `[${AVA}]` && pl1.userWarrantDisplayOfTime === 0, `expandFor che lancia: piastra ${JSON.stringify(pl1 && [pl1.userWarrantDisplayOfTime, pl1.warrantMedalIds])}`);
+    check(pl2 && pl2.warrantMedalIds.length === 1, 'expandFor che lancia: seconda lista non vuota');
+    const lines = logs.filter((x) => x.includes(bPity.rowId) && /ricetta di prova/.test(x));
+    check(lines.length === 1, `expandFor che lancia: una riga di log per banner (${lines.length}: ${logs.join(' | ')})`);
+    t.reloadGachaBanners();
+  }
   delete process.env.KHUX_GUILT_BURST_POPUP;
 } catch (err) { errors.push(`2b: eccezione ${err.stack}`); }
 
