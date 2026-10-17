@@ -216,20 +216,40 @@ check(m.free_day_limit('FREE', [0], 0, 1, False) == 0 and m.free_day_limit('FREE
 check(m.free_day_limit('SN', [0], 0, 0, False) == 1 and m.free_day_limit('SN', [0, 3000], 0, 0, False) == 0
       and m.free_day_limit('SN', [3000], 0, 0, False) == 0, 'prezzo 0: una al giorno; FIRST_FREE e a pagamento no')
 
-# --- correzione finale C: lista nello slot della stella sotto una garanzia di stella esplicita (B0306, B0355)
+# --- correzione finale C (sotto-progetto 2b): slot della lista da banner_guarantees (riserve in ordine di testo);
+# guarantee.slot = slot della prima riserva a lista (compatibilita' col sotto-progetto 2)
+import banner_guarantees as bg  # noqa: E402
+
+
+def _slot(text, mix):
+    return bg.guarantee_v3(R(row_id='BT'), text, mix, [], [])['slot']
+
+
 GT = 'Guarantees one Tier 4 or lower 7★ Medal. Guarantees one of the following Medals: Illustrated Kairi [EX], HD Axel.'
-check(m.guarantee_slot(GT, [[7, 1], [6, 1], [5, 8]]) == 1, 'B0306: lista nello slot 6★')
-check(m.guarantee_slot('Guarantees one 7★ Tier 3 or 4 Medal. Guarantees one of the following Medals: A, B.', [[7, 1], [6, 1], [5, 2]]) == 1, 'B0355')
-check(m.guarantee_slot('Guarantees two of the following Medals at 7★: A, B.', [[7, 2], [6, 1], [5, 7]]) == 0, 'lista sola: slot 0')
-check(m.guarantee_slot('Guarantees one of the following Medals: A. Guarantees one 7★ Tier 4 Medal.', [[7, 1], [6, 1], [5, 8]]) == 0,
-      'garanzia di stella dopo la lista: slot 0')
-check(m.guarantee_slot('Guarantees one Tier 4 7★ Medal.', [[7, 1], [6, 1], [5, 8]]) == 0, 'senza lista: slot 0')
-check(m.guarantee_slot(GT, [[5, 8], [7, 1], [6, 1]]) == 9, 'indice nell ordine del mix del catalogo')
+check(_slot(GT, [[7, 1], [6, 1], [5, 8]]) == 1, 'B0306: lista nello slot 6★')
+check(_slot('Guarantees one 7★ Tier 3 or 4 Medal. Guarantees one of the following Medals: A, B.', [[7, 1], [6, 1], [5, 2]]) == 1, 'B0355')
+check(_slot('Guarantees two of the following Medals at 7★: A, B.', [[7, 2], [6, 1], [5, 7]]) == 0, 'lista sola: slot 0')
+check(_slot('Guarantees one of the following Medals: A. Guarantees one 7★ Tier 4 Medal.', [[7, 1], [6, 1], [5, 8]]) == 1,
+      'garanzia di stella dopo la lista: le riserve con stella prima, la lista sul primo slot libero')
+check(_slot('Guarantees one Tier 4 7★ Medal.', [[7, 1], [6, 1], [5, 8]]) == 0, 'senza lista: slot 0')
+check(_slot(GT, [[5, 8], [7, 1], [6, 1]]) == 9, 'indice nell ordine del mix del catalogo')
+
+# --- sotto-progetto 2b: Tier come 4° campo, righe boosted escluse, data d'inizio dal notice
+MB = [{'medalId': 2001, 'name': 'Chip', 'rare': 6, 'type': 1, 'validPack': 0, 'groupId': 0},
+      {'medalId': 1002001, 'name': 'Chip', 'rare': 6, 'type': 1, 'validPack': 0, 'groupId': 2001}]
+check(m.is_boosted(MB[1]) and not m.is_boosted(MB[0]) and m.is_boosted({'medalId': 1000001, 'name': 'X'}), 'is_boosted')
+med_x = {}
+m.extend_medals(med_x, [{'medalId': 301899, 'name': 'SN+ - Second Form Sora', 'rare': 7, 'type': 1, 'validPack': 0, 'guiltValue': 9},
+                        {'medalId': 1301899, 'name': 'SN+ - Second Form Sora', 'rare': 7, 'type': 1, 'validPack': 0, 'groupId': 301899, 'guiltValue': 9}],
+                {}, {'sn+ - second form sora': '2019-09-10'})
+check(med_x.get('sn+ - second form sora', {}).get('ids') == [[301899, 7, '2019-09-10', 9]], f'extend_medals: Tier e niente boosted {med_x}')
+check(m.bonus_of('Includes one bonus 6★ [[Chip]] Medal.', MB, []) == [[3, 2001, 1]], 'bonus: mai la boosted')
 
 # --- integrazione sui dati veri
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
 if os.path.exists(WIKI) and os.path.exists(TSV):
+    TIER_BANNERS = 183  # audit delle garanzie, appendice A (178) + 5 frasi SAB del 2016: vedi sotto
     cat = m.build_catalog(m.default_inputs())
     bs = cat['banners']
     check(len(bs) == 808, f'banner {len(bs)}')
@@ -319,10 +339,42 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
              and not (b['dayLimit'] or b['totalLimit'] or b['vipFree'])]
     check(not nolim, f'gratuite senza limite {nolim}')
 
-    # C: lista nello slot 6★ sotto la garanzia «Tier ... 7★» (B0306-B0308, B0355); nessun altro banner cambia slot
-    slot1 = sorted(b['rowId'] for b in bs if b['guarantee'].get('slot', 0) != 0)
-    check(slot1 == ['B0306', 'B0307', 'B0308', 'B0355'] and all(byid[r]['guarantee']['slot'] == 1 for r in slot1),
-          f'guarantee.slot {slot1}')
+    # C: guarantee.slot = slot della prima riserva a lista; != 0 solo sotto una riserva di stella esplicita
+    # (Tier 7★, medaglia nominata o lista precedente): B0306-B0308, B0355 sul 6★ e le liste dopo una nominata (D2/D7)
+    for r in ('B0306', 'B0307', 'B0308', 'B0355'):
+        check(byid[r]['guarantee']['slot'] == 1, f'guarantee.slot {r}')
+    check(all(b['guarantee']['slot'] == next((s['slot'] for s in b['guarantee']['slots'] if s['kind'] == 'list'), 0) for b in bs),
+          'guarantee.slot = prima riserva a lista')
+
+    # sotto-progetto 2b: riserve, pity, Tier (audit delle garanzie del 17-10)
+    B = byid
+    check(cat['version'] == 3 and all(len(i) == 4 for v in cat['medals'].values() for i in v['ids']), 'Tier nelle medaglie')
+    check(not any(i[0] >= 1000000 for v in cat['medals'].values() for i in v['ids']), 'nessuna boosted nel catalogo')
+    # Tier sui banner estraibili, come l'audit: i 178 dell'appendice A (tutti presenti) + 5 del 2016 col SAB
+    # (B0046/B0047 «Level 3 SAB», B0051/B0052 «SAB of 3 or higher», B0079 «Special Attack Bonus Tier of 3»: ricerca §3)
+    # = 183; su tutti gli 808 banner 201 (+12 VIP_TWIN delle serie Tier 7, +6 INCOMPLETE con la frase solo nel notice)
+    live = [b for b in cat['banners'] if not b['catalogOnly']]
+    n_tier = sum(1 for b in live if any(s['kind'] == 'tier' for s in b['guarantee']['slots']))
+    check(n_tier == TIER_BANNERS, f'banner con Tier {n_tier}')
+    # conflitti solo fra i banner di solo catalogo: 6 INCOMPLETE senza rarity_mix, B0473 (VIP_TWIN, «two ... at 7★» su un
+    # mix con un 7★ solo); fra gli estraibili nessuno
+    check(not [b['rowId'] for b in live if any(s.get('conflict') for s in b['guarantee']['slots'])], 'nessun conflitto')
+    check(B['B0199']['start'] == '2017-11-24' and B['B0199']['guarantee']['pity'] == 20, 'B0199 data dal notice')
+    check(B['B0629']['guarantee']['slots'][1]['count'] == 3 and B['B0678']['guarantee']['slots'][0]['count'] == 1, 'D3/D4')
+    check(all(B[r]['guarantee']['pityStar'] == 7 for r in ['B0365', 'B0397', 'B0411', 'B0425', 'B0426', 'B0427', 'B0459']), 'D9 a 7')
+    check(B['B0230']['guarantee']['slots'] and B['B0246']['guarantee']['slots'], 'D6 liste piene alla data')
+    check(all(B[r]['guarantee']['pitySlot'] == 1 and B[r]['guarantee']['pityStar'] == 6 for r in ('B0319', 'B0402', 'B0403', 'B0412')),
+          'decisione 5: pity 6★ sul primo 6★ o 5★')
+    check(B['B0321']['guarantee']['pitySlot'] == 1 and B['B0306']['guarantee']['pitySlot'] == 0, 'pity sullo slot giusto')
+    check(B['B0419']['guarantee']['pityNames'] == ['hd aced [ex+]'] and B['B0421']['guarantee']['pityNames'] == ['hd gula [ex+]'],
+          'decisione 4')
+    ks = {'kind', 'slot', 'count', 'star', 'names', 'tierMin', 'tierMax'}
+    check(all(ks <= set(s) <= ks | {'conflict'} for b in bs for s in b['guarantee']['slots']), 'campi delle riserve')
+    # decisione 1: nessun nome di una lista su uno slot 6★ senza variante 6★ (se la lista ne ha almeno uno)
+    bad = [b['rowId'] for b in bs for s in b['guarantee']['slots'] if s['kind'] == 'list' and s['star'] == 6
+           and any(n in med for n in s['names']) and any(n in med and 6 not in {i[1] for i in med[n]['ids']} for n in s['names'])
+           and any(n in med and 6 in {i[1] for i in med[n]['ids']} for n in s['names'])]
+    check(not bad, f'decisione 1 {bad[:5]}')
     check(all('slot' in b['guarantee'] for b in bs), 'guarantee.slot sempre presente')
 
     # F: nessuna medaglia del catalogo con darklight 3 (la scena del risultato va in crash: docs/notes/shop.md)

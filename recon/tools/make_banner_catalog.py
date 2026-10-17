@@ -283,6 +283,7 @@ def list_names(seg, keep_star=False):
     """nomi normalizzati di un elenco «A, [[B]], or {{KA|22}}.» (link e template resi come banner_sources.toks);
     la stella davanti («7★ Prime - KH Cloud») si toglie, salvo keep_star (bonus: sceglie la rarita')"""
     seg = seg[:_cut(seg)]
+    seg = re.split(r',?\s+with (?:its|one|a|their)\b', seg)[0]  # «..., or [[X]], with one of the following skills: ...»
     seg = LINK.sub(lambda m: (bsrc.toks(m.group(0)) or [' '])[0], seg)
     seg = KEEP_COMMA.sub(lambda m: m.group(0).replace(',', '§'), seg)
     parts = re.split(r',\s*(?:or |and )?|\s+(?:or|and)\s+', seg)
@@ -371,46 +372,32 @@ def guarantee_of(row, notes):
     return g
 
 
-STAR_GUARANTEE = re.compile(r'[Gg]uarantees? (?:one|a|an) ([^.|]*?)(\d)★')
-
-
-def guarantee_slot(text, mix):
-    """indice (in slotRarities: il mix nell'ordine del catalogo) del primo slot a lista. Se il testo, prima di
-    «N of the following», garantisce una stella esplicita («Guarantees one Tier 4 or lower 7★ Medal.», B0306-B0308;
-    «one 7★ Tier 3 or 4 Medal», B0355), quello slot e' suo e la lista va sulla stella successiva del mix; altrimenti
-    0. Il limite di Tier non e' applicato (sotto-progetto 2b)."""
-    t = text.replace("'''", '')
-    m = LISTRE.search(t)
-    if not m:
-        return 0
-    slots = [r for r, n in mix for _ in range(n)]
-    for s in STAR_GUARANTEE.finditer(t[:m.start()]):
-        if 'of the following' in s.group(0):
-            continue
-        lower = [r for r in slots if r < int(s.group(2))]
-        return slots.index(max(lower)) if lower else 0
-    return 0
+def guarantee_names(g):
+    """nomi garantiti scritti nel banner: lista, nomi delle riserve (slots[].names, salvo quelle prese dal master per
+    prefisso, «SN+ or SN++» e «KH III Medal+») e bersagli della pity; `list` (= prima riserva a lista) solo senza slots"""
+    sl = g.get('slots') or []
+    return ([n for s in sl if 'prefix' not in s for n in s['names']] if sl else g['list']) + g.get('pityNames', [])
 
 
 def align_debut_dates(banners, medals, first):
     """Vetrina e lista alla data del banner (correzione finale A). La data di una variante (rare_date di
     banner_sources.medal_release) e' interpolata dal numero NA e cade a volte 3-11 giorni dopo l'inizio del banner
-    che ha introdotto la medaglia: per ogni nome di pool.featured o guarantee.list di un banner estraibile con
-    inizio S, se la medaglia e' uscita entro S (o S e' il primo banner estraibile che la nomina), le varianti
-    datate dopo S prendono S, ma solo alle stelle del mix (gia' uscite) e alla stella sopra se gia' uscita
-    (le stesse di expandPool in server/gacha-data.js: mai 6★ prima del 15/07/2016 ne' 7★ prima del 25/05/2018).
-    Le altre medaglie non cambiano. Restituisce il numero di varianti spostate."""
+    che ha introdotto la medaglia: per ogni nome di pool.featured, guarantee.list, guarantee.slots[].names o
+    guarantee.pityNames di un banner estraibile con inizio S, se la medaglia e' uscita entro S (o S e' il primo
+    banner estraibile che la nomina), le varianti datate dopo S prendono S, ma solo alle stelle del mix (gia' uscite)
+    e alla stella sopra se gia' uscita (le stesse di expandPool in server/gacha-data.js: mai 6★ prima del 15/07/2016
+    ne' 7★ prima del 25/05/2018). Le altre medaglie non cambiano. Restituisce il numero di varianti spostate."""
     live = sorted((b for b in banners if not b['catalogOnly'] and b['start']), key=lambda b: b['start'])
     debut = {}
     for b in live:
-        for n in b['pool']['featured'] + b['guarantee']['list']:
+        for n in b['pool']['featured'] + guarantee_names(b['guarantee']):
             debut.setdefault(n, b['start'])
     moved = 0
     for b in live:
         s = b['start']
         stars = {r for r, _ in b['rarityMix'] if not (first.get(str(r)) and first[str(r)] > s)}
         stars |= {r + 1 for r, _ in b['rarityMix'] if first.get(str(r + 1)) and first[str(r + 1)] <= s}
-        for n in _dedup(b['pool']['featured'] + b['guarantee']['list']):
+        for n in _dedup(b['pool']['featured'] + guarantee_names(b['guarantee'])):
             v = medals.get(n)
             if not v or not (v['date'] <= s or debut.get(n) == s):
                 continue
@@ -454,6 +441,13 @@ def vip_twins(rows):
     return {r['row_id'] for r in rows if is_vip(r) and key(r) in normal}
 
 
+# ---------- righe boosted del master (sotto-progetto 2b, Task 3) ----------
+def is_boosted(r):
+    """riga boosted di medal.json (groupId = medaglia normale, o medalId >= 1000000): non entra in nessuna tabella
+    per nome del catalogo (medaglie, bonus, evoluzione, liste), che darebbe la boosted al posto della normale"""
+    return bool(r.get('groupId')) or r['medalId'] >= 1000000
+
+
 # ---------- bonus (note «Includes N bonus ...») ----------
 BONUS = re.compile(r'[Ii]ncludes? (a|one|two|three|five|\d+) bonus ')
 
@@ -465,7 +459,8 @@ def _bonus(notes, medal_rows, material_rows):
     mats = {norm(x['name']): x['materialId'] for x in material_rows}
     meds = collections.defaultdict(list)
     for x in medal_rows:
-        meds[norm(x['name'])].append(x)
+        if not is_boosted(x):
+            meds[norm(x['name'])].append(x)
     text = notes.replace("'''", '')
     for m in BONUS.finditer(text):
         v = m.group(1).lower()
@@ -521,7 +516,7 @@ def evolve_of(row, medal_rows):
         fmt, levels = 'Blue Fairy [SA Bonus LV {}]', range(4, 9) if row['start_pt'] >= '2018-09-14' else range(3, 9)
     else:  # Gold
         fmt, levels = 'Blue Fairy [SA Bonus LV {}]', range(5, 9)
-    by = {x['name']: x['medalId'] for x in medal_rows}
+    by = {x['name']: x['medalId'] for x in medal_rows if not is_boosted(x)}
     return [[by[fmt.format(lv)], lv] for lv in levels if fmt.format(lv) in by]
 
 
@@ -642,10 +637,11 @@ def extend_medals(medals, M, rd, debut):
     (varianti SN+/Supernova+/SN++ come «SN+ - KH III Demyx», redirect nella wiki). Data = primo banner che
     le nomina (`debut`), altrimenti l'uscita della famiglia (SN 05/10/2018, SN+ 01/09/2019, SN++ 08/11/2019),
     mai prima della medaglia base; cls/class2/att/origin dalla base. Senza base e senza debutto: saltate
-    (nessuna data inventata). Senza base ma nominate: cls 'LIST' (solo dalle liste esplicite)."""
+    (nessuna data inventata). Senza base ma nominate: cls 'LIST' (solo dalle liste esplicite).
+    ids = [medalId, rarita', data, Tier (guiltValue)]; le righe boosted restano fuori."""
     rows = collections.defaultdict(list)
     for r in M:
-        if r['type'] == 1 and r.get('validPack') != 1:
+        if r['type'] == 1 and r.get('validPack') != 1 and not is_boosted(r):
             rows[norm(r['name'])].append(r)
     added = 0
     for n, rs in sorted(rows.items()):
@@ -665,7 +661,7 @@ def extend_medals(medals, M, rd, debut):
             continue
         medals[n] = {'date': date, 'cls': b['cls'] if b else 'LIST', 'class2': b['class2'] if b else 'Attack',
                      'att': b['att'] if b else '', 'origin': b['origin'] if b else '',
-                     'ids': [[r['medalId'], r['rare'], date] for r in sorted(rs, key=lambda r: r['medalId'])],
+                     'ids': [[r['medalId'], r['rare'], date, r.get('guiltValue') or 0] for r in sorted(rs, key=lambda r: r['medalId'])],
                      'alias': base}
         added += 1
     return added
@@ -749,8 +745,11 @@ def default_inputs():
 
 
 def build_catalog(inputs):
+    import banner_guarantees as bg  # qui dentro: banner_guarantees importa questo modulo (import circolare)
     wiki, rows, story, notices = inputs['wiki'], inputs['rows'], inputs['story'], inputs['notices']
-    M, MAT = inputs['medals'], inputs['materials']
+    M = [r for r in inputs['medals'] if not is_boosted(r)]  # le boosted (Task 3) non hanno voce nel catalogo
+    MAT = inputs['materials']
+    tier = {r['medalId']: r.get('guiltValue') or 0 for r in M}  # Tier = guiltValue (audit delle garanzie, sezione 5)
     S = bsrc.english_subsets(wiki)
     rel = bsrc.medal_release(S, wiki, M, rows)
     wsx = shop_index(bsrc.wiki_shop_rows(wiki))
@@ -770,7 +769,7 @@ def build_catalog(inputs):
             if typ != 1 or vp == 1:
                 continue
             rd = o['rare_date'].get(rare) or o['rare_date'].get(str(rare)) or o['date']
-            ids.append([mid, rare, max(rd, o['date'])])
+            ids.append([mid, rare, max(rd, o['date']), tier.get(mid, 0)])
         medals[norm(o['name'])] = {'date': o['date'], 'cls': o['cls'], 'class2': o['class2'], 'ids': ids}
     # attributo (att) e origine (origin) per i filtri dei set: InfoMedal e categorie della pagina della medaglia
     info = {}
@@ -800,9 +799,11 @@ def build_catalog(inputs):
     incl = [r for r in rows if not types[r['row_id']].startswith('X_')]
     twins = vip_twins(incl)
     ov = collections.defaultdict(dict)
+    ov_src = collections.defaultdict(dict)
     for o in inputs['overrides']:
-        if o.get('field') in ('price', 'draw_size', 'rarity_mix', 'end_pt'):
+        if o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt'):
             ov[o['row_id']][o['field']] = o['value']
+            ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
     out, docs, skipped = [], [], []
     for r0 in sorted(incl, key=lambda r: (r['start_pt'] or '9999', r['row_id'])):
@@ -818,7 +819,8 @@ def build_catalog(inputs):
                 completed = s['row_id']
         if rid in ov:
             r.update(ov[rid])
-            completed = 'override'
+            if set(ov[rid]) & {'price', 'draw_size', 'rarity_mix'}:
+                completed = 'override'
         flags = []
         if r['status'].startswith('permanent'):
             flags.append('PERMANENT')
@@ -838,15 +840,19 @@ def build_catalog(inputs):
         prices = parse_price(r['price'])
         lot = int(r['draw_size'][1:]) if re.fullmatch(r'x\d+', r['draw_size']) else None
         end, end_src = end_of(r, typ, incl, notices)
+        if 'end_pt' in ov.get(rid, {}):
+            end_src = ov_src[rid]['end_pt']
         refs = setrefs(notes)
         pool = pool_recipe(r, notes, typ, docs, sub_members, rel, M)
         if refs:
             docs.append((r['start_pt'] or FIRST_DAY, pool['sets'], pool['names'], typ))
-        g = guarantee_of(r, notes)
+        # riserve degli slot, pity e Tier (sotto-progetto 2b): guarantee.list/count/slot = prima riserva a lista
+        g = bg.guarantee_v3(r, notes, rarity_mix(r['rarity_mix']), pool['featured'], M, rares_of=lambda n: None, keep_prefix=True)
         if g['every'] and not g['list']:  # l'elenco sta solo nel testo del notice (B0742, B0765)
             g['list'] = notice_list(r, notices)
-        g.pop('featured')
-        g['slot'] = guarantee_slot(r['guarantees'], rarity_mix(r['rarity_mix'])) if g['list'] else 0
+            lst = next((s for s in g['slots'] if s['kind'] == 'list' and not s['names']), None)
+            if lst:
+                lst['names'] = list(g['list'])
         total = total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)
@@ -876,7 +882,7 @@ def build_catalog(inputs):
     # nomi di vetrina e garanzia -> chiavi di `medals` (alias, redirect, famiglie SN)
     debut = {}
     for b in sorted(out, key=lambda b: b['start'] or '9999'):
-        for n in b['guarantee']['list'] + b['pool']['featured']:
+        for n in guarantee_names(b['guarantee']) + b['pool']['featured']:
             debut.setdefault(clean_name(n), b['start'] or FIRST_DAY)
     added = extend_medals(medals, M, rd, debut)
     mark_std(medals)
@@ -892,18 +898,36 @@ def build_catalog(inputs):
         own = resolve_name(re.sub(r'\s+deal$', '', series_key(b['name'])), st, medals, rd)
         if own:
             b['pool']['featured'] = _dedup([own] + b['pool']['featured'])
-        for lst, key in ((b['guarantee'], 'list'), (b['pool'], 'featured'), (b['pool'], 'names')):
+        g = b['guarantee']
+        for lst, key, count in ([(g, 'pityNames', True), (b['pool'], 'featured', True), (b['pool'], 'names', False)]
+                                + [(s, 'names', 'prefix' not in s) for s in g['slots']]):
             res = []
             for n in lst[key]:
                 k = resolve_name(n, st, medals, rd)
                 res.append(k or n)
-                if not k and key != 'names' and not b['catalogOnly']:
+                if not k and count and not b['catalogOnly']:
                     unresolved['non medaglia' if non_medal(n, mats) else 'medaglia probabile'] += 1
-            lst[key] = _dedup(res)
+            lst[key] = _dedup(k for k in res if k in medals or 'prefix' not in lst)  # nomi del master: solo quelli del catalogo
+        first = next((s for s in g['slots'] if s['kind'] == 'list'), None)
+        g['list'] = list(first['names']) if first else _dedup(resolve_name(n, st, medals, rd) or n for n in g['list'])
     aligned = align_debut_dates(out, medals, first_rarity(rows))
+    # decisione 1 sui nomi risolti (redirect, alias, famiglie SN: i nomi del master non bastano, «Illustrated Sora A»
+    # 6★ e' «Illustrated Sora»), dopo le date del debutto, che contano tutti i nomi scritti; poi lista e pitySlot
+    rares = {k: {i[1] for i in v['ids']} for k, v in medals.items()}
+    for b in out:
+        g = b['guarantee']
+        for s in g['slots']:
+            s.pop('prefix', None)
+            if s['kind'] == 'list':
+                s['names'] = bg.star_filter(s['names'], s['star'], rares.get)
+        first = next((s for s in g['slots'] if s['kind'] == 'list'), None)
+        if first:
+            g['list'] = list(first['names'])
+        if g['pity']:
+            g['pitySlot'], g['pityStar'] = bg.pity_slot(g['pityNames'], g['pityStar'], g['slots'], b['rarityMix'])
     out.sort(key=lambda b: b['rowId'])
     return {
-        'version': 2,
+        'version': 3,
         'firstRarity': first_rarity(rows),
         'story': story,
         'subsets': {k: {'date': sub_date.get(k, FIRST_DAY), 'names': v} for k, v in sorted(sub_members.items())},
@@ -937,6 +961,15 @@ def main():
     print('completate', sum(1 for b in bs if b['completedFrom']), 'fine ricostruita', sum(1 for b in bs if b['endSource'] != 'original'))
     print('bonus', sum(len(b['bonus']) for b in bs), 'bonus saltati', len(skipped))
     print('medaglie', len(cat['medals']), 'std', sum(1 for v in cat['medals'].values() if v['std']), stats)
+    live = [b for b in bs if not b['catalogOnly']]
+    for lab, xs in (('estraibili', live), ('tutti', bs)):
+        gs = [b['guarantee'] for b in xs]
+        print(f'garanzie ({lab})', 'con slots', sum(1 for g in gs if g['slots']),
+              'con Tier', sum(1 for g in gs if any(s['kind'] == 'tier' for s in g['slots'])),
+              'riserve', dict(C(s['kind'] for g in gs for s in g['slots'])),
+              'pity per stella', dict(C(g['pityStar'] for g in gs if g['pity'])),
+              'conflitti', sum(1 for g in gs if any(s.get('conflict') for s in g['slots'])),
+              'override', sum(1 for g in gs if g['source']))
     print('scritto', inp['out'], os.path.getsize(inp['out']), 'byte')
 
 
