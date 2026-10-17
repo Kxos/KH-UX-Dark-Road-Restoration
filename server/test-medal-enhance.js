@@ -85,6 +85,10 @@ assert.ok(gf >= range.min && gf <= range.max, `guilt ${gf} fuori da ${range.min}
 assert.equal(state(b).guiltFactor, gf, 'guilt salvata in medalState');
 const lv1 = r.userData.userPoint.guiltBurstLv;
 assert.equal(lv1, lv0 + 1, 'prima guilt: Burst +1');
+// popup del Nova (acceso per default): il client mostra «LV <suo livello> » LV <campo>», quindi il campo e' il
+// livello d'arrivo, non l'aumento (banco 17-10: «LV 6 » LV 1» con l'aumento)
+assert.equal(r.guiltBurstFirstLv, lv1, 'guiltBurstFirstLv = livello dopo la prima guilt');
+assert.equal(r.guiltBurstMaxLv, 0, 'guiltBurstMaxLv 0 senza guilt massima');
 log('3. Quest 34: guilt', gf, 'Burst', lv0, '->', lv1);
 
 // 4. Magic Mirror x2 (pila: una cella, numbers [2]): +1% ciascuno, fino al massimo
@@ -106,10 +110,14 @@ assert.equal(a.burstUpperNumber, 5, 'pallini conservati');
 log('5. Chip x10, Dale, Cid 10 x3: STR +', a.attackUpperNumber, 'DEF +', a.defenseUpperNumber, 'upperCost', a.upperCost);
 
 // 6. guilt al massimo (rilanci + specchi): Burst +5 (prima guilt massima)
-for (let i = 0; i < 200 && state(b).guiltFactor < range.max; i++) enhance(b, [give(90156)[0]]);
+let rMax = null;
+for (let i = 0; i < 200 && state(b).guiltFactor < range.max; i++) rMax = enhance(b, [give(90156)[0]]);
 assert.equal(state(b).guiltFactor, range.max);
+assert.equal(rMax.guiltBurstMaxLv, lv1 + 5, 'guiltBurstMaxLv = livello dopo la guilt massima');
+assert.equal(rMax.guiltBurstFirstLv, 0, 'guiltBurstFirstLv 0 senza prima guilt nuova');
 r = enhance(b, give(90056));   // una fusione qualsiasi per rileggere il Burst
 assert.equal(r.userData.userPoint.guiltBurstLv, lv1 + 5, 'guilt massima: Burst +5');
+assert.equal(r.guiltBurstFirstLv + r.guiltBurstMaxLv, 0, 'nessun popup senza livelli nuovi');
 log('6. guilt massima', state(b).guiltFactor, 'Burst', r.userData.userPoint.guiltBurstLv);
 
 // 7. Fantasia Mickey B (type 8) su un'altra 6★ con 2 pallini: +1
