@@ -49,8 +49,13 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
 - `respondMedalEnhance`: dopo l'EXP, `medalGuilt.applyEnhance(row, base, materiali, {burstRow,
   guiltProb, isGuilt: isGuiltUnlocked()})`; lo stato va in `medalState` e in
   `afterEnhanceUserMedal`. Log: `pallini a->b, guilt a->b (tiri ...), STR +, DEF +, costo -`.
-- `guiltBurstFirstLv/MaxLv` = livelli del Burst appena dati (`guiltBurst().gained()`), solo con
-  `KHUX_GUILT_BURST_POPUP=1` (manca `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup`); altrimenti 0.
+- `guiltBurstFirstLv/MaxLv` = livello d'ARRIVO del popup «NOVA LEVEL UP!» (`guiltBurst().gained()`): il client
+  (`FUN_00b44918` -> `FUN_00b430bc(scena, da, a)`) mostra «LV <suo livello> » LV <campo>», quindi prima guilt =
+  livello dopo i +1, guilt massima = livello dopo anche i +5, 0 = nessun popup (commit bad55f1: con l'aumento il
+  banco mostrava «LV 6 » LV 1»). Popup acceso per default dal sotto-progetto 2b (LWF JP
+  `GuiltBonus_BurstLvup(_num)`, `GuiltBonus_Wfix0..9`, layout `MedalInfo_Burst_Info.json`, logo «NOVA» di
+  `make_nova_logo.py`, risorse 41); `KHUX_GUILT_BURST_POPUP=0` lo spegne. Chiave del registro: `groupId ||
+  medalId` (una boosted e la sua normale contano una volta, U7 provato al banco).
 - `userDetail.isGuilt = isGuiltUnlocked()`: missione numero >= 34 (Power Bangle; `stageNumber` di
   `lastClearStageId`), oppure sempre 1 con `KHUX_GUILT_BURST_LV` > 0 (prove del Burst). Il client
   (FUN_00c81f30, FUN_00c7e498) permette sblocco/rilancio e Magic Mirror solo con `isGuilt`; il

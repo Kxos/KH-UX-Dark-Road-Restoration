@@ -128,9 +128,13 @@ Codice: `CarouselGuiltBurst`, setup `FUN_00b0fbd0` (battaglia) -> `FUN_00aee878`
   `/stage/clear`, draw, Moogle Shop, raid reward) e `guiltBurstFirstLv`/`MaxLv` del Level Up
   (`FUN_0078f990`) aprono `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` (`FUN_00b430bc`, clip
   `FromLv`/`ToLv`, evento `enterFrame` su `_root`) e `GuiltBonus_BurstLvup_num` (`FUN_00b45dc0`),
-  **assenti** (LWF nullo = crash). Le liste partono solo con `KHUX_GUILT_BURST_POPUP=1`; il Level Up
-  manda 0. Per generarli: copia di un LWF con clip omonime (stile `make_medaltype_lwf.py`).
-  `MedalInfo_Burst_Info.json` (`FUN_00b466cc`, dettaglio medaglia) e' nei layout mancanti.
+  importati dai dati JP 4.3.1 (`import_jp_raisedraw.py`, con `GuiltBonus_Wfix0..9` e il layout
+  `MedalInfo_Burst_Info.json` di `FUN_00b466cc`) con il logo «NOVA» al posto di «BURST» (`make_nova_logo.py`,
+  `--replace`), risorse 41. Popup acceso per default (`KHUX_GUILT_BURST_POPUP=0` lo spegne): provato al banco dal
+  Level Up il 17-10 (+1 «Unlocked X's Special Attack Bonus!», +5 «Maxed out X's Special Attack Bonus!», TAP SCREEN;
+  [shop.md#sp2b](shop.md#sp2b)). Il Level Up manda il livello d'arrivo ([guilt.md](guilt.md)); per le liste
+  `guiltBurst*UserMedalIds` (draw, /stage/clear) il client calcola i livelli dalla riga medal
+  (`addGuiltBurstLv/Max`, 0 nelle nostre tabelle): I-149. Registro per `groupId || medalId`.
 - **Super Burst** (`setupSuperGuiltBurst` `FUN_00aef124`, sempre chiamato): per ogni medaglia del
   deck con `validSuperBurst` (+0x500) e `superBurstId` (+0x504) != 0 (`FUN_00af14e0`) aggiunge un
   pannello a `ActionMap_SuperBurst_SelectWindow/SelectPanel` (serviti). Nessuna medaglia delle

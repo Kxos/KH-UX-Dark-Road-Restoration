@@ -380,3 +380,92 @@ regola allargata di `align_debut_dates` («primo banner estraibile che le nomina
 Il report completo dell'audit (tabelle per schema, regole di estrazione, esiti attesi) e' fuori dal repo:
 `D:\Progetto_Restauro_KH_UX\tmp\sp2\audit-guarantees.md`.
 
+
+<a id="sp2b"></a>
+## Sotto-progetto 2b «Garanzie» (17-10, I-144 chiuso)
+
+Spec [2026-10-17-shop-garanzie-2b-design.md](../superpowers/specs/2026-10-17-shop-garanzie-2b-design.md), piano
+[2026-10-17-shop-garanzie-2b.md](../superpowers/plans/2026-10-17-shop-garanzie-2b.md) (10 task, commit 2ef2c14..bad55f1).
+
+**Contratto del catalogo v3** (`server/game_data/gacha_catalog.json`, `version` 3; dettaglio nel piano):
+`medals[n].ids[i] = [id, stella, data, Tier]` (Tier = `medal.json.guiltValue`); `guarantee.slots[]` = riserve
+`{kind: list|tier|trait, slot, count, star, names, tierMin, tierMax}`; `pityNames`, `pityStar`, `pitySlot`,
+`pityGift` (`[3, medalId, 1]` per le medaglie di supporto: va nel Present Box), `erratum`, `source`;
+`enhance.preset` (`dots`, `guilt: 'max'`), `enhance.boosted` (`str`/`def`, `chance: small` = 5% ricostruito per slot
+idoneo, `guaranteed`), `enhance.maxSkill`, `enhance.notReproduced`. `guarantee.list/count/slot` restano (prima
+riserva a lista) per compatibilita'.
+
+**Comandi, nell'ordine** (master -> revisione nuova; risorse complete solo a banco fermo):
+
+```powershell
+python recon/tools/make_banner_catalog.py
+$env:KHUX_MEDALS_ALL='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # righe boosted (in fondo)
+node server/make-banners.js                                  # drawMedalType: striscia, validComment, warrant
+.\tools\ldplayer\session\build-resources.ps1 -Version 41     # LWF JP del Nova + logo NOVA, Draw_StatusBonus, *_SB.png
+.\tools\ldplayer\session\update-resources.ps1 -Revision 121
+```
+
+`make-game-tables.js` va lanciato con `KHUX_MEDALS_ALL=1` (senza scrive solo 522 medaglie) e rifa' anche
+`keyblade_levels.json`/`stage.json`, che poi altri script ritoccano. Nel Task 10 e' stato provato su una copia
+(`tmp\master_t10`): `medal.json` e' risultato identico a quello in uso, quindi il master vero non e' stato riscritto.
+
+**Regole** (server/gacha.js, gacha-data.js, medal-boost.js):
+
+- slot: le riserve `tier` filtrano per Tier (`tierMin..tierMax`, nomi alternativi ammessi), le `list` pescano per
+  nome alla stella dello slot, le `trait` sono slot generici; pool vuoto -> senza filtro con log, mai un'eccezione;
+  mai una medaglia prima della sua data;
+- pity: dopo `pity` estrazioni senza il bersaglio, lo slot `pitySlot` diventa il bersaglio a `pityStar` (la variante
+  piu' alta gia' uscita alla data, altrimenti la piu' bassa sopra); `pityGift` lo mette nel Present Box senza
+  toccare gli slot (Dual Meow Wow 301684, Blue Fairy 301502);
+- striscia gialla: `validComment 0` + `warrantMedalIds` (nomi dalla tabella medal) -> «<nome> guaranteed in N
+  tries!» / «1 try!»; senza bersaglio alla data il contatore e' 0 e la striscia sparisce (16 date);
+  `WARRANT_XML_SAFE` resta `false` (U3);
+- boosted: la riga boosted del master al posto della normale (cella propria), `chance small` 5% per slot idoneo;
+  le Tier-family (+1000/+1000) sono ricostruite (la frase non da' i valori), spiegate nelle Notices;
+- preset: pallini fino a `maxEnhanceCount`, guilt al massimo del Tier (con `guilt: 'max'` anche i pallini); la guilt
+  del preset vale per il Nova anche prima di Power Bangle (probabilmente come l'originale);
+- maxSkill: 80 banner estraibili, 0 coperti (skill.json ha 12 abilita', nessuna «... Max»): I-146 resta aperto.
+
+**Prove al banco (17-10, risorse 41, master BASE 121, nessun crash del gioco).** Copia del salvataggio ridotto in
+`D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-2b`. Le prove 1-6 e 8 sono state fatte sul salvataggio completo
+(`tmp\save-backup-before-nova-test`, `freeStone` portato a 100000). La prova 3 e' stata fatta su una copia del
+ridotto con medaglie aggiunte (`tmp\save-nova-fixture.json`, poi 20 Magic Mirror, 5 Xaldin e munny). A fine prove il
+salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,B0629,B0076,B0651`. Screenshot in
+`D:\Progetto_Restauro_KH_UX\screenshots\`:
+
+| Prova | Esito | Screenshot |
+|---|---|---|
+| 1 B0306 x5 | OK: slot 0 7★ di Tier 3 (Owl, Hydra, Ice Titan, Alice), slot 1 dalle 8 liste a 6★ (TWEWY Art 2, HD Larxene, Yuna & Rikku & Paine); striscia «HD Axel guaranteed in 5 tries!» -> 4, 3, 2, «1 try!»; alla quinta HD Axel 7★ Tier 4 sullo slot 0 (log `pity`), poi di nuovo 5 | 2b_t1_strip5a, 2b_t1_d1_result, 2b_t1_back1, 2b_t1_back2, 2b_t1_d3_back, 2b_t1_d4_back, 2b_t1_d5_result, 2b_t1_d5_back |
+| 2 B0629 x2 | OK: 1 New Enemy 7★ (SN++ Rock Troll, SN+ Flood) + 3 KH III 6★ in ogni estrazione; striscia da 10 a 9 dopo il bersaglio | 2b_t2_d1_result, 2b_t2_d2_result, 2b_t4_back |
+| 3 Nova (Level Up) | OK dopo bad55f1: popup «NOVA LEVEL UP!» con logo NOVA, «LV 12 » LV 13», riquadro «Unlocked Xaldin's Special Attack Bonus!» (U4: il +1 mostra il riquadro) e TAP SCREEN; +5 con «Maxed out Iago's Special Attack Bonus!». Prima della correzione «LV 6 » LV 1» e «LV 7 » LV 5» (il campo e' il livello d'arrivo). Da estrazione non provabile: I-148, I-149 | 2b_t3_a_6, 2b_t3d_max_5, 2b_t3f_5 |
+| 4 B0076 (U3) | OK: «Illustrated Sora & Pals guaranteed in 5 tries!» leggibile, nessun cambio | 2b_t4_strip1..8 |
+| 5 B0651 boosted | OK: fascia BOOSTED su tutte e 10, dettaglio con STR/DEF/Cost gialli, Cost 36, No. della normale (1743), targhetta LV rossa in Medal List e Level Up (come `reference\shop_boosted`) | 2b_t5_d1_result, 2b_t5_detail, 2b_t5_list, 2b_t5_listdetail |
+| 6 abilita' al massimo | non provabile: nessun banner estraibile coperto (I-146) | - |
+| 8 Shop/Notices x10 | OK: 10 `GET /gacha/list`, nessun crash; Notices con le righe nuove (boosted 5%, abilita' al massimo, +1000, regali nel Present Box) | 2b_t8_shop1..10, 2b_t8_notices1..10, 2b_t8_diff1..3 |
+
+**Incertezze U1-U7**:
+
+- **U1** (`minCost` della boosted = normale - 10): confermato. Cid sulla boosted Aqua: costo -5 (log `costo -5`),
+  Cost giallo (2b_t5_u1_cid1, 2b_t5_u1_result). Nessun cambio.
+- **U2** (`groupId` e Level Up): la normale e' materiale «da pallino» della boosted. Anteprima con un pallino giallo
+  e LV 1 -> 42; risultato pallini 0 -> 1, LV 51 (Great Success del client, EXP x1,5); nessun crash
+  (2b_t5_u2_preview, 2b_t5_u2_anim2). Nessun cambio.
+- **U3** («&» nella striscia): leggibile, `WARRANT_XML_SAFE` resta spento, niente revisione 122.
+- **U4** (riquadro del +1): il +1 mostra il riquadro «Unlocked ...», il +5 «Maxed out ...» (2b_t3f_5, 2b_t3d_max_5).
+  Il numero d'arrivo era sbagliato: corretto in `guilt-burst.js gained()` (commit bad55f1, nessun cambio di master).
+- **U5** (`displayId` 1 per le boosted senza badge): Iago boosted (displayId 1) mostrata senza crash in Medal List,
+  Level Up e dettaglio; le SN+ (displayId 201) con il badge giusto.
+- **U6** (medalId >= 1.000.000): Medal List, dettaglio (anche la seconda pagina, 2b_t6_down), Level Up ed Evolve
+  aperti senza crash (2b_t6_evolve).
+- **U7** (Nova per gruppo): Iago boosted guiltata dopo la normale: +80% senza popup (2b_t7_b_*), registro
+  `first: [31056, 300930]` senza voci nuove. La guilt massima della boosted ha dato il +5 (un massimo non ancora
+  registrato per il gruppo), come previsto dalla chiave `groupId || medalId`.
+
+**Rimandati** (note qui; i difetti veri sono in ISSUES):
+
+- I-146 (maxSkill), I-148 (nessun preset `max` estraibile), I-149 (livelli del popup dalle estrazioni), I-150 (nomi
+  guasti del catalogo), I-151 (liste che salgono a 7★, pity senza bersaglio alla `pityStar` in 161 banner);
+- 16 date di banner con la pity senza bersaglio: striscia nascosta;
+- bagliore del logo NOVA di 8 px contro i ~16-20 del JP (Task 9, solo estetica);
+- durante la prova U2 sul salvataggio completo, «Unequip» dal dettaglio di una medaglia in un sottoslot del keyblade
+  ha aperto «Remove all following Medals?» con la lista vuota: annullato, da guardare se ricapita.
