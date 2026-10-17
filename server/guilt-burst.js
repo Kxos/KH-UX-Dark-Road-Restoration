@@ -20,6 +20,8 @@
 //   guiltFactor > 0;
 // - guilt massima = la prima volta che una copia arriva al massimo del suo tier (guiltProb).
 // Il conto e' un registro che non scende (player.guiltBurst = {first: [medalId], max: [medalId]}):
+// la chiave e' groupId || medalId (sotto-progetto 2b): una boosted (riga a parte con groupId = la normale,
+// medal-boost.js) e la sua normale contano come una medaglia sola; per le normali (groupId 0) e' il medalId.
 // vendere o fondere la medaglia non toglie il livello, come nell'originale. I medalId registrati
 // con le regole di prima (possesso, livello massimo) restano: il livello non scende.
 //
@@ -50,15 +52,16 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     for (const m of userMedalList()) {
       const row = rows.get(m.medalId);
       if (!row || !(row.guiltValue > 0) || !(m.guiltFactor > 0)) continue;
-      if (!first.has(m.medalId)) {
-        first.add(m.medalId);
-        rec.first.push(m.medalId);
+      const key = row.groupId || m.medalId;
+      if (!first.has(key)) {
+        first.add(key);
+        rec.first.push(key);
         if (!seed) pending.first.push(m.userMedalId);
       }
       const top = guiltRange(guiltProb, row.guiltValue).max;
-      if (top > 0 && m.guiltFactor >= top && !max.has(m.medalId)) {
-        max.add(m.medalId);
-        rec.max.push(m.medalId);
+      if (top > 0 && m.guiltFactor >= top && !max.has(key)) {
+        max.add(key);
+        rec.max.push(key);
         if (!seed) pending.max.push(m.userMedalId);
       }
     }

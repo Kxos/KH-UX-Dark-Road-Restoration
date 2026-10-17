@@ -74,13 +74,34 @@ function catalogRow() {
 // sortId: il client ([fn]) raggruppa le piastre in una mappa per sortId della lista (non quello del master,
 // che non legge) e le mostra per sortId crescente, poi drawMedalTypeId: un numero intero diverso per ogni piastra
 // (senza, JSON.stringify lo toglie e [fn] rifiuta la lista: «200 ERROR :75», I-138).
-function plate(b, webBase, userLimitedCount, price, sortId) {
+function plate(b, webBase, userLimitedCount, price, sortId, warrant = warrantFields({})) {
   return {
     validAdd: 0, drawMedalTypeId: b.drawMedalTypeId, drawType: 1, sortId, payType: b.payType, price,
-    lotCount: b.lotCount, isDayLimited: b.dayLimit || b.vipFree || b.totalLimit ? 1 : 0, userLimitedCount, userWarrantDisplayOfTime: 1,
+    lotCount: b.lotCount, isDayLimited: b.dayLimit || b.vipFree || b.totalLimit ? 1 : 0, userLimitedCount,
+    userWarrantDisplayOfTime: warrant.userWarrantDisplayOfTime,
     name: b.name, description: b.name, bannerUrl: `${webBase}/web/gacha/img/${b.drawMedalTypeId}.png`,
-    warrantMedalIds: [], drawTicketlimitDate: '2030-12-31 23:59:59',
+    warrantMedalIds: warrant.warrantMedalIds, drawTicketlimitDate: '2030-12-31 23:59:59',
   };
+}
+
+// Striscia della garanzia sulla piastra (sotto-progetto 2b, ricerca §2). Senza pity: la striscia di oggi
+// (userWarrantDisplayOfTime 1 con warrantDisplayOfTime 1 del master: compare il comment). Con pity il master ha
+// warrantDisplayOfTime = pity e validComment 0 (make-banners.warrantOf): il client scrive «<nome> guaranteed in N
+// tries!» con N = userWarrantDisplayOfTime e i nomi di warrantMedalIds, che con validComment 0 NON puo' essere
+// vuota (crash, Review Focus 4). N = estrazioni che mancano alla pity (pity - sinceFeatured, mai sotto 1);
+// warrantMedalIds = i bersagli alla stella promessa (ex.pityIds; catalogo vecchio senza slots: la vetrina), la
+// medaglia del pityGift (Present Box), oppure, se la pity non ha bersagli alla data, 0 (striscia nascosta) e il
+// primo id del pool, solo perche' la lista non sia vuota.
+const NO_WARRANT = { userWarrantDisplayOfTime: 1, warrantMedalIds: [] };
+function warrantFields(b, ex, state = {}) {
+  const g = b.guarantee || {};
+  if (!g.pity) return { ...NO_WARRANT, warrantMedalIds: [] };
+  const left = Math.max(1, g.pity - (state.sinceFeatured || 0));
+  if (g.pityGift) return { userWarrantDisplayOfTime: left, warrantMedalIds: [g.pityGift[1]] };
+  const targets = (ex?.pityIds || []).length ? ex.pityIds : Array.isArray(g.slots) ? [] : ex?.featuredIds || [];
+  if (targets.length) return { userWarrantDisplayOfTime: left, warrantMedalIds: [...targets] };
+  const any = Object.values(ex?.pool || {}).flat()[0];
+  return { userWarrantDisplayOfTime: 0, warrantMedalIds: any ? [any] : [] };
 }
 
 function catalogPlate(webBase) {
@@ -106,13 +127,15 @@ function drawsLeft(player, b, realMs) {
   return left.length ? Math.min(...left) : 0;
 }
 
-function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show }) {
+// exFor(banner) -> expandPool del banner alla data del giocatore (server.js expandFor): per la striscia della garanzia
+function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor }) {
   ticketsOf(player);
   const list = shopBanners(banners, { storyQuest, storyDay, sizes, show });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
   // Catalog sortId 1, poi 10, 20, ... nell'ordine di shopBanners (i piu' recenti prima, spec 4.3).
   return {
-    gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, drawsLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1)))],
+    gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, drawsLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1),
+      warrantFields(b, exFor?.(b), drawState(player, b))))],
     petGachaList: [],
   };
 }
@@ -271,5 +294,5 @@ function catalogPage(banners, ctx) {
 
 module.exports = {
   SHOP_MAX, WALLET, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
+  dayLeft, drawsLeft, gachaListData, warrantFields, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
 };

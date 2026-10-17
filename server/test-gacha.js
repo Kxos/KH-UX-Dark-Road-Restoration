@@ -270,5 +270,45 @@ check(!g.detailPage(bA, exA, medalNames, sctx).includes(NR), 'dettagli: garanzie
 check(!g.detailPage(sb({}), exNo, medalNames, sctx).includes(NR), 'dettagli: nessuna garanzia, nessun avviso');
 check(g.oddsPage([{ banner: sb({ guarantee: { list: [], count: 0, pity: 10, every: null } }), ex: exNo }]).includes(NR), 'odds: pity non riprodotta');
 
+// --- sotto-progetto 2b, Task 6: striscia della garanzia sulla piastra (warrantFields) ---
+// con validComment 0 (ogni banner con pity, make-banners.warrantOf) il client legge i nomi di warrantMedalIds:
+// una lista vuota lo manda in crash (Review Focus 4)
+try {
+  const WCAT = { firstRarity: { 5: '2016-04-07', 6: '2016-07-15', 7: '2018-05-25' }, story: [], subsets: {}, medals: {
+    'hd axel': { date: '2016-04-07', std: true, ids: [[51, 5, '2016-04-07', 4], [71, 7, '2018-05-25', 4]] },
+    wakka: { date: '2016-04-07', std: true, ids: [[15, 5, '2016-04-07', 1]] },
+  } };
+  const WG = (o) => ({ list: [], count: 0, pity: 5, every: null, slots: [], pityNames: ['hd axel'], pityStar: 7, pitySlot: 0, pityGift: null, ...o });
+  const wb = (o) => mk({ start: '2018-06-01', end: '2018-06-30', rarityMix: [[7, 1], [5, 9]], pool: { mode: 'released', sets: [], names: [], featured: [], filter: [] }, guarantee: WG({}), ...o });
+  const bw = wb({});
+  const exW = gd.expandPool(bw, WCAT, '2018-06-01');
+  const wf = (b, ex, s) => JSON.stringify(g.warrantFields(b, ex, { draws: s, sinceFeatured: s }));
+  check(wf(bw, exW, 0) === '{"userWarrantDisplayOfTime":5,"warrantMedalIds":[71]}', `warrantFields pity 5, 0 di fila: ${wf(bw, exW, 0)}`);
+  check(wf(bw, exW, 1) === '{"userWarrantDisplayOfTime":4,"warrantMedalIds":[71]}', `warrantFields 1 di fila: ${wf(bw, exW, 1)}`);
+  check(wf(bw, exW, 4) === '{"userWarrantDisplayOfTime":1,"warrantMedalIds":[71]}', `warrantFields 4 di fila: ${wf(bw, exW, 4)}`);
+  // pity senza bersagli alla data: striscia nascosta (0), lista mai vuota (primo id del pool)
+  const bNo = wb({ guarantee: WG({ pityNames: ['nessuno'] }) });
+  const exNoW = gd.expandPool(bNo, WCAT, '2018-06-01');
+  const firstPool = Object.values(exNoW.pool).flat()[0];
+  check(exNoW.pityIds.length === 0 && wf(bNo, exNoW, 2) === `{"userWarrantDisplayOfTime":0,"warrantMedalIds":[${firstPool}]}`, `warrantFields senza bersagli: ${wf(bNo, exNoW, 2)}`);
+  // senza pity: la striscia di oggi
+  const bFree = wb({ guarantee: WG({ pity: null, pityNames: [] }) });
+  check(wf(bFree, gd.expandPool(bFree, WCAT, '2018-06-01'), 0) === '{"userWarrantDisplayOfTime":1,"warrantMedalIds":[]}', 'warrantFields senza pity: {1, []}');
+  // pityGift (medaglia di supporto nel Present Box): conto alla rovescia sul regalo
+  const bGift = wb({ guarantee: WG({ pity: 10, pityNames: [], pityStar: null, pitySlot: null, pityGift: [3, 301684, 1] }) });
+  check(wf(bGift, gd.expandPool(bGift, WCAT, '2018-06-01'), 3) === '{"userWarrantDisplayOfTime":7,"warrantMedalIds":[301684]}', `warrantFields pityGift: ${wf(bGift, gd.expandPool(bGift, WCAT, '2018-06-01'), 3)}`);
+  // catalogo vecchio (senza slots): la vetrina
+  const bOld = wb({ guarantee: { list: [], count: 0, pity: 5, every: null }, pool: { mode: 'released', sets: [], names: [], featured: ['hd axel'], filter: [] } });
+  check(wf(bOld, gd.expandPool(bOld, WCAT, '2018-06-01'), 0) === '{"userWarrantDisplayOfTime":5,"warrantMedalIds":[51,71]}', `warrantFields catalogo vecchio: ${wf(bOld, gd.expandPool(bOld, WCAT, '2018-06-01'), 0)}`);
+  // nella lista: exFor da' il pool; la piastra Catalog resta {1, []}
+  const wopt = { ...opt, storyDay: '2018-06-10' };
+  const pw6 = { freeStone: 0, gacha: { sinceFeatured: { [bw.drawMedalTypeId]: 3 } } };
+  const lw = g.gachaListData([bw, bFree], pw6, { realMs: t0, webBase: 'http://h', ...wopt, exFor: (b) => gd.expandPool(b, WCAT, '2018-06-01') });
+  const pwB = lw.gachaList.find((x) => x.drawMedalTypeId === bw.drawMedalTypeId), pwF = lw.gachaList.find((x) => x.drawMedalTypeId === bFree.drawMedalTypeId);
+  check(pwB && pwB.userWarrantDisplayOfTime === 2 && JSON.stringify(pwB.warrantMedalIds) === '[71]', `lista: piastra con pity ${JSON.stringify(pwB)}`);
+  check(pwF && pwF.userWarrantDisplayOfTime === 1 && pwF.warrantMedalIds.length === 0, 'lista: piastra senza pity {1, []}');
+  check(lw.gachaList[0].userWarrantDisplayOfTime === 1 && lw.gachaList[0].warrantMedalIds.length === 0, 'lista: piastra Catalog {1, []}');
+} catch (err) { errors.push(`warrantFields: eccezione ${err.message}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

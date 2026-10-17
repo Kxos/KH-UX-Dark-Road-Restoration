@@ -34,6 +34,7 @@ const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranki
 const medalSkill = require('./medal-skill');
 const gachaData = require('./gacha-data');
 const gacha = require('./gacha');
+const medalBoost = require('./medal-boost');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
 const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
 
@@ -1139,7 +1140,10 @@ function sanitizeBanners(catalog) {
   return { ...catalog, banners };
 }
 const gachaCatalog = () => (gachaCatalogMemo ??= sanitizeBanners(gachaData.loadCatalog(GACHA_FILE)));
-function reloadGachaBanners() { gachaCatalogMemo = null; gachaPoolCache.clear(); }
+// righe boosted del master medal (medal-boost.boostedIndex: 'normale:str:def' -> medalId), per enhance.boosted
+let gachaBoostMemo = null;
+const gachaBoostedIndex = () => (gachaBoostMemo ??= medalBoost.boostedIndex(masterRows('medal')));
+function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; gachaPoolCache.clear(); }
 
 // Punto della storia del giocatore: ultima quest superata (1-525) e data della sua tranche.
 function storyCtx() {
@@ -1157,9 +1161,11 @@ function expandFor(b, ctx = storyCtx()) {
 // Banner della lista attuale (stessa scelta di /gacha/list)
 const gachaShopList = (ctx = storyCtx()) => gacha.shopBanners(gachaCatalog().banners, { ...ctx, sizes: GACHA_SIZES, show: GACHA_SHOW });
 
+// Piastre con la striscia della garanzia (gacha.warrantFields): il pool alla data del giocatore da' i bersagli della pity.
 function respondGachaList(res) {
-  const migrate = !player.drawTickets, listed = player.gacha?.listedCurrency;
-  const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW, ...storyCtx() });
+  const migrate = !player.drawTickets, listed = player.gacha?.listedCurrency, ctx = storyCtx();
+  const exFor = (b) => { try { return expandFor(b, ctx); } catch { return undefined; } };
+  const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW, ...ctx, exFor });
   if (migrate || player.gacha.listedCurrency !== listed) savePlayer();
   send(res, 200, { ret: ret(), ...data });
 }
@@ -1169,6 +1175,12 @@ function respondGachaList(res) {
 // effectNumbers: tutti obbligatori) e [fn] (guiltBurstFirst/MaxUserMedalIds). Un rifiuto
 // risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop ([fn]). Si estrae solo dai
 // banner della lista attuale o di KHUX_GACHA_SHOW: una richiesta forgiata non arriva ai banner fuori periodo.
+// Potenziamenti del catalogo v3 (sotto-progetto 2b, rollDraw extras): boosted = la riga boosted del master al
+// posto della normale (cella propria, validPack 0); preset = pallini (fino a maxEnhanceCount della burst, gia'
+// corretto da burstDotFixes in make-game-tables) e guilt al massimo del Tier (guilt 'max': pallini sempre pieni,
+// ricerca §3); maxSkill = una delle abilita' presenti in skill.json (a caso), al livello massimo; pityGift = la
+// medaglia di supporto nel Present Box quando scatta la pity. Nova: guiltBurstFirst/MaxUserMedalIds (popup dietro
+// KHUX_GUILT_BURST_POPUP, guilt-burst.js).
 function respondGachaDraw(res, body) {
   player.medals = player.medals || []; // salvataggio nuovo: l'elenco nasce alla prima medaglia
   const now = serverTime(), realMs = realNow(), ctx = storyCtx();
@@ -1183,7 +1195,9 @@ function respondGachaDraw(res, body) {
   const snap = inventorySnapshot(now);
   const owned = new Set(userMedalList().map((m) => m.medalId)); // quello che vede il client
   let draw;
-  try { draw = gachaData.rollDraw(banner, expandFor(banner, ctx), Math.random, gacha.drawState(player, banner)); } catch (e) {
+  const boosted = gachaBoostedIndex();
+  const boostedOf = (id, str, def) => boosted.get(`${id}:${str}:${def}`);
+  try { draw = gachaData.rollDraw(banner, expandFor(banner, ctx), Math.random, gacha.drawState(player, banner), { boostedOf }); } catch (e) {
     console.log(`  [gacha] estrazione impossibile, niente addebitato: ${e.message}`);
     return send(res, 200, { ret: ret() });
   }
@@ -1193,8 +1207,11 @@ function respondGachaDraw(res, body) {
   const userMedalIds = [], first = [];
   let price;
   try {
-    const packed = new Set(masterRows('medal').filter((m) => m.validPack).map((m) => m.medalId));
+    const medalRows = new Map(masterRows('medal').map((m) => [m.medalId, m]));
+    const packed = new Set([...medalRows.values()].filter((m) => m.validPack).map((m) => m.medalId));
     const skills = skillRowsById();
+    const skillByName = new Map([...skills.values()].map((r) => [medalBoost.norm(r.name), r]));
+    let bursts = null; // masterRows('burst') solo se serve (7 MB)
     draw.medalIds.forEach((medalId, i) => {
       grantItem(3, medalId, 1);
       const newId = player.medals[player.medals.length - 1].userMedalId;
@@ -1209,7 +1226,26 @@ function respondGachaDraw(res, body) {
         player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
         (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() };
       }
+      const x = draw.extras?.[i], row = medalRows.get(medalId);
+      if (x?.preset && row && !packed.has(medalId)) {
+        bursts ??= new Map(masterRows('burst').map((b) => [b.burstId, b]));
+        const maxDots = row.validBurst ? bursts.get(row.burstId)?.maxEnhanceCount || 0 : 0;
+        const max = x.preset.guilt === 'max';
+        const dots = max || x.preset.dots === 'max' ? maxDots : Math.max(0, Math.min(Number(x.preset.dots) || 0, maxDots));
+        const guilt = max ? medalGuilt.guiltRange(masterRows('guiltProb'), row.guiltValue || 0).max : 0;
+        setMedalState(newId, { burstUpperNumber: dots, ...(guilt ? { guiltFactor: guilt } : {}) });
+      }
+      // maxSkill: una delle abilita' presenti in skill.json (a caso), al livello massimo; nessuna presente: niente
+      const have = (x?.skills || []).map((n) => skillByName.get(medalBoost.norm(n))).filter(Boolean);
+      if (have.length && !packed.has(medalId)) {
+        const s = have[Math.min(have.length - 1, Math.floor(Math.random() * have.length))];
+        player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
+        (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: s.skillId, level: s.maxLv || 1, exp: 0, getDatetime: realNow() };
+      }
     });
+    // pity con regalo (medaglia di supporto, catalogo v3 guarantee.pityGift): nel Present Box, nessuno slot sostituito
+    const gift = banner.guarantee?.pityGift;
+    if (draw.pityFired && Array.isArray(gift)) addPresent(gift[0], gift[1], gift[2] || 1, 'Guaranteed bonus: ' + banner.name);
     // oggetti in omaggio dell'estrazione (Magic Mirror, gemme...): nel Present Box (spec 9.2)
     for (const [type, itemId, n] of banner.bonus || []) addPresent(type, itemId, n, 'Bonus: ' + banner.name);
     missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
@@ -1221,7 +1257,11 @@ function respondGachaDraw(res, body) {
     return send(res, 200, { ret: ret() });
   }
   savePlayer();
-  console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${price} ${gacha.walletName(banner)}, medaglie ${draw.medalIds.join(',')}`);
+  const boostedLog = (draw.extras || []).filter((x) => x.boostedFrom).length;
+  console.log(`  [gacha] ${banner.rowId} ${banner.name}: -${price} ${gacha.walletName(banner)}, medaglie ${draw.medalIds.join(',')}`
+    + `${boostedLog ? `, boosted ${boostedLog}` : ''}${draw.pityFired ? ', pity' : ''}`);
+  // userPointData (livello del Nova: refresh mette in attesa le copie appena arrivate) prima di inventoryBlocks,
+  // che porta guiltBurstFirst/MaxUserMedalIds (guiltBurst().lists())
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now) }, ...inventoryBlocks(now, snap), ...gacha.drawResultFields(userMedalIds, first) });
 }
 
