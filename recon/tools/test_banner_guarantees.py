@@ -283,8 +283,26 @@ check(b['boosted'] == [{'on': {'names': ['illustrated xion [ex]']}, 'str': 1000,
       and b['preset'] == [{'on': {'names': ['illustrated xion [ex]']}, 'dots': 3, 'guilt': None}], f'B0282 boosted e pallini {b}')
 b = g.enhance_of('Has a small chance of drawing a boosted version of 6★ or 7★ Prime - Illustrated Axel or 7★ Key Art #17 with 1000 more base strength and defense.', [], [], M, S)
 check(b['boosted'][0]['on'] == {'names': ['prime - illustrated axel', 'key art #17']}, f'stelle davanti ai nomi {b}')
+# boosted per Tier (ruling del coordinatore: on {star, tierMin, tierMax} + excludePrime; 1000/1000 come le boosted del video)
+TB = lambda on: [{'on': on, 'str': 1000, 'def': 1000, 'chance': 'small'}]  # noqa: E731
 b = g.enhance_of('Has a small chance of drawing a boosted version of a 7★ Tier 4, 5, 6, or 7 Medal (excluding Prime Medals).', [], [], M, S)
-check(b['boosted'] == [] and b['notReproduced'] == ['boosted'], f'boosted per Tier: non riprodotta {b}')
+check(b['boosted'] == TB({'star': 7, 'tierMin': 4, 'tierMax': 7, 'excludePrime': True}) and b['notReproduced'] == [], f'B0455 Tier 4-7 senza Prime {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of a 7★ Tier 4 or Tier 5 Medal.', [], [], M, S)['boosted']
+check(b == TB({'star': 7, 'tierMin': 4, 'tierMax': 5}), f'Tier 4 o 5 {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of a 7★ Tier 4 or Tier 5 Medal (excluding Tier 4 Prime Medals).', [], [], M, S)['boosted']
+check(b == TB({'star': 7, 'tierMin': 4, 'tierMax': 4, 'excludePrime': True}) + TB({'star': 7, 'tierMin': 5, 'tierMax': 5}), f'Prime esclusi solo al Tier 4 {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of a 7★ Tier 4+ Medal.', [], [], M, S)['boosted']
+check(b == TB({'star': 7, 'tierMin': 4, 'tierMax': None}), f'Tier 4+ {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of a 7★ Tier 8 Medal.', [], [], M, S)['boosted']
+check(b == TB({'star': 7, 'tierMin': 8, 'tierMax': 8}), f'Tier 8 {b}')
+b = g.enhance_of('Has a small chance of drawing a boosted version of a Tier 4 or higher Medal (excluding Prime Medals).', [], [], M, S)['boosted']
+check(b == TB({'star': None, 'tierMin': 4, 'tierMax': None, 'excludePrime': True}), f'Tier 4 o piu senza stella {b}')
+T55 = ('Guarantees two of the following Medals at 7★: [[KH III Goofy]], [[KH III Donald]]. Has a small chance of drawing a boosted version of the '
+       'aforementioned Medals with 1000 more base strength and defense. Has a small chance of drawing a boosted version of a 7★ Tier 4, 5, 6, or 7 Medal (excluding Prime Medals).')
+s = g.assign_slots(g.parse_reservations(T55), [[7, 2], [5, 8]])
+b = g.enhance_of(T55, s, [], M, S)['boosted']
+check(b == [{'on': {'names': ['kh iii goofy', 'kh iii donald']}, 'str': 1000, 'def': 1000, 'chance': 'small'}]
+      + TB({'star': 7, 'tierMin': 4, 'tierMax': 7, 'excludePrime': True}), f'B0455 nomi + Tier {b}')
 b = g.enhance_of('Guarantees ten Imitation Medals. Has a small chance of drawing a boosted version of an Imitation Medal with 1000 more base strength and defense.', [], [], M, S)
 check(b['boosted'] == [] and b['notReproduced'] == ['imitation'], f'Imitation {b}')
 b = g.enhance_of('Has a small chance of drawing a boosted version of Xion [EX+] with 2000 more base strength and defense, and 5 Trait Slots.', [], [], M, S)

@@ -416,6 +416,13 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
           f"B0104 {B['B0104']['enhance']['boosted']}")
     check(any(x['str'] == 2000 and x['def'] == 2000 and x['on'] == {'names': ['sn - blitz form sora']} for x in B['B0514']['enhance']['boosted']), 'B0514 2000')
     check(B['B0631']['enhance']['boosted'] == [{'on': {'slots': [0]}, 'str': 1000, 'def': 1000, 'chance': 'guaranteed'}], 'B0631 guaranteed')
+    # boosted per Tier: forma {star, tierMin, tierMax} (+ excludePrime), mai piu' 'boosted' fra i non riprodotti
+    check(not [b['rowId'] for b in bs if 'boosted' in b['enhance']['notReproduced']], 'boosted per Tier riprodotte')
+    check({'on': {'star': 7, 'tierMin': 4, 'tierMax': 7, 'excludePrime': True}, 'str': 1000, 'def': 1000, 'chance': 'small'}
+          in B['B0455']['enhance']['boosted'], f"B0455 {B['B0455']['enhance']['boosted']}")
+    tb = [x['on'] for b in bs for x in b['enhance']['boosted'] if 'tierMin' in x['on']]
+    check(len({id(o) for o in tb}) >= 344 and all(set(o) <= {'star', 'tierMin', 'tierMax', 'excludePrime'} and o['tierMin']
+                                                  and (o['tierMax'] is None or o['tierMax'] >= o['tierMin']) for o in tb), f'forma Tier {len(tb)}')
     check(all(x['chance'] in ('small', 'guaranteed') and (x['str'], x['def']) in ((1000, 0), (1000, 1000), (2000, 2000))
               for b in bs for x in b['enhance']['boosted']), 'boosted: chance e varianti del contratto')
     # nomi dei bersagli = chiavi del catalogo dove si risolvono; mai una Trait Medal
