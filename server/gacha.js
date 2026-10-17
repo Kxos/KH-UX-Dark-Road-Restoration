@@ -71,9 +71,12 @@ function catalogRow() {
     bannerUrl: `/web/gacha/img/${gd.CATALOG_ID}.png`, detailUrl: '/web/gacha/catalog', comment: 'Open Details to browse all banners' });
 }
 
-function plate(b, webBase, userLimitedCount, price) {
+// sortId: il client ([fn]) raggruppa le piastre in una mappa per sortId della lista (non quello del master,
+// che non legge) e le mostra per sortId crescente, poi drawMedalTypeId: un numero intero diverso per ogni piastra
+// (senza, JSON.stringify lo toglie e [fn] rifiuta la lista: «200 ERROR :75», I-138).
+function plate(b, webBase, userLimitedCount, price, sortId) {
   return {
-    validAdd: 0, drawMedalTypeId: b.drawMedalTypeId, drawType: 1, sortId: b.sortId, payType: b.payType, price,
+    validAdd: 0, drawMedalTypeId: b.drawMedalTypeId, drawType: 1, sortId, payType: b.payType, price,
     lotCount: b.lotCount, isDayLimited: b.dayLimit || b.vipFree ? 1 : 0, userLimitedCount, userWarrantDisplayOfTime: 1,
     name: b.name, description: b.name, bannerUrl: `${webBase}/web/gacha/img/${b.drawMedalTypeId}.png`,
     warrantMedalIds: [], drawTicketlimitDate: '2030-12-31 23:59:59',
@@ -81,7 +84,7 @@ function plate(b, webBase, userLimitedCount, price) {
 }
 
 function catalogPlate(webBase) {
-  return plate({ drawMedalTypeId: gd.CATALOG_ID, sortId: 1, payType: 6, lotCount: 1, name: 'Banner Catalog' }, webBase, 0, 1);
+  return plate({ drawMedalTypeId: gd.CATALOG_ID, payType: 6, lotCount: 1, name: 'Banner Catalog' }, webBase, 0, 1, 1);
 }
 
 // Limiti giornalieri: al cambio di giorno (clock.dayIndex) si azzera solo «used».
@@ -99,8 +102,9 @@ function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, st
   ticketsOf(player);
   const list = shopBanners(banners, { storyQuest, storyDay, sizes, show });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
+  // Catalog sortId 1, poi 10, 20, ... nell'ordine di shopBanners (i piu' recenti prima, spec 4.3).
   return {
-    gachaList: [catalogPlate(webBase), ...list.map((b) => plate(b, webBase, dayLeft(player, b, realMs), priceFor(b, player)))],
+    gachaList: [catalogPlate(webBase), ...list.map((b, i) => plate(b, webBase, dayLeft(player, b, realMs), priceFor(b, player), 10 * (i + 1)))],
     petGachaList: [],
   };
 }
