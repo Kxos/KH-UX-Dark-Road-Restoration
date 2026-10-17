@@ -66,6 +66,9 @@ check(p3 && p3.added === 1 && rows3.some((x) => x.medalId === 3301993) && !rows3
 check(p3 && p3.families && p3.families.tier && p3.families.tier.added === 1, 'conteggio per famiglia');
 
 // slot a lista: i nomi della riserva
+// slotOf = gacha-data.reservationOf: slotsUsed (conflitti) rispettato
+const SU = { guarantee: { slots: [{ kind: 'list', slot: 0, count: 2, star: 7, names: ['c'], conflict: true, slotsUsed: [3, 5] }] } };
+check(mb.slotOf(SU, 5)?.names[0] === 'c' && !mb.slotOf(SU, 0) && mb.resolveNames({ on: { slots: [3] } }, SU, {}).join() === 'c', 'slotOf: slotsUsed rispettato');
 check(mb.resolveNames({ on: { slots: [1] } }, { guarantee: { slots: [{ kind: 'list', slot: 1, count: 1, star: 7, names: ['a', 'b'] }] } }, {}).join() === 'a,b', 'slot a lista -> nomi della riserva');
 // slot non a lista: il pool del banner alla stella dello slot (con il Tier)
 const cat2 = { firstRarity: {}, subsets: { s: { date: '2019-01-01', names: ['x', 'y'] } },

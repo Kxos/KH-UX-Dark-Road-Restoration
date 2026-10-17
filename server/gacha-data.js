@@ -66,7 +66,8 @@ function asOf(banner, day) {
 // listNames/featuredNames: [[nome, peso, {rare: [ids]}]] per gli slot a lista e della pity (solo i nomi con
 // almeno una variante nel pool; in lista la vetrina pesa FEATURED_WEIGHT, nella pity tutte 1).
 // Catalogo v3 (sotto-progetto 2b): slotNames[j] = i nomi della riserva guarantee.slots[j] (lista, o nomi
-// alternativi del Tier; [] per il Trait), pityNames = i bersagli della pity, pityIds = tutte le loro varianti;
+// alternativi del Tier; [] per il Trait), pityNames = i bersagli della pity, pityIds = le loro varianti alla stella
+// promessa (pityStar, o quella che la pity darebbe alla data: pityVariantStar), le sole che azzerano la pity;
 // per questi nomi riservati entrano anche pityStar e le stelle degli slot, solo se gia' uscite alla data
 // (firstRarity <= at). tiers: Map id -> Tier (4o campo di ids); medalInfo: Map id -> {name, rare}.
 function expandPool(banner, catalog, at) {
@@ -125,16 +126,25 @@ function expandPool(banner, catalog, at) {
   const bySets = (o) => Object.fromEntries(Object.entries(o).map(([r, s]) => [r, sorted(s)]));
   const named = (ns, w, m = byName) => [...new Set(ns)].filter((n) => m.has(n)).map((n) => [n, w(n), bySets(m.get(n))]);
   const pityNames = named(g.pityNames || [], () => 1, resByName);
+  const sr = slotRarities(banner), pStar = g.pityStar || (sr[g.pitySlot || 0] ?? sr[0]); // come pityOf: fuori misura -> slot 0
+  const pityIds = pityNames.flatMap(([, , v]) => poolOf(v, pityVariantStar(v, pStar)));
   return {
     pool: bySets(pool), featuredIds: sorted(featuredIds), listIds: sorted(listIds),
     listNames: named(g.list || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1)),
     featuredNames: named(p.featured || [], () => 1), weighted: [],
     slotNames: res.map((s) => named(s.names || [], (n) => (feat.has(n) ? FEATURED_WEIGHT : 1), resByName)),
-    pityNames, pityIds: sorted(new Set(pityNames.flatMap(([, , v]) => Object.values(v).flat()))), tiers, medalInfo,
+    pityNames, pityIds: sorted(new Set(pityIds)), tiers, medalInfo,
   };
 }
 
 const poolOf = (pool, rare) => pool[rare] || pool[String(rare)] || [];
+// stella della variante data per nome alla stella `star` (pity, liste): la piu' alta sotto (o uguale),
+// altrimenti la piu' bassa sopra; v = {rare: [ids]} con le sole varianti gia' uscite alla data
+function pityVariantStar(v, star) {
+  const have = Object.keys(v).map(Number).filter((r) => poolOf(v, r).length);
+  const below = have.filter((r) => r <= star), above = have.filter((r) => r > star);
+  return below.length ? Math.max(...below) : Math.min(...above);
+}
 const pickIndex = (n, rng) => Math.min(n - 1, Math.floor(rng() * n));
 function pickWeighted(items, rng) {
   const tot = items.reduce((s, [, w]) => s + w, 0);
@@ -190,9 +200,7 @@ function reservationOf(banner, i) {
 // variante di una medaglia per nome alla stella `star`: la piu' alta sotto (o uguale), altrimenti la piu'
 // bassa sopra (comunque gia' uscita alla data: expandPool tiene solo quelle)
 function pickVariant(v, star, rng) {
-  const have = Object.keys(v).map(Number).filter((r) => poolOf(v, r).length);
-  const below = have.filter((r) => r <= star), above = have.filter((r) => r > star);
-  const list = poolOf(v, below.length ? Math.max(...below) : Math.min(...above));
+  const list = poolOf(v, pityVariantStar(v, star));
   return list[pickIndex(list.length, rng)];
 }
 const pickName = (names, rng) => names[pickWeighted(names.map((x, i) => [i, x[1]]), rng)][2];
