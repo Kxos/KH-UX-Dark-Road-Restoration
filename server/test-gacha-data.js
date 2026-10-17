@@ -175,7 +175,7 @@ const b3 = B3({}), x3 = g.expandPool(b3, TCAT, '2018-11-01');
 check(J(x3.pool) === '{"5":[51],"6":[61],"7":[71,72,73,74]}', `pool di B0306 sintetico (${J(x3.pool)})`);
 check(x3.slotNames.length === 2 && J(x3.slotNames[0]) === '[]' && J(x3.slotNames[1]) === '[["kairi",1,{"6":[61],"7":[73]}],["sn only",1,{"7":[74]}]]',
   `slotNames per riserva (${J(x3.slotNames)})`);
-check(J(x3.pityNames) === '[["hd axel",1,{"5":[51],"7":[71]}]]' && J(x3.pityIds) === '[51,71]', `pityNames/pityIds (${J(x3.pityNames)} ${J(x3.pityIds)})`);
+check(J(x3.pityNames) === '[["hd axel",1,{"5":[51],"7":[71]}]]' && J(x3.pityIds) === '[71]', `pityNames/pityIds (${J(x3.pityNames)} ${J(x3.pityIds)})`);
 check(x3.tiers instanceof Map && x3.tiers.get(74) === 10 && x3.tiers.get(71) === 4 && x3.tiers.get(61) === 3, 'tiers dal 4o campo');
 check(g.reservationOf(b3, 0)?.kind === 'tier' && g.reservationOf(b3, 1)?.kind === 'list' && g.reservationOf(b3, 2) === null, 'reservationOf');
 const bUsed = B3({ guarantee: G3({ slots: [RES({ slot: 0, count: 2, slotsUsed: [3, 5], conflict: true, names: ['kairi'] })] }) });
@@ -192,15 +192,19 @@ for (const r of rngs) {
 check(bad === 0, `slot tier di B0306: ${bad} estrazioni fuori dal Tier <= 4`);
 check(bad1 === 0, `slot lista a 6★ di B0306: ${bad1} estrazioni diverse da 61`);
 const d3 = g.rollDraw(b3, x3, seq(0.99), NOPITY);
-check(d3.featured === d3.medalIds.some((id) => [51, 71].includes(id)) && d3.pityFired === false && Array.isArray(d3.extras) && d3.extras.length === 10, 'estrazione v3: featured, pityFired, extras');
+check(d3.featured === d3.medalIds.includes(71) && d3.pityFired === false && Array.isArray(d3.extras) && d3.extras.length === 10, 'estrazione v3: featured, pityFired, extras');
 check(J(d3.extras[0]) === '{"boostedFrom":null,"preset":null,"skills":null}', `extras vuoti (${J(d3.extras[0])})`);
 // pity alla quinta estrazione senza vetrina: hd axel 7★ sullo slot 0
 for (const r of rngs.slice(0, 20)) {
   const d = g.rollDraw(b3, x3, r, PITY);
   check(d.medalIds[0] === 71 && d.featured === true && d.pityFired === true, `pity di B0306: slot 0 = ${d.medalIds[0]}, featured ${d.featured}`);
 }
-check(g.rollDraw(b3, x3, seq(0.5), NOPITY).medalIds.slice(2).includes(51) && g.rollDraw(b3, x3, seq(0.5), NOPITY).featured === true,
-  'featured anche quando hd axel 5★ esce in uno slot generico');
+// Fix 1: la pity si azzera solo con il bersaglio alla stella promessa (pityStar o la variante che la pity darebbe)
+const f51 = g.rollDraw(b3, x3, seq(0.5), NOPITY);
+check(f51.medalIds.slice(2).includes(51) && !f51.medalIds.includes(71) && f51.featured === false,
+  `hd axel 5★ in uno slot generico non azzera la pity 7★ (${f51.medalIds} featured ${f51.featured})`);
+const f71 = g.rollDraw(b3, x3, seq(0.0), NOPITY);
+check(f71.medalIds[0] === 71 && f71.pityFired === false && f71.featured === true, `hd axel 7★ estratta da sola azzera la pity (${f71.medalIds})`);
 
 // Tier vuoto alla data: slot senza filtro, una riga di log, nessuna eccezione
 const bT = B3({ drawMedalTypeId: 19001, guarantee: G3({ slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMin: 8, tierMax: 9 })] }) });
@@ -215,6 +219,8 @@ check(logs.length === 1 && /Tier/.test(logs[0]), `Tier vuoto: una riga di log ($
 
 // pity a stella fissa prima della data (Review Focus 1): a 2018-01-10 non ci sono 7★, la pity da' 51
 const bE = B3({ start: '2018-01-10', end: '2018-01-17' }), xE = g.expandPool(bE, TCAT, '2018-01-10');
+const fE = (() => { const l = console.log; console.log = () => {}; try { return g.rollDraw(bE, xE, seq(0.5), NOPITY); } finally { console.log = l; } })(); // Tier vuoto: log zittito
+check(fE.medalIds.includes(51) && fE.pityFired === false && fE.featured === true, `prima delle 7★: la variante di ripiego (51) azzera la pity (${fE.medalIds})`);
 check(!x3.pool[8] && !xE.pool[7] && J(xE.pityIds) === '[51]', `prima delle 7★: niente 7★ (${J(xE.pool)} ${J(xE.pityIds)})`);
 for (const r of rngs.slice(0, 20)) {
   const d = g.rollDraw(bE, xE, r, PITY);

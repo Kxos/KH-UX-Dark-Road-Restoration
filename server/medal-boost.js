@@ -48,8 +48,8 @@ function boostedIndex(medalRows) {
   return out;
 }
 
-// riserva (guarantee.slots) che copre l'indice di slot k
-const slotOf = (banner, k) => (banner.guarantee?.slots || []).find((s) => k >= s.slot && k < s.slot + (s.count || 1));
+// riserva (guarantee.slots) che copre l'indice di slot k (slotsUsed compreso): la stessa di gacha-data
+const slotOf = (banner, k) => ga.reservationOf(banner, k) || undefined;
 
 // nomi (del catalogo, minuscoli) di una voce boosted: on.names, oppure i nomi delle riserve a lista di
 // on.slots (e i nomi alternativi degli slot Tier)
