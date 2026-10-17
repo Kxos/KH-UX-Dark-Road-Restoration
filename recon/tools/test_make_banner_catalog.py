@@ -369,7 +369,35 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(B['B0419']['guarantee']['pityNames'] == ['hd aced [ex+]'] and B['B0421']['guarantee']['pityNames'] == ['hd gula [ex+]'],
           'decisione 4')
     ks = {'kind', 'slot', 'count', 'star', 'names', 'tierMin', 'tierMax'}
-    check(all(ks <= set(s) <= ks | {'conflict'} for b in bs for s in b['guarantee']['slots']), 'campi delle riserve')
+    check(all(ks <= set(s) <= ks | {'conflict', 'slotsUsed'} for b in bs for s in b['guarantee']['slots']), 'campi delle riserve')
+    check(not any(k.startswith('_') for b in bs for k in b['guarantee']), 'nessun campo privato nel catalogo')
+    # fix 1, punto 1: liste prese dal master per prefisso («SN+ or SN++», «KH III Medal+») solo coi nomi del pool alla data
+    sub_m = {k: v['names'] for k, v in cat['subsets'].items()}
+    sub_d = {k: v['date'] for k, v in cat['subsets'].items()}
+    for r, i in (('B0750', 0), ('B0733', 1), ('B0740', 2), ('B0803', 0)):
+        pn = m.pool_names_at(B[r], med, sub_m, sub_d, cat['firstRarity'])
+        names = B[r]['guarantee']['slots'][i]['names']
+        check(names and set(names) <= pn, f'{r} lista per prefisso fuori dal pool {sorted(set(names) - pn)[:5]} ({len(names)})')
+        check(all(any(x[2] <= B[r]['start'] for x in med[n]['ids']) for n in names), f'{r} nomi datati dopo l inizio')
+    check(B['B0750']['guarantee']['list'] == B['B0750']['guarantee']['slots'][0]['names'], 'B0750 lista di compatibilita')
+    # fix 1, punto 2: i nomi interi della pity non diventano un nome piu' lungo della vetrina
+    for r in ('B0637', 'B0638', 'B0646', 'B0663'):
+        check('sn++ - kh iii terra' in B[r]['guarantee']['pityNames'], f'{r} pity senza sn++ - kh iii terra')
+    check(B['B0169']['guarantee']['pityNames'] == ['kh 0.2 kairi'], 'B0169 nome troncato completato')
+    # fix 1, punto 6: date dal notice -> fine originale, fonte in datesSource
+    check(all(B[r]['endSource'] == 'original' and B[r]['end'] == '2017-12-04' and 'notice 34475' in B[r]['datesSource']
+              for r in ('B0199', 'B0200', 'B0201', 'B0202', 'B0203')), 'B0199-B0203 fine originale dal notice')
+    check(sum(1 for b in bs if b['datesSource']) == 5, 'datesSource solo per le date lette dai notice')
+    # fix 1, punto 8: senza stella scritta, pityStar = stella dello slot finale
+    import banner_guarantees as _bgm  # `bg` qui sopra e' una garanzia
+    bad = []
+    for b in bs:
+        gq = b['guarantee']
+        rr = [x for x, n in b['rarityMix'] for _ in range(n)]
+        if gq['pity'] and rr and _bgm._pity(b['notes'] + ' | ' + b['guaranteesText'], b['pool']['featured'], [], b['rarityMix'])[1] is None \
+                and gq['pityStar'] != rr[gq['pitySlot']]:
+            bad.append(b['rowId'])
+    check(not bad, f'pityStar non scritta diversa dallo slot finale {bad[:8]}')
     # decisione 1: nessun nome di una lista su uno slot 6★ senza variante 6★ (se la lista ne ha almeno uno)
     bad = [b['rowId'] for b in bs for s in b['guarantee']['slots'] if s['kind'] == 'list' and s['star'] == 6
            and any(n in med for n in s['names']) and any(n in med and 6 not in {i[1] for i in med[n]['ids']} for n in s['names'])

@@ -134,7 +134,13 @@ s = g.assign_slots([{'kind': 'tier', 'count': 1, 'star': 7, 'names': [], 'tierMi
                     {'kind': 'tier', 'count': 1, 'star': 7, 'names': [], 'tierMin': 6, 'tierMax': None}], [[7, 1], [6, 1], [5, 8]])
 check(s[0]['slot'] == 0 and 'conflict' not in s[0] and s[1]['slot'] == 1 and s[1].get('conflict') is True, f'conflitto {s}')
 s = g.assign_slots([{'kind': 'list', 'count': 4, 'star': None, 'names': ['a'], 'tierMin': None, 'tierMax': None}], [[6, 1], [5, 2]])
-check(s[0]['slot'] == 0 and s[0].get('conflict') is True, f'conflitto: piu slot del lotto {s}')
+check(s[0]['slot'] == 0 and s[0].get('conflict') is True and s[0]['slotsUsed'] == [0, 1, 2], f'conflitto: piu slot del lotto {s}')
+# fix 1, punto 7: liberi non consecutivi -> uno per uno, mai uno slot gia' preso, slotsUsed esplicito
+s = g.assign_slots([{'kind': 'tier', 'count': 1, 'star': 6, 'names': [], 'tierMin': 5, 'tierMax': None},
+                    {'kind': 'list', 'count': 3, 'star': 7, 'names': ['a'], 'tierMin': None, 'tierMax': None}], [[7, 1], [6, 2], [5, 2]])
+check(s[0]['slot'] == 1 and s[1].get('conflict') is True and s[1]['slotsUsed'] == [0, 2, 3] and s[1]['slot'] == 0,
+      f'conflitto con liberi non consecutivi {s}')
+check('slotsUsed' not in s[0] and g.covered(s[1]) == [0, 2, 3] and g.covered(s[0]) == [1], 'covered')
 
 # --- pity: decisione 5 (B0319: «one 6★ X» con slot 0 a 7★ -> primo 6★, altrimenti primo 5★)
 B0319 = ("Guarantees one Tier 4 7★ Medal with one of the following skills: Attack Boost VI Max. "
@@ -159,6 +165,15 @@ p = g.pity_of('[[SN - KH III Dark Riku]] is guaranteed within 10 draws.', [], []
 check(p['pity'] == 10 and p['pityNames'] == ['sn - kh iii dark riku'], f'within {p}')
 p = g.pity_of('If bought 5 times, at least one KH 0.2 Kair', ['kh 0.2 kairi', 'kh 0.2 kair'], [], [[6, 1], [5, 9]])
 check(p['pityNames'] == ['kh 0.2 kairi'], f'B0169 nome troncato dal TSV {p}')
+# fix 1, punto 2: un nome intero non si «completa» con un nome della vetrina piu' lungo
+p = g.pity_of('If bought 5 times, at least one HD Axel is guaranteed.', ['hd axel [ex]'], [], M3)
+check(p['pityNames'] == ['hd axel'], f'nome intero non completato {p}')
+p = g.pity_of('If bought 3 times, one SN++ - KH III Terra-Xehanort, SN++ - KH III Terra, or SN++ - Fiend is guaranteed.',
+              ['sn++ - kh iii terra-xehanort', 'sn++ - kh iii terra', 'sn++ - fiend'], [], [[6, 3], [5, 7]])
+check(p['pityNames'] == ['sn++ - kh iii terra-xehanort', 'sn++ - kh iii terra', 'sn++ - fiend'], f'B0637 terra resta {p}')
+p = g.pity_of('If bought 3 times, one SN++ - KH III Terra, or SN++ - Fiend is guaranteed.',
+              ['sn++ - kh iii terra-xehanort'], [], [[6, 3], [5, 7]])
+check(p['pityNames'] == ['sn++ - kh iii terra', 'sn++ - fiend'], f'nome non nella vetrina, frase intera {p}')
 check(g.pity_of('Guarantees one of the following Medals: A.', [], [], M3) ==
       {'pity': None, 'pityNames': [], 'pityStar': None, 'pitySlot': None}, 'senza pity')
 
@@ -185,6 +200,14 @@ gv = g.guarantee_v3(R(row_id='BX'), 'Draws from sets 1.1.', [[6, 1], [5, 9]], []
 check(gv['slots'] == [] and (gv['list'], gv['count'], gv['slot'], gv['pity']) == ([], 0, 0, None), f'nessuna garanzia {gv}')
 gv = g.guarantee_v3(R(row_id='BX', guarantees='Guarantees one 6★ Prime - KH Cloud.'), 'Draws from sets 1.1.', [[6, 1], [5, 9]], [], MR)
 check(gv['slots'] and gv['slots'][0]['names'] == ['prime - kh cloud'], f'note senza garanzie: colonna guarantees {gv}')
+
+# fix 1, punto 8: la stella scritta della pity arriva a build_catalog (None se non scritta), mai nel blocco pubblico
+T = 'Guarantees two of the following Medals: [[KH III Pooh]]. If bought 3 times, one SN++ - Fiend is guaranteed.'
+gv = g.guarantee_v3(R(row_id='BX'), T, [[6, 3], [5, 7]], [], MR, keep_prefix=True)
+check(gv['_pityStarWritten'] is None and '_pityStarWritten' not in g.guarantee_v3(R(row_id='BX'), T, [[6, 3], [5, 7]], [], MR),
+      f'stella della pity non scritta {gv}')
+gv = g.guarantee_v3(R(row_id='BX'), B0306, M3, ['hd axel'], MR, keep_prefix=True)
+check(gv['_pityStarWritten'] == 7, 'stella della pity scritta')
 
 # override: ogni voce ha la fonte
 O = g.SLOT_OVERRIDES
