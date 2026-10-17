@@ -159,6 +159,10 @@ const schema = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'recon', 'o
 const fields = schema.map(([f]) => f);
 check(fields.length === 47 && fields.every((f) => f in row), 'riga master con tutti i 47 campi');
 check(row.benefitId === 0 && row.drawType === 1 && row.price === 600 && row.validComment === 1 && row.warrantDisplayOfTime === 1, 'valori della riga');
+const rowW = g.drawMedalTypeRow({ drawMedalTypeId: 10002, name: 'X', payType: 1, price: 600, sortId: 10, bannerUrl: 'a', detailUrl: 'b',
+  comment: '100% <important>%d tries</important>', warrant: { display: 5, number: 5, validComment: 0 } });
+check(rowW.warrantDisplayOfTime === 5 && rowW.warrantNumberOfTime === 5 && rowW.validComment === 0, 'warrant nella riga');
+check(rowW.comment === '100%% <important>%d tries</important>', `comment: % raddoppiato, %d intatto (${rowW.comment})`);
 
 const EMPTY = '{"banners":[],"subsets":{},"medals":{},"firstRarity":{},"story":[]}';
 check(J(g.loadCatalog('/non/esiste.json')) === EMPTY, 'catalogo assente -> vuoto');
