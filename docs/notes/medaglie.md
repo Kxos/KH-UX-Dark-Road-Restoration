@@ -68,6 +68,13 @@ ottobre). Tocchi in [banco.md](banco.md#tocchi).
   `make-limited-missions.js` (mappa nome -> riga a rarita' massima: la boosted, a pari rarita' e dopo, non
   sostituisce la normale), `grant-all-medals.js` (darebbe anche le boosted), album/Medal List in `server.js`.
   `supernova.js` e `blue-fairy.js` cercano per id e girano prima della patch: nessun filtro.
+  **Rigenerazione**: le boosted copiano la normale in fondo a `make-game-tables.js`; lanciare da soli
+  `supernova.js`, `blue-fairy.js` o `make-pet-tables.js` lascia le copie boosted con i valori vecchi finche'
+  `make-game-tables.js` non gira di nuovo (con `KHUX_MEDALS_ALL=1`: senza, il master scende a 522 medaglie).
+  **Al banco (Task 10, 17-10, risorse 41, rev 121)**: fascia BOOSTED nel risultato, dettaglio con STR/DEF/Cost gialli,
+  Cost 36 (46 - 10) e il No. della normale, targhetta LV rossa in Medal List e Level Up; Level Up normale ->
+  boosted con il pallino (U2), Cid sulla boosted (U1), Medal List/dettaglio/Evolve senza crash (U6); esiti in
+  [shop.md#sp2b](shop.md#sp2b).
 
 <a id="burst"></a>
 ## Attacchi speciali (`burst`)

@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 40**, **revisione master: BASE 120** (default dei 4 script di sessione dalla correzione finale
+Stato del banco: **risorse 41**, **revisione master: BASE 121** (default dei 4 script di sessione dal sotto-progetto 2b
 del 17-10; il server manda `120*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
@@ -64,19 +64,18 @@ python recon/tools/make_banner_catalog.py; python recon/tools/make_banner_images
 
 - Aperti dello Shop: I-139 (24 INCOMPLETE), I-140 (filtro Epic), I-141 (immagine di B0612), I-142 (Blue Fairy Deal),
   I-143 (tocco perso dopo le Notices), **I-144 garanzie** (audit: 171 banner con discrepanze, 178 con Tier).
-- **Prossimo: eseguire il sotto-progetto 2b «Garanzie»** (I-144): spec approvata
-  [2026-10-17-shop-garanzie-2b-design.md](docs/superpowers/specs/2026-10-17-shop-garanzie-2b-design.md) (sezione 8 =
-  esiti della ricerca: boosted come righe del master, striscia gialla originale, guilt/SAB, LWF JP del popup del Nova
-  con logo «NOVA»), piano [2026-10-17-shop-garanzie-2b.md](docs/superpowers/plans/2026-10-17-shop-garanzie-2b.md)
-  (10 task, incertezze U1-U7); manca la conferma dell'utente sul piano, esecuzione subagent-driven come per il 2.
-  Appoggio fuori dal repo: `D:\Progetto_Restauro_KH_UX\tmp\sp2b\` (decisioni.md, research.md, video-LFJ5.md),
-  audit `D:\Progetto_Restauro_KH_UX\tmp\sp2\audit-guarantees.md`; riferimenti `reference\shop_boosted`,
-  `reference\nova_lvup`, `reference\medal_illustration` (I-147). Dopo: **sotto-progetto 3** (catalogo con filtri,
-  sblocchi, rotazione, stagionali; la chiusura dei Details non ricarica la lista).
-- **Banco al 17-10 sera**: salvataggio RIDOTTO a 25 medaglie per la prova del Nova (Nova 6, 100000 jewel), server
-  rev 120 con `-GachaShow B0033,B0306,B0008,B0767`. Salvataggio completo prima della riduzione:
-  `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json`; prima delle estrazioni dell'utente:
-  `...\tmp\save-backup-before-user-pulls\`. Rimettere il salvataggio completo prima di altri lavori.
+- **Sotto-progetto 2b «Garanzie» (17-10): fatto** (I-144 chiuso, [shop.md#sp2b](docs/notes/shop.md#sp2b), commit
+  2ef2c14..bad55f1): slot/Tier/pity/striscia gialla, boosted come righe del master, preset, popup del Nova acceso
+  (LWF JP + logo NOVA, risorse 41; `KHUX_GUILT_BURST_POPUP=0` lo spegne). Prove al banco OK (rev 121); U1-U7 in
+  shop.md. Aperti nuovi: I-148 (nessun banner estraibile con guilt al massimo: B0310 INCOMPLETE), I-149 (livelli del
+  popup dalle estrazioni: `addGuiltBurstLv/Max` 0 nel master), I-150, I-151. **Manca la prova 7 dell'utente** (popup
+  del Nova da estrazione col salvataggio ridotto): bloccata da I-148/I-149; il popup dal Level Up funziona.
+  Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la chiusura dei Details non
+  ricarica la lista).
+- **Banco al 17-10 sera (dopo il Task 10)**: salvataggio RIDOTTO (25 medaglie, Nova 6, 100000 jewel) rimesso per la
+  prova dell'utente, server rev 121 con `relogin.ps1 -Tag 2b_end -Revision 121 -GachaShow B0306,B0651`, home.
+  Salvataggio completo: `D:\Progetto_Restauro_KH_UX	mp\save-backup-before-nova-test\player.json` (il ridotto in
+  `tmp\save-backup-before-2b`); rimettere il completo prima di altri lavori.
 - Altri lavori in attesa (Limited I-118, Blue Fairy e PvP I-126, NPC JP, crash intermittenti, decisioni dell'utente
   del 16-10): [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md) e [ISSUES](docs/ISSUES.md).
 - Salvataggio di prova: livello 100, materiali a 9999, keyblade a +35/+60, party creato, HD Roxas condivisa, 43
