@@ -707,6 +707,30 @@ def mark_std(medals):
     return sum(1 for v in medals.values() if v['std'])
 
 
+def apply_enhance_overrides(enh, ov_row):
+    """Override del blocco enhance da banner_overrides.tsv (campo «preset»: «slots=0;dots=max;guilt=max»,
+    «star=7;dots=3;guilt=none»): aggiunge la voce preset se non c'e' gia'. Serve quando la frase sta in un
+    altro banner (B0306-B0308: «the 7★ Medal you receive ... maximum Special Attack Bonus» e' nel testo di
+    B0310, che annuncia i tre deal)."""
+    v = (ov_row or {}).get('preset')
+    if not v:
+        return enh
+    kv = dict(x.split('=', 1) for x in v.split(';') if '=' in x)
+    if 'slots' in kv:
+        on = {'slots': [int(x) for x in kv['slots'].split(',')]}
+    elif 'star' in kv:
+        on = {'star': int(kv['star'])}
+    else:
+        on = {'names': [x.strip() for x in kv.get('names', '').split(',') if x.strip()]}
+    dots = kv.get('dots', 'max')
+    dots = dots if dots == 'max' else int(dots)
+    guilt = 'max' if kv.get('guilt') == 'max' else None
+    item = {'on': on, 'dots': dots, 'guilt': guilt}
+    if item not in enh['preset']:
+        enh['preset'].append(item)
+    return enh
+
+
 # ---------- righe incomplete: fratello di serie (porta di incomplete.py) e override ----------
 def sib_key(n):
     return re.sub(r'\s+', ' ', re.sub(r'\(\d+/\d+\)|returns!?|is back!?|limited time:|!|\(ex\+?\)|\[ex\+?\]', '', n.lower())).strip()
@@ -822,7 +846,7 @@ def build_catalog(inputs):
     ov = collections.defaultdict(dict)
     ov_src = collections.defaultdict(dict)
     for o in inputs['overrides']:
-        if o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt'):
+        if o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -880,6 +904,7 @@ def build_catalog(inputs):
         # potenziamenti per banner (guilt, pallini, boosted, abilita' al massimo): nomi risolti piu' sotto
         enh = bg.enhance_of(bg.enhance_text(notes, r['guarantees']), g['slots'], pool['featured'], M, inputs.get('skills') or [],
                             mix=rarity_mix(r['rarity_mix']))
+        apply_enhance_overrides(enh, ov.get(rid))
         total = total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)
