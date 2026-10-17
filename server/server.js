@@ -1241,12 +1241,19 @@ function respondGachaDraw(res, body) {
         (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() };
       }
       const x = draw.extras?.[i], row = medalRows.get(medalId);
-      if (x?.preset && row && !packed.has(medalId)) {
+      // Tier della riga; una boosted senza Tier prende quello della normale (groupId)
+      const tier = row ? row.guiltValue || medalRows.get(row.groupId)?.guiltValue || 0 : 0;
+      // decisione 13-bis, regola originale (notice 48236 del 01-01-2019: «7★ Tier 9 Medals come with the maximum
+      // bonus percentage of 280%»; notice 56838 del 01-09-2019, Tier 10 al 320%): ogni 7★ di Tier 9-10 estratta,
+      // da qualsiasi banner e boosted comprese, arriva con pallini e guilt al massimo. Le altre solo col preset.
+      const rule = !!row && row.rare === 7 && tier >= 9;
+      if ((x?.preset || rule) && row && !packed.has(medalId)) {
         bursts ??= new Map(masterRows('burst').map((b) => [b.burstId, b]));
         const maxDots = row.validBurst ? bursts.get(row.burstId)?.maxEnhanceCount || 0 : 0;
-        const max = x.preset.guilt === 'max';
-        const dots = max || x.preset.dots === 'max' ? maxDots : Math.max(0, Math.min(Number(x.preset.dots) || 0, maxDots));
-        const guilt = max ? medalGuilt.guiltRange(masterRows('guiltProb'), row.guiltValue || 0).max : 0;
+        // preset e regola insieme: il massimo dei due
+        const max = rule || x?.preset?.guilt === 'max';
+        const dots = max || x?.preset?.dots === 'max' ? maxDots : Math.max(0, Math.min(Number(x?.preset?.dots) || 0, maxDots));
+        const guilt = max ? medalGuilt.guiltRange(masterRows('guiltProb'), tier).max : 0;
         setMedalState(newId, { burstUpperNumber: dots, ...(guilt ? { guiltFactor: guilt } : {}) });
       }
       // maxSkill: una delle abilita' presenti in skill.json (a caso), al livello massimo; nessuna presente: niente

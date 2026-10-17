@@ -350,6 +350,7 @@ const NOT_REPRODUCED_KINDS = {
   pity: 'Pity Medal: not reproduced, the target Medal is not available in this restoration.',
   imitation: 'Imitation Medal bonus: not reproduced.',
 };
+const T910_LINE = 'Any 7★ Tier 9-10 Medal: comes with its Special Attack Bonus maxed (original)';
 function guaranteeSection(banner, ex, medalNames) {
   const nm = namer(ex, medalNames);
   const g = banner.guarantee || {}, e = banner.enhance || {}, out = [];
@@ -360,6 +361,9 @@ function guaranteeSection(banner, ex, medalNames) {
     else out.push(`${n}x one of the listed Medals (${s.star}★)`);
   }
   for (const p of e.preset || []) out.push(`${onText(p.on, nm)}: comes with its Special Attack Bonus maxed (original)`);
+  // decisione 13-bis: con i preset elencati, la regola generale delle 7★ di Tier 9-10 (server.js respondGachaDraw), perche'
+  // i preset su altri slot non facciano pensare il contrario
+  if ((e.preset || []).length && (banner.rarityMix || []).some(([r]) => r >= 7)) out.push(T910_LINE);
   for (const b of e.boosted || []) {
     const stats = [b.str ? `+${b.str} STR` : '', b.def ? `+${b.def} DEF` : ''].filter(Boolean).join(', ');
     const rec = b.on && ('star' in b.on || 'tierMin' in b.on) ? ', reconstructed' : ''; // valori nostri: la frase non li dava

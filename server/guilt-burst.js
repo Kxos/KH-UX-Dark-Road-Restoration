@@ -52,14 +52,16 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     const guiltProb = masterRows('guiltProb');
     for (const m of userMedalList()) {
       const row = rows.get(m.medalId);
-      if (!row || !(row.guiltValue > 0) || !(m.guiltFactor > 0)) continue;
+      // Tier: una boosted senza guiltValue prende quello della normale (groupId, decisione 13-bis)
+      const tier = row ? row.guiltValue || rows.get(row.groupId)?.guiltValue || 0 : 0;
+      if (!row || !(tier > 0) || !(m.guiltFactor > 0)) continue;
       const key = row.groupId || m.medalId;
       if (!first.has(key)) {
         first.add(key);
         rec.first.push(key);
         if (!seed) pending.first.push(m.userMedalId);
       }
-      const top = guiltRange(guiltProb, row.guiltValue).max;
+      const top = guiltRange(guiltProb, tier).max;
       if (top > 0 && m.guiltFactor >= top && !max.has(key)) {
         max.add(key);
         rec.max.push(key);
