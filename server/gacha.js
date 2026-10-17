@@ -14,6 +14,7 @@
 'use strict';
 const clock = require('./clock');
 const gd = require('./gacha-data');
+const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
 const { SKILL_TABLES } = gd;
 
 const SHOP_MAX = 8;
@@ -222,7 +223,7 @@ function page(title, body) {
     + '<style>body{margin:0;background:#174a5c;color:#e8f2f6;font:17px sans-serif;padding:10px 14px 40px}'
     + 'h1{color:#5fe0f0;font-size:21px;margin:8px 0}h2{color:#5fe0f0;font-size:18px;margin:14px 0 6px}'
     + 'a{color:#fff}img{width:100%;max-width:640px;height:auto;display:block;margin:6px 0}.b{border-bottom:2px dotted #8fb3c0;padding:8px 0}'
-    + 'table{border-collapse:collapse}td{padding:2px 10px 2px 0;vertical-align:top}.n{color:#bcd}.s{color:#ffd86b}</style></head><body>'
+    + 'table{border-collapse:collapse}td{padding:2px 10px 2px 0;vertical-align:top}.n{color:#bcd}.s{color:#ffd86b}.box{border:2px solid #ffd86b;padding:6px 10px;margin:8px 0}</style></head><body>'
     + `<h1>${esc(title)}</h1>${body}</body></html>`;
 }
 
@@ -251,6 +252,8 @@ const r2 = (x) => Math.round(x * 10000) / 100;
 const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'}`;
 const rar = (o) => `${o.rare}★ ${o.pct}%`;
 
+// «<=4» -> «4 or lower», «>=5» -> «5 or higher» (etichette di slotOdds)
+const tierWords = (t) => String(t).replace(/^<=(\d+)$/, '$1 or lower').replace(/^>=(\d+)$/, '$1 or higher');
 // Righe «Medal i | probabilita'» (o i livelli di un banner evolve): condivise da dettagli e Draw Odds.
 function oddsRows(banner, ex, medalNames) {
   if (banner.pool?.mode === 'evolve') {
@@ -259,7 +262,8 @@ function oddsRows(banner, ex, medalNames) {
   const every = banner.guarantee?.every;
   return gd.slotOdds(banner, ex).map((s, i) => {
     const lead = s[0]?.list ? `${every ? `every ${ordinal(every)} draw: ` : ''}one of the listed Medals, featured Medals twice as likely: ` : '';
-    return `<tr><td>Medal ${i + 1}</td><td>${lead}${s.map(rar).join(', ')}</td></tr>`;
+    const kind = s[0]?.kind === 'tier' ? `Tier ${tierWords(s[0].tier)}: ` : s[0]?.kind === 'trait' ? 'Trait Medal slot: ' : s[0]?.kind === 'pity' ? 'guaranteed Medal slot: ' : '';
+    return `<tr><td>Medal ${i + 1}</td><td>${kind}${lead}${s.map(rar).join(', ')}</td></tr>`;
   }).join('');
 }
 
@@ -275,14 +279,70 @@ function skillSection(banner, skillNames) {
 // Garanzia scritta ma senza medaglie estraibili alla data del banner (lista o vetrina vuote in expandPool):
 // i dettagli lo dicono invece di promettere una garanzia che non scatta (correzione finale D).
 const NOT_REPRODUCED = 'This guarantee is not reproduced yet.';
-const pityText = (banner, ex) => `Featured Medal guaranteed within ${banner.guarantee.pity} draws (original).`
-  + `${ex && !(ex.featuredNames || []).length ? ` ${NOT_REPRODUCED}` : ''}`;
-const listLost = (banner, ex) => !!(ex && (banner.guarantee?.list || []).length && !(ex.listNames || []).length);
+// v3 (slots): i bersagli sono ex.pityNames (o il regalo pityGift, che non dipende dal pool); percorso vecchio: ex.featuredNames.
+const hasSlotsOf = (banner) => Array.isArray(banner.guarantee?.slots);
+const pityHasTargets = (banner, ex) => !ex || (hasSlotsOf(banner)
+  ? !!banner.guarantee.pityGift || (ex.pityNames || []).length > 0 : (ex.featuredNames || []).length > 0);
+// nomi del catalogo in minuscolo -> «HD Axel», «Illustrated Kairi [EX]»
+const UPPER_WORDS = new Set(['hd', 'ex', 'sp', 'sn', 'dx', 'ii', 'iii', 'iv']);
+const niceName = (n) => String(n).replace(/[A-Za-z0-9+]+/g, (w) => (UPPER_WORDS.has(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)));
+const niceList = (a) => (a || []).map(niceName).join(', ');
+const pityText = (banner, ex) => {
+  const g = banner.guarantee;
+  const who = hasSlotsOf(banner) && (g.pityNames || []).length ? `${niceList(g.pityNames)}${g.pityStar ? ` (${g.pityStar}★)` : ''}` : 'Featured Medal';
+  if (hasSlotsOf(banner) && g.pityGift) return `${who} is sent to your Present Box (original: included in the draw) within ${g.pity} draws.`;
+  return `${who} guaranteed within ${g.pity} draws (original).${pityHasTargets(banner, ex) ? '' : ` ${NOT_REPRODUCED}`}`;
+};
+// v3: una riserva a lista con nomi scritti ma nessuna medaglia estraibile alla data (ex.slotNames[j] vuoto)
+const listLost = (banner, ex) => !!ex && (hasSlotsOf(banner)
+  ? banner.guarantee.slots.some((s, j) => s.kind === 'list' && (s.names || []).length && !(ex.slotNames?.[j] || []).length)
+  : (banner.guarantee?.list || []).length && !(ex.listNames || []).length);
+
+// Righe dei Details per le garanzie v3 e i potenziamenti (catalogo version 3); vuoto senza guarantee.slots/enhance.
+const tierRange = (s) => (s.tierMin == null && s.tierMax == null ? '' : s.tierMin == null ? ` Tier ${s.tierMax} or lower`
+  : s.tierMax == null ? ` Tier ${s.tierMin} or higher` : s.tierMin === s.tierMax ? ` Tier ${s.tierMin}` : ` Tier ${s.tierMin}-${s.tierMax}`);
+function onText(on) {
+  if (on?.slots) return `Medal ${on.slots.map((i) => i + 1).join(', ')}`;
+  if (on?.names) return niceList(on.names);
+  if (on && ('star' in on || 'tierMin' in on)) {
+    return `${on.star ? `${on.star}★` : 'Any'}${tierRange(on)} Medals${on.excludePrime ? ' (not Prime)' : ''}`;
+  }
+  return 'Eligible Medals';
+}
+const NOT_REPRODUCED_KINDS = {
+  trait: 'Trait Medal: not reproduced, a regular Medal of the same rarity instead.',
+  traitSlots: 'Trait Medal slots: not reproduced, regular Medals of the same rarity instead.',
+  skill: 'Guaranteed max-level Skill: not reproduced for Skills that do not exist in this restoration.',
+  epic: 'Epic-only draw: not reproduced, the full set of Medals is drawn.',
+  pity: 'Pity Medal: not reproduced, the target Medal is not available in this restoration.',
+  imitation: 'Imitation Medal bonus: not reproduced.',
+};
+function guaranteeSection(banner) {
+  const g = banner.guarantee || {}, e = banner.enhance || {}, out = [];
+  for (const s of g.slots || []) {
+    const n = s.count || 1;
+    if (s.kind === 'tier') out.push(`${n}x ${s.star}★${tierRange(s)}${(s.names || []).length ? ` (or ${niceList(s.names)})` : ''}`);
+    else if (s.kind === 'trait') out.push(`${n}x Trait Medal (${s.star}★)`);
+    else out.push(`${n}x one of the listed Medals (${s.star}★)`);
+  }
+  for (const p of e.preset || []) out.push(`${onText(p.on)}: comes with its Special Attack Bonus maxed (original)`);
+  for (const b of e.boosted || []) {
+    const stats = [b.str ? `+${b.str} STR` : '', b.def ? `+${b.def} DEF` : ''].filter(Boolean).join(', ');
+    const rec = b.on && ('star' in b.on || 'tierMin' in b.on) ? ', reconstructed' : ''; // valori nostri: la frase non li dava
+    out.push(b.chance === 'guaranteed' ? `${onText(b.on)}: boosted version guaranteed (${stats}${rec})`
+      : `${onText(b.on)}: Small chance of a boosted version (${stats}${rec}): ${BOOST_PCT}% per eligible Medal (reconstructed)`);
+  }
+  for (const m of e.maxSkill || []) out.push(`${onText(m.on)}: Max-level Skill (${m.skills.map(niceName).join(', ')})`);
+  for (const k of e.notReproduced || []) if (NOT_REPRODUCED_KINDS[k]) out.push(NOT_REPRODUCED_KINDS[k]);
+  const box = g.erratum ? `<div class="box">${esc(g.erratum)}</div>` : '';
+  return `${out.length ? `<h2>Guarantees and bonuses</h2><ul>${out.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${box}`;
+}
 
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
   const pity = banner.guarantee?.pity ? `<p>${pityText(banner, ex)}</p>` : '';
+  const garanzie = !evolve && ex && banner.rarityMix?.length ? guaranteeSection(banner) : '';
   const gtext = [banner.guaranteesText, listLost(banner, ex) ? NOT_REPRODUCED : ''].filter(Boolean).map(esc).join(' ');
   const rated = !!(ex && banner.rarityMix?.length) && banner.catalogOnly !== 'INCOMPLETE';
   const pool = evolve || !rated ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {
@@ -292,7 +352,7 @@ function detailPage(banner, ex, medalNames, ctx) {
   const lim = gd.limitText(banner);
   const head = priceLine(banner) ? `<p>${priceLine(banner).replace(', ', ' for ')}${lim ? `, ${lim}` : ''}.</p>${priceSteps(banner)}` : '';
   const rates = rated ? '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
-    + `<table>${oddsRows(banner, ex, medalNames)}</table>${pity}${skillSection(banner, ctx.skillNames)}${evolve ? '' : '<h2>Medals in this draw</h2>'}${pool}` : '';
+    + `<table>${oddsRows(banner, ex, medalNames)}</table>${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : '<h2>Medals in this draw</h2>'}${pool}` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
     + `<p class="n">Original banner: ${dates(banner)}.</p><p class="s">${esc(st.text)}</p>`
     + `${gtext ? `<p class="n">${gtext}</p>` : ''}${rates}`);
