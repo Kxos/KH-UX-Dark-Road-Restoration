@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-151**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-152**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -65,6 +65,7 @@ Ultima revisione: 17 ottobre 2026.
 | I-034 | APERTO | Testi ui assenti anche nella 4.4.0 con segnaposto (102850008 ora «Available quests!», 3b6bbb3; 106260102, 1062402xx, 106240301) | [risorse_layout](notes/risorse_layout.md#regole) | 915c683 |
 | I-035 | APERTO | Presents: cornici viola di Dark Road da sostituire con le texture blu | [home_profilo](notes/home_profilo.md#presents) | 081b0cb |
 | I-096 | APERTO | Presents (segnalazione utente 13-10): layout come nell'originale (vedi I-035) | [home_profilo](notes/home_profilo.md#presents) | - |
+| I-152 | APERTO | **Effetti sonori originali mancanti (x10 draw, popup del Nova, altri)** (17-10): l'animazione dell'estrazione x10 (`se_ui2_se_000039` in `raidgacha_result_display_10`) e il popup del Nova (`se_ui2_se_000074` in `GuiltBonus_BurstLvup`) erano muti: `audio/509000390.akb` e `509000740.akb` mancano da OBB 5.0.1 + addnl, il JP 4.3.1 li ha. Correzione generica nel codice: `recon/tools/jp_sound_effects.py`, chiamato da `import_jp_coco.py`, copia dal JP gli AKB degli eventi `se_`/`playBGM_` di tutti i LWF serviti e generati (prova a secco: 216 AKB, 4.327.702 byte, + 4 testi `text/audio`; pacchetto generato 108.128.458 byte su 128 MiB, indice dentro la riserva di `-Quick`). Da provare al banco dopo `build-resources.ps1 -Quick`: x10 draw e popup del Nova con il suono | [risorse_layout](notes/risorse_layout.md#suoni-jp) | - |
 
 ### Mappe e missioni di storia
 

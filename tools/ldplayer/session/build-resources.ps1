@@ -106,6 +106,9 @@ if ($LASTEXITCODE) { throw 'make_shop_art fallito' }
 # layout originali dai dati JP 4.3.1 al posto dei nostri generati (I-117): elenco versionato in
 # recon\tools\jp_coco_layouts.txt (togliere una riga = torna il generato), sopra l'uscita di
 # make_layouts/make_textures; rapporto e manifest in $sg\jp_import (Pillow: senza -I)
+# Copia anche (pure con -NoJp) gli AKB delle BGM Medals e gli effetti sonori se_<nome> dei LWF serviti e
+# generati assenti dalle risorse (jp_sound_effects.py, I-152: x10 draw, popup del Nova, nemici JP; ~4,3 MB;
+# rapporto $sg\jp_import\sound_effects.json). Legge raisedraw_gen\files ed enemy_gen\files gia' presenti.
 # -NoJp: niente originali JP (tornano i generati; serve per un -Quick su una versione installata
 # prima degli originali: i ~250 nomi nuovi non stanno nella riserva dell'indice)
 $jpOpt = @(); if ($NoJp) { $jpOpt = @('--none') }
