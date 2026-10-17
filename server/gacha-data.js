@@ -206,8 +206,10 @@ function rollSkill(spec, slotIndex, skillRows, rng) {
 // bannerUrl/detailUrl sono percorsi: server.js (servedMasterRows) ci mette davanti l'indirizzo http.
 // drawType 1; benefitId 0 (il lucchetto apre l'acquisto in-app: crash, I-134); comment = striscia
 // scorrevole sotto il banner, stringa printf (niente % sciolti), visibile con warrantDisplayOfTime 1
-// e userWarrantDisplayOfTime 1 nella lista (spike del 16-10, prova 3).
-function drawMedalTypeRow({ drawMedalTypeId, name, payType, price, sortId, bannerUrl, detailUrl, comment }) {
+// e userWarrantDisplayOfTime 1 nella lista (spike del 16-10, prova 3). warrant = striscia della garanzia:
+// {display, number, validComment}; con display != 0 la striscia compare se 1 <= userWarrantDisplayOfTime <= display.
+function drawMedalTypeRow({ drawMedalTypeId, name, payType, price, sortId, bannerUrl, detailUrl, comment, warrant }) {
+  const w = { display: 1, number: 0, validComment: 1, ...warrant };
   const z = (n) => Array(n).fill(0);
   return {
     drawMedalTypeId, drawType: 1, sortId, name, benefitId: 0, payType, price,
@@ -215,7 +217,8 @@ function drawMedalTypeRow({ drawMedalTypeId, name, payType, price, sortId, banne
     lotCount: z(3), lotSsr: z(3), lotPsr: z(3), lotSr: z(3), lotPr: z(3), lotR: z(3), lotPn: z(3), lotN: z(3),
     tableIds: z(3), vipcoinNumber: 0, limitedvipcoinNumber: 0, validAdd: 0, addType: 0, addId: 0, addSkillType: 0,
     addSkillId: 0, addSkillLv: 0, addNum: 0, bannerUrl, mypageBanner: 0, detailUrl, dayCount: 0,
-    warrantNumberOfTime: 0, warrantDisplayOfTime: 1, validComment: 1, comment: String(comment).replace(/%/g, '%%'),
+    warrantNumberOfTime: w.number, warrantDisplayOfTime: w.display, validComment: w.validComment,
+    comment: String(comment).replace(/%(?!d)/g, '%%'), // %d (conto alla rovescia) resta com'e'
     warrantCounterId: 0, warrantTableIds: 0, warrantMedalListIds: [0], warrantMedalRepeat: 0,
     warrantResetMedalListIds: z(10), displayTimeLeft: 0, startDate: '2016-04-07 00:00:00',
     endDate: '2099-12-31 23:59:59', isDeleted: 0,

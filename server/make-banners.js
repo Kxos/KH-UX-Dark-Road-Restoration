@@ -24,11 +24,29 @@ function commentOf(b) {
   return `${b.lotCount} Medal${b.lotCount === 1 ? '' : 's'}${mix ? `: ${mix}` : ''}${extra}`;
 }
 
-function masterRows(catalog) {
+// Striscia della garanzia. Con pity: conto alla rovescia (display = number = pity) e validComment 0, il client
+// scrive «<nome> guaranteed in N tries!» dai nomi di warrantMedalIds (Task 6). Senza pity: la striscia di oggi.
+// Con WARRANT_XML_SAFE un nome con «&» (o «<») romperebbe il parser XML del client: validComment 1 e
+// comment XML scritto da noi, con i nomi escapati e il solo %d (ricerca §2, U3: da provare al banco).
+const WARRANT_XML_SAFE = false;
+const xmlEsc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function warrantOf(b, xmlSafe = WARRANT_XML_SAFE) {
+  const pity = b.guarantee?.pity;
+  if (!pity) return { display: 1, number: 0, validComment: 1 };
+  const names = b.guarantee.pityNames || [];
+  if (xmlSafe && names.some((n) => /[&<>]/.test(n))) {
+    return { display: pity, number: pity, validComment: 1,
+      comment: `<important>${names.map(xmlEsc).join(' &amp; ')}</important> guaranteed in <important>%d tries</important>!` };
+  }
+  return { display: pity, number: pity, validComment: 0 };
+}
+
+function masterRows(catalog, xmlSafe = WARRANT_XML_SAFE) {
   return [require('./gacha').catalogRow(), ...catalog.banners.map((b, i) => gd.drawMedalTypeRow({
     drawMedalTypeId: b.drawMedalTypeId, name: b.name, payType: [1, 4, 5, 6, 7, 8].includes(b.payType) ? b.payType : 1,
     price: Math.max(1, (b.prices || [])[0] || 1), sortId: 10 + i,
-    bannerUrl: `/web/gacha/img/${b.drawMedalTypeId}.png`, detailUrl: `/web/gacha/detail/${b.drawMedalTypeId}`, comment: commentOf(b),
+    bannerUrl: `/web/gacha/img/${b.drawMedalTypeId}.png`, detailUrl: `/web/gacha/detail/${b.drawMedalTypeId}`, comment: warrantOf(b, xmlSafe).comment || commentOf(b), warrant: warrantOf(b, xmlSafe),
   }))];
 }
 
@@ -46,4 +64,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { commentOf, masterRows };
+module.exports = { commentOf, masterRows, warrantOf, WARRANT_XML_SAFE };
