@@ -31,6 +31,7 @@ const CAT = {
     vip: { date: '2016-04-07', cls: 'V', class2: 'Attack', std: false, ids: [[33, 3, '2016-04-07']] },
     mickey: { date: '2016-04-07', cls: '', class2: 'Attack', std: false, origin: 'disney', att: 'power', ids: [[34, 3, '2016-04-07']] },
     cloud: { date: '2016-04-07', cls: '', class2: 'Attack', std: false, origin: 'ffkh', att: 'speed', ids: [[35, 3, '2016-04-07']] },
+    riku: { date: '2016-04-07', cls: '', class2: 'Attack', std: false, ids: [[45, 4, '2016-04-07'], [55, 5, '2016-04-07']] },
   },
 };
 const B = (o) => ({ rowId: 'B9', drawMedalTypeId: 10009, lotCount: 3, rarityMix: [[4, 1], [3, 2]], flags: [], start: '2016-05-01', end: '2016-05-31',
@@ -52,7 +53,8 @@ check(g.asOf(B({ flags: ['PERMANENT'] }), '2016-04-07') === '2016-05-01', 'asOf 
 check(J(g.expandPool(B({}), CAT, '2016-05-01').pool) === '{"3":[31],"4":[41],"5":[51]}', 'pool per set (niente 6, niente Hades)');
 const seven = (at) => g.expandPool(B({ rarityMix: [[6, 1]], lotCount: 1 }), CAT, at).pool;
 check(J(seven('2018-06-01')[7]) === '[71]', 'epoca 7: 7 estraibile dal 25/05/2018');
-check(!seven('2018-05-01')[7], 'epoca 7: niente 7 prima del 25/05/2018');
+check(!seven('2018-05-20')[7], 'epoca 7: niente 7 prima del 25/05/2018 (id gia uscito il 14/05)');
+check(J(g.expandPool(B({ rarityMix: [[6, 1]], lotCount: 1 }), CAT, '2016-06-01').pool) === '{}', 'stella del mix non ancora uscita: esclusa');
 const rel = (at) => allIds(g.expandPool(B({ pool: P({ mode: 'released', sets: [] }) }), CAT, at).pool);
 check(J(rel('2016-04-30')) === '[31,41,51]', 'released: solo Sora prima di Hades');
 check(J(rel('2016-06-01')) === '[31,32,41,42,51]', 'released: Sora e Hades, mai vip ne non std');
@@ -81,31 +83,43 @@ check(J(g.slotOdds(B({ epicBoost: true }), ex)[1]) === '[{"rare":3,"pct":85},{"r
 check(J(g.rollDraw(B({}), ex, seq(0.5, 0.0)).medalIds) === '[41,31,31]', 'estrazione senza promozioni');
 check(J(g.rollDraw(B({}), ex, seq(0.01, 0.0, 0.5, 0.0, 0.5, 0.0)).medalIds) === '[51,31,31]', 'promozione 4 -> 5');
 let threw = false;
-try { g.rollDraw(B({}), { pool: {}, featuredIds: [], listIds: [], weighted: [] }, Math.random); } catch { threw = true; }
+try { g.rollDraw(B({}), { pool: {}, featuredIds: [], listIds: [], listNames: [], featuredNames: [], weighted: [] }, Math.random); } catch (e) { threw = /pool vuoto/.test(e.message); }
 check(threw, 'pool vuoto: errore');
 check(J(g.rollDraw(B({ lotCount: 3, pool: P({ mode: 'evolve' }) }), ev, seq(0.95)).medalIds) === '[301684,301684,301684]', 'estrazione evolve');
+threw = false;
+try { g.rollDraw(B({ pool: P({ mode: 'evolve', evolve: [] }) }), { pool: {}, featuredIds: [], listIds: [], weighted: [] }, Math.random); } catch { threw = true; }
+check(threw, 'evolve vuoto: errore');
 
-// slot a lista (vetrina peso 2): mix 3★ -> listIds [31,32,41,42], pesi 1,2,1,2
-const LB = B({ rarityMix: [[3, 3]], pool: P({ featured: ['hades'] }), guarantee: G({ list: ['sora', 'hades'], count: 1 }) });
+// slot a lista: prima la medaglia per nome (vetrina peso 2), poi la variante alla stella dello slot
+// (mix [[4,1],[3,2]] a 2016-06-01: sora {3,4,5} peso 1, hades {3,4} peso 2; slot 0 = 4★)
+const LB = B({ pool: P({ featured: ['hades'] }), guarantee: G({ list: ['sora', 'hades'], count: 1 }) });
 const lex = g.expandPool(LB, CAT, '2016-06-01');
-check(J(lex.listIds) === '[31,32,41,42]' && J(lex.featuredIds) === '[32,42]', 'liste espanse');
-check(g.rollDraw(LB, lex, seq(0.0, 0.5, 0.0)).medalIds[0] === 31, 'slot a lista: rng 0 -> primo');
-check(g.rollDraw(LB, lex, seq(0.99, 0.5, 0.0)).medalIds[0] === 42, 'slot a lista: rng 0.99 -> Hades');
-check(g.rollDraw(LB, lex, seq(0.7, 0.5, 0.0)).medalIds[0] === 42, 'slot a lista: vetrina peso 2 (uniforme darebbe 41)');
-check(J(g.slotOdds(LB, lex)[0]) === '[{"list":true,"pct":100}]', 'odds slot a lista');
+check(J(lex.listIds) === '[31,32,41,42,51]' && J(lex.featuredIds) === '[32,42]', 'liste espanse');
+check(J(lex.listNames) === '[["sora",1,{"3":[31],"4":[41],"5":[51]}],["hades",2,{"3":[32],"4":[42]}]]', 'listNames per nome');
+check(J(lex.featuredNames) === '[["hades",1,{"3":[32],"4":[42]}]]', 'featuredNames per nome');
+check(g.rollDraw(LB, lex, seq(0.0, 0.5, 0.0)).medalIds[0] === 41, 'slot a lista: rng 0 -> Sora alla stella dello slot');
+check(g.rollDraw(LB, lex, seq(0.99, 0.0)).medalIds[0] === 42, 'slot a lista: rng 0.99 -> Hades 4★');
+check(g.rollDraw(LB, lex, seq(0.4, 0.0)).medalIds[0] === 42, 'slot a lista: vetrina peso 2 (uniforme darebbe Sora)');
+check(g.rollDraw(LB, lex, seq(0.0, 0.01, 0.0)).medalIds[0] === 51, 'slot a lista: salita 4 -> 5 della medaglia');
+const NB = B({ rarityMix: [[5, 1], [3, 2]], guarantee: G({ list: ['hades'], count: 1 }) });
+check(g.rollDraw(NB, g.expandPool(NB, CAT, '2016-06-01'), seq(0.0)).medalIds[0] === 42, 'slot a lista: variante piu vicina sotto lo slot');
+const UB = B({ rarityMix: [[3, 1]], lotCount: 1, pool: P({ sets: [] }), guarantee: G({ list: ['riku'], count: 1 }) });
+check(g.rollDraw(UB, g.expandPool(UB, CAT, '2016-06-01'), seq(0.0, 0.5, 0.0)).medalIds[0] === 45, 'slot a lista: variante piu bassa sopra lo slot');
+check(J(g.slotOdds(LB, lex)[0]) === '[{"list":true,"rare":4,"pct":94},{"list":true,"rare":5,"pct":6}]', 'odds slot a lista');
+check(J(g.slotOdds(LB, lex)[1]) === '[{"rare":3,"pct":90},{"rare":4,"pct":10}]', 'odds slot normale dopo la lista');
 
 // pity
 const PB = B({ pool: P({ featured: ['hades'] }), guarantee: G({ pity: 3 }) });
 const pex = g.expandPool(PB, CAT, '2016-06-01');
 const pr = g.rollDraw(PB, pex, seq(0.0, 0.5, 0.0), { draws: 2, sinceFeatured: 2 });
-check([32, 42].includes(pr.medalIds[0]) && pr.featured === true, 'pity alla terza estrazione senza vetrina');
+check(pr.medalIds[0] === 42 && pr.featured === true, 'pity alla terza estrazione: vetrina alla stella dello slot');
 const pn = g.rollDraw(PB, pex, seq(0.5, 0.0), { draws: 2, sinceFeatured: 1 });
 check(J(pn.medalIds) === '[41,31,31]' && pn.featured === false, 'pity non ancora');
 
 // every
 const EB = B({ guarantee: G({ list: ['hades'], count: 1, every: 3 }) });
 const eex = g.expandPool(EB, CAT, '2016-06-01');
-check([32, 42].includes(g.rollDraw(EB, eex, seq(0.5, 0.0), { draws: 2, sinceFeatured: 0 }).medalIds[0]), 'every 3: terza estrazione');
+check(g.rollDraw(EB, eex, seq(0.5, 0.0), { draws: 2, sinceFeatured: 0 }).medalIds[0] === 42, 'every 3: terza estrazione, Hades 4★');
 check(g.rollDraw(EB, eex, seq(0.5, 0.0), { draws: 0, sinceFeatured: 0 }).medalIds[0] === 41, 'every 3: prima estrazione normale');
 
 // abilita'
