@@ -55,7 +55,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   al banco fatte con la revisione 119. **Correzione finale** (commit b9e23cc,
   [shop.md#correzione-finale](docs/notes/shop.md#correzione-finale)): vetrina e lista dei banner di debutto,
   `totalLimit` e una al giorno per le gratuite senza limite, `guarantee.slot` (B0306-B0308/B0355), «This guarantee is
-  not reproduced yet.», tre righe nuove nelle Notices; master cambiato -> revisione 120, **da provare al banco**.
+  not reproduced yet.», tre righe nuove nelle Notices; master cambiato -> revisione 120, **provata al banco** il 17-10 (4 prove OK, dubbi minori in I-145).
 - Generazione, nell'ordine:
 
 ```powershell

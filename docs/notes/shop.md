@@ -278,7 +278,7 @@ biglietti per le prove). Restano nel salvataggio le 43 medaglie estratte e `play
 DEAL!, Free Deal VIP, Falling a 2500). Poi relogin normale (revisione 119, senza `-GachaShow`, `sp2r_end_shop`).
 
 <a id="correzione-finale"></a>
-### Correzione finale (17-10, commit b9e23cc, revisione 120; non ancora provata al banco)
+### Correzione finale (17-10, commit b9e23cc, revisione 120; provata al banco il 17-10)
 
 - **A. Vetrina e lista del banner di debutto.** La data di ogni variante (`rare_date` di `banner_sources.medal_release`)
   e' interpolata dal numero NA e cadeva 3-11 giorni dopo l'inizio del banner che aveva introdotto la medaglia: in 15
@@ -304,6 +304,24 @@ DEAL!, Free Deal VIP, Falling a 2500). Poi relogin normale (revisione 119, senza
   massimo sostituiti da una medaglia normale della stessa rarita'; le gratuite «una volta» o «una al giorno» tengono il
   limite.
 - Master: 23 commenti cambiati (i limiti nuovi nella striscia) -> BASE 120 negli script di sessione.
+
+**Prove al banco (17-10, revisione 120, nessun crash).** Copia del salvataggio in
+`D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-sp2-final`; a server fermo `freeStone` 360 -> 20000, alla fine
+riportato a 360 dalla copia (`limitedDrawTicket1` 0, invariato). Il primo relogin con la 120 ha scaricato i master
+(`GET /master/drawMedalType`) senza crash. Screenshot in `D:\Progetto_Restauro_KH_UX\screenshots\`:
+
+| Prova | Esito | Screenshot |
+|---|---|---|
+| 1 B0306 x10 (`-GachaShow B0306`) | OK: Details con la lista su «Medal 2» (6★ 97%, 7★ 3%), Medal 1 7★ 100%; log `[gacha]`: slot 0 SP Roxas 7★, slot 1 **HD Zexion 6★** (della lista), otto 5★; stelle contate nel risultato: 7, 6 e otto da 5; jewel -3000 | sp2f_f1_details, sp2f_f1_details2, sp2f_f1_confirm, sp2f_f1_anim2, sp2f_f1_back |
+| 2 B0054 Epic Medal Carnival 2016 | OK: «Featured Medal guaranteed within 10 draws (original).» senza «not reproduced» (vetrina = Illustrated Sephiroth); x10 senza crash (tre 5★, sette 4★) | sp2f_f2_shop, sp2f_f2_details..3, sp2f_f2_result2 |
+| 3 B0604 e B0511 gratuite «Available once» | OK: piastre a 1 Jewel con «Chances left today: 1» (il client scrive «today» anche per `totalLimit`); dopo l'estrazione piastra grigia, striscia «... - once», un secondo tocco non manda richieste e non cambia i jewel. B0604: slot 0 Supernova - KH III Zeus 7★ (della lista) | sp2f_f3_shop, sp2f_f3_result, sp2f_f3_back, sp2f_f3_tap2, sp2f_f3b_confirm, sp2f_f3b_result, sp2f_f3b_tap2 |
+| 4 «not reproduced» + Notices | OK: B0663 Ticket Draw x10 «Featured Medal guaranteed within 3 draws (original). This guarantee is not reproduced yet.»; Differences con le tre righe nuove (Tier, Trait/boosted/SA/skill, gratuite una volta) | sp2f_f4_details2, sp2f_notice_diff2, sp2f_notice_diff3 |
+
+- Dopo la correzione A nessun banner estraibile ha piu' `guarantee.list` con `listNames` vuoto alla sua data: la
+  frase compare solo per la pity con vetrina vuota (25 banner, es. B0663, B0023, B0280, i Ticket/Cookies Deal).
+- Restano nel salvataggio le 40 medaglie estratte e i contatori `player.gacha.count` (10511 e 10604 a 1: con
+  `-GachaShow` quelle piastre restano grigie).
+- Stato finale: server normale rev 120 senza `-GachaShow`, home raggiunta (`sp2f_end_home2`). Dubbi in I-145.
 
 <a id="garanzie"></a>
 ## Garanzie dei banner: audit e modello slot per slot (sotto-progetto 2b, I-144)
