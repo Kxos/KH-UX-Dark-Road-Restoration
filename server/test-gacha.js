@@ -79,6 +79,24 @@ check(e.price === 1 && e.userLimitedCount === 0 && e.isDayLimited === 0, 'piastr
 check(['validAdd', 'drawMedalTypeId', 'drawType', 'sortId', 'payType', 'price', 'lotCount', 'isDayLimited', 'userLimitedCount',
   'userWarrantDisplayOfTime', 'name', 'description', 'bannerUrl', 'warrantMedalIds', 'drawTicketlimitDate'].every((k) => k in e), 'campi obbligatori');
 check(e.bannerUrl === `http://h/web/gacha/img/${first.drawMedalTypeId}.png`, 'bannerUrl');
+// I-138: FUN_0079541c rifiuta la lista se un campo manca o ha il tipo sbagliato (JSON.stringify toglie gli undefined).
+// Tipi della piastra Catalog e di quelle del sotto-progetto 1 che funzionavano al banco.
+const PLATE_TYPES = {
+  validAdd: 'int', drawMedalTypeId: 'int', drawType: 'int', sortId: 'int', payType: 'int', price: 'int', lotCount: 'int',
+  isDayLimited: 'int', userLimitedCount: 'int', userWarrantDisplayOfTime: 'int', name: 'string', description: 'string',
+  bannerUrl: 'string', warrantMedalIds: 'array', drawTicketlimitDate: 'string',
+};
+const typeOf = (v) => (Array.isArray(v) ? 'array' : Number.isInteger(v) ? 'int' : typeof v);
+const ord = [mk({ start: '2016-12-02' }), mk({ start: '2016-12-07' }), perm, mk({ start: '2016-12-05' }), mk({ start: '2016-12-07' })];
+const lo = JSON.parse(JSON.stringify(g.gachaListData(ord, { freeStone: 0 }, { realMs: t0, webBase: 'http://h', ...opt })));
+const badPlates = lo.gachaList.flatMap((x) => Object.entries(PLATE_TYPES).filter(([k, t]) => typeOf(x[k]) !== t)
+  .map(([k, t]) => `${x.drawMedalTypeId}.${k}=${JSON.stringify(x[k])} (atteso ${t})`));
+check(badPlates.length === 0, `campi e tipi delle piastre: ${badPlates.join(', ')}`);
+// Il client ordina le piastre per sortId crescente (mappa di FUN_00a19c84): Catalog prima, poi l'ordine di shopBanners.
+const wantIds = [9001, ...g.shopBanners(ord, opt).map((b) => b.drawMedalTypeId)];
+const bySort = [...lo.gachaList].sort((a, b) => a.sortId - b.sortId);
+check(JSON.stringify(bySort.map((x) => x.drawMedalTypeId)) === JSON.stringify(wantIds), `ordine per sortId: ${bySort.map((x) => x.drawMedalTypeId)}`);
+check(new Set(lo.gachaList.map((x) => x.sortId)).size === lo.gachaList.length, 'sortId distinti');
 const cat = l.gachaList[0];
 check(cat.payType === 6 && cat.price === 1 && cat.drawType === 1, 'Catalog innocuo');
 check(l.gachaList.every((x) => x.price >= 1 && x.payType !== 3 && x.payType !== 9), 'mai prezzo 0, payType 3 o 9');

@@ -16,7 +16,7 @@ Prove: `node server/test-gacha.js`, `node server/test-gacha-server.js`. Piano e 
 
 - Parser `FUN_00795724` (`gachaList`, elemento `FUN_0079541c`, 0x90 byte) **e** `FUN_00795ba0` (`petGachaList`):
   senza `petGachaList` -> «200 ERROR :75». Salvata nel singleton `FUN_007c1dfc` +0x560.
-- `FUN_00a19c84` fa una piastra per elemento (mappa scena+0x998, raggruppate per `sortId`): +0x18 drawMedalTypeId,
+- `FUN_00a19c84` fa una piastra per elemento (mappa scena+0x998, raggruppate per `sortId` della lista, crescente, poi drawMedalTypeId; il sortId del master non conta): +0x18 drawMedalTypeId,
   +0x1c price, +0x20 lotCount, +0x28 bannerUrl, +0x40 drawType, +0x44 payType, +0x48 isDayLimited,
   +0x4c userLimitedCount (estrazioni RIMASTE oggi), +0x50 userWarrantDisplayOfTime, +0x58 warrantMedalIds.
 - Il master **DrawMedalType** (parser `FUN_00ef4454`, getter `FUN_00ef4258`, tabella 0x5c) e' obbligatorio: la piastra
@@ -217,4 +217,8 @@ Task 1). Cache `MM_*` cancellata prima delle prove. Screenshot in `D:\Progetto_R
   (B0001-B0004, come `shopBanners` calcolato sul salvataggio) e immagini giuste dalla cache svuotata
   (`sp2_diag_sortid`, `sp2_diag_sortid_scroll`).
 - Prove 2-7 e le dieci aperture dello Shop: **non fatte**, ferme su I-138.
+- **Correzione di I-138 (17-10, da provare al banco).** `FUN_0079541c` legge `sortId` della lista a +0xc;
+  `FUN_00a19c84` mette gli elementi in una mappa `sortId -> (drawMedalTypeId -> piastra)` e numera le piastre
+  visitandola: ordine per sortId crescente, a parita' per drawMedalTypeId. Il sortId del master (riga +8) li' non
+  si legge. `gachaListData` manda Catalog 1, poi 10, 20, ... nell'ordine di `shopBanners`; master invariato.
 
