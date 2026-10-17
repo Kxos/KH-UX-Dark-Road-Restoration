@@ -18,8 +18,8 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 41**, **revisione master: BASE 122** (default dei 4 script di sessione dal fix 1 del Task 10 del sotto-progetto 2b
-del 17-10; il server manda `122*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 41**, **revisione master: BASE 123** (default dei 4 script di sessione dalla correzione di I-153
+del 17-10; il server manda `123*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -61,7 +61,10 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   suoni JP (I-152 chiuso: x10, Evolve, Nova), 7★ Tier 10 a +320% con i due popup del Nova (B0619, B0637), Evolve con
   guilt senza popup fuori posto. **Guasta la striscia della pity con liste lunghe (I-153)**: buffer di 0x400 byte del
   client, 12 banner (B0637, B0638, B0646, ...); analisi e proposta in `D:\Progetto_Restauro_KH_UX\tmp\strip_b0637\report.md`.
-  **Prossimo: correggere I-153** (decisione dell'utente sul testo di categoria), poi lo spazio di lavoro SDD del 2b si cancella.
+  **I-153 corretto offline** (commit 086ab8e, master BASE 123, [shop.md#i153](docs/notes/shop.md#i153)): oltre 900 byte
+  di nomi testo di categoria con `validComment` 1 (16 banner). **Prossimo: prova al banco** con
+  `relogin.ps1 -Tag i153 -Revision 123 -GachaShow B0637,B0619,B0771` (B0637 striscia di categoria, B0619 ancora con il
+  nome), poi I-153 si chiude e lo spazio di lavoro SDD del 2b si cancella.
 - **Audit dei banner contro i notice ufficiali** (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\notice_audit\`,
   report.md + findings.tsv + overrides_proposed.tsv): 155 differenze su 122 banner (regole G1-G10: deal 7★/Prime
   2018 con SA + SAB max + skill, «If you receive the following Medals ... N dots», «0 dots», Daily/Small Deal,

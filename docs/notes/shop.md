@@ -390,7 +390,8 @@ Spec [2026-10-17-shop-garanzie-2b-design.md](../superpowers/specs/2026-10-17-sho
 **Contratto del catalogo v3** (`server/game_data/gacha_catalog.json`, `version` 3; dettaglio nel piano):
 `medals[n].ids[i] = [id, stella, data, Tier]` (Tier = `medal.json.guiltValue`); `guarantee.slots[]` = riserve
 `{kind: list|tier|trait, slot, count, star, names, tierMin, tierMax}`; `pityNames`, `pityStar`, `pitySlot`,
-`pityGift` (`[3, medalId, 1]` per le medaglie di supporto: va nel Present Box), `erratum`, `source`;
+`pityGift` (`[3, medalId, 1]` per le medaglie di supporto: va nel Present Box), `pityLabel` (categoria della striscia
+oltre il limite del client, I-153: [#i153](#i153)), `erratum`, `source`;
 `enhance.preset` (`dots`, `guilt: 'max'`), `enhance.boosted` (`str`/`def`, `chance: small` = 5% ricostruito per slot
 idoneo, `guaranteed`), `enhance.maxSkill`, `enhance.notReproduced`. `guarantee.list/count/slot` restano (prima
 riserva a lista) per compatibilita'.
@@ -406,7 +407,7 @@ python recon/tools/make_banner_images.py --mode palette      # server/game_data/
 $env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # boosted e Nova in fondo
 Remove-Item Env:KHUX_MEDALS_ALL, Env:KHUX_WORLDTOUR          # non lasciarle alla sessione PowerShell
 node server/make-banners.js                                  # drawMedalType: striscia, validComment, warrant
-.\tools\ldplayer\session\relogin.ps1 -Tag x -Revision <BASE+1>   # oggi BASE 122 -> 123, anche nei 4 script di sessione
+.\tools\ldplayer\session\relogin.ps1 -Tag x -Revision <BASE+1>   # oggi BASE 123 -> 124, anche nei 4 script di sessione
 ```
 
 Solo se cambiano LWF o immagini del client: `build-resources.ps1 -Version <N+1>` a banco fermo (oggi installata la
@@ -450,7 +451,8 @@ e `node server/make-nova-rows.js` (idempotenti), poi `make-banners.js` e la revi
   toccare gli slot (Dual Meow Wow 301684, Blue Fairy 301502);
 - striscia gialla: `validComment 0` + `warrantMedalIds` (nomi dalla tabella medal) -> «<nome> guaranteed in N
   tries!» / «1 try!»; senza bersaglio alla data il contatore e' 0 e la striscia sparisce (16 date);
-  `WARRANT_XML_SAFE` resta `false` (U3);
+  `WARRANT_XML_SAFE` resta `false` (U3); un id per nome e, oltre 900 byte di nomi, `validComment` 1 con il testo di
+  categoria (I-153, [#i153](#i153));
 - boosted: la riga boosted del master al posto della normale (cella propria), `chance small` 5% per slot idoneo;
   le Tier-family (+1000/+1000) sono ricostruite (la frase non da' i valori), spiegate nelle Notices;
 - preset: pallini fino a `maxEnhanceCount`, guilt al massimo del Tier (con `guilt: 'max'` anche i pallini); la guilt
@@ -567,3 +569,66 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
   byte del formato del client, 12 banner coinvolti: I-153.
 - Inciampi: dopo il kill del server per modificare il salvataggio, il relogin si e' fermato al titolo con «Launcher3 non
   risponde» (Attendi, poi KHUX START a mano); il primo tocco su MENU dopo le Notices si perde (I-143).
+
+<a id="i153"></a>
+#### I-153: striscia della pity con liste lunghe, «Testo di categoria» (17-10, commit 086ab8e, master BASE 123)
+
+Analisi (statica, client WW 4.3.1) in `D:\Progetto_Restauro_KH_UX\tmp\strip_b0637\report.md` (con `measure.js`). Con
+`validComment` 0 e piu' nomi `[fn]` unisce i nomi distinti di `warrantMedalIds` in
+«<important>nome</important>» con «, » e «, or » prima dell'ultimo e formatta
+`A ${1:%s} guaranteed in <important>${2:%d :#try:#tries}</important>!` con `vsnprintf` in 0x400 byte
+(`[fn]`), poi `[fn]` avvolge in `<xml>%s</xml>` in altri 0x400 byte: limite **J <= 963 byte**,
+oltre 1021 nomi e numero restano vuoti («A  guaranteed in !»). J = somma(23 + byte UTF-8 del nome) + 2·(k-2) + 5 per
+k >= 2 nomi distinti (un nome: i suoi byte). Con `validComment` != 0 il client fa solo `sprintf(comment,
+userWarrantDisplayOfTime)` (master +0x6ec, 0x801 byte) e **non legge** `warrantMedalIds` (lo stesso ramo che usano
+da sempre i banner senza pity, con la lista vuota).
+
+Decisione dell'utente: «Testo di categoria». Regole (`server/gacha.js`, `server/make-banners.js`):
+
+1. `warrantFields(..., nameOf)`: **un id per nome** (nome della riga medal del master servito, il primo id nell'ordine
+   di oggi, cioe' `ex.pityIds` crescenti), come gia' fa il client: il testo non cambia, il pacchetto si accorcia.
+   `gacha.warrantStripBytes(ids, nameOf)` = J, la stessa funzione per server e generatore.
+2. `make-banners.js`: J sul pool alla data del banner (`gd.asOf(b, '2099-12-31')`: i limitati al loro inizio, i
+   PERMANENT alla fine, il caso peggiore perche' il pool cresce col tempo; `stripBytesOf`). **J <= 900**
+   (`WARRANT_LIST_MAX`): come prima, lista dei nomi e `validComment` 0. **J > 900**: `validComment` 1,
+   `warrantDisplayOfTime = warrantNumberOfTime = pity` e il comment
+   `A <important>{categoria}</important> is guaranteed! Draws left: <important>%d</important>` (`categoryComment`):
+   un sprintf con il solo `%d` (= `userWarrantDisplayOfTime`, le estrazioni che mancano) e senza plurale, quindi il
+   numero sta in fondo. Banner oltre 900 senza categoria: «featured Medal» e una riga di log del generatore.
+3. `guardWarrant`: `validComment` 0 e J > 963 (`WARRANT_HARD_MAX`, master non rigenerato) -> striscia nascosta
+   (`userWarrantDisplayOfTime` 0) e il solo primo id, una riga di log per banner; `validComment` 1 con pity -> il solo
+   primo id (la striscia e il conto restano).
+4. Categorie: **un posto solo**, campo `pity_label` di `recon/tools/banner_overrides.tsv` (come il `preset`, con la
+   fonte), che `make_banner_catalog.apply_pity_label` copia in `guarantee.pityLabel` (None per gli altri banner).
+
+| Banner | J (byte) | Categoria | Fonte |
+|---|---|---|---|
+| B0637, B0638 | 3089, 3086 | SN or higher Medal | notice 62458 «a SN or higher Medal is guaranteed on the 3rd draw!» |
+| B0646 | 3272 | SN or higher Medal | notice 63619 «SN or higher medal guaranteed every 3 draws!» |
+| B0523, B0526 | 1215 | Medal that can be upgraded to Supernova+ | notice 53775 / 53777 «a Medal that can be upgraded to Supernova+» |
+| B0545 | 1350 | Medal that can be upgraded to Supernova+ | notice 55231 «a Medal that can be upgraded into a Supernova+ Medal» |
+| B0548 | 1215 | Tier 8 or Tier 9 Medal that can be upgraded to Supernova+ | notice 55474 (bersagli: 7★ di Tier 8-9) |
+| B0788, B0792, B0797, B0803, B0807 | 1041-1139 | boosted SN++ Medal | **ricavata** dai pityNames (tutte SN++, boosted per i Guarantees della wiki): i notice dicono solo «one of the following Medals every 3rd draw» |
+| B0678 | 933 | SN or higher Medal | **ricavata** dai pityNames (SN, Supernova, SN+, SN++): nessun notice della pity nell'audit |
+| B0771, B0778, B0781 | 943 | boosted SN++ Medal | **ricavata**, come B0788 |
+
+I 12 banner guasti al banco (J > 963) piu' 4 corretti ma sopra la soglia di 900 (B0678, B0771, B0778, B0781): 16 righe
+del master cambiate, tutte le altre identiche. B0768 (899 byte), B0619, B0306 restano con i nomi.
+
+Rigenerazione (17-10, offline, server vivo non toccato): la catena di [#sp2b](#sp2b) eseguita su copie in
+`D:\Progetto_Restauro_KH_UX\tmp\i153\shadow\` (backup del master e del catalogo di prima in `tmp\i153\backup\`):
+`make_banner_catalog.py` (uscita in una copia) -> identico al catalogo di prima tranne `pityLabel`;
+`make-game-tables.js` con `KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1` (senza `KHUX_TOURS_V2`) -> master identico tranne la
+copia inerte `keyblade_levels.json`; `make-banners.js` -> 16 righe di `drawMedalType.json`. Poi copiati nel repo
+`drawMedalType.json`, `keyblade_levels.json` e `gacha_catalog.json` (nessun file in git). `make_banner_images.py` non
+rilanciato: le immagini non leggono `pityLabel`. Revisione **BASE 123** nei 4 script di sessione.
+
+Notices > Shop: riga nuova «When a guarantee covers too many Medals to name them all, the yellow line names the kind
+of Medal from the banner's original notice instead (...). This wording is written by this restoration.»
+
+Prove: `node server/test-warrant-strip.js` (J, un id per nome, soglia 900, guardWarrant, i 16 banner del master con
+`validComment` 1 e il comment, B0619/B0306/B0768 con i nomi, B0637 con un master vecchio nascosto), tutti i
+`server/test-*.js` e `recon/tools/test_make_banner_catalog.py` verdi. **Da provare al banco** (I-153 resta aperto):
+`relogin.ps1 -Tag i153 -Revision 123 -GachaShow B0637,B0619,B0771`: B0637 con «A SN or higher Medal is guaranteed!
+Draws left: 3», che scende a 2 e 1 e torna a 3 dopo la pity; B0619 ancora con «SN++ - KH III Terra-Xehanort
+guaranteed in 10 tries!»; B0771 con la categoria «boosted SN++ Medal».
