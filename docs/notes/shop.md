@@ -545,3 +545,23 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
   Attack Bonus!» e TAP SCREEN, poi di nuovo lo Shop (2bf_p1_after1-8, 2bf_p1_dismiss2). Nessun crash del gioco.
 - Stato lasciato per la prova dell'utente: salvataggio ridotto, `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow
   B0306,B0307,B0308`, home.
+
+<a id="banco-finale-2b"></a>
+### Sessione al banco finale del 2b (17-10 sera, risorse 41 con `-Quick` dei suoni, revisione 122, codice fe280d8)
+
+`build-resources.ps1 -Quick` (216 AKB del JP, pacchetto 108.128.458 byte), `relogin.ps1 -Tag 2b_bench -Revision 122
+-GachaShow B0619,B0637,B0306`, salvataggio ridotto.
+- **Suoni (I-152)**: l'animazione dell'estrazione x10 e l'Evolve si sentono (confermato dall'utente a orecchio).
+- **Regola 13-bis**: 10 estrazioni su B0619 «SN++ - KH III Terra-Xehanort» (2019-11-15); 9 senza 7★, la decima con
+  la pity (`, pity` nel registro) da' SN++ - KH III Terra-Xehanort 301927 (7★ Tier 10): dettaglio con 5 pallini,
+  **+320%** e Tier 10 (b2b_tx_detail). Dopo l'OK due popup del Nova come nel video originale LFJ5ikVkIhk: «LV 36 » LV
+  37» «Unlocked ... Special Attack Bonus!», al tocco «LV 37 » LV 42» «Maxed out ... Special Attack Bonus!»
+  (b2b_nova2-4). La striscia di B0619 scende a 9 dopo la prima estrazione e torna a 10 dopo la pity.
+- **Evolve con guilt**: HD Axel 7★ Tier 4 a +130% (guilt 13000, livello 100; 5 copie aggiunte a mano al salvataggio
+  ridotto di prova, backup in `tmp\save-backup-before-evolve-test`) -> SN - HD Axel Tier 9: tiene +130%, Traits 2 -> 5,
+  nessun popup del Nova; l'estrazione successiva su B0619 chiude senza popup arretrato (b2b_evo8c, b2b_post_ok1).
+  L'anteprima dell'Evolve mostra +280% (massimo del Tier 9): e' il client, non il server.
+- **B0637, striscia gialla lunga (M1): GUASTA**. Il client scrive «A  guaranteed in !» (niente nomi, niente
+  numero; tmp\strip_all.png); con pochi bersagli (B0619, 7★ Medal Deal) la striscia e' giusta. Analisi in corso.
+- Inciampi: dopo il kill del server per modificare il salvataggio, il relogin si e' fermato al titolo con «Launcher3 non
+  risponde» (Attendi, poi KHUX START a mano); il primo tocco su MENU dopo le Notices si perde (I-143).
