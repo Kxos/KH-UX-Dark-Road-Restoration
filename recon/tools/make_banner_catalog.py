@@ -575,6 +575,25 @@ def extend_medals(medals, M, rd, debut):
     return added
 
 
+STD_CLS = {'', 'SR', 'L'}
+
+
+def mark_std(medals):
+    """medals[n]['std'] = True solo per le medaglie standard dei pool released/inherit (spec 9.3): voce della
+    wiki (non alias), non SN/Supernova/SN+/SN++/Prime, cls '', SR o L, class2 Attack o ''. Ogni medalId
+    sta in una sola voce std (la prima in ordine di nome)."""
+    seen = set()
+    for k in sorted(medals):
+        v = medals[k]
+        ids = {i[0] for i in v['ids']}
+        std = ('alias' not in v and not FAMILY_RE.match(k) and not k.startswith('prime - ')
+               and v['cls'] in STD_CLS and v['class2'] in ('Attack', '') and not (ids & seen))
+        v['std'] = std
+        if std:
+            seen |= ids
+    return sum(1 for v in medals.values() if v['std'])
+
+
 # ---------- righe incomplete: fratello di serie (porta di incomplete.py) e override ----------
 def sib_key(n):
     return re.sub(r'\s+', ' ', re.sub(r'\(\d+/\d+\)|returns!?|is back!?|limited time:|!|\(ex\+?\)|\[ex\+?\]', '', n.lower())).strip()
@@ -757,6 +776,7 @@ def build_catalog(inputs):
         for n in b['guarantee']['list'] + b['pool']['featured']:
             debut.setdefault(clean_name(n), b['start'] or FIRST_DAY)
     added = extend_medals(medals, M, rd, debut)
+    mark_std(medals)
     mats = {norm(x['name']) for x in MAT}
     unresolved = collections.Counter()
     for b in out:
@@ -807,7 +827,7 @@ def main():
     print('pool', dict(C(b['pool']['mode'] for b in bs).most_common()))
     print('completate', sum(1 for b in bs if b['completedFrom']), 'fine ricostruita', sum(1 for b in bs if b['endSource'] != 'original'))
     print('bonus', sum(len(b['bonus']) for b in bs), 'bonus saltati', len(skipped))
-    print('medaglie', len(cat['medals']), stats)
+    print('medaglie', len(cat['medals']), 'std', sum(1 for v in cat['medals'].values() if v['std']), stats)
     print('scritto', inp['out'], os.path.getsize(inp['out']), 'byte')
 
 

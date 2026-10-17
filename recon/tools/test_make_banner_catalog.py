@@ -5,6 +5,7 @@
 L'ultimo controllo (catalogo completo) gira solo se esistono la wiki e il TSV veri.
 """
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -188,6 +189,13 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     b5 = next(b for b in bs if b['rowId'] == 'B0005')
     check(b5['pool']['filter'] == ['disney'] and med['stitch']['origin'] == 'disney' and med['kh ii cloud']['origin'] == 'ffkh'
           and med['kh ii cloud']['att'] in ('power', 'speed', 'magic'), 'B0005 filtro e campi medaglia')
+    from collections import Counter as _C
+    dup = [i for i, n in _C(i[0] for v in med.values() if v['std'] for i in v['ids']).items() if n > 1]
+    check(not dup, f'medalId in due voci std {dup[:5]}')
+    bad = [k for k, v in med.items() if v['std'] and re.match(r'(sn|supernova|prime)\b', k)]
+    check(not bad, f'voci std SN/Prime {bad[:5]}')
+    check(all(not v['std'] for v in med.values() if 'alias' in v), 'alias non std')
+    check(all('std' in v for v in med.values()), 'std sempre presente')
     integr = ', integrazione'
 else:
     integr = ' (integrazione saltata: dati veri assenti)'
