@@ -157,6 +157,19 @@ c = m.complete_row(R(name='[WJE] Monday Only Free Deal! (9/14)'),
                    R(name='Free Deal', currency='Free, VIP only', price='Free VIP only', draw_size='x10', rarity_mix='7★:1 5★:9'))
 check(c['currency'] == '' and c['price'] == 'Free' and c['draw_size'] == 'x10' and not m.is_vip(c), f'completamento senza VIP {c}')
 
+# --- fix round 3: L-SR std, class2 Rare, alias dei sotto-set
+MS = {'phantom': {'cls': 'L-SR', 'class2': 'Attack', 'ids': [[1, 6, 'x']], 'date': '2017-01-01'},
+      'vanitas': {'cls': 'SR', 'class2': 'Super Rare', 'ids': [[2, 6, 'x']], 'date': '2017-01-01'},
+      'chip': {'cls': '', 'class2': 'Boost', 'ids': [[3, 6, 'x']], 'date': '2016-01-01'},
+      'xion a': {'cls': '', 'class2': 'Attack', 'ids': [[4, 5, 'x']], 'date': '2016-11-25'},
+      'xion b': {'cls': 'E', 'class2': 'Attack', 'ids': [[5, 5, 'x']], 'date': '2017-12-13'},
+      'prime - key art #17': {'cls': '', 'class2': 'Attack', 'ids': [[6, 7, 'x']], 'date': '2018-06-15'}}
+m.mark_std(MS)
+check(MS['phantom']['std'] and MS['vanitas']['std'] and not MS['chip']['std'] and not MS['prime - key art #17']['std'],
+      f'std L-SR / Super Rare / Boost / Prime {[(k, v["std"]) for k, v in MS.items()]}')
+check(m.resolve_name('xion', '2016-11-25', MS, {}) == 'xion a', 'alias xion -> xion a')
+check(m.resolve_name('key art #17', '2018-06-15', MS, {}) == 'prime - key art #17', 'alias key art #17 -> prime')
+
 # --- integrazione sui dati veri
 WIKI = os.environ.get('KHUX_WIKI_JSON', m.DEFAULTS['wiki'])
 TSV = os.environ.get('KHUX_BANNERS_TSV', m.DEFAULTS['banners'])
@@ -196,6 +209,12 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(not bad, f'voci std SN/Prime {bad[:5]}')
     check(all(not v['std'] for v in med.values() if 'alias' in v), 'alias non std')
     check(all('std' in v for v in med.values()), 'std sempre presente')
+    check(med['world of ff sora']['std'], 'world of ff sora std')
+    import json as _json
+    dump = _json.dumps(cat, ensure_ascii=False)
+    check('�' not in dump and 'saïx' in dump and 'lumière' in dump, 'nomi UTF-8 corretti')
+    miss = sorted({n for s in cat['subsets'].values() for n in s['names'] if n not in med and not n.startswith('trait medal')})
+    check(not miss, f'nomi dei sotto-set senza voce {miss}')  # «moogle & sora» -> redirect «sora & moogle»
     integr = ', integrazione'
 else:
     integr = ' (integrazione saltata: dati veri assenti)'
