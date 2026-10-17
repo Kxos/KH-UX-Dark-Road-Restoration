@@ -379,6 +379,25 @@ def guarantee_names(g):
     return ([n for s in sl if 'prefix' not in s for n in s['names']] if sl else g['list']) + g.get('pityNames', [])
 
 
+def pool_names_at(b, medals, sub_members, sub_date, first):
+    """nomi del pool del banner alla sua data d'inizio, come expandPool in server/gacha-data.js (senza
+    guarantee.list): pool.names, vetrina, sotto-set usciti (col filtro origin/att), std released/inherit; solo i nomi
+    con una variante alle stelle del mix (o alla stella sopra, se gia' uscite) datata entro l'inizio"""
+    p, at = b['pool'], b['start'] or FIRST_DAY
+    names = set(p['names']) | set(p['featured'])
+    flt = p.get('filter') or []
+    for s in p['sets']:
+        if sub_date.get(s, FIRST_DAY) <= at:
+            names |= {n for n in sub_members.get(s, []) if n in medals
+                      and (not flt or medals[n].get('origin') in flt or medals[n].get('att') in flt)}
+    if p['mode'] in ('released', 'inherit'):
+        after = p['inheritAfter'] or '' if p['mode'] == 'inherit' else ''
+        names |= {n for n, v in medals.items() if v.get('std') and after < v['date'] <= at}
+    stars = {r for r, _ in b['rarityMix'] if not (first.get(str(r)) and first[str(r)] > at)}
+    stars |= {r + 1 for r, _ in b['rarityMix'] if first.get(str(r + 1)) and first[str(r + 1)] <= at}
+    return {n for n in names if any(i[1] in stars and i[2] <= at for i in medals.get(n, {}).get('ids', []))}
+
+
 def align_debut_dates(banners, medals, first):
     """Vetrina e lista alla data del banner (correzione finale A). La data di una variante (rare_date di
     banner_sources.medal_release) e' interpolata dal numero NA e cade a volte 3-11 giorni dopo l'inizio del banner
@@ -840,8 +859,11 @@ def build_catalog(inputs):
         prices = parse_price(r['price'])
         lot = int(r['draw_size'][1:]) if re.fullmatch(r'x\d+', r['draw_size']) else None
         end, end_src = end_of(r, typ, incl, notices)
+        # date lette da un notice (override start_pt/end_pt): la fine e' originale (non ricostruita, gacha.js);
+        # la fonte resta in datesSource per i Details
+        dates_src = '; '.join(_dedup(ov_src[rid][f] for f in ('start_pt', 'end_pt') if f in ov.get(rid, {}))) or None
         if 'end_pt' in ov.get(rid, {}):
-            end_src = ov_src[rid]['end_pt']
+            end_src = 'original'
         refs = setrefs(notes)
         pool = pool_recipe(r, notes, typ, docs, sub_members, rel, M)
         if refs:
@@ -871,7 +893,7 @@ def build_catalog(inputs):
         img, img_from = image_of(r0, incl)
         out.append({
             'rowId': rid, 'drawMedalTypeId': 10000 + int(rid[1:]), 'name': r['name'], 'type': typ, 'flags': flags,
-            'start': r['start_pt'], 'end': end, 'endSource': end_src,
+            'start': r['start_pt'], 'end': end, 'endSource': end_src, 'datesSource': dates_src,
             'unlockQuest': unlock_quest(r['start_pt'], story), 'payType': pay, 'currency': cur,
             'prices': prices, 'lotCount': lot, 'rarityMix': rarity_mix(r['rarity_mix']), 'epicBoost': epic_boost(notes),
             'dayLimit': day, 'totalLimit': total, 'vipFree': vip_free,
@@ -914,17 +936,22 @@ def build_catalog(inputs):
     # decisione 1 sui nomi risolti (redirect, alias, famiglie SN: i nomi del master non bastano, «Illustrated Sora A»
     # 6★ e' «Illustrated Sora»), dopo le date del debutto, che contano tutti i nomi scritti; poi lista e pitySlot
     rares = {k: {i[1] for i in v['ids']} for k, v in medals.items()}
+    first_r = first_rarity(rows)
     for b in out:
         g = b['guarantee']
         for s in g['slots']:
+            if 'prefix' in s:  # «SN+ or SN++», «KH III Medal+»: solo i nomi del pool del banner alla sua data
+                pool = pool_names_at(b, medals, sub_members, sub_date, first_r)
+                s['names'] = [n for n in s['names'] if n in pool]
             s.pop('prefix', None)
             if s['kind'] == 'list':
                 s['names'] = bg.star_filter(s['names'], s['star'], rares.get)
         first = next((s for s in g['slots'] if s['kind'] == 'list'), None)
         if first:
             g['list'] = list(first['names'])
-        if g['pity']:
-            g['pitySlot'], g['pityStar'] = bg.pity_slot(g['pityNames'], g['pityStar'], g['slots'], b['rarityMix'])
+        written = g.pop('_pityStarWritten', None)
+        if g['pity']:  # senza stella scritta, pityStar = stella dello slot finale (dopo la decisione 1)
+            g['pitySlot'], g['pityStar'] = bg.pity_slot(g['pityNames'], written, g['slots'], b['rarityMix'])
     out.sort(key=lambda b: b['rowId'])
     return {
         'version': 3,

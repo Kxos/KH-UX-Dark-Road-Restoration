@@ -158,15 +158,25 @@ def assign_slots(reservations, mix):
         cnt = max(1, r.get('count') or 1)
         at = run(cnt, r.get('star')) if r.get('star') else run(cnt)
         if at is None:
-            free = [j for j in range(len(rar)) if j not in used]
+            # nessun blocco consecutivo: i primi `count` slot liberi uno per uno (dall'alto), mai uno gia' preso;
+            # conflict True e slotsUsed = gli slot davvero usati (slot..slot+count-1 non vale piu'; vuoto se non ce n'e')
+            free = sorted((j for j in range(len(rar)) if j not in used), key=lambda j: (-rar[j], j))[:cnt]
             at = free[0] if free else 0
             r['conflict'] = True
-        used.update(range(at, min(at + cnt, len(rar))))
+            r['slotsUsed'] = free
+            used.update(free)
+        else:
+            used.update(range(at, at + cnt))
         r['slot'] = at
         r['star'] = rar[at] if rar else r.get('star')
         out[i] = {k: r[k] for k in ('kind', 'slot', 'count', 'star', 'names', 'tierMin', 'tierMax')} | \
-            {k: v for k, v in r.items() if k in ('prefix', 'conflict')}
+            {k: v for k, v in r.items() if k in ('prefix', 'conflict', 'slotsUsed')}
     return out
+
+
+def covered(s):
+    """indici degli slot di una riserva: slotsUsed (conflitto) o slot..slot+count-1"""
+    return list(s['slotsUsed']) if 'slotsUsed' in s else list(range(s['slot'], s['slot'] + max(1, s['count'])))
 
 
 # ---------- pity ----------
@@ -181,8 +191,8 @@ def pity_slot(names, star, slots, mix):
             return s['slot'], star or s['star']
     if not rar:
         return 0, star
-    reserved = {j for s in slots for j in range(s['slot'], s['slot'] + max(1, s['count']))}
-    trait = {j for s in slots if s['kind'] == 'trait' for j in range(s['slot'], s['slot'] + max(1, s['count']))}
+    reserved = {j for s in slots for j in covered(s)}
+    trait = {j for s in slots if s['kind'] == 'trait' for j in covered(s)}
     target = star or rar[0]
     if target not in rar:
         lower = [r for r in rar if r < target]
@@ -194,24 +204,33 @@ def pity_slot(names, star, slots, mix):
     return (free or tr or [rar.index(target)])[0], star or target
 
 
+def _pity(text, featured, slots, mix):
+    """(pity_of, stella scritta o None): la stella scritta serve a build_catalog per ricalcolare pitySlot/pityStar
+    dopo la decisione 1 (senza stella scritta, pityStar = stella dello slot finale)"""
+    t = clean_markup(text)
+    g = mbc.guarantee_of({'guarantees': '', 'featured_medals': ''}, t)
+    if not g['pity']:
+        return {'pity': None, 'pityNames': [], 'pityStar': None, 'pitySlot': None}, None
+    ss = sentences(t)
+    sent = next((s for s in ss if re.search(r'[Ii]f bought \d+ times', s)), None) or next((s for s in ss if PITY_SENT.search(s)), '')
+    # «As Trait Medal #2 is guaranteed within 5 draws» (B0267): via il «as» davanti
+    names = [n for n in (re.sub(r'^as ', '', x) for x in g['featured']) if 'following' not in n]
+    # frase «If bought» troncata dal TSV a 500 caratteri, senza «is guaranteed» («... at least one KH 0.2 Kair», B0169):
+    # solo l'ultimo nome si completa col nome della vetrina che lo continua (la vetrina puo' contenere anche il troncato)
+    if names and re.search(r'[Ii]f bought', sent) and not re.search(r'\b(?:is|are) (?:guaranteed|included)', sent):
+        names[-1] = next((f for f in featured if f.startswith(names[-1]) and f != names[-1]), names[-1])
+    names = mbc._dedup(names) or list(featured)
+    star = re.search(r'(\d)★', re.split(r'\s+(?:is|are) (?:guaranteed|included)', sent)[0])
+    star = int(star.group(1)) if star else None
+    slot, pstar = pity_slot(names, star, slots, mix)
+    return {'pity': g['pity'], 'pityNames': names, 'pityStar': pstar, 'pitySlot': slot}, star
+
+
 def pity_of(text, featured, slots, mix):
     """{pity, pityNames, pityStar, pitySlot} dalla frase «If bought N times, at least one [S★] X is guaranteed» o
     «X is guaranteed within N draws»: pityNames = X (default `featured`), pityStar = S (default la stella di pitySlot).
     Le frasi «every Nth draw» restano pity (decisione 3)."""
-    t = clean_markup(text)
-    g = mbc.guarantee_of({'guarantees': '', 'featured_medals': ''}, t)
-    if not g['pity']:
-        return {'pity': None, 'pityNames': [], 'pityStar': None, 'pitySlot': None}
-    # nome troncato dal TSV a 500 caratteri («KH 0.2 Kair», B0169): il nome della vetrina che lo continua
-    # «As Trait Medal #2 is guaranteed within 5 draws» (B0267): via il «as» davanti
-    names = mbc._dedup(next((f for f in featured if f.startswith(n) and f != n), n)
-                       for n in (re.sub(r'^as ', '', x) for x in g['featured']) if 'following' not in n)
-    names = names or list(featured)
-    ss = sentences(t)
-    sent = next((s for s in ss if re.search(r'[Ii]f bought \d+ times', s)), None) or next((s for s in ss if PITY_SENT.search(s)), '')
-    star = re.search(r'(\d)★', re.split(r'\s+(?:is|are) (?:guaranteed|included)', sent)[0])
-    slot, pstar = pity_slot(names, int(star.group(1)) if star else None, slots, mix)
-    return {'pity': g['pity'], 'pityNames': names, 'pityStar': pstar, 'pitySlot': slot}
+    return _pity(text, featured, slots, mix)[0]
 
 
 # ---------- override scritti a mano (casi visti solo nelle immagini o nei notice) ----------
@@ -294,12 +313,15 @@ def guarantee_v3(row, notes, mix, featured, medal_rows, rares_of=None, keep_pref
         if s['kind'] == 'list':
             s['names'] = star_filter(s['names'], s['star'], rares_of or master.get)
     old = mbc.guarantee_of({'guarantees': row.get('guarantees') or '', 'featured_medals': row.get('featured_medals') or ''}, notes)
-    p = pity_of(notes + ' | ' + (row.get('guarantees') or ''), featured, slots, mix)
+    p, written = _pity(notes + ' | ' + (row.get('guarantees') or ''), featured, slots, mix)
     if 'pityNames' in ov and p['pity']:
         p['pityNames'] = list(ov['pityNames'])
-        p['pitySlot'], p['pityStar'] = pity_slot(p['pityNames'], p['pityStar'], slots, mix)
+        p['pitySlot'], p['pityStar'] = pity_slot(p['pityNames'], written, slots, mix)
     lst = next((s for s in slots if s['kind'] == 'list'), None)
-    return {'list': list(lst['names']) if lst else [], 'count': lst['count'] if lst else 0, 'slot': lst['slot'] if lst else 0,
-            'pity': p['pity'], 'every': old['every'], 'slots': slots,
-            'pityNames': p['pityNames'], 'pityStar': p['pityStar'], 'pitySlot': p['pitySlot'], 'pityGift': None,
-            'erratum': ov.get('erratum'), 'source': ov.get('source')}
+    out = {'list': list(lst['names']) if lst else [], 'count': lst['count'] if lst else 0, 'slot': lst['slot'] if lst else 0,
+           'pity': p['pity'], 'every': old['every'], 'slots': slots,
+           'pityNames': p['pityNames'], 'pityStar': p['pityStar'], 'pitySlot': p['pitySlot'], 'pityGift': None,
+           'erratum': ov.get('erratum'), 'source': ov.get('source')}
+    if keep_prefix:  # per build_catalog: stella scritta della pity (tolta prima di scrivere il catalogo)
+        out['_pityStarWritten'] = written
+    return out
