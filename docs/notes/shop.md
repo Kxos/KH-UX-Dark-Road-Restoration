@@ -628,7 +628,13 @@ of Medal from the banner's original notice instead (...). This wording is writte
 
 Prove: `node server/test-warrant-strip.js` (J, un id per nome, soglia 900, guardWarrant, i 16 banner del master con
 `validComment` 1 e il comment, B0619/B0306/B0768 con i nomi, B0637 con un master vecchio nascosto), tutti i
-`server/test-*.js` e `recon/tools/test_make_banner_catalog.py` verdi. **Da provare al banco** (I-153 resta aperto):
+`server/test-*.js` e `recon/tools/test_make_banner_catalog.py` verdi. Prova al banco prevista:
 `relogin.ps1 -Tag i153 -Revision 123 -GachaShow B0637,B0619,B0771`: B0637 con «A SN or higher Medal is guaranteed!
 Draws left: 3», che scende a 2 e 1 e torna a 3 dopo la pity; B0619 ancora con «SN++ - KH III Terra-Xehanort
 guaranteed in 10 tries!»; B0771 con la categoria «boosted SN++ Medal».
+
+**Provato al banco il 17-10** (master 123 scaricato al login, risorse 41): B0771 «A boosted SN++ Medal is
+guaranteed! Draws left: 3»; B0619 ancora col nome; B0637 «A SN or higher Medal is guaranteed! Draws left: 2» (una
+estrazione gia' fatta), 1 dopo un'estrazione, la seconda da' la pity (SN+ Sephiroth 7★ NEW) e la striscia torna a 3
+(i153_s0, tmp i153_d.png, i153_f.png). L'utente ha controllato la categoria: la pity copre solo medaglie SN, Supernova,
+SN+, Supernova+ e SN++ (67 nomi), quindi «SN or higher» e' giusto. I-153 chiuso.

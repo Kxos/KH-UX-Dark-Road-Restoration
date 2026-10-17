@@ -59,12 +59,10 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Prova 7 dell'utente fatta (popup del Nova da B0306). Comandi di generazione in [shop.md#sp2b](docs/notes/shop.md#sp2b).
 - **Sessione al banco finale del 2b fatta** (17-10 sera, [shop.md#banco-finale-2b](docs/notes/shop.md#banco-finale-2b)):
   suoni JP (I-152 chiuso: x10, Evolve, Nova), 7★ Tier 10 a +320% con i due popup del Nova (B0619, B0637), Evolve con
-  guilt senza popup fuori posto. **Guasta la striscia della pity con liste lunghe (I-153)**: buffer di 0x400 byte del
-  client, 12 banner (B0637, B0638, B0646, ...); analisi e proposta in `D:\Progetto_Restauro_KH_UX\tmp\strip_b0637\report.md`.
-  **I-153 corretto offline** (commit 086ab8e, master BASE 123, [shop.md#i153](docs/notes/shop.md#i153)): oltre 900 byte
-  di nomi testo di categoria con `validComment` 1 (16 banner). **Prossimo: prova al banco** con
-  `relogin.ps1 -Tag i153 -Revision 123 -GachaShow B0637,B0619,B0771` (B0637 striscia di categoria, B0619 ancora con il
-  nome), poi I-153 si chiude e lo spazio di lavoro SDD del 2b si cancella.
+  guilt senza popup fuori posto. **I-153 chiuso** (striscia della pity con liste lunghe: buffer di 0x400 byte del
+  client; commit 086ab8e, master BASE 123, [shop.md#i153](docs/notes/shop.md#i153)): oltre 900 byte di nomi testo di
+  categoria con `validComment` 1 (16 banner), provato al banco il 17-10 (B0637 «Draws left» 2 -> 1 -> 3 dopo la pity,
+  B0771 categoria, B0619 ancora col nome). **Il sotto-progetto 2b e' chiuso.**
 - **Audit dei banner contro i notice ufficiali** (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\notice_audit\`,
   report.md + findings.tsv + overrides_proposed.tsv): 155 differenze su 122 banner (regole G1-G10: deal 7★/Prime
   2018 con SA + SAB max + skill, «If you receive the following Medals ... N dots», «0 dots», Daily/Small Deal,
