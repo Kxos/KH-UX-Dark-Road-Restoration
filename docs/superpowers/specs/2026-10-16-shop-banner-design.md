@@ -89,8 +89,11 @@ scelto** nel catalogo, ristretto ai disponibili; senza scelta: **«Novita'»** =
 di recente + quelli pagabili con i biglietti posseduti. Un banner compare una volta sola.
 
 ### 4.4 Sblocchi con la storia
-Condizione di ogni banner: «superata la quest della storia N», con N = l'ultima quest uscita (WW) alla
-data di inizio del banner (story_release_ww.tsv). Oltre la storia restaurata (oggi 525) i banner
+Condizione di ogni banner: «superata la quest della storia N», con N = la quest che precede la prima
+della tranche WW in corso alla data di inizio del banner (l'ultima riga di story_release_ww.tsv con
+data <= inizio: N = first_quest - 1; il lancio del 2016-04-07 da' 0, la tranche 201-250 da' 200)
+(decisione dell'utente del 17-10: al lancio WW le quest 1-200 uscirono insieme e i banner del lancio
+erano estraibili dal primo giorno). Oltre la storia restaurata (oggi 525) i banner
 restano bloccati: nel catalogo «Unlocks after Story Quest N — coming with a future update». La
 regola non cambia quando arrivano le quest 526-979. Il banner del tutorial resta solo nel tutorial.
 

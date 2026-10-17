@@ -226,12 +226,14 @@ def end_of(row, typ, rows, notices):
 
 # ---------- sblocco con la storia ----------
 def unlock_quest(start, story):
-    """last_quest della tranche WW piu' alta uscita entro l'inizio del banner."""
-    best = 0
+    """«Superata la quest N»: N = first_quest - 1 della tranche WW in corso all'inizio del banner,
+    cioe' l'ultima riga con data <= start (decisione dell'utente del 17-10: al lancio WW le quest
+    1-200 uscirono insieme e i banner del lancio erano estraibili dal primo giorno)."""
+    cur = None
     for first, last, date in story:
-        if date <= start:
-            best = max(best, int(last))
-    return best
+        if date <= start and (cur is None or date >= cur[1]):
+            cur = (int(first), date)
+    return cur[0] - 1 if cur else 0
 
 
 def day_limit(notes, typ):

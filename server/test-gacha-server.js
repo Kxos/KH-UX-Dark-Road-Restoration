@@ -83,6 +83,11 @@ if (missing.length) { console.log(`ERRORI (${missing.length}):\n  export mancant
 // catalogo: il banner Blue Fairy (slot senza medaglie) e' scartato
 check(quiet(() => t.sanitizeBanners(t.gachaCatalog())).banners.length === banners.length, 'sanitizeBanners: nessun banner sparisce dal catalogo');
 check(logs.some((x) => /B0008/.test(x)), 'sanitizeBanners: log del banner scartato');
+// ricetta guasta (expandPool lancia): scartato, e il log dice perche'
+logs.length = 0;
+const broken = { ...catalog, banners: [mk({ rowId: 'B0099', name: 'Broken Deal', pool: { mode: 'sets', sets: 5, names: [], featured: [], filter: [] } })] };
+check(quiet(() => t.sanitizeBanners(broken)).banners[0].catalogOnly === 'NO_MEDALS', 'sanitizeBanners: ricetta guasta scartata');
+check(logs.some((x) => /B0099/.test(x) && /not iterable/.test(x)), `sanitizeBanners: errore nel log (${logs.join(' | ')})`);
 check(t.gachaCatalog().banners.find((b) => b.rowId === 'B0008').catalogOnly, 'Blue Fairy: solo catalogo');
 
 // lista alla quest 200 (storia al 2016-04-07): show B0005 per primo (start 2019), poi start uguale per id
@@ -126,6 +131,18 @@ check(plate(call(t.respondGachaList), 10002).price === 2500, 'lista dopo la prim
 p.freeStone = 2500;
 r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 });
 check(r.userMedalIds && p.freeStone === 0, 'seconda estrazione: -2500');
+
+// errore durante la consegna (qui: elenco medaglie congelato, grantItem lancia): niente addebitato,
+// niente consegnato a meta', il giocatore torna com'era e il client riceve solo {ret}
+p.freeStone = 2500;
+const before = JSON.stringify(p);
+Object.freeze(p.medals);
+logs.length = 0;
+try { r = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 10 }); } catch (e) { r = { thrown: e.message }; }
+check(r && Object.keys(r).join() === 'ret', `consegna fallita: risposta {ret} (${JSON.stringify(r).slice(0, 80)})`);
+check(p.freeStone === 2500 && JSON.stringify(p) === before, 'consegna fallita: nessun addebito, giocatore invariato');
+check(!Object.isFrozen(p.medals), 'consegna fallita: elenco medaglie ripristinato');
+check(logs.some((x) => /consegna/.test(x)), 'consegna fallita: log');
 
 // VIP gratuito: 1 Jewel, una volta al giorno
 p.freeStone = 5;
