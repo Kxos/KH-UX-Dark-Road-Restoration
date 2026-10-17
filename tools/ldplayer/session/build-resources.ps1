@@ -168,7 +168,14 @@ if ($Quick) {
 $xg = "$D\raisedraw_gen"
 $raisedrawPack = @()
 if (-not $NoRaisedraw -and (-not $Quick -or -not (Test-Path "$xg\files"))) {
-  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json"
+  # logo «NOVA» del popup del Nova al posto del «BURST» JP (make_nova_logo.py -> raisedraw_gen\nova, fuori
+  # da git): sostituisce Burst_Logo / Burst_Logo_B (422x142) di GuiltBonus_BurstLvup con --replace
+  python recon\tools\make_nova_logo.py --out "$xg\nova"
+  if ($LASTEXITCODE) { throw 'make_nova_logo fallito' }
+  $burst = 'lwf/medal/guilt_bonus/GuiltBonus_BurstLvup/GuiltBonus_BurstLvup_'
+  $novaReplace = @('--replace', "${burst}42757273745f4c6f676f2e706e67.png=$xg\nova\Burst_Logo.png",
+                   '--replace', "${burst}42757273745f4c6f676f5f422e706e67.png=$xg\nova\Burst_Logo_B.png")
+  python recon\tools\import_jp_raisedraw.py --ww "$D\catalog\raisedraw_ww" --out "$xg\files" --report "$xg\raisedraw_report.json" @novaReplace
   if ($LASTEXITCODE) { throw 'import_jp_raisedraw fallito' }
 }
 if ($Quick) {
