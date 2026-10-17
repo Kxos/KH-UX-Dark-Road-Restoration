@@ -57,12 +57,11 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   (`make-nova-rows.js`); **regola originale 13-bis**: ogni 7★ di Tier 9 estratta da banner dal 2019-01-01 (notice
   48236) e di Tier 10 dal 2019-09-01 (notice 56838) arriva con pallini e guilt al massimo (`gacha-data.MAX_GUILT_FROM`).
   Prova 7 dell'utente fatta (popup del Nova da B0306). Comandi di generazione in [shop.md#sp2b](docs/notes/shop.md#sp2b).
-- **Suoni (I-152, APERTO)**: estrazione x10 e popup del Nova muti perche' mancano 509000390/509000740 (e 216 AKB in
-  tutto, ~4,3 MB) negli OBB 5.0.1; `recon/tools/jp_sound_effects.py` li copia dal JP (commit 6698a14, 38451c3,
-  approvati). **Da fare al banco**: `build-resources.ps1 -Quick`, poi provare a orecchio x10 e Nova.
-- **Prossima sessione al banco** (tutta insieme): build -Quick (suoni); estrazione su un banner SN++ (7★ Tier 10 a
-  +320% e popup del Nova, `-GachaShow` di un banner dal 2019-09); striscia gialla lunga di B0637 (~67 nomi, mai
-  provata); Evolve di una medaglia con guilt senza popup del Nova fuori posto.
+- **Sessione al banco finale del 2b fatta** (17-10 sera, [shop.md#banco-finale-2b](docs/notes/shop.md#banco-finale-2b)):
+  suoni JP (I-152 chiuso: x10, Evolve, Nova), 7★ Tier 10 a +320% con i due popup del Nova (B0619, B0637), Evolve con
+  guilt senza popup fuori posto. **Guasta la striscia della pity con liste lunghe (I-153)**: buffer di 0x400 byte del
+  client, 12 banner (B0637, B0638, B0646, ...); analisi e proposta in `D:\Progetto_Restauro_KH_UX\tmp\strip_b0637\report.md`.
+  **Prossimo: correggere I-153** (decisione dell'utente sul testo di categoria), poi lo spazio di lavoro SDD del 2b si cancella.
 - **Audit dei banner contro i notice ufficiali** (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\notice_audit\`,
   report.md + findings.tsv + overrides_proposed.tsv): 155 differenze su 122 banner (regole G1-G10: deal 7★/Prime
   2018 con SA + SAB max + skill, «If you receive the following Medals ... N dots», «0 dots», Daily/Small Deal,
@@ -72,11 +71,10 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   I-143 (tocco perso dopo le Notices), I-145, I-146 (abilita' mancanti), I-150 (nomi guasti del catalogo), I-151
   (liste che salgono di stella). Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la
   chiusura dei Details non ricarica la lista).
-- **Banco (17-10 sera)**: salvataggio RIDOTTO (25 medaglie + estrazioni dell'utente), server rev 122 con
-  `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow B0306,B0307,B0308` (server avviato prima di fe280d8: al
-  prossimo relogin parte il codice nuovo). Salvataggio completo:
+- **Banco (17-10 sera)**: salvataggio RIDOTTO di prova (piu' 5 copie di HD Axel aggiunte ed evolute, 46000 jewel), server
+  rev 122 con `relogin.ps1 -Tag 2b_nova2 -Revision 122 -GachaShow B0616,B0637,B0619`. Salvataggio completo:
   `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json` (livello 100, materiali a 9999,
-  keyblade a +35/+60; il ridotto in `tmp\save-backup-before-2b`, altre copie in `tmp\save-backup-*`): rimetterlo
+  keyblade a +35/+60; il ridotto in `tmp\save-backup-before-2b` e `tmp\save-backup-before-evolve-test`): rimetterlo
   prima di altri lavori.
 - Altri lavori in attesa (Limited I-118, Blue Fairy e PvP I-126, NPC JP, crash intermittenti, decisioni dell'utente
   del 16-10): [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md) e [ISSUES](docs/ISSUES.md).

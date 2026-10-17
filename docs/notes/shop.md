@@ -551,7 +551,8 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
 
 `build-resources.ps1 -Quick` (216 AKB del JP, pacchetto 108.128.458 byte), `relogin.ps1 -Tag 2b_bench -Revision 122
 -GachaShow B0619,B0637,B0306`, salvataggio ridotto.
-- **Suoni (I-152)**: l'animazione dell'estrazione x10 e l'Evolve si sentono (confermato dall'utente a orecchio).
+- **Suoni (I-152, chiuso)**: l'animazione dell'estrazione x10, l'Evolve e il popup del Nova si sentono (confermato dall'utente a
+  orecchio; Nova ripetuto su B0637: SN+ - Second Form Sora 7★ Tier 10 dalla pity alla seconda estrazione).
 - **Regola 13-bis**: 10 estrazioni su B0619 «SN++ - KH III Terra-Xehanort» (2019-11-15); 9 senza 7★, la decima con
   la pity (`, pity` nel registro) da' SN++ - KH III Terra-Xehanort 301927 (7★ Tier 10): dettaglio con 5 pallini,
   **+320%** e Tier 10 (b2b_tx_detail). Dopo l'OK due popup del Nova come nel video originale LFJ5ikVkIhk: «LV 36 » LV
@@ -562,6 +563,7 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
   nessun popup del Nova; l'estrazione successiva su B0619 chiude senza popup arretrato (b2b_evo8c, b2b_post_ok1).
   L'anteprima dell'Evolve mostra +280% (massimo del Tier 9): e' il client, non il server.
 - **B0637, striscia gialla lunga (M1): GUASTA**. Il client scrive «A  guaranteed in !» (niente nomi, niente
-  numero; tmp\strip_all.png); con pochi bersagli (B0619, 7★ Medal Deal) la striscia e' giusta. Analisi in corso.
+  numero; tmp\strip_all.png); con pochi bersagli (B0619, 7★ Medal Deal) la striscia e' giusta. Causa: buffer di 0x400
+  byte del formato del client, 12 banner coinvolti: I-153.
 - Inciampi: dopo il kill del server per modificare il salvataggio, il relogin si e' fermato al titolo con «Launcher3 non
   risponde» (Attendi, poi KHUX START a mano); il primo tocco su MENU dopo le Notices si perde (I-143).
