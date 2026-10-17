@@ -437,7 +437,7 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
 |---|---|---|
 | 1 B0306 x5 | OK: slot 0 7★ di Tier 3 (Owl, Hydra, Ice Titan, Alice), slot 1 dalle 8 liste a 6★ (TWEWY Art 2, HD Larxene, Yuna & Rikku & Paine); striscia «HD Axel guaranteed in 5 tries!» -> 4, 3, 2, «1 try!»; alla quinta HD Axel 7★ Tier 4 sullo slot 0 (log `pity`), poi di nuovo 5 | 2b_t1_strip5a, 2b_t1_d1_result, 2b_t1_back1, 2b_t1_back2, 2b_t1_d3_back, 2b_t1_d4_back, 2b_t1_d5_result, 2b_t1_d5_back |
 | 2 B0629 x2 | OK: 1 New Enemy 7★ (SN++ Rock Troll, SN+ Flood) + 3 KH III 6★ in ogni estrazione; striscia da 10 a 9 dopo il bersaglio | 2b_t2_d1_result, 2b_t2_d2_result, 2b_t4_back |
-| 3 Nova (Level Up) | OK dopo bad55f1: popup «NOVA LEVEL UP!» con logo NOVA, «LV 12 » LV 13», riquadro «Unlocked Xaldin's Special Attack Bonus!» (U4: il +1 mostra il riquadro) e TAP SCREEN; +5 con «Maxed out Iago's Special Attack Bonus!». Prima della correzione «LV 6 » LV 1» e «LV 7 » LV 5» (il campo e' il livello d'arrivo). Da estrazione non provabile: I-148, I-149 | 2b_t3_a_6, 2b_t3d_max_5, 2b_t3f_5 |
+| 3 Nova (Level Up) | OK dopo bad55f1 (estrazione: vedi il fix 1 sotto): popup «NOVA LEVEL UP!» con logo NOVA, «LV 12 » LV 13», riquadro «Unlocked Xaldin's Special Attack Bonus!» (U4: il +1 mostra il riquadro) e TAP SCREEN; +5 con «Maxed out Iago's Special Attack Bonus!». Prima della correzione «LV 6 » LV 1» e «LV 7 » LV 5» (il campo e' il livello d'arrivo). Da estrazione non provabile: I-148, I-149 | 2b_t3_a_6, 2b_t3d_max_5, 2b_t3f_5 |
 | 4 B0076 (U3) | OK: «Illustrated Sora & Pals guaranteed in 5 tries!» leggibile, nessun cambio | 2b_t4_strip1..8 |
 | 5 B0651 boosted | OK: fascia BOOSTED su tutte e 10, dettaglio con STR/DEF/Cost gialli, Cost 36, No. della normale (1743), targhetta LV rossa in Medal List e Level Up (come `reference\shop_boosted`) | 2b_t5_d1_result, 2b_t5_detail, 2b_t5_list, 2b_t5_listdetail |
 | 6 abilita' al massimo | non provabile: nessun banner estraibile coperto (I-146) | - |
@@ -469,3 +469,27 @@ salvataggio ridotto e' stato rimesso identico (hash). Banner: `-GachaShow B0306,
 - bagliore del logo NOVA di 8 px contro i ~16-20 del JP (Task 9, solo estetica);
 - durante la prova U2 sul salvataggio completo, «Unequip» dal dettaglio di una medaglia in un sottoslot del keyblade
   ha aperto «Remove all following Medals?» con la lista vuota: annullato, da guardare se ricapita.
+
+### Fix 1 del Task 10: Nova da estrazione (I-148, I-149; commit 2bf8b4b, master BASE 122)
+
+- **B0306-B0308 con guilt al massimo**: B0310 «Get a 7★ Medal in each Draw!» (INCOMPLETE, resta nel catalogo) e'
+  l'annuncio dei tre 7★ Medal Deal (HD Axel, Illustrated Aqua A, Illustrated Ventus): «the 7★ Medal you receive is
+  guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus». Prima del fix i tre
+  deal avevano `enhance.preset` vuoto. Campo nuovo `preset` in `recon/tools/banner_overrides.tsv` (`slots=0;dots=max;
+  guilt=max`, con la fonte), applicato da `make_banner_catalog.apply_enhance_overrides`. E' il comportamento
+  originale (Details: «comes with its Special Attack Bonus maxed (original)»), niente riga nelle Notices.
+- **Livelli del popup dopo un'estrazione**: con `guiltBurstFirst/MaxUserMedalIds` il client calcola i livelli dalle
+  righe medal delle copie elencate (`[fn]`: partenza = `userPoint.guiltBurstLv` - `addGuiltBurstLv` +0x4c4
+  delle prime - `addGuiltBurstLvMax` +0x4c8 delle massime; `[fn]`/`[fn]` riaggiungono a ogni passo).
+  Con 0 nel master il popup mostrava lo stesso livello due volte. `server/make-nova-rows.js` (in fondo a
+  `make-game-tables.js`, idempotente, `test-nova-rows.js`) mette 1/5 solo sulle righe d'attacco con Tier che un preset
+  «guilt: max» puo' consegnare e sulle loro boosted: oggi 1669 righe (le 7★ con Tier, slot 0 di B0306-B0308). Il
+  popup parte solo quando il server manda le liste, quindi le estrazioni normali non lo mostrano; altri lettori del
+  campo nel client (`[fn]`, `[fn]`, `[fn]`) non sono stati capiti: per questo non si e' messo
+  1/5 su tutte le medaglie.
+- **Banco (17-10, rev 122, salvataggio completo)**: estrazione normale su B0629 -> nessun popup (2bf_n1_after1-4);
+  B0306 -> slot 0 Aladdin 7★ (Tier 3) con pallini 5 e guilt 10000 (massimo del Tier) nel salvataggio, popup «NOVA
+  LEVEL UP!» «LV 1923 » LV 1928» (registro: 1908 prime + 3 massime x5 = 1923, +5) con «Maxed out Aladdin's Special
+  Attack Bonus!» e TAP SCREEN, poi di nuovo lo Shop (2bf_p1_after1-8, 2bf_p1_dismiss2). Nessun crash del gioco.
+- Stato lasciato per la prova dell'utente: salvataggio ridotto, `relogin.ps1 -Tag 2bf_end -Revision 122 -GachaShow
+  B0306,B0307,B0308`, home.
