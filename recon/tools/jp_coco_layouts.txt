@@ -34,6 +34,8 @@ PopupNormal_Guilt_ver130.json           +absent-ok
 MedalInfo_MaxEnhanced_ver340.json
 MedalEvoScene_ver320.json
 MedalInfo_Evo_Medal.json                need=Medal_S,Possession,Label_9,Num_Label
+# Messaggio del popup del Nova (Unlocked/Maxed out; sp. 2b task 8): usa solo Panel03.png, gia' servita
+MedalInfo_Burst_Info.json
 # WW servito con i testi giapponesi: torna l'originale WW, Panel07 (9-slice, I-049) arriva da JP
 MedalInfo_ReleaseWindow.json
 PopupNormal_SortButton_ver350.json
