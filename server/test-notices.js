@@ -41,11 +41,14 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
     'Seasonal draw currencies (Spooky Cookies, Moogle Points, Holiday Draw Tickets) are kept separately; the Shop shows one of them at a time.',
     'Some 2016-17 banners only drew Epic Medals; the game data no longer says which Medals were Epic, so these banners draw from their full sets.',
     'Blue Fairy Deal banners are in the Banner Catalog but cannot be drawn yet: Blue Fairies will come with a future update.',
-    'Some deals limited the guaranteed Medal to a Tier range (for example "Tier 4 or lower"); these Tier limits are not enforced yet.',
-    'Trait Medals, boosted Medals and Medals with strengthened Special Attacks or max-level Skills no longer exist: where a deal guaranteed one, you get a regular Medal of the same rarity.',
+    'Trait Medals no longer exist: where a deal guaranteed a Trait Medal you get a random Medal of the same rarity instead.',
+    'Boosted Medals: the chance of a boosted version on deals that offered one is reconstructed (5% per eligible Medal). Guaranteed max-level Skills are given only for Skills that exist in this restoration.',
+    'Boosted stats on deals that did not state them are reconstructed (+1000 STR, +1000 DEF), and bonus support Medals earned through a guarantee arrive in your Presents.',
     'Free deals that could be drawn only once (or once per day) keep that limit.']) {
     check(diff.includes(s), `differenze: «${s.slice(0, 40)}...»`);
   }
+  check(!diff.some((s) => /not enforced yet|^Trait Medals, boosted Medals/.test(s)), 'differenze: righe vecchie dei Tier e delle Trait tolte');
+  check(shop.includes('Guarantees work as on the original banners: the yellow line under a banner counts down the draws left to its guaranteed Medal.'), 'Shop: riga delle garanzie');
   check(!diff.some((s) => s.startsWith('Shop draw rates are reconstructed where the original game did not publish them: ')), 'differenze: vecchia riga delle probabilita tolta');
   check(shop.includes('Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'Shop: banner originali e storia');
 }

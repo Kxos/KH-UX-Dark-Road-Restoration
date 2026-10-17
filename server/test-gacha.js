@@ -324,5 +324,49 @@ try {
   check(fE.warrantMedalIds.length > 0 && wlog.some((x) => new RegExp(bNo.rowId).test(x)), `warrantFields pool vuoto: lista non vuota e log (${JSON.stringify(fE)} | ${wlog.join(' | ')})`);
 } catch (err) { errors.push(`warrantFields: eccezione ${err.message}`); }
 
+// Task 7: pagine dei Details e Draw Odds con garanzie v3 e potenziamenti
+try {
+  const g6 = (o = {}) => sb({
+    name: 'B0306 sintetico', rarityMix: [[7, 1], [6, 1], [4, 8]], lotCount: 10,
+    guarantee: {
+      list: ['alpha'], count: 1, slot: 1, pity: 5, every: null,
+      slots: [{ kind: 'tier', slot: 0, count: 1, star: 7, names: [], tierMin: null, tierMax: 4 }, { kind: 'list', slot: 1, count: 1, star: 6, names: ['alpha'], tierMin: null, tierMax: null }],
+      pityNames: ['hd axel'], pityStar: 7, pitySlot: 0, pityGift: null, erratum: null, source: null, ...(o.guarantee || {}),
+    },
+    enhance: { preset: [], boosted: [], maxSkill: [], notReproduced: [], ...(o.enhance || {}) },
+  });
+  const ex6 = { pool: { 7: [1], 6: [2], 4: [3] }, featuredIds: [], listIds: [], listNames: [], featuredNames: [], weighted: [], slotNames: [[], [['alpha', 1, { 6: [2] }]]],
+    pityNames: [['hd axel', 1, { 7: [1] }]], pityIds: [1], tiers: new Map(), medalInfo: new Map() };
+  const d6 = g.detailPage(g6(), ex6, medalNames, sctx);
+  check(d6.includes('1x 7★ Tier 4 or lower'), 'T7: riga slot Tier');
+  check(d6.includes('1x one of the listed Medals (6★)'), 'T7: riga slot lista');
+  check(d6.includes('HD Axel (7★) guaranteed within 5 draws (original)'), `T7: riga pity v3 (${d6.replace(/<[^>]+>/g, ' ').slice(0, 600)})`);
+  check(!d6.includes('not reproduced yet'), 'T7: pity v3 con bersagli non e NOT_REPRODUCED (ex.pityNames)');
+  const dNo = g.detailPage(g6(), { ...ex6, pityNames: [], pityIds: [] }, medalNames, sctx);
+  check(dNo.includes('This guarantee is not reproduced yet.'), 'T7: pity v3 senza bersagli alla data: non riprodotta');
+  const dOld = g.detailPage(bA, { ...exA, featuredNames: [] }, medalNames, sctx);
+  check(dOld.includes('This guarantee is not reproduced yet.'), 'T7: percorso vecchio senza slots invariato');
+  const dBs = g.detailPage(g6({ enhance: { boosted: [{ on: { names: ['alpha'] }, str: 1000, def: 1000, chance: 'small' }] } }), ex6, medalNames, sctx);
+  check(dBs.includes('Small chance of a boosted version (+1000 STR, +1000 DEF): 5% per eligible Medal (reconstructed)'), 'T7: boosted small con nomi');
+  const dBt = g.detailPage(g6({ enhance: { boosted: [{ on: { star: 7, tierMin: 1, tierMax: 4 }, str: 1000, def: 1000, chance: 'small' }] } }), ex6, medalNames, sctx);
+  check(dBt.includes('Small chance of a boosted version (+1000 STR, +1000 DEF, reconstructed): 5% per eligible Medal (reconstructed)'), 'T7: boosted a Tier con valori ricostruiti');
+  const dBg = g.detailPage(g6({ enhance: { boosted: [{ on: { slots: [0] }, str: 2000, def: 0, chance: 'guaranteed' }] } }), ex6, medalNames, sctx);
+  check(dBg.includes('boosted version guaranteed (+2000 STR)'), 'T7: boosted garantita');
+  const dPs = g.detailPage(g6({ enhance: { preset: [{ on: { slots: [0] }, dots: 'max', guilt: 'max' }] } }), ex6, medalNames, sctx);
+  check(dPs.includes('comes with its Special Attack Bonus maxed (original)'), 'T7: preset');
+  const dMs = g.detailPage(g6({ enhance: { maxSkill: [{ on: { names: ['zexion [+]'] }, skills: ['paralysis+ ii max'] }] } }), ex6, medalNames, sctx);
+  check(/Max-level Skill/.test(dMs) && dMs.includes('Zexion [+]'), 'T7: maxSkill');
+  const dEr = g.detailPage(g6({ guarantee: { erratum: 'Original text: <b>5 draws</b>' } }), ex6, medalNames, sctx);
+  check(/<div class="box">[^]*Original text: &lt;b&gt;5 draws&lt;\/b&gt;/.test(dEr), 'T7: erratum in un riquadro (escape)');
+  for (const [k, t] of [['trait', 'Trait Medal: not reproduced, a regular Medal of the same rarity instead'], ['skill', 'max-level Skill'], ['epic', 'Epic'], ['pity', 'Pity Medal'], ['traitSlots', 'Trait'], ['imitation', 'Imitation Medal']]) {
+    const dn = g.detailPage(g6({ enhance: { notReproduced: [k] } }), ex6, medalNames, sctx);
+    check(dn.includes(t), `T7: notReproduced ${k}`);
+  }
+  const dGift = g.detailPage(g6({ guarantee: { pityNames: ['dual meow wow'], pityStar: 4, pityGift: [3, 301684, 1] } }), { ...ex6, pityNames: [], pityIds: [] }, medalNames, sctx);
+  check(dGift.includes('Dual Meow Wow') && dGift.includes('sent to your Present Box (original: included in the draw)') && !dGift.includes('not reproduced yet'), 'T7: pityGift nel Present Box');
+  const op6 = g.oddsPage([{ banner: g6(), ex: ex6, medalNames }]);
+  check(op6.includes('Tier 4 or lower') && op6.includes('one of the listed Medals'), `T7: odds con kind (${op6.replace(/<[^>]+>/g, ' ').slice(0, 400)})`);
+} catch (err) { errors.push(`T7: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');
