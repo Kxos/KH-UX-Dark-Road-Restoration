@@ -217,8 +217,45 @@ Task 1). Cache `MM_*` cancellata prima delle prove. Screenshot in `D:\Progetto_R
   (B0001-B0004, come `shopBanners` calcolato sul salvataggio) e immagini giuste dalla cache svuotata
   (`sp2_diag_sortid`, `sp2_diag_sortid_scroll`).
 - Prove 2-7 e le dieci aperture dello Shop: **non fatte**, ferme su I-138.
-- **Correzione di I-138 (17-10, da provare al banco).** `FUN_0079541c` legge `sortId` della lista a +0xc;
+- **Correzione di I-138 (17-10, commit 264a8a6, provata al banco: sotto).** `FUN_0079541c` legge `sortId` della lista a +0xc;
   `FUN_00a19c84` mette gli elementi in una mappa `sortId -> (drawMedalTypeId -> piastra)` e numera le piastre
   visitandola: ordine per sortId crescente, a parita' per drawMedalTypeId. Il sortId del master (riga +8) li' non
   si legge. `gachaListData` manda Catalog 1, poi 10, 20, ... nell'ordine di `shopBanners`; master invariato.
+
+#### Ripresa dopo I-138 (17-10, commit 264a8a6, revisione 119, cache `MM_*` svuotata)
+
+1. **Shop alla quest 132**: OK. Catalog + DAILY DEAL! (grigio, gia' usato oggi), Daily Deal!, Get a 3★-5★ Medal!,
+   Get at least one 5★ Medal! (B0001-B0004), immagini riscaricate (`GET /web/gacha/img/9001..10004`) e giuste
+   (`sp2r_shop1`, `sp2r_shop1_scroll2`).
+2. **Catalogo**: `sp2r_catalog1`, scorrimento veloce di tutta la lista avanti e indietro senza blocchi ne' crash
+   (`sp2r_catalog_scroll1-5`); stati visti: «In the Shop now», «Unlocks after Story Quest 805/815 — coming with a
+   future update», «Medals not available yet — coming with a future update» (Blue Fairy Deal, `sp2r_catalog_bluefairy`).
+   Dettagli: Tier 6-7 Deal 2018 bloccato (`sp2r_detail_a`..`a3`), Platinum Ticket Draw 2019 bloccato con Dual Meow
+   Wow LV7 45% / LV8 45% / LV9 10% (`sp2r_detail_plat`), Skills to Thrill SKILL (`sp2r_detail_skill`, `..3`: slot,
+   tabella delle abilita' sul primo slot, medaglie per rarita'). VIP_TWIN non visto a schermo.
+3. **DAILY DEAL! x3** (B0001): conferma 600 = piastra (`sp2r3_confirm`), risultato Selphie 4★, KH II King Mickey 3★,
+   KH II Leon 3★ (`sp2r3_anim5`), tutte del 07/04/2016 (data della tranche 2016-04-07); jewel 20000 -> 19400, piastra
+   poi grigia (`sp2r3_back`).
+4. **7★ Medal Deal x10** (`-GachaShow B0306,B0008`, prova obbligatoria): conferma 3000 (`sp2r4_confirm`), animazione e
+   risultato senza crash (`sp2r4_anim1-8`): The World Ends with You Art 2 7★ (14/05/2018), Saix 6★ e otto 5★, tutte
+   uscite entro il 25/05/2018; jewel 19400 -> 16400 (`sp2r4_back`).
+5. **Platinum Ticket Draw** (`-GachaShow B0456,B0116,B0713,B0727`, `limitedDrawTicket1 = 2` a server fermo): conferma
+   «Use 1 Platinum Ticket» (`sp2r5_confirm`), 5 Dual Meow Wow LV7/LV8 con NEW (`sp2r5_anim7`); il box passa da 2119 a
+   2121 posti (una cella per livello, impilati); seconda estrazione (`sp2r5_confirm2`, `sp2r5_result2`: LV7, LV9,
+   LV8) senza crash e senza posti in piu' (2131 prima e dopo: le celle crescono), biglietti 2 -> 0 (`sp2r5_back2`).
+6. **Falling Price Deal x10** (B0116, 3000/2500/2200/2000/1900): conferma 3000 (`sp2r6_confirm`), 10 medaglie 5-6★
+   del 2016 (`sp2r6_result`), poi la piastra mostra **2500** (`sp2r6_back`).
+7. **Free Deal VIP** (B0713 e B0727): conferma «Spend 1 Jewel to get 10 Medals» (`sp2r7_confirm`), risultato con SN++
+   KH III Kairi 7★ e nove 5★ (`sp2r7_anim8`), jewel -1; poi **entrambe grigie** (`sp2r7_back`, `sp2r7_back2`). Il
+   ritorno il giorno dopo non e' stato provato al banco (coperto da `test-gacha.js`).
+8. **Dieci aperture dello Shop** (MENU > Home > Shop, `sp2r8_shop1-10`): una `GET /gacha/list` per giro, nessun crash.
+   **Notices**: righe nuove (Epic Medals, Blue Fairy Deal, sblocco con la storia) in `sp2r_notices`, `sp2r_notice_diff`.
+
+**Ordine delle piastre** (con `-GachaShow`): 7★ Medal Deal (2018) sopra Skills to Thrill (29/04/2016) sopra DAILY
+DEAL! (`sp2r4_shop`, `sp2r4_shop_s1`); Free Deal VIP 2020-10 e 2020-09 sopra Platinum 2019, Falling 2017 e DAILY
+DEAL! (`sp2r5_shop`, `sp2r7_back2`): i piu' recenti in alto.
+
+Ripristino: `freeStone` 360 e `limitedDrawTicket1` 0 come nel backup `save-backup-before-sp2-t9` (dati 20000 jewel e 2
+biglietti per le prove). Restano nel salvataggio le 43 medaglie estratte e `player.gacha` (contatori di oggi: DAILY
+DEAL!, Free Deal VIP, Falling a 2500). Poi relogin normale (revisione 119, senza `-GachaShow`, `sp2r_end_shop`).
 
