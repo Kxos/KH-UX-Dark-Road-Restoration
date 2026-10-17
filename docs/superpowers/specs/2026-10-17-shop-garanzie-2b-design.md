@@ -1,6 +1,7 @@
 # Shop, sotto-progetto 2b: garanzie e medaglie come le dava il banner — design
 
-Stato: bozza del 17-10-2026, da approvare dall'utente. Segue il sotto-progetto 2 (catalogo dei banner originali,
+Stato: approvata dall'utente il 17-10-2026 (con il numero dorato nella striscia, 4.4, e la verifica dei LWF del
+popup del Nova, 4.6). Segue il sotto-progetto 2 (catalogo dei banner originali,
 [shop-banner-design](2026-10-16-shop-banner-design.md) sezione 9) e chiude I-144. Fonti: audit delle garanzie del
 17-10 (`D:\Progetto_Restauro_KH_UX\tmp\sp2\audit-guarantees.md`, riassunto in
 [shop.md#garanzie](../../notes/shop.md#garanzie)), decisioni dell'utente
@@ -88,6 +89,12 @@ Il client compone la striscia sotto il banner da `comment` del master come forma
 - Banner con pity: `comment` con `%d` (es. «Featured Medal guaranteed within %d draws»; testo da allineare a quello
   dell'originale se trovato), `warrantNumberOfTime` = pity, `userWarrantDisplayOfTime` = `pity - sinceFeatured`
   (5, 4, ... e di nuovo 5 quando la vetrina esce), `warrantMedalIds` = id della vetrina.
+- **Il numero delle estrazioni mancanti in colore dorato** (richiesta dell'utente del 17-10, approvazione della spec),
+  per distinguerlo dal resto del testo. Ricerca nel decompilato: se la striscia accetta un markup di colore (tag di
+  rich text, codici colore nel formato), il numero si scrive dorato col markup; se no, si valuta una risorsa (font o
+  layout della striscia) che lo permetta senza toccare il client; se nessuna delle due e' possibile, lo si dice
+  all'utente prima di scegliere un ripiego. Differenza dall'originale da dichiarare nelle Notices se il colore non era
+  gia' dorato nell'originale.
 - Da verificare al banco come il client usa `warrantDisplayOfTime`/`warrantMedalIds` (ricerca nel decompilato
   prima del codice). Nuova revisione del master.
 
@@ -111,12 +118,21 @@ Il client compone la striscia sotto il banner da `comment` del master come forma
 
 ### 4.6 Popup «NOVA LEVEL UP!»
 
-Oggi spento: mancano `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` e `GuiltBonus_BurstLvup_num` (LWF nullo = crash;
-[battaglia.md](../../notes/battaglia.md)). Riferimento originale: `reference\nova_lvup` (titolo «NOVA LEVEL UP!»,
-«LV a » LV b», messaggio «Maxed out X's Special Attack Bonus!», «TAP SCREEN»). Si generano i due LWF con le clip
-attese dal client (`FromLv`/`ToLv`, evento `enterFrame` su `_root`), nello stile di `make_medaltype_lwf.py`, poi si
-accendono le liste `guiltBurstFirst/MaxUserMedalIds` (oggi solo con `KHUX_GUILT_BURST_POPUP=1`). Nuova versione delle
-risorse.
+Oggi spento: nel nostro client mancano `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` e `GuiltBonus_BurstLvup_num`
+(LWF nullo = crash; [battaglia.md](../../notes/battaglia.md)). **I due LWF originali esistono nei dati JP 4.3.1**
+(verifica del 17-10): `[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\
+lwf\medal\guilt_bonus\GuiltBonus_BurstLvup\` (`.lwf` + Burst_Arrow, Burst_LV_Logo «LEVEL UP!», Burst_Logo, Burst_Plate,
+ciascuna anche in versione `_B`) e `GuiltBonus_BurstLvup_num\` (Burst_LV_Mark); assenti negli OBB WW e nelle
+versioni 1.0.1-4.4.0 della stessa raccolta. Differenza: il logo JP dice **«BURST»**, il WW **«NOVA»**
+(`reference\nova_lvup`, titolo «NOVA LEVEL UP!», «LV a » LV b», messaggio «Maxed out X's Special Attack Bonus!»,
+«TAP SCREEN»).
+
+Piano: importare i due LWF JP nel pacchetto generato (come gli altri layout JP, `import_jp_coco.py`/pacchetti
+statici), sostituire `Burst_Logo`/`Burst_Logo_B` con un logo «NOVA» rifatto sui fotogrammi del video (stesso formato e
+misura, encode come gli originali con `btf.py`), verificare che le clip attese dal client (`FromLv`/`ToLv`, evento
+`enterFrame` su `_root`) ci siano, poi accendere le liste `guiltBurstFirst/MaxUserMedalIds` (oggi solo con
+`KHUX_GUILT_BURST_POPUP=1`). Il messaggio «Maxed out ...» viene dai testi del client (verificare che l'id esista in
+WW). Nuova versione delle risorse.
 
 ## 5. Fuori dal 2b
 
