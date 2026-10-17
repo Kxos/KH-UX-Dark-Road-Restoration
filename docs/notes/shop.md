@@ -346,11 +346,12 @@ Schemi dell'originale (dai testi e dalle immagini dei banner) e confronto col se
   estrazione» resi come pity (31);
 - **178 banner con un limite di Tier** (D12), riproducibile: `medal.json.guiltValue` e' il Tier (verificato sulle 24
   medaglie 7★ della riserva di B0306, tutte Tier 4);
-- **boosted (40), riproducibili** (scoperta del 17-10): «with 1000 more base strength and defense» e' la medaglia gia'
-  al tetto di Chip/Dale. `addMaxAttack`/`addMaxDefense` del master (1000 su Illustrated Kairi [EX] 301172/301173) sono
-  il tetto di `attackUpperNumber`/`defenseUpperNumber` della medaglia del giocatore (`server/medal-guilt.js`, [Chip e
-  Dale](medaglie.md)): basta crearla con quei due valori al tetto (solo l'attacco per «more base strength»). Manca la
-  probabilita' («small chance» nelle note), da ricostruire;
+- **boosted (40), da studiare**: «with 1000 more base strength and defense». Correzione dell'utente (17-10): il +1000
+  era **in piu'** del potenziamento con Chip/Dale, che restava tutto disponibile. Quindi NON e' la medaglia al tetto di
+  `attackUpperNumber`/`defenseUpperNumber` (tetto `addMaxAttack`/`addMaxDefense` del master, `server/medal-guilt.js`):
+  serve un altro modo di alzare la base di +1000 lasciando libero Chip/Dale (campo della medaglia del giocatore da
+  cercare nel decompilato, oppure medaglie distinte nel master: verificare). Manca anche la probabilita' («small
+  chance» nelle note);
 - **non riproducibili**: Trait Medal (89), Special Attack rinforzato (104), skill al massimo (62), Imitation (3), Epic e
   set del 2016 (17 + 17): scritti nelle Notices.
 
