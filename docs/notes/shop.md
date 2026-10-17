@@ -385,7 +385,7 @@ Il report completo dell'audit (tabelle per schema, regole di estrazione, esiti a
 ## Sotto-progetto 2b «Garanzie» (17-10, I-144 chiuso)
 
 Spec [2026-10-17-shop-garanzie-2b-design.md](../superpowers/specs/2026-10-17-shop-garanzie-2b-design.md), piano
-[2026-10-17-shop-garanzie-2b.md](../superpowers/plans/2026-10-17-shop-garanzie-2b.md) (10 task, commit 2ef2c14..bad55f1).
+[2026-10-17-shop-garanzie-2b.md](../superpowers/plans/2026-10-17-shop-garanzie-2b.md) (10 task, commit cf1030b..40a7538, fix della review finale compreso).
 
 **Contratto del catalogo v3** (`server/game_data/gacha_catalog.json`, `version` 3; dettaglio nel piano):
 `medals[n].ids[i] = [id, stella, data, Tier]` (Tier = `medal.json.guiltValue`); `guarantee.slots[]` = riserve
