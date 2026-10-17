@@ -41,6 +41,33 @@ ottobre). Tocchi in [banco.md](banco.md#tocchi).
 - Elemento `userMedal` (`FUN_0078d608`): `userMedalId` uint64, `medalId`, `number`, `level`, `exp`,
   `attack/defense/burstUpperNumber`, `lock`, `upperCost`, `guiltFactor`, `userSkills` <= 2,
   `userShuffleSkills`, `getDatetime`.
+- <a id="boosted"></a>**Boosted** (sotto-progetto 2b, Task 3, 17-10): una riga a parte del master `medal`
+  (`server/medal-boost.js`, `server/make-boosted-medals.js`, in fondo a `make-game-tables.js`), non un campo di
+  `userMedal`. medalId = variante x 1.000.000 + normale (1 = +1000 STR, 2 = +1000 STR/DEF, 3 = +2000 STR/DEF);
+  `displayId` = normale + 1 se la normale e' in {0, 100, 200, 300, 1100, 1200, 1300}, altrimenti 1; `groupId` =
+  normale (la normale resta 0); STR/DEF base e massimi + str/def; `cost`/`minCost` - 10 (minimo 0; video LFJ5:
+  SN++ - Master Eraqus 46 -> 36; `minCost` proposta); `validPack` 0; tutto il resto (immagini, nome, `sortId`,
+  burst, `guiltValue`, `addMaxAttack/Defense`, Evolve) uguale. Righe dalle voci `enhance.boosted` del catalogo:
+  **1125** (1000/1000: 1023, 1000/0: 95, 2000/2000: 7; per nome 442 coppie, per Tier 1003, per slot 140, gia'
+  coperte dalle altre due); `medal.json` da 2108 a 3233 righe (2.435.784 -> 3.770.561 byte). Nomi del catalogo
+  senza riga: «launchpad mcquakc», «webby vanderquakc», «axel [ex]», «kairi [ex+]», «sn++ - master eraqus
+  supernova+ - ava» (refusi/frasi del catalogo, nessuna riga). `make_banner_catalog.py` ignora le boosted:
+  rigenerato dopo la patch, catalogo identico (sha1 47861a1a).
+  **Verifica nel decompilato (U5/U6, WW 4.3.1)**: lettori del campo +0x18 della riga medal (getter
+  `FUN_006e02d4` con offset 0x18 su `*(medaglia+0x168)`, scansione di tutte le 80 chiamate con offset 0x18 in
+  `D:\Progetto_Restauro_KH_UX\tmp\sp2b\t3\ctx18.txt`): `FUN_0073e818` (boosted se 1/101/201/301/1101/1201/1301),
+  `FUN_0073eaf0` (badge: confronta `displayId - 100/200/300/1100/1200/1300 < 2`, cioe' n e n+1 uguali),
+  `FUN_00eb60c0`/`FUN_00eb61ac`/`FUN_00eb6298` (SN/SN+/SN++, stesso schema `- n < 2`, dopo il campo +0x504).
+  Nessuno usa `displayId` come indice di immagine o di tabella; 1 non cade in nessun intervallo del badge (come
+  0). Le altre chiamate con offset 0x18 leggono altre tabelle (dimensione 1/8/0x21/0x505, oppure +0x24 intero
+  dentro il nome della medaglia, `FUN_008d7e8c`) o un oggetto con +0x38 (barra a rapporto in `FUN_0072f1e0` a
+  0x733500); `FUN_00b0cbb4` copia +0x14/+0x18 in un'altra riga allo stesso offset. medalId nel parser
+  `FUN_00efce88`: rapidjson `IsInt()` (bit 0x400 di flags, byte +0x11 bit 2) e copia di 4 byte: intero a 32
+  bit, gli id fino a 3.301.993 stanno ben sotto 2^31. Esito: nessun blocco.
+  Altre ricerche per nome che vedrebbero le boosted (da filtrare con `isBoosted` nei task che le toccano):
+  `make-limited-missions.js` (mappa nome -> riga a rarita' massima: la boosted, a pari rarita' e dopo, non
+  sostituisce la normale), `grant-all-medals.js` (darebbe anche le boosted), album/Medal List in `server.js`.
+  `supernova.js` e `blue-fairy.js` cercano per id e girano prima della patch: nessun filtro.
 
 <a id="burst"></a>
 ## Attacchi speciali (`burst`)
@@ -208,7 +235,7 @@ destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Su
   richiesta `{baseUserMedalId:723, attachmentMedalIds:[2313 x5]}` (la pila ripete il primo id), il server consuma
   2313-2317 e 99999 munny. Come si ottengono senza PvP: I-126 (decisione rimandata).
 <a id="bgm-medals"></a>
-- **BGM Medals** (15-10, `referencegm_medals\`, khuxwiki «Category:BGM_Medals»): 37 medaglie con un brano che
+- **BGM Medals** (15-10, `reference\bgm_medals\`, khuxwiki «Category:BGM_Medals»): 37 medaglie con un brano che
   suona nel dettaglio della medaglia e in home quando e' condivisa (Share). Client: `medal.bgm` int (+0x56c,
   `FUN_00efce88`) = id del suono; `FUN_00737ff0` lo suona (`FUN_00ac7278`, dissolvenza 500 ms) e caricando
   `audio/%09d.akb` (`FUN_00ac4894`, banco SQEX AKB v2 con Ogg Vorbis; senza file non suona nulla, ma l'icona ♪
@@ -224,7 +251,7 @@ destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Su
   16-10 (master 113): le Supernova (SN/SN+/SN++ - X) prendono il brano della medaglia base X (decisione
   dell'utente; nell'originale documentata solo Supernova - Sephiroth): +7 righe (SN++ - Final Boss Xion, SN++ - HD
   Roxas, SN++ - Illustrated Xion, SN/SN+ - Casual Roxas, SN/SN+ - HD Xion [EX]), 78 in tutto. Prova mirata:
-  `D:\Progetto_Restauro_KH_UX	mpgm_save.js` (a server fermo) lascia nel salvataggio solo le 78 medaglie con
+  `D:\Progetto_Restauro_KH_UX\tmp\bgm_save.js` (a server fermo) lascia nel salvataggio solo le 78 medaglie con
   musica; salvataggio vero in `tmp\player_before_bgmtest.json`, da rimettere dopo la prova.
   **Banco 16-10: tutte le 78 suonano** (sentite dall'utente), anche Dearly Beloved (501006001) e HD Ventus [EX]
   (501006019): i loro AKB sono gia' negli OBB serviti. Resta senza brano solo HD King Mickey [EX] (Vim and Vigor, bgm 0).
