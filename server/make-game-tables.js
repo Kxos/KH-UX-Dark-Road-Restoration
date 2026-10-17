@@ -759,6 +759,8 @@ require('./make-pet-tables').patch(OUT);
 // dei banner (make-boosted-medals.js); dopo supernova, blue-fairy, guilt-burst e pet, che non le vedono
 const gachaCatalog = path.join(__dirname, 'game_data', 'gacha_catalog.json');
 if (fs.existsSync(gachaCatalog)) require('./make-boosted-medals').patch(OUT, gachaCatalog);
+// Nova: addGuiltBurstLv/Max 1/5 sulle righe (e boosted) che un preset «guilt: max» puo' consegnare (I-149)
+if (fs.existsSync(gachaCatalog)) require('./make-nova-rows').patch(OUT, gachaCatalog);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
 // khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
 const TABLES = path.join(__dirname, 'tables');

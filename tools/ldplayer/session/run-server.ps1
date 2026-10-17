@@ -12,7 +12,7 @@
 # -KbFree: potenziamento dei keyblade senza materiali (KHUX_KB_FREE=1, prove dei livelli)
 # -GachaShow: rowId del catalogo separati da virgola (es. B0306,B0456) aggiunti alla lista dello Shop anche
 # se non sbloccati o fuori data (KHUX_GACHA_SHOW, prove al banco; docs/notes/shop.md)
-param([int]$Revision = 121, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow)
+param([int]$Revision = 122, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null

@@ -44,3 +44,6 @@ B0202	start_pt	2017-11-24	notice 34475 ([EX] Foreteller Medal Deals: Nov. 24 - D
 B0202	end_pt	2017-12-04	notice 34475 (periodo della campagna; la fine del TSV, 23/11, precede il nuovo inizio)
 B0203	start_pt	2017-11-24	notice 34475 ([EX] Foreteller Medal Deals: Nov. 24 - Dec. 4, 2017; decisione 9 del 2b)
 B0203	end_pt	2017-12-04	notice 34475 (periodo della campagna; la fine del TSV, 23/11, precede il nuovo inizio)
+B0306	preset	slots=0;dots=max;guilt=max	B0310 (note del TSV): «the 7★ Medal you receive is guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus» nei tre deal di HD Axel, Illustrated Aqua A e Illustrated Ventus
+B0307	preset	slots=0;dots=max;guilt=max	B0310 (note del TSV): «the 7★ Medal you receive is guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus» nei tre deal di HD Axel, Illustrated Aqua A e Illustrated Ventus
+B0308	preset	slots=0;dots=max;guilt=max	B0310 (note del TSV): «the 7★ Medal you receive is guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus» nei tre deal di HD Axel, Illustrated Aqua A e Illustrated Ventus

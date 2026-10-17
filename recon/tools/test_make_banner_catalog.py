@@ -227,6 +227,18 @@ def _slot(text, mix):
 
 GT = 'Guarantees one Tier 4 or lower 7★ Medal. Guarantees one of the following Medals: Illustrated Kairi [EX], HD Axel.'
 check(_slot(GT, [[7, 1], [6, 1], [5, 8]]) == 1, 'B0306: lista nello slot 6★')
+
+# --- override del preset (banner_overrides.tsv, campo preset: B0306-B0308 dal testo di B0310)
+enh = {'preset': [], 'boosted': [], 'maxSkill': [], 'notReproduced': []}
+m.apply_enhance_overrides(enh, {'preset': 'slots=0;dots=max;guilt=max'})
+check(enh['preset'] == [{'on': {'slots': [0]}, 'dots': 'max', 'guilt': 'max'}], f'override preset {enh["preset"]}')
+m.apply_enhance_overrides(enh, {'preset': 'slots=0;dots=max;guilt=max'})
+check(len(enh['preset']) == 1, 'override preset idempotente')
+enh2 = {'preset': [], 'boosted': [], 'maxSkill': [], 'notReproduced': []}
+m.apply_enhance_overrides(enh2, {'preset': 'star=7;dots=3;guilt=none'})
+check(enh2['preset'] == [{'on': {'star': 7}, 'dots': 3, 'guilt': None}], f'override preset star {enh2["preset"]}')
+m.apply_enhance_overrides(enh2, {})
+check(len(enh2['preset']) == 1, 'nessun override: invariato')
 check(_slot('Guarantees one 7★ Tier 3 or 4 Medal. Guarantees one of the following Medals: A, B.', [[7, 1], [6, 1], [5, 2]]) == 1, 'B0355')
 check(_slot('Guarantees two of the following Medals at 7★: A, B.', [[7, 2], [6, 1], [5, 7]]) == 0, 'lista sola: slot 0')
 check(_slot('Guarantees one of the following Medals: A. Guarantees one 7★ Tier 4 Medal.', [[7, 1], [6, 1], [5, 8]]) == 1,
@@ -444,6 +456,9 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
                and not any(n in med for n in b['guarantee']['pityNames'])], 'ogni pity ha un bersaglio nel catalogo o un regalo')
     check(sum(1 for b in bs if b['guarantee']['pityGift']) == 9, f"pityGift {[b['rowId'] for b in bs if b['guarantee']['pityGift']]}")
 
+    # G: B0306-B0308 (i tre 7★ Medal Deal annunciati da B0310): 7★ con pallini e Special Attack Bonus al massimo
+    for r in ('B0306', 'B0307', 'B0308'):
+        check({'on': {'slots': [0]}, 'dots': 'max', 'guilt': 'max'} in B[r]['enhance']['preset'], f'{r}: preset guilt max')
     # F: nessuna medaglia del catalogo con darklight 3 (la scena del risultato va in crash: docs/notes/shop.md)
     dl3 = {r['medalId'] for r in m.default_inputs()['medals'] if r.get('darklight') == 3}
     cat_ids = {i[0] for v in med.values() for i in v['ids']} | {e[0] for b in bs for e in (b['pool'].get('evolve') or [])}
