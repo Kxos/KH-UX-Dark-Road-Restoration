@@ -1,0 +1,642 @@
+"""Catalogo dei banner originali: una «ricetta» per banner (spec 2026-10-16-shop-banner-design.md, sezione 9).
+
+    python recon/tools/make_banner_catalog.py
+        -> server/game_data/gacha_catalog.json (ignorato da git), letto da server/gacha*.js
+
+Fonti fuori dal repo (sola lettura; percorsi di default dalla radice <repo>/../..):
+  KHUX_WIKI_JSON     wiki/wiki_all.json                     (sotto-set, InfoMedal, righe Shop complete)
+  KHUX_BANNERS_TSV   reference/banners/banners_ww.tsv       (813 righe dei banner WW)
+  KHUX_STORY_TSV     reference/story/story_release_ww.tsv   (tranche della storia WW)
+  KHUX_NOTICES_JSON  reference/banners/notices.json         (notice in cache: periodi dei banner senza fine)
+  server/master_data/medal.json, server/master_data/material.json
+  recon/tools/banner_overrides.tsv (nel repo: numeri letti dai notice, con la fonte; vincono su tutto)
+
+Porta di tmp/sp2/scripts/analyze.py e incomplete.py (ricerca del sotto-progetto 2) senza variabili
+globali: i dati passano come argomenti. Le probabilita' non sono qui: le ricostruisce il server (9.2).
+"""
+import collections
+import csv
+import datetime as dt
+import json
+import os
+import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import banner_sources as bsrc  # noqa: E402
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(HERE))
+ROOT = os.path.dirname(os.path.dirname(REPO))
+DEFAULTS = {
+    'wiki': os.path.join(ROOT, 'wiki', 'wiki_all.json'),
+    'banners': os.path.join(ROOT, 'reference', 'banners', 'banners_ww.tsv'),
+    'story': os.path.join(ROOT, 'reference', 'story', 'story_release_ww.tsv'),
+    'notices': os.path.join(ROOT, 'reference', 'banners', 'notices.json'),
+    'medals': os.path.join(REPO, 'server', 'master_data', 'medal.json'),
+    'materials': os.path.join(REPO, 'server', 'master_data', 'material.json'),
+    'overrides': os.path.join(HERE, 'banner_overrides.tsv'),
+    'out': os.path.join(REPO, 'server', 'game_data', 'gacha_catalog.json'),
+}
+ENV = {'wiki': 'KHUX_WIKI_JSON', 'banners': 'KHUX_BANNERS_TSV', 'story': 'KHUX_STORY_TSV', 'notices': 'KHUX_NOTICES_JSON'}
+
+norm = bsrc.norm
+D = dt.date.fromisoformat
+FIRST_DAY = '2016-04-07'
+SKILL72415_FROM = '2020-12-17'  # data del notice 72415 (prima tabella delle abilita' SN+/SN++/7★ in notices.json)
+DRAW_CLS = {'', 'SR', 'L-SR', 'L'}
+NUM = {'a': 1, 'an': 1, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8,
+       'nine': 9, 'ten': 10}
+
+
+# ---------- note complete dalla wiki (il TSV tronca a 500 caratteri) ----------
+def wiki_start(d):
+    m = re.match(r'(\d\d)/(\d\d)/(\d\d)', d or '')
+    return f'20{m.group(3)}-{m.group(1)}-{m.group(2)}' if m else ''
+
+
+def shop_index(shop):
+    wsx = collections.defaultdict(list)
+    for o in shop:
+        wsx[re.sub(r'\(\d+\)(?=\.png)', '', o['image'])].append(o)
+    return wsx
+
+
+def full_notes(r, wsx):
+    img = re.sub(r'\(\d+\)(?=\.png)', '', bsrc.norm_img(r['image_file'].split(' ')[0])) if r['image_file'] else ''
+    best = None
+    for o in wsx.get(img, []):
+        ws = wiki_start(o['duration'])
+        if ws and r['start_pt'] and abs((D(ws) - D(r['start_pt'])).days) <= 2:
+            best = o
+            break
+        if not ws and best is None:
+            best = o
+    if best and len(best['notes']) >= len(r['notes']) - 5:
+        return best['notes'], 'wiki'
+    return r['notes'], 'tsv'
+
+
+# ---------- classificazione ----------
+TICKETS = {'Bronze Ticket': 4, 'Silver Ticket': 5, 'Gold Ticket': 6, 'Platinum Ticket': 7, 'Draw Ticket': 8,
+           'Holiday Draw Ticket': 8, 'Spooky Cookie': 8, 'Moogle Point': 8, 'Draw Point': 9}
+CURRENCY = {'Bronze Ticket': (4, 'bronze'), 'Silver Ticket': (5, 'silver'), 'Gold Ticket': (6, 'gold'),
+            'Platinum Ticket': (7, 'platinum'), 'Draw Ticket': (8, 'draw'), 'Holiday Draw Ticket': (8, 'holiday'),
+            'Spooky Cookie': (8, 'spooky'), 'Moogle Point': (8, 'moogle'), 'Draw Point': (9, 'points')}
+
+
+def classify(r, notes):
+    n = r['name'].lower()
+    c = r['currency']
+    p = r['price']
+    mix = r['rarity_mix']
+    if 'blind box' in n:
+        return 'X_BLINDBOX'
+    if r['row_id'] == 'B0813' or 'strengthen your equipment' in n:
+        return 'X_TUTORIAL'
+    if c in TICKETS:
+        if c == 'Draw Point':
+            return 'T_POINTS'
+        if c in ('Bronze Ticket', 'Silver Ticket', 'Gold Ticket', 'Platinum Ticket'):
+            return 'T_EVOLVE'
+        return 'T_TICKET'
+    if 'free' in n or (c.startswith('Free') and 'Jewels' not in c) or r['row_id'] in ('B0497',):
+        return 'FREE'
+    if re.search(r'beginner|newcomer|starter', n):
+        return 'BEGINNER'
+    if re.search(r'falling price', n) or len(re.findall(r'\d(?:st|nd|rd|th):', p)) >= 3 or re.match(r'^\d{4}, \d{4}, ', p):
+        return 'FALLING'
+    if re.search(r'skill', n):
+        return 'SKILL'
+    if re.search(r'imitation|trait medal|blue fairy|meow wow|magic mirror', n):
+        return 'ITEM'
+    if re.search(r'supernova|^sn[ +]|sn\+|^sn -|\bsn deal', n) or re.match(r'(SN|Supernova)', r['featured_medals']):
+        return 'SN'
+    stars = re.findall(r'(\d)★', mix)
+    if '7★' in n or 'prime' in n or (stars and set(stars) == {'7'}):
+        return 'SEVEN'
+    if re.search(r'daily|top-drawer|gem deal|one-day', n) or re.search(r'once (per|a) day|times per day|each day', notes, re.I):
+        return 'DAILY'
+    if r['featured_medals'] or re.search(r'if bought|within \d+ draws|guarantees? (one|two|three|four|a) of the following',
+                                         notes + ' ' + r['guarantees'], re.I):
+        return 'FEATURED'
+    return 'STANDARD'
+
+
+# ---------- prezzi e valute ----------
+def parse_price(p):
+    p = p.replace(',', '') if re.match(r'^\d{1,3},\d{3}$', p) else p
+    steps = re.findall(r'(\d+)(?:st|nd|rd|th)\+?: (Free|\d+)', p)
+    if steps:
+        return [0 if v == 'Free' else int(v) for _, v in steps]
+    if re.match(r'^\d{4}(, \d{4})+$', p):
+        return sorted([int(x) for x in p.split(', ')], reverse=True)
+    if re.search(r'^\s*(VIP Only )?Free', p):
+        return [0]
+    m = re.search(r'(\d+)', p)
+    return [int(m.group(1))] if m else []
+
+
+def currency_of(row, typ):
+    """(payType, currency): Jewels, Free e valuta vuota -> (1, 'jewel')."""
+    if row.get('row_id') == 'B0787':  # «Ticket Draw x10» 2021-01: «Holiday» nel TSV e' un errore (research.md §2)
+        return (8, 'draw')
+    cur = row['currency'].replace(', VIP only', '').replace('Free, ', '')
+    return CURRENCY.get(cur, (1, 'jewel'))
+
+
+def rarity_mix(mix):
+    return [[int(s), int(n)] for s, n in re.findall(r'(\d)★:(\d+)', mix)]
+
+
+def first_rarity(rows):
+    out = {}
+    for r in rows:
+        for k in re.findall(r'(\d)★', r['rarity_mix']):
+            if r['start_pt'] and (k not in out or r['start_pt'] < out[k]):
+                out[k] = r['start_pt']
+    return dict(sorted(out.items()))
+
+
+# ---------- date di fine mancanti (spec 9.8) ----------
+def series_key(name):
+    k = re.sub(r'\(\d+/\d+\)|returns!?|is back!?|pt\.? ?\d|!', '', name.lower())
+    return re.sub(r'\s+', ' ', k).strip()
+
+
+MONS = {m: i + 1 for i, m in enumerate(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])}
+PERIOD = re.compile(r'([A-Z][a-z]{2})[a-z]*\.? (\d+), (\d{4}) 12:00 a\.m\. to (?:([A-Z][a-z]{2})[a-z]*\.? (\d+), (\d{4}) )?'
+                    r'11:59 p\.m\. \(PT\)')
+
+
+def notice_end(r, notices):
+    """(punteggio del titolo, fine, id) del notice citato dalla riga il cui periodo parte il giorno d'inizio."""
+    best = None
+    words = set(re.findall(r'[a-z0-9+]+', series_key(r['name']))) - {'deal', 'the', 'medal'}
+    for i in [int(i) for i in re.findall(r'detail/(\d+)', r['source_url'])]:
+        x = notices.get(i)
+        if not x:
+            continue
+        title = x['title'].lower()
+        score = len(words & set(re.findall(r'[a-z0-9+]+', title)))
+        if 'one day only' in title:
+            score += 1
+        if series_key(r['name']).replace('!', '') in re.sub(r'[!＋]', lambda m: '+' if m.group(0) == '＋' else '', title):
+            score += 5
+        for m in PERIOD.finditer(x['text']):
+            if m.group(1) not in MONS or (m.group(4) and m.group(4) not in MONS):
+                continue
+            st = dt.date(int(m.group(3)), MONS[m.group(1)], int(m.group(2)))
+            if st.isoformat() != r['start_pt']:
+                continue
+            en = dt.date(int(m.group(6)), MONS[m.group(4)], int(m.group(5))) if m.group(4) else st
+            if best is None or score > best[0]:
+                best = (score, en.isoformat(), i)
+            break
+    return best
+
+
+def end_of(row, typ, rows, notices):
+    """(fine, fonte). Ordine della spec 9.8; le regole smentite dai notice (giorno prima del successivo
+    della serie, Supernova Deal settimanali di 7 giorni, 1° del mese -> fine mese) non ci sono piu'."""
+    if row['end_pt']:
+        return row['end_pt'], 'original'
+    s = row['start_pt']
+    k = series_key(row['name'])
+    if 'draw points' in k:
+        return '2021-06-29', 'permanent to end of service (README)'
+    ne = notice_end(row, notices)
+    if ne and ne[0] >= 5:
+        return ne[1], f'notice {ne[2]}'
+    if re.search(r'supernova deal|gem deal|free deal|sn\+ falling price|ffbe campaign', k):
+        return s, '1 day (series rule)'
+    if ne:
+        return ne[1], f'notice {ne[2]} (weak title match)'
+    if 'beginner' in k and s[:4] == '2019':
+        return '2020-10-11', 'Beginner 2019 -> 11 Oct 2020 (notice 70063)'
+    if 'beginner' in k:
+        return '2021-02-24', 'Beginner 2020 -> end of jewel sales 24 Feb 2021'
+    return s, '1 day (default)'
+
+
+# ---------- sblocco con la storia ----------
+def unlock_quest(start, story):
+    """last_quest della tranche WW piu' alta uscita entro l'inizio del banner."""
+    best = 0
+    for first, last, date in story:
+        if date <= start:
+            best = max(best, int(last))
+    return best
+
+
+def day_limit(notes, typ):
+    m = re.search(r'\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten) times per day|(3)×/day', notes, re.I)
+    if m:
+        v = (m.group(1) or m.group(2)).lower()
+        return int(v) if v.isdigit() else NUM[v]
+    if re.search(r'once (per|a) day', notes, re.I) or typ == 'DAILY':
+        return 1
+    return 0
+
+
+# ---------- liste di medaglie nelle note ----------
+LINK = re.compile(r'\[\[[^\]]*\]\]|\{\{[^}]*\}\}')
+STOP = re.compile(r'(?<!\bIllus)(?<!\bIll)(?<!\bVer)(?<!\bJr)(?<!\bMr)(?<!\bMrs)(?<!\bDr)[.!|](?=\s|$|\*)|\|')
+
+
+def _cut(seg):
+    """posizione della prima fine di frase fuori da [[...]] e {{...}} (non dopo «Illus.», «Ver.» ...)"""
+    masked = LINK.sub(lambda m: 'L' * len(m.group(0)), seg)
+    mm = STOP.search(masked)
+    return mm.start() if mm else len(seg)
+
+
+KEEP_COMMA = re.compile(r'huey, dewey|terra, ven, aqua', re.I)  # nomi di medaglie con la virgola
+TAIL = re.compile(r'\s+(?:with (?:its|one|a)\b|pre-strengthened\b|at \d★|medals?$|is guaranteed\b).*$', re.I)
+
+
+def list_names(seg):
+    """nomi normalizzati di un elenco «A, [[B]], or {{KA|22}}.» (link e template resi come banner_sources.toks)"""
+    seg = seg[:_cut(seg)]
+    seg = LINK.sub(lambda m: (bsrc.toks(m.group(0)) or [' '])[0], seg)
+    seg = KEEP_COMMA.sub(lambda m: m.group(0).replace(',', '§'), seg)
+    parts = re.split(r',\s*(?:or |and )?|\s+(?:or|and)\s+', seg)
+    return [n for n in (norm(TAIL.sub('', p.replace('§', ','))) for p in parts) if n]
+
+
+def featured_col(row):
+    """medaglie della colonna featured_medals (voci «;», a volte elenchi «A, B, and C»)"""
+    return [n for x in re.split(r';\s*', row['featured_medals']) if x.strip() for n in list_names(x)]
+
+
+def setrefs(notes):
+    m = re.search(r'[Dd]raws from (?:[^.]*? Medals in )?sets? ((?:\d+\.\d+[a-z]?|,|and|\s)+)', notes)
+    return re.findall(r'\d+\.\d+[a-z]?', m.group(1)) if m else []
+
+
+def names_listed(notes):
+    m = re.search(r'[Dd]raws from the following [Mm]edals[^:]*: ', notes)
+    return list_names(notes[m.end():]) if m else []
+
+
+def _dedup(xs):
+    return list(dict.fromkeys(xs))
+
+
+# ---------- garanzie ----------
+LISTRE = re.compile(r'(?:[Gg]uarantees?|guaranteed to (?:get|receive)) (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) '
+                    r'(?:boosted versions? )?of the following [Mm]edals(?: at \d★)?(?: every (\d+)(?:st|nd|rd|th) draw)?[!:]?\s*')
+NOT_A_NAME = re.compile(r'\b(she|he|him|her|they|these|this|it|you)\b', re.I)
+
+
+def guarantee_of(row, notes):
+    """{list, count, pity, every, featured}: slot a lista («N of the following»), pity «If bought N times»
+    o «within N draws», «every Nth draw»; featured = medaglie della pity (normalizzate)."""
+    text = (notes + ' | ' + row['guarantees']).replace("'''", '')
+    g = {'list': [], 'count': 0, 'pity': None, 'every': None, 'featured': []}
+    m = LISTRE.search(text)
+    if m:
+        v = m.group(1).lower()
+        g['count'] = int(v) if v.isdigit() else NUM[v]
+        g['list'] = _dedup(list_names(text[m.end():]))
+        if m.group(2):
+            g['every'] = int(m.group(2))
+    if g['every'] is None:
+        e = re.search(r'every (\d+)(?:st|nd|rd|th) draw', text)
+        if e:
+            g['every'] = int(e.group(1))
+    p = re.search(r'[Ii]f bought (\d+) times?,?\s*', text)
+    if p:
+        g['pity'] = int(p.group(1))
+        rest = text[p.end():]
+        e = re.search(r'\s+(?:is|are) (?:guaranteed|included)', rest)
+        cut = _cut(rest)
+        seg = rest[:e.start()] if e and e.start() < cut else rest
+        lst = re.match(r'(?:at least )?(?:one )?of the following [Mm]edals (?:is|are) (?:guaranteed|included)[:!]?\s*', rest)
+        if lst:  # «If bought 3 times, one of the following Medals is guaranteed: [[A]], [[B]] ...»
+            seg = rest[lst.end():]
+        seg = re.sub(r'^(?:guarantees (?:a|one) (?:boosted version of )?|at least one |one |an? )', '', seg, flags=re.I)
+        g['featured'] = _dedup(list_names(seg))
+        return g
+    w = re.search(r'within (\d+) draws', text, re.I)
+    if w:
+        g['pity'] = int(w.group(1))
+        feat = featured_col(row)
+        if not feat:  # righe dai notice: «SN - KH III Dark Riku  is guaranteed within 10 draws.»
+            f = re.search(r'(?:^|[|.!]\s*)([^|.!]+?)\s+(?:is |are )?guaranteed within \d+', text)
+            if f and not NOT_A_NAME.search(f.group(1)):
+                feat = list_names(f.group(1))
+        g['featured'] = _dedup(feat)
+    return g
+
+
+# ---------- gemelli VIP (spec 9.5) ----------
+def is_vip(r):
+    return 'VIP' in r['currency'] or 'VIP' in r['price']
+
+
+def vip_twins(rows):
+    """row_id delle righe VIP con una riga non VIP della stessa data e della stessa serie."""
+    def key(r):
+        return (r['start_pt'], series_key(re.sub(r'\(VIP\)|VIP:', '', r['name'])))
+    normal = {key(r) for r in rows if not is_vip(r)}
+    return {r['row_id'] for r in rows if is_vip(r) and key(r) in normal}
+
+
+# ---------- bonus (note «Includes N bonus ...») ----------
+BONUS = re.compile(r'[Ii]ncludes? (a|one|two|three|five|\d+) bonus ')
+
+
+def _bonus(notes, medal_rows, material_rows):
+    """([[3|5, id, numero], ...], nomi non trovati): la frase finisce al primo punto fuori da link e
+    abbreviazioni («Donald Ver. B»); «5★ A and 6★ B medal» = due oggetti."""
+    found, skipped = [], []
+    mats = {norm(x['name']): x['materialId'] for x in material_rows}
+    meds = collections.defaultdict(list)
+    for x in medal_rows:
+        meds[norm(x['name'])].append(x)
+    text = notes.replace("'''", '')
+    for m in BONUS.finditer(text):
+        v = m.group(1).lower()
+        n = int(v) if v.isdigit() else NUM[v]
+        for part in list_names(text[m.end():]):
+            star = re.match(r'(\d)★\s*', part)
+            name = part[star.end():] if star else part
+            keys = [name] + ([name[:-1]] if name.endswith('s') else [])  # «[[Power Gem]]s»
+            k = next((k for k in keys if k in mats or k in meds), None)
+            if k in mats:
+                found.append([5, mats[k], n])
+                continue
+            cand = sorted(meds.get(k, []), key=lambda x: x['medalId'])
+            if star and any(x['rare'] == int(star.group(1)) for x in cand):
+                cand = [x for x in cand if x['rare'] == int(star.group(1))]
+            if cand:
+                found.append([3, cand[0]['medalId'], n])
+            else:
+                skipped.append(name)
+    return found, skipped
+
+
+def bonus_of(notes, medal_rows, material_rows):
+    return _bonus(notes, medal_rows, material_rows)[0]
+
+
+# ---------- pool (spec 9.3) ----------
+def expand_refs(refs, sub_members, rel, start):
+    """sotto-set citati -> (sotto-set, nomi): «24.3» -> 24.3a + 24.3b; set senza sotto-set nella wiki
+    (27.6, 40.6, 41.x) -> medaglie di quel set uscite entro l'inizio."""
+    sets, names = [], []
+    for s in refs:
+        if s in sub_members:
+            sets.append(s)
+            continue
+        alts = sorted(k for k in sub_members if re.fullmatch(re.escape(s) + r'[a-z]', k))
+        if alts:
+            sets += alts
+            continue
+        n = int(s.split('.')[0])
+        names += [norm(o['name']) for o in rel if o['set'] == n and o['date'] <= start and o['cls'] in DRAW_CLS]
+    return _dedup(sets), _dedup(names)
+
+
+def evolve_of(row, medal_rows):
+    """T_EVOLVE: [[medalId, livello], ...] delle medaglie d'evoluzione del biglietto (spec 9.2)."""
+    cur = row['currency']
+    if 'Platinum' in cur:
+        fmt, levels = 'Dual Meow Wow [SAB LV {}]', range(7, 10)
+    elif 'Bronze' in cur:
+        fmt, levels = 'Blue Fairy [SA Bonus LV {}]', range(1, 4)
+    elif 'Silver' in cur:
+        fmt, levels = 'Blue Fairy [SA Bonus LV {}]', range(4, 9) if row['start_pt'] >= '2018-09-14' else range(3, 9)
+    else:  # Gold
+        fmt, levels = 'Blue Fairy [SA Bonus LV {}]', range(5, 9)
+    by = {x['name']: x['medalId'] for x in medal_rows}
+    return [[by[fmt.format(lv)], lv] for lv in levels if fmt.format(lv) in by]
+
+
+def pool_recipe(row, notes, typ, docs, sub_members, rel=(), medal_rows=()):
+    """docs = [(inizio, sotto-set, nomi, tipo)] dei banner con «Draws from sets» precedenti."""
+    start = row['start_pt'] or FIRST_DAY
+    p = {'mode': 'released', 'sets': [], 'names': [], 'featured': [], 'inheritAfter': None, 'evolve': None}
+    refs = setrefs(notes)
+    listed = names_listed(notes)
+    if typ == 'T_EVOLVE':
+        p['mode'] = 'evolve'
+        p['evolve'] = evolve_of(row, medal_rows)
+    elif refs:
+        p['mode'] = 'sets'
+        p['sets'], p['names'] = expand_refs(refs, sub_members, rel, start)
+    elif listed:
+        p['mode'] = 'list'
+        p['names'] = _dedup(listed)
+    else:
+        prevd = [d for d in docs if d[0] <= start]
+        same = [d for d in prevd if d[3] == typ]
+        if row['status'].startswith('permanent') or not prevd:
+            p['mode'] = 'released'
+        else:
+            d0 = (same or prevd)[-1]
+            p['mode'] = 'inherit'
+            p['sets'] = list(d0[1])
+            p['inheritAfter'] = d0[0]
+            p['names'] = _dedup(list(d0[2]) + [norm(x) for x in bsrc.toks(notes)])
+    p['featured'] = _dedup(featured_col(row) + guarantee_of(row, notes)['featured'])
+    return p
+
+
+def epic_boost(notes):
+    return bool(re.search(r'higher chances? of (being|the other \d+ being) Epic|chance to obtain Epic', notes))
+
+
+def skill_of(typ, start):
+    if typ == 'SKILL':
+        return {'table': '50106', 'slots': 'first'}
+    if typ in ('SN', 'SEVEN') and start >= SKILL72415_FROM:
+        return {'table': '72415', 'slots': 'all'}
+    return None
+
+
+# ---------- righe incomplete: fratello di serie (porta di incomplete.py) e override ----------
+def sib_key(n):
+    return re.sub(r'\s+', ' ', re.sub(r'\(\d+/\d+\)|returns!?|is back!?|limited time:|!|\(ex\+?\)|\[ex\+?\]', '', n.lower())).strip()
+
+
+def missing(r):
+    return not r['draw_size'] or not r['price']
+
+
+def sibling_of(x, rows, types):
+    """riga completa della stessa serie piu' vicina per data (o la Free Deal per le «Monday Only Free Deal»)"""
+    sib = [y for y in rows if y is not x and not missing(y) and not types[y['row_id']].startswith('X_')
+           and (sib_key(y['name']) == sib_key(x['name'])
+                or (types[x['row_id']] == types[y['row_id']] == 'FREE' and 'monday' in x['name'].lower() and y['name'] == 'Free Deal'))]
+    sib.sort(key=lambda y: abs((D(y['start_pt']) - D(x['start_pt'])).days) if y['start_pt'] and x['start_pt'] else 9999)
+    return sib[0] if sib else None
+
+
+def image_of(r, rows):
+    """(file, rowId della riga da cui viene): la propria, altrimenti la piu' vicina della stessa serie."""
+    if r['image_file']:
+        return r['image_file'].split(' ')[0], r['row_id']
+    def key(n):  # «Supernova+ - Aced Deal Returns!» = «Supernova+ - Aced»
+        return re.sub(r' deal$', '', series_key(n))
+    k = key(r['name'])
+    sib = [y for y in rows if y['image_file'] and key(y['name']) == k]
+    sib.sort(key=lambda y: (abs((D(y['start_pt']) - D(r['start_pt'])).days), y['row_id']))
+    return (sib[0]['image_file'].split(' ')[0], sib[0]['row_id']) if sib else (None, None)
+
+
+def read_tsv(path):
+    with open(path, encoding='utf-8', newline='') as f:
+        return list(csv.DictReader(f, delimiter='\t'))
+
+
+def default_inputs():
+    p = {k: os.environ.get(ENV[k], v) if k in ENV else v for k, v in DEFAULTS.items()}
+
+    def load(path):
+        with open(path, encoding='utf-8') as f:
+            return json.load(f)
+    story = [[int(t['first_quest']), int(t['last_quest']), t['ww_release_date']] for t in read_tsv(p['story'])]
+    return {'wiki': load(p['wiki']), 'rows': read_tsv(p['banners']), 'story': story,
+            'notices': {x['id']: x for x in load(p['notices'])}, 'medals': load(p['medals']),
+            'materials': load(p['materials']),
+            'overrides': read_tsv(p['overrides']) if os.path.exists(p['overrides']) else [], 'out': p['out']}
+
+
+def build_catalog(inputs):
+    wiki, rows, story, notices = inputs['wiki'], inputs['rows'], inputs['story'], inputs['notices']
+    M, MAT = inputs['medals'], inputs['materials']
+    S = bsrc.english_subsets(wiki)
+    rel = bsrc.medal_release(S, wiki, M, rows)
+    wsx = shop_index(bsrc.wiki_shop_rows(wiki))
+
+    # sotto-set: 1.1 = medaglie del set 1 fuori dagli altri sotto-set 1.x e dalle extra del set 1
+    sub_members = {s['id']: [norm(n) for n in s['members']] for s in S['subsets']}
+    sub_date = {s['id']: (s['date'] or FIRST_DAY) for s in S['subsets']}
+    other1 = set(n for k, v in sub_members.items() if k.startswith('1.') for n in v) | \
+        set(norm(n) for e in S['extras'] if e['set'] == 1 for n in e['members'])
+    sub_members['1.1'] = [n for n in (norm(e['name']) for e in S['nasets']['1']['medals']) if n not in other1]
+    sub_date['1.1'] = FIRST_DAY
+
+    medals = {}
+    for o in rel:
+        ids = []
+        for (mid, rare, typ, vp, dl) in o['rows']:
+            if typ != 1 or vp == 1:
+                continue
+            rd = o['rare_date'].get(rare) or o['rare_date'].get(str(rare)) or o['date']
+            ids.append([mid, rare, max(rd, o['date'])])
+        medals[norm(o['name'])] = {'date': o['date'], 'cls': o['cls'], 'class2': o['class2'], 'ids': ids}
+
+    notes_of = {r['row_id']: full_notes(r, wsx) for r in rows}
+    types = {r['row_id']: classify(r, notes_of[r['row_id']][0]) for r in rows}
+    incl = [r for r in rows if not types[r['row_id']].startswith('X_')]
+    twins = vip_twins(incl)
+    ov = collections.defaultdict(dict)
+    for o in inputs['overrides']:
+        if o.get('field') in ('price', 'draw_size', 'rarity_mix', 'end_pt'):
+            ov[o['row_id']][o['field']] = o['value']
+
+    out, docs, skipped = [], [], []
+    for r0 in sorted(incl, key=lambda r: (r['start_pt'] or '9999', r['row_id'])):
+        rid = r0['row_id']
+        notes, nsrc = notes_of[rid]
+        typ = types[rid]
+        r = dict(r0)
+        completed = None
+        if missing(r0):
+            s = sibling_of(r0, incl, types)
+            if s:
+                for f in ('currency', 'price', 'draw_size', 'rarity_mix'):
+                    if not r[f]:
+                        r[f] = s[f]
+                completed = s['row_id']
+        if rid in ov:
+            r.update(ov[rid])
+            completed = 'override'
+        flags = []
+        if r['status'].startswith('permanent'):
+            flags.append('PERMANENT')
+        if day_limit(notes, typ) or re.search(r'once (per|a) day', notes, re.I):
+            flags.append('DAY_LIMITED')
+        if is_vip(r):
+            flags.append('VIP')
+        if r['currency'].startswith('Free, Jewels') or re.match(r'.*1st: Free', r['price']):
+            flags.append('FIRST_FREE')
+        if r['seasonal']:
+            flags.append('SEASONAL')
+        if r['event_tie_in']:
+            flags.append('EVENT')
+        if missing(r0):
+            flags.append('INCOMPLETE')
+        pay, cur = currency_of(r, typ)
+        prices = parse_price(r['price'])
+        lot = int(r['draw_size'][1:]) if re.fullmatch(r'x\d+', r['draw_size']) else None
+        end, end_src = end_of(r, typ, incl, notices)
+        refs = setrefs(notes)
+        pool = pool_recipe(r, notes, typ, docs, sub_members, rel, M)
+        if refs:
+            docs.append((r['start_pt'] or FIRST_DAY, pool['sets'], pool['names'], typ))
+        g = guarantee_of(r, notes)
+        g.pop('featured')
+        found, sk = _bonus(notes, M, MAT)
+        skipped += [(rid, x) for x in sk]
+        if rid in twins:
+            only = 'VIP_TWIN'
+        elif pay in (4, 5, 6):
+            only = 'PVP_TICKETS'
+        elif pay == 9:
+            only = 'DRAW_POINTS'
+        elif not prices or not lot:
+            only = 'INCOMPLETE'
+        else:
+            only = None
+        img, img_from = image_of(r0, incl)
+        out.append({
+            'rowId': rid, 'drawMedalTypeId': 10000 + int(rid[1:]), 'name': r['name'], 'type': typ, 'flags': flags,
+            'start': r['start_pt'], 'end': end, 'endSource': end_src,
+            'unlockQuest': unlock_quest(r['start_pt'], story), 'payType': pay, 'currency': cur,
+            'prices': prices, 'lotCount': lot, 'rarityMix': rarity_mix(r['rarity_mix']), 'epicBoost': epic_boost(notes),
+            'dayLimit': day_limit(notes, typ), 'vipFree': typ == 'FREE' and 'VIP' in flags,
+            'pool': pool, 'guarantee': g, 'skill': skill_of(typ, r['start_pt']), 'bonus': found,
+            'catalogOnly': only, 'completedFrom': completed, 'image': img, 'imageFrom': img_from,
+            'notes': notes, 'guaranteesText': r['guarantees'], 'notesSource': nsrc,
+        })
+    out.sort(key=lambda b: b['rowId'])
+    return {
+        'version': 2,
+        'firstRarity': first_rarity(rows),
+        'story': story,
+        'subsets': {k: {'date': sub_date.get(k, FIRST_DAY), 'names': v} for k, v in sorted(sub_members.items())},
+        'medals': medals,
+        'banners': out,
+        '_skippedBonus': skipped,
+    }
+
+
+def main():
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+    inp = default_inputs()
+    cat = build_catalog(inp)
+    skipped = cat.pop('_skippedBonus')
+    bs = cat['banners']
+    os.makedirs(os.path.dirname(inp['out']), exist_ok=True)
+    with open(inp['out'], 'w', encoding='utf-8') as f:
+        json.dump(cat, f, ensure_ascii=False, separators=(',', ':'))
+    C = collections.Counter
+    print('banner', len(bs))
+    print('tipi', dict(C(b['type'] for b in bs).most_common()))
+    print('catalogOnly', dict(C(b['catalogOnly'] for b in bs if b['catalogOnly']).most_common()))
+    print('sbloccati a 525', sum(1 for b in bs if b['unlockQuest'] <= 525))
+    print('pool', dict(C(b['pool']['mode'] for b in bs).most_common()))
+    print('completate', sum(1 for b in bs if b['completedFrom']), 'fine ricostruita', sum(1 for b in bs if b['endSource'] != 'original'))
+    print('bonus', sum(len(b['bonus']) for b in bs), 'bonus saltati', len(skipped))
+    print('scritto', inp['out'], os.path.getsize(inp['out']), 'byte')
+
+
+if __name__ == '__main__':
+    main()
