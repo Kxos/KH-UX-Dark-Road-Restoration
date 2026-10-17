@@ -69,6 +69,8 @@ def save(rel, im):
 mapping, missing, failed = {}, [], []
 jobs = []
 for row in master:
+    if row.get('groupId') or row['medalId'] >= 1000000:
+        continue  # boosted (server/medal-boost.js): stessa imageId della normale, nessuna immagine propria
     d = match(row)
     if not d:
         missing.append('%s %s %s★' % (row['medalId'], row['name'], row['rare']))

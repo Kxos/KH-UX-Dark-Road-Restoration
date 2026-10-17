@@ -78,5 +78,17 @@ const ids3 = mb.resolveIds({ on: { star: 7 } }, b2, cat2, new Map());
 check(ids3.join() === '11,12', `{star} -> pool della stella (${ids3})`);
 fs.rmSync(tmp, { recursive: true, force: true });
 
+// Fix A: l'album non elenca le boosted (allMedalCount, voci), ma la riga si trova per id e la copia
+// boosted posseduta conta per la normale
+const { albumData } = require('./routes-info-album');
+const O = { ...N, medalId: 11021, name: 'Goofy A', displayId: 11021, guiltValue: 3 };
+const B = mb.boostedRow({ ...N, guiltValue: 10 }, 1000, 1000);
+const master3 = [{ ...N, medalId: 1 }, { ...N, guiltValue: 10 }, O, B];
+const album = albumData([{ medalId: B.medalId, guiltFactor: 100 }], master3, () => 32000).userAlbum;
+check(album.allMedalCount === 2, `album: boosted fuori dal conteggio (${album.allMedalCount})`);
+check(JSON.stringify(album.albumMedals) === JSON.stringify([{ medalId: 301993, guiltStatus: 1 }]), `album: la boosted conta per la normale (${JSON.stringify(album.albumMedals)})`);
+check(new Map(master3.map((x) => [x.medalId, x])).get(2301993) === B, 'ricerca per id: la boosted si trova');
+check(master3.filter((x) => !mb.isBoosted(x)).length === 3, 'enumerazione filtrata');
+
 if (errors.length) { console.log(`ERRORI (${errors.length})`); errors.forEach((e) => console.log(' -', e)); process.exit(1); }
 console.log('OK: righe boosted (id, badge, statistiche, indice, patch idempotente, famiglie)');

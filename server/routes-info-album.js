@@ -24,6 +24,7 @@
 // bonus massimo del tier (ricostruzione: i valori originali non sono noti).
 
 const clock = require('./clock');
+const { isBoosted } = require('./medal-boost');
 
 // Ogni funzione che differisce dall'originale ha una notizia (docs/notes/home_profilo.md#notices-album)
 const DIFFERENCES_BODY = [
@@ -128,7 +129,8 @@ function noticesPage(realMs = Date.now()) {
 }
 
 // owned: medaglie possedute [{medalId, guiltFactor}]; medalRows: tabella master medal;
-// maxGuilt(tier) -> fattore massimo del tier (medal-guilt.js GUILT_RANGES)
+// maxGuilt(tier) -> fattore massimo del tier (medal-guilt.js GUILT_RANGES). Le boosted (groupId = normale,
+// medal-boost.js) non sono voci dell'album: la riga si trova per id, la copia conta per la normale
 function albumData(owned, medalRows, maxGuilt) {
   const byId = new Map(medalRows.map((r) => [r.medalId, r]));
   const best = new Map();
@@ -138,12 +140,13 @@ function albumData(owned, medalRows, maxGuilt) {
     const f = m.guiltFactor || 0;
     const top = maxGuilt(row.guiltValue || 0);
     const st = f <= 0 ? 0 : top && f >= top ? 2 : 1;
-    best.set(m.medalId, Math.max(best.get(m.medalId) ?? 0, st));
+    const id = isBoosted(row) ? row.groupId : m.medalId;
+    best.set(id, Math.max(best.get(id) ?? 0, st));
   }
   return {
     userAlbum: {
       albumMedals: [...best].sort((a, b) => a[0] - b[0]).map(([medalId, guiltStatus]) => ({ medalId, guiltStatus })),
-      allMedalCount: medalRows.filter((r) => r.medalId !== 1).length,
+      allMedalCount: medalRows.filter((r) => r.medalId !== 1 && !isBoosted(r)).length,
     },
   };
 }
