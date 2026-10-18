@@ -102,6 +102,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   visto un `/stage/clear` arrivato (vedi ISSUES I-008).
 - Regola dell'utente: **i dialoghi con SKIP si saltano sempre**; i risultati si scorrono con OK
   (960,965).
+- **Rientro fermo al titolo** (18-10, tre volte di fila dopo `relogin.ps1`/`build-resources.ps1 -Quick`): il
+  dialogo Android «L'app Launcher3 non risponde» copre il gioco e prende i tocchi su KHUX START. Toccare
+  «Attendi» (640,649) e rilanciare `bench_start.ps1`.
 - **Nemici piu' forti** (18-10, per provare Second Chance e le skill che servono a terra):
   `relogin.ps1 -EnemyAtk 10` (o `run-server.ps1 -EnemyAtk 10`) moltiplica l'attacco della tabella `enemy`
   nel master servito (`KHUX_BENCH_ENEMY_ATK`; il client prende le statistiche dei nemici dal master). La
