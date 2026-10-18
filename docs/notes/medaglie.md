@@ -344,10 +344,29 @@ testi del client 101300020-032 e 100620003.
 - Server (`server/medal-skill.js`, 12-10): `player.medalSkills[userMedalId]` dopo un Overwrite
   riuscito (userSkillId da `player.nextUserSkillId`); le Scrooge hanno una skill calcolata (id
   1000000000 + userMedalId, livello massimo; quale skill avesse ogni Scrooge non si sa: ipotesi 3★
-  rango 1, 5★ rango 2, 6★ No Cost, scelta con userMedalId). `userSkills` intera in login, inventario,
+  rango 1, 5★ rango 2, 6★ rango 3, scelta con userMedalId; vedi «Scrooge e wiki» e «Migrazione» sotto). `userSkills` intera in login, inventario,
   Level Up, vendita, trait; il supporto manda la skill della sua medaglia. `skillExp` = le 4 righe vere
   (vedi «Tabella skill»; la vecchia `server/tables/skillExp.json` inventata e' stata tolta). Prova: `server/test-medal-enhance.js`
   (punto 9).
+- Scrooge e wiki (I-146, 18-10, ricerca in `wiki_all.json`): la pagina «Scrooge» dice solo «grants a skill»
+  (3★/5★/6★, EXP 1400/5150/15150, dal Colosseo o dagli eventi) e il master ha una riga per rarita' (90123/
+  90125/90126, nome sempre «Scrooge»): la skill **non dipende dalla medaglia ma dal premio**. Il wiki la scrive
+  accanto al premio: tabelloni (`6★ Scrooge (Board)`: «Scrooge 5★ (Paralysis)», «Scrooge 6★ (Attack Boost II)»),
+  Shop/2016-2017 («Scrooge Medal with the [[Attack Boost III]] Skill»), Moogle Shop (Scrooge 6★ con «ATK B XIV
+  Max & Sleep», «Second Chance IV», ...), regali (Organization XIII A: «ATK B III Max & SP GA II»). Premi
+  contati sui tabelloni: 3★ = Poison/Paralysis/Sleep/Attack Boost I/All I/Defense Boost I (tutte rango 1);
+  5★ = Boost II, All II, Defense Boost II, stati e stati «+» (rango 1-2); 6★ = Attack Boost II, No Cost, Attack
+  Prize Plus, «Max» e combinazioni (rango 2-3). Nessun abbinamento per nome possibile: resta la regola per
+  rarita' (3★ rango 1, 5★ rango 2, 6★ rango 3, `pool[userMedalId % pool.length]` per skillId, livello massimo)
+  sulla tabella completa: 3★ invariate (le 6 rango 1 erano gia' tutte nel master), 5★ da 5 a 14 skill, 6★ da
+  1 (No Cost) a 143.
+- Migrazione (I-146, `migrateSkills()` in `server.js`, `player.skillVersion` 1, all'avvio dopo le tabelle): le
+  Scrooge gia' possedute senza voce salvano la skill di prima (`scroogeSkillV1` = stessa regola sulle 12 skill
+  di allora 1100-1113, stesso `userSkillId` 1000000000 + userMedalId, `getDatetime` della medaglia); ogni
+  skill salvata tiene il livello mostrato e prende `exp` = soglia vera di quel livello (`expToReach`, limitata a
+  maxLv: la curva inventata dava altri numeri). Medaglie senza skill restano senza; Scrooge nuove = regola
+  sulla tabella completa, calcolata (exp 0 come prima). Nuovo giocatore: `skillVersion` 1 subito. Prova:
+  `server/test-skill-migration.js`.
 - Tabella skill (I-146, 18-10, `server/make-skill-table.js`, chiamato da `make-game-tables.js` dopo
   `make-pet-tables`; prova `server/test-skill-table.js`; report `D:Progetto_Restauro_KH_UX	mpskilleport.md`).
   Sorgenti lette a build-time, fuori dal repo: 25 righe vere di thethiny (1100-1126, `dataskill.json`), le 4

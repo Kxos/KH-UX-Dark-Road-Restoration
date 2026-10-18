@@ -21,13 +21,24 @@
 'use strict';
 
 // Le Scrooge (type 2, «grants a skill») hanno una skill al livello massimo. Quale skill avesse ogni
-// Scrooge non si sa (dipendeva dal premio del Colosseo/evento): ipotesi deterministica per rarita'
-// (3★ rango 1, 5★ rango 2, 6★ rango 3) scelta con userMedalId. userSkillId calcolato, non salvato.
+// Scrooge non dipendeva dalla medaglia (la riga e' la stessa: 90123/90125/90126) ma dal premio: wiki
+// «6★ Scrooge (Board)» «Scrooge 5★ (Paralysis)», «Shop/2017» «Scrooge Medal with the [[Attack Boost III]]
+// Skill», «Moogle Shop» «Scrooge 6★ ... ATK B XIV Max & Sleep». Nessun abbinamento per nome possibile:
+// ipotesi deterministica per rarita' (3★ rango 1, 5★ rango 2, 6★ rango 3; nei premi del wiki 3★ = stati e
+// Boost I, 5★ = Boost II, 6★ = Max e combinazioni) scelta con userMedalId sulla tabella completa.
+// userSkillId calcolato, non salvato (docs/notes/medaglie.md#skill).
 const SCROOGE_SKILL_BASE = 1000000000;
 const SCROOGE_RANK = { 3: 1, 5: 2, 6: 3 };
+// le 12 skill del master prima della tabella completa (I-146, 18-10): le Scrooge possedute allora tengono
+// la skill calcolata su queste (scroogeSkillV1, salvata una volta da migrateSkills in server.js)
+const SKILL_IDS_V1 = new Set([1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1109, 1110, 1112, 1113]);
 
 function isSkillMedal(row) {
   return !!row && row.type === 2 && /grants a skill/i.test(row.advantage || '');
+}
+
+function scroogeSkillV1(row, userMedalId, skills) {
+  return scroogeSkill(row, userMedalId, skills.filter((s) => SKILL_IDS_V1.has(s.skillId)));
 }
 
 function scroogeSkill(row, userMedalId, skills) {
@@ -96,6 +107,6 @@ function addSkillExp(skill, skillRow, expRow, gained) {
 }
 
 module.exports = {
-  SCROOGE_SKILL_BASE, isSkillMedal, scroogeSkill, skillChance, overwriteChance,
+  SCROOGE_SKILL_BASE, isSkillMedal, scroogeSkill, scroogeSkillV1, skillChance, overwriteChance,
   expToReach, levelForExp, addSkillExp,
 };

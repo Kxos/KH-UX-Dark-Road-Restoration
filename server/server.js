@@ -2504,6 +2504,31 @@ function medalSkillOf(m) {
   return medalSkill.scroogeSkill(t.medals.get(m.medalId), m.userMedalId, t.skills);
 }
 
+// Migrazione alla tabella skill completa e alla curva skillExp vera (I-146, skillVersion 1): le Scrooge
+// possedute senza voce salvano la skill di prima (scroogeSkillV1, sulle 12 skill di allora: la regola sulla
+// tabella completa ne darebbe un'altra), getDatetime della medaglia; ogni skill salvata tiene il livello
+// mostrato, l'EXP diventa la soglia vera di quel livello (la curva inventata dava altri numeri). Le Scrooge
+// nuove restano calcolate (medalSkillOf). Medaglie senza skill: nessuna voce.
+function migrateSkills() {
+  if (player.skillVersion) return;
+  const t = medalSkillTables();
+  const expRows = new Map(masterRows('skillExp').map((r) => [r.expId, r.value]));
+  player.medalSkills = player.medalSkills || {};
+  for (const m of userMedalList()) {
+    if (player.medalSkills[m.userMedalId] !== undefined) continue;
+    const s = medalSkill.scroogeSkillV1(t.medals.get(m.medalId), m.userMedalId, t.skills);
+    if (s) player.medalSkills[m.userMedalId] = { ...s, getDatetime: m.getDatetime };
+  }
+  for (const s of Object.values(player.medalSkills)) {
+    const row = s && t.byId.get(s.skillId);
+    const expRow = row && expRows.get(row.expType);
+    if (!expRow) continue;
+    s.exp = medalSkill.expToReach(expRow, Math.min(s.level || 1, row.maxLv || 1));
+  }
+  player.skillVersion = 1;
+  savePlayer();
+}
+
 // elemento di userSkills ([fn])
 function userSkillElement(m, s, now) {
   return { userSkillId: s.userSkillId, skillId: s.skillId, level: s.level, exp: s.exp || 0,
@@ -3703,6 +3728,10 @@ function grantMissingKeyblades() {
   }
 }
 
+// skill (I-146): qui e non accanto a migrateClock() perche' usa le tabelle (medalSkillTables, userMedalList)
+// definite piu' avanti nel file
+if (player.created) migrateSkills(); else player.skillVersion = 1; // nuovo giocatore: gia' sulla tabella completa
+
 if (player.created) {
   const before = (player.keyblades || []).length;
   grantMissingKeyblades();
@@ -3718,6 +3747,8 @@ module.exports._test = {
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear, grantDeckSkillExp,
+  // server/test-skill-migration.js
+  migrateSkills,
   // server/test-clock-migration.js
   migrateClock, clockMonthIndex: clock.monthIndex, userSkillElement, userSphereData, userKeybladeData,
   // server/test-clock-server.js
