@@ -368,8 +368,8 @@ testi del client 101300020-032 e 100620003.
   sulla tabella completa, calcolata (exp 0 come prima). Nuovo giocatore: `skillVersion` 1 subito. Prova:
   `server/test-skill-migration.js`.
 - Tabella skill (I-146, 18-10, `server/make-skill-table.js`, chiamato da `make-game-tables.js` dopo
-  `make-pet-tables`; prova `server/test-skill-table.js`; report `D:Progetto_Restauro_KH_UX	mpskilleport.md`).
-  Sorgenti lette a build-time, fuori dal repo: 25 righe vere di thethiny (1100-1126, `dataskill.json`), le 4
+  `make-pet-tables`; prova `server/test-skill-table.js`; report `D:\Progetto_Restauro_KH_UX\tmp\skill\report.md`).
+  Sorgenti lette a build-time, fuori dal repo: 25 righe vere di thethiny (1100-1126, `D:\Progetto_Restauro_KH_UX\external\thethiny_2026-10-13\KHUx-Server\data\skill.json`), le 4
   righe vere di `skillExp` (expId 1-4) e la lista «List of Skills» della pagina «Medal» del wiki (163 skill,
   nessun doppione). Regole:
   - righe vere: numeri di thethiny invariati (anche `thumbId` 1-5; il 5.0.1 usa 6-9 e Lux Plus `luxUp` 15000

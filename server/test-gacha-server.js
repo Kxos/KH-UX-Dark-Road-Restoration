@@ -387,6 +387,9 @@ try {
   const para = t.masterRows('skill').find((s) => s.name === 'Paralysis');
   check(idS && p.medalSkills[idS] && p.medalSkills[idS].skillId === para.skillId && p.medalSkills[idS].level === para.maxLv,
     `maxSkill: Paralysis al livello ${para && para.maxLv} (${JSON.stringify(idS && p.medalSkills[idS])})`);
+  const paraCurve = t.masterRows('skillExp').find((e) => e.expId === para.expType).value;
+  check(idS && p.medalSkills[idS].exp === require('./medal-skill').expToReach(paraCurve, para.maxLv) && p.medalSkills[idS].exp > 0,
+    `maxSkill: EXP alla soglia del livello massimo (${idS && p.medalSkills[idS].exp})`);
   check(idS && r.userSkills.some((s) => s.userMedalId === idS && s.level === para.maxLv) && um(r, idS).userSkills.length === 1, 'maxSkill: in userSkills e nella medaglia');
   r = draw6(bNoSkill);
   check(r.userMedalIds && r.userMedalIds.length === 1 && !p.medalSkills[r.userMedalIds[0]], 'maxSkill assente: nessuna skill, estrazione riuscita');

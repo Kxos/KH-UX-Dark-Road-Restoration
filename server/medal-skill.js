@@ -37,18 +37,21 @@ function isSkillMedal(row) {
   return !!row && row.type === 2 && /grants a skill/i.test(row.advantage || '');
 }
 
-function scroogeSkillV1(row, userMedalId, skills) {
-  return scroogeSkill(row, userMedalId, skills.filter((s) => SKILL_IDS_V1.has(s.skillId)));
+function scroogeSkillV1(row, userMedalId, skills, expRows) {
+  return scroogeSkill(row, userMedalId, skills.filter((s) => SKILL_IDS_V1.has(s.skillId)), expRows);
 }
 
-function scroogeSkill(row, userMedalId, skills) {
+// expRows (Map expId -> riga skillExp): l'EXP parte dalla soglia del livello massimo, come le skill migrate
+// (senza expRows resta 0)
+function scroogeSkill(row, userMedalId, skills, expRows) {
   if (!isSkillMedal(row) || !skills.length) return null;
   const rank = SCROOGE_RANK[row.rare] || 1;
   let pool = skills.filter((s) => s.rank === rank);
   if (!pool.length) pool = skills;
   pool = [...pool].sort((a, b) => a.skillId - b.skillId);
   const s = pool[userMedalId % pool.length];
-  return { userSkillId: SCROOGE_SKILL_BASE + userMedalId, skillId: s.skillId, level: s.maxLv, exp: 0 };
+  return { userSkillId: SCROOGE_SKILL_BASE + userMedalId, skillId: s.skillId, level: s.maxLv,
+    exp: expRows?.get(s.expType) ? expToReach(expRows.get(s.expType), s.maxLv || 1) : 0 };
 }
 
 // probabilita' (0..1) di una skill, come [fn]

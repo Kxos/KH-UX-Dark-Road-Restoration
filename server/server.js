@@ -1262,11 +1262,13 @@ function respondGachaDraw(res, body) {
         setMedalState(newId, { burstUpperNumber: dots, ...(guilt ? { guiltFactor: guilt } : {}) });
       }
       // maxSkill: una delle abilita' presenti in skill.json (a caso), al livello massimo; nessuna presente: niente
+      const skillExpRows = medalSkillTables().expRows;
       const have = (x?.skills || []).map((n) => skillByName.get(medalBoost.norm(n))).filter(Boolean);
       if (have.length && !packed.has(medalId)) {
         const s = have[Math.min(have.length - 1, Math.floor(Math.random() * have.length))];
         player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
-        (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: s.skillId, level: s.maxLv || 1, exp: 0, getDatetime: realNow() };
+        (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: s.skillId, level: s.maxLv || 1,
+          exp: skillExpRows.get(s.expType) ? medalSkill.expToReach(skillExpRows.get(s.expType), s.maxLv || 1) : 0, getDatetime: realNow() };
       }
     });
     // pity con regalo (medaglia di supporto, catalogo v3 guarantee.pityGift): nel Present Box, nessuno slot sostituito
@@ -2488,6 +2490,7 @@ function medalSkillTables() {
   if (!medalSkillMemo) {
     const skills = masterRows('skill');
     medalSkillMemo = { skills, byId: new Map(skills.map((r) => [r.skillId, r])),
+      expRows: new Map(masterRows('skillExp').map((r) => [r.expId, r.value])),
       medals: new Map(masterRows('medal').map((r) => [r.medalId, r])) };
     setImmediate(() => { medalSkillMemo = null; });
   }
@@ -2501,7 +2504,7 @@ function medalSkillOf(m) {
   const t = medalSkillTables();
   const saved = player.medalSkills?.[m.userMedalId];
   if (saved !== undefined) return saved && t.byId.has(saved.skillId) ? saved : null;
-  return medalSkill.scroogeSkill(t.medals.get(m.medalId), m.userMedalId, t.skills);
+  return medalSkill.scroogeSkill(t.medals.get(m.medalId), m.userMedalId, t.skills, t.expRows);
 }
 
 // Migrazione alla tabella skill completa e alla curva skillExp vera (I-146, skillVersion 1): le Scrooge
@@ -2512,11 +2515,22 @@ function medalSkillOf(m) {
 function migrateSkills() {
   if (player.skillVersion) return;
   const t = medalSkillTables();
-  const expRows = new Map(masterRows('skillExp').map((r) => [r.expId, r.value]));
+  const expRows = t.expRows;
+  // guardia: un master vecchio o ridotto (curva inventata, poche skill, righe medaglia mancanti) darebbe una
+  // migrazione sbagliata e skillVersion 1 la renderebbe definitiva: si rimanda, il salvataggio non cambia
+  const miss = [];
+  if (expRows.get(4)?.[0] !== 30) miss.push('skillExp senza la riga expId 4 vera');
+  if (t.skills.length < 25) miss.push(`skill ${t.skills.length} < 25`);
+  const noRow = userMedalList().filter((m) => !t.medals.has(m.medalId) && player.medalSkills?.[m.userMedalId] === undefined).length;
+  if (noRow) miss.push(`${noRow} medaglie possedute senza riga nel master`);
+  if (miss.length) {
+    console.log(`[skill] migrazione rimandata: master vecchio o ridotto (${miss.join('; ')}); rigenera con node server/make-skill-table.js`);
+    return;
+  }
   player.medalSkills = player.medalSkills || {};
   for (const m of userMedalList()) {
     if (player.medalSkills[m.userMedalId] !== undefined) continue;
-    const s = medalSkill.scroogeSkillV1(t.medals.get(m.medalId), m.userMedalId, t.skills);
+    const s = medalSkill.scroogeSkillV1(t.medals.get(m.medalId), m.userMedalId, t.skills, expRows);
     if (s) player.medalSkills[m.userMedalId] = { ...s, getDatetime: m.getDatetime };
   }
   for (const s of Object.values(player.medalSkills)) {

@@ -4,7 +4,8 @@
 //
 //   node server/test-skill-exp.js [skillExp.json]
 //
-// Senza il file stampa SKIP ed esce con 0.
+// Senza il file le prove sulla riga costante [30, 12132, 13500] e su grantDeckSkillExp girano lo stesso: si
+// salta solo il controllo con le righe vere e col wiki (stampa SKIP).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -13,13 +14,13 @@ const { expToReach, levelForExp, addSkillExp } = require('./medal-skill');
 
 const DATA = 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data';
 const FILE = process.argv[2] || path.join(DATA, 'skillExp.json');
-if (!fs.existsSync(FILE)) {
-  console.log(`SKIP: ${FILE} assente`);
-  process.exit(0);
-}
-const rows = new Map(JSON.parse(fs.readFileSync(FILE, 'utf8')).map((r) => [r.expId, r.value]));
-const row = rows.get(1);
-assert.deepStrictEqual(row, [30, 12132, 13500], 'riga expType 1 inattesa');
+// riga expType 1 vera (dati Square Enix, anche in server/master_data/skillExp.json): le prove di base non
+// dipendono dal file esterno
+const row = [30, 12132, 13500];
+const external = fs.existsSync(FILE);
+const rows = external ? new Map(JSON.parse(fs.readFileSync(FILE, 'utf8')).map((r) => [r.expId, r.value])) : new Map();
+if (external) assert.deepStrictEqual(rows.get(1), row, 'riga expType 1 inattesa');
+else console.log(`SKIP controllo con le righe vere e col wiki: ${FILE} assente`);
 
 // 1. livello 1 = 0, curva strettamente crescente
 assert.strictEqual(expToReach(row, 1), 0);
@@ -47,7 +48,7 @@ assert.deepStrictEqual(addSkillExp({ skillId: 1, level: 2, exp: 200 }, { maxLv: 
 
 // 5. controllo col wiki «Skill EXP» (solo stampato): «generally enough to level a skill with a max-level of 10
 //    from LV 1 to LV 8 (two runs), 15 -> LV 7 (four runs), 20 -> LV 6 (four runs)»
-try {
+if (external) try {
   const enemies = new Map(JSON.parse(fs.readFileSync(path.join(DATA, 'enemy.json'), 'utf8')).map((e) => [e.enemyId, e]));
   const top = (id) => { const e = enemies.get(id); return e ? e.exp[e.exp.length - 1] : 0; };
   const maps = JSON.parse(fs.readFileSync(path.join(DATA, 'stage_maps.json'), 'utf8'));

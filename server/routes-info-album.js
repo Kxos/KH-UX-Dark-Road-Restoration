@@ -75,7 +75,7 @@ function updateNotice(realMs) {
 }
 
 // Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
-// elenchi di modifiche. Le prime due (dati aggiornati e differenze) restano fisse in cima.
+// elenchi di modifiche. In lista prima la notizia dinamica dei dati aggiornati (updateNotice), poi queste, dalla piu' recente.
 const NOTICES = [
   { date: '10/18', tag: 'IMPORTANT', title: 'Medal skills',
     body: ['Medal skills are reconstructed: 25 of the 163 skills use the original values, the other 138 are rebuilt from the community skill list (power and max trigger rate from the wiki, other values estimated). Some long descriptions are shortened.',

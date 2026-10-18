@@ -5,6 +5,7 @@
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const assert = require('assert');
 const { expToReach, scroogeSkill, scroogeSkillV1, SCROOGE_SKILL_BASE } = require('./medal-skill');
+const { spawnSync } = require('child_process');
 
 const MASTER = path.join(__dirname, 'master_data');
 if (!fs.existsSync(path.join(MASTER, 'skillExp.json'))) {
@@ -66,6 +67,34 @@ fs.writeFileSync(SAVE, JSON.stringify({
     206: { userSkillId: 8, skillId: 1100, level: 10, exp: 1000, getDatetime: T6 + 5500 },
   },
 }));
+// 2b. guardia: con un master vecchio (skillExp inventata di 3 righe) la migrazione e' rimandata, salvataggio
+//     intatto e skillVersion non impostata (processo a parte: server.js migra al caricamento)
+{
+  const OLDM = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-oldmaster-'));
+  for (const f of fs.readdirSync(MASTER)) fs.copyFileSync(path.join(MASTER, f), path.join(OLDM, f));
+  fs.writeFileSync(path.join(OLDM, 'skillExp.json'), JSON.stringify([{ expId: 1, value: [10, 1000, 15000] },
+    { expId: 2, value: [15, 3000, 15000] }, { expId: 3, value: [20, 6000, 15000] }]));
+  const SAVE2 = path.join(os.tmpdir(), `khux-test-skillmig-old-${process.pid}.json`);
+  const saveText = fs.readFileSync(SAVE, 'utf8');
+  fs.writeFileSync(SAVE2, saveText);
+  try {
+    const r = spawnSync(process.execPath, ['-e',
+      "const t=require('./server')._test;console.error('RES '+JSON.stringify({v:t.player.skillVersion,s:Object.keys(t.player.medalSkills||{})}))"],
+    { cwd: __dirname, env: { ...process.env, KHUX_SAVE: SAVE2, KHUX_MASTER_DIR: OLDM }, encoding: 'utf8' });
+    const all = String(r.stdout) + String(r.stderr);
+    assert.ok(all.includes('[skill] migrazione rimandata'), 'avviso mancante: ' + all.slice(0, 300));
+    const res = JSON.parse(all.slice(all.indexOf('RES ') + 4).split(/\r?\n/)[0]);
+    assert.strictEqual(res.v, undefined, 'skillVersion con master vecchio');
+    assert.deepStrictEqual(res.s.sort(), ['203', '205', '206'], 'voci aggiunte con master vecchio');
+    // il server riscrive il salvataggio con i suoi default: contano skillVersion e medalSkills su disco
+    const disk = JSON.parse(fs.readFileSync(SAVE2, 'utf8'));
+    assert.ok(!('skillVersion' in disk), 'skillVersion su disco');
+    assert.deepStrictEqual(disk.medalSkills, JSON.parse(saveText).medalSkills, 'medalSkills cambiate con master vecchio');
+  } finally {
+    for (const f of [SAVE2, SAVE2 + '.tmp']) try { fs.unlinkSync(f); } catch {}
+    fs.rmSync(OLDM, { recursive: true, force: true });
+  }
+}
 process.env.KHUX_SAVE = SAVE; process.env.KHUX_MASTER_DIR = MASTER;
 const log = console.log; const quiet = (fn) => { console.log = () => {}; try { return fn(); } finally { console.log = log; } };
 try {
@@ -105,6 +134,7 @@ try {
   const n = t.userSkillsData(t.serverTime(), t.userMedalList()).find((e) => e.userMedalId === 300);
   assert.strictEqual(n.skillId, scroogeSkill(medals.get(S6), 300, skills).skillId, 'Scrooge nuova');
   assert.ok(!(300 in p.medalSkills));
+  assert.strictEqual(n.exp, expToReach(curve(n.skillId), skills.find((r) => r.skillId === n.skillId).maxLv), 'Scrooge nuova: EXP al massimo');
 } finally {
   for (const f of [SAVE, SAVE + '.tmp']) try { fs.unlinkSync(f); } catch {}
 }
