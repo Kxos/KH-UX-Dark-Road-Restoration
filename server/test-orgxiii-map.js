@@ -45,10 +45,13 @@ for (const [se, copy, robo, seven, plus6, plus7] of TABLE) {
       assert.strictEqual(r.guiltValue, 3, 'guiltValue');
       assert.strictEqual(r.validEvolve, 1, 'validEvolve');
       assert.strictEqual(r.evolveId, seven, 'evolveId');
+      assert.strictEqual(r.name, byId.get(seven)?.name, 'nome «X A»');
       assert.strictEqual(r.validEvolveNeed, 5, 'validEvolveNeed');
       assert.deepStrictEqual(r.evolveNeedId, [FAIRY_LV3, FAIRY_LV3, FAIRY_LV3, FAIRY_LV3, FAIRY_LV3], 'evolveNeedId');
     });
   }
+  // 5★ SE: stesso nome «X A»
+  check(`${se - 1}`, () => assert.strictEqual(byId.get(se - 1)?.name, byId.get(seven)?.name, 'nome «X A»'));
   // 7★ «X A» presente; il doppione 6★ «X A» (300000 + id Roboloid) no
   check(`${seven}`, () => {
     const r = byId.get(seven);

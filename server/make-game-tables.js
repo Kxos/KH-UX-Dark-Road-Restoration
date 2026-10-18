@@ -210,6 +210,13 @@ for (const m of medals) {
   Object.assign(m, { validEvolve: 1, evolveId: to });
   orgEvolve++;
 }
+// nome «X A» sulle 5★ e 6★ SE: il master di thethiny (2017) le chiama solo «Lexaeus», nel 4.3.1 sono
+// «Lexaeus A» dall'uscita delle «B»; il nome si prende dalla 7★ «X A» di arrivo dell'Evolve
+const orgName = new Map(Object.entries(EVOLVE_FIX).map(([id, to]) => [Number(id) % 100000, medals.find((x) => x.medalId === to)?.name]));
+for (const m of medals) {
+  const name = m.medalId < 200000 && (orgName.get(m.medalId % 100000) || orgName.get(m.medalId % 100000 + 1));
+  if (name && name.replace(/ A$/, '') === m.name) m.name = name;
+}
 
 // Level Up con medaglie speciali (I-079/I-080, server/medal-guilt.js, docs/notes/guilt.md): le due
 // medaglie di Roboloid senza attributo che il ciclo sopra scarta, Magic Broom (300948, materiale
