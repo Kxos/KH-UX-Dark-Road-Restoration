@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 42 costruite, da installare con `update-resources.ps1` al banco** (41 installata sul banco; la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782), **revisione master: BASE 127** (default dei 4 script di sessione dalle skill allo
+Stato del banco: **risorse 43 installate** (la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782, la 43 corregge quella delle 6★ «X A», che era della [+]), **revisione master: BASE 128** (default dei 4 script di sessione dalle skill allo
 stato 4.3.1 del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
@@ -96,8 +96,9 @@ otice_audit\g4_historical_tiers.md`), B0154 lista di 17 nomi, XIII Deal 10 nomi.
   **Org XIII corretta (18-10 notte, rev 127, I-160)**: `MEDAL_MAP_FIX`/`EVOLVE_FIX` nel generatore, 13 6★ [+] nuove con
   immagini (risorse 42), catalogo e migrazione del salvataggio (96a7515, ba2922d, 4f1c8a7, 247fbed; test d3105e4)
   ([medaglie.md#mapping-orgxiii](docs/notes/medaglie.md#mapping-orgxiii)). Aperti: I-161 (SN++ adjusted), I-162 (167 6★
-  senza evoluzione). **Prossimo passo: banco (Task 6: installare risorse 42, riavvio con migrazione, B0280/B0303, Evolve
-  6★ -> 7★ «X A»), poi G4 del 2c.**
+  senza evoluzione). Banco 18-10: migrazione sul salvataggio vero, 6★ Tier 3, Evolve con 5 Blue Fairy [3], Vexen [+] da
+  regalo visti; rev 128 nomi «X A» sulle 5★/6★ SE (e53b3d4); risorse 43 grafica «X A» sulle 23 6★ SE, che avevano quella
+  della [+] (989d5de). **Prossimo passo: controllo a vista delle immagini (filtri di colore), B0280, poi G4 del 2c.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
