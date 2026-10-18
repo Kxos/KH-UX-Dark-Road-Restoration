@@ -63,4 +63,39 @@ function overwriteChance(comps, skillRows, min, max) {
   return { skill: first, chance: Math.min(1, p) };
 }
 
-module.exports = { SCROOGE_SKILL_BASE, isSkillMedal, scroogeSkill, skillChance, overwriteChance };
+// Curva skillExp (I-146), come il client 4.3.1 ([fn], oggetto della skill nella sessione):
+// riga skillExp value = [a, b, c] (expType della skill, +0x10c), EXP TOTALE per il livello L
+//   trunc(b * powf((L - 1) / (a - 1), c / 10000))   (in float; costante 10000.0f a 0x01763f00)
+// cioe' 0 al LV 1 e b al LV a (es. [30,12132,13500]: 12132 al LV 30, esponente 1.35). Il client la usa per
+// la soglia del livello attuale (+0x18) e del successivo (+0x14, con L al posto di L - 1); il livello e'
+// limitato a maxLv (+0x108). Aritmetica in float32 come il client (Math.fround).
+function expToReach(expRow, level) {
+  const f = Math.fround;
+  const [a, b, c] = expRow;
+  if (level <= 1) return 0;
+  const x = f(f(level - 1) / f(a - 1));
+  const p = f(Math.pow(x, f(f(c) / f(10000))));
+  return Math.trunc(f(f(b) * p));
+}
+
+// livello (1..maxLv) per un'EXP totale
+function levelForExp(expRow, maxLv, exp) {
+  let lv = 1;
+  while (lv < maxLv && expToReach(expRow, lv + 1) <= exp) lv++;
+  return lv;
+}
+
+// aggiunge EXP a una skill {skillId, level, exp}: EXP limitata alla soglia di maxLv, livello mai piu' basso
+function addSkillExp(skill, skillRow, expRow, gained) {
+  const maxLv = skillRow.maxLv || 1;
+  const cap = expToReach(expRow, maxLv);
+  const add = Number.isFinite(gained) && gained > 0 ? Math.trunc(gained) : 0;
+  const exp = Math.min(cap, Math.max(0, skill.exp || 0) + add);
+  const level = Math.min(maxLv, Math.max(skill.level || 1, levelForExp(expRow, maxLv, exp)));
+  return { level, exp };
+}
+
+module.exports = {
+  SCROOGE_SKILL_BASE, isSkillMedal, scroogeSkill, skillChance, overwriteChance,
+  expToReach, levelForExp, addSkillExp,
+};

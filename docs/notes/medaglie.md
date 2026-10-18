@@ -329,6 +329,19 @@ testi del client 101300020-032 e 100620003.
   `getDatetime`; `userMedal.userSkills` = soli id (int). Il client cerca ogni id nella tabella della
   sessione (`[fn]`, +0x1c8, riempita dalle liste `userSkills`): id senza oggetto = riga skill
   0 = crash; con l'oggetto legge `skillExp` per `expType` (getter senza controllo del null).
+- Curva `skillExp` (I-146, 18-10, disassemblato `0x00eb7960-0x00eb7ab8`): `[fn]` limita il livello a
+  `maxLv` (riga skill +0x108), prende la riga `skillExp` di `expType` (+0x10c, `[fn]` = getter, tipo
+  master 0x35; parser `[fn]`: `expId`, `value` int[3] a +4) e calcola in float
+  `soglia(L) = trunc(value[1] * powf((L - 1) / (value[0] - 1), value[2] / 10000.0f))` (costante a `0x01763f00`)
+  per il livello attuale (oggetto +0x18) e `L` al posto di `L - 1` per il successivo (+0x14); l'EXP della skill
+  (+0x10) e' quindi **totale** (0 al LV 1). Righe vere: `[30,12132,13500]` = 12132 EXP al LV 30, esponente 1.35
+  (LV 2-4: 128, 328, 567; LV 8: 1780; LV 10: 2499). `maxLv` non entra nella curva. Server: `expToReach`,
+  `levelForExp`, `addSkillExp` in `server/medal-skill.js`, prova `server/test-skill-exp.js`.
+- Controllo col wiki «Skill EXP» (maxLv 10 da LV 1 a LV 8 in due giri, 15 -> LV 7 e 20 -> LV 6 in quattro): non
+  torna con l'`exp` dei nemici. La stage 82003 (601001 x3 + 611001, `exp` 200/1200) da' 1800 EXP a giro: un giro
+  porta gia' una maxLv 10 a LV 8 (expType 1), due giri al massimo; 11001-11006 al livello piu' alto (5/20) danno
+  15-35 EXP a giro, LV 1-2. Nessuna riga `skillExp` spiega insieme LV 8 (maxLv 10, 2 giri) e LV 7 (maxLv 15,
+  4 giri): la quantita' di EXP data dall'originale resta da capire (Task 3), non la curva.
 - Server (`server/medal-skill.js`, 12-10): `player.medalSkills[userMedalId]` dopo un Overwrite
   riuscito (userSkillId da `player.nextUserSkillId`); le Scrooge hanno una skill calcolata (id
   1000000000 + userMedalId, livello massimo; quale skill avesse ogni Scrooge non si sa: ipotesi 3★
