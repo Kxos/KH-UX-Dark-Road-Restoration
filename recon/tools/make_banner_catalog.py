@@ -644,6 +644,8 @@ def resolve_name(name, start, medals, rd):
             return bare + ' a'
         return alt[0] if len(alt) == 1 else None
     ok =[k for k in cands if medals[k]['date'] <= start]
+    if not ok and bare == clean_name(name) and medals.get(bare + ' a', {}).get('date', '9999') <= start:
+        return bare + ' a'  # «Axel» in 6.2 (2016) e B0083 = «Axel A», non «SN++ - Axel» (19/10/2020) non ancora uscita
     return ok[0] if ok else min(cands, key=lambda k: medals[k]['date'])
 
 
@@ -670,6 +672,9 @@ def extend_medals(medals, M, rd, debut):
         fam, epoch = family_of(n)
         bare = n[len(fam):]
         base = rd.get(n) if rd.get(n) in medals else None
+        own = medals.get(bare + ' a', {})
+        if not fam and not base and {r['medalId'] for r in rs} <= {i[0] for i in own.get('ids', [])}:
+            continue  # «Axel», «Roxas», «Vexen» del master = righe di «X A»: niente alias verso un'altra famiglia (SN++)
         if not base:
             base = next((f + bare for f, _ in reversed(FAMILIES) if f + bare in medals and f + bare != n), None)
         b = medals.get(base)
@@ -685,6 +690,39 @@ def extend_medals(medals, M, rd, debut):
                      'alias': base}
         added += 1
     return added
+
+
+def clamp_plus_dates(medals, first):
+    """7★ delle voci «X [+]» mai prima del lancio delle 7★ (firstRarity[7], 25/05/2018): la rare_date della wiki
+    (14/05/2018) precede la 6★ [+] di Vexen (13/04) e Lexaeus (13/05/2018). Le altre 7★ del 14/05/2018 restano
+    (il pool le filtra comunque con firstRarity). Restituisce il numero di date spostate."""
+    moved = 0
+    for k, v in medals.items():
+        if not k.endswith(' [+]'):
+            continue
+        for i in v['ids']:
+            f = first.get(str(i[1]))
+            if f and i[2] < f:
+                i[2] = f
+                moved += 1
+    return moved
+
+
+def apply_medal_dates(medals, overrides, starts):
+    """Data d'uscita EN di una medaglia da banner_overrides.tsv (campo medal_date, valore = nome della medaglia,
+    row_id = banner del notice che la introduce): voce e varianti prendono l'inizio di quel banner (SN++ - Axel B e
+    SN++ - Roxas: New Year Deal B0774 del 01/01/2021, notice 72833; la wiki dice 01/12/2020). Restituisce il numero
+    di voci cambiate."""
+    n = 0
+    for o in overrides:
+        v = medals.get(norm(o.get('value') or '')) if o.get('field') == 'medal_date' else None
+        d = starts.get(o['row_id'])
+        if v and d:
+            v['date'] = d
+            for i in v['ids']:
+                i[2] = d
+            n += 1
+    return n
 
 
 STD_CLS = {'', 'SR', 'L-SR', 'L'}  # = DRAW_CLS
@@ -949,6 +987,7 @@ def build_catalog(inputs):
     for b in sorted(out, key=lambda b: b['start'] or '9999'):
         for n in guarantee_names(b['guarantee']) + b['pool']['featured']:
             debut.setdefault(clean_name(n), b['start'] or FIRST_DAY)
+    apply_medal_dates(medals, inputs['overrides'], {b['rowId']: b['start'] for b in out})
     added = extend_medals(medals, M, rd, debut)
     mark_std(medals)
     # nomi dei sotto-set -> chiavi di `medals` alla data del sotto-set ({{KA|19}} 31.5a -> supernova - key art #19,
@@ -977,6 +1016,7 @@ def build_catalog(inputs):
         first = next((s for s in g['slots'] if s['kind'] == 'list'), None)
         g['list'] = list(first['names']) if first else _dedup(resolve_name(n, st, medals, rd) or n for n in g['list'])
     aligned = align_debut_dates(out, medals, first_rarity(rows))
+    clamp_plus_dates(medals, first_rarity(rows))
     # decisione 1 sui nomi risolti (redirect, alias, famiglie SN: i nomi del master non bastano, «Illustrated Sora A»
     # 6★ e' «Illustrated Sora»), dopo le date del debutto, che contano tutti i nomi scritti; poi lista e pitySlot
     rares = {k: {i[1] for i in v['ids']} for k, v in medals.items()}

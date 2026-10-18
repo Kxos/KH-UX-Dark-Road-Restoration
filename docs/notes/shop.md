@@ -177,6 +177,11 @@ Campi aggiunti durante il sotto-progetto 2 (oltre al piano):
 - `guarantee.slot` (default 0): indice in `slotRarities` del primo slot a lista (gli altri `count - 1` seguono); 1 su
   B0306-B0308 e B0355, dove lo slot 7★ e' di una garanzia di stella con Tier e la lista sta sullo slot 6★.
 - `skill` `{"table": "72415", "slots": "all"}` sui banner SN/SEVEN dal 17/12/2020 (data del notice 72415).
+- Organizzazione XIII (piano 2026-10-18-orgxiii-mapping, Task 3): i nomi del master «Axel», «Roxas», «Vexen» (righe di
+  «X A») non hanno voce propria ne' alias verso SN++ e si risolvono in «X A» finche' la variante di famiglia non e'
+  uscita (sotto-set 6.2, B0064, B0083); le 7★ delle voci «X [+]» mai prima di `firstRarity[7]`; campo `medal_date` di
+  `banner_overrides.tsv` (valore = nome, data = inizio del banner della riga): SN++ - Axel B e SN++ - Roxas al
+  01/01/2021 (B0774, notice 72833).
 - `catalogOnly`: VIP_TWIN, INCOMPLETE, DRAW_POINTS, PVP_TICKETS dal generatore; `NO_MEDALS` lo mette il server
   (`sanitizeBanners` in `server.js`) ai banner con uno slot senza medaglie (B0370/B0418 Blue Fairy Deal, I-142).
 
