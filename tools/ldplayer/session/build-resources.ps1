@@ -108,11 +108,13 @@ python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$D\tmp
 if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
 # pulsante «Overwrite Skill» del Level Up acceso (I-157): [fn] carica skill_mix_button_On/_Disable e,
 # acceso, le cornici Medal_Syn_Select_Panel02 in img/ui; WW serve solo _Off (acceso restava grigio). BTF del 2016
-foreach ($n in 'skill_mix_button_On', 'skill_mix_button_Disable', 'Medal_Syn_Select_Panel02') {
-    $src = "$D\tmp\thethiny_x\bundle2016\files\img\ui\$n.png"
+# Icona skill 3 (thumbId 3: Lux Plus e le combo «& Lux Plus»): WW serve img/skill/Skill_Icon1,2,4-9 ma non la 3;
+# senza, il riquadro teneva l'icona di prima (Lux Plus con la freccia rossa di Attack Boost, banco 18-10)
+foreach ($n in 'ui\skill_mix_button_On', 'ui\skill_mix_button_Disable', 'ui\Medal_Syn_Select_Panel02', 'skill\Skill_Icon3') {
+    $src = "$D\tmp\thethiny_x\bundle2016\files\img\$n.png"
     if (-not (Test-Path $src)) { throw "manca $src" }
-    New-Item -ItemType Directory -Force "$sg\files\img\ui" | Out-Null
-    Copy-Item $src "$sg\files\img\ui\$n.png" -Force
+    New-Item -ItemType Directory -Force (Split-Path "$sg\files\img\$n.png") | Out-Null
+    Copy-Item $src "$sg\files\img\$n.png" -Force
 }
 # piastra «Banner Catalog» dello Shop: testi del pulsante Gold Ticket (106140420-424) e icona
 # Star7_Ticket_39 (aveva il segno «仮»), dopo i testi IPA; banner 9001 in server\game_data\gacha_img

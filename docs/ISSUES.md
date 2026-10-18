@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-157**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-158**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -159,6 +159,7 @@ Ultima revisione: 17 ottobre 2026.
 | I-155 | APERTO | **Segnalino «Medal STR/DEF +N» (BaseBuff) sotto gli HP assente** (18-10, segnalato dall'utente: video IxiZa1FyOpQ a 2:10, SN+ - KH III Naminé «Medal STR +2000», la targhetta somma 2000/4000/9000...). Mancano tre cose: i campi `addBase*` della tabella `burst` sono 0 in tutte le righe (394 descrizioni dicono «Medal STR/DEF ±N»: l'aumento non entra neanche nel danno); le risorse `ActionMap_BaseBuff_Avt/_Enm/_eff.json` e le texture `BaseBuff_*` (nel JP 4.3.1); i nodi `BaseBuff_Avt_Null1/2` dell'HUD, solo in `ActionMap_PlayerStatusField_new` JP rev. 00360289 (il WW servito non li ha). Client: `[fn]` (carica il layout se esiste), `[fn]` (aggancio ai nodi), dati da `[fn]`/`[fn]`, acceso da `[fn]` (tipo, durata, valore != 0). Gli striscioni del pet nello stesso video sono I-137 | [battaglia](notes/battaglia.md) | 18-10 |
 | I-156 | CHIUSO | **Crash al tocco sul risultato del Level Up con skill** (18-10, segnalato dall'utente: Overwrite di Attack Boost VII su SP Roxas, poi riprodotto due volte): nel ramo 55 `userSkills` sono le skill da cancellare e il server mandava la lista intera, il client svuotava la tabella skill e l'ordinamento «Skill» della Medal List leggeva la riga skill 0. Ora solo le skill dei materiali consumati; la base tiene il suo `userSkillId`. Prova al banco: nessun crash, skill intatte | [medaglie](notes/medaglie.md#skill) | 18-10 |
 | I-157 | CHIUSO | **Pulsante «Overwrite Skill» sempre grigio** (18-10, segnalato dall'utente): mancavano `img/ui/skill_mix_button_On.png`/`_Disable.png` e `img/ui/Medal_Syn_Select_Panel02.png`; `build-resources.ps1` li copia dal pacchetto 2016 (risorse 41 con `-Quick`). Banco: acceso azzurro, cornici degli slot cambiate; Overwrite completo (Auron, 20%) senza crash | [medaglie](notes/medaglie.md#skill) | 18-10 |
+| I-158 | CHIUSO | **Icona di Lux Plus sbagliata** (18-10, segnalato dall'utente: anteprima dell'Overwrite e medaglia dopo diverse): `img/skill/Skill_Icon3.png` (thumbId 3, Lux Plus e combo «& Lux Plus») non era servita, il riquadro teneva l'icona di prima. `build-resources.ps1` la copia dal pacchetto 2016; banco: Leon e Dumbo con l'icona giusta | [medaglie](notes/medaglie.md#skill) | 18-10 |
 
 ### Union Cross
 
