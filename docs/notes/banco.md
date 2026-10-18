@@ -102,6 +102,11 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   visto un `/stage/clear` arrivato (vedi ISSUES I-008).
 - Regola dell'utente: **i dialoghi con SKIP si saltano sempre**; i risultati si scorrono con OK
   (960,965).
+- **Nemici piu' forti** (18-10, per provare Second Chance e le skill che servono a terra):
+  `relogin.ps1 -EnemyAtk 10` (o `run-server.ps1 -EnemyAtk 10`) moltiplica l'attacco della tabella `enemy`
+  nel master servito (`KHUX_BENCH_ENEMY_ATK`; il client prende le statistiche dei nemici dal master). La
+  revisione servita sale di 90000 + N, quindi il client riscarica il master; un `relogin.ps1` senza
+  l'opzione lo riporta al normale. Strumento di prova, non una funzione del gioco: nessuna notice.
 - Prove delle uscite multi-parte: spostare temporaneamente la partenza STG vicino all'uscita,
   poi ripristinare e rifare `-Quick`.
 

@@ -253,6 +253,12 @@ function respondStatus(res) {
 const clock = require('./clock');
 const STARTED_AT = Date.now();
 const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE della revisione del master
+// KHUX_BENCH_ENEMY_ATK=N (solo banco, run-server.ps1 -EnemyAtk N): attacco dei nemici della tabella
+// enemy x N nel master servito, per provare skill come Second Chance (serve finire a terra). Il client
+// prende le statistiche dei nemici dal master, non dalle risposte di battaglia. La revisione servita
+// sale di 90000 + N: il client riscarica il master a ogni revisione diversa, anche piu' bassa
+// (docs/notes/server.md), quindi spenta l'opzione torna da solo al master normale.
+const BENCH_ENEMY_ATK = Math.max(1, Math.trunc(Number(process.env.KHUX_BENCH_ENEMY_ATK) || 1));
 // KHUX_REAL_NOW (prove al banco): l'ora reale parte da quell'istante all'avvio del server
 // (una data che non si legge ferma subito l'avvio: meglio che un orologio NaN a banco acceso)
 if (process.env.KHUX_REAL_NOW && !Number.isFinite(Date.parse(process.env.KHUX_REAL_NOW))) {
@@ -421,7 +427,7 @@ function masterKey(name) {
 }
 
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
-const masterRevisionNow = () => clock.masterRevision(REVISION, realNow());
+const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0);
 // Revisione della sessione: fissata all'inizio di ogni login (POST /system/login, la prima risposta
 // con ret() della sequenza) e usata da ret(), /system/resourcesize e dal master servito per tutta la
 // sessione. Il master cambia cosi' solo al login successivo, e il contenuto servito (scadenze dei
@@ -444,6 +450,9 @@ const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeri
 // occorrenza), in ora finta con lo scostamento del mese della revisione
 function servedMasterRows(name, realMs) {
   const rows = masterRows(name);
+  if (name === 'enemy' && BENCH_ENEMY_ATK > 1) {
+    return rows.map((r) => ({ ...r, attack: (r.attack || []).map((v) => v * BENCH_ENEMY_ATK) }));
+  }
   // drawMedalType: bannerUrl/detailUrl sono percorsi (server/make-banners.js); l'indirizzo http si
   // aggiunge qui (max 128 byte, strncpy del client)
   if (name === 'drawMedalType') {
