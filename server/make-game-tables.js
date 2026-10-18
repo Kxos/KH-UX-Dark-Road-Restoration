@@ -755,6 +755,8 @@ if (enemies) fs.writeFileSync(path.join(OUT, 'enemy.json'), JSON.stringify(enemi
 require('./make-guilt-burst').patch(OUT);
 // Pet: petRank, petSkill, medal.addPetPt (make-pet-tables.js)
 require('./make-pet-tables').patch(OUT);
+// Skill: tabella skill (25 vere di thethiny + le altre del wiki) e skillExp vera (make-skill-table.js, I-146)
+require('./make-skill-table').patch(OUT);
 // Boosted: righe a parte del master medal (groupId = normale) dalle voci enhance.boosted del catalogo
 // dei banner (make-boosted-medals.js); dopo supernova, blue-fairy, guilt-burst e pet, che non le vedono
 const gachaCatalog = path.join(__dirname, 'game_data', 'gacha_catalog.json');

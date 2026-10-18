@@ -306,9 +306,8 @@ Fonti (`reference\medal_overwrite\NOTE.md`): khuxwiki «Medal» (sezione Skills)
 (`reference\guilt\khuxwiki_raw.md`), kingdomhearts.fandom «Medals», khwiki «Skill», GameFAQs
 (thread 74095652), Reddit r/KHUx (`reference\optimize\reddit_subslot_pet_levelup_optimize.md`),
 testi del client 101300020-032 e 100620003.
-- Skill = abilita' passiva della medaglia (tabella `skill`, 12 righe: Attack Boost I/II, Attack Boost
-  All I/II, Poison, Paralysis, Sleep, Attack Prize Plus, Lux Plus, No Cost, Defense Boost I/II;
-  maxLv 10/15/20). Una per medaglia (khwiki; il client ne legge 2). Sale di livello usando la
+- Skill = abilita' passiva della medaglia (tabella `skill`, 163 righe dal 18-10: vedi «Tabella skill»
+  sotto; maxLv 10/15/20). Una per medaglia (khwiki; il client ne legge 2). Sale di livello usando la
   medaglia in battaglia (EXP della skill, tabella `skillExp`). Rara sulle medaglie dei deal; le
   **Scrooge** (EXP medal 3/5/6★, Colosseo ed eventi) la portano sempre al livello massimo.
 - Overwrite (wiki): la skill del materiale **piu' a sinistra** passa alla base; 20% al livello 1 della
@@ -346,10 +345,37 @@ testi del client 101300020-032 e 100620003.
   riuscito (userSkillId da `player.nextUserSkillId`); le Scrooge hanno una skill calcolata (id
   1000000000 + userMedalId, livello massimo; quale skill avesse ogni Scrooge non si sa: ipotesi 3★
   rango 1, 5★ rango 2, 6★ No Cost, scelta con userMedalId). `userSkills` intera in login, inventario,
-  Level Up, vendita, trait; il supporto manda la skill della sua medaglia. `skillExp` (vuota nel
-  master) ricostruita in `server/tables/skillExp.json` (`[N, A, P]` = maxLv, 1000/3000/6000, 15000:
-  valori inventati, l'EXP delle skill in battaglia non e' servita). Prova: `server/test-medal-enhance.js`
+  Level Up, vendita, trait; il supporto manda la skill della sua medaglia. `skillExp` = le 4 righe vere
+  (vedi «Tabella skill»; la vecchia `server/tables/skillExp.json` inventata e' stata tolta). Prova: `server/test-medal-enhance.js`
   (punto 9).
+- Tabella skill (I-146, 18-10, `server/make-skill-table.js`, chiamato da `make-game-tables.js` dopo
+  `make-pet-tables`; prova `server/test-skill-table.js`; report `D:Progetto_Restauro_KH_UX	mpskilleport.md`).
+  Sorgenti lette a build-time, fuori dal repo: 25 righe vere di thethiny (1100-1126, `dataskill.json`), le 4
+  righe vere di `skillExp` (expId 1-4) e la lista «List of Skills» della pagina «Medal» del wiki (163 skill,
+  nessun doppione). Regole:
+  - righe vere: numeri di thethiny invariati (anche `thumbId` 1-5; il 5.0.1 usa 6-9 e Lux Plus `luxUp` 15000
+    contro 30000); i 4 campi del layout 4.3.1 che thethiny non ha (`value1`, `burstLock`, `pvpConditionTurn`,
+    `pvpConditionCount`) dalla riga 5.0.1 del master se c'e' (1100-1113: es. Poison `value1` 1000,
+    `pvpConditionCount` 3), altrimenti `value1` 10000, `burstLock` 0, `pvp*` = `condition*`;
+  - abbinamento al wiki per nome normalizzato (maiuscole, «Plus»/«+», «ATK»/«Attack», numeri romani, ordine
+    delle parti «&»: «ATK Prize+ & ATK Boost II» = «ATK Boost II & ATK Prize+»);
+  - ricostruite (138, id 1127-1264 in ordine di wiki, `sortId` = `skillId`, `categoryEvolve` unico dal 31):
+    copia della sorella = riga vera della stessa famiglia (dalla descrizione: Attack Boost, Attack Boost All,
+    Defense Boost, Second Chance, stato, stato «+», SP Attack Gauge, ATK & Lux, ATK & Prize, No Cost) piu' vicina
+    per maxLv, «Max», stato, probabilita' e potenza; `rank`/`expType` della sorella se ha lo stesso maxLv,
+    altrimenti della riga vera piu' comune con quel maxLv (20 -> 3/3); potenza dalla descrizione (`attackUp`
+    N*10000, `damageCut` 10000*(1-a/b), `luxUp` 30000 o 50000 per «vastly» (stima), `prizeBurstUp` 220000,
+    `add*` 10000 e `conditionTurn` 1 con «1 turn», `burstCancel` 1 con «no special attack gauges»);
+    `invokeProbPerLv` della sorella (le «Max» con sorella non «Max»: 10 come Attack Boost II Max),
+    `invokeProb` = trigger% * 100 - perLv * (maxLv - 1) (verificata sulle vere, entro l'arrotondamento del wiki);
+  - famiglie senza riga vera, sorella col tipo di attivazione piu' vicino: ATK & stato (13, Poison+/Paralysis+/
+    Sleep+), Triple Threat (2, Poison+, tutti e tre gli stati), ATK & SP Gauge (42, Attack Boost III Max con
+    l'icona 5 delle SP Attack Gauge);
+  - testi <= 71 byte (`string(72)`): frasi intere del wiki, abbreviazioni fisse se non bastano (anche 6
+    righe vere: 1114, 1117, 1120-1123).
+  Aperti: come il client distingua «GA 1/2» (le SP Attack Gauge vere non hanno un campo diverso, forse
+  `value1` che thethiny non ha); `value1` 1000 delle righe di stato 5.0.1 forse e' il limite di livello
+  dei nemici («Effective on enemies up to LV 1999»): da provare al banco.
 - Optimize del Level Up (`Button_MaxEnhanced`, `openMaxEnhancePopup` -> `runMaxEnhance`, `[fn]`):
   tutto nel client, che sceglie i materiali e manda la stessa `/user/medal/enhance` (con `numbers`
   per le pile); nessun dato in piu' dal server. Dalla 3.3.0 usa Huey & Dewey & Louie e non le medaglie
