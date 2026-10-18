@@ -26,6 +26,15 @@ assert.equal(r2.state.guiltFactor, r.state.guiltFactor + 200); console.log('mirr
 // reroll piu' basso non scende
 const r3 = g.applyEnhance(base, r2.state, [copy], { burstRow, guiltProb: gp, isGuilt: 1, rng: () => 0 });
 assert.equal(r3.state.guiltFactor, r2.state.guiltFactor);
+// eccedenza (banco 18-10, anteprima del client): 2 pallini + due copie da 1 pallino = 2 + 2 + 2 > 5 ->
+// pallini 5 e guilt sbloccata con un tiro; riempire esattamente (2 + 3 = 5) non la sblocca
+const one = { row: base, burstUpperNumber: 1 };
+const r7 = g.applyEnhance(base, { burstUpperNumber: 2 }, [one, one], { burstRow, guiltProb: gp, isGuilt: 1, rng: () => 0.5 });
+assert.equal(r7.state.burstUpperNumber, 5); assert.ok(r7.events.guiltUnlocked, 'eccedenza: guilt sbloccata'); assert.equal(r7.events.rolls.length, 1);
+const r8 = g.applyEnhance(base, { burstUpperNumber: 2 }, [one, copy], { burstRow, guiltProb: gp, isGuilt: 1, rng: () => 0.5 });
+assert.equal(r8.state.burstUpperNumber, 5); assert.equal(r8.state.guiltFactor, 0, 'pieno esatto: niente guilt');
+const r9 = g.applyEnhance(base, { burstUpperNumber: 2 }, [one, one], { burstRow, guiltProb: gp, isGuilt: 0 });
+assert.equal(r9.state.guiltFactor, 0, 'isGuilt 0: eccedenza senza guilt');
 // isGuilt 0: niente sblocco
 const r4 = g.applyEnhance(base, { burstUpperNumber: 5 }, [copy], { burstRow, guiltProb: gp, isGuilt: 0 });
 assert.equal(r4.state.guiltFactor, 0);

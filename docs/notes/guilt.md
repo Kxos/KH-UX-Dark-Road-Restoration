@@ -67,6 +67,14 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
   (`supportUsers`, isGuilt 0) non cambia.
 - `module.exports._test`: funzioni per `test-medal-enhance.js`.
 
+- Eccedenza dei pallini (banco 18-10, Vexen [+] 2 pallini + due copie da 1: il client ha mostrato lo sblocco
+  con «00%», il server aveva perso l'eccedenza): l'anteprima del client ([fn], [fn]) somma
+  1 + pallini di ogni copia; se pallini della base + somma > massimo (stretto) alza il flag di sblocco
+  (scena +0x524, ~0x00c826a8) e la copia che sfora e' l'ultima selezionabile. Con guilt > 0 una sola copia
+  (rilancio, +0x523, popup «Bonus range»); guilt al massimo: la copia tira un trait (+0x525). La guilt
+  della copia non si legge mai; un solo tiro per fusione. Il risultato ([fn]) mostra solo il
+  guiltFactor della risposta. `applyEnhance` segue questa regola; caso del banco in `test-medal-guilt.js`.
+
 ## 3. guilt-burst.js - fatto
 
 Prima guilt = una copia con `guiltFactor > 0`; guilt massima = `guiltFactor >= guiltRange(guiltProb,

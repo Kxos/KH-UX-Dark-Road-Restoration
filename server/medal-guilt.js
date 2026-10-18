@@ -93,19 +93,23 @@ function applyEnhance(baseRow, base, comps, opts) {
   const range = guiltRange(opts.guiltProb || [], tier);
   const guiltOpen = !!opts.isGuilt && tier > 0 && range.max > 0;
   const before = s.guiltFactor;
+  // pallini come l'anteprima del client ([fn], [fn]): ogni copia vale 1 + i suoi pallini;
+  // se il totale supera il massimo (strettamente) la fusione sblocca o rilancia la guilt con un solo tiro,
+  // anche quando e' la stessa copia a riempire i pallini (banco 18-10: 2 + 2 + 2 su 5 -> guilt). La guilt
+  // della copia non conta. Prima l'eccedenza si perdeva e tirava solo una copia aggiunta a pallini pieni.
+  if (maxDots > 0) {
+    const sum = comps.filter((c) => isDotMaterial(baseRow, c.row)).reduce((t, c) => t + 1 + (c.burstUpperNumber || 0), 0);
+    const total = s.burstUpperNumber + sum;
+    ev.dots = Math.max(0, Math.min(maxDots, total) - s.burstUpperNumber);
+    s.burstUpperNumber = Math.max(s.burstUpperNumber, Math.min(maxDots, total));
+    if (sum > 0 && total > maxDots && guiltOpen && s.guiltFactor < range.max) {
+      const v = rollGuilt(opts.guiltProb, tier, opts.rng);
+      ev.rolls.push(v);
+      if (v > s.guiltFactor) s.guiltFactor = v;
+    }
+  }
   for (const c of comps) {
     const r = c.row;
-    if (maxDots > 0 && isDotMaterial(baseRow, r)) {
-      if (s.burstUpperNumber < maxDots) {
-        const add = 1 + (c.burstUpperNumber || 0);
-        ev.dots += Math.min(add, maxDots - s.burstUpperNumber);
-        s.burstUpperNumber = Math.min(maxDots, s.burstUpperNumber + add);
-      } else if (guiltOpen && s.guiltFactor < range.max) {
-        const v = rollGuilt(opts.guiltProb, tier, opts.rng);
-        ev.rolls.push(v);
-        if (v > s.guiltFactor) s.guiltFactor = v;
-      }
-    }
     if (r.enhanceGuilt > 0 && guiltOpen && s.guiltFactor > 0) {
       s.guiltFactor = Math.min(range.max, s.guiltFactor + r.enhanceGuilt);
     }
