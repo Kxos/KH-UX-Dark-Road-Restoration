@@ -411,7 +411,8 @@ testi del client 101300020-032 e 100620003.
     righe vere: 1114, 1117, 1120-1123).
 - Unita' dei campi d'effetto (verifica del 18-10, client 4.3.1 con l'aiuto del decompilato con simboli 1.0.1 di
   thethiny; parser `[fn]`, riga offuscata di 0x17c byte, offset `rank` 0x104 ... `raidUp` 0x178 nell'ordine
-  del master; decompilati in `D:Progetto_Restauro_KH_UX	mpskillchecke`). 10000 = 1,0:
+  del master; decompilati in `D:Progetto_Restauro_KH_UX	mpskillcheck
+e`). 10000 = 1,0:
   | campo | unita' / effetto | prova |
   |---|---|---|
   | `invokeProb`, `invokeProbPerLv` | probabilita' in 1/10000: `invokeProb + perLv * (min(lv, maxLv) - 1)` (Attack Boost I LV 10 = 47,2%), per (1 + bonus di battaglia +0xbe4) | `[fn]` |
@@ -493,6 +494,8 @@ testi del client 101300020-032 e 100620003.
   `/stage/clear`, `[fn]`/`[fn]`; nessun campo dedicato, `D:\Progetto_Restauro_KH_UX	mp\skill\popupnswer.md`).
 - Overwrite: materiale Donald Ver. A con Attack Boost VII 20/20 a sinistra -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
   Attack Boost VII?», base con Attack Boost VII 20/20. Ordinamento «Skill» della lista: medaglie con skill in cima.
+- Combo «& GA N» (18-10, banco dell'utente): `burstLock` = costo fisso dello speciale in gauge x 10000; AB VIII Max &
+  Lux++ & GA 1 su SP Roxas (speciale da 3 gauge) -> lo speciale costa 1 gauge. `invokeShowTiming` 6 funziona.
 - Attivazione in battaglia (18-10, dal vivo, `relogin.ps1 -EnemyAtk 10`): Second Chance di SP Axel scatta, il
   giocatore resta in piedi a 1 HP (`screenshots\sc_live.png`, missione 132); il nome di Attack Boost di SP Roxas
   compare a schermo. Da misurare: l'aumento reale del danno di Attack Boost; le combo «& GA 1/2».

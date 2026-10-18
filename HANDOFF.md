@@ -81,8 +81,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Level Up dopo il risultato (I-156: `userSkills` del ramo 55 = da cancellare), pulsante Overwrite (I-157), icona
   Lux Plus (I-158), icone numerate (I-159), NPC muti (I-154, `text/drama`), base buff «Medal STR +N» della Naminé
   (I-155, provato dall'utente). Opzioni del banco `-EnemyAtk N` e `-SkillProb P` ([banco.md](docs/notes/banco.md)).
-  **Restano**: combo «& GA 1/2» al banco (timing 6 stimato), righe originali sospette (Lux Plus x3 contro x1,5 del
-  5.0.1, SP Attack Gauge II), cose da guardare per I-159 (icone dei premi delle Missioni, tutorial JP).
+  Combo GA provata dall'utente (AB VIII Max & Lux++ & GA 1 su Roxas: speciale a 1 gauge invece di 3; GA N =
+  costo fisso N). **Restano**: righe originali sospette (Lux Plus x3 contro x1,5 del
+  5.0.1, SP Attack Gauge II), tutorial JP di I-159 (nessuno visto finora; Missioni a posto).
   **Poi: riprendere il 2c da G4.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
