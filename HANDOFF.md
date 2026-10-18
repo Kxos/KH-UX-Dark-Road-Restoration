@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 41**, **revisione master: BASE 126** (default dei 4 script di sessione dalle skill allo
+Stato del banco: **risorse 42 costruite, da installare con `update-resources.ps1`** (41 installata sul banco; la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782), **revisione master: BASE 126** (default dei 4 script di sessione dalle skill allo
 stato 4.3.1 del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).

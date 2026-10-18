@@ -90,7 +90,10 @@ Raid, Thundaga, Heaven's Sword) (ISSUES I-033).
 
 - `recon/tools/fetch_medal_images.py` (`--all`): immagini di Roboloid/khux (file originali del gioco)
   associate per nome e stelle -> Medal_L/Medal_S/Cutin in `D:\Progetto_Restauro_KH_UX\medal_gen\files`
-  (2.117 medaglie; nomi con `%23` decodificati). Pacchetto penultimo delle versioni complete.
+  (2.130 medaglie dal 18-10, comprese le 13 6★ [+] 301446...301782 ottenute dal master rigenerato, stessa riga di
+  Roboloid per nome+stelle: le copie potenziate 2301xxx riusano l'imageId della base; nomi con `%23` decodificati).
+  Pacchetto penultimo delle versioni complete: `-Quick` NON lo ricostruisce, per nuove immagini serve `-Version N+1`
+  (offline, non tocca il guest; poi `update-resources.ps1`).
 - Controllo dell'agente (`stage_gen\medal_check\REPORT.md`): le 21 Medal_L e 5 Cutin che esistevano
   sono identiche agli originali; limiti della fonte: 185 Cutin assenti (41 nel master), 419 medaglie
   aggiunte condividono la Medal_L, 590 Cutin senza bagliore bianco, Medal_S leggermente piu' morbide
