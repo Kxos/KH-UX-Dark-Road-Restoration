@@ -99,7 +99,7 @@ agli offset scritti nell'intestazione (+ 0x34), in quest'ordine e contigue:
 | nemico (8 int) | `x, y, enemyId, f3 (0; 1 nelle missioni JP ridisegnate), f4 (1), livello, rewardId, uid` |
 | forzieri | u32 n, n x 0x14: `x, y, rewardId, aspetto (look: pari = specchiato, (look % 6) >> 1 e look / 6 = grafica; 0..19 negli originali), uid` |
 | materiali | u32 n, n x 0x10: `x, y, materialId, quantita'`; uid calcolato `(32*parte + 32) | ((i+1) << 10) | 6` |
-| npc | u32 n, n x 0x20: `x, y, id, short tipo (3, 4; 5 = dentro un livello grafico), short ?, short verso, short livello, int, int, int ordine`; grafica `lwf/character/npc/<id>/wait/wait.lwf` |
+| npc | u32 n, n x 0x20: `x, y, id, short tipo (3, 4; 5 = dentro un livello grafico), short ?, short verso, short livello, int talk, int talk2, int ordine`; grafica `lwf/character/npc/<id>/wait/wait.lwf`; talk/talk2 = testi di dialogo (vedi [Filmati e dialoghi](#filmati)) |
 
 - `uid` di squadre, nemici e forzieri **globali fra le parti**; e' lo spazio di id di `userTreasures`/
   `userEnemyDropItems` e di `getTreasures`/`getEnemyDropItems`. Gli uid delle squadre non hanno record
@@ -540,6 +540,23 @@ D:\Progetto_Restauro_KH_UX\wiki\medals.json`. Avvio: `server/save/smoke.json` `{
 Filmati prima/dopo senza `img/light/SEQ/<id>.l` ne' `lwf/drama/<id>/` disattivati (base in
 `stage_base.json`). Dei 116 filmati lwf (2xxxxxx) ne mancano 5 (tutti 2999951); i 175 dialoghi
 (script SEQ 1xxxxxx) quasi tutti assenti: si tolgono gli id assenti (ISSUES I-014).
+
+<a id="npc-talk"></a>
+**Testi degli NPC** (I-154, 18-10). Sintomo al banco: missione 132 (stage 5020, Agrabah), la guardia ha la
+nuvoletta gialla ma il tocco non fa nulla (niente testo, nessuna richiesta). Client: l'init dell'NPC
+(4.3.1 `[fn]`; 1.0.1 `MapNonPlayableCharacter::init`) copia i due int a +0x14/+0x18 del record
+npc; `get_talk` usa il primo col tipo 3, il primo o il secondo col tipo 1 (flag a +0x3ac), 0 con gli altri;
+nuvoletta `img/stage_npc/NPCTalkIcon.png` per `(tipo|2) == 3`. La finestra (`[fn]`,
+`SceneActionMap::makeTalkWindow`) legge `TextData::get(1, id % 200000000 + 200000000)` =
+`text/drama/<n>.txt` (tipi `ui`, `drama`, `misc` a file 0x1663e2c; pagine separate da 0x0C) e senza il
+file esce restituendo 8, in silenzio. I testi `2040xxxxx` (= 4 + stage a 4 cifre + npc a 2) arrivavano
+dal CDN: nelle risorse WW c'e' solo `204010301`. 5020: un npc (730, 690, id 2005, tipo 3, talk 4050201)
+-> `204050201.txt`, assente. Mappe servite: 178 testi citati, 1 servito, 177 nel pacchetto 2016 in
+inglese (176 anche nel JP). Correzione: `recon/tools/import_npc_talk.py` in `build-resources.ps1` (dopo
+i testi ui, prima di `resource_pack`) copia nel pacchetto generato la revisione corrente del 2016, in
+mancanza quella JP (segnalata), rapporto `stage_gen
+pc_talk.json`. Gli npc di tipo 4 hanno 1/2 in quei
+campi: non parlano.
 
 <a id="prove"></a>
 ## Prove sul banco

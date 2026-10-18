@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-153**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-154**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -155,6 +155,7 @@ Ultima revisione: 17 ottobre 2026.
 | I-147 | APERTO | **Illustrazione completa della medaglia dal dettaglio** (segnalazione dell'utente, 17-10): nell'originale, nel dettaglio di alcune medaglie, un'icona a due riquadri sovrapposti in basso a destra della medaglia apre l'illustrazione completa a tutto schermo (es. SN++ - Stained Glass #13: vetrata di Aurora; video LFJ5ikVkIhk 3:04-3:05). Non tutte le medaglie l'hanno: da capire quali (campo del master come `artId`/`imageCategory`, o presenza dell'immagine nelle risorse WW/JP), dove il client prende l'immagine e se oggi l'icona compare/crasha da noi | riferimento `D:\Progetto_Restauro_KH_UX\reference\medal_illustration` | 17-10 |
 | I-150 | APERTO | Catalogo dei banner, nomi guasti: 5 nomi boosted senza medaglia («launchpad mcquakc», «webby vanderquakc», «axel [ex]», «kairi [ex+]», «sn++ - master eraqus supernova+ - ava» fuso); note sorgente con U+FFFD («SN+ - KH III Namin<U+FFFD>»: quella pity non si risolve mai); `pool.featured` di B0637/B0646 con la frase «of the following» (parser del sotto-progetto 2) | [shop](notes/shop.md#sp2b) | 17-10 |
 | I-151 | APERTO | Garanzie a lista che salgono di stella: se la lista non ha varianti alla stella dello slot, `pickList` ripiega sull'intera lista e su B0447 (Illustrated Rai/Seifer/Fuu, solo 7★) e B0678 (lista SN 6★ su un mix 6/5) esce una 7★ dove il banner prometteva meno; 161 banner non hanno il bersaglio della pity alla `pityStar` alla loro data (si da' la variante esistente piu' vicina) | [shop](notes/shop.md#sp2b) | 17-10 |
+| I-154 | IN CORSO | **NPC muti: text/drama 2040xxxxx mancanti** (18-10, banco): missione 132 (stage 5020), la guardia con la nuvoletta non apre il dialogo; il client cerca `text/drama/204050201.txt` (id dal record npc della mappa) e senza il file non fa nulla. 177 testi su 178 citati dalle mappe servite mancano; `import_npc_talk.py` li prende dal pacchetto 2016 nel pacchetto generato. Da ricostruire le risorse e provare al banco | [mappe_storia](notes/mappe_storia.md#npc-talk) | 18-10 |
 
 ### Union Cross
 

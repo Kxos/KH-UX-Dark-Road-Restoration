@@ -99,6 +99,13 @@ foreach ($t in Get-ChildItem "$D\layouts\ui_texts\text\ui" -File) {
     if ((Test-Path $dst) -and ([IO.File]::ReadAllText($t.FullName) -match '^\[\d+\]$')) { continue }
     Copy-Item $t.FullName $dst -Force
 }
+# testi di dialogo degli NPC (text/drama/2040xxxxx, I-154): citati dai record npc delle mappe gia' in
+# $sg\files\stage, scaricati dal CDN nell'originale (nelle risorse WW solo 204010301); dal pacchetto
+# 2016 (inglese), in mancanza dal JP 4.3.1 (segnalati); senza, toccare l'NPC con la nuvoletta non fa nulla
+python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$D\tmp\thethiny_x\bundle2016" `
+  "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\text\drama" `
+  "$sg\files\stage" "$sg\files" --report "$sg\npc_talk.json"
+if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
 # piastra «Banner Catalog» dello Shop: testi del pulsante Gold Ticket (106140420-424) e icona
 # Star7_Ticket_39 (aveva il segno «仮»), dopo i testi IPA; banner 9001 in server\game_data\gacha_img
 python recon\tools\make_shop_art.py "$sg\files" server\game_data

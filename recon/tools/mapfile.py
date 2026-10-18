@@ -25,7 +25,10 @@ buchi ne' coda; nei file < 13 le misure sotto non tornerebbero (sezioni sovrappo
                  n_nemici x 0x20 (x, y, enemyId, f3, f4, livello, rewardId, uid)
        forzieri: n, n x 0x14 (x, y, rewardId, aspetto, uid)
        materiali:n, n x 0x10 (x, y, materialId, quantita')
-       npc:      n, n x 0x20 (x, y, id, short tipo, short ?, short verso, short livello, int, int, int)
+       npc:      n, n x 0x20 (x, y, id, short tipo, short ?, short verso, short livello, int talk,
+                 int talk2, int ordine). talk/talk2 = testi di dialogo: il client apre
+                 text/drama/<talk % 200000000 + 200000000>.txt (tipo 3 talk; tipo 1 talk o talk2;
+                 tipo 4 non parla, valori 1/2). Vedi import_npc_talk.py.
 """
 import json
 import os
@@ -145,7 +148,7 @@ def parse_map(b, part=0):
     for k in range(n):
         if rec_npc == 32:
             r = struct.unpack_from('<3i4h3i', b, o + 4 + 32 * k)
-            npcs.append(dict(zip(('x', 'y', 'id', 'type', 's14', 'facing', 'layer', 'i20', 'i24', 'z'), r)))
+            npcs.append(dict(zip(('x', 'y', 'id', 'type', 's14', 'facing', 'layer', 'talk', 'talk2', 'z'), r)))
         else:
             npcs.append({'raw': struct.unpack_from('<7i', b, o + 4 + rec_npc * k)})
     out['npcs'] = npcs
