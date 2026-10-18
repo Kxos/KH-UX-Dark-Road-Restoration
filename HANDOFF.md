@@ -18,8 +18,8 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 41**, **revisione master: BASE 125** (default dei 4 script di sessione dal base buff
-del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 41**, **revisione master: BASE 126** (default dei 4 script di sessione dalle skill allo
+stato 4.3.1 del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -82,9 +82,17 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   Lux Plus (I-158), icone numerate (I-159), NPC muti (I-154, `text/drama`), base buff «Medal STR +N» della Naminé
   (I-155, provato dall'utente). Opzioni del banco `-EnemyAtk N` e `-SkillProb P` ([banco.md](docs/notes/banco.md)).
   Combo GA provata dall'utente (AB VIII Max & Lux++ & GA 1 su Roxas: speciale a 1 gauge invece di 3; GA N =
-  costo fisso N). **Restano**: righe originali sospette (Lux Plus x3 contro x1,5 del
-  5.0.1, SP Attack Gauge II), tutorial JP di I-159 (nessuno visto finora; Missioni a posto).
-  **Poi: riprendere il 2c da G4.**
+  costo fisso N). Righe sospette risolte (94ca26a, rev 126): Lux Plus x1,5 e icone 6-9 della 4.3.1
+  ([medaglie.md](docs/notes/medaglie.md), `ERA_431`); 163 Scrooge 5★ con una skill ciascuna nel salvataggio
+  (userMedalId 2701-2863, backup `tmp\skill\player-before-scrooges.json`), icone confermate dall'utente.
+  Resta: tutorial JP di I-159 (nessuno visto finora).
+  **2c ripreso da G4 (18-10 sera)**: i Tier 2016-18 non sono mai cambiati, min..max sul Tier di oggi = liste
+  storiche (`tmp\sp2b
+otice_audit\g4_historical_tiers.md`), B0154 lista di 17 nomi, XIII Deal 10 nomi.
+  MA i 13 id Org XIII originali (31176...) sono Tier 8 per un NOSTRO errore di mapping (medal_gen -> righe
+  Roboloid «X [+]»; i 3004xx «X A» sono nostri doppioni; alias SN++ di 32236/33236 sbagliati):
+  `tmp\sp2b\g4\orgxiii_migration.md`. Audit globale del mapping in corso (`tmp\sp2b\g4\medal_mapping_audit.md`),
+  poi piano di correzione da mostrare all'utente, poi G4 e G5-G10.
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
