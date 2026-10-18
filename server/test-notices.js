@@ -31,6 +31,11 @@ check(p.includes('Next update: in 23 hours'), 'ore al singolare/plurale');
 p = n.noticesPage(U(2026, 10, 19, 7) + 30 * 60000);
 check(p.includes('Next update: in less than an hour'), 'meno di un ora');
 
+{
+  const ms = n.NOTICES.find((x) => x.tag === 'IMPORTANT' && x.title === 'Medal skills');
+  const t = ms ? ms.body.join(' ') : '';
+  check(ms && /reconstructed/.test(t) && /163/.test(t) && /Skill EXP/.test(t) && /every Medal in your deck/.test(t), 'notizia Medal skills');
+}
 check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && /no purchases/.test(x.body.join(' '))), 'acquisti nelle differenze');
 {
   const diff = n.NOTICES.find((x) => x.title === 'Differences from the original game').body;

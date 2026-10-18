@@ -77,6 +77,11 @@ function updateNotice(realMs) {
 // Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
 // elenchi di modifiche. Le prime due (dati aggiornati e differenze) restano fisse in cima.
 const NOTICES = [
+  { date: '10/18', tag: 'IMPORTANT', title: 'Medal skills',
+    body: ['Medal skills are reconstructed: 25 of the 163 skills use the original values, the other 138 are rebuilt from the community skill list (power and max trigger rate from the wiki, other values estimated). Some long descriptions are shortened.',
+      'After each mission, the Skill EXP of the battle goes to every Medal in your deck that has a skill. The original server could not know which Medals you used, so this is our deduction.',
+      'Combo skills marked "& GA 1" and "& GA 2" currently work like the matching Attack Boost Max skill: the SP gauge reduction could not be rebuilt yet.',
+      'New Scrooge Medals get a skill picked by rarity, because the original skill depended on where the Scrooge came from. Scrooges you already own keep their skill.'] },
   { date: '10/16', tag: 'INFORMATION', title: 'Differences from the original game',
     body: DIFFERENCES_BODY },
   { date: '10/16', tag: 'INFORMATION', title: 'Missions',
