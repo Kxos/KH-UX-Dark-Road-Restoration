@@ -90,8 +90,9 @@ Serve anche al 2c: i banner che promettono «a powerful skill at max skill level
 
 ### 5.3 Icone
 
-`thumbId` puntano alle icone originali di `img/skill`; se un'icona manca nelle nostre risorse, si aggiunge al
-pacchetto generato (risorse nuove: versione completa a banco fermo).
+Le icone originali sono solo 5 (`img/skill/Skill_Icon1-5.png`, `thumbId` 1-5: attacco, difesa, Lux/Prize, stato
+alterato, speciale); le 25 righe vere usano solo queste. Le ricostruite prendono il `thumbId` della sorella: niente
+risorse nuove (se al banco un'icona non compare, si aggiunge al pacchetto generato a banco fermo).
 
 ### 5.4 Skill nei dettagli della medaglia e fonti
 
@@ -112,9 +113,9 @@ pacchetto generato (risorse nuove: versione completa a banco fermo).
   le skill aggiornate (`userSkills`) nella risposta, perche' il client mostri «Skill Level Up».
 - Quantita' di EXP: **dati originali**. Ogni nemico del master ha `exp` per livello (array parallelo a `baseLv`,
   come `lux`): Shadow/Soldier 1-5, Great/King Pretender 4-20 (i nemici della missione delle skill «danno tanta EXP»,
-  fonti online: ogni nemico da' una quantita' nascosta di EXP di skill, i Pretender molto di piu'). L'EXP della
-  missione = somma degli `exp` dei nemici sconfitti al loro livello nello stage (la richiesta di `/stage/clear` porta
-  `getEnemyDropItems`/`enemyDeadNumber`; chi costruisce verifica come ricavare i nemici sconfitti).
+  fonti online: ogni nemico da' una quantita' nascosta di EXP di skill, i Pretender molto di piu'). **Il client fa
+  la somma da solo** e la manda in `/stage/clear` come `getPoint.exp` (log del 16-10: `"exp":20` con 17 nemici,
+  16 Shadow 80001): il server usa quel numero.
 - A chi va: a **ogni medaglia del deck con una skill** (il client non manda quali medaglie sono state usate, quindi
   il server originale non poteva saperlo). Questa e' una deduzione: si dichiara nelle Notices.
 - Controllo: con la curva vera, due giri della missione delle skill devono portare una skill con massimo 10 circa da
@@ -147,7 +148,6 @@ EXP di skill data a tutte le medaglie del deck con skill. Importante se cambia l
 
 - Come leggere la tabella del wiki e quali regole di somiglianza usare per le sorelle (documentate nel report).
 - I blocchi di `skillId` e i `sortId`.
-- Come ricavare dalla richiesta di `/stage/clear` e dallo stage i nemici sconfitti e il loro livello.
 - Quali medaglie usare per le prove al banco.
 
 ## 8. Fatto quando
