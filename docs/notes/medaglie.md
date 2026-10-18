@@ -443,6 +443,8 @@ testi del client 101300020-032 e 100620003.
   `/stage/clear`, `[fn]`/`[fn]`; nessun campo dedicato, `D:\Progetto_Restauro_KH_UX	mp\skill\popupnswer.md`).
 - Overwrite: materiale Donald Ver. A con Attack Boost VII 20/20 a sinistra -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
   Attack Boost VII?», base con Attack Boost VII 20/20. Ordinamento «Skill» della lista: medaglie con skill in cima.
-- Non visto: l'attivazione delle skill in battaglia (i fotogrammi ogni 2 s non la colgono): da guardare dal vivo.
+- Attivazione in battaglia (18-10, dal vivo, `relogin.ps1 -EnemyAtk 10`): Second Chance di SP Axel scatta, il
+  giocatore resta in piedi a 1 HP (`screenshots\sc_live.png`, missione 132); il nome di Attack Boost di SP Roxas
+  compare a schermo. Da misurare: l'aumento reale del danno di Attack Boost; le combo «& GA 1/2».
 - Inciampi: `Select-Object -First N` su uno script node lo chiude prima della scrittura (skill di prova persa); il tombstone del
   servizio sensori dell'emulatore (`android.hardware.sensors`) non e' un crash del gioco.
