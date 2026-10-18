@@ -31,6 +31,6 @@ assert.equal(on.rev, off.rev + 90010, 'revisione diversa: il client riscarica il
 const p0 = run(0, 0), p100 = run(0, 100);
 assert.deepEqual(p0.prob, [0, 0], 'SkillProb 0: mai');
 assert.deepEqual(p100.prob, [10000, 0], 'SkillProb 100: sempre');
-assert.deepEqual(off.prob, [3975, 75], 'spenta: probabilita del master');
+assert.deepEqual(off.prob, [4000, 75], 'spenta: probabilita del master (Attack Boost VII, 2be5bd0)');
 assert.ok(p0.rev !== off.rev && p100.rev !== off.rev && p0.rev !== p100.rev, 'revisioni diverse');
 console.log('ok: Shadow', off.attack[0], '->', on.attack[0], ', revisione', off.rev, '->', on.rev);
