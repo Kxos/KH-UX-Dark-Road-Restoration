@@ -259,6 +259,10 @@ const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE della revisione
 // sale di 90000 + N: il client riscarica il master a ogni revisione diversa, anche piu' bassa
 // (docs/notes/server.md), quindi spenta l'opzione torna da solo al master normale.
 const BENCH_ENEMY_ATK = Math.max(1, Math.trunc(Number(process.env.KHUX_BENCH_ENEMY_ATK) || 1));
+// KHUX_BENCH_SKILL_PROB=P (solo banco, run-server.ps1 -SkillProb P, 0-100): probabilita' di attivazione di
+// tutte le skill delle medaglie fissata a P% nel master servito (invokeProb P*100, invokeProbPerLv 0), per
+// misurare l'effetto (Attack Boost: stesso colpo con 0 e 100). Revisione servita +80000 + P + 1.
+const BENCH_SKILL_PROB = /^\d+$/.test(process.env.KHUX_BENCH_SKILL_PROB || '') ? Math.min(100, Number(process.env.KHUX_BENCH_SKILL_PROB)) : null;
 // KHUX_REAL_NOW (prove al banco): l'ora reale parte da quell'istante all'avvio del server
 // (una data che non si legge ferma subito l'avvio: meglio che un orologio NaN a banco acceso)
 if (process.env.KHUX_REAL_NOW && !Number.isFinite(Date.parse(process.env.KHUX_REAL_NOW))) {
@@ -427,7 +431,8 @@ function masterKey(name) {
 }
 
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
-const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0);
+const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0)
+  + (BENCH_SKILL_PROB !== null ? 80000 + BENCH_SKILL_PROB + 1 : 0);
 // Revisione della sessione: fissata all'inizio di ogni login (POST /system/login, la prima risposta
 // con ret() della sequenza) e usata da ret(), /system/resourcesize e dal master servito per tutta la
 // sessione. Il master cambia cosi' solo al login successivo, e il contenuto servito (scadenze dei
@@ -450,6 +455,9 @@ const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeri
 // occorrenza), in ora finta con lo scostamento del mese della revisione
 function servedMasterRows(name, realMs) {
   const rows = masterRows(name);
+  if (name === 'skill' && BENCH_SKILL_PROB !== null) {
+    return rows.map((r) => ({ ...r, invokeProb: BENCH_SKILL_PROB * 100, invokeProbPerLv: 0 }));
+  }
   if (name === 'enemy' && BENCH_ENEMY_ATK > 1) {
     return rows.map((r) => ({ ...r, attack: (r.attack || []).map((v) => v * BENCH_ENEMY_ATK) }));
   }

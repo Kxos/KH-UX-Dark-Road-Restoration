@@ -110,6 +110,11 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   nel master servito (`KHUX_BENCH_ENEMY_ATK`; il client prende le statistiche dei nemici dal master). La
   revisione servita sale di 90000 + N, quindi il client riscarica il master; un `relogin.ps1` senza
   l'opzione lo riporta al normale. Strumento di prova, non una funzione del gioco: nessuna notice.
+- **Skill sempre o mai** (18-10): `relogin.ps1 -SkillProb 100` (o `0`) fissa la probabilita' di tutte le skill
+  delle medaglie nel master servito (`KHUX_BENCH_SKILL_PROB`, revisione +80000 + P + 1). Per misurare un effetto:
+  stessa missione due volte, solo attacchi normali (in AUTO parte anche la Supernova), e confronto di
+  `maximumDamage` nel corpo di `/stage/clear` (`server/logs/requests.ndjson`). Comando manuale: toccare il
+  nemico, poi trascinare la medaglia verso l'alto.
 - Prove delle uscite multi-parte: spostare temporaneamente la partenza STG vicino all'uscita,
   poi ripristinare e rifare `-Quick`.
 
