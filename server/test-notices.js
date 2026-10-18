@@ -49,7 +49,8 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
     'Trait Medals no longer exist: where a deal guaranteed a Trait Medal you get a random Medal of the same rarity instead.',
     'Boosted Medals: the chance of a boosted version on deals that offered one is reconstructed (5% per eligible Medal). Guaranteed max-level Skills are given only for Skills that exist in this restoration.',
     'Boosted stats on deals that did not state them are reconstructed (+1000 STR, +1000 DEF), and bonus support Medals earned through a guarantee arrive in your Presents.',
-    'Free deals that could be drawn only once (or once per day) keep that limit.']) {
+    'Free deals that could be drawn only once (or once per day) keep that limit.',
+    'The "Medal STR +N" and "Medal DEF +N" effects of Special Attacks and Supernovas are rebuilt from their descriptions, because the original values are lost.']) {
     check(diff.includes(s), `differenze: «${s.slice(0, 40)}...»`);
   }
   check(!diff.some((s) => /not enforced yet|^Trait Medals, boosted Medals/.test(s)), 'differenze: righe vecchie dei Tier e delle Trait tolte');

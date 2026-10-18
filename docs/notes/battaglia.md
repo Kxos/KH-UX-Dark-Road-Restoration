@@ -276,14 +276,63 @@ ordine di schema da `addTurn` +0x388 fino a `unmatchMagnification` +0x52c (`targ
 - `reflection*` (`[fn]` -> `[fn]` per ogni bersaglio): attivo con `reflectionTurn` > 0
   (turni), con `reflectionMagnification` e `reflectionAttribute`; `reflectionResetAttribute` letto
   altrove. Icone `ActMapReflectionAnim/RIcon_*`. Unita' non verificate.
-- `addBase*` (`[fn]` se' stesso, `[fn]` avversario -> `[fn](tipo, valore,
-  atk, def, attributo)`): `addBaseCountType`/`Value` = tipo e durata, `addBaseAtk/DefSelf` e
-  `...Opponent` = variazione di STR/DEF base, `addBaseAttribute` = maschera. Unita' non verificate.
+- `addBase*` («Medal STR/DEF ±N»): semantica verificata nel codice, vedi [Base buff](#basebuff).
 - Buff/debuff (dalle 154 righe thethiny confrontate con Roboloid): `buf*` = livelli positivi,
   `debuf*` = livelli **negativi** (-N); `...All` = su tutti i bersagli (speciali con `target` 2),
   senza `All` = sul bersaglio; `addTurn` = durata in turni, `addCount` = durata in attacchi;
   `heal`/`healShake` (cura, es. 2500/500), `cure*` 1 (Esuna), `resetDebuf*` 1 (Dispel), `copyBuf*` 1 +
   `addTurn` (Mirror); attributo neutro = `attribute` 5.
+<a id="basebuff"></a>
+## Base buff «Medal STR/DEF ±N» (I-155, 18-10)
+
+Campi `burst` +0x500..+0x51c in ordine di schema: `addBaseCountType`, `addBaseCountValue`, `addBaseAtkSelf`,
+`addBaseDefSelf`, `addBaseAtkOpponent`, `addBaseDefOpponent`, `resetBase` (+0x518), `addBaseAttribute` (+0x51c).
+Decompilati e disassemblato in `D:\Progetto_Restauro_KH_UX	mp
+amine\` (`d1..d8.c`, `g2\lin_86f.txt`).
+
+- **Lettura** (`[fn]`, dopo uno speciale o una Supernova: riga di `[fn]` e, se c'e', quella di
+  `[fn]`): prima `resetBase` (bit 0/1 = azzera STR/DEF propri `[fn]`/`[fn]`, bit 2/3 = dei
+  bersagli), poi `[fn]` su se' (Self) e `[fn]` su **ogni bersaglio** (Opponent) ->
+  `[fn](oggetto, tipo, durata, atk, def, attributo)` -> `[fn]` due volte: lista STR (+0) e lista DEF
+  (+0x58). Una voce entra solo con **tipo != 0, durata >= 1, valore != 0** (voce di 16 byte {tipo|8, durata,
+  valore, attributo}; il bit 8 = «aggiunta dopo l'ultimo azzeramento», tolto da `[fn]`).
+- **Tipo** (`[fn]`: scala di 1 la durata delle voci di quel tipo, toglie quelle a 0): **1 = turni**
+  (`[fn]`/`[fn]` a fine turno: `[fn](.,1)` accanto a `[fn]`, lo scalare dei buff a
+  turni), **2 = attacchi** (`[fn]` dopo l'attacco: `[fn](.,2)` accanto a `[fn]`, i buff a
+  conteggio). Lato DEF uguale con `[fn]`. «1 turn: Medal STR +2000» = tipo 1, durata 1, valore 2000;
+  «3 attacks: ...» = tipo 2, durata 3. Nessun altro tipo nel codice.
+- **Valore assoluto** sommato alla STR della medaglia: `[fn]` = STR della riga + `[fn](lista,
+  maschera)`, minimo 0, poi i moltiplicatori; DEF del nemico/STR del nemico con la somma totale (`[fn]`,
+  `[fn]`, `[fn]`). Voci uguali **si sommano** (Naminé 2000 + 2000, poi Supernova +5000 = 9000).
+- **Attributo** (`[fn]`, maschere statiche 0x7 e 0x18; maschera della medaglia da `[fn]`): bit 0/1/2
+  = Power/Speed/Magic (medaglia +0x494 = 1/2/3, o l'attributo cambiato `[fn]`), bit 3/4 = Upright/Reversed
+  (+0x498 = 1/2), come `recurringAttribute`. Se la voce ha bit PSM la medaglia deve averne uno; se ha bit U/R
+  idem; **0 = tutte le medaglie**. «P- & S-Medal STR» = 3, «U-Medal» = 8, «Medal STR» = 0. «PSM-STR» nelle
+  descrizioni e' la notazione dei buff a livelli (`buf*`), non dei base buff.
+- **HUD**: `[fn]` (giocatore: somma STR filtrata per la medaglia, somma DEF, flag `[fn]`) e
+  `[fn]` (nemico) -> `[fn]` -> targhetta. Layout `ActionMap_BaseBuff_Avt/_Enm` (+ `_eff`) caricati
+  da `[fn]` solo se esistono, agganciati da `[fn]` ai nodi `BaseBuff_Avt_Null1/2`
+  (giocatore) o `BaseBuff_Enm1/2` (nemico, nella barra `RaidBattle_EnemyStatusField_*`; stringhe del client:
+  `BaseBuff_Avt_Null1/2`, `BaseBuff_Enm1/2`, `BaseBuff_Enm_Null1/2`); tutto controlla il null. PvP:
+  `ActionMapPvP_BaseBuff_*` (non importati).
+- **Dati**: nessuna fonte originale ha valori != 0 (thethiny 11 e 751 righe, JP 4.3.1 senza master). Ricostruiti
+  dalle descrizioni con `server/make-base-buff.js` (chiamato da `make-game-tables.js`, idempotente; prova
+  `test-base-buff.js`): **397 righe** (378 a turni, 19 ad attacchi, 314 con attributo, 4 con DEF, 3
+  sull'avversario), 0 non interpretate. Confronto con i campi `STRPlus`/`DEFPlus`/`STRMinus` di Roboloid: 393 uguali,
+  4 diverse dove Roboloid contraddice il proprio testo (4002029, 4001991-3: vince la descrizione). Rapporto in
+  `D:\Progetto_Restauro_KH_UX	mp
+amine
+eport.md`. Dichiarato nella notice «Differences from the original game».
+  Il filtro «Base STR/DEF» della Medal List (`addBaseAtk*`/`addBaseDef*`, [medaglie](medaglie.md)) ora trova queste medaglie.
+- **Risorse** (`jp_coco_layouts.txt`, I-155): `ActionMap_BaseBuff_Avt/_Enm/_eff.json` con le texture `BaseBuff_*` dal JP;
+  in `ActionMap_PlayerStatusField_new.json` (WW servito) l'opzione nuova `graft=` innesta solo i due nodi Null della
+  revisione JP 00360289 (Panel 24x24 a 122,20 e 96,-6 sotto `Panel_8`), il resto resta WW.
+  Nemico: il WW ha `BaseBuff_Enm1/2` solo in `RaidBattle_EnemyStatusField_S` e `_S_Raid`; innestati dal JP anche in
+  `_L` (rev. 00438800), `_L_Multi` (00376985) e `_S_Boss` (00376981).
+- Da provare al banco: targhetta sotto gli HP dopo lo speciale della Naminé (2000 -> 4000 -> 9000 con la Supernova),
+  sparizione a fine turno, danno piu' alto, una riga «N attacks», una riga con attributo e una medaglia di altro
+  attributo (la targhetta del giocatore segue la medaglia), «targets [Medal STR -N]» sul nemico (targhetta sulla barra del nemico, anche boss).
+
 <a id="cornice-avatar"></a>
 ## Cornice dell'avatar nell'HUD (I-125, 14-10)
 

@@ -152,7 +152,7 @@ iniziale nel percorso; sola lettura; dati di terzi, mai nel repository).
 
 **Strumento** `recon/tools/import_jp_coco.py` (Pillow: senza `-I`), lanciato da `build-resources.ps1`
 dopo `make_layouts`/`make_textures`/testi e prima di `btf_fix`. Legge l'elenco versionato
-`recon/tools/jp_coco_layouts.txt` (una radice per riga; opzioni `rev=N`, `need=a,b`, `+absent-ok`;
+`recon/tools/jp_coco_layouts.txt` (una radice per riga; opzioni `rev=N`, `need=a,b`, `+absent-ok`, `clone=`, `set=`, `graft=`;
 `? Nome # motivo` = da decidere) e per ogni radice prende la chiusura (sotto-layout delle scene,
 armature, texture) e la scrive in `stage_gen\files\cocostudio\publish\` sopra il generato.
 - Revisione: entry id piu' alto, salvo `rev=`. **Attenzione**: l'estrattore a volte da' a una
@@ -161,6 +161,10 @@ armature, texture) e la scrive in `stage_gen\files\cocostudio\publish\` sopra il
 - Nomi gia' serviti (`names_v4.tsv`): mai copiati, vince la WW (comprese le 11 texture localizzate).
   Radice WW servita che make_layouts sovrascriveva (`MedalInfo_ReleaseWindow`): torna il WW,
   copiato solo per tradurne i testi, con le texture mancanti da JP (Panel07, 9-slice di I-049).
+  Eccezione `graft=W1,W2` (solo radici WW servite): innesta nel WW i widget W1, W2 della revisione JP
+  (`rev=`), sotto il genitore con lo stesso nome e con la stessa posizione; tag nuovo se gia' usato; gia'
+  presenti = nulla. Usata per `BaseBuff_Avt_Null1/2` di `ActionMap_PlayerStatusField_new` (rev. 00360289,
+  I-155, [battaglia](battaglia.md#basebuff)): il resto del layout resta WW.
 - Sotto-layout nostri non in elenco restano i nostri; texture disegnate da noi sostituite
   dall'originale JP (stessa tela o nessun altro layout generato le usa; mai gli atlanti delle
   armature). Texture di `publish/` che l'estrattore ha tolto come doppioni: si prendono con lo

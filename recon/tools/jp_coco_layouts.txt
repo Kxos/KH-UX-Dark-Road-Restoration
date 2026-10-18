@@ -8,6 +8,8 @@
 #   rev=N        revisione JP fissata (0 = file senza suffisso; predefinita: entry id piu' alto)
 #   need=a,b     widget che il codice cerca senza controllo: se l'originale non li ha, la radice si ferma
 #   +absent-ok   texture assenti ovunque tollerate (mai con il 9-slice: quello ferma sempre)
+#   graft=a,b    solo per un layout WW servito: innesta i widget a, b della revisione JP (rev=) sotto lo
+#                stesso genitore, il resto resta WW (eccezione alla regola dei nomi serviti)
 # «? Nome  # motivo» = da decidere: non si importa, compare solo nel rapporto.
 #
 # Controllo fatto il 13-10-2026 (jp_coco_widgets.py sul decompilato attorno ai caricatori,
@@ -218,3 +220,16 @@ Union_Popup2.json
 # Filter della lista della storia (15-10, segnalazione dell'utente): AdventureTop2_FilterButton_ver106 servito, il popup
 # AdventureTop2_Filter_ver106 no (GUIReader su documento vuoto, crash al tocco di Filter)
 AdventureTop2_Filter_ver106.json
+# Segnalino «Medal STR/DEF +N» sotto gli HP (BaseBuff, I-155, docs/notes/battaglia.md#basebuff): [fn]
+# carica ActionMap_BaseBuff_Avt/_Enm e _eff (assenti dalle risorse WW) solo se esistono, [fn] li aggancia
+# ai nodi BaseBuff_Avt_Null1/2 dell'HUD (controlla il null). I due nodi ci sono solo nella revisione JP 00360289
+# del layout dell'HUD: il resto e' uguale al WW, quindi si innestano nel WW servito (122,20 e 96,-6 sotto Panel_8)
+ActionMap_BaseBuff_Avt.json
+ActionMap_BaseBuff_Enm.json
+ActionMap_BaseBuff_eff.json
+ActionMap_PlayerStatusField_new.json    rev=360289 graft=BaseBuff_Avt_Null1,BaseBuff_Avt_Null2
+# Lato nemico: [fn] cerca BaseBuff_Enm1/2 nella barra del nemico. Il WW li ha solo in
+# RaidBattle_EnemyStatusField_S e _S_Raid; nelle revisioni JP ci sono anche in _L, _L_Multi e _S_Boss
+RaidBattle_EnemyStatusField_L.json         rev=438800 graft=BaseBuff_Enm1,BaseBuff_Enm2
+RaidBattle_EnemyStatusField_L_Multi.json   rev=376985 graft=BaseBuff_Enm1,BaseBuff_Enm2
+RaidBattle_EnemyStatusField_S_Boss.json    rev=376981 graft=BaseBuff_Enm1,BaseBuff_Enm2

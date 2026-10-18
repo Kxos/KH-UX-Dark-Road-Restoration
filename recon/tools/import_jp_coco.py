@@ -149,6 +149,8 @@ for ln, line in enumerate(open(args.list, encoding='utf-8'), 1):
                 if not m:
                     sys.exit('%s:%d: clone= non valido %r' % (args.list, ln, c))
                 opts.setdefault('clone', []).append(m.groups())
+        elif p.startswith('graft='):            # graft=W1,W2: widget del JP (rev=) innestati nel layout WW servito
+            opts.setdefault('graft', []).extend(x for x in p[6:].split(',') if x)
         elif p.startswith('set='):              # set=Widget.opzione=valore[,...]: ritocco del layout JP
             for c in p[4:].split(','):
                 m = re.match(r'^([^.=]+)\.([^.=]+)=(.+)$', c)
@@ -333,6 +335,45 @@ def clone_widget(data, src, new, ref=None):
     return None
 
 
+def graft_widget(data, jp_file, name):
+    """Opzione graft= (solo radici WW servite): copia il widget name (con i figli) dalla revisione JP
+    nel layout WW, sotto il genitore con lo stesso nome e alla stessa posizione; tag nuovo se il suo e'
+    gia' usato. Eccezione alla regola «un nome servito non si copia mai»: il resto del layout resta WW
+    (es. BaseBuff_Avt_Null1/2 di ActionMap_PlayerStatusField_new, rev. 00360289, I-155)."""
+    import copy
+    if not jp_file:
+        return 'revisione JP assente'
+
+    def index(d):
+        found, tags = {}, []
+
+        def walk(n, parent):
+            o = n.get('options') or {}
+            if isinstance(o.get('tag'), int):
+                tags.append(o['tag'])
+            if o.get('name'):
+                found.setdefault(o['name'], (n, parent))
+            for c in n.get('children') or []:
+                walk(c, n)
+        walk(d.get('widgetTree') or {}, None)
+        return found, tags
+    ww, ww_tags = index(data)
+    if name in ww:
+        return None                                    # gia' presente (WW piu' nuovo o corsa ripetuta)
+    jp_found, _ = index(load_json(jp_file))
+    if name not in jp_found or jp_found[name][1] is None:
+        return 'widget assente nella revisione JP'
+    node, parent = jp_found[name]
+    pname = (parent.get('options') or {}).get('name')
+    if pname not in ww:
+        return 'genitore %s assente nel WW' % pname
+    dup = copy.deepcopy(node)
+    if dup['options'].get('tag') in ww_tags:
+        dup['options']['tag'] = max(ww_tags) + 1
+    ww[pname][0].setdefault('children', []).append(dup)
+    return None
+
+
 # ---- analisi di un layout ---------------------------------------------------------------------
 def scan(data):
     """(sotto-layout, texture [(nome, 9-slice)], plist, nomi dei widget, testi [(dict, chiave)])."""
@@ -417,8 +458,17 @@ for root, opts in roots:
         r['kind'] = 'ww'
         src = served_path(root)
         pre[root] = (src, load_json(src))
+        for g in opts.get('graft', []):
+            err = graft_widget(pre[root][1], jp_path(root), g)
+            if err:
+                r['block'].append('%s: graft %s: %s' % (root, g, err))
+            else:
+                r['warn'].append('widget %s innestato dal JP (rev %s)' % (g, PIN.get(root, 'corrente')))
         plan[root] = ('jp', src, pre[root][1])
         todo = [(root, 'pre')]
+    elif opts.get('graft'):
+        r['block'].append('graft= solo per un layout WW servito')
+        todo = []
     elif jp_path(root):
         r['kind'] = 'jp'
         todo = [(root, None)]

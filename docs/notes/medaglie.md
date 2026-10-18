@@ -160,7 +160,7 @@ AND); riga «SN» = `burst` di `superBurstId` (`[fn]`, nessun limite agli id 400
 | Filter_Sb_NotSet (0x3c) | None | nessuno dei tre |
 | Filter_Sb_Single/All/Random (0x2c-0x2e) | Single/All/Random | riga SN `target` 1/2/3 (in OR) |
 | Filter_Sb01-08, 09, 12 (0x2f-0x38) | icone (sotto «Types», 106240205) | buff/debuff della riga SN (`bufAttack*`, `debufDefense*`, ...) |
-| Filter_Sb_Guard / BaseAttack / BaseDefence (0x39-0x3b) | Pierce DEF / Base STR / Base DEF | `penetrate` > 0 / `addBaseAtk*` / `addBaseDef*` != 0: da noi sempre 0 |
+| Filter_Sb_Guard / BaseAttack / BaseDefence (0x39-0x3b) | Pierce DEF / Base STR / Base DEF | `penetrate` > 0 / `addBaseAtk*` / `addBaseDef*` != 0: `penetrate` sempre 0; `addBase*` dalle descrizioni dal 18-10 ([battaglia](battaglia.md#basebuff), I-155) |
 | Filter_Sb_Recovery (0x3d) | Heal | `heal`, `cure*`, `recovery` |
 | Filter_Sb_Special (0x3f) | Special | copia/azzeramento buff, contatore, riflesso |
 | Filter_Sb_Recovery2 (0x3e) | SN Renew | `recurringAttribute` > 0 |
@@ -172,7 +172,7 @@ Restano a `%d`/`%d+` solo 106240201-204 (Hits/Gauges). Banco 14-10 (un filtro al
 None, Single, SN Renew (le 16 SN++ «R», icona verde) corretti. Attenzione: uno swipe che parte su un
 pulsante lo attiva (Hits/Gauges fuori vista davano liste vuote o solo Moogle): scorrere sul bordo
 destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Supernova casuali
-(Roboloid ha solo Single/All) e `penetrate`/`addBase*` (nessuna fonte con i valori originali).
+(Roboloid ha solo Single/All) e `penetrate` (nessuna fonte con i valori originali; `addBase*` ricostruiti dalle descrizioni, [battaglia](battaglia.md#basebuff)).
 
 <a id="vendita"></a>
 ## Vendita (Sell Medals) e lucchetto

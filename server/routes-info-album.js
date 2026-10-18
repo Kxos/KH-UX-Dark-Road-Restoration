@@ -33,6 +33,7 @@ const DIFFERENCES_BODY = [
   'Completed missions that you did not collect before they end are sent to your Presents.',
   'Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.',
   'A few Spirit parts without original graphics are replaced by a similar part.',
+  'The "Medal STR +N" and "Medal DEF +N" effects of Special Attacks and Supernovas are rebuilt from their descriptions, because the original values are lost.',
   'Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner\'s Details say so.',
   'Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.',
   'Free draws cost 1 Jewel. VIP Free Deals are open to everyone, with one free VIP draw per day in total.',

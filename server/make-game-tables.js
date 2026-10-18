@@ -757,6 +757,8 @@ require('./make-guilt-burst').patch(OUT);
 require('./make-pet-tables').patch(OUT);
 // Skill: tabella skill (25 vere di thethiny + le altre del wiki) e skillExp vera (make-skill-table.js, I-146)
 require('./make-skill-table').patch(OUT);
+// Base buff: addBase* della tabella burst dalle descrizioni «Medal STR/DEF ±N» (make-base-buff.js, I-155)
+require('./make-base-buff').patch(OUT);
 // Boosted: righe a parte del master medal (groupId = normale) dalle voci enhance.boosted del catalogo
 // dei banner (make-boosted-medals.js); dopo supernova, blue-fairy, guilt-burst e pet, che non le vedono
 const gachaCatalog = path.join(__dirname, 'game_data', 'gacha_catalog.json');
