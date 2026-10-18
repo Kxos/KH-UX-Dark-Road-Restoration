@@ -1737,6 +1737,27 @@ function respondApRecover(res) {
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) }, userKeyblades: userKeybladesData() });
 }
 
+// EXP di skill dopo la missione (I-146): `gained` = getPoint.exp del client, uguale per ogni medaglia dei 5
+// slot del deck del keyblade della missione (non il pet, non il supporto). Solo le skill salvate in
+// player.medalSkills: le calcolate (Scrooge) sono gia' al massimo. Ritorna gli userSkillId saliti di livello.
+function grantDeckSkillExp(gained) {
+  const ups = [];
+  if (!Number.isFinite(gained) || gained <= 0) return ups;
+  const rows = skillRowsById();
+  const expRows = new Map(masterRows('skillExp').map((r) => [r.expId, r.value]));
+  for (const id of keybladeDeckIds(player.currentUserKeybladeId || USER_KEYBLADE_ID).slice(0, 5)) {
+    const s = player.medalSkills?.[id];
+    const row = s && rows.get(s.skillId);
+    const expRow = row && expRows.get(row.expType);
+    if (!expRow) continue;
+    const r = medalSkill.addSkillExp(s, row, expRow, gained);
+    if (r.level > s.level) ups.push(s.userSkillId);
+    s.level = r.level;
+    s.exp = r.exp;
+  }
+  return ups;
+}
+
 function respondStageClear(res, req) {
   // POST /stage/clear (azione 116). Il ramo chiama [fn] (userData.userPoint),
   // [fn] (userData.userDetail), [fn] (stageRewardUserMedalIds[]
@@ -1809,6 +1830,9 @@ function respondStageClear(res, req) {
   player.clearMissions[stageId] = [...new Set([...before, ...cleared])].sort((a, b) => a - b).slice(0, 3);
   // stage completato, con il record di Lux (Lux Record nell'elenco delle missioni)
   player.stageScores[stageId] = Math.max(player.stageScores[stageId] || 0, lux);
+  // EXP di skill del combattimento (getPoint.exp) a ogni medaglia del deck con una skill salvata
+  const skillUps = grantDeckSkillExp(Number(req?.getPoint?.exp));
+  if (skillUps.length) console.log(`[skill] salite di livello: userSkillId ${skillUps.join(', ')}`);
   savePlayer();
   send(res, 200, {
     ret: ret(),
@@ -3693,7 +3717,7 @@ module.exports._test = {
   // server/test-keyblades.js
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js
-  respondUserCreate, respondStageClear,
+  respondUserCreate, respondStageClear, grantDeckSkillExp,
   // server/test-clock-migration.js
   migrateClock, clockMonthIndex: clock.monthIndex, userSkillElement, userSphereData, userKeybladeData,
   // server/test-clock-server.js

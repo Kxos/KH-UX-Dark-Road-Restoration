@@ -67,4 +67,45 @@ try {
   console.log(`wiki: controllo saltato (${e.message})`);
 }
 
+// 6. EXP dopo la missione (server.js grantDeckSkillExp), su un salvataggio temporaneo
+{
+  const os = require('os');
+  const MASTER = path.join(__dirname, 'master_data');
+  if (!fs.existsSync(path.join(MASTER, 'skillExp.json'))) {
+    console.log('SKIP grantDeckSkillExp: master senza skillExp');
+  } else {
+    process.env.KHUX_MASTER_DIR = MASTER;
+    process.env.KHUX_SAVE = path.join(os.tmpdir(), `khux-test-skillexp-${process.pid}.json`);
+    const log = console.log;
+    console.log = () => {};
+    const { _test: t } = require('./server');
+    console.log = log;
+    const erow = JSON.parse(fs.readFileSync(path.join(MASTER, 'skillExp.json'), 'utf8')).find((r) => r.expId === 1).value;
+    const p = t.player;
+    const mk = (id) => ({ userMedalId: id, medalId: 1, level: 1, exp: 0 });
+    Object.assign(p, { created: true, medals: [mk(101), mk(102), mk(103), mk(104), mk(105), mk(106)], medalState: {},
+      deck: [101, 102, 103, 104], currentUserKeybladeId: 1, nextUserSkillId: 500 });
+    const sk = (id, skillId, level, exp) => ({ userSkillId: id, skillId, level, exp, getDatetime: 0 });
+    const capExp = expToReach(erow, 10);
+    const fresh = () => { p.medalSkills = { 101: sk(1, 1100, 1, 0), 102: null, 103: sk(3, 1100, 10, capExp), 104: sk(4, 9999, 1, 0), 105: sk(5, 1100, 1, 0) }; };
+    const snap = () => JSON.stringify(p.medalSkills);
+    const grant = (n) => { console.log = () => {}; try { return t.grantDeckSkillExp(n); } finally { console.log = log; } };
+
+    fresh();
+    const before = snap();
+    for (const bad of [0, NaN, -5, undefined]) { assert.deepStrictEqual(grant(bad), []); assert.strictEqual(snap(), before, `EXP ${bad}`); }
+    assert.deepStrictEqual(grant(expToReach(erow, 3)), [1], 'sale solo la skill A');
+    assert.deepStrictEqual(p.medalSkills[101], sk(1, 1100, 3, 328));
+    assert.strictEqual(p.medalSkills[102], null, 'B senza skill resta senza');
+    assert.deepStrictEqual(p.medalSkills[103], sk(3, 1100, 10, capExp), 'C al massimo invariata');
+    assert.deepStrictEqual(p.medalSkills[104], sk(4, 9999, 1, 0), 'skillId assente dal master invariata');
+    assert.deepStrictEqual(p.medalSkills[105], sk(5, 1100, 1, 0), 'fuori dal deck invariata');
+    // il deck e' quello del keyblade della missione
+    p.keybladeDecks = { 7: [105] };
+    p.currentUserKeybladeId = 7;
+    assert.deepStrictEqual(grant(expToReach(erow, 2)), [5]);
+    assert.strictEqual(p.medalSkills[101].level, 3, 'il deck del keyblade 1 non viene toccato');
+  }
+}
+
 console.log('OK test-skill-exp');
