@@ -2561,6 +2561,35 @@ function migrateSkills() {
   savePlayer();
 }
 
+// Organizzazione XIII (medalMapVersion 1): il master ha tolto i 13 doppioni 6★ «X A» 3004xx/3006xx (erano
+// le stesse medaglie degli id SE) e le 23 Tier 8 potenziate 20xxxxx/21xxxxx dei deal 2018 (ora la 6★ [+]
+// potenziata). Fonte: D:\Progetto_Restauro_KH_UX\tmp\sp2b\g4\medal_mapping_audit.md. Le 7★ «X A» restano.
+const ORGXIII_MEDAL_MAP = new Map([
+  // doppione 6★ «X A» -> id SE
+  [300443, 31176], [300483, 31196], [300486, 31206], [300638, 31226], [300446, 32186], [300449, 32196],
+  [300489, 32216], [300641, 32236], [300452, 33176], [300455, 33186], [300492, 33206], [300495, 33216], [300644, 33236],
+  // Tier 8 potenziata -> 6★ [+] potenziata (2000000 + id [+]): 20xxxxx = 2000000 + id SE (tutti e 13), 21xxxxx =
+  // 2100000 + id SE (10: Xemnas, Axel e Roxas non hanno la copia nel master)
+  ...[[31176, 301491], [31196, 301601], [31206, 301531], [31226, 301680, 1], [32186, 301634], [32196, 301658],
+    [32216, 301745], [32236, 301563, 1], [33176, 301446], [33186, 301511], [33206, 301595], [33216, 301616], [33236, 301782, 1]]
+    .flatMap(([se, plus, solo20]) => [[2000000 + se, 2000000 + plus], ...(solo20 ? [] : [[2100000 + se, 2000000 + plus]])]),
+]);
+
+// Sostituisce medalId nei campi del salvataggio che lo tengono: medals[], medalState[] (Evolve) e i regali
+// in sospeso di tipo medaglia (resourceType 3). Il resto (userMedalId, medalSkills, medalLocks, medalTraits,
+// deck, supporto, guilt) e' per userMedalId e non cambia; gacha, pet e subslot non tengono medalId.
+function migrateMedalMap() {
+  if (player.medalMapVersion) return;
+  let n = 0;
+  const fix = (o, k) => { const to = o && ORGXIII_MEDAL_MAP.get(o[k]); if (to) { o[k] = to; n++; } };
+  for (const m of player.medals || []) fix(m, 'medalId');
+  for (const st of Object.values(player.medalState || {})) fix(st, 'medalId');
+  for (const p of player.presents || []) if (p.resourceType === 3) fix(p, 'resourceId');
+  player.medalMapVersion = 1;
+  if (n) console.log(`[save] Organizzazione XIII: ${n} medaglie/regali spostati sugli id originali (medalMapVersion 1)`);
+  savePlayer();
+}
+
 // elemento di userSkills ([fn])
 function userSkillElement(m, s, now) {
   return { userSkillId: s.userSkillId, skillId: s.skillId, level: s.level, exp: s.exp || 0,
@@ -3771,6 +3800,8 @@ function grantMissingKeyblades() {
 // skill (I-146): qui e non accanto a migrateClock() perche' usa le tabelle (medalSkillTables, userMedalList)
 // definite piu' avanti nel file
 if (player.created) migrateSkills(); else player.skillVersion = 1; // nuovo giocatore: gia' sulla tabella completa
+// id Organizzazione XIII (medalMapVersion 1)
+if (player.created) migrateMedalMap(); else player.medalMapVersion = 1;
 
 if (player.created) {
   const before = (player.keyblades || []).length;
@@ -3788,7 +3819,7 @@ module.exports._test = {
   // server/test-keyblade-unlock.js
   respondUserCreate, respondStageClear, grantDeckSkillExp,
   // server/test-skill-migration.js
-  migrateSkills,
+  migrateSkills, migrateMedalMap,
   // server/test-clock-migration.js
   migrateClock, clockMonthIndex: clock.monthIndex, userSkillElement, userSphereData, userKeybladeData,
   // server/test-clock-server.js
