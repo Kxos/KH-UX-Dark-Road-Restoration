@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-155**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-157**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -157,6 +157,8 @@ Ultima revisione: 17 ottobre 2026.
 | I-151 | APERTO | Garanzie a lista che salgono di stella: se la lista non ha varianti alla stella dello slot, `pickList` ripiega sull'intera lista e su B0447 (Illustrated Rai/Seifer/Fuu, solo 7★) e B0678 (lista SN 6★ su un mix 6/5) esce una 7★ dove il banner prometteva meno; 161 banner non hanno il bersaglio della pity alla `pityStar` alla loro data (si da' la variante esistente piu' vicina) | [shop](notes/shop.md#sp2b) | 17-10 |
 | I-154 | CHIUSO | **NPC muti: text/drama 2040xxxxx mancanti** (18-10, banco): missione 132 (stage 5020), la guardia con la nuvoletta non apre il dialogo; il client cerca `text/drama/204050201.txt` (id dal record npc della mappa) e senza il file non fa nulla. 177 testi su 178 citati dalle mappe servite mancano; `import_npc_talk.py` li prende dal pacchetto 2016 nel pacchetto generato. Risorse 41 riscritte con `build-resources.ps1 -Quick` (177 testi); banco 18-10: la guardia parla, due pagine («He couldn't have gotten far.» / «He must be hiding in one of the buildings around here.», `screenshots\q9.png`) | [mappe_storia](notes/mappe_storia.md#npc-talk) | 18-10 |
 | I-155 | APERTO | **Segnalino «Medal STR/DEF +N» (BaseBuff) sotto gli HP assente** (18-10, segnalato dall'utente: video IxiZa1FyOpQ a 2:10, SN+ - KH III Naminé «Medal STR +2000», la targhetta somma 2000/4000/9000...). Mancano tre cose: i campi `addBase*` della tabella `burst` sono 0 in tutte le righe (394 descrizioni dicono «Medal STR/DEF ±N»: l'aumento non entra neanche nel danno); le risorse `ActionMap_BaseBuff_Avt/_Enm/_eff.json` e le texture `BaseBuff_*` (nel JP 4.3.1); i nodi `BaseBuff_Avt_Null1/2` dell'HUD, solo in `ActionMap_PlayerStatusField_new` JP rev. 00360289 (il WW servito non li ha). Client: `[fn]` (carica il layout se esiste), `[fn]` (aggancio ai nodi), dati da `[fn]`/`[fn]`, acceso da `[fn]` (tipo, durata, valore != 0). Gli striscioni del pet nello stesso video sono I-137 | [battaglia](notes/battaglia.md) | 18-10 |
+| I-156 | CHIUSO | **Crash al tocco sul risultato del Level Up con skill** (18-10, segnalato dall'utente: Overwrite di Attack Boost VII su SP Roxas, poi riprodotto due volte): nel ramo 55 `userSkills` sono le skill da cancellare e il server mandava la lista intera, il client svuotava la tabella skill e l'ordinamento «Skill» della Medal List leggeva la riga skill 0. Ora solo le skill dei materiali consumati; la base tiene il suo `userSkillId`. Prova al banco: nessun crash, skill intatte | [medaglie](notes/medaglie.md#skill) | 18-10 |
+| I-157 | APERTO | **Pulsante «Overwrite Skill» sempre grigio** (18-10, segnalato dall'utente): mancano `img/ui/skill_mix_button_On.png` e `img/ui/Medal_Syn_Select_Panel02.png` nelle risorse (nel pacchetto 2016); la funzione va, cambia solo l'aspetto | [medaglie](notes/medaglie.md#skill) | 18-10 |
 
 ### Union Cross
 

@@ -176,8 +176,9 @@ const ow = r.overwriteSkills[0];
 assert.deepEqual([ow.skillId, ow.level, ow.userMedalId], [scSkill.skillId, scSkill.level, x]);
 assert.deepEqual(r.afterEnhanceUserMedal.userSkills, [ow.userSkillId]);
 assert.deepEqual(r.beforeEnhanceUserMedal.userSkills, []);
-assert.ok(r.userSkills.some((s) => s.userSkillId === ow.userSkillId), 'skill nuova nella lista userSkills');
-assert.ok(!r.userSkills.some((s) => s.userMedalId === sc1), 'la skill della Scrooge consumata sparisce');
+// ramo 55: userSkills = skill da cancellare nel client ([fn]): solo quella della Scrooge
+// consumata, mai la lista intera (svuotava la tabella: crash dell'ordinamento «Skill», banco 18-10)
+assert.deepEqual(r.userSkills.map((s) => s.userSkillId), [scSkill.userSkillId], 'userSkills = solo la skill consumata');
 log('9b. Overwrite su', atk.name, ':', skById.get(ow.skillId).name, 'LV', ow.level, 'id', ow.userSkillId);
 
 // 9c. Overwrite spento: la base tiene la sua skill, quella della Scrooge si perde
@@ -186,7 +187,7 @@ r = enhance(x, [sc2], [], 0);
 assert.equal(r.successOverwrite, 0);
 assert.deepEqual(r.overwriteSkills, []);
 assert.deepEqual(r.afterEnhanceUserMedal.userSkills, [ow.userSkillId]);
-assert.ok(!r.userSkills.some((s) => s.userMedalId === sc2));
+assert.deepEqual(r.userSkills.map((s) => s.userMedalId), [sc2], 'Overwrite spento: si cancella la skill della Scrooge');
 log('9c. Overwrite spento: skill della base invariata');
 
 // 9d. skill al livello 1 a sinistra: 20% (fallisce con 0,5, riesce con 0,1); stessa categoria
@@ -208,9 +209,16 @@ try {
   assert.equal(r.successOverwrite, 1, 'due Attack Boost I LV1 = 40%');
   assert.equal(r.overwriteSkills[0].skillId, 1100);
   Math.random = () => 0.1;
+  const oldId = p.medalSkills[y].userSkillId;
   r = enhance(y, [withSkill(1112, 3)], [], 1);
   assert.equal(r.successOverwrite, 1, 'Defense Boost I LV3 sostituisce Attack Boost I');
   assert.deepEqual([r.overwriteSkills[0].skillId, r.overwriteSkills[0].level], [1112, 3]);
+  // la base tiene il suo userSkillId (banco 18-10: con un id nuovo il client crasha al tocco sul
+  // risultato, la medaglia «prima» cita l'id vecchio): prima, dopo e overwriteSkills sullo stesso id
+  assert.equal(r.overwriteSkills[0].userSkillId, oldId, 'Overwrite: stesso userSkillId della base');
+  assert.deepEqual(r.beforeEnhanceUserMedal.userSkills, [oldId]);
+  assert.deepEqual(r.afterEnhanceUserMedal.userSkills, [oldId]);
+  assert.ok(!r.userSkills.some((s) => s.userSkillId === oldId), 'la skill della base non si cancella');
   assert.equal(t.userSkillsData().filter((s) => s.userMedalId === y).length, 1, 'una skill sola per medaglia');
   Math.random = () => 0;
   r = enhance(y, [give(90041)[0], withSkill(1100, 10)], [], 1);

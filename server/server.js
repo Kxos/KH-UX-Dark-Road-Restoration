@@ -2010,7 +2010,8 @@ function respondSphereUpdate(res, req) {
 // Liste dell'inventario delle risposte 44/49/190 (rami 0x7c33bc e 0x7cad14 di [fn]).
 // Ogni chiave e' OBBLIGATORIA: parser nullo (chiave assente o non array, [fn]) = errore
 // del dispatcher (cbz -> w19 = 0). Ma l'array vuoto e' valido e il client NON sostituisce le
-// liste: userMaterials/userMedals/userSkills passano voce per voce per un upsert per id
+// liste: userMaterials/userMedals/userSkills passano voce per voce per un upsert per id (non nel
+// Level Up, ramo 55: li' userSkills sono le skill da togliere, vedi respondMedalEnhance)
 // ([fn] materiali, number 0 = tolto; [fn] medaglie; [fn] skill) che
 // ricopia tutto l'elenco e ne ricostruisce l'indice a ogni voce: con ~2000 medaglie O(n^2),
 // ~6,5 s di attesa dopo ogni sblocco di nodo (banco 14 ottobre, come I-083 per il Level Up).
@@ -2677,13 +2678,22 @@ function respondMedalEnhance(res, body) {
     if (overwrite) {
       overwriteOk = Math.random() < overwrite.chance;
       if (overwriteOk) {
-        player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
+        // la base con una skill tiene il suo userSkillId (overwriteSkills ne fa l'upsert)
+        const own = medalSkillOf(base)?.userSkillId;
+        if (!own) player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
         player.medalSkills = player.medalSkills || {};
         const { skillId, level: lv, exp: sexp } = overwrite.skill;
-        player.medalSkills[base.userMedalId] = { userSkillId: player.nextUserSkillId, skillId, level: lv, exp: sexp || 0, getDatetime: realNow() };
+        player.medalSkills[base.userMedalId] = { userSkillId: own || player.nextUserSkillId, skillId, level: lv, exp: sexp || 0, getDatetime: realNow() };
       }
     }
   }
+  // ramo 55: userSkills = id da CANCELLARE dalla tabella skill del client ([fn], 0x7cf0c0), poi
+  // upsert di overwriteSkills. Solo le skill dei materiali consumati (mai quella della base, che tiene il
+  // suo id): con la lista intera il client svuotava la tabella e l'ordinamento «Skill» della Medal List
+  // crashava al tocco sul risultato (banco 18-10, [fn] -> [fn], riga skill 0)
+  const lostSkills = comps.map((m) => [m, medalSkillOf(m)])
+    .filter(([, s]) => s && s.userSkillId !== medalSkillOf(base)?.userSkillId)
+    .map(([m, s]) => userSkillElement(m, s, now));
   setMedalState(base.userMedalId, { level, exp, ...state });
   for (const m of comps) setMedalState(m.userMedalId, { removed: true });
   player.money = Math.max(0, (player.money || 0) - cost);
@@ -2701,8 +2711,7 @@ function respondMedalEnhance(res, body) {
   send(res, 200, {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
-    // tutte le skill (la tabella del client deve avere ogni id citato dalle medaglie)
-    userSkills: userSkillsData(now),
+    userSkills: lostSkills,
     userMedals: touchedMedalsData(base.userMedalId, comps, now),
     beforeEnhanceUserMedal: before,
     afterEnhanceUserMedal: userMedalElement({ ...base, level, exp, ...state }, now),

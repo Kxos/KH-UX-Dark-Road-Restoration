@@ -324,6 +324,18 @@ testi del client 101300020-032 e 100620003.
   10000; limite 100%. Risposta (`[fn]`): `overwriteSkills` = elementi userSkill,
   `successOverwrite` (+0x2b0): il risultato (`[fn]`, `[fn]`) mostra il nome della
   skill della base dopo la fusione.
+- **Ramo 55 (Level Up): `userSkills` = skill da CANCELLARE** (banco 18-10, crash al tocco sul risultato):
+  0x7ceed8 raccoglie gli `userSkillId` della lista, 0x7cf0c0 `[fn]` ricostruisce la tabella +0x1c8
+  senza quegli id, poi upsert di `overwriteSkills` (0x7cf0c4) e delle medaglie; `componentUserMedalIds`
+  toglie solo medaglie (`[fn]`). Mandando la lista intera il client svuotava la tabella e
+  l'ordinamento «Skill» della Medal List (`[fn]` -> `[fn]`) crashava (riga skill 0). Il
+  server manda solo le skill dei materiali consumati; la base con skill tiene il suo `userSkillId`. Altri
+  rami: vendita (51) upsert, `GET /user/skill` (13) sostituisce tutto. Prova: Level Up di Leon con un
+  materiale senza skill, lista per «Skill», nessun crash e skill delle altre medaglie intatte.
+- Pulsante «Overwrite Skill» sempre grigio (I-157): interruttore `skill_mix_button` (`[fn]`:
+  `img/ui/skill_mix_button_On.png` / `_Off` / `_Disable`); acceso cambia anche le cornici degli slot
+  (`img/ui/Medal_Syn_Select_Panel02.png`). Serviamo solo `_Off`: mancano `_On` (azzurra nel pacchetto
+  2016) e `Medal_Syn_Select_Panel02` in `img/ui/`.
 - Elemento userSkill (`[fn]`): `userSkillId` uint64, `skillId`, `level`, `exp`, `userMedalId`,
   `getDatetime`; `userMedal.userSkills` = soli id (int). Il client cerca ogni id nella tabella della
   sessione (`[fn]`, +0x1c8, riempita dalle liste `userSkills`): id senza oggetto = riga skill
