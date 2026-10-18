@@ -18,8 +18,8 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 41**, **revisione master: BASE 124** (default dei 4 script di sessione dalle skill
-del 18-10; il server manda `123*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 41**, **revisione master: BASE 125** (default dei 4 script di sessione dal base buff
+del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -75,8 +75,15 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   finto. Restano da discutere G4-G10, casi singoli, dubbi D1-D9.
 - **Sotto-progetto «Skill» (I-146) fatto il 18-10** (commit 6f9e3c3..75d00ab, rev 124): 163 skill (25 vere + 138 dal
   wiki), curva vera, EXP a fine missione, migrazione dei salvataggi, notice; provato al banco
-  ([medaglie.md#skill-banco](docs/notes/medaglie.md#skill-banco)). **Resta**: guardare dal vivo l'attivazione delle
-  skill in battaglia (un tipo per volta) e le combo «& GA 1/2». **Poi: riprendere il 2c da G4.**
+  ([medaglie.md#skill-banco](docs/notes/medaglie.md#skill-banco)). **Seguito del 18-10 sera** (rev 125, risorse 41
+  con -Quick): Second Chance e Attack Boost provati in battaglia (danno max 43.962 -> 152.323 con
+  `-SkillProb 0/100`); unita' dei campi verificate nel client e 98 righe ricostruite corrette (2be5bd0); crash del
+  Level Up dopo il risultato (I-156: `userSkills` del ramo 55 = da cancellare), pulsante Overwrite (I-157), icona
+  Lux Plus (I-158), icone numerate (I-159), NPC muti (I-154, `text/drama`), base buff «Medal STR +N» della Naminé
+  (I-155, provato dall'utente). Opzioni del banco `-EnemyAtk N` e `-SkillProb P` ([banco.md](docs/notes/banco.md)).
+  **Restano**: combo «& GA 1/2» al banco (timing 6 stimato), righe originali sospette (Lux Plus x3 contro x1,5 del
+  5.0.1, SP Attack Gauge II), cose da guardare per I-159 (icone dei premi delle Missioni, tutorial JP).
+  **Poi: riprendere il 2c da G4.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
@@ -90,7 +97,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json`; il ridotto del 17-10 in
   `tmp\save-before-skill`), migrato alle skill (`skillVersion` 1), rev 124. Modifiche di prova: skill date a SP Roxas
   (762, ora Attack Boost VII 20/20 dopo l'Overwrite, LV 49), SP Axel (766, Second Chance 15/15), 2141 (Attack Boost VI),
-  2204 (Second Chance); Donald Ver. A (120) consumato nel Level Up.
+  2204 (Second Chance); Donald Ver. A (120) consumato nel Level Up. Poi: Leon (2459) Lux Plus 15/15 LV 35 (consumati
+  Scrooge 452/453, Wakka, Auron); deck di Lady Luck = Roxas + 4 Wakka (prove del danno). L'utente ricomincera' da zero
+  sul telefono a lavoro finito: consumare medaglie per le prove va bene.
 - Altri lavori in attesa (Limited I-118, Blue Fairy e PvP I-126, NPC JP, crash intermittenti, decisioni dell'utente
   del 16-10): [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md) e [ISSUES](docs/ISSUES.md).
 
