@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 42 costruite, da installare con `update-resources.ps1`** (41 installata sul banco; la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782), **revisione master: BASE 126** (default dei 4 script di sessione dalle skill allo
+Stato del banco: **risorse 42 costruite, da installare con `update-resources.ps1` al banco** (41 installata sul banco; la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782), **revisione master: BASE 127** (default dei 4 script di sessione dalle skill allo
 stato 4.3.1 del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
@@ -93,6 +93,11 @@ otice_audit\g4_historical_tiers.md`), B0154 lista di 17 nomi, XIII Deal 10 nomi.
   Roboloid «X [+]»; i 3004xx «X A» sono nostri doppioni; alias SN++ di 32236/33236 sbagliati):
   `tmp\sp2b\g4\orgxiii_migration.md`. Audit globale del mapping in corso (`tmp\sp2b\g4\medal_mapping_audit.md`),
   poi piano di correzione da mostrare all'utente, poi G4 e G5-G10.
+  **Org XIII corretta (18-10 notte, rev 127, I-160)**: `MEDAL_MAP_FIX`/`EVOLVE_FIX` nel generatore, 13 6★ [+] nuove con
+  immagini (risorse 42), catalogo e migrazione del salvataggio (96a7515, ba2922d, 4f1c8a7, 247fbed; test d3105e4)
+  ([medaglie.md#mapping-orgxiii](docs/notes/medaglie.md#mapping-orgxiii)). Aperti: I-161 (SN++ adjusted), I-162 (167 6★
+  senza evoluzione). **Prossimo passo: banco (Task 6: installare risorse 42, riavvio con migrazione, B0280/B0303, Evolve
+  6★ -> 7★ «X A»), poi G4 del 2c.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione

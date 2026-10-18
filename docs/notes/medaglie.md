@@ -511,3 +511,31 @@ e`). 10000 = 1,0:
   compare a schermo. Da misurare: l'aumento reale del danno di Attack Boost; le combo «& GA 1/2».
 - Inciampi: `Select-Object -First N` su uno script node lo chiude prima della scrittura (skill di prova persa); il tombstone del
   servizio sensori dell'emulatore (`android.hardware.sensors`) non e' un crash del gioco.
+
+<a id="mapping-orgxiii"></a>
+## Mapping Organizzazione XIII e Roboloid (I-160, 18-10, rev 127)
+
+- Problema: `make-game-tables.js` prende il Tier dalla riga Roboloid `MEDAL_MAP[id]` e con `KHUX_MEDALS_ALL` aggiunge come
+  `300000+ID` ogni riga non usata. Per i 13 id SE dell'Organizzazione XIII `medal_map.json` puntava alle «X [+]» (Tier 8): le
+  «X A» 3004xx/3006xx diventavano doppioni nostri e le 6★ [+] non avevano riga. Prove: `tmp\sp2b\g4\medal_mapping_audit.md`
+  (gruppo 1), `orgxiii_migration.md`.
+- Correzione in `server/make-game-tables.js`: `MEDAL_MAP_FIX` (23 chiavi: 13 id SE + 10 copie 1xxxxx -> «X A» 6★, Tier 3) applicata
+  con `Object.assign` dopo il caricamento di `MEDAL_MAP`; `EVOLVE_FIX` (stesse 23 chiavi -> 7★ «X A», `validEvolve` 1, 5 Blue Fairy [3]
+  da `blue-fairy.js`). Sta nel repo perche' `medal_map.json` e' esterno (`D:\Progetto_Restauro_KH_UX\medal_gen`) e non
+  versionato: senza la tabella nel generatore una rigenerazione riporterebbe l'errore. Solo id Roboloid/SE, nessun dato SE.
+- Tabella (SE -> «X A» giusta / 7★ «X A» / 6★ [+] nuova, data EN): 31176 Lexaeus 443/300444/301491 2018-05-13; 31196 Xaldin
+  483/300484/301601 2018-09-24 (solo evento); 31206 Saix 486/300487/301531 2018-07-13; 31226 Xemnas 638/300639/301680 2019-01-13;
+  32186 Marluxia 446/300447/301634 2018-11-13; 32196 Larxene 449/300450/301658 2018-12-13; 32216 Xigbar 489/300490/301745
+  2019-02-13; 32236 Axel 641/300642/301563 2018-08-13; 33176 Vexen 452/300453/301446 2018-04-13; 33186 Zexion 455/300456/301511
+  2018-06-13; 33206 Demyx 492/300493/301595 2018-09-13; 33216 Luxord 495/300496/301616 2018-10-13; 33236 Roxas 644/300645/301782
+  2019-03-13. Le potenziate 20xxxxx/21xxxxx dell'Org XIII non si rigenerano (nascevano dai deal [+]): ora sono le 2301xxx.
+- Test: `server/test-orgxiii-map.js` (tabella a mano contro il master), `server/test-orgxiii-migration.js`.
+- Catalogo (`recon/tools/make_banner_catalog.py`, 4f1c8a7): alias di Axel/Roxas/Vexen non piu' su SN++, 6.2 su «axel a»/«roxas a»,
+  `clamp_plus_dates` (le [+] non prima di `firstRarity`), `medal_date` in `banner_overrides.tsv` (302074/302075 al 2021-01-01);
+  B0280/B0303 danno la 6★ [+]. Installato con le promesse skill dei 98 banner (`maxSkill`).
+- Immagini (ba2922d): grafica e cutin delle 13 6★ [+] 301446...301782 (imageId = medalId), risorse 42 costruite, da installare al banco.
+- Salvataggio (247fbed, `migrateMedalMap` in `server/server.js`, `medalMapVersion` 1): `ORGXIII_MEDAL_MAP` (36 voci) porta 3004xx/3006xx
+  all'id SE e le potenziate 20xxxxx/21xxxxx alla 2301xxx; campi con `medalId`: `medals[]`, `medalState`, regali `resourceType` 3;
+  il resto segue `userMedalId`. Salvataggio del banco: 14 copie, nessuna potenziata.
+- Seguiti aperti dall'audit: I-161 (SN++ 302008-302012 «adjusted» del 07-09-2020, evoluzione con Fantasia Mickey B 300913) e I-162
+  (167 6★ originali senza `validEvolve` verso la 7★).
