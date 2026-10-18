@@ -18,8 +18,8 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 41**, **revisione master: BASE 123** (default dei 4 script di sessione dalla correzione di I-153
-del 17-10; il server manda `123*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 41**, **revisione master: BASE 124** (default dei 4 script di sessione dalle skill
+del 18-10; il server manda `123*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -73,9 +73,10 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   la garantita della 5ª estrazione, le copie uscite prima no; (c) G2: skill al massimo come promessa dal notice
   (dopo le skill); (d) G3: potenziamento a 3 pallini su Daily/Small Deal legato alle date dei deal sull'orologio
   finto. Restano da discutere G4-G10, casi singoli, dubbi D1-D9.
-- **Prima del 2c (deciso dall'utente il 18-10): sotto-progetto «Skill» (I-146)**, completo come nell'originale:
-  tabella completa delle abilita', skill giusta nei dettagli di ogni medaglia, crescita di livello (battaglia e
-  Level Up/Overwrite), effetto vero in battaglia. Brainstorming in corso.
+- **Sotto-progetto «Skill» (I-146) fatto il 18-10** (commit 6f9e3c3..75d00ab, rev 124): 163 skill (25 vere + 138 dal
+  wiki), curva vera, EXP a fine missione, migrazione dei salvataggi, notice; provato al banco
+  ([medaglie.md#skill-banco](docs/notes/medaglie.md#skill-banco)). **Resta**: guardare dal vivo l'attivazione delle
+  skill in battaglia (un tipo per volta) e le combo «& GA 1/2». **Poi: riprendere il 2c da G4.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
@@ -85,11 +86,11 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   I-143 (tocco perso dopo le Notices), I-145, I-146 (abilita' mancanti), I-150 (nomi guasti del catalogo), I-151
   (liste che salgono di stella). Dopo: **sotto-progetto 3** (catalogo con filtri, sblocchi, rotazione, stagionali; la
   chiusura dei Details non ricarica la lista).
-- **Banco (17-10 sera)**: salvataggio RIDOTTO di prova (piu' 5 copie di HD Axel aggiunte ed evolute, 46000 jewel), server
-  rev 122 con `relogin.ps1 -Tag 2b_nova2 -Revision 122 -GachaShow B0616,B0637,B0619`. Salvataggio completo:
-  `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json` (livello 100, materiali a 9999,
-  keyblade a +35/+60; il ridotto in `tmp\save-backup-before-2b` e `tmp\save-backup-before-evolve-test`): rimetterlo
-  prima di altri lavori.
+- **Banco (18-10 sera)**: salvataggio COMPLETO rimesso (copia intatta in
+  `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json`; il ridotto del 17-10 in
+  `tmp\save-before-skill`), migrato alle skill (`skillVersion` 1), rev 124. Modifiche di prova: skill date a SP Roxas
+  (762, ora Attack Boost VII 20/20 dopo l'Overwrite, LV 49), SP Axel (766, Second Chance 15/15), 2141 (Attack Boost VI),
+  2204 (Second Chance); Donald Ver. A (120) consumato nel Level Up.
 - Altri lavori in attesa (Limited I-118, Blue Fairy e PvP I-126, NPC JP, crash intermittenti, decisioni dell'utente
   del 16-10): [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md) e [ISSUES](docs/ISSUES.md).
 

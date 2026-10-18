@@ -365,7 +365,7 @@ testi del client 101300020-032 e 100620003.
   di allora 1100-1113, stesso `userSkillId` 1000000000 + userMedalId, `getDatetime` della medaglia); ogni
   skill salvata tiene il livello mostrato e prende `exp` = soglia vera di quel livello (`expToReach`, limitata a
   maxLv: la curva inventata dava altri numeri). Medaglie senza skill restano senza; Scrooge nuove = regola
-  sulla tabella completa, calcolata (exp 0 come prima). Nuovo giocatore: `skillVersion` 1 subito. Prova:
+  sulla tabella completa, calcolata (exp = soglia del livello massimo, come le migrate; guardia: con un master vecchio o ridotto la migrazione si rimanda con un avviso `[skill] migrazione rimandata`). Nuovo giocatore: `skillVersion` 1 subito. Prova:
   `server/test-skill-migration.js`.
 - Tabella skill (I-146, 18-10, `server/make-skill-table.js`, chiamato da `make-game-tables.js` dopo
   `make-pet-tables`; prova `server/test-skill-table.js`; report `D:\Progetto_Restauro_KH_UX\tmp\skill\report.md`).
@@ -432,3 +432,17 @@ testi del client 101300020-032 e 100620003.
   Dewey/Louie e HDL, Chip, Dale, Magic Mirror, Cid/Cid 5/Cid 10 (23 righe). Restano fuori le
   Scrooge (type 2, unk_1116 0), come nell'originale (Reddit: Optimize non usa le Scrooge). Valori
   originali non trovati: regola ricostruita.
+
+<a id="skill-banco"></a>
+### Prova al banco del 18-10 (rev 124, salvataggio completo)
+
+- Migrazione al primo avvio: `skillVersion` 1, 15 skill (8 salvate + 4 di prova + 3 Scrooge fissate).
+- Dettagli: Attack Boost VI (ricostruita) 1/20 al 39% (`invokeProb` 3975), Second Chance (vera) 15/15 al 32%; icone e descrizioni giuste.
+- Crescita: Combat 101 da' `getPoint.exp` 14 con 17 nemici; con EXP a 595 la missione porta la skill a LV 3 e i RESULTS mostrano
+  «Supernova+ - SP Roxas's Attack Boost VI leveled up!» (il client confronta il livello di `userSkills` prima e dopo la risposta di
+  `/stage/clear`, `[fn]`/`[fn]`; nessun campo dedicato, `D:\Progetto_Restauro_KH_UX	mp\skill\popupnswer.md`).
+- Overwrite: materiale Donald Ver. A con Attack Boost VII 20/20 a sinistra -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
+  Attack Boost VII?», base con Attack Boost VII 20/20. Ordinamento «Skill» della lista: medaglie con skill in cima.
+- Non visto: l'attivazione delle skill in battaglia (i fotogrammi ogni 2 s non la colgono): da guardare dal vivo.
+- Inciampi: `Select-Object -First N` su uno script node lo chiude prima della scrittura (skill di prova persa); il tombstone del
+  servizio sensori dell'emulatore (`android.hardware.sensors`) non e' un crash del gioco.
