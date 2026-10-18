@@ -32,6 +32,8 @@ RAW = 'https://raw.githubusercontent.com/Roboloid/khux/master/images/'
 
 def norm(s):
     s = re.sub(r'\bver\.?\s*', '', str(s), flags=re.I)
+    # «+» resta: senza, «Vexen [+]» 6★ e «Vexen» 6★ (= «Vexen A») avevano la stessa chiave
+    s = s.replace('+', 'plus')
     return re.sub(r'[^a-z0-9]', '', s.lower())
 
 
