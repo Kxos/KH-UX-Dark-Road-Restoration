@@ -98,6 +98,26 @@ const ROBO_DB = process.env.KHUX_ROBOLOID_DB || 'D:\\Progetto_Restauro_KH_UX\\ex
 const ROBO = fs.existsSync(ROBO_DB) ? JSON.parse(fs.readFileSync(ROBO_DB, 'utf8')) : [];
 const ROBO_BY_ID = new Map(ROBO.map((d) => [d.ID, d]));
 const MEDAL_MAP = fs.existsSync(MEDAL_MAP_PATH) ? JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')) : {};
+// Organizzazione XIII: medal_map.json associa le 6★ SE (e le copie 1xxxxx) alle «X [+]» di Roboloid
+// (Tier 8, deal di aprile 2018 - marzo 2019), ma le righe SE sono le «X A» 6★ (Tier 3, banner
+// 2016-2017): verifica in D:\Progetto_Restauro_KH_UX\tmp\sp2b\g4\medal_mapping_audit.md. Con l'id
+// giusto Tier, buff e set «mapped» (sotto) cambiano: sparisce il doppione 6★ «X A» 3004xx e nasce la
+// 6★ [+] propria (301xxx, Tier 8, Evolve verso la 7★ [+])
+const MEDAL_MAP_FIX = {
+  31176: 443, 131176: 443, 31196: 483, 131196: 483, 31206: 486, 131206: 486, 31226: 638, // Lexaeus, Xaldin, Saïx, Xemnas
+  32186: 446, 132186: 446, 32196: 449, 132196: 449, 32216: 489, 132216: 489, 32236: 641, // Marluxia, Larxene, Xigbar, Axel
+  33176: 452, 133176: 452, 33186: 455, 133186: 455, 33206: 492, 133206: 492, // Vexen, Zexion, Demyx
+  33216: 495, 133216: 495, 33236: 644, // Luxord, Roxas
+};
+Object.assign(MEDAL_MAP, MEDAL_MAP_FIX);
+// Evolve delle 6★ SE verso la 7★ «X A» (300000 + id Roboloid della 7★): le righe di thethiny non
+// l'hanno; si applica dopo le righe di Roboloid, prima di blue-fairy.js (5 Blue Fairy LV 3)
+const EVOLVE_FIX = {
+  31176: 300444, 131176: 300444, 31196: 300484, 131196: 300484, 31206: 300487, 131206: 300487, 31226: 300639,
+  32186: 300447, 132186: 300447, 32196: 300450, 132196: 300450, 32216: 300490, 132216: 300490, 32236: 300642,
+  33176: 300453, 133176: 300453, 33186: 300456, 133186: 300456, 33206: 300493, 133206: 300493,
+  33216: 300496, 133216: 300496, 33236: 300645,
+};
 // slot dei trait (khuxwiki, «Special Attack Bonus», Trait Slots): tier 1-3 -> 1, 4-5 -> 2,
 // 6-8 -> 3 (9-10 non elencati: 3); Supernova (SN, SN+, SN++, Supernova, Supernova+) e Prime 7★
 // -> 5, Prime 6★ -> 3; supporto (EXP, evoluzione) -> 0. Non le «7★» di Roboloid senza prefisso
@@ -148,8 +168,8 @@ let roboAdded = 0;
 if (process.env.KHUX_MEDALS_ALL === '1' && ROBO.length) {
   const robo = ROBO;
   // id Roboloid gia' associati a una medaglia del master (le chiavi 300000+ sono le aggiunte)
-  const mapped = new Set(fs.existsSync(MEDAL_MAP_PATH) ? Object.entries(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))
-    .filter(([k]) => Number(k) < 300000).map(([, v]) => v) : []);
+  // (MEDAL_MAP, con le correzioni di MEDAL_MAP_FIX)
+  const mapped = new Set(Object.entries(MEDAL_MAP).filter(([k]) => Number(k) < 300000).map(([, v]) => v));
   const ATTR = { Power: 1, Speed: 2, Magic: 3 };
   const tpl = (rare, attr) => medals.find((m) => m.rare === rare && m.attribute === attr && m.validBurst)
     || medals.find((m) => m.rare === Math.min(rare, 6) && m.validBurst) || medals.find((m) => m.validBurst);
@@ -181,6 +201,14 @@ if (process.env.KHUX_MEDALS_ALL === '1' && ROBO.length) {
     }));
     roboAdded++;
   }
+}
+// Evolve 6★ SE -> 7★ «X A» dell'Organizzazione XIII (EVOLVE_FIX, sopra), solo se la 7★ c'e'
+let orgEvolve = 0;
+for (const m of medals) {
+  const to = EVOLVE_FIX[m.medalId];
+  if (!to || !medals.some((x) => x.medalId === to)) continue;
+  Object.assign(m, { validEvolve: 1, evolveId: to });
+  orgEvolve++;
 }
 
 // Level Up con medaglie speciali (I-079/I-080, server/medal-guilt.js, docs/notes/guilt.md): le due
@@ -773,6 +801,6 @@ for (const f of fs.existsSync(TABLES) ? fs.readdirSync(TABLES) : []) {
 }
 console.log(`medal: ${medals.length} righe (+${roboAdded} da Roboloid, ${tiersFromRobo} tier da Roboloid); player: ${players.length} livelli (HP lv1 = ${hp})` +
   (enemies ? `; enemy: ${enemies.length} righe (${displaysJp} con grafica originale di enemy_gen, ${displaysDarkRoad} con grafica di Dark Road, ${displaysSubstituted} con grafica sostitutiva, ${showsRestored} con effetto di comparsa originale ripristinato, ${showsSubstituted} con effetto di comparsa sostitutivo; enemyAttack +${attacksAdded})` : '') + `; burst: ${bursts.length} righe (+${burstsAdded}, ${buffStats.rows} con buff/debuff, ${buffStats.fromOrig} da thethiny, ${buffStats.conflicts} conflitti)` +
-  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie); +${fairyAdded} Blue Fairy, ${fairyEvolve} Evolve 6★->7★ con Blue Fairy; bgm: ${bgmRows} righe` +
+  `; supernova: ${snBursts.length} attacchi, +${meowAdded} Dual Meow Wow, ${snEvolve.applied} Evolve con medaglie richieste (${snEvolve.missing} regole senza medaglie); +${fairyAdded} Blue Fairy, ${fairyEvolve} Evolve 6★->7★ con Blue Fairy (${orgEvolve} dell'Organizzazione XIII verso la 7★ «X A»); bgm: ${bgmRows} righe` +
   `; guilt: +${guiltExtra} medaglie speciali, ${Object.keys(dotFix).length} burst con pallini corretti, guiltProb ${guiltProb.length} righe` +
   `; stage: +${storyAdded} missioni di storia (${submissionsFixed} obiettivi su nemici assenti), filmati: ${dramasTheater} dal theater, ${dramasOff} disattivati`);
