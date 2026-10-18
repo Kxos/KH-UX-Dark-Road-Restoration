@@ -106,6 +106,14 @@ python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$D\tmp
   "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\text\drama" `
   "$sg\files\stage" "$sg\files" --report "$sg\npc_talk.json"
 if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
+# pulsante «Overwrite Skill» del Level Up acceso (I-157): [fn] carica skill_mix_button_On/_Disable e,
+# acceso, le cornici Medal_Syn_Select_Panel02 in img/ui; WW serve solo _Off (acceso restava grigio). BTF del 2016
+foreach ($n in 'skill_mix_button_On', 'skill_mix_button_Disable', 'Medal_Syn_Select_Panel02') {
+    $src = "$D\tmp\thethiny_x\bundle2016\files\img\ui\$n.png"
+    if (-not (Test-Path $src)) { throw "manca $src" }
+    New-Item -ItemType Directory -Force "$sg\files\img\ui" | Out-Null
+    Copy-Item $src "$sg\files\img\ui\$n.png" -Force
+}
 # piastra «Banner Catalog» dello Shop: testi del pulsante Gold Ticket (106140420-424) e icona
 # Star7_Ticket_39 (aveva il segno «仮»), dopo i testi IPA; banner 9001 in server\game_data\gacha_img
 python recon\tools\make_shop_art.py "$sg\files" server\game_data
