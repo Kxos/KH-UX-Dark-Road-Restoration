@@ -66,8 +66,16 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Audit dei banner contro i notice ufficiali** (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\notice_audit\`,
   report.md + findings.tsv + overrides_proposed.tsv): 155 differenze su 122 banner (regole G1-G10: deal 7★/Prime
   2018 con SA + SAB max + skill, «If you receive the following Medals ... N dots», «0 dots», Daily/Small Deal,
-  limiti, Power Gems, Tier massimi persi). **Prossimo: sotto-progetto 2c «Promesse dei notice»** (spec + piano),
-  con le decisioni dell'utente sulle regole.
+  limiti, Power Gems, Tier massimi persi). **Sotto-progetto 2c «Promesse dei notice»: brainstorming iniziato il 18-10,
+  IN PAUSA** perche' l'utente vuole prima le skill (sotto). Decisioni gia' prese: (a) ogni promessa che il client non
+  mostra o che non possiamo dare si dichiara nelle Notices (come lo slot Trait); (b) G1: SA sbloccato + pallini e
+  guilt al massimo + skill al massimo solo sulla 7★ garantita (e copie dove il notice lo dice); notice 43549 = solo
+  la garantita della 5ª estrazione, le copie uscite prima no; (c) G2: skill al massimo come promessa dal notice
+  (dopo le skill); (d) G3: potenziamento a 3 pallini su Daily/Small Deal legato alle date dei deal sull'orologio
+  finto. Restano da discutere G4-G10, casi singoli, dubbi D1-D9.
+- **Prima del 2c (deciso dall'utente il 18-10): sotto-progetto «Skill» (I-146)**, completo come nell'originale:
+  tabella completa delle abilita', skill giusta nei dettagli di ogni medaglia, crescita di livello (battaglia e
+  Level Up/Overwrite), effetto vero in battaglia. Brainstorming in corso.
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
