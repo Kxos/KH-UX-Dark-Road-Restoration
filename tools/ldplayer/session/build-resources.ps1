@@ -110,11 +110,58 @@ if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
 # acceso, le cornici Medal_Syn_Select_Panel02 in img/ui; WW serve solo _Off (acceso restava grigio). BTF del 2016
 # Icona skill 3 (thumbId 3: Lux Plus e le combo «& Lux Plus»): WW serve img/skill/Skill_Icon1,2,4-9 ma non la 3;
 # senza, il riquadro teneva l'icona di prima (Lux Plus con la freccia rossa di Attack Boost, banco 18-10)
-foreach ($n in 'ui\skill_mix_button_On', 'ui\skill_mix_button_Disable', 'ui\Medal_Syn_Select_Panel02', 'skill\Skill_Icon3') {
+# Controllo delle immagini dal nome composto con un numero (18-10, risorse_layout.md#icone-numerate): le
+# mancanti con una fonte. Dal pacchetto 2016 (BTF uguali byte per byte ai WW dove ci sono entrambi):
+# - IncentiveIcon_NN: icona di un premio per tipo, costanti di [fn] (tipo 7 titolo, 8 CP, 9 HP, 26 Skip
+#   Ticket, ... usati da reward/mission); WW serve solo 02/04/14. Escluse 10 e 12 (giapponese disegnato)
+# - material_54 (material.materialId 54, Remembrance Gem; [fn] tipo 5, riga material +0)
+# - Prize_Treasure02-04 ([fn], «Prize_Treasure%02d» dal premio +0x48; WW solo 01)
+# - Topinfo_BarBut1,3-7 _Off/_On ([fn]/[fn]/[fn]: «Button_%d», indice+1; WW solo 2)
+# - Deck_Arrow_U/R1-3 (frecce del bonus di attributo del deck, [fn]; WW solo publish/Deck_Arrow_U1)
+# - tutorial_N ([fn] -> [fn] «tutorial_%d», id 1-65 costanti dei chiamanti): le 19 del 2016
+#   in inglese; quelle dei soli dati JP (48-65) hanno il testo giapponese e restano assenti (ISSUES I-159)
+# - light/NPC/39994,39996,39997 (immagini dei SEQ light novel 1010151/1989901, comando 4002)
+$img16 = @('ui\skill_mix_button_On', 'ui\skill_mix_button_Disable', 'ui\Medal_Syn_Select_Panel02', 'skill\Skill_Icon3',
+  'material\material_54', 'prizes\Prize_Treasure02', 'prizes\Prize_Treasure03', 'prizes\Prize_Treasure04',
+  'light\NPC\39994', 'light\NPC\39996', 'light\NPC\39997')
+$img16 += @(6, 7, 8, 9, 11, 15, 16, 17, 26, 28, 29) | ForEach-Object { 'incentive\IncentiveIcon_{0:D2}' -f $_ }
+$img16 += @(1, 3, 4, 5, 6, 7) | ForEach-Object { "ui\Topinfo_BarBut${_}_Off"; "ui\Topinfo_BarBut${_}_On" }
+$img16 += @(1, 2, 3) | ForEach-Object { "ui\Deck_Arrow_U$_"; "ui\Deck_Arrow_R$_" }
+$img16 += @(12, 13, 16, 17, 20, 21, 22, 23, 24, 25, 27, 29, 30, 32, 33, 34, 45, 46, 47) | ForEach-Object { "tutorial\tutorial_$_" }
+foreach ($n in $img16) {
     $src = "$D\tmp\thethiny_x\bundle2016\files\img\$n.png"
     if (-not (Test-Path $src)) { throw "manca $src" }
     New-Item -ItemType Directory -Force (Split-Path "$sg\files\img\$n.png") | Out-Null
     Copy-Item $src "$sg\files\img\$n.png" -Force
+}
+# Dai dati JP 4.3.1 (PNG, revisione piu' alta; btf_fix le premoltiplica), senza testo disegnato:
+# - IncentiveIcon_30-32, 35-41 ([fn]: 40 Platinum Ticket e 41 Draw Ticket nelle missioni 4059/4060/4091)
+# - AvtInfo_CrownIcon1-3 / trophyIcon1-2 del Profilo ([fn]: corona = (mvpCount-1)/50+1, trofeo =
+#   (pvpMvpCount-1)/50+1 senza segno, fino a 4; col nostro 0 il client chiede CrownIcon1 e trophyIcon4)
+# - cifre del danno dmgGuardBreak/dmgReflection_num0-9 e _comma (tabella 0x1f2c2a0 di [fn], tipi 5 e 6)
+$jpImg = "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\img"
+$imgJp = @(30, 31, 32, 35, 36, 37, 38, 39, 40, 41) | ForEach-Object { 'incentive\IncentiveIcon_{0:D2}' -f $_ }
+$imgJp += @('ui\AvtInfo_CrownIcon1', 'ui\AvtInfo_CrownIcon2', 'ui\AvtInfo_CrownIcon3', 'ui\AvtInfo_trophyIcon1', 'ui\AvtInfo_trophyIcon2')
+foreach ($k in 'GuardBreak', 'Reflection') { $imgJp += @(0..9 | ForEach-Object { "damage\dmg${k}_num$_" }) + "damage\dmg${k}_comma" }
+foreach ($n in $imgJp) {
+    $leaf = Split-Path -Leaf $n
+    $cand = @(Get-ChildItem (Split-Path "$jpImg\$n.png") -File | Where-Object { $_.Name -match ('^' + [regex]::Escape($leaf) + '(\.\d{8})?\.png$') } |
+      Sort-Object { if ($_.Name -match '\.(\d{8})\.png$') { [int]$Matches[1] } else { -1 } })
+    if (-not $cand) { throw "manca $jpImg\$n.png" }
+    New-Item -ItemType Directory -Force (Split-Path "$sg\files\img\$n.png") | Out-Null
+    Copy-Item $cand[-1].FullName "$sg\files\img\$n.png" -Force
+}
+# Serviti solo sotto cocostudio/publish (non valgono per img/...): stesso file anche in img/ (WW localizzate:
+# CrownIcon4, trophyIcon3/4, IncentiveIcon_42 Premium Ticket). Estratti una volta in catalog\img_alias
+$alias = @{ 'ui\AvtInfo_CrownIcon4' = 'cocostudio/publish/AvtInfo_CrownIcon4.png'; 'ui\AvtInfo_trophyIcon3' = 'cocostudio/publish/AvtInfo_trophyIcon3.png'
+  'ui\AvtInfo_trophyIcon4' = 'cocostudio/publish/AvtInfo_trophyIcon4.png'; 'incentive\IncentiveIcon_42' = 'cocostudio/publish/IncentiveIcon_42.png' }
+$ac = "$D\catalog\img_alias"
+$need = @($alias.Values | Where-Object { -not (Test-Path "$ac\$_") })
+if ($need) { python -I recon\tools\res_get.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $ac @need; if ($LASTEXITCODE) { throw 'res_get img_alias fallito' } }
+foreach ($k in $alias.Keys) {
+    if (-not (Test-Path "$ac\$($alias[$k])")) { throw "manca $ac\$($alias[$k])" }
+    New-Item -ItemType Directory -Force (Split-Path "$sg\files\img\$k.png") | Out-Null
+    Copy-Item "$ac\$($alias[$k])" "$sg\files\img\$k.png" -Force
 }
 # piastra «Banner Catalog» dello Shop: testi del pulsante Gold Ticket (106140420-424) e icona
 # Star7_Ticket_39 (aveva il segno «仮»), dopo i testi IPA; banner 9001 in server\game_data\gacha_img

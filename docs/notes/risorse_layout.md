@@ -303,3 +303,48 @@ diversi (bwait, btlEnd, knockback, dead1-3) hanno `key` e `shadow` in entrambe l
   generato 108.128.458 byte su 134.217.728 di riserva (80,6%); indice: entra nella dimensione installata
   della 41 (restano ~57,6 KB di riserva): basta un `-Quick`.
 - I suoni sono originali: nessuna riga nelle Notices.
+
+<a id="icone-numerate"></a>
+## Immagini dal nome numerato (controllo del 18-10, I-158/I-159)
+
+Il client compone molti percorsi `img/...` con `sprintf` da un id del master o da un numero; se il file manca
+`ImageView::loadTexture`/`Sprite::setTexture` lasciano la texture di prima (icona sbagliata, nessun crash: caso
+`Skill_Icon3`, I-158). Controllo **offline**: 119 formati `img/` e `cocostudio/publish/...%d` dalle stringhe della
+libreria 4.3.1 (`strings` + `who_refs.py` + Ghidra sulle funzioni che li usano), valori dal master servito
+(`server/master_data`), file serviti = `names_v4.tsv` + `medal_gen`/`rooms_gen`/`enemy_gen`/`raisedraw_gen`/`stage_gen`
+`files\` (un file solo in `cocostudio/publish/` non vale per `img/`). Lavoro e script in
+`D:\Progetto_Restauro_KH_UX\tmp\icons\` (`check.py`, `fmt_other.py`, `seq.py`, decompilati `helpers*.c`).
+
+| Formato | Numero da | Valori usati | Mancanti | Fonte / esito |
+|---|---|---|---|---|
+| `img/skill/Skill_Icon%d` | `skill.thumbId` (riga skill +8, [fn], [fn] tipo 0) | 5 | 0 (la 3 dal 2016, I-158) | - |
+| `img/medal/Medal_S_%d` / `Medal_L_%d` | `medal.thumbId` (+8, premio tipo 3) / `medal.imageId` | 2090 | 0 | - |
+| `img/Cutin/Cutin_%d` | `medal.cutinId` (+0xc, carosella delle mosse speciali [fn]/[fn]) | 2088 | 173 | nessuna (I-159) |
+| `img/art/Art_%d` | `medal.artId` (+0x14, scena `MedalArtAnim` [fn]) | 2088 | 2088 | nessuna; JP 55 id solo giapponesi (I-159) |
+| `img/material/material_%d` | `material.materialId` (+0, premio tipo 5) | 53 | 54 | 2016 |
+| `img/avatarParts/ai%d` / `ai%03d` | id della parte (premio 0x12-0x14/0x17) | 2824 | 103 (partsType 7) | non chieste: sotto-parti di `setCloth`, mai premio |
+| `img/petParts/pi%d` | `petParts.petPartsId` (premio 0x21, missioni tipo 33) | 668 | 0 | - |
+| `img/sphere_incentive/%d`, `sphere_board/Board_%04d`, `sphere_kind/Kind_%04d` | `sphere.sphereBoardId` / `boardId` / `kindId` | 118 / 1 / 2 | 0 | - |
+| `img/keyBlade/KeyBlade_%06d` | `keyblade.displayId` (+0xcc, premio tipo 13) | 64 | 0 | `make_keyblade_images.py` |
+| `img/carouselDeck/*%03d`, `img/ui/Subslot_MedalSlot%03d` | `keyblade.displayId / 100` | 16 | 0 | `make_keyblade_decks.py` |
+| `img/kakusei/Kakusei_Icon%04d` | `shuffleskill.category` (+4, [fn]) | 11 | 0 | - |
+| `img/userTitle/title_%04d` | `title.label` | 102 | 0 | - |
+| `img/Theater/World_Icon_%d`, `img/wipe/wipe_%d`, `stage_select_ico_%d_%d` | `theater.worldId`, `world.worldId`, `stage.worldId`+`thumbId` | 14 / 10 / 99 | 0 | - |
+| `img/light/{BG,NPC,NARRATION}/%d` | comando 4002 dei 40 SEQ serviti `img/light/SEQ/*.l` (slot 5003 BG, 5004 narrazione, 5008-5012 NPC) | tutti gli id citati | 4 | 39994/39996/39997 dal 2016; 30019 nessuna (I-159) |
+| `img/incentive/IncentiveIcon_NN` | costanti per tipo di premio ([fn]): usati 7, 8, 9, 26, 40, 41 (reward, mission) | 27 nomi | 24 | 06-29 dal 2016 (non 10/12: giapponese disegnato), 30-41 JP (rev. piu' alta), 42 = `cocostudio/publish/IncentiveIcon_42` |
+| `img/incentive/Star7_Ticket_%02d`, `draw_Ticket_%02d` | tipo di premio 37-42 | 6 | 0 | serviti con «仮» (segnaposto WW, Star7 39 in `make_shop_art.py`) |
+| `img/prizes/Prize_Treasure%02d` | premio +0x48 ([fn]) | 1-4 | 02-04 | 2016 |
+| `img/ui/AvtInfo_CrownIcon%d`, `AvtInfo_trophyIcon%d` | Profilo ([fn]): `(mvpCount-1)/50+1`, `(pvpMvpCount-1)/50+1` senza segno, max 4; col nostro 0: Crown1 e trophy4 | 1-4 | tutte | 1-3/1-2 JP, Crown4 e trophy3/4 da `cocostudio/publish/` (WW) |
+| `img/ui/Topinfo_BarBut%d_Off/_On` | indice della scheda + 1 (`Button_%d`, finestra Missioni [fn]/[fn]/[fn]) | 1-7 | 1, 3-7 | 2016 (uguali byte per byte a `publish/Topinfo_BarBut*_Off`) |
+| `img/ui/Deck_Arrow_U%d` / `R%d` | attributo 1-3 (deck, [fn]) | 1-3 | tutte | 2016 |
+| `img/tutorial/tutorial_%d` | id 1-65 costanti dei chiamanti di [fn] (12/41 -> 40, 44 -> 6; 100-120 altro ramo) | 34 dalle costanti | 25 | 19 dal 2016 (inglese, grafica 2016: la 5 servita e' diversa); 49-55, 57-59, 61, 65 solo JP giapponese (I-159) |
+| `img/damage/dmgGuardBreak_num%d`, `dmgReflection_num%d` (+ `_comma`) | tipo di danno 5 e 6 (tabella 0x1f2c2a0, [fn]) | 0-9 | tutte | JP |
+| `img/download_background/image_%02d` | costante 9 ([fn]) | 9 | 09 | nessuna (I-159) |
+| `img/ui/guilt/*%d*`, `Deck_Medal%d`, `Deck_Slot_Num_%d`, `Av_Box_Num%d`, `damage/dmg*_num%d`, `LoginTime_Icon%02d`, `KeyBlade_type_%02d` | livelli, slot, ore | - | 0 | - |
+| `talkstamp_%d`, `Emblem_%d`, `gesture/m_act%d`, `Shop_BuyItem_%02d`, `Rank_Title_%d`, `Comeback_Tutorial_%d`, `raid_boss_%d`, `xtres/*`, `union/*`, `colosseum/*`, `result/Result_PvPRank*`, `dark_*` | tabelle vuote o funzioni online / Dark Road | - | - | non controllati oltre (JP ha talkstamp, Emblem, m_act0-13, raid_boss) |
+
+- Le icone di `IncentiveIcon_40/41` nel JP hanno piu' revisioni (biglietti stagionali; l'estrattore ne scambia
+  alcune): si prende la piu' alta (40 = biglietto platino, 41 = biglietto azzurro), come `import_jp_coco.py`.
+- `tutorial_%d` con id >= 53: `popupFlag` vale 2^53 - 1 a tutorial finito (`server.js`), quindi le finestre
+  oltre il bit 52, se il bit e' l'id, si aprirebbero ancora; da vedere al banco se compaiono (tutte senza fonte inglese).
+- Nessuna riga nelle Notices: sono grafiche originali (2016, JP o WW sotto altro percorso).

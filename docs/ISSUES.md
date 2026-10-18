@@ -2,7 +2,7 @@
 
 Una riga per problema. I dettagli tecnici stanno in `docs/notes/<area>.md` (colonna Dettaglio),
 la cronologia in `docs/journal/`. Gli ID (I-001, I-002, ...) sono stabili e **non si riusano**:
-un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-158**).
+un problema nuovo prende il numero successivo all'ultimo usato (ultimo: **I-159**).
 
 Stati: **IN CORSO** (un agente o la sessione ci sta lavorando) · **APERTO** · **DA VERIFICARE**
 (correzione nel codice, mai vista sul banco) · **CHIUSO** (corretto e provato sul banco) ·
@@ -160,6 +160,7 @@ Ultima revisione: 17 ottobre 2026.
 | I-156 | CHIUSO | **Crash al tocco sul risultato del Level Up con skill** (18-10, segnalato dall'utente: Overwrite di Attack Boost VII su SP Roxas, poi riprodotto due volte): nel ramo 55 `userSkills` sono le skill da cancellare e il server mandava la lista intera, il client svuotava la tabella skill e l'ordinamento «Skill» della Medal List leggeva la riga skill 0. Ora solo le skill dei materiali consumati; la base tiene il suo `userSkillId`. Prova al banco: nessun crash, skill intatte | [medaglie](notes/medaglie.md#skill) | 18-10 |
 | I-157 | CHIUSO | **Pulsante «Overwrite Skill» sempre grigio** (18-10, segnalato dall'utente): mancavano `img/ui/skill_mix_button_On.png`/`_Disable.png` e `img/ui/Medal_Syn_Select_Panel02.png`; `build-resources.ps1` li copia dal pacchetto 2016 (risorse 41 con `-Quick`). Banco: acceso azzurro, cornici degli slot cambiate; Overwrite completo (Auron, 20%) senza crash | [medaglie](notes/medaglie.md#skill) | 18-10 |
 | I-158 | CHIUSO | **Icona di Lux Plus sbagliata** (18-10, segnalato dall'utente: anteprima dell'Overwrite e medaglia dopo diverse): `img/skill/Skill_Icon3.png` (thumbId 3, Lux Plus e combo «& Lux Plus») non era servita, il riquadro teneva l'icona di prima. `build-resources.ps1` la copia dal pacchetto 2016; banco: Leon e Dumbo con l'icona giusta | [medaglie](notes/medaglie.md#skill) | 18-10 |
+| I-159 | APERTO | **Immagini dal nome numerato senza fonte** (18-10, controllo offline di tutti i formati `img/...%d` del client contro il master servito, [risorse_layout](notes/risorse_layout.md#icone-numerate)): le mancanti con una fonte sono ora nel pacchetto generato (`build-resources.ps1`); restano senza fonte (2016, JP 4.3.1, IPA 4.4.0): `img/Cutin/Cutin_%d` per 173 `medal.cutinId` (43 medaglie di supporto 90xxx: Moogle, Huey/Dewey/Louie, Yen Sid, Flora..., 130 medaglie 301051-301684; nella carosella delle mosse speciali, `[fn]`, lo sprite tiene il cut-in di prima); `img/tutorial/tutorial_49-55,57-59,61,65` (chieste dai chiamanti di `[fn]`; solo JP, col testo giapponese); `img/light/NPC/30019` (SEQ 3000310); `img/download_background/image_09` (`[fn]`, costante 9); `img/art/Art_%d` (`medal.artId`, scena `MedalArtAnim` `[fn]`: nessuna delle 2088 servita, il JP ha 55 id solo giapponesi; non si sa se la scena e' raggiungibile). Da ridisegnare (tutorial in inglese) o da decidere | [risorse_layout](notes/risorse_layout.md#icone-numerate) | 18-10 |
 
 ### Union Cross
 
