@@ -12,8 +12,10 @@
 //   thethiny non ha, per le righe con lo stesso skillId.
 //
 // Righe vere: i numeri di thethiny restano (anche thumbId 1-5: il 5.0.1 usa 6-9, che il 4.3.1 non ha); i 4
-// campi mancanti dal master se c'e' la riga, altrimenti value1 10000, burstLock 0, pvpConditionTurn =
-// conditionTurn, pvpConditionCount = conditionCount.
+// campi mancanti dalla riga 5.0.1 del master se c'e' (1100-1113), altrimenti dalla descrizione: value1 1000
+// per gli stati (10000 per le altre), burstLock = gauge * 10000 per «uses only N special attack gauge(s)»,
+// pvpConditionTurn = conditionTurn, pvpConditionCount = conditionCount. Unita' verificate nel client 4.3.1:
+// docs/notes/medaglie.md, «Tabella skill».
 // Righe ricostruite (le altre skill del wiki): copia della «sorella», la riga vera della stessa famiglia
 // (vedi family(): Attack Boost, Attack Boost All, Defense Boost, Second Chance, stato alterato, «+», SP Attack
 // Gauge, combo & Lux / & Prize, No Cost) piu' vicina per maxLv, «Max», stati e potenza; poi
@@ -23,9 +25,11 @@
 // - potenza dalla descrizione: «N times more damage» -> attackUp N*10000, «by a/b» -> damageCut
 //   10000*(1-a/b), «by P%» -> (100-P)*100, Lux -> luxUp della riga vera (30000; «vastly» = 50000, stima),
 //   attack prizes -> prizeBurstUp della riga vera (220000), Poison/Paralysis/Sleep -> add* 10000 e
-//   conditionTurn 1 se «1 turn», «no special attack gauges» -> burstCancel 1 (come No Cost);
+//   conditionTurn 1 se «1 turn», value1 1000 (500 con «enemies up to LV 1999»), «no special attack gauges»
+//   -> burstCancel 1 (come No Cost), «uses only N» -> burstLock N*10000; combo ATK & GA: invokeShowTiming 6;
 // - invokeProbPerLv della sorella (delle «Max» senza sorella «Max»: quello della riga vera «Max», 10),
-//   invokeProb = trigger% * 100 - perLv * (maxLv - 1);
+//   invokeProb dal trigger% TRONCATO del wiki (baseProb: quello della sorella o il multiplo di 100 che da'
+//   quel trigger%);
 // - skillId dal 1127 in ordine di wiki, sortId = skillId, categoryEvolve nuovo e unico dal 31.
 // Le famiglie senza una riga vera (combo ATK & GA, ATK & stato, Triple Threat) prendono la riga vera con il
 // tipo di attivazione piu' vicino e sono elencate nel report (D:\Progetto_Restauro_KH_UX\tmp\skill\report.md).
@@ -165,6 +169,8 @@ function features(name, desc) {
   f.gauge = m ? (m[1] === 'no' ? 0 : parseInt(m[1], 10)) : null;
   f.noCost = /for free/i.test(desc);
   f.chance = /fatal blow/i.test(desc);
+  m = /enemies up to LV (\d+)/i.exec(desc);
+  f.maxEnemyLv = m ? parseInt(m[1], 10) : null;
   f.max = /\bMax\b/.test(name);
   f.plus = /\+/.test(name);
   return f;
@@ -196,20 +202,47 @@ const FALLBACK = {
 };
 
 const EXTRA4 = ['value1', 'burstLock', 'pvpConditionTurn', 'pvpConditionCount'];
+const LAST_501_ID = 1113;   // righe vere dell'APK 5.0.1 nel master (1100-1113); le altre del master sono generate
 
-// righe vere di thethiny + i 4 campi del layout 4.3.1 (dal master se c'e' la riga, altrimenti regola)
+// value1 (client 4.3.1, [fn]): riuscita di uno stato = rate del nemico * clamp(1 - X * value1 / 1e6, 0,
+// 1), X = livello del nemico (deduzione: 5.0.1 Poison 1000 = fino al LV 999; il wiki «Effective on enemies up
+// to LV 1999» = 500). Conta solo per le skill con stati: le altre tengono il neutro 10000 delle righe 5.0.1.
+function value1For(f) {
+  if (!f.status.size) return 10000;
+  return f.maxEnemyLv ? Math.round(1e6 / (f.maxEnemyLv + 1)) : 1000;
+}
+// burstLock (client 4.3.1, [fn]): costo fisso dello speciale quando la skill scatta, in gauge * 10000
+// («uses only 1 special attack gauge» = 10000); 0 con burstCancel 0 = speciale gratis come No Cost.
+const burstLockFor = (f) => (f.gauge ? f.gauge * 10000 : 0);
+
+// righe vere di thethiny + i 4 campi del layout 4.3.1 (dalla riga 5.0.1 del master se c'e', altrimenti regola
+// dalla descrizione)
 function realSkillRows(thethinyRows, masterRows) {
-  const master = new Map((masterRows || []).map((r) => [r.skillId, r]));
+  const master = new Map((masterRows || []).filter((r) => r.skillId <= LAST_501_ID).map((r) => [r.skillId, r]));
   return thethinyRows.map((t) => {
     const r = { ...t };
     const m = master.get(t.skillId);
-    const rule = { value1: 10000, burstLock: 0, pvpConditionTurn: t.conditionTurn, pvpConditionCount: t.conditionCount };
+    const f = features(t.name, t.description);
+    const rule = { value1: value1For(f), burstLock: burstLockFor(f), pvpConditionTurn: t.conditionTurn, pvpConditionCount: t.conditionCount };
     for (const k of EXTRA4) if (r[k] === undefined) r[k] = m && Number.isInteger(m[k]) ? m[k] : rule[k];
     return r;
   });
 }
 
 const topProb = (r) => r.invokeProb + r.invokeProbPerLv * (r.maxLv - 1);
+
+// invokeProb (1/10000 al LV 1) dalla probabilita' massima del wiki, che e' TRONCATA all'intero (righe vere:
+// 47.2% -> 47, 44.5% -> 44, 54.25% -> 54): il massimo vero sta in [pct*100, pct*100+99] (e <= 10000).
+// Si sceglie il valore della sorella se ci sta, altrimenti l'unico multiplo di 100 nell'intervallo (tutte le
+// 25 righe vere hanno invokeProb multiplo di 100 o il massimo esatto 10000, come le «Max» 9810).
+function baseProb(triggerPct, perLv, maxLv, sisterProb) {
+  const span = perLv * (maxLv - 1);
+  const lo = Math.round(triggerPct * 100) - span;
+  const hi = Math.min(lo + 99, 10000 - span);
+  if (sisterProb !== undefined && sisterProb >= lo && sisterProb <= hi) return sisterProb;
+  const round = Math.ceil(lo / 100) * 100;
+  return round <= hi ? round : lo;
+}
 
 function skillRows(realRows, wikiSkills, schema) {
   const fields = schema.skill.map(([f]) => f);
@@ -300,7 +333,7 @@ function skillRows(realRows, wikiSkills, schema) {
     // probabilita'
     const sisterMax = realInfo.get(sister.skillId).f.max;
     row.invokeProbPerLv = f.max && !sisterMax ? maxRef.invokeProbPerLv : sister.invokeProbPerLv;
-    row.invokeProb = Math.round(w.triggerPct * 100) - row.invokeProbPerLv * (w.maxLv - 1);
+    row.invokeProb = baseProb(w.triggerPct, row.invokeProbPerLv, w.maxLv, sister.invokeProb);
     // potenza dalla descrizione
     row.attackUp = f.attackUp || 10000;
     row.damageCut = f.damageCut !== undefined ? f.damageCut : 10000;
@@ -315,8 +348,15 @@ function skillRows(realRows, wikiSkills, schema) {
     row.luxUp = f.lux === 2 ? LUX_VAST : f.lux ? luxRef : 10000;
     row.prizeBurstUp = f.prize ? prizeRef : 10000;
     row.burstCancel = f.noCost || f.gauge === 0 ? 1 : 0;
+    row.burstLock = burstLockFor(f);
+    row.value1 = value1For(f);
     row.dokonjo = f.chance ? 1 : 0;
     if (fam === 'ATK & SP Gauge') {
+      // il costo dello speciale si legge al timing 5 ([fn] -> invoke(..., 5, 3)), il danno al timing 1:
+      // invokeShowTiming 6 = timing 1 o 5 (un tiro per battaglia, poi sempre), invokeType 1 = nessun filtro.
+      // Deduzione (nessuna riga vera con showTiming 6): da provare al banco.
+      row.invokeType = 1;
+      row.invokeShowTiming = 6;
       // icona: quella delle SP Attack Gauge (speciale), attivazione di Attack Boost Max
       const g = realOf('SP Attack Gauge')[0];
       if (g) row.thumbId = g.thumbId;
@@ -358,14 +398,14 @@ function reportMarkdown(rows, report, exp) {
   L.push('', '## Testi accorciati (<= 71 byte)', '');
   for (const s of report.shortened) L.push(`- ${s.skillId} ${s.field}: «${s.from}» -> «${s.to}»`);
   L.push('', '## Righe', '');
-  L.push('| skillId | nome | vera | famiglia | sorella | maxLv | rank | expType | thumb | invokeType | prob | perLv | trigger | attackUp | damageCut | stati | lux | prize | burstCancel | note |');
-  L.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+  L.push('| skillId | nome | vera | famiglia | sorella | maxLv | rank | expType | thumb | invokeType | showTiming | prob | perLv | trigger | attackUp | damageCut | stati | value1 | lux | prize | burstCancel | burstLock | note |');
+  L.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
   for (const x of report.rows) {
     const r = byId.get(x.skillId);
     const st = [r.addPoison && 'P', r.addParalysis && 'Pa', r.addSleep && 'S'].filter(Boolean).join('+') + (r.conditionTurn ? `/${r.conditionTurn}t` : '');
     L.push(`| ${r.skillId} | ${r.name} | ${x.real ? 'si' : ''} | ${x.family} | ${x.sister || ''} | ${r.maxLv} | ${r.rank} | ${r.expType} | ` +
-      `${r.thumbId} | ${r.invokeType} | ${r.invokeProb} | ${r.invokeProbPerLv} | ${x.triggerPct}% | ${r.attackUp} | ${r.damageCut} | ${st} | ` +
-      `${r.luxUp} | ${r.prizeBurstUp} | ${r.burstCancel} | ${x.note || ''} |`);
+      `${r.thumbId} | ${r.invokeType} | ${r.invokeShowTiming} | ${r.invokeProb} | ${r.invokeProbPerLv} | ${x.triggerPct}% | ${r.attackUp} | ${r.damageCut} | ${st} | ${r.value1} | ` +
+      `${r.luxUp} | ${r.prizeBurstUp} | ${r.burstCancel} | ${r.burstLock} | ${x.note || ''} |`);
   }
   return L.join('\n') + '\n';
 }
@@ -395,6 +435,6 @@ function patch(dir) {
   return { rows, report, exp };
 }
 
-module.exports = { readWikiMedalPage, parseWikiSkills, normName, shortText, features, family, realSkillRows, skillRows, skillExpRows, patch };
+module.exports = { readWikiMedalPage, parseWikiSkills, normName, shortText, features, family, baseProb, realSkillRows, skillRows, skillExpRows, patch };
 
 if (require.main === module) patch(process.argv[2] || process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data'));

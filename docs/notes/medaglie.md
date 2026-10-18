@@ -387,7 +387,9 @@ testi del client 101300020-032 e 100620003.
   - righe vere: numeri di thethiny invariati (anche `thumbId` 1-5; il 5.0.1 usa 6-9 e Lux Plus `luxUp` 15000
     contro 30000); i 4 campi del layout 4.3.1 che thethiny non ha (`value1`, `burstLock`, `pvpConditionTurn`,
     `pvpConditionCount`) dalla riga 5.0.1 del master se c'e' (1100-1113: es. Poison `value1` 1000,
-    `pvpConditionCount` 3), altrimenti `value1` 10000, `burstLock` 0, `pvp*` = `condition*`;
+    `pvpConditionCount` 3), altrimenti dalla descrizione: `value1` 1000 per gli stati (1120-1122) e 10000 per le
+    altre, `burstLock` 10000/20000 per SP Attack Gauge I/II (1124/1126), `pvp*` = `condition*`. Le righe del
+    master oltre la 1113 sono generate e non valgono come fonte di questi campi;
   - abbinamento al wiki per nome normalizzato (maiuscole, «Plus»/«+», «ATK»/«Attack», numeri romani, ordine
     delle parti «&»: «ATK Prize+ & ATK Boost II» = «ATK Boost II & ATK Prize+»);
   - ricostruite (138, id 1127-1264 in ordine di wiki, `sortId` = `skillId`, `categoryEvolve` unico dal 31):
@@ -396,17 +398,53 @@ testi del client 101300020-032 e 100620003.
     per maxLv, «Max», stato, probabilita' e potenza; `rank`/`expType` della sorella se ha lo stesso maxLv,
     altrimenti della riga vera piu' comune con quel maxLv (20 -> 3/3); potenza dalla descrizione (`attackUp`
     N*10000, `damageCut` 10000*(1-a/b), `luxUp` 30000 o 50000 per «vastly» (stima), `prizeBurstUp` 220000,
-    `add*` 10000 e `conditionTurn` 1 con «1 turn», `burstCancel` 1 con «no special attack gauges»);
+    `add*` 10000 e `conditionTurn` 1 con «1 turn», `value1` 1000 per gli stati (500 con «Effective on enemies
+    up to LV 1999»), `burstCancel` 1 con «no special attack gauges», `burstLock` N*10000 con «uses only N»);
     `invokeProbPerLv` della sorella (le «Max» con sorella non «Max»: 10 come Attack Boost II Max),
-    `invokeProb` = trigger% * 100 - perLv * (maxLv - 1) (verificata sulle vere, entro l'arrotondamento del wiki);
+    `invokeProb` dal trigger% del wiki, che e' **troncato** (vere: 47.2% -> 47, 44.5% -> 44, 54.25% -> 54): quello
+    della sorella se da' lo stesso trigger%, altrimenti l'unico multiplo di 100 che lo da' (`baseProb`, ritrova
+    tutte le 25 vere); i 100% esatti restano 10000 - perLv * (maxLv - 1) (9810, Defense Boost I Max 9860);
   - famiglie senza riga vera, sorella col tipo di attivazione piu' vicino: ATK & stato (13, Poison+/Paralysis+/
     Sleep+), Triple Threat (2, Poison+, tutti e tre gli stati), ATK & SP Gauge (42, Attack Boost III Max con
-    l'icona 5 delle SP Attack Gauge);
+    l'icona 5 delle SP Attack Gauge, `invokeType` 1 e `invokeShowTiming` 6: vedi sotto);
   - testi <= 71 byte (`string(72)`): frasi intere del wiki, abbreviazioni fisse se non bastano (anche 6
     righe vere: 1114, 1117, 1120-1123).
-  Aperti: come il client distingua «GA 1/2» (le SP Attack Gauge vere non hanno un campo diverso, forse
-  `value1` che thethiny non ha); `value1` 1000 delle righe di stato 5.0.1 forse e' il limite di livello
-  dei nemici («Effective on enemies up to LV 1999»): da provare al banco.
+- Unita' dei campi d'effetto (verifica del 18-10, client 4.3.1 con l'aiuto del decompilato con simboli 1.0.1 di
+  thethiny; parser `[fn]`, riga offuscata di 0x17c byte, offset `rank` 0x104 ... `raidUp` 0x178 nell'ordine
+  del master; decompilati in `D:Progetto_Restauro_KH_UX	mpskillchecke`). 10000 = 1,0:
+  | campo | unita' / effetto | prova |
+  |---|---|---|
+  | `invokeProb`, `invokeProbPerLv` | probabilita' in 1/10000: `invokeProb + perLv * (min(lv, maxLv) - 1)` (Attack Boost I LV 10 = 47,2%), per (1 + bonus di battaglia +0xbe4) | `[fn]` |
+  | `invokeShowTiming` | momento: 1 attacco di medaglia, 2 danno subito, 3/4 inizio turno (4 anche Second Chance), 5 attacco speciale, 6 = 1 o 5 (un tiro per battaglia, poi sempre o mai), 7 = 2 o 5 | `[fn]` (`stage::skill::invoke`) |
+  | `invokeType` | filtro sul tipo d'attacco: 4 solo speciale, 5 solo medaglie «tutti», 7 tutto tranne «tutti» e speciale (stati base: solo bersaglio singolo), 3 solo timing 4, 0 mai, 1/2/6 nessun filtro | idem |
+  | `attackUp` | moltiplicatore del danno /10000: 24000 = danno x2,4 (non +40%) | `[fn]` |
+  | `damageCut` | danno subito * damageCut / 10000 (minimo 1; fra piu' skill vince il piu' basso): 10000 nessuna riduzione, 5000 = -1/2, 3333 = -2/3, 2000 = -80% | `[fn]`, `[fn]` |
+  | `dokonjo` | flag: con HP a 0 resta a 1 HP, una volta | `[fn]` |
+  | `burstCancel` | 1 = speciale gratis | `[fn]` |
+  | `burstLock` | con `burstCancel` 0: costo fisso dello speciale in gauge*10000 (10000 = «only 1 gauge», 20000 = «only 2»); **0 = gratis** | idem |
+  | `add*` | flag (10000 non e' una probabilita'): riuscita = attivazione * rate del nemico * `value1` | `[fn]`, `[fn]` |
+  | `value1` | solo stati: fattore clamp(1 - X * value1 / 1e6, 0, 1); X = livello del nemico (deduzione: 1000 = fino al LV 999, 500 = «up to LV 1999»; 10000 = niente oltre il LV 99) | `[fn]` |
+  | `conditionTurn` / `conditionCount` | durata in turni / in azioni; con turn > 0 count si azzera; riapplicazione = massimo | `[fn]` |
+  | `prizeHpUp`, `prizeBurstUp` | moltiplicatori /10000 dei prize HP / gauge del nemico colpito (220000 = x22 sui punti gauge, non una probabilita') | `[fn]`, `[fn]` |
+  | `luxUp` | moltiplicatore /10000 dei Lux (per colpo, colpo finale, raid): 30000 = x3, 15000 = x1,5 | `[fn]`, `[fn]` |
+  | `pvpConditionTurn/Count`, `moneyUp`, `raidUp`, `counter`, `addAction` | **mai letti** nella 4.3.1 (neutri) | lettori degli offset |
+  Lux e prize valgono solo se la skill e' scattata sull'attacco che colpisce il nemico (+0x740).
+- Verifica riga per riga del 18-10 (descrizione della riga e wiki contro i numeri, 163 righe):
+  - corrette nel generatore (master rigenerato, 98 righe cambiate): `invokeProb` di 30 ricostruite (Attack Boost
+    IV-XII, ATK & Lux e ATK & AP & Lux non Max 3975 -> 4000, Defense Boost IV-VI 2950 -> 3000, ATK & AP+ 3950 ->
+    4000, Second Chance II/III 5950/7950 -> 6000/8000: il vecchio calcolo prendeva il trigger% del wiki come
+    esatto); `burstLock` di SP Attack Gauge I/II (0 -> 10000/20000: erano gratis come No Cost) e delle 29 combo
+    «GA 1/2»; `invokeShowTiming` 1 -> 6 delle 42 combo ATK & GA (con 1 il costo dello speciale, letto al timing
+    5, non cambiava mai; 6 e' una deduzione, nessuna riga vera la usa: da provare al banco); `value1` 10000 ->
+    1000 delle 3 «+» vere (con 10000 lo stato non riusciva sui nemici dal LV 100) e 500 delle 21 ricostruite
+    «up to LV 1999» (le altre di stato 1000).
+  - righe vere sospette (non toccate): Lux Plus 1109 `luxUp` 30000 (x3) nei dati di thethiny (era 1.1.3) contro
+    15000 (x1,5) nel 5.0.1, stessa descrizione; le combo «greatly increases Lux» (1114, 1123) hanno 30000 e la
+    4.3.1 potrebbe avere i valori del 5.0.1; SP Attack Gauge II 1126 ha `maxLv` 15 con `expType` 3 (le altre
+    maxLv 15 hanno 2) e `categoryEvolve` 29 come la I; Attack Prize Plus `prizeBurstUp` 220000 (x22) e' molto
+    piu' di «increases», ma e' il numero vero. Le altre 25 tornano con descrizione e wiki.
+  - stime rimaste: Lux++ `luxUp` 50000 («vastly», nessuna riga vera), le combo «GA» (timing 6).
+  Aperti: X di `value1` (livello del nemico) e il timing 6 delle combo ATK & GA, da provare al banco.
 - Optimize del Level Up (`Button_MaxEnhanced`, `openMaxEnhancePopup` -> `runMaxEnhance`, `[fn]`):
   tutto nel client, che sceglie i materiali e manda la stessa `/user/medal/enhance` (con `numbers`
   per le pile); nessun dato in piu' dal server. Dalla 3.3.0 usa Huey & Dewey & Louie e non le medaglie
