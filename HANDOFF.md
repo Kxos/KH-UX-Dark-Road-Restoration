@@ -98,7 +98,10 @@ otice_audit\g4_historical_tiers.md`), B0154 lista di 17 nomi, XIII Deal 10 nomi.
   ([medaglie.md#mapping-orgxiii](docs/notes/medaglie.md#mapping-orgxiii)). Aperti: I-161 (SN++ adjusted), I-162 (167 6★
   senza evoluzione). Banco 18-10: migrazione sul salvataggio vero, 6★ Tier 3, Evolve con 5 Blue Fairy [3], Vexen [+] da
   regalo visti; rev 128 nomi «X A» sulle 5★/6★ SE (e53b3d4); risorse 43 grafica «X A» sulle 23 6★ SE, che avevano quella
-  della [+] (989d5de). **Prossimo passo: controllo a vista delle immagini (filtri di colore), B0280, poi G4 del 2c.**
+  della [+] (989d5de); immagini e filtri confermati. Revisione finale del piano: medalMapVersion 2 (record Nova), test,
+  catalogo e docs (0e77901). Guilt: l'eccedenza dei pallini sblocca la guilt come l'anteprima del client (6f74ac2, Vexen
+  [+] 2865 del banco corretta a mano: guilt 20100). **Prossimo passo (19-10): vedere al banco la guilt 201% di Vexen [+]
+  e una fusione con eccedenza (server avviato con -GachaShow B0280), poi G4 del 2c.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
