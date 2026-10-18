@@ -439,7 +439,14 @@ e`). 10000 = 1,0:
     5, non cambiava mai; 6 e' una deduzione, nessuna riga vera la usa: da provare al banco); `value1` 10000 ->
     1000 delle 3 «+» vere (con 10000 lo stato non riusciva sui nemici dal LV 100) e 500 delle 21 ricostruite
     «up to LV 1999» (le altre di stato 1000).
-  - righe vere sospette (non toccate): Lux Plus 1109 `luxUp` 30000 (x3) nei dati di thethiny (era 1.1.3) contro
+  - **Stato 4.3.1 (18-10 sera, `ERA_431` in make-skill-table.js, ricerca in `tmp\skill\suspicious_rows.md`)**:
+    thethiny e' il master di feb.-mar. 2017, la 5.0.1 (2021) la fonte piu' vicina alla 4.3.1 (primavera 2021).
+    Lux Plus 1109 `luxUp` 30000 -> 15000 (x1,5 come 5.0.1); gradi Lux delle ricostruite: «increases» 15000,
+    «greatly» 30000 (combo vere), «vastly» 50000 (stima). Icone: le risorse WW 4.3.1 hanno Skill_Icon1,2,4-9 e
+    non la 3 (falso che la 4.3.1 non avesse 6-9): 6 attacco a tutti (1102/1103), 7 prize (1107/1117), 8 Lux
+    (1109/1114/1123), 9 costo gauge (1110/1124/1126; le ultime 5 per deduzione). La Skill_Icon3 del 2016 servita
+    da I-158 non la usa piu' nessuna riga. SP Attack Gauge II e Attack Prize Plus x22 restano (uguali nelle fonti).
+  - (storico) righe vere sospette: Lux Plus 1109 `luxUp` 30000 (x3) nei dati di thethiny (era 1.1.3) contro
     15000 (x1,5) nel 5.0.1, stessa descrizione; le combo «greatly increases Lux» (1114, 1123) hanno 30000 e la
     4.3.1 potrebbe avere i valori del 5.0.1; SP Attack Gauge II 1126 ha `maxLv` 15 con `expType` 3 (le altre
     maxLv 15 hanno 2) e `categoryEvolve` 29 come la I; Attack Prize Plus `prizeBurstUp` 220000 (x22) e' molto

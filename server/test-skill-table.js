@@ -32,7 +32,7 @@ assert.deepStrictEqual([ab1w.maxLv, ab1w.triggerPct, ab1w.nameJp], [10, 47, 'ア
 assert.strictEqual(ab1w.description, 'Deals 1.2 times more damage.');
 const uniqueWiki = new Set(wikiSkills.map((w) => mk.normName(w.name))).size;
 
-// 2. righe: tante quante i nomi unici del wiki, 25 vere con i numeri invariati
+// 2. righe: tante quante i nomi unici del wiki, 25 vere con i numeri invariati (tranne ERA_431)
 const real = mk.realSkillRows(thethiny, []);
 const { rows, report } = mk.skillRows(real, wikiSkills, schema);
 assert.strictEqual(rows.length, uniqueWiki, `righe ${rows.length}, nomi unici del wiki ${uniqueWiki}`);
@@ -42,6 +42,7 @@ for (const t of thethiny) {
   assert.ok(r, `riga vera ${t.skillId} assente`);
   for (const k of Object.keys(t)) {
     if (k === 'name' || k === 'description') continue;
+    if (mk.ERA_431[t.skillId] && k in mk.ERA_431[t.skillId]) continue;   // stato 4.3.1, controllato sotto
     assert.strictEqual(r[k], t[k], `${t.skillId}.${k}: ${r[k]} invece di ${t[k]}`);
   }
 }
@@ -87,7 +88,8 @@ for (const r of rebuilt) {
   assert.ok([1, 2, 3, 4].includes(r.expType), `${r.name} expType ${r.expType}`);
 }
 assert.strictEqual(new Set(rebuilt.map((r) => r.categoryEvolve)).size, rebuilt.length, 'categoryEvolve ricostruite doppie');
-for (const r of rows) assert.ok(r.thumbId >= 1 && r.thumbId <= 5, `${r.skillId} thumbId ${r.thumbId}`);
+// icone della 4.3.1: Skill_Icon1,2,4-9 (la 3 non c'e' piu')
+for (const r of rows) assert.ok([1, 2, 4, 5, 6, 7, 8, 9].includes(r.thumbId), `${r.skillId} thumbId ${r.thumbId}`);
 
 // 5. probabilita': il wiki TRONCA il massimo all'intero (47.2% -> 47): trunc(top / 100) = trigger% per tutte
 // le righe, vere e ricostruite; baseProb ritrova l'invokeProb di tutte le 25 righe vere senza la sorella
@@ -139,6 +141,12 @@ assert.deepStrictEqual([ab.attackUp, ab.addParalysis, ab.conditionTurn, ab.value
 const apl = byName.get('ATK B III & AP+ & Lux+');
 assert.deepStrictEqual([apl.attackUp, apl.prizeBurstUp, apl.luxUp], [16000, 220000, 30000]);
 assert.ok(report.noSister.length > 0, 'famiglie senza sorella nel report');
+// stato della 4.3.1 (ERA_431): Lux Plus x1,5, «greatly» x3 (combo vere), «vastly» x5; icone 6-9
+const lux = (id) => rows.find((r) => r.skillId === id);
+assert.deepStrictEqual([lux(1109).luxUp, lux(1109).thumbId, lux(1114).luxUp, lux(1114).thumbId], [15000, 8, 30000, 8]);
+assert.deepStrictEqual([1102, 1107, 1110, 1124, 1126].map((id) => lux(id).thumbId), [6, 7, 9, 9, 9]);
+assert.strictEqual(byName.get('ATK B V & Lux+').luxUp, 30000);
+assert.strictEqual(byName.get('AB X Max & Lux++ & GA 1').luxUp, 50000);
 
 // 7. skillExp vera: 4 righe, expId 1-4, value int[3]
 const exp = mk.skillExpRows(realExp);

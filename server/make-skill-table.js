@@ -11,7 +11,7 @@
 // - la skill.json gia' nel master (righe 1100-1113 dell'APK 5.0.1, import-master.js): solo i 4 campi che
 //   thethiny non ha, per le righe con lo stesso skillId.
 //
-// Righe vere: i numeri di thethiny restano (anche thumbId 1-5: il 5.0.1 usa 6-9, che il 4.3.1 non ha); i 4
+// Righe vere: i numeri di thethiny (master di feb.-mar. 2017) restano, tranne ERA_431 (stato della 4.3.1); i 4
 // campi mancanti dalla riga 5.0.1 del master se c'e' (1100-1113), altrimenti dalla descrizione: value1 1000
 // per gli stati (10000 per le altre), burstLock = gauge * 10000 per «uses only N special attack gauge(s)»,
 // pvpConditionTurn = conditionTurn, pvpConditionCount = conditionCount. Unita' verificate nel client 4.3.1:
@@ -23,7 +23,8 @@
 //   prima non ci sta), maxLv dal wiki;
 // - rank/expType della sorella se ha lo stesso maxLv, altrimenti della riga vera piu' comune con quel maxLv;
 // - potenza dalla descrizione: «N times more damage» -> attackUp N*10000, «by a/b» -> damageCut
-//   10000*(1-a/b), «by P%» -> (100-P)*100, Lux -> luxUp della riga vera (30000; «vastly» = 50000, stima),
+//   10000*(1-a/b), «by P%» -> (100-P)*100, Lux -> luxUp della riga vera («increases» = Lux Plus 15000,
+//   «greatly» = combo vere 30000; «vastly» = 50000, stima),
 //   attack prizes -> prizeBurstUp della riga vera (220000), Poison/Paralysis/Sleep -> add* 10000 e
 //   conditionTurn 1 se «1 turn», value1 1000 (500 con «enemies up to LV 1999»), «no special attack gauges»
 //   -> burstCancel 1 (come No Cost), «uses only N» -> burstLock N*10000; combo ATK & GA: invokeShowTiming 6;
@@ -50,6 +51,16 @@ const FIRST_NEW_ID = 1127;
 const FIRST_NEW_CATEGORY = 31;
 const MAX_BYTES = 71;
 const LUX_VAST = 50000;   // «vastly increases Lux» (Lux++): nessuna riga vera, stima (le «greatly» hanno 30000)
+// Righe vere riportate allo stato della 4.3.1 (primavera 2021; tmp\skill\suspicious_rows.md). thethiny e' il
+// master di feb.-mar. 2017, la 5.0.1 offline (2021) e' la fonte piu' vicina: sulle 12 righe in comune cambiano
+// solo Lux Plus luxUp (30000 -> 15000) e le icone. Le risorse WW della 4.3.1 hanno Skill_Icon1,2,4-9 senza la
+// 3: 6 = attacco a tutti, 7 = prize, 8 = Lux, 9 = costo della gauge. Le righe senza riga 5.0.1 (combo Lux e
+// prize, SP Attack Gauge) prendono l'icona del loro effetto (deduzione). Le ricostruite la ereditano dalla sorella.
+const ERA_431 = {
+  1102: { thumbId: 6 }, 1103: { thumbId: 6 }, 1107: { thumbId: 7 }, 1109: { thumbId: 8, luxUp: 15000 },
+  1110: { thumbId: 9 }, 1114: { thumbId: 8 }, 1117: { thumbId: 7 }, 1123: { thumbId: 8 }, 1124: { thumbId: 9 },
+  1126: { thumbId: 9 },
+};
 
 // ---------------------------------------------------------------------------------------------------------
 // wiki
@@ -163,7 +174,7 @@ function features(name, desc) {
   if (/paraly/i.test(desc)) f.status.add('Paralysis');
   if (/sleep/i.test(desc)) f.status.add('Sleep');
   f.oneTurn = /\b1 turn\b/i.test(desc);
-  f.lux = /\bLux\b/.test(desc) ? (/vastly increases/i.test(desc) ? 2 : 1) : 0;
+  f.lux = /\bLux\b/.test(desc) ? (/vastly increases/i.test(desc) ? 3 : /greatly increases/i.test(desc) ? 2 : 1) : 0;
   f.prize = /attacks? prizes/i.test(desc);
   m = /uses (?:only )?(\d|no) special attack gauges?/i.exec(desc);
   f.gauge = m ? (m[1] === 'no' ? 0 : parseInt(m[1], 10)) : null;
@@ -220,7 +231,7 @@ const burstLockFor = (f) => (f.gauge ? f.gauge * 10000 : 0);
 function realSkillRows(thethinyRows, masterRows) {
   const master = new Map((masterRows || []).filter((r) => r.skillId <= LAST_501_ID).map((r) => [r.skillId, r]));
   return thethinyRows.map((t) => {
-    const r = { ...t };
+    const r = { ...t, ...ERA_431[t.skillId] };
     const m = master.get(t.skillId);
     const f = features(t.name, t.description);
     const rule = { value1: value1For(f), burstLock: burstLockFor(f), pvpConditionTurn: t.conditionTurn, pvpConditionCount: t.conditionCount };
@@ -272,7 +283,9 @@ function skillRows(realRows, wikiSkills, schema) {
   const realOf = (fam) => real.filter((r) => realInfo.get(r.skillId).family === fam);
   const maxRef = real.filter((r) => features(r.name, r.description).max)
     .sort((a, b) => a.skillId - b.skillId)[0];
-  const luxRef = Math.max(...real.map((r) => r.luxUp).filter((v) => v > 10000));
+  // luxUp per grado: «increases» = Lux Plus, «greatly» = combo vere, «vastly» = stima
+  const luxOf = (lv) => Math.max(...real.filter((r) => features(r.name, r.description).lux === lv).map((r) => r.luxUp));
+  const luxRef = { 1: luxOf(1), 2: luxOf(2), 3: LUX_VAST };
   const prizeRef = Math.max(...real.map((r) => r.prizeBurstUp).filter((v) => v > 10000));
 
   const out = [];
@@ -345,7 +358,7 @@ function skillRows(realRows, wikiSkills, schema) {
     row.conditionCount = f.status.size ? sister.conditionCount : 0;
     row.pvpConditionTurn = row.conditionTurn;
     row.pvpConditionCount = row.conditionCount;
-    row.luxUp = f.lux === 2 ? LUX_VAST : f.lux ? luxRef : 10000;
+    row.luxUp = f.lux ? luxRef[f.lux] : 10000;
     row.prizeBurstUp = f.prize ? prizeRef : 10000;
     row.burstCancel = f.noCost || f.gauge === 0 ? 1 : 0;
     row.burstLock = burstLockFor(f);
@@ -435,6 +448,6 @@ function patch(dir) {
   return { rows, report, exp };
 }
 
-module.exports = { readWikiMedalPage, parseWikiSkills, normName, shortText, features, family, baseProb, realSkillRows, skillRows, skillExpRows, patch };
+module.exports = { ERA_431, readWikiMedalPage, parseWikiSkills, normName, shortText, features, family, baseProb, realSkillRows, skillRows, skillExpRows, patch };
 
 if (require.main === module) patch(process.argv[2] || process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data'));
