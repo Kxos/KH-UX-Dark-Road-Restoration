@@ -68,10 +68,14 @@ for (const [se, copy, robo, seven, plus6, plus7] of TABLE) {
     assert.strictEqual(r.validEvolve, 1, 'validEvolve');
     assert.strictEqual(r.evolveId, plus7, 'evolveId');
   });
-  // copie potenziate (righe boosted con groupId = medaglia normale, es. 2031176): Tier dalla base
-  for (const b of medals.filter((m) => m.groupId && (m.groupId === se || m.groupId === copy))) {
-    check(`${b.medalId} (boosted di ${b.groupId})`, () => assert.strictEqual(b.guiltValue, 3, 'guiltValue'));
-  }
+  check(`${plus7}`, () => assert.strictEqual(byId.get(plus7)?.rare, 7, '7★ [+] assente'));
+  // potenziate: le vecchie Tier 8 20xxxxx/21xxxxx non ci sono piu', c'e' la 6★ [+] potenziata (Tier 8)
+  for (const old of [2000000 + se, 2100000 + se]) check(`${old}`, () => assert.ok(!byId.has(old), 'potenziata vecchia presente'));
+  check(`${2000000 + plus6}`, () => {
+    const r = byId.get(2000000 + plus6);
+    assert.ok(r, 'riga assente');
+    assert.strictEqual(r.guiltValue || byId.get(r.groupId)?.guiltValue, 8, 'guiltValue');
+  });
 }
 
 if (fails.length) {

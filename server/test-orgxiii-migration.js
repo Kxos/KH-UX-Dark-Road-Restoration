@@ -1,4 +1,4 @@
-// Migrazione del salvataggio ai nuovi id dell'Organizzazione XIII (medalMapVersion 1): i doppioni 6★ «X A»
+// Migrazione del salvataggio ai nuovi id dell'Organizzazione XIII (medalMapVersion 1-2): i doppioni 6★ «X A»
 // 3004xx spariti dal master diventano l'id SE, le Tier 8 potenziate spariscono nella 6★ [+] potenziata;
 // userMedalId, livello, skill, blocchi, deck e guilt restano. Salvataggio finto (KHUX_SAVE), un processo
 // figlio per login (server.js legge il salvataggio al caricamento):
@@ -28,7 +28,9 @@ function save(extra) {
     presents: [{ userPresentId: 1, resourceType: 3, resourceId: 300495, number: 1, limitDatetime: T * 2, comment: 'x', created: T },
       { userPresentId: 2, resourceType: 3, resourceId: 300496, number: 1, limitDatetime: T * 2, comment: 'x', created: T }, // 7★ A
       { userPresentId: 3, resourceType: 5, resourceId: 300443, number: 1, limitDatetime: T * 2, comment: 'x', created: T }], // materiale: no
-    presentLastId: 3, ...extra };
+    presentLastId: 3,
+    // record Nova: 300446 (Marluxia) solo col vecchio id -> 32186; 300443 accanto a 31176 resta (il livello non scende)
+    guiltBurst: { first: [300443, 31176, 300446, 1], max: [300443] }, ...extra };
 }
 // 2133236 non esiste tra le potenziate Tier 8 della lista (Roxas ha solo 2033236): resta com'e'
 function login(file) {
@@ -42,7 +44,9 @@ try {
   fs.writeFileSync(SAVE, JSON.stringify(save()));
   const p = login();
   const by = (id) => p.medals.find((m) => m.userMedalId === id);
-  assert.strictEqual(p.medalMapVersion, 1, 'medalMapVersion 1');
+  assert.strictEqual(p.medalMapVersion, 2, 'medalMapVersion 2');
+  assert.deepStrictEqual(p.guiltBurst.first, [300443, 31176, 32186, 1], 'record Nova first');
+  assert.deepStrictEqual(p.guiltBurst.max, [31176], 'record Nova max: 300443 -> 31176, nessun +5 in piu');
   assert.strictEqual(by(201).medalId, 31176, '300443 -> 31176');
   assert.strictEqual(by(202).medalId, 33236, '300644 -> 33236');
   assert.strictEqual(by(203).medalId, 300444, '7★ invariata');
@@ -63,13 +67,19 @@ try {
   // secondo login: niente cambia
   const before = fs.readFileSync(SAVE, 'utf8');
   const p2 = login();
-  assert.deepStrictEqual(p2.medals, p.medals); assert.strictEqual(p2.medalMapVersion, 1);
+  assert.deepStrictEqual(p2.medals, p.medals); assert.strictEqual(p2.medalMapVersion, 2);
   assert.strictEqual(fs.readFileSync(SAVE, 'utf8'), before, 'secondo login: salvataggio identico');
   // nuovo giocatore: versione 1 senza migrazione
   fs.writeFileSync(SAVE, JSON.stringify({ created: false }));
   const code = `const log = console.log; console.log = () => {}; const { _test: t } = require(${JSON.stringify(path.join(__dirname, 'server'))}); log(t.player.medalMapVersion);`;
   const env = { ...process.env, KHUX_SAVE: SAVE, KHUX_REVISION: '127' };
   const n = { medalMapVersion: Number(execFileSync(process.execPath, ['-e', code], { env, encoding: 'utf8' }).trim().split('\n').pop()) };
-  assert.strictEqual(n.medalMapVersion, 1, 'nuovo giocatore: medalMapVersion 1');
+  assert.strictEqual(n.medalMapVersion, 2, 'nuovo giocatore: medalMapVersion 2');
+  // salvataggio gia' a versione 1 (banco 18-10): solo il record Nova
+  fs.writeFileSync(SAVE, JSON.stringify(save({ medalMapVersion: 1, guiltBurst: { first: [300443, 31176], max: [300443] } })));
+  const p3 = login();
+  assert.strictEqual(p3.medals.find((m) => m.userMedalId === 201).medalId, 300443, 'versione 1: medaglie non ritoccate');
+  assert.deepStrictEqual(p3.guiltBurst.max, [31176], 'versione 1: record Nova max migrato');
+  assert.strictEqual(p3.medalMapVersion, 2);
   console.log('ok: migrazione Organizzazione XIII');
 } finally { try { fs.unlinkSync(SAVE); } catch { /* assente */ } }

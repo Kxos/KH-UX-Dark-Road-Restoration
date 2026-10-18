@@ -2578,15 +2578,24 @@ const ORGXIII_MEDAL_MAP = new Map([
 // Sostituisce medalId nei campi del salvataggio che lo tengono: medals[], medalState[] (Evolve) e i regali
 // in sospeso di tipo medaglia (resourceType 3). Il resto (userMedalId, medalSkills, medalLocks, medalTraits,
 // deck, supporto, guilt) e' per userMedalId e non cambia; gacha, pet e subslot non tengono medalId.
+// Versione 2: il record del livello Nova (guiltBurst.first/max, per medalId, non cala mai) tiene i vecchi id;
+// l'id nuovo prende il posto del vecchio solo se non c'e' gia', cosi' la stessa medaglia non da' un secondo
+// aumento (+5 e popup «NOVA LEVEL UP!» senza motivo) e il livello non scende.
 function migrateMedalMap() {
-  if (player.medalMapVersion) return;
+  if (player.medalMapVersion >= 2) return;
   let n = 0;
   const fix = (o, k) => { const to = o && ORGXIII_MEDAL_MAP.get(o[k]); if (to) { o[k] = to; n++; } };
-  for (const m of player.medals || []) fix(m, 'medalId');
-  for (const st of Object.values(player.medalState || {})) fix(st, 'medalId');
-  for (const p of player.presents || []) if (p.resourceType === 3) fix(p, 'resourceId');
-  player.medalMapVersion = 1;
-  if (n) console.log(`[save] Organizzazione XIII: ${n} medaglie/regali spostati sugli id originali (medalMapVersion 1)`);
+  if (!player.medalMapVersion) {
+    for (const m of player.medals || []) fix(m, 'medalId');
+    for (const st of Object.values(player.medalState || {})) fix(st, 'medalId');
+    for (const p of player.presents || []) if (p.resourceType === 3) fix(p, 'resourceId');
+  }
+  for (const list of [player.guiltBurst?.first, player.guiltBurst?.max]) {
+    if (!Array.isArray(list)) continue;
+    list.forEach((id, i) => { const to = ORGXIII_MEDAL_MAP.get(id); if (to && !list.includes(to)) { list[i] = to; n++; } });
+  }
+  player.medalMapVersion = 2;
+  if (n) console.log(`[save] Organizzazione XIII: ${n} id spostati sugli originali (medalMapVersion 2)`);
   savePlayer();
 }
 
@@ -3799,9 +3808,9 @@ function grantMissingKeyblades() {
 
 // skill (I-146): qui e non accanto a migrateClock() perche' usa le tabelle (medalSkillTables, userMedalList)
 // definite piu' avanti nel file
+// id Organizzazione XIII (medalMapVersion 2), prima delle skill: migrateSkills cerca le medaglie nel master
+if (player.created) migrateMedalMap(); else player.medalMapVersion = 2;
 if (player.created) migrateSkills(); else player.skillVersion = 1; // nuovo giocatore: gia' sulla tabella completa
-// id Organizzazione XIII (medalMapVersion 1)
-if (player.created) migrateMedalMap(); else player.medalMapVersion = 1;
 
 if (player.created) {
   const before = (player.keyblades || []).length;

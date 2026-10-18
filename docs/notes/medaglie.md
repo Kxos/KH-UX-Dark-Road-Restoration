@@ -513,7 +513,7 @@ e`). 10000 = 1,0:
   servizio sensori dell'emulatore (`android.hardware.sensors`) non e' un crash del gioco.
 
 <a id="mapping-orgxiii"></a>
-## Mapping Organizzazione XIII e Roboloid (I-160, 18-10, rev 127)
+## Mapping Organizzazione XIII e Roboloid (I-160, 18-10, rev 128)
 
 - Problema: `make-game-tables.js` prende il Tier dalla riga Roboloid `MEDAL_MAP[id]` e con `KHUX_MEDALS_ALL` aggiunge come
   `300000+ID` ogni riga non usata. Per i 13 id SE dell'Organizzazione XIII `medal_map.json` puntava alle «X [+]» (Tier 8): le
@@ -533,9 +533,17 @@ e`). 10000 = 1,0:
 - Catalogo (`recon/tools/make_banner_catalog.py`, 4f1c8a7): alias di Axel/Roxas/Vexen non piu' su SN++, 6.2 su «axel a»/«roxas a»,
   `clamp_plus_dates` (le [+] non prima di `firstRarity`), `medal_date` in `banner_overrides.tsv` (302074/302075 al 2021-01-01);
   B0280/B0303 danno la 6★ [+]. Installato con le promesse skill dei 98 banner (`maxSkill`).
-- Immagini (ba2922d): grafica e cutin delle 13 6★ [+] 301446...301782 (imageId = medalId), risorse 42 costruite, da installare al banco.
-- Salvataggio (247fbed, `migrateMedalMap` in `server/server.js`, `medalMapVersion` 1): `ORGXIII_MEDAL_MAP` (36 voci) porta 3004xx/3006xx
+- Immagini (ba2922d): grafica e cutin delle 13 6★ [+] 301446...301782 (imageId = medalId), risorse 42. Al banco le 6★ SE avevano la
+  grafica della [+] (colore sbagliato nei filtri): `norm()` di `recon/tools/fetch_medal_images.py` toglieva il «+», «Vexen [+]» 6★ e
+  «Vexen» 6★ avevano la stessa chiave. Corretto in 989d5de; in `medal_gen` le 23 immagini (Medal_L, Medal_S, Cutin) sono quelle della
+  6★ «X A» 3004xx/3006xx e `medal_map.json` punta lì; risorse 43. Controllo su tutte le 2106 medaglie con grafica: attributo, nome e
+  stelle uguali a Roboloid.
+- Nomi (e53b3d4, rev 128): il master di thethiny (2017) chiama le 5★/6★ SE solo «Lexaeus»; nel 4.3.1 sono «X A» dall'uscita delle
+  «B». Le 36 righe prendono il nome della 7★ «X A» di arrivo dell'Evolve; catalogo rigenerato (5 banner: solo chiavi dei nomi).
+- Salvataggio (247fbed, `migrateMedalMap` in `server/server.js`, `medalMapVersion` 1-2): `ORGXIII_MEDAL_MAP` (36 voci) porta 3004xx/3006xx
   all'id SE e le potenziate 20xxxxx/21xxxxx alla 2301xxx; campi con `medalId`: `medals[]`, `medalState`, regali `resourceType` 3;
-  il resto segue `userMedalId`. Salvataggio del banco: 14 copie, nessuna potenziata.
+  il resto segue `userMedalId`. Salvataggio del banco: 14 copie, nessuna potenziata. Versione 2 (revisione finale): il record del
+  livello Nova (`guiltBurst.first`/`max`, per medalId, non cala mai) prende l'id nuovo al posto del vecchio solo se non c'e' gia'
+  (niente secondo +5 con popup per la stessa medaglia, livello che non scende); la migrazione gira prima di `migrateSkills`.
 - Seguiti aperti dall'audit: I-161 (SN++ 302008-302012 «adjusted» del 07-09-2020, evoluzione con Fantasia Mickey B 300913) e I-162
   (167 6★ originali senza `validEvolve` verso la 7★).
