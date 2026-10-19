@@ -1070,7 +1070,9 @@ function sphereBonus() {
 }
 
 function luxRankFor(lux) {
-  const rows = masterRows('player').filter((r) => r.lv >= 1 && r.needExp <= lux);
+  // fino al livello massimo (misc 100): la tabella ha una riga in piu' (make-lux-levels.js)
+  const max = miscValue(100, 999);
+  const rows = masterRows('player').filter((r) => r.lv >= 1 && r.lv <= max && r.needExp <= lux);
   return Math.max(1, ...rows.map((r) => r.lv));
 }
 

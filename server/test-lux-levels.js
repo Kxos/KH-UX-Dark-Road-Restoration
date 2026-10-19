@@ -13,12 +13,12 @@ const misc = JSON.parse(fs.readFileSync(path.join(MASTER, 'misc.json'), 'utf8'))
 const by = new Map(player.map((r) => [r.lv, r]));
 const step = (lv) => by.get(lv).needExp - by.get(lv - 1).needExp;
 
-check(player.length === 1000 && by.has(0) && by.has(999) && !by.has(1000), `righe 0..999 (${player.length})`);
+check(player.length === 1001 && by.has(0) && by.has(1000) && !by.has(1001), `righe 0..1000 (${player.length})`);
 check(misc.find((r) => r.miscId === 100)?.value === 999, 'misc 100 = 999');
 check(by.get(301).needExp === 144826275, 'riga 301 originale');
 check(step(302) === 521557110 && step(303) === 535117590 && step(304) === 549030555, 'Lux 302-304 dal wiki JP');
 let mono = true, ints = true;
-for (let lv = 2; lv <= 999; lv++) {
+for (let lv = 2; lv <= 1000; lv++) {
   if (!(step(lv) > 0)) mono = false;
   if (!Number.isInteger(by.get(lv).needExp)) ints = false;
 }

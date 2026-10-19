@@ -41,7 +41,7 @@ function steps() {
   }
   const [last, vlast] = ANCHORS[ANCHORS.length - 1];
   for (let lv = last; lv <= 900; lv++) out.set(lv, vlast * GROWTH_877_900 ** (lv - last));
-  for (let lv = 901; lv <= MAX_LV; lv++) out.set(lv, out.get(900) * GROWTH_901_999 ** (lv - 900));
+  for (let lv = 901; lv <= MAX_LV + 1; lv++) out.set(lv, out.get(900) * GROWTH_901_999 ** (lv - 900));
   return out;
 }
 
@@ -51,7 +51,9 @@ function rows(base) {
   const st = steps();
   const out = [];
   let need = r301.needExp;
-  for (let lv = 302; lv <= MAX_LV; lv++) {
+  // una riga oltre il massimo: il client la legge anche al livello massimo (banco 19-10: crash al 999 senza la
+  // riga 1000); il server non la raggiunge mai (luxRankFor si ferma a misc 100)
+  for (let lv = 302; lv <= MAX_LV + 1; lv++) {
     need += Math.round(st.get(lv));
     out.push({ ...r301, lv, needExp: need, luxMedal: 55, rewardId: 0 });
   }
@@ -71,7 +73,7 @@ function patch(masterDir) {
   if (m && m.value !== MAX_LV) { m.value = MAX_LV; miscChanged = true; }
   if (!m) { misc.push({ miscId: 100, value: MAX_LV }); miscChanged = true; }
   if (miscChanged) fs.writeFileSync(miscFile, JSON.stringify(misc));
-  console.log(`lux: righe player fino a ${MAX_LV} (needExp 999 = ${all[all.length - 1].needExp}), misc 100 = ${MAX_LV}` +
+  console.log(`lux: righe player fino a ${MAX_LV} (needExp 999 = ${all.find((r) => r.lv === MAX_LV).needExp}, piu' la riga ${MAX_LV + 1}), misc 100 = ${MAX_LV}` +
     `${before !== after || miscChanged ? '' : ' (invariato)'}`);
 }
 
