@@ -1818,8 +1818,10 @@ COPIES[PUB + 'Result_Clear_Challenge_Panel01B.png'] = PUB + 'Result_Clear_Challe
 # risorsa: il pulsante blu But16 (come Play Style)
 COPIES.update({'img/ui/But13_%s.png' % s: PUB + 'But16_%s.png' % s for s in ('Off', 'On', 'Disable')})
 # Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come
-# per gli NPC e il pet ([fn] restituisce NULL se manca: crash)
-_EMPTY_LWF = os.path.join(OUT, 'lwf', 'character', 'npc', '2000', 'wait', 'wait.lwf')
+# per gli NPC e il pet ([fn] restituisce NULL se manca: crash). LWF vuoto = recon/tools/empty.lwf
+# (492 byte, un fotogramma, copia dei vecchi NPC vuoti): prima era npc/2000/wait/wait.lwf del pacchetto, che
+# import_jp_coco.py ora sovrascrive con l'animazione JP di Chirithy (audit I-170 del 19-10)
+_EMPTY_LWF = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty.lwf')
 if os.path.exists(_EMPTY_LWF):
     os.makedirs(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait'), exist_ok=True)
     shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
