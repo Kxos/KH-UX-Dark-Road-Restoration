@@ -96,10 +96,32 @@ check(res.pet.userPetParts.some((p) => p.petPartsId === first.itemId), `parte ${
 check(res.missions.find((m) => m.id === first.id)?.status === 2, 'missione non segnata come riscossa');
 log(`riscossa «${first.missionName}»: parte ${first.itemId}, ${res.pet.userPetParts.length} parti possedute`);
 
-// il mese dopo (stessa campagna fra 35 mesi): contatori azzerati
+// premi unici (I-168, decisione dell'utente 19-10): una volta sola. second = completata ma non riscossa (a fine mese
+// va nei Presents), third = non completata in tempo (deve tornare)
+const second = byId.get(month[1]), third = byId.get(month[2]);
+quiet(() => t.missionCount('lux', second.targetNum[0] - first.targetNum[0]));
+const st2 = quiet(() => t.missionsData());
+check(st2.find((m) => m.id === second.id)?.status === 1 && st2.find((m) => m.id === third.id)?.status === 0, 'seconda completata, terza no');
+check(st2.find((m) => m.id === first.id)?.status === 2, 'la riscossa resta visibile nel suo mese');
+quiet(() => t.settleClock()); // la prima chiusura registra solo l'istante
+const presentsBefore = (t.player.presents || []).length;
+at(new Date(Date.UTC(2026, 10, 16, 12)).toISOString());
+quiet(() => t.settleClock());
+check((t.player.presents || []).slice(presentsBefore).some((p) => p.resourceType === 33 && p.resourceId === second.itemId), 'seconda (completata, non riscossa) nei Presents a fine mese');
+// la stessa campagna fra 35 mesi
 at(new Date(Date.UTC(2026, 9 + 35, 16, 12)).toISOString());
-const again = quiet(() => t.missionsData()).find((m) => m.id === first.id);
-check(again && again.status === 0 && again.numUpper === 0, `al ritorno della campagna stato ${JSON.stringify(again)}`);
+quiet(() => t.settleClock());
+const back = quiet(() => t.missionsData());
+check(!back.some((m) => m.id === first.id), 'premio unico riscosso: la missione non torna');
+check(!back.some((m) => m.id === second.id), 'premio unico arrivato nei Presents: la missione non torna');
+const again = back.find((m) => m.id === third.id);
+check(again && again.status === 0 && again.numUpper === 0, `non completata in tempo: torna da zero (${JSON.stringify(again)})`);
+// parte gia' posseduta per altra via: niente premio fantasma
+const fourth = byId.get(month[3]);
+if (fourth && fourth.rewardType === 33) {
+  t.player.pet.parts[fourth.itemId] = Date.now();
+  check(!quiet(() => t.missionsData()).some((m) => m.id === fourth.id), 'parte gia posseduta: missione nascosta');
+}
 
 const untyped = rows.filter((r) => !r.rewardType).map((r) => `${r.id} ${r.missionName}`);
 log(`premi ancora senza tipo: ${untyped.length}${untyped.length ? ' (' + untyped.join('; ') + ')' : ''}`);

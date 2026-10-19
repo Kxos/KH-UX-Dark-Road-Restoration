@@ -2203,7 +2203,7 @@ function missionActive(row, realMs) {
     beginnerLimitTime(); // fissa beginnerSince al primo elenco
     return realMs < player.beginnerSince + BEGINNER_DAYS * 86400000;
   }
-  if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id, realMs);
+  if (row.missionType === 4 && LIMITED_GROUP.size) return limitedActive(row.id, realMs) && !limitedGone(row, realMs);
   if (row.missionType === 3) return weeklyActive(row, realMs);
   return true;
 }
@@ -2222,8 +2222,27 @@ function missionState(row, realMs) {
   player.missions = player.missions || {};
   const period = missionPeriod(row, realMs);
   let s = player.missions[row.id];
+  if (s && s.period !== period && s.received && limitedUnique(row)) markLimitedOnce(row.id);
   if (!s || s.period !== period) s = player.missions[row.id] = { period, count: 0, received: false };
   return s;
+}
+
+// Limited con premio unico (medaglia 3, titolo 7, parte dell'avatar 20, parte dello Spirit 33): si riscuotono una
+// volta sola (decisione dell'utente 19-10, I-168). Quando la campagna ritorna nella rotazione la missione non si
+// mostra se e' gia' stata riscossa (player.limitedOnce, anche finita nei Presents a fine periodo) o se il titolo o
+// la parte sono gia' posseduti per altra via (niente premi fantasma); nel periodo della riscossione resta visibile.
+const UNIQUE_REWARD_TYPES = new Set([3, 7, 20, 33]);
+const limitedUnique = (row) => row.missionType === 4 && UNIQUE_REWARD_TYPES.has(row.rewardType);
+function markLimitedOnce(id) { (player.limitedOnce ||= {})[id] = 1; }
+function limitedGone(row, realMs) {
+  if (!limitedUnique(row)) return false;
+  const s = player.missions?.[row.id];
+  if (s && s.received && s.period === missionPeriod(row, realMs)) return false;
+  if (player.limitedOnce?.[row.id] || (s && s.received)) return true;
+  if (row.rewardType === 33) return !!player.pet?.parts?.[row.itemId];
+  if (row.rewardType === 7) return (player.titles || []).includes(row.itemId);
+  if (row.rewardType === 20) return (player.avatarParts || []).includes(row.itemId);
+  return false;
 }
 
 // Lux della settimana (bolla della home «Weekly Lux» dei membri del party, userRanking.lux): stessa settimana
@@ -2269,6 +2288,7 @@ function respondMissionReceive(res, req) {
     const s = missionState(r, nowMs);
     if (s.received || missionProgress(r, s) < (r.targetNum?.[0] || 1)) continue;
     s.received = true;
+    if (limitedUnique(r)) markLimitedOnce(r.id);
     grantItem(r.rewardType, r.itemId, r.itemNum);
   }
   savePlayer();
@@ -2295,6 +2315,7 @@ function settleClock(realMs = realNow()) {
       if (!s || s.received || !SETTLE_COMMENT[row.missionType] || s.period === missionPeriod(row, realMs)) continue;
       if (s.count >= (row.targetNum?.[0] || 1) || (MISSION_DERIVED[row.conditionId] && missionProgress(row, s) >= (row.targetNum?.[0] || 1))) {
         s.received = true;
+        if (limitedUnique(row)) markLimitedOnce(row.id);
         addPresent(row.rewardType, row.itemId, row.itemNum, SETTLE_COMMENT[row.missionType]);
         console.log(`[missioni] ${row.id} non riscossa a fine periodo: premio nei Presents`);
       }
