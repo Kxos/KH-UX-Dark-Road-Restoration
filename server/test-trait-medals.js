@@ -33,6 +33,8 @@ if (t1) {
   check(t1.addPetPt === 15 && t1.sortId === 985 && t1.validPack === 1 && t1.shuffleskillSlot === 0, '15 Pet Point, Album 985, impilabile, senza slot');
   check(t1.shuffleSkillGroupId === byId.get(301426).shuffleSkillGroupId, 'gruppo dei trait della medaglia');
   check(t1.imageId === t1.medalId && t1.thumbId === t1.medalId, 'immagini proprie');
+  // Tier 1: la guilt si sblocca (khuxwiki) ma la Trait Medal non vale come la sua medaglia (sub-slot, missioni)
+  check(t1.guiltValue === 1 && !t1.addGuiltBurstLv && !t1.addGuiltBurstLvMax, `Tier della Trait Medal: ${t1.guiltValue}`);
   const b = burst.find((x) => x.burstId === t1.burstId);
   check(b && b.name === 'Lesser Attack' && b.target === 1 && b.gauge === 1 && b.displayPower === 10000, `Lesser Attack: ${b && [b.name, b.target, b.gauge, b.displayPower]}`);
 }

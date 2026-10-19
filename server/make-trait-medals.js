@@ -46,6 +46,8 @@ function traitMedalRow(e, med) {
     name: `Trait Medal #${e.n}`,
     flavor: `A Trait Medal for ${med.name}.\n\nFuse it into ${med.name} to give it\na new trait and one Special Attack dot.`,
     advantage: `Fuse into ${med.name}:\n+1 trait and +1 Special Attack dot.`,
+    // Tier 1: la guilt si puo' sbloccare (khuxwiki) ma non vale come quella della medaglia (sub-slot, missioni)
+    guiltValue: 1, addGuiltBurstLv: 0, addGuiltBurstLvMax: 0,
     autoEnhance: 0, validPack: 1, type: 9, rare: 6, skillSlot: 0, shuffleskillSlot: 0, spShuffleskillSlot: 0, addPetPt: 15,
     attack: 1, maxAttack: 1, addMaxAttack: 0, defense: 1, maxDefense: 1, addMaxDefense: 0, cost: 999, minCost: 999,
     validBurst: 1, burstId: LESSER_ATTACK, validSuperBurst: 0, superBurstId: 0, burstEnhanceCategory: [0, 0], groupId: 0,

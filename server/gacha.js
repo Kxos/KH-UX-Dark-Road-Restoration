@@ -456,6 +456,7 @@ function onText(on, nm) {
 }
 // Trait Medal #N -> «Trait Medal #N (for <medaglia>)» (server/trait_medals.json, I-084 parte B)
 const TRAIT_FOR = new Map(JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'trait_medals.json'), 'utf8')).map((e) => [e.n, e.name]));
+const traitKnown = (n) => TRAIT_FOR.has(Number((/^trait medal #(\d+)$/.exec(n) || [])[1]));
 function traitLabel(n) {
   const m = /^trait medal #(\d+)$/.exec(n);
   const name = m && TRAIT_FOR.get(Number(m[1]));
@@ -480,7 +481,7 @@ function guaranteeSection(banner, ex, medalNames, at) {
   for (const s of g.slots || []) {
     const n = s.count || 1;
     if (s.kind === 'tier') out.push(`${n}x ${s.star}★${tierRange(s)}${(s.names || []).length ? ` (or ${niceList(s.names, nm)})` : ''}`);
-    else if (s.kind === 'trait' && (s.names || []).length) out.push(`${n}x ${s.names.map((t) => traitLabel(t).replace(' (for ', ` (${s.star}★, for `)).join(' or ')}`);
+    else if (s.kind === 'trait' && (s.names || []).some(traitKnown)) out.push(`${n}x ${s.names.map((t) => traitLabel(t).replace(' (for ', ` (${s.star}★, for `)).join(' or ')}`);
     else if (s.kind === 'trait') out.push(`${n}x Trait Medal (${s.star}★)`);
     else out.push(`${n}x one of the listed Medals (${s.star}★${s.up && gd.UPGRADE?.[s.star] ? `, ${Math.round(gd.UPGRADE[s.star] * 100)}% chance of ${s.star + 1}★, reconstructed` : ''})`);
   }
