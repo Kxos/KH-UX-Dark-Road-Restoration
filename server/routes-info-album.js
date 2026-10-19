@@ -28,12 +28,15 @@ const { isBoosted } = require('./medal-boost');
 
 // Ogni funzione che differisce dall'originale ha una notizia (docs/notes/home_profilo.md#notices-album)
 const DIFFERENCES_BODY = [
+  '## Game and progress',
   'This is a private restoration of KINGDOM HEARTS Union χ[Cross]. Your progress is saved only on this restoration server.',
   'The in-game date is set between 2016 and 2021 so that the original game keeps working. Missions reset at the real times shown in their countdowns.',
   'Completed missions that you did not collect before they end are sent to your Presents.',
   'Limited Missions rotate among the original campaigns: one monthly Lux campaign and one short campaign each week.',
+  '## Medals',
   'A few Spirit parts without original graphics are replaced by a similar part.',
   'The "Medal STR +N" and "Medal DEF +N" effects of Special Attacks and Supernovas are rebuilt from their descriptions, because the original values are lost.',
+  '## Shop and draws',
   'Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner\'s Details say so.',
   'Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.',
   'Free draws cost 1 Jewel. VIP Free Deals are open to everyone, with one free VIP draw per day in total.',
@@ -44,6 +47,7 @@ const DIFFERENCES_BODY = [
   'Trait Medals no longer exist: where a deal guaranteed a Trait Medal you get a random Medal of the same rarity instead.',
   'Boosted Medals: the chance of a boosted version on deals that offered one is reconstructed (5% per eligible Medal). Guaranteed max-level Skills are given only for Skills that exist in this restoration.',
   'Boosted stats on deals that did not state them are reconstructed (+1000 STR, +1000 DEF), and bonus support Medals earned through a guarantee arrive in your Presents.',
+  '## Purchases',
   'There are no purchases: Jewels and items come from quests, missions and presents.',
 ];
 
@@ -82,15 +86,15 @@ const NOTICES = [
     body: ['Medal skills are reconstructed: 25 of the 163 skills use the original values, the other 138 are rebuilt from the community skill list (power and max trigger rate from the wiki, other values estimated). Some long descriptions are shortened.',
       'After each mission, the Skill EXP of the battle goes to every Medal in your deck that has a skill. The original server could not know which Medals you used, so this is our deduction.',
       'Combo skills marked "& GA 0", "& GA 1" and "& GA 2" make the special attack cost 0, 1 or 2 gauges; when the skill is checked is our estimate, as no original value was found.',
-      'New Scrooge Medals get a skill picked by rarity, because the original skill depended on where the Scrooge came from. Scrooges you already own keep their skill.'] },
+      'Scrooge Medals from the **Skills to Thrill** deals come with the skill shown on their banner, at max level. Other new Scrooge Medals get a skill picked by rarity, because the original skill depended on where the Scrooge came from. Scrooges you already own keep their skill.'] },
   { date: '10/16', tag: 'INFORMATION', title: 'Differences from the original game',
     body: DIFFERENCES_BODY },
   { date: '10/16', tag: 'INFORMATION', title: 'Missions',
-    body: ['Open the scroll under your avatar on the home screen to see your Beginner, Daily, Weekly and Limited Missions, then tap Receive to collect the rewards.',
+    body: ['Open the **scroll** under your avatar on the home screen to see your Beginner, Daily, Weekly and Limited Missions, then tap **Receive** to collect the rewards.',
       'Daily Missions reset every day, Weekly Missions every Monday and Limited Missions with their campaign: the time left is shown on each tab.'] },
   { date: '10/16', tag: 'INFORMATION', title: 'Shop',
-    body: ['The first banner in the Shop, Banner Catalog, cannot be drawn: tap its Details to see the banners and the Medals they contain.',
-      'Draws cost Jewels or Tickets earned in the game. Draw Odds shows the rates used by this restoration.',
+    body: ['The first banner in the Shop, **Banner Catalog**, cannot be drawn: tap its **Details** to see the banners and the Medals they contain.',
+      'Draws cost Jewels or Tickets earned in the game. **Draw Odds** shows the rates used by this restoration.',
       'Guarantees work as on the original banners: the yellow line under a banner counts down the draws left to its guaranteed Medal.',
       'When a guarantee covers too many Medals to name them all, the yellow line names the kind of Medal from the banner\'s original notice instead (for example "A SN or higher Medal is guaranteed! Draws left: 3"). This wording is written by this restoration.',
       'Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story. Banners unlock as you progress through the Story; in the original game they followed the calendar.'] },
@@ -112,28 +116,56 @@ function informationPopup(sessionBase) {
 }
 
 // Pagina /web/notices, come l'elenco originale (reference\other_menu\notices_list_yt_02.jpg: data,
-// etichetta colorata, titolo, freccia rossa) e il dettaglio (notices_detail_yt_03.jpg: titoletti con
-// il quadratino, pulsante BACK)
+// etichetta colorata, titolo, freccia rossa) e il dettaglio (notices_detail_yt_03.jpg e notices_dialog_01.jpg:
+// fondo blu notte, testo spaziato, titoletti col quadratino, parole chiave in arancione, BACK blu in basso).
+// Testo delle notizie: «## Titolo» = sezione (le righe sotto diventano un elenco puntato), «**parola**» = evidenziata.
 function noticesPage(realMs = Date.now()) {
   const notices = [updateNotice(realMs), ...NOTICES];
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="k">$1</b>');
+  const bodyHtml = (body) => {
+    let out = '', list = false;
+    for (const line of body) {
+      if (line.startsWith('## ')) {
+        if (list) out += '</ul>';
+        out += `<h3>${esc(line.slice(3))}</h3><ul>`;
+        list = true;
+      } else out += list ? `<li>${rich(line)}</li>` : `<p>${rich(line)}</p>`;
+    }
+    return out + (list ? '</ul>' : '');
+  };
   const rows = notices.map((n, i) => `<a class="row" href="#n${i}" onclick="show(${i});return false">`
     + `<span class="d">${esc(n.date)}</span><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
     + `<span class="x">${esc(n.title)}</span><span class="a">&#9654;</span></a>`).join('');
-  const details = notices.map((n, i) => `<div class="det" id="d${i}"><h2>&#9632; ${esc(n.title)}</h2>`
-    + n.body.map((p) => `<p>${esc(p)}</p>`).join('') + '<a class="back" href="#" onclick="show(-1);return false">BACK &#8617;</a></div>').join('');
+  const details = notices.map((n, i) => `<div class="det" id="d${i}"><div class="meta"><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
+    + `<span class="d">${esc(n.date)}</span></div><h2>${esc(n.title)}</h2>${bodyHtml(n.body)}`
+    + '<div class="bar"><a class="back" href="#" onclick="show(-1);return false">BACK<span>&#10550;</span></a></div></div>').join('');
   return '<!doctype html><html><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<style>body{margin:0;background:#174a5c;color:#fff;font:18px sans-serif}'
-    + '.row{display:flex;align-items:center;padding:10px 8px;border-bottom:2px dotted #8fb3c0;color:#fff;text-decoration:none}'
-    + '.d{width:58px}.t{width:120px;text-align:center;font-size:14px;padding:4px 0;margin-right:10px}'
-    + '.x{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a{color:#e8242c;margin-left:8px}'
-    + '.det{display:none;padding:10px 14px 70px}h2{color:#5fe0f0;font-size:20px;margin:10px 0}p{color:#e8f2f6;line-height:1.4}'
-    + '.back{position:fixed;left:16px;bottom:12px;background:#2f7fd6;color:#fff;padding:8px 22px;border-radius:8px;'
-    + 'text-decoration:none;font-weight:bold;border:2px solid #cfe8ff}</style>'
+    + '<style>body{margin:0;background:#174a5c;color:#fff;font:18px sans-serif;letter-spacing:.3px}'
+    + '.row{display:flex;align-items:center;padding:12px 10px;border-bottom:2px dotted #8fb3c0;color:#fff;text-decoration:none}'
+    + '.row:active{background:#1f5d72}.d{width:62px}'
+    + '.t{display:inline-block;width:124px;text-align:center;font-size:14px;padding:5px 0;margin-right:12px;border-radius:3px;'
+    + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.18)}'
+    + '.x{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a{color:#e8242c;margin-left:10px}'
+    + '.det{display:none;min-height:100vh;box-sizing:border-box;background:#0d3350;padding:14px 22px 96px;line-height:1.85}'
+    + '.meta{display:flex;align-items:center;color:#9fc3d6;font-size:15px}.meta .t{width:auto;padding:3px 12px}'
+    + 'h2{color:#5fe0f0;font-size:21px;margin:10px 0 14px;padding-bottom:8px;border-bottom:2px solid #1e5f80}'
+    + 'h2:before,h3:before{content:"";display:inline-block;width:14px;height:14px;background:#2fd0e8;margin-right:10px;vertical-align:1px}'
+    + 'h3{color:#5fe0f0;font-size:18px;margin:22px 0 6px}p{color:#eef4f7;margin:0 0 14px}'
+    + 'ul{margin:0 0 6px;padding:0 0 0 4px;list-style:none}li{position:relative;padding:6px 0 6px 22px;border-bottom:1px solid #1a4a68;color:#eef4f7}'
+    + 'li:before{content:"";position:absolute;left:4px;top:19px;width:7px;height:7px;border-radius:50%;background:#2fd0e8}'
+    + '.k{color:#ffae3b;font-weight:bold}'
+    + '.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:linear-gradient(rgba(6,26,42,0),rgba(6,26,42,.92) 35%)}'
+    + '.back{display:inline-block;padding:7px 26px 8px;border-radius:10px;border:2px solid #9fd4ff;color:#fff;text-decoration:none;'
+    + 'font:italic bold 20px sans-serif;letter-spacing:1px;background:linear-gradient(#5aa8ff,#2556c8 55%,#1b3f9c);'
+    + 'box-shadow:0 2px 0 #0b2a66,inset 0 1px 0 rgba(255,255,255,.5);text-shadow:0 1px 2px #0a2a6a}.back span{margin-left:10px;font-style:normal}</style>'
     + '<script>function show(i){document.getElementById("list").style.display=i<0?"block":"none";'
     + 'for(var k=0;k<' + notices.length + ';k++)document.getElementById("d"+k).style.display=k===i?"block":"none";'
-    + 'window.scrollTo(0,0)}</script></head><body>'
+    + 'window.scrollTo(0,0)}'
+    // avvisa il server appena disegnata (tempi del popup al primo avvio, server.js noticesshown)
+    + 'window.addEventListener("load",function(){requestAnimationFrame(function(){new Image().src="/web/notices/shown?"+Date.now()})})'
+    + '</script></head><body>'
     + `<div id="list">${rows}</div>${details}</body></html>`;
 }
 

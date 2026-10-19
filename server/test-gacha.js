@@ -206,12 +206,12 @@ const dp = g.detailPage(bA, exA, medalNames, sctx);
 check(dp.includes('Draw rates') && /reconstructed/.test(dp), 'dettagli: Draw rates e reconstructed');
 check(dp.includes('Medal rarities of each draw: original'), 'dettagli: composizione original');
 check(dp.includes('Featured Medal guaranteed within 7 draws (original)'), 'dettagli: pity');
-check(dp.includes('every 3rd draw') && dp.includes('one of the listed Medals, featured Medals twice as likely'), 'dettagli: slot a lista con every');
+check(dp.includes('every 3rd draw') && dp.includes('one of the listed Medals (featured Medals twice as likely)'), 'dettagli: slot a lista con every');
 check(dp.includes('Beta') && dp.includes('Gamma') && dp.includes('Alpha'), 'dettagli: medaglie');
-check(dp.includes('4★ 94%') && dp.includes('5★ 6%'), 'dettagli: percentuali dello slot');
+check(dp.includes('4★</span></td><td>94%') && dp.includes('5★</span></td><td>6%'), 'dettagli: percentuali dello slot');
 const bS = sb({ skill: { table: '50106', slots: 'first' } });
 const dS = g.detailPage(bS, exA, medalNames, sctx);
-check(dS.includes('(original rates, notice)') && dS.includes('Attack Boost II') && dS.includes('No Cost'), 'dettagli skill: tabella');
+check(dS.includes('Original rates (notice)') && dS.includes('Attack Boost II') && dS.includes('No Cost'), 'dettagli skill: tabella');
 const dS2 = g.detailPage(bS, exA, medalNames, { ...sctx, skillNames: new Set(['Lux Plus']) });
 check(dS2.includes('Lux Plus') && !dS2.includes('Attack Boost II'), 'dettagli skill: solo le presenti');
 const bE = sb({ type: 'T_EVOLVE', payType: 4, currency: 'bronze', pool: { mode: 'evolve', evolve: [[301495, 1], [301496, 2], [301497, 3]] } });
@@ -219,9 +219,9 @@ const exE = gd.expandPool(bE, {}, bE.start);
 const dE = g.detailPage(bE, exE, medalNames, sctx);
 check(dE.includes('Fairy LV3') && dE.includes('10%') && dE.includes('45%'), 'dettagli evolve: livelli con percentuali');
 const op = g.oddsPage([{ banner: bA, ex: exA }, { banner: bE, ex: exE, medalNames }]);
-check(op.includes('Draw Odds') && op.includes('Second') === false && op.includes(bA.name), 'odds: sezione per banner');
+check(op.includes('Probabilities') && op.includes('Second') === false && op.includes(bA.name), 'odds: sezione per banner');
 check((op.match(/class="b"/g) || []).length === 2, 'odds: una sezione per banner');
-check(op.includes('Medal 1') && op.includes('Medal 3') && op.includes('every 3rd draw') && op.includes('Fairy LV3'), 'odds: righe degli slot');
+check(op.includes('Medal 1') && /Medal (3|2-3)(?!\d)/.test(op) && op.includes('every 3rd draw') && op.includes('Fairy LV3'), 'odds: righe degli slot');
 
 // fix round 1
 const d3 = g.detailPage(sb({ dayLimit: 3 }), exA, medalNames, sctx);

@@ -739,3 +739,12 @@ otices_detail_yt_03.jpg (titoletti
   allMedalCount = righe della tabella medal tranne la medaglia 1 (originale: «Medals 1837/1930»,
   
 eference\album\album_yt_01.jpg).
+
+<a id="notices-stile"></a>
+- Notices, stile e tempi (19-10, richiesta dell'utente): dettaglio come `notices_detail_yt_03.jpg`/`notices_dialog_01.jpg`
+  (fondo #0d3350, interlinea ampia, etichetta e data in alto, titoletti col quadratino, parole chiave «**x**» in
+  arancione, «## Sezione» = titoletto con elenco puntato, BACK blu fisso in basso); «Differences» divisa in sezioni.
+  Tempi del popup al login: misurati con `D:\Progetto_Restauro_KH_UX\tmp\ntime_login.ps1` (server 3 ms; client:
+  ~1 s di cornice vuota prima che chieda /web/notices, pagina disegnata ~1 s dopo). La pagina chiama
+  `/web/notices/shown` appena disegnata e il server scrive «[notices] pagina disegnata N ms dopo la richiesta»:
+  serve a cogliere i casi lenti segnalati dall'utente (non riprodotti in 4 prove).

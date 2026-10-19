@@ -755,3 +755,14 @@ Preset per nome con `dots=0` in testa (vince sui 1-3 pallini dello slot, anche p
 bersagli sempre a 0, le altre medaglie dello slot sempre 1-3. Details (gacha.js `presetText`): ogni preset diceva
 «comes with its Special Attack Bonus maxed» anche con 1-3 o 0 pallini; ora il testo segue la voce. Banco: pity di
 B0273 -> HD Vanitas [EX+] con 0 pallini; Details con le righe «0» e «1 to 3».
+
+<a id="pagine-stile"></a>
+## Stile delle pagine Details, Draw Odds e Catalog (19-10, richiesta dell'utente)
+
+Riferimenti originali in `D:\Progetto_Restauro_KH_UX\reference\shop_odds_details\` (NOTE.md: notice 46003 da Wayback
+con il CSS, screenshot reddit di Draw Odds «6★Medals» e delle righe Boosted). `gacha.js page()`: fondo #043654, testo
+bianco spaziato, titoli «■» #00d4ed, frasi chiave arancio #ffa500 e stelle gialle #ffcd4a, tabelle a bordi bianchi
+con intestazione #365e76. Probabilita' in tabella «Medal | Rarity | Probability» (`oddsTable`, posizioni uguali
+raggruppate «Medal 4-10»); Draw Odds si chiama «Probabilities» come l'originale, sezioni «[banner]» gialle con
+«↑PAGE TOP»; medaglie in tre colonne colorate per attributo (Power #ff4a74, Speed #5cd94a, Magic #62a7ff) come i
+nomi nei notice, bersagli della pity sottolineati. Banco: B0082 Details e Probabilities.

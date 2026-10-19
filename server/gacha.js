@@ -288,12 +288,24 @@ function priceSteps(b) {
 const priceLine = (b) => (b.catalogOnly === 'INCOMPLETE' ? ''
   : `${esc(priceText(b, firstPrice(b)))}, ${b.lotCount ?? '?'} Medal${b.lotCount === 1 ? '' : 's'}`);
 const firstPrice = (b) => Math.max(1, (b.prices || [])[0] || 1);
+// Stile delle pagine originali (reference\shop_odds_details\NOTE.md: notice 46003 da Wayback e screenshot di Draw
+// Odds): fondo #043654, testo bianco spaziato, titoli «■» azzurri #00d4ed, frasi chiave arancio/giallo, tabelle con
+// bordi bianchi e intestazione #365e76, sezioni gialle «6★Medals» con «↑PAGE TOP», nomi colorati per attributo.
 function page(title, body) {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<style>body{margin:0;background:#174a5c;color:#e8f2f6;font:17px sans-serif;padding:10px 14px 40px}'
-    + 'h1{color:#5fe0f0;font-size:21px;margin:8px 0}h2{color:#5fe0f0;font-size:18px;margin:14px 0 6px}'
-    + 'a{color:#fff}img{width:100%;max-width:640px;height:auto;display:block;margin:6px 0}.b{border-bottom:2px dotted #8fb3c0;padding:8px 0}'
-    + 'table{border-collapse:collapse}td{padding:2px 10px 2px 0;vertical-align:top}.n{color:#bcd}.s{color:#ffd86b}.box{border:2px solid #ffd86b;padding:6px 10px;margin:8px 0}</style></head><body>'
+    + '<style>body{margin:0;background:#043654;color:#fff;font:17px/1.8 sans-serif;letter-spacing:.4px;padding:6px 18px 40px}'
+    + 'h1{font-size:22px;margin:8px 0 4px;color:#fff}h2{color:#00d4ed;font-size:18px;margin:20px 0 6px}h2:before{content:"\\25A0  "}'
+    + 'h3{color:#ffcd4a;font-size:19px;margin:16px 0 4px}a{color:#00d4ed}p{margin:4px 0 8px}'
+    + 'img{width:100%;max-width:640px;height:auto;display:block;margin:8px 0}'
+    + '.b{border-bottom:2px solid #9fb7c6;padding:10px 0 16px}hr{border:0;border-top:2px solid #9fb7c6;margin:20px 0}'
+    + '.n{color:#b9cfdc;font-size:15px}.s{display:inline-block;background:#1a6fa8;border-radius:12px;padding:0 12px;font-size:14px;margin:4px 0}'
+    + '.k{color:#ffa500;font-weight:bold}.y{color:#ffcd4a;font-weight:bold}'
+    + 'table{width:97%;margin:6px auto 10px;border-collapse:collapse;table-layout:fixed;font-size:85%}'
+    + 'th,td{border:1px solid #fff;padding:4px 8px;text-align:center;vertical-align:middle}th{background:#365e76;font-weight:normal}'
+    + 'td.l{text-align:left}ul{margin:4px 0 8px;padding-left:22px}li{margin:3px 0}'
+    + '.ml{columns:3;column-gap:18px;list-style:none;padding:0;font-size:15px;line-height:1.6}.ml li{break-inside:avoid}'
+    + '.p{color:#ff4a74}.g{color:#5cd94a}.m{color:#62a7ff}.f{font-weight:bold;text-decoration:underline}'
+    + '.top{text-align:right;font-size:15px}.box{border:2px solid #ffcd4a;padding:6px 10px;margin:8px 0}</style></head><body>'
     + `<h1>${esc(title)}</h1>${body}</body></html>`;
 }
 
@@ -324,17 +336,31 @@ const rar = (o) => `${o.rare}★ ${o.pct}%`;
 
 // «<=4» -> «4 or lower», «>=5» -> «5 or higher» (etichette di slotOdds)
 const tierWords = (t) => String(t).replace(/^<=(\d+)$/, '$1 or lower').replace(/^>=(\d+)$/, '$1 or higher');
-// Righe «Medal i | probabilita'» (o i livelli di un banner evolve): condivise da dettagli e Draw Odds.
-function oddsRows(banner, ex, medalNames) {
+// Tabella «Medal | Rarity | Probability» (o i livelli di un banner evolve), condivisa da dettagli e Draw Odds; le
+// posizioni consecutive con le stesse probabilita' diventano una riga sola («Medal 2-10»).
+function oddsTable(banner, ex, medalNames) {
   if (banner.pool?.mode === 'evolve') {
-    return (ex.weighted || []).map(([id, w]) => `<tr><td>${esc(medalNames?.get(id) || `#${id}`)}</td><td>${r2(w)}%</td></tr>`).join('');
+    return '<table><tr><th>Medal</th><th>Probability</th></tr>'
+      + (ex.weighted || []).map(([id, w]) => `<tr><td class="l">${esc(medalNames?.get(id) || `#${id}`)}</td><td>${r2(w)}%</td></tr>`).join('') + '</table>';
   }
   const every = banner.guarantee?.every;
-  return gd.slotOdds(banner, ex).map((s, i) => {
-    const lead = s[0]?.list ? `${every ? `every ${ordinal(every)} draw: ` : ''}one of the listed Medals, featured Medals twice as likely: ` : '';
-    const kind = s[0]?.kind === 'tier' ? `Tier ${tierWords(s[0].tier)}: ` : s[0]?.kind === 'trait' ? 'Trait Medal slot: ' : s[0]?.kind === 'pity' ? 'guaranteed Medal slot: ' : '';
-    return `<tr><td>Medal ${i + 1}</td><td>${kind}${lead}${s.map(rar).join(', ')}</td></tr>`;
-  }).join('');
+  const rows = gd.slotOdds(banner, ex).map((s) => {
+    const lead = s[0]?.list ? `${every ? `every ${ordinal(every)} draw: ` : ''}one of the listed Medals (featured Medals twice as likely)` : '';
+    const kind = s[0]?.kind === 'tier' ? `Tier ${tierWords(s[0].tier)}` : s[0]?.kind === 'trait' ? 'Trait Medal slot' : s[0]?.kind === 'pity' ? 'guaranteed Medal slot' : '';
+    return { what: [kind, lead].filter(Boolean).join(', '), odds: s };
+  });
+  const groups = [];
+  rows.forEach((r, i) => {
+    const last = groups[groups.length - 1];
+    if (last && last.what === r.what && JSON.stringify(last.odds) === JSON.stringify(r.odds)) last.to = i + 1;
+    else groups.push({ ...r, from: i + 1, to: i + 1 });
+  });
+  return '<table><tr><th style="width:26%">Medal</th><th>Rarity</th><th style="width:22%">Probability</th></tr>' + groups.map((g) => {
+    const label = `Medal ${g.from}${g.to > g.from ? `-${g.to}` : ''}`;
+    const span = g.odds.length > 1 ? ` rowspan="${g.odds.length}"` : '';
+    return g.odds.map((o, k) => `<tr>${k ? '' : `<td${span}>${label}${g.what ? `<div class="n">${esc(g.what)}</div>` : ''}</td>`}`
+      + `<td><span class="y">${o.rare}★</span></td><td>${o.pct}%</td></tr>`).join('');
+  }).join('') + '</table>';
 }
 
 function skillSection(banner, skillNames) {
@@ -342,8 +368,8 @@ function skillSection(banner, skillNames) {
   const rows = (SKILL_TABLES[spec?.table] || []).filter(([n]) => !skillNames || skillNames.has(n));
   if (!rows.length) return '';
   const who = spec.slots === 'first' ? 'the first Medal of the draw' : 'every Medal of the draw';
-  return `<h2>Skills (original rates, notice)</h2><p class="n">Chance of each skill on ${who}; other Medals have no skill.</p>`
-    + `<table>${rows.map(([n, pct]) => `<tr><td>${esc(n)}</td><td>${pct}%</td></tr>`).join('')}</table>`;
+  return `<h2>Skills</h2><p class="n">Original rates (notice). Chance of each skill on ${who}; other Medals have no skill.</p>`
+    + `<table><tr><th>Skill</th><th style="width:30%">Probability</th></tr>${rows.map(([n, pct]) => `<tr><td class="l">${esc(n)}</td><td>${pct}%</td></tr>`).join('')}</table>`;
 }
 
 // Garanzia scritta ma senza medaglie estraibili alla data del banner (lista o vetrina vuote in expandPool):
@@ -432,30 +458,50 @@ function guaranteeSection(banner, ex, medalNames, at) {
   return `${out.length ? `<h2>Guarantees and bonuses</h2><ul>${out.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${box}`;
 }
 
+// classe di colore dell'attributo (medal.attribute: 1 Power, 2 Speed, 3 Magic), come i nomi nei notice originali
+const ATTR_CLASS = { 1: 'p', 2: 'g', 3: 'm' };
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
-  const pity = banner.guarantee?.pity ? `<p>${pityText(banner, ex, medalNames)}</p>` : '';
+  const pity = banner.guarantee?.pity ? `<p class="k">★ ${pityText(banner, ex, medalNames)}</p>` : '';
   const garanzie = !evolve && ex && banner.rarityMix?.length ? guaranteeSection(banner, ex, medalNames, gd.asOf(banner, ctx?.storyDay || banner.start)) : '';
   const gtext = [banner.guaranteesText, listLost(banner, ex) ? NOT_REPRODUCED : ''].filter(Boolean).map(esc).join(' ');
   const rated = !!(ex && banner.rarityMix?.length) && banner.catalogOnly !== 'INCOMPLETE';
+  const featured = new Set(ex?.pityIds || []);
+  const attr = ctx?.medalAttr;
   const pool = evolve || !rated ? '' : Object.entries(ex.pool).sort((a, b) => b[0] - a[0]).map(([r, ids]) => {
-    const names = [...new Set(ids.map((id) => medalNames.get(id) || `#${id}`))].sort();
-    return `<h2>${r}★ (${names.length})</h2><p>${names.map(esc).join(', ')}</p>`;
+    const byName = new Map();
+    for (const id of ids) {
+      const n = medalNames.get(id) || `#${id}`;
+      if (!byName.has(n)) byName.set(n, { cls: ATTR_CLASS[attr?.get(id)] || '', f: false });
+      if (featured.has(id)) byName.get(n).f = true;
+    }
+    const names = [...byName.keys()].sort();
+    return `<h3>${r}★Medals (${names.length})</h3><ul class="ml">${names.map((n) => {
+      const v = byName.get(n);
+      const cls = [v.cls, v.f ? 'f' : ''].filter(Boolean).join(' ');
+      return `<li${cls ? ` class="${cls}"` : ''}>${esc(n)}</li>`;
+    }).join('')}</ul>`;
   }).join('');
   const lim = gd.limitText(banner);
-  const head = priceLine(banner) ? `<p>${priceLine(banner).replace(', ', ' for ')}${lim ? `, ${lim}` : ''}.</p>${priceSteps(banner)}` : '';
+  const head = priceLine(banner) ? `<p class="k">★ ${priceLine(banner).replace(', ', ' for ')}${lim ? `, ${lim}` : ''}.</p>${priceSteps(banner)}` : '';
+  const legend = attr ? '<p class="n">Names: <span class="p">Power</span>, <span class="g">Speed</span>, <span class="m">Magic</span>'
+    + `${featured.size ? ', <span class="f">guaranteed Medal</span>' : ''}.</p>` : '';
   const rates = rated ? '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
-    + `<table>${oddsRows(banner, ex, medalNames)}</table>${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : '<h2>Medals in this draw</h2>'}${pool}` : '';
+    + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<p class="n">Original banner: ${dates(banner)}.</p><p class="s">${esc(st.text)}</p>`
-    + `${gtext ? `<p class="n">${gtext}</p>` : ''}${rates}`);
+    + `<span class="s">${esc(st.text)}</span><h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}`);
 }
 
 function oddsPage(entries) {
-  return page('Draw Odds', '<p class="n">Medal rarities of each draw are original; the chances of one more star are reconstructed for this restoration.</p>'
-    + entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length).map(({ banner, ex, medalNames }) => `<div class="b"><b>${esc(banner.name)}</b>${banner.guarantee?.pity ? `<div class="n">${pityText(banner, ex, medalNames)}</div>` : ''}`
-      + `<table>${oddsRows(banner, ex, medalNames)}</table></div>`).join(''));
+  const list = entries.filter(({ banner, ex }) => ex && banner.rarityMix?.length);
+  const toc = list.length > 1 ? `<p>${list.map(({ banner }, i) => `<a href="#b${i}">${esc(banner.name)}</a>`).join(' / ')}</p>` : '';
+  return page('Probabilities', '<a id="top"></a>' + toc
+    + '<p class="n">Medal rarities of each draw are original; the chances of one more star are reconstructed for this restoration. Percentages are rounded.</p>'
+    + list.map(({ banner, ex, medalNames }, i) => `<div class="b" id="b${i}"><h3>[${esc(banner.name)}]</h3>`
+      + `${banner.guarantee?.pity ? `<p class="k">★ ${pityText(banner, ex, medalNames)}</p>` : ''}`
+      + `${oddsTable(banner, ex, medalNames)}${list.length > 1 ? '<div class="top"><a href="#top">↑PAGE TOP</a></div>' : ''}</div>`).join(''));
 }
 
 function catalogPage(banners, ctx) {
@@ -463,7 +509,7 @@ function catalogPage(banners, ctx) {
   return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
     + sorted.map((b) => `<div class="b"><a href="/web/gacha/detail/${b.drawMedalTypeId}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
       + `<div class="n">${dates(b)}</div>${priceLine(b) ? `<div class="n">${priceLine(b)}</div>` : ''}`
-      + `<div class="s">${esc(stateOf(b, ctx).text)}</div></div>`).join(''));
+      + `<span class="s">${esc(stateOf(b, ctx).text)}</span></div>`).join(''));
 }
 
 module.exports = {

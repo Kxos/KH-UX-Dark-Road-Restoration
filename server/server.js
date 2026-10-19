@@ -217,6 +217,7 @@ function route(url) {
   if (p === '/system/information/list') return 'infolist';
   if (p.startsWith('/system/information/list/')) return 'infopopup';
   if (p === '/web/notices') return 'noticespage';
+  if (p === '/web/notices/shown') return 'noticesshown';
   if (p === '/web/agreement') return 'agreementpage';
   if (p === '/web/license') return 'licensepage';
   if (p.startsWith('/user/album/') && !p.startsWith('/user/album/challenge')) return 'album';
@@ -1341,9 +1342,10 @@ function respondGachaWeb(res, url) {
   }
   const det = /^\/web\/gacha\/detail\/(\d+)$/i.exec(p);
   const banner = det && gachaData.bannerById(banners, det[1]);
-  if (!banner) return html('<!doctype html><meta charset="utf-8"><body style="background:#174a5c;color:#fff;font:18px sans-serif">Banner not found.</body>', 404);
+  if (!banner) return html('<!doctype html><meta charset="utf-8"><body style="background:#043654;color:#fff;font:18px sans-serif">Banner not found.</body>', 404);
   const skillNames = new Set(masterRows('skill').map((r) => r.name));
-  return html(gacha.detailPage(banner, expandFor(banner, story), medalNames, { ...ctx, skillNames }));
+  const medalAttr = new Map(masterRows('medal').map((m) => [m.medalId, m.attribute]));
+  return html(gacha.detailPage(banner, expandFor(banner, story), medalNames, { ...ctx, skillNames, medalAttr }));
 }
 
 // POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo
@@ -2359,6 +2361,8 @@ function seedTestPresents() {
 
 // un regalo nella scatola (id progressivi mai riusati), valido 30 giorni come gli originali
 // skillId: medaglia con quella skill al livello massimo (Scrooge dei Skills to Thrill, catalogo bonus[3])
+let noticesServedAt = 0;
+
 function addPresent(resourceType, resourceId, number, comment, skillId) {
   player.presents = player.presents || [];
   const id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId)) + 1;
@@ -3501,7 +3505,15 @@ function handler(scheme) {
       if (kind === 'gachalist') return respondGachaList(res);
       if (kind === 'gachadraw') return respondGachaDraw(res, entry.bodyDecoded);
       if (kind === 'gachaweb') return respondGachaWeb(res, req.url);
+      // tempi del popup Notices (segnalazione dell'utente 19-10: a volte resta vuoto a lungo al primo avvio): la
+      // pagina chiama /web/notices/shown appena disegnata; il log dice quanto e' passato dalla richiesta
+      if (kind === 'noticesshown') {
+        console.log(`  [notices] pagina disegnata ${noticesServedAt ? Date.now() - noticesServedAt : '?'} ms dopo la richiesta`);
+        res.writeHead(204);
+        return res.end();
+      }
       if (kind === 'noticespage') {
+        noticesServedAt = Date.now();
         const buf = Buffer.from(infoAlbum.noticesPage(realNow()), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': buf.length });
         return res.end(buf);

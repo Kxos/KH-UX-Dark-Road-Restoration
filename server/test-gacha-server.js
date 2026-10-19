@@ -230,7 +230,7 @@ check(page('/web/gacha/detail/10006').includes('VIP variant'), 'dettagli di un b
 check(page('/web/gacha/detail/10009').includes('Original details missing'), 'dettagli INCOMPLETE senza eccezioni');
 check(page('/web/gacha/detail/10008').includes('Medals not available yet'), 'dettagli del banner scartato');
 w = raw(t.respondGachaWeb, '/web/gacha/odds');
-check(String(w.body).includes('Draw Odds') && String(w.body).includes('DAILY DEAL!'), 'pagina odds');
+check(String(w.body).includes('Probabilities') && String(w.body).includes('DAILY DEAL!'), 'pagina odds');
 w = raw(t.respondGachaWeb, '/web/gacha/odds/10002');
 check(String(w.body).includes('Epic Medal Carnival') && !String(w.body).includes('DAILY DEAL!'), 'odds di una piastra (id accodato dal client)');
 w = raw(t.respondGachaWeb, '/web/gacha/odds/9001');
