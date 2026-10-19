@@ -700,3 +700,12 @@ Notice 23113, 23538, 24587, 24593, 24843 («guaranteed at least one of the new M
 Power/Speed/Magic/Sun/Moon Gem. Fonti: notice 30125/31604/32524/33510 («guarantees three Power Gems or Speed Gems or
 Magic Gems in each pull») e la grafica (medaglia epica x1, 4★+ x4, Gem x3). Solo quei 18 banner cambiano. Il server
 consegna il bonus nel Present Box (server.js, «Bonus: <banner>»): banco 19-10, B0142 -> «Power Gem × 3 — Bonus: Gem Deal».
+
+<a id="sp2c-g7"></a>
+## Sotto-progetto 2c, G7: regali solo nel notice (19-10, revisione 134)
+
+Campo `bonus` di banner_overrides.tsv (`tipo,id,numero`, piu' voci con `;`), aggiunto ai bonus letti dalla wiki.
+B0212 (EX Falling Price HD King Mickey [EX]): Magic Broom (300948) a ogni estrazione, notice 35138 e grafica (scopa
+x1). B0270 dell'audit era un abbinamento sbagliato: il notice 38660 e' di B0271 (Illustrated Kairi [EX]), che la
+scopa l'aveva gia'; B0270 (Special EX Medal Deal, «One Draw Only!») non ha regali. Banco 19-10: Present Box
+«Magic Broom — Bonus: EX Falling Price Deal».

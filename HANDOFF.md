@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 44 installate** (la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782, la 43 corregge quella delle 6★ «X A», che era della [+], la 44 mette le animazioni originali JP della guilt, I-163), **revisione master: BASE 133** (default dei 4 script di sessione dalle skill allo
+Stato del banco: **risorse 44 installate** (la 42 aggiunge la grafica delle 13 6★ [+] 301446...301782, la 43 corregge quella delle 6★ «X A», che era della [+], la 44 mette le animazioni originali JP della guilt, I-163), **revisione master: BASE 134** (default dei 4 script di sessione dalle skill allo
 stato 4.3.1 del 18-10; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
@@ -106,7 +106,7 @@ otice_audit\g4_historical_tiers.md`), B0154 lista di 17 nomi, XIII Deal 10 nomi.
   Animazioni della guilt originali (I-163, risorse 44, [guilt.md#lwf-originali](docs/notes/guilt.md#lwf-originali)).
   **G4 del 2c fatto (19-10, rev 130, [shop.md#sp2c-g4](docs/notes/shop.md#sp2c-g4))**: Tier dal notice, B0154 e
   B0046/B0047 a lista, rare originali SE solo col tiro «small». **G5 fatto (rev 131, [shop.md#sp2c-g5](docs/notes/shop.md#sp2c-g5)).** B0079 col mix della grafica (rev 132). Regola: la grafica del banner fa fede sulla wiki.
-  **G6 fatto (rev 133, [shop.md#sp2c-g6](docs/notes/shop.md#sp2c-g6)).** **Prossimo passo: G7-G10 del 2c.** In attesa a lungo termine: I-164 (bilanciamento risorse dopo tutte le modalita').
+  **G6 fatto (rev 133, [shop.md#sp2c-g6](docs/notes/shop.md#sp2c-g6)).** **G7 fatto (rev 134, [shop.md#sp2c-g7](docs/notes/shop.md#sp2c-g7)).** **Prossimo passo: G8-G10 del 2c.** In attesa a lungo termine: I-164 (bilanciamento risorse dopo tutte le modalita').
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione

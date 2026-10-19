@@ -972,7 +972,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -1038,6 +1038,11 @@ def build_catalog(inputs):
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)
         found, sk = _bonus(notes, M, MAT)
+        # 2c/G7: regalo che sta solo nel notice (campo «bonus» = «tipo,id,numero», B0212 Magic Broom, notice 35138)
+        for v in [x for x in ((ov.get(rid) or {}).get('bonus') or '').split(';') if x.strip()]:
+            item = [int(x) for x in v.split(',')]
+            if item not in found:
+                found.append(item)
         skipped += [(rid, x) for x in sk]
         if rid in twins:
             only = 'VIP_TWIN'
