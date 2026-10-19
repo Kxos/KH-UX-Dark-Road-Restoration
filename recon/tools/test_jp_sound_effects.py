@@ -52,6 +52,8 @@ check(m.lwf_events(d) == ['isPlaySE_1', 'se_ui2_se_000039'], 'lwf_events: solo l
 check(m.lwf_events(b'non un lwf') == [], 'lwf_events: file non LWF')
 check(m.sound_names(['se_b', 'playBGM_x', 'se_a', 'se_a', 'se_', 'isPlaySE_1', 'stopSE']) == ['a', 'b', 'x'],
       'sound_names: se_/playBGM_, ordinati e senza doppi')
+check(m.sound_names(['playSE_ui2_se_000075', 'isPlaySound_1', 'playSE_']) == ['ui2_se_000075'],
+      'sound_names: playSE_ (ruota del trait Kakusei_Get1/2, I-084)')
 
 # --- id come [fn]: testo text/audio, poi atoi del nome
 check(m.c_atoi(' 509000390\r\n') == 509000390 and m.c_atoi('-12x') == -12 and m.c_atoi('abc') == 0, 'c_atoi')

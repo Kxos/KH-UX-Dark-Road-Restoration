@@ -32,7 +32,9 @@ JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]'
                        '[local reference data]', 'data', 'jp_final_4.3.1')
 STATIC_PACKS = ('medal_gen', 'rooms_gen', 'enemy_gen', 'raisedraw_gen')
 RESERVE = 128 * 1024 * 1024        # riserva del pacchetto generato (build-resources.ps1, versioni complete)
-PREFIXES = ('se_', 'playBGM_')
+# playSE_<nome>: eventi delle LWF della ruota del trait (Kakusei_Get1/2: playSE_ui2_se_000075/76, AKB 509000750/760
+# assenti dalle risorse WW; il client ha il gestore «playSE», banco 19-10: animazione muta)
+PREFIXES = ('se_', 'playBGM_', 'playSE_')
 # indici delle sezioni nell'intestazione LWF (stesso ordine di make_pet_motions.SECTIONS)
 SEC_STRING_BYTES, SEC_EVENT_NAME, SEC_STRING_DATA = 0, 25, 35
 REV = re.compile(r'^(.+?)\.(\d{8})(\.[A-Za-z0-9]+)?$')
@@ -60,7 +62,7 @@ def lwf_events(data):
 
 
 def sound_names(events):
-    """Nomi audio degli eventi `se_<nome>` / `playBGM_<nome>`, ordinati."""
+    """Nomi audio degli eventi `se_<nome>` / `playBGM_<nome>` / `playSE_<nome>`, ordinati."""
     return sorted({e[len(p):] for e in events for p in PREFIXES if e.startswith(p) and len(e) > len(p)})
 
 
