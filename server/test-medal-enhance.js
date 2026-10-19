@@ -263,6 +263,50 @@ assert.equal(r.guiltBurstFirstLv + r.guiltBurstMaxLv, 0, 'il Level Up dopo non s
 log('10. Evolve', evoRow.name, '->', byId.get(evoRow.evolveId).name, ': Nova', lvEv0, '->',
   t.userPointData('2026-10-12 00:00:00').guiltBurstLv, 'senza popup');
 
+// 11. Trait dalla fusione (I-084 parte A): una copia della stessa medaglia = un trait fra gli 11 della ruota, in fondo;
+// piu' copie = un trait solo; slot pieni = trait in sospeso (medalResumption status 1); niente trait con una medaglia
+// diversa, con una base senza slot o con Mickey & Brooms; i trait del materiale consumato spariscono
+const { FUSION_TRAIT_IDS } = require('./make-trait-groups');
+const traitsOf = (id) => t.userMedalList().find((m) => m.userMedalId === id) && (p.medalTraits?.[id] || []);
+const base11 = medal.find((r2) => r2.type === 1 && r2.shuffleskillSlot >= 3 && !r2.groupId && r2.shuffleSkillGroupId);
+assert.ok((p.traitPending || []).some((x) => x.userMedalId === b), 'la base delle sezioni 1-10 (1 slot) ha un trait in sospeso');
+p.traitPending = [];
+const slots = base11.shuffleskillSlot;
+const tb = give(base11.medalId)[0];
+r = enhance(tb, give(base11.medalId));
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 1, 'una copia: un trait');
+assert.ok(FUSION_TRAIT_IDS.includes(r.afterEnhanceUserMedal.userShuffleSkills[0].shuffleSkillId), 'trait della ruota');
+assert.deepEqual(r.medalResumption, { userShuffleSkills: [], resumptionStatus: 0 });
+const firstTrait = r.afterEnhanceUserMedal.userShuffleSkills[0].userShuffleSkillId;
+r = enhance(tb, give(base11.medalId, 3));
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 2, 'tre copie: un trait solo');
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills[0].userShuffleSkillId, firstTrait, 'il nuovo va in fondo');
+for (let k = 2; k < slots; k++) enhance(tb, give(base11.medalId));
+assert.equal(traitsOf(tb).length, slots, 'slot pieni');
+const before11 = JSON.stringify(traitsOf(tb));
+r = enhance(tb, give(base11.medalId));
+assert.equal(JSON.stringify(traitsOf(tb)), before11, 'slot pieni: lista invariata');
+assert.equal(r.medalResumption.resumptionStatus, 1, 'slot pieni: status 1');
+assert.equal(r.medalResumption.userShuffleSkills.length, 1, 'slot pieni: un trait in sospeso');
+assert.equal(r.medalResumption.userShuffleSkills[0].userMedalId, tb, 'il trait in sospeso e\' della base');
+assert.equal(p.traitPending.length, 1, 'coda dei trait in sospeso');
+const other11 = medal.find((r2) => r2.type === 1 && r2.shuffleskillSlot > 0 && r2.name !== base11.name && r2.medalId < 300000);
+const nb = give(base11.medalId)[0];
+r = enhance(nb, give(other11.medalId));
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 0, 'medaglia diversa: nessun trait');
+const noSlot = medal.find((r2) => r2.type === 4 && !r2.shuffleskillSlot && r2.medalId > 1);
+const ns = give(noSlot.medalId)[0];
+r = enhance(ns, give(noSlot.medalId));
+assert.equal((r.afterEnhanceUserMedal.userShuffleSkills || []).length, 0, 'base senza slot: nessun trait');
+const mickey = medal.find((r2) => r2.type === 8);
+r = enhance(nb, give(mickey.medalId));
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 0, 'Mickey & Brooms: nessun trait');
+const withTrait = give(base11.medalId)[0];
+(p.medalTraits ||= {})[withTrait] = [{ userShuffleSkillId: 99001, shuffleSkillId: 10, type: 0, getDatetime: 0 }];
+enhance(nb, [withTrait]);
+assert.ok(!p.medalTraits[withTrait], 'trait del materiale consumato tolti');
+log('11. trait: una copia +1, tre copie +1, slot pieni ->', JSON.stringify(r.medalResumption), '; slot della base', slots);
+
 // medaglia 1 (Stock Medal) intatta
 assert.equal(byId.get(1).imageId, 90000);
 try { fs.unlinkSync(SAVE); } catch {}

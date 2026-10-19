@@ -28,6 +28,7 @@ const { makeMulti, routeMulti } = require('./multi');
 const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
 const medalGuilt = require('./medal-guilt');
+const medalTrait = require('./medal-trait');
 const infoAlbum = require('./routes-info-album');
 const legalPages = require('./legal-pages');
 const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
@@ -2698,6 +2699,13 @@ function userSkillsData(now = serverTime(), medals = userMedalList()) {
   return out;
 }
 
+// trait in sospeso (slot pieni) nel formato del client: la coda player.traitPending, il primo (medal-trait.resumption)
+function medalResumptionData() {
+  const r = medalTrait.resumption(player.traitPending);
+  return { ...r, userShuffleSkills: r.userShuffleSkills.map((t) => ({ ...t, getDatetime: outTime(t.getDatetime, serverTime()) })) };
+}
+const specialTraitIds = () => new Set(masterRows('shuffleskill').filter((r) => r.type === 2).map((r) => r.shuffleSkillId));
+
 function medalTraits(userMedalId) {
   return (player.medalTraits?.[userMedalId] || []).map((t) => ({ ...t, userMedalId, getDatetime: outTime(t.getDatetime, serverTime()) }));
 }
@@ -2822,8 +2830,27 @@ function respondMedalEnhance(res, body) {
   const lostSkills = comps.map((m) => [m, medalSkillOf(m)])
     .filter(([, s]) => s && s.userSkillId !== medalSkillOf(base)?.userSkillId)
     .map(([m, s]) => userSkillElement(m, s, now));
+  // Trait dalla fusione (I-084 parte A, server/medal-trait.js): una copia della stessa medaglia = un trait della ruota
+  // (uno solo per fusione); slot pieni -> in sospeso (player.traitPending, medalResumption status 1)
+  let newTrait = null, pendingTrait = null;
+  if (medalTrait.gainsTrait(row, comps.map((m) => rows.get(m.medalId)))) {
+    player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
+    const trait = { userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: medalTrait.rollTrait(), type: 0, getDatetime: realNow() };
+    const special = specialTraitIds();
+    const got = medalTrait.addTrait(player.medalTraits?.[base.userMedalId], row.shuffleskillSlot, (id) => special.has(id), trait);
+    if (got.pending) {
+      pendingTrait = { ...trait, type: 1, userMedalId: base.userMedalId };
+      (player.traitPending ||= []).push(pendingTrait);
+    } else {
+      (player.medalTraits ||= {})[base.userMedalId] = got.list;
+      newTrait = trait;
+    }
+  }
   setMedalState(base.userMedalId, { level, exp, ...state });
-  for (const m of comps) setMedalState(m.userMedalId, { removed: true });
+  for (const m of comps) {
+    setMedalState(m.userMedalId, { removed: true });
+    if (player.medalTraits?.[m.userMedalId]) delete player.medalTraits[m.userMedalId]; // i trait del materiale si perdono
+  }
   player.money = Math.max(0, (player.money || 0) - cost);
   savePlayer();
   if (overwrite) console.log(`  [level up] Overwrite Skill ${overwrite.skill.skillId} LV ${overwrite.skill.level}: ` +
@@ -2832,7 +2859,8 @@ function respondMedalEnhance(res, body) {
     `materiali ${comps.map((m) => m.userMedalId).join(',')}, -${cost} munny; ` +
     `pallini ${base.burstUpperNumber || 0}->${state.burstUpperNumber}, guilt ${base.guiltFactor || 0}->${state.guiltFactor}` +
     (events.rolls.length ? ` (tiri ${events.rolls.join(',')})` : '') +
-    `, STR +${state.attackUpperNumber}, DEF +${state.defenseUpperNumber}, costo -${state.upperCost}`);
+    `, STR +${state.attackUpperNumber}, DEF +${state.defenseUpperNumber}, costo -${state.upperCost}` +
+    (newTrait ? `, trait ${newTrait.shuffleSkillId}` : pendingTrait ? `, trait ${pendingTrait.shuffleSkillId} in sospeso (slot pieni)` : ''));
   // livelli del Burst dati da questa fusione (prima guilt / guilt massima): solo con il popup
   // GuiltBonus_BurstLvup (acceso per default, KHUX_GUILT_BURST_POPUP=0 lo spegne), come guilt-burst.js
   const burstGain = guiltBurst().gained();
@@ -2849,8 +2877,9 @@ function respondMedalEnhance(res, body) {
     overwriteSkills: overwriteOk ? userSkillsData(now, [base]) : [],
     successOverwrite: overwriteOk ? 1 : 0,
     guiltBurstFirstLv: burstGain.first, guiltBurstMaxLv: burstGain.max,
-    // [fn], obbligatorio: senza, «200 ERROR :55»
-    medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
+    // [fn], obbligatorio: senza, «200 ERROR :55»; con un trait in sospeso status 1 (scelta del trait da
+    // sostituire, azione 57)
+    medalResumption: medalResumptionData(),
     // [fn] (pet.petSubslot, [fn]): senza, il ramo 55 va in errore se isPet
     // (+0x45) e' acceso; il ramo lo copia nel pet della sessione solo se esiste (0x7ce17c)
     pet: { petSubslot: petSubslotNow() },
