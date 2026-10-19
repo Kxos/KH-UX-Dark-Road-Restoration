@@ -17,7 +17,7 @@ const gd = require('./gacha-data');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
 const { SKILL_TABLES } = gd;
 
-const SHOP_MAX = 8;
+const SHOP_MAX = 20; // fino a 19 banner nella stessa settimana dell originale (2020-09-10); prima 8 (I-165)
 const WALLET = { 1: 'freeStone', 7: 'limitedDrawTicket1' }; // payType 8: player.drawTickets[currency]
 const TICKET_CURRENCIES = ['draw', 'holiday', 'spooky', 'moogle'];
 const VIP_FREE = 'vipFree'; // chiave del limite condiviso delle Free Deal VIP (spec 9.5)
@@ -51,10 +51,16 @@ function priceFor(b, player) {
 const drawable = (b, sizes) => !b.catalogOnly && [1, 7, 8].includes(b.payType) && sizes.has(b.lotCount);
 const activeOn = (b, day) => b.start <= day && day <= (b.end || '2099-12-31');
 
-function shopBanners(banners, { storyQuest, storyDay, sizes, show = new Set() }) {
+// shopFrom/shopTo: settimana della rotazione (gacha-data.shopWindow, I-165): entra ogni banner attivo in almeno un
+// giorno della finestra; senza finestra, il solo storyDay (comportamento di prima, test)
+function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, show = new Set() }) {
+  const inside = (b) => (b.start >= shopFrom && (b.end || '2099-12-31') <= shopTo ? 1 : 0);
+  const inWindow = (b) => (shopFrom ? b.start <= shopTo && (b.end || '2099-12-31') >= shopFrom : activeOn(b, storyDay));
   const pick = banners.filter((b) => drawable(b, sizes)
-    && ((b.unlockQuest <= storyQuest && activeOn(b, storyDay)) || show.has(b.rowId)))
-    .sort((a, b) => (a.start < b.start ? 1 : a.start > b.start ? -1 : a.drawMedalTypeId - b.drawMedalTypeId));
+    && ((b.unlockQuest <= storyQuest && inWindow(b)) || show.has(b.rowId)))
+    // con la finestra, prima i banner che stanno tutti dentro la settimana (non avranno un'altra occasione: con lo Shop
+    // pieno restavano fuori), poi i piu' recenti
+    .sort((a, b) => (shopFrom ? inside(b) - inside(a) : 0) || (a.start < b.start ? 1 : a.start > b.start ? -1 : a.drawMedalTypeId - b.drawMedalTypeId));
   let currency = null;
   const out = [];
   for (const b of pick) {
@@ -215,9 +221,9 @@ function drawsLeft(player, b, realMs) {
 // per la striscia della garanzia; validCommentOf(banner) = validComment della riga drawMedalType servita, safeMedalId =
 // ultimo ripiego per warrantMedalIds (guardWarrant), nameOf(medalId) = nome della riga medal servita (I-153: un id per
 // nome e lunghezza della striscia)
-function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, show, exFor, catalog, validCommentOf, safeMedalId, nameOf }) {
+function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, shopFrom, shopTo, show, exFor, catalog, validCommentOf, safeMedalId, nameOf }) {
   ticketsOf(player);
-  const list = shopBanners(banners, { storyQuest, storyDay, sizes, show });
+  const list = shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, show });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
   const warrantOfList = (b) => {
     const ex = exFor?.(b);
@@ -472,9 +478,23 @@ const ATTR_CLASS = { 1: 'p', 2: 'g', 3: 'm' };
 // cosa vuol dire lo stato del banner (richiesta dell'utente 19-10: «Not in the Shop now» non si capiva)
 const STATE_WHY = {
   now: 'You can draw from this banner in the Shop now.',
-  later: 'This banner is unlocked, but it is not in the Shop at the moment. The Shop lists the banners that were running on the original date that matches your progress in the Story (in the original game they followed the calendar). This banner ran on a different date: you can look at its Medals and rates here, but you cannot draw from it now.',
   locked: 'Clear the Story Quest above to reach the date of this banner. In the original game banners followed the calendar; here they follow your progress in the Story.',
 };
+// «Not in the Shop now» con la rotazione settimanale (I-165): fra quante settimane torna, o periodo gia' passato
+function laterWhy(banner, w) {
+  const head = 'The Shop shows one week of the original calendar at a time, inside the period that matches your progress in the Story, and moves to the next week every Monday.';
+  if (!w) return head;
+  const end = banner.end || '2099-12-31';
+  if (end < w.day) return `${head} This banner ran before your current Story period, so it is no longer in the Shop: you can still look at its Medals and rates here.`;
+  if (banner.start > w.periodEnd) return `${head} This banner comes later in the Story.`;
+  for (let d = 1; d <= w.n; d++) {
+    const k = (w.k + d) % w.n;
+    const from = new Date(Date.parse(w.day + 'T00:00:00Z') + 7 * k * 86400000).toISOString().slice(0, 10);
+    const to = new Date(Math.min(Date.parse(from) + 6 * 86400000, Date.parse(w.periodEnd))).toISOString().slice(0, 10);
+    if (banner.start <= to && end >= from) return `${head} This banner comes back to the Shop ${d === 1 ? 'next week' : `in ${d} weeks`}.`;
+  }
+  return head;
+}
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
@@ -506,7 +526,7 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<span class="s s-${st.key}">${esc(st.text)}</span>${STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `<span class="s s-${st.key}">${esc(st.text)}</span>${(() => { const t = st.key === 'later' ? laterWhy(banner, ctx?.shopWeek) : STATE_WHY[st.key]; return t ? `<div class="why ${st.key}">${esc(t)}</div>` : ''; })()}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
     + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}${back}`, back ? 'hb' : '');
 }
 

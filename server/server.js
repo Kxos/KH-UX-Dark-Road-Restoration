@@ -1164,9 +1164,16 @@ const gachaBoostedIndex = () => (gachaBoostMemo ??= medalBoost.boostedIndex(mast
 function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; gachaPoolCache.clear(); }
 
 // Punto della storia del giocatore: ultima quest superata (1-525) e data della sua tranche.
+// storyDay = primo giorno della settimana dello Shop (rotazione I-165): data dei pool dei PERMANENT e della regola
+// 13-bis; shopFrom/shopTo = la settimana mostrata. player.gacha.rot ricorda in che settimana reale si e' entrati nella
+// tranche della storia, cosi' la rotazione parte dalla sua prima settimana.
 function storyCtx() {
   const storyQuest = stageNumber(lastStoryStageId());
-  return { storyQuest, storyDay: gachaData.storyDay(gachaCatalog(), storyQuest) };
+  const week = clock.weekIndex(realNow());
+  const g = (player.gacha ||= {});
+  const w = gachaData.shopWindow(gachaCatalog(), storyQuest, week, g.rot);
+  if (!g.rot || g.rot.day !== w.day) { g.rot = { day: w.day, week }; savePlayer(); }
+  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w };
 }
 // Pool del banner alla data di riferimento (i PERMANENT seguono la storia); undefined per i banner
 // senza composizione (INCOMPLETE): detailPage li mostra senza probabilita'.

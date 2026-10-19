@@ -52,6 +52,26 @@ function storyDay(catalog, quest) {
   return row ? row[2] : (quest < s[0][0] ? s[0][2] : s[s.length - 1][2]);
 }
 
+// Rotazione settimanale dello Shop (I-165, decisione dell'utente 19-10): la tranche della storia copre il periodo
+// originale dalla sua data alla data della tranche dopo (l'ultima: una settimana); lo Shop mostra una settimana di
+// quel periodo alla volta e avanza di una ogni settimana reale (lunedi', con l'aggiornamento dei dati), poi riparte.
+// rot = {day, week}: tranche vista e settimana reale in cui il giocatore ci e' entrato (la rotazione parte da li').
+// -> {day (data della tranche), from, to (finestra di 7 giorni), k, n (settimana k di n), weeksLeft (fino al cambio)}.
+const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+function shopWindow(catalog, quest, week, rot) {
+  const day = storyDay(catalog, quest);
+  const dates = [...new Set((catalog.story || []).map((r) => r[2]))].sort();
+  const next = dates.find((d) => d > day);
+  const span = next ? Math.round((Date.parse(next) - Date.parse(day)) / 86400000) : 7;
+  const n = Math.max(1, Math.ceil(span / 7));
+  const start = rot && rot.day === day ? rot.week : week;
+  const k = (((week - start) % n) + n) % n;
+  const from = addDays(day, 7 * k);
+  const end = next ? addDays(next, -1) : addDays(day, 6);
+  const to = addDays(from, 6) < end ? addDays(from, 6) : end;
+  return { day, from, to, k, n, periodEnd: end };
+}
+
 // Decisione 13-bis, regola originale: dalla data del notice le 7★ di quel Tier estratte arrivano con pallini e guilt al
 // massimo (server.js respondGachaDraw), confrontata con asOf del banner (la stessa data delle medaglie del pool).
 const MAX_GUILT_FROM = Object.freeze({
@@ -424,5 +444,5 @@ const bannerById = (list, id) => list.find((b) => b.drawMedalTypeId === Number(i
 
 module.exports = {
   CATALOG_ID, UPGRADE, EPIC_UPGRADE, FEATURED_WEIGHT, BOOST_SMALL_CHANCE, SKILL_TABLES, parseRarityMix, slotRarities, loadCatalog,
-  MAX_GUILT_FROM, maxGuiltRule, storyDay, asOf, expandPool, limitText, slotOdds, rollDraw, reservationOf, rollSkill, drawMedalTypeRow, bannerById,
+  MAX_GUILT_FROM, maxGuiltRule, storyDay, shopWindow, asOf, expandPool, limitText, slotOdds, rollDraw, reservationOf, rollSkill, drawMedalTypeRow, bannerById,
 };

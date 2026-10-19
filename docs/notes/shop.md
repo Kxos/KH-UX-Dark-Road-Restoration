@@ -774,3 +774,22 @@ nomi nei notice, bersagli della pity sottolineati. Banco: B0082 Details e Probab
   Logica dello Shop (domanda dell'utente): a ogni blocco di missioni di storia corrisponde una data originale
   (`catalog.story`), lo Shop mostra i banner attivi in quella data (al massimo `SHOP_MAX`); 517 banner su 734 non ci
   cadono mai (I-165).
+
+<a id="rotazione"></a>
+## Rotazione settimanale dello Shop (19-10, I-165, decisione dell'utente)
+
+Prima lo Shop mostrava i banner attivi in una sola data per tranche di storia: 517 banner estraibili su 734 non ci
+entravano mai. Ora (`gacha-data.shopWindow`, `server.js storyCtx`, `gacha.shopBanners`):
+- la tranche della storia copre il periodo originale dalla sua data alla data della tranche dopo (l'ultima: 7 giorni);
+- lo Shop mostra una settimana di quel periodo (ogni banner attivo in almeno un giorno della settimana) e avanza di
+  una ogni lunedi' (`clock.weekIndex`, come gli aggiornamenti dei dati); finito il periodo riparte dalla prima
+  settimana; `player.gacha.rot = {day, week}` fa partire la rotazione dalla settimana in cui si entra nella tranche;
+- con lo Shop pieno passano prima i banner che stanno tutti dentro la settimana; `SHOP_MAX` da 8 a 20 (fino a 19 banner
+  nella stessa settimana dell'originale, 2020-09-10; banco: lista di 19+ banner scorsa fino in fondo, nessun crash);
+- simulazione su tutte le tranche e settimane: 734 banner estraibili su 734 raggiunti;
+- Details «Not in the Shop now»: fra quante settimane il banner torna, o «ran before your current Story period»;
+  notizia Shop con la sezione «Weekly rotation». I banner di periodi superati restano solo nel Catalog.
+
+Notices lente al login (seguito): esperimento con 3 rientri a pagina minima e 3 a pagina vera, tutti 1,2-1,4 s; i
+casi lenti (~9 s) sono intermittenti e coincidono con un aggiornamento di font di Google Play Services che fallisce
+(orologio del guest al 2021, obbligatorio per il client): non dipendono dalla pagina. Il blocco DNS li accorcia.

@@ -60,7 +60,8 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
   check(shop.includes('When a guarantee covers too many Medals to name them all, the yellow line names the kind of Medal from the banner\'s original notice instead (for example "A SN or higher Medal is guaranteed! Draws left: 3"). This wording is written by this restoration.')
     && shop.findIndex((s) => s.startsWith('Guarantees work as on')) + 1 === shop.findIndex((s) => s.startsWith('When a guarantee covers')),
   'Shop: riga della striscia di categoria, dopo quella delle garanzie');
-  check(shop.includes('Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'Shop: banner originali e storia');
+  check(shop.includes('Every original banner is in the Banner Catalog. Banners unlock as you progress through the Story; in the original game they followed the calendar.'), 'Shop: banner originali e storia');
+  check(shop.includes('## Weekly rotation') && shop.some((x) => /every \*\*Monday\*\*|Every \*\*Monday\*\*/.test(x)), 'Shop: rotazione settimanale (I-165)');
 }
 
 n.NOTICES.push({ date: '1', tag: 'X', title: 'a<b>"&', body: ['<script>'] });

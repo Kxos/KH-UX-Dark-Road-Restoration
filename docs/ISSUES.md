@@ -165,7 +165,6 @@ Ultima revisione: 18 ottobre 2026.
 | I-161 | APERTO | **SN++ «adjusted» 302008-302012 prima del tempo** (18-10, audit del mapping): sono le forme rettificate del 03-09-2020 (avviso 69365, «adjusted stats ... medals evolved with a Fantasia Mickey B»; deal di ritorno dal 07-09-2020), ma il catalogo le data come gli originali (2019-12-01 / 2020-01-01 / 2020-01-09), estraibili 8 mesi prima e doppie nel pool, e il master le evolve senza Fantasia Mickey B (300913). Da fare: date 2020-09-07 e requisito di evoluzione | [medaglie](notes/medaglie.md#mapping-orgxiii) | audit `tmp\sp2b\g4\medal_mapping_audit.md` |
 | I-162 | APERTO | **167 6★ originali senza evoluzione verso la 7★** (18-10, audit del mapping): 167 delle 179 righe 6★ thethiny hanno `validEvolve` 0 pur avendo la 7★ in Roboloid (3000xx), che resta senza riga di partenza. Stessa cura delle «X A» (`EVOLVE_FIX` per id) da estendere | [medaglie](notes/medaglie.md#mapping-orgxiii) | audit `tmp\sp2b\g4\medal_mapping_audit.md` |
 | I-164 | IN ATTESA | **Bilanciamento delle risorse di gioco** (richiesta dell'utente, 19-10): dopo aver implementato tutte le modalita' (tutte le story quest e Proud, Special, Event, Union Cross, Coliseum, PvP, Raid Boss) studiare il bilanciamento di Jewel, traguardi delle missioni giornaliere/settimanali/mensili e Moogle Shop. Non prima | | |
-| I-165 | APERTO | **517 banner estraibili su 734 non entrano mai nello Shop** (19-10, domanda dell'utente su «Not in the Shop now»): lo Shop mostra i banner attivi in UNA data per blocco di missioni di storia (`catalog.story`, es. 1-200 = 2016-04-07, 201-250 = 2016-04-21); i banner che cadono fra due date (es. B0007 22-28/04/2016) non ci sono mai. Da risolvere con la rotazione del sotto-progetto 3 | [shop](notes/shop.md#pagine-stile) | |
 
 ### Union Cross
 
@@ -189,6 +188,7 @@ Ultima revisione: 18 ottobre 2026.
 
 | ID | Area | Titolo | Prova |
 |---|---|---|---|
+| I-165 | CHIUSO | **517 banner estraibili su 734 non entrano mai nello Shop** (19-10, domanda dell'utente su «Not in the Shop now»): lo Shop mostra i banner attivi in UNA data per blocco di missioni di storia (`catalog.story`, es. 1-200 = 2016-04-07, 201-250 = 2016-04-21); i banner che cadono fra due date (es. B0007 22-28/04/2016) non ci sono mai. Risolto con la rotazione settimanale (decisione dell'utente 19-10): 734 su 734 raggiungibili | [shop](notes/shop.md#pagine-stile) | rotazione settimanale, commit di questo passo |
 | I-163 | CHIUSO | **Animazioni della guilt nostre al posto degli originali** (19-10, segnalazione dell'utente): `GuiltBonus`, `_result`, `_max` e cifre `Yfix`/`Rfix` erano disegnate da `make_guilt_bonus_lwf.py`; gli originali JP 4.3.1 importati da `import_jp_raisedraw.py` (fonte per nome per le texture condivise, un solo sostituto: `png_logo_guilt_bonus2`), risorse 44. Banco 19-10: sblocco 0 -> 198% e rilancio 198 -> 230% (massimo) con GuiltBonus, cifre che girano e GuiltBonus_max «MAX» originali, nessun crash | [guilt](notes/guilt.md#lwf-originali) | import_jp_raisedraw.py, risorse 44 (banco 19-10, tmp
 ec
 eroll) |

@@ -48,9 +48,25 @@ check(!s.includes(onlyCat) && !s.includes(five), 'catalogOnly e lotCount 5: non 
 check(s[0] === inside && s[1] === perm, 'ordine per start decrescente');
 s = g.shopBanners([inside, locked, past, onlyCat, five], { ...opt, show: new Set([locked.rowId, past.rowId, onlyCat.rowId, five.rowId]) });
 check(s.includes(locked) && s.includes(past) && !s.includes(onlyCat) && !s.includes(five), 'show: solo se drawable');
-const many = Array.from({ length: 12 }, (_, i) => mk({ start: `2016-12-0${(i % 7) + 1}` }));
+const many = Array.from({ length: 24 }, (_, i) => mk({ start: `2016-12-0${(i % 7) + 1}` }));
 s = g.shopBanners(many, opt);
-check(s.length === g.SHOP_MAX && g.SHOP_MAX === 8, 'al massimo SHOP_MAX');
+check(s.length === g.SHOP_MAX && g.SHOP_MAX === 20, 'al massimo SHOP_MAX');
+// rotazione settimanale (I-165): finestra di 7 giorni, prima i banner tutti dentro la settimana
+{
+  const gd = require('./gacha-data');
+  const cat = { story: [[1, 200, '2016-04-07'], [201, 250, '2016-04-21'], [251, 275, '2016-05-05']] };
+  const w0 = gd.shopWindow(cat, 210, 100, null);
+  const w1 = gd.shopWindow(cat, 210, 101, { day: '2016-04-21', week: 100 });
+  const w2 = gd.shopWindow(cat, 210, 102, { day: '2016-04-21', week: 100 });
+  check(w0.n === 2 && w0.from === '2016-04-21' && w0.to === '2016-04-27' && w1.from === '2016-04-28' && w1.to === '2016-05-04'
+    && w2.from === '2016-04-21', `rotazione: due settimane che si alternano ${JSON.stringify([w0, w1, w2])}`);
+  const last = gd.shopWindow(cat, 260, 5, null);
+  check(last.n === 1 && last.from === '2016-05-05' && last.to === '2016-05-11', 'ultima tranche: una settimana');
+  const a = mk({ start: '2016-04-22', end: '2016-04-26' }), b = mk({ start: '2016-04-01', end: '2016-06-01' });
+  const r = g.shopBanners([b, a], { ...opt, storyQuest: 210, shopFrom: '2016-04-21', shopTo: '2016-04-27' });
+  check(r[0] === a && r.includes(b), 'finestra: prima il banner tutto dentro la settimana');
+  check(!g.shopBanners([a], { ...opt, storyQuest: 210, shopFrom: '2016-04-28', shopTo: '2016-05-04' }).length, 'finestra: fuori dalla settimana');
+}
 check(s.every((b, i) => i === 0 || s[i - 1].start >= b.start), 'ordine decrescente con molti banner');
 const tDraw = mk({ payType: 8, currency: 'draw', prices: [1], start: '2016-12-05' });
 const tSpooky = mk({ payType: 8, currency: 'spooky', prices: [1], start: '2016-12-03' });
