@@ -173,6 +173,7 @@ function route(url) {
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
   if (p === '/user/medal/enhance') return 'medalenhance';
+  if (p === '/user/medal/shuffleskill') return 'medalshuffle';
   if (p === '/user/medal/evolve') return 'medalevolve';
   if (p === '/user/medal/remove') return 'medalremove';
   if (p === '/user/material/sell') return 'materialsell';
@@ -1523,7 +1524,8 @@ function respondUser(res) {
     userPoint: userPointData(now),
     userDetail: userDetailData(),
     stageResumption: stageResumptionData(),
-    medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
+    // trait in sospeso della fusione (I-084 A): con status 1 il client apre «There are traits that have not been set.»
+    medalResumption: medalResumptionData(),
   };
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
 }
@@ -2706,6 +2708,33 @@ function medalResumptionData() {
 }
 const specialTraitIds = () => new Set(masterRows('shuffleskill').filter((r) => r.type === 2).map((r) => r.shuffleSkillId));
 
+// POST /user/medal/shuffleskill (azione 57, corpo [fn]): scelta per un trait in sospeso (slot pieni).
+// Replace {userMedalId, userShuffleSkillId: trait da togliere, enableUserShuffleSkillId: il pending}; Skip
+// {userMedalId, userShuffleSkillId: il pending, enableUserShuffleSkillId: 0} ([fn] / [fn]).
+// Risposta: userMedal e medalResumption alla radice, obbligatori ([fn], [fn]); nessuna animazione.
+function respondMedalShuffleSkill(res, body) {
+  const medalId = Number(body?.userMedalId), removeId = Number(body?.userShuffleSkillId), enableId = Number(body?.enableUserShuffleSkillId) || 0;
+  const queue = player.traitPending || [];
+  const at = queue.findIndex((x) => x.userMedalId === medalId && x.userShuffleSkillId === (enableId || removeId));
+  const medal = userMedalList().find((m) => m.userMedalId === medalId);
+  if (at >= 0 && medal) {
+    const { userMedalId, ...pending } = queue[at];
+    const list = player.medalTraits?.[medalId] || [];
+    if (!enableId) {
+      queue.splice(at, 1);
+      console.log(`  [trait] ${medalId}: trait ${pending.shuffleSkillId} scartato (Skip)`);
+    } else if (list.some((x) => x.userShuffleSkillId === removeId)) {
+      (player.medalTraits ||= {})[medalId] = medalTrait.resolvePending(list, { ...pending, type: 0 }, removeId);
+      queue.splice(at, 1);
+      console.log(`  [trait] ${medalId}: trait ${pending.shuffleSkillId} al posto di ${removeId}`);
+    }
+    player.traitPending = queue;
+    savePlayer();
+  } else console.log(`  [trait] scelta senza trait in sospeso: ${JSON.stringify(body)}`);
+  const now = serverTime();
+  send(res, 200, { ret: ret(), userMedal: medal ? userMedalElement(medal, now) : null, medalResumption: medalResumptionData() });
+}
+
 function medalTraits(userMedalId) {
   return (player.medalTraits?.[userMedalId] || []).map((t) => ({ ...t, userMedalId, getDatetime: outTime(t.getDatetime, serverTime()) }));
 }
@@ -3573,6 +3602,7 @@ function handler(scheme) {
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
+      if (kind === 'medalshuffle') return respondMedalShuffleSkill(res, entry.bodyDecoded);
       if (kind === 'medalevolve') return respondMedalEvolve(res, entry.bodyDecoded);
       if (kind === 'medalremove') return respondMedalRemove(res, entry.bodyDecoded);
       if (kind === 'materialsell') return respondMaterialSell(res, entry.bodyDecoded);
@@ -3801,6 +3831,7 @@ function pet() {
   return petInstance ??= makePet({
     ret, send, serverTime, masterRows, player, savePlayer, userMedalList, userMedalElement, schemaResponse,
     realNow, outTime, monthIndex: clock.monthIndex, weekEnd: clock.weekEnd, monthEnd: clock.monthEnd,
+    medalResumption: medalResumptionData,
   });
 }
 // petSubslot per i rami 55/56: spento = il segnaposto di prima (tutto a 0)
@@ -3942,7 +3973,7 @@ if (require.main === module) start();
 module.exports = { SESSION, parseBody, start, route, multi };
 // per i test senza client (server/test-medal-enhance.js, con KHUX_SAVE e KHUX_MASTER_DIR propri)
 module.exports._test = {
-  player, respondMedalEnhance, respondMedalEvolve, userMedalList, userMedalElement, userPointData, isGuiltUnlocked, userSkillsData,
+  player, respondMedalEnhance, respondMedalShuffleSkill, respondUser, respondMedalEvolve, userMedalList, userMedalElement, userPointData, isGuiltUnlocked, userSkillsData,
   // server/test-keyblades.js
   kbEvo, ownedKeyblades, grantKeyblade, grantMissingKeyblades, userKeybladesData, userDecksData, masterRows,
   // server/test-keyblade-unlock.js

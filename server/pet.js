@@ -317,7 +317,8 @@ function makePet(ctx) {
       return ctx.send(res, 200, {
         ret: ctx.ret(),
         userMedals: ids.map((id) => ctx.userMedalElement(owned.get(id), now)),
-        medalResumption: { userShuffleSkills: [], resumptionStatus: 0 },
+        // il valore della sessione lo sostituisce: un trait in sospeso della fusione (I-084 A) non va cancellato
+        medalResumption: ctx.medalResumption ? ctx.medalResumption() : { userShuffleSkills: [], resumptionStatus: 0 },
       });
     }
     // GET: slot 2..TRAIN_SLOTS aperti fino a fine mese; scadenze settimana/mese
