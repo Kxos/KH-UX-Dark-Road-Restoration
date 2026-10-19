@@ -68,6 +68,8 @@ if (-not (Test-Path "$kl\img\carouselDeck")) { python -I recon\tools\res_bulk.py
 # texture tolte dall'estrazione JP per le cartelle 02-10 (import_jp_raisedraw.py)
 $rw = "$D\catalog\raisedraw_ww"
 if (-not (Test-Path "$rw\lwf\raisedraw")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $rw lwf/raisedraw/ }
+# KeyBlade_ef6/ef8 e star01 di GuiltBonus_max (fonte per nome, NAME_WW di import_jp_raisedraw.py, 19-10)
+if (-not (Test-Path "$rw\lwf\battleresult\Result_LuxLevelUp")) { python -I recon\tools\res_bulk.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $rw lwf/battleresult/Result_LuxLevelUp/ }
 # deck per keyblade (img/carouselDeck/Deck%03d...) e bagliore dell'attributo nel deck
 # (MedalDeck_Type1/2/11/21/31/01): servite solo 001 e Type3, crash di «Select a Keyblade»
 python recon\tools\make_keyblade_decks.py server\master_data\keyblade.json $kl "$sg\files"

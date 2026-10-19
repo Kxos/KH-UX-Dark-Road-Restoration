@@ -1862,8 +1862,8 @@ make_pet_motions.write_all(OUT)
 # Evoluzione del keyblade ([fn]): LWF nostro al posto di quello vuoto scritto sopra (I-078).
 import make_kb_evolution_lwf  # noqa: E402
 make_kb_evolution_lwf.write_all(OUT)
-import make_guilt_bonus_lwf  # noqa: E402
-make_guilt_bonus_lwf.write_all(OUT)
+# Animazioni della guilt (GuiltBonus, _result, _max, cifre Yfix/Rfix): originali JP 4.3.1 importati da
+# import_jp_raisedraw.py nel pacchetto raisedraw_gen (19-10); make_guilt_bonus_lwf.py resta come ripiego.
 
 # Animazione del risultato di Evolve ([fn]: lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il

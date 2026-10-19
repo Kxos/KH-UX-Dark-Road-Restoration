@@ -81,6 +81,17 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
   pallini + copia da 2 (3 + 1 + 2 = 6 > 5) -> nessun popup, risultato ●●●○○ -> ●●●●● e riga «Special Attack
   +171%», server 17100: anteprima e risultato coincidono. Entrambe le fusioni con `isGreatSuccess` 1 dal
   client (EXP x1,5: 34.222 -> 51.333, l'anteprima mostra l'EXP senza il Great Success).
+- <a id="lwf-originali"></a>**Animazioni originali (19-10, risorse 44)**: `lwf/medal/guilt_bonus/GuiltBonus` (sblocco/rilancio),
+  `GuiltBonus_result`, `GuiltBonus_max` (guilt al massimo, logo «MAX») e le cifre `GuiltBonus_Yfix0-9`/`Rfix0-9`
+  erano NOSTRE (`make_guilt_bonus_lwf.py`, ora solo ripiego); gli originali ci sono nei dati JP 4.3.1 (thethiny)
+  e li importa `import_jp_raisedraw.py` nel pacchetto raisedraw_gen. L'esportazione JP salva una texture
+  condivisa solo nella prima cartella che la usa: fonte per NOME originale esatto + dimensioni dichiarate
+  (`name_index`/`by_name`, solo cartelle della guilt, mai «ビットマップ N»): cifre gialle di Yfix e _result da
+  `GuiltBonus`, KeyBlade_ef1/ef2 da altre LWF JP, KeyBlade_ef6/ef8/star01 dalla LWF WW
+  `lwf/battleresult/Result_LuxLevelUp`. Unico sostituto: `png_logo_guilt_bonus2.png` (336x35, in _result e _max,
+  assente da ogni fonte e da ogni revisione) = `png_logo_guilt_bonus.png` (stesso logo «GUILT BONUS», stesse
+  dimensioni); rapporto in `raisedraw_gen\raisedraw_report.json` (classi name-jp, name-ww, substitute). Copia
+  delle LWF nostre tolte: `D:\Progetto_Restauro_KH_UX\tmp\guilt_ours_backup`.
 
 ## 3. guilt-burst.js - fatto
 

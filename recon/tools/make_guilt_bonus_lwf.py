@@ -1,4 +1,7 @@
-"""Animazione dello sblocco/rilancio della guilt (SP Attack Bonus) nel Level Up
+"""RIPIEGO, non piu' usato dal 19-10: le animazioni della guilt servite sono gli originali JP 4.3.1
+(GuiltBonus, _result, _max, cifre Yfix/Rfix) importati da import_jp_raisedraw.py (raisedraw_gen).
+
+Animazione dello sblocco/rilancio della guilt (SP Attack Bonus) nel Level Up
 (lwf/medal/guilt_bonus/GuiltBonus/GuiltBonus.lwf), assente da ogni risorsa: LWF NOSTRO, scritto
 da zero con le texture disegnate qui (I-079, banco gu_23: crash dopo la risposta).
 

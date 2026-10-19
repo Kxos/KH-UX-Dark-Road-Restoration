@@ -86,7 +86,21 @@ WANTED = ([f'{RD}demo/raidgacha_result_display_{n:02d}' for n in range(1, 11)]
           # popup del Nova e animazione «BONUS» delle boosted (sp. 2b, task 8): solo fonte (1)
           + [GB + 'GuiltBonus_BurstLvup', GB + 'GuiltBonus_BurstLvup_num']
           + [f'{GB}GuiltBonus_Wfix{n}' for n in range(10)]
-          + [RD + 'demo/Draw_StatusBonus'])
+          + [RD + 'demo/Draw_StatusBonus']
+          # animazioni della guilt nel Level Up (sblocco/rilancio, risultato, massimo; cifre gialle e
+          # rosse), al posto delle nostre di make_guilt_bonus_lwf.py (19-10): solo fonte (1)
+          + [GB + n for n in ('GuiltBonus', 'GuiltBonus_result', 'GuiltBonus_max')]
+          + [f'{GB}GuiltBonus_{c}fix{n}' for c in 'YR' for n in range(10)])
+# Animazioni della guilt (cartelle sotto GB, 19-10): l'esportazione JP salva una texture condivisa solo nella
+# prima cartella che la usa (le cifre png_num_Y* di Yfix0-9 e _result stanno in GuiltBonus; i KeyBlade_ef* in
+# altre LWF). Fonte (1b) solo per queste cartelle: stesso NOME originale (mai «ビットマップ N», che le
+# esportazioni rinumerano) e stesse dimensioni dichiarate, prima in un'altra cartella JP (revisione piu'
+# alta), poi nelle cartelle WW servite di NAME_WW (estratte con res_bulk.py in --ww).
+NAME_WW = ['lwf/battleresult/Result_LuxLevelUp']
+# Texture assente da ogni fonte: png_logo_guilt_bonus2.png (336x35, _result e _max, tutte le revisioni) ->
+# png_logo_guilt_bonus.png di GuiltBonus, stesso logo «GUILT BONUS» e stesse dimensioni. Unico sostituto,
+# contato come «substitute» nel rapporto.
+SUBST = {'png_logo_guilt_bonus2.png': 'png_logo_guilt_bonus.png'}
 # immagini singole (targhette rosse delle boosted), copiate come le texture: PNG vero -> BTF
 STATIC = ['img/ui/Minfo_Def12_SB.png', 'img/ui/Deck_Panel_SB.png']
 # cartella WW servita della stessa animazione (riferimento per le texture tolte dall'estrazione JP)
@@ -154,6 +168,47 @@ def lwf_textures(path):
         sid, _fmt, w, h = struct.unpack_from('<4i', d, to + 20 * i)
         out.append((strs[sid], (w, h), tuple(sorted(sigs.get(i, [])))))
     return out
+
+
+def name_index(ww):
+    """{nome originale: [(tipo, percorso)]} delle texture con nome dato a mano: JP sotto lwf/ (revisione
+    piu' alta per cartella), poi le cartelle WW di NAME_WW. Fonte (1b), vedi NAME_WW."""
+    idx = {}
+    tex = re.compile(r'^(.+?)_([0-9a-f]+)(?:\.(\d{8}))?\.png$')
+    for root, _dirs, files in os.walk(os.path.join(JP, 'lwf')):
+        best = {}
+        for f in files:
+            m = tex.match(f)
+            if not m:
+                continue
+            try:
+                name = bytes.fromhex(m.group(2)).decode('utf-8')
+            except ValueError:
+                continue
+            rev = int(m.group(3) or -1)
+            if GENERIC.match(name) or best.get(name, (-2,))[0] >= rev:
+                continue
+            best[name] = (rev, os.path.join(root, f))
+        for name, (_r, p) in sorted(best.items()):
+            idx.setdefault(name, []).append(('jp', p))
+    for rel in NAME_WW:
+        folder = os.path.join(ww, *rel.split('/'))
+        base = rel.split('/')[-1]
+        for f in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+            if f.endswith('.png'):
+                name = orig_name(base, f)
+                if not GENERIC.match(name):
+                    idx.setdefault(name, []).append(('ww', os.path.join(folder, f)))
+    return idx
+
+
+def by_name(names, name, wh):
+    """Fonte (1b): ((tipo, percorso), classe) della prima texture di nome `name` (poi SUBST) con dimensioni wh."""
+    for n, sub in ((name, False), (SUBST.get(name), True)):
+        for kind, p in names.get(n, []) if n else []:
+            if tuple(img_size(open(p, 'rb').read()) or ()) == wh:
+                return (kind, p), 'substitute' if sub else f'name-{kind}'
+    return None
 
 
 def orig_name(base, fname):
@@ -255,6 +310,7 @@ def main(argv=None):
         rtex = lwf_textures(rl)
         md5 = {t[0]: hashlib.md5(open(os.path.join(rdir, t[0]), 'rb').read()).hexdigest() for t in rtex}
         refs[prefix] = {'dir': rdir, 'base': rel.split('/')[-1], 'tex': rtex, 'md5': md5}
+    names = name_index(a.ww)
     report = {}
     for rel in WANTED:
         base = rel.split('/')[-1]
@@ -275,7 +331,7 @@ def main(argv=None):
             continue
         files, missing = {}, []
         count = {'own-jp': 0, 'unique-anchor': 0, 'position-corroborated': 0, 'name-corroborated': 0,
-                 'position-only': len(pos_only)}
+                 'position-only': len(pos_only), 'name-jp': 0, 'name-ww': 0, 'substitute': 0}
         bad = set(conflict) | set(pos_only)
         conflict = [orig_name(base, k) for k in conflict]
         for k, wh, _sig in tex:
@@ -290,6 +346,8 @@ def main(argv=None):
                 cand, cls = ('jp', own), 'own-jp'
             elif k in mapped:
                 cand, cls = ('ww', os.path.join(ref['dir'], mapped[k][0])), mapped[k][1]
+            elif rel.startswith(GB) and (hit := by_name(names, name, wh)):
+                cand, cls = hit
             else:
                 missing.append(name)
                 continue
@@ -357,7 +415,8 @@ def main(argv=None):
             c = r['count']
             extra = (f" ({r['lwf']}, {r['textures']} texture: {c['own-jp']} JP, {c['unique-anchor']}"
                      f" ancore, {c['position-corroborated']} posizione corroborata,"
-                     f" {c['name-corroborated']} nome corroborato, {c['position-only']} solo posizione)")
+                     f" {c['name-corroborated']} nome corroborato, {c['position-only']} solo posizione"
+                     + ''.join(f", {c[x]} {x}" for x in ('name-jp', 'name-ww', 'substitute') if c[x]) + ')')
         if r['status'] == 'incomplete':
             extra += (f" mancanti {r['missing']} conflitti {r['conflict']}"
                       + (f" errore {r['error']}" if 'error' in r else ''))
