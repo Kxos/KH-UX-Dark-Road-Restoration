@@ -9,8 +9,8 @@
 // 2. shuffleskill: la ruota della fusione estrae fra gli 11 trait originali (notice 27491, guida p. 21-23):
 //    mancavano come trait normali (type 1) Max HP +800 e Poison/Sleep/Paralysis Resist 20%, che esistevano solo
 //    come Special Trait del pet (type 2): righe 14-17 copiate dalle 1024/1029/1032/1035 col type 1. La roulette del
-//    client ([fn], anche nell'acquisto del Moogle Shop) mostra le righe type 1 con rate != 0: rate 100 sugli
-//    11 e 0 sui trait solo da Moogle Shop (Max HP +300 e i 5 della 4.1.0, decisione dell'utente 19-10).
+//    client ([fn], anche nell'acquisto del Moogle Shop) mostra le righe type 1 con rate != 0: rate 100 su tutte
+//    (anche i trait solo da Moogle Shop, Max HP +300 e i 5 della 4.1.0), l'estrazione la fa il server sugli 11.
 // Idempotente; chiamato in fondo a make-game-tables.js (dopo make-pet-tables, che ha i Special Trait). Dopo:
 // alzare la revisione del master.
 //
@@ -53,10 +53,11 @@ function patch(masterDir) {
     const want = { ...src, shuffleSkillId: id, type: 1, sortId: id, rate: 100, campaignRate: 0 };
     if (JSON.stringify(byId.get(id)) !== JSON.stringify(want)) { byId.set(id, want); touched++; }
   }
+  // rate 100 su tutti i trait normali: la roulette del client (anche nell'acquisto del Moogle Shop) deve avere fra le
+  // facce il trait che arriva dal server; quale trait esce lo decide il server (FUSION_TRAIT_IDS, medal-trait.js)
   for (const r of byId.values()) {
     if (r.type !== 1 || r.shuffleSkillId >= 900) continue;
-    const rate = FUSION_TRAIT_IDS.includes(r.shuffleSkillId) ? 100 : 0;
-    if (r.rate !== rate) { r.rate = rate; touched++; }
+    if (r.rate !== 100) { r.rate = 100; touched++; }
   }
   if (touched) fs.writeFileSync(shuffleFile, JSON.stringify([...byId.values()].sort((a, b) => a.shuffleSkillId - b.shuffleSkillId)));
   out.push(`shuffleskill: ruota sugli 11 trait originali (cambiate ${touched})`);

@@ -196,11 +196,8 @@ function patch(dir) {
     // type 1: con rate 0 ovunque la lista e' vuota e il primo «dispString» del nostro LWF
     // (make_kakusei_lwf.py) farebbe std::out_of_range. rate 100 ai trait normali (non ai Burst
     // 901/902), usato solo come «candidato della roulette».
-    // I-084 A: solo gli 11 trait della ruota della fusione (make-trait-groups.js FUSION_TRAIT_IDS); i trait solo
-    // da Moogle Shop restano a 0 (la roulette resta non vuota)
-    const { FUSION_TRAIT_IDS } = require('./make-trait-groups');
     let rated = 0;
-    for (const r of kept) if (r.type === 1 && FUSION_TRAIT_IDS.includes(r.shuffleSkillId) && !r.rate) { r.rate = 100; rated++; }
+    for (const r of kept) if (r.type === 1 && r.shuffleSkillId < 900 && !r.rate) { r.rate = 100; rated++; }
     if (rated) out.push(`shuffleskill type 1 rate ${rated}`);
     const before = JSON.stringify(rows.filter((r) => ids.has(r.shuffleSkillId)));
     if (rated || before !== JSON.stringify(special)) {

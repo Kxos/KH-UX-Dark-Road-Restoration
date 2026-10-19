@@ -73,6 +73,15 @@ p.traitPending = [];
 r = call(t.respondUser);
 check(same(r.userData.medalResumption, { userShuffleSkills: [], resumptionStatus: 0 }), 'login senza pending');
 
+// trait in sospeso di una medaglia che non c'e' piu' (venduta o fusa): fuori dalla risposta e dalla coda
+reset();
+p.traitPending.unshift({ ...T(11, 12, 1), userMedalId: 999 });
+r = call(t.respondUser);
+check(r.userData.medalResumption.userShuffleSkills[0].userMedalId === 101, `login: niente medaglie sparite (${JSON.stringify(r.userData.medalResumption)})`);
+check(!p.traitPending.some((x) => x.userMedalId === 999), 'coda ripulita dalle medaglie sparite');
+r = call(t.respondMedalShuffleSkill, { userMedalId: 999, userShuffleSkillId: 11, enableUserShuffleSkillId: 0 });
+check(r.userMedal === undefined || r.userMedal !== null, 'la 57 non manda userMedal null');
+
 // training del pet (244) con un pending della fusione: la risposta lo rimanda, non lo azzera
 reset();
 r = call((res) => t.pet().respondExpedition(res, 'POST', { userMedalIds: [102] }, '/pet/expedition'));

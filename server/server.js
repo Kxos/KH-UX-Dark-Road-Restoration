@@ -2702,8 +2702,15 @@ function userSkillsData(now = serverTime(), medals = userMedalList()) {
 }
 
 // trait in sospeso (slot pieni) nel formato del client: la coda player.traitPending, il primo (medal-trait.resumption)
-function medalResumptionData() {
-  const r = medalTrait.resumption(player.traitPending);
+// Senza argomento la coda, ripulita dalle medaglie che non ci sono piu' (vendute, fuse, evolute: il login aprirebbe la
+// finestra su una medaglia inesistente, revisione finale 19-10).
+function medalResumptionData(queue) {
+  if (!queue && (player.traitPending || []).length) {
+    const owned = new Set(userMedalList().map((m) => m.userMedalId));
+    const kept = player.traitPending.filter((x) => owned.has(x.userMedalId));
+    if (kept.length !== player.traitPending.length) { player.traitPending = kept; savePlayer(); }
+  }
+  const r = medalTrait.resumption(queue || player.traitPending);
   return { ...r, userShuffleSkills: r.userShuffleSkills.map((t) => ({ ...t, getDatetime: outTime(t.getDatetime, serverTime()) })) };
 }
 const specialTraitIds = () => new Set(masterRows('shuffleskill').filter((r) => r.type === 2).map((r) => r.shuffleSkillId));
@@ -2732,7 +2739,9 @@ function respondMedalShuffleSkill(res, body) {
     savePlayer();
   } else console.log(`  [trait] scelta senza trait in sospeso: ${JSON.stringify(body)}`);
   const now = serverTime();
-  send(res, 200, { ret: ret(), userMedal: medal ? userMedalElement(medal, now) : null, medalResumption: medalResumptionData() });
+  // userMedal obbligatorio ([fn]): senza la medaglia (venduta) la base della scelta o la prima posseduta
+  const shown = medal || userMedalList()[0];
+  send(res, 200, { ret: ret(), ...(shown ? { userMedal: userMedalElement(shown, now) } : {}), medalResumption: medalResumptionData() });
 }
 
 function medalTraits(userMedalId) {
@@ -2906,9 +2915,10 @@ function respondMedalEnhance(res, body) {
     overwriteSkills: overwriteOk ? userSkillsData(now, [base]) : [],
     successOverwrite: overwriteOk ? 1 : 0,
     guiltBurstFirstLv: burstGain.first, guiltBurstMaxLv: burstGain.max,
-    // [fn], obbligatorio: senza, «200 ERROR :55»; con un trait in sospeso status 1 (scelta del trait da
-    // sostituire, azione 57)
-    medalResumption: medalResumptionData(),
+    // [fn], obbligatorio: senza, «200 ERROR :55»; status 1 solo col trait in sospeso di QUESTA fusione (scelta
+    // del trait da sostituire, azione 57): un pending di un'altra medaglia aprirebbe la sua finestra nel risultato di
+    // questa (revisione finale 19-10); la coda intera va al login (userData) e al training (244)
+    medalResumption: pendingTrait ? medalResumptionData([pendingTrait]) : { userShuffleSkills: [], resumptionStatus: 0 },
     // [fn] (pet.petSubslot, [fn]): senza, il ramo 55 va in errore se isPet
     // (+0x45) e' acceso; il ramo lo copia nel pet della sessione solo se esiste (0x7ce17c)
     pet: { petSubslot: petSubslotNow() },

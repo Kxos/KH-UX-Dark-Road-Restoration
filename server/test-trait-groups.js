@@ -37,8 +37,10 @@ for (const [id, name, cat] of [[14, 'Max HP +800', 20], [15, 'Poison Resist 20%%
   check(r && r.type === 1 && r.name === name && r.category === cat, `riga ${id} ${name}`);
 }
 check(row(14)?.hp === 800 && row(15)?.poison === 20 && row(16)?.sleep === 20 && row(17)?.paralyze === 20, 'effetti delle righe 14-17');
-const rated = shuffle.filter((r) => r.type === 1 && r.rate > 0).map((r) => r.shuffleSkillId).sort((a, b) => a - b);
-check(JSON.stringify(rated) === JSON.stringify([...tg.FUSION_TRAIT_IDS].sort((a, b) => a - b)), `rate > 0 solo sugli 11 della ruota: ${rated}`);
+// la roulette del client (anche quella del Moogle Shop) usa le righe type 1 con rate != 0: tutte le normali a 100,
+// cosi' il trait comprato e' fra le facce (revisione finale 19-10); il server estrae solo fra gli 11
+const unrated = shuffle.filter((r) => r.type === 1 && r.shuffleSkillId < 900 && !(r.rate > 0)).map((r) => r.shuffleSkillId);
+check(!unrated.length, `trait normali con rate 0: ${unrated}`);
 
 // idempotente: una seconda esecuzione su una copia non cambia i file
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-trait-'));

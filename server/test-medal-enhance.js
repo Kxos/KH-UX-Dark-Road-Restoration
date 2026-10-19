@@ -298,9 +298,14 @@ const noSlot = medal.find((r2) => r2.type === 4 && !r2.shuffleskillSlot && r2.me
 const ns = give(noSlot.medalId)[0];
 r = enhance(ns, give(noSlot.medalId));
 assert.equal((r.afterEnhanceUserMedal.userShuffleSkills || []).length, 0, 'base senza slot: nessun trait');
+assert.ok(p.traitPending.length === 1, 'resta il trait in sospeso di tb');
+r = enhance(nb, give(base11.medalId));
+assert.deepEqual(r.medalResumption, { userShuffleSkills: [], resumptionStatus: 0 },
+  'fusione su una medaglia con slot liberi: nella risposta niente trait in sospeso di altre medaglie');
 const mickey = medal.find((r2) => r2.type === 8);
+const nbTraits = traitsOf(nb).length;
 r = enhance(nb, give(mickey.medalId));
-assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 0, 'Mickey & Brooms: nessun trait');
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, nbTraits, 'Mickey & Brooms: nessun trait');
 const withTrait = give(base11.medalId)[0];
 (p.medalTraits ||= {})[withTrait] = [{ userShuffleSkillId: 99001, shuffleSkillId: 10, type: 0, getDatetime: 0 }];
 enhance(nb, [withTrait]);
