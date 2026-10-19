@@ -735,6 +735,18 @@ def extend_medals(medals, M, rd, debut):
     return added
 
 
+TRAIT_MEDAL_DATE = '2018-03-13'  # notice 38128: introduzione delle Trait Medal
+
+
+def add_trait_medals(medals, entries):
+    """voci «trait medal #N» per le Trait Medal del master (server/trait_medals.json, id 9000000 + N, 6★, I-084 parte
+    B): cls 'LIST', fuori dai pool standard, entrano solo dove un banner le nomina (slot Trait, liste, pity)"""
+    for e in entries:
+        medals['trait medal #%d' % e['n']] = {'date': TRAIT_MEDAL_DATE, 'cls': 'LIST', 'class2': 'Trait', 'att': '',
+                                              'origin': '', 'ids': [[9000000 + e['n'], 6, TRAIT_MEDAL_DATE, 0]]}
+    return len(entries)
+
+
 def clamp_plus_dates(medals, first):
     """7★ delle voci «X [+]» mai prima del lancio delle 7★ (firstRarity[7], 25/05/2018): la rare_date della wiki
     (14/05/2018) precede la 6★ [+] di Vexen (13/04) e Lexaeus (13/05/2018). Le altre 7★ del 14/05/2018 restano
@@ -1183,6 +1195,7 @@ def build_catalog(inputs):
             debut.setdefault(clean_name(n), b['start'] or FIRST_DAY)
     apply_medal_dates(medals, inputs['overrides'], {b['rowId']: b['start'] for b in out})
     added = extend_medals(medals, M, rd, debut)
+    add_trait_medals(medals, json.load(open(bg.TRAIT_MEDALS, encoding='utf8')) if os.path.exists(bg.TRAIT_MEDALS) else [])
     mark_std(medals)
     # nomi dei sotto-set -> chiavi di `medals` alla data del sotto-set ({{KA|19}} 31.5a -> supernova - key art #19,
     # «Xion» 8.2 -> xion a, «SN - KH III Xion» -> redirect sn - kh iii xion a); gli irrisolti restano come sono
@@ -1207,6 +1220,11 @@ def build_catalog(inputs):
                 if not k and count and not b['catalogOnly']:
                     unresolved['non medaglia' if non_medal(n, mats) else 'medaglia probabile'] += 1
             lst[key] = _dedup(k for k in res if k in medals or 'prefix' not in lst)  # nomi del master: solo quelli del catalogo
+        # Trait Medal fra i bersagli («a boosted Trait Medal #85», B0464): nessuna riga boosted ne' pallini da dare
+        for on in targets:
+            on['names'] = [n for n in on['names'] if not n.startswith('trait medal')]
+        for k in ('preset', 'boosted', 'maxSkill'):
+            b['enhance'][k] = [x for x in b['enhance'][k] if 'names' not in x['on'] or x['on']['names']]
         first = next((s for s in g['slots'] if s['kind'] == 'list'), None)
         g['list'] = list(first['names']) if first else _dedup(resolve_name(n, st, medals, rd) or n for n in g['list'])
     aligned = align_debut_dates(out, medals, first_rarity(rows))
@@ -1236,7 +1254,7 @@ def build_catalog(inputs):
                 g['pitySlot'] = slot_w
         if g['pity'] and not any(n in medals for n in g['pityNames']):
             # bersaglio fuori dal catalogo: medaglia di supporto del master -> regalo nel Present Box (nessuno slot
-            # sostituito, D11 B0472/B0481); altrimenti (Trait Medal, nomi del notice) pity non riprodotta
+            # sostituito, D11 B0472/B0481); altrimenti (Trait Medal senza riga, nomi del notice) pity non riprodotta
             gift = bg.pity_gift(b['notes'] + ' | ' + (b['guaranteesText'] or ''), inputs['medals'])
             g['pitySlot'] = g['pityStar'] = None
             nr = set(b['enhance']['notReproduced'])

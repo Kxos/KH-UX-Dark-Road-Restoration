@@ -18,6 +18,7 @@ col 7★ in cima: primo 6★, altrimenti primo 5★). Usato da make_banner_catal
 """
 import collections
 import copy
+import json
 import os
 import re
 import sys
@@ -59,7 +60,7 @@ PITY_SENT = re.compile(r'[Ii]f bought \d+ times|within \d+ draws')
 LIST_RE = re.compile(r'(?:[Gg]uarantee[sd]?|guaranteed to (?:get|receive)) (?:at least )?(' + NUMW + r') '
                      r'(?:boosted versions? )?of (?:the )?following (?:(\d)★ )?(?:[Bb]oosted Ver )?[Mm]edals?\b([^:!]{0,160}?)(?:[:!]|$)\s*')
 SNPLUS_RE = re.compile(r'[Gg]uarantees (' + NUMW + r') (?:boosted )?SN\+ or SN\+\+ Medals?')
-TRAIT_RE = re.compile(r'^[Gg]uarantee[sd]? (' + NUMW + r') (?:(\d)★ )?Trait Medals?\b')
+TRAIT_RE = re.compile(r'^[Gg]uarantee[sd]? (' + NUMW + r') (?:(\d)★ )?Trait Medals?\b(?: #(\d+))?')
 TIER_RE = re.compile(r'\b[Tt]ier (\d+)((?:,? (?:or )?(?:[Tt]ier )?\d+\b(?!★))*)(?: or (higher|lower|above))?')
 SAB_RE = re.compile(r'(?:SAB|Special Attack Bonus Tier) of (\d+) or (higher|above)|Level (\d+) SAB')
 TIER_COUNT = re.compile(r'(?:[Gg]uarantee[sd]?|guaranteed to (?:get|receive)) (?:either )?(?:at least )?(' + NUMW + r')\b')
@@ -113,7 +114,9 @@ def _parse_one(s):
         return _res('list', _num(m.group(1)), None, prefix=SNPLUS)
     m = TRAIT_RE.search(s)
     if m:
-        return _res('trait', _num(m.group(1)), int(m.group(2)) if m.group(2) else None)
+        # «Guarantees one Trait Medal #23» -> names ['trait medal #23'] (I-084 parte B: la riga c'e' se il numero e' noto)
+        return _res('trait', _num(m.group(1)), int(m.group(2)) if m.group(2) else None,
+                    ['trait medal #' + m.group(3)] if m.group(3) else [])
     c = TIER_COUNT.search(s)
     if (c or 'one of which is guaranteed' in s) and (TIER_RE.search(s) or SAB_RE.search(s)):
         tmin, tmax = _tier(s)
@@ -303,13 +306,25 @@ def _dots(s):
     return [x for x in sorted(out, key=lambda x: x[1]) if x[0] not in (0, [0, 0])]
 
 
+# Trait Medal con la riga nel master (server/trait_medals.json, I-084 parte B): le altre restano non riproducibili
+TRAIT_MEDALS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'server', 'trait_medals.json')
+KNOWN_TRAIT = {e['n'] for e in json.load(open(TRAIT_MEDALS, encoding='utf8'))} if os.path.exists(TRAIT_MEDALS) else set()
+
+
+def trait_known(name):
+    """«trait medal #N» con N nell'elenco delle Trait Medal del master"""
+    m = re.match(r'trait medal #(\d+)$', name)
+    return bool(m) and int(m.group(1)) in KNOWN_TRAIT
+
+
 def _target_names(seg, trait):
-    """nomi di medaglia di un elenco senza le Trait Medal (non riproducibili: trait[0] = True) e senza i resti generici"""
+    """nomi di medaglia di un elenco senza le Trait Medal (quelle senza riga: trait[0] = True; con la riga i preset su
+    di loro, «strengthened 0 times», non servono) e senza i resti generici"""
     out = []
     for n in mbc.list_names(seg):
         n = re.sub(r'^(?:an?|version of) ', '', re.sub(r'\s*\d★\s*', ' ', n).strip())  # «The World Ends with You Art 2» resta
         if n.startswith('trait medal'):
-            trait[0] = True
+            trait[0] = trait[0] or not trait_known(n)
         elif n and not GENERIC.search(n):
             out.append(n)
     return mbc._dedup(out)
@@ -353,7 +368,8 @@ def enhance_of(text, slots, featured, medal_rows, skill_rows, mix=None):
     rar = [r for r, n in (mix or []) for _ in range(n)]
     out = {'preset': [], 'boosted': [], 'maxSkill': [], 'notReproduced': []}
     nr = set()
-    trait = [any(s['kind'] == 'trait' or any(n.startswith('trait medal') for n in s['names']) for s in slots)]
+    trait = [any((s['kind'] == 'trait' and not (s['names'] and all(trait_known(n) for n in s['names'])))
+                 or any(n.startswith('trait medal') and not trait_known(n) for n in s['names']) for s in slots)]
     k = 0
     last_list, last_skills, last_res, done = [], [], None, set()
 

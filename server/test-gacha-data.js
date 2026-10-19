@@ -329,6 +329,21 @@ const oS = g.slotOdds(bS, xS);
 check(oS[2].every((o) => o.kind === 'pity') && !oS[0][0].kind, `odds: pitySlot senza riserva -> kind pity (${J(oS[2])})`);
 const oTr = g.slotOdds(B3({ guarantee: G3({ slots: [RES({ kind: 'trait', slot: 3, star: 5 })] }) }), x3);
 check(oTr[3].every((o) => o.kind === 'trait'), 'odds: slot trait');
+// slot Trait con la Trait Medal nel catalogo (I-084 parte B): lo slot la da' sempre, e solo lo slot (fuori dal pool)
+const TMCAT = { ...SCAT, medals: { ...SCAT.medals, 'trait medal #23': { date: '2018-03-13', cls: 'LIST', std: false, ids: [[9000023, 6, '2018-03-13', 0]] } } };
+const TB = { ...SB, guarantee: G({ list: [], count: 0, slots: [RES({ kind: 'trait', slot: 1, star: 6, names: ['trait medal #23'] })] }) };
+const tex = g.expandPool(TB, TMCAT, TB.start);
+check(!Object.values(tex.pool).flat().includes(9000023), `Trait Medal fuori dal pool generico (${J(tex.pool)})`);
+const tr = g.rollDraw(TB, tex, seq(0.0, 0.0, 0.5, 0.0, ...tail));
+check(tr.medalIds[1] === 9000023 && !tr.medalIds.slice(2).includes(9000023), `slot Trait: Trait Medal #23 (${tr.medalIds})`);
+check(J(g.slotOdds(TB, tex)[1]) === '[{"rare":6,"pct":100,"kind":"trait","names":["trait medal #23"]}]', `odds: slot della Trait Medal #23 (${J(g.slotOdds(TB, tex)[1])})`);
+// slot Trait senza numero noto: ripiego (6★ qualsiasi)
+const TU = { ...SB, guarantee: G({ list: [], count: 0, slots: [RES({ kind: 'trait', slot: 1, star: 6, names: [] })] }) };
+check(g.rollDraw(TU, g.expandPool(TU, TMCAT, TU.start), seq(0.0, 0.0, 0.5, 0.0, ...tail)).medalIds[1] !== 9000023, 'slot Trait sconosciuto: ripiego');
+// pity su una Trait Medal (B0267): alla quinta estrazione lo slot della pity la da'
+const TP = { ...SB, guarantee: G({ list: [], count: 0, slots: [], pity: 5, pityNames: ['trait medal #23'], pityStar: 6, pitySlot: 1 }) };
+const tpx = g.expandPool(TP, TMCAT, TP.start);
+check(g.rollDraw(TP, tpx, seq(0.0, 0.0, 0.5, 0.0, ...tail), { draws: 4, sinceFeatured: 4 }).medalIds[1] === 9000023, 'pity sulla Trait Medal #23');
 check(J(g.slotOdds(B3({ guarantee: G3({ slots: [RES({ kind: 'tier', slot: 0, star: 7, tierMin: 3, tierMax: 4 })] }) }), x3)[0][0].tier) === '"3-4"', 'odds: Tier 3-4');
 // compatibilita': banner senza slots -> extras presenti, featured dalla vetrina
 const cd = g.rollDraw(B({}), ex, seq(0.5, 0.0));

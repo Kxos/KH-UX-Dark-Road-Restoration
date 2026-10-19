@@ -382,7 +382,7 @@ function oddsTable(banner, ex, medalNames) {
   const every = banner.guarantee?.every;
   const rows = gd.slotOdds(banner, ex).map((s) => {
     const lead = s[0]?.list ? `${every ? `every ${ordinal(every)} draw: ` : ''}one of the listed Medals (featured Medals twice as likely)` : '';
-    const kind = s[0]?.kind === 'tier' ? `Tier ${tierWords(s[0].tier)}` : s[0]?.kind === 'trait' ? 'Trait Medal slot' : s[0]?.kind === 'pity' ? 'guaranteed Medal slot' : '';
+    const kind = s[0]?.kind === 'tier' ? `Tier ${tierWords(s[0].tier)}` : s[0]?.kind === 'trait' ? (s[0].names ? s[0].names.map(traitLabel).join(' or ') : 'Trait Medal slot') : s[0]?.kind === 'pity' ? 'guaranteed Medal slot' : '';
     return { what: [kind, lead].filter(Boolean).join(', '), odds: s };
   });
   const groups = [];
@@ -454,8 +454,15 @@ function onText(on, nm) {
   }
   return 'Eligible Medals';
 }
+// Trait Medal #N -> «Trait Medal #N (for <medaglia>)» (server/trait_medals.json, I-084 parte B)
+const TRAIT_FOR = new Map(JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'trait_medals.json'), 'utf8')).map((e) => [e.n, e.name]));
+function traitLabel(n) {
+  const m = /^trait medal #(\d+)$/.exec(n);
+  const name = m && TRAIT_FOR.get(Number(m[1]));
+  return m ? `Trait Medal #${m[1]}${name ? ` (for ${name})` : ''}` : niceName(n);
+}
 const NOT_REPRODUCED_KINDS = {
-  trait: 'Trait Medal: not reproduced, a regular Medal of the same rarity instead.',
+  trait: 'Trait Medal: not reproduced where the Medal it belongs to is unknown (numbers missing from the surviving lists), a regular Medal of the same rarity instead.',
   traitSlots: 'Trait Medal slots: not reproduced, regular Medals of the same rarity instead.',
   skill: 'Guaranteed max-level Skill: not reproduced for Skills that do not exist in this restoration.',
   epic: 'Epic-only draw: not reproduced, the full set of Medals is drawn.',
@@ -473,6 +480,7 @@ function guaranteeSection(banner, ex, medalNames, at) {
   for (const s of g.slots || []) {
     const n = s.count || 1;
     if (s.kind === 'tier') out.push(`${n}x ${s.star}★${tierRange(s)}${(s.names || []).length ? ` (or ${niceList(s.names, nm)})` : ''}`);
+    else if (s.kind === 'trait' && (s.names || []).length) out.push(`${n}x ${s.names.map((t) => traitLabel(t).replace(' (for ', ` (${s.star}★, for `)).join(' or ')}`);
     else if (s.kind === 'trait') out.push(`${n}x Trait Medal (${s.star}★)`);
     else out.push(`${n}x one of the listed Medals (${s.star}★${s.up && gd.UPGRADE?.[s.star] ? `, ${Math.round(gd.UPGRADE[s.star] * 100)}% chance of ${s.star + 1}★, reconstructed` : ''})`);
   }

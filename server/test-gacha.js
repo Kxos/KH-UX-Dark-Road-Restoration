@@ -383,7 +383,14 @@ try {
   check(/Max-level Skill/.test(dMs) && dMs.includes('Zexion [+]'), 'T7: maxSkill');
   const dEr = g.detailPage(g6({ guarantee: { erratum: 'Original text: <b>5 draws</b>' } }), ex6, medalNames, sctx);
   check(/<div class="box">[^]*Original text: &lt;b&gt;5 draws&lt;\/b&gt;/.test(dEr), 'T7: erratum in un riquadro (escape)');
-  for (const [k, t] of [['trait', 'Trait Medal: not reproduced, a regular Medal of the same rarity instead'], ['skill', 'max-level Skill'], ['epic', 'Epic'], ['pity', 'Pity Medal'], ['traitSlots', 'Trait'], ['imitation', 'Imitation Medal']]) {
+  // slot Trait con la Trait Medal (I-084 parte B): nome e medaglia associata; senza numero noto il ripiego
+  const trSlot = (names) => g6({ guarantee: { slots: [{ kind: 'trait', slot: 1, count: 1, star: 6, names, tierMin: null, tierMax: null }] } });
+  const dTr = g.detailPage(trSlot(['trait medal #1']), { ...ex6, slotNames: [[['trait medal #1', 1, { 6: [9000001] }]]] }, medalNames, sctx);
+  check(dTr.includes('1x Trait Medal #1 (6★, for Illustrated KH Riku [EX])'), `T7: riga slot Trait Medal #1 (${(dTr.match(/1x Trait[^<]*/) || [])[0]})`);
+  check(g.detailPage(trSlot([]), ex6, medalNames, sctx).includes('1x Trait Medal (6★)'), 'T7: riga slot Trait senza numero');
+  const opTr = g.oddsPage([{ banner: trSlot(['trait medal #1']), ex: { ...ex6, slotNames: [[['trait medal #1', 1, { 6: [9000001] }]]] }, medalNames }]);
+  check(opTr.includes('Trait Medal #1 (for Illustrated KH Riku [EX])'), 'T7: Draw Odds dello slot Trait Medal #1');
+  for (const [k, t] of [['trait', 'Trait Medal: not reproduced where the Medal it belongs to is unknown'], ['skill', 'max-level Skill'], ['epic', 'Epic'], ['pity', 'Pity Medal'], ['traitSlots', 'Trait'], ['imitation', 'Imitation Medal']]) {
     const dn = g.detailPage(g6({ enhance: { notReproduced: [k] } }), ex6, medalNames, sctx);
     check(dn.includes(t), `T7: notReproduced ${k}`);
   }

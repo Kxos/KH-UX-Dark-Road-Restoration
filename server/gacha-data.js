@@ -96,7 +96,7 @@ function asOf(banner, day) {
 // listNames/featuredNames: [[nome, peso, {rare: [ids]}]] per gli slot a lista e della pity (solo i nomi con
 // almeno una variante nel pool; in lista la vetrina pesa FEATURED_WEIGHT, nella pity tutte 1).
 // Catalogo v3 (sotto-progetto 2b): slotNames[j] = i nomi della riserva guarantee.slots[j] (lista, o nomi
-// alternativi del Tier; [] per il Trait), pityNames = i bersagli della pity, pityIds = le loro varianti alla stella
+// alternativi del Tier; per il Trait la Trait Medal #N se nota), pityNames = i bersagli della pity, pityIds = le loro varianti alla stella
 // promessa (pityStar, o quella che la pity darebbe alla data: pityVariantStar), le sole che azzerano la pity;
 // per questi nomi riservati entrano anche pityStar e le stelle degli slot, solo se gia' uscite alla data
 // (firstRarity <= at). tiers: Map id -> Tier (4o campo di ids); medalInfo: Map id -> {name, rare}.
@@ -134,13 +134,16 @@ function expandPool(banner, catalog, at) {
   const resRarities = new Set(rarities);
   for (const r of [g.pityStar, ...res.map((s) => s.star), ...res.filter((s) => s.up).map((s) => s.star + 1)]) if (r && !out(r)) resRarities.add(r);
   const feat = new Set(p.featured || []), list = new Set(g.list || []);
+  // nomi solo degli slot Trait (Trait Medal #N, I-084 parte B): li da' solo lo slot, non entrano nel pool generico
+  const traitOnly = new Set(res.filter((s) => s.kind === 'trait').flatMap((s) => s.names || []));
+  for (const n of [...feat, ...list, ...(p.names || []), ...(g.pityNames || []), ...res.filter((s) => s.kind !== 'trait').flatMap((s) => s.names || [])]) traitOnly.delete(n);
   const pool = {}, featuredIds = new Set(), listIds = new Set(), byName = new Map(), resByName = new Map();
   const tiers = new Map(), medalInfo = new Map();
   const add = (m, n, rare, id) => { if (!m.has(n)) m.set(n, {}); (m.get(n)[rare] ||= new Set()).add(id); };
   for (const n of names) {
     for (const [id, rare, rd, tier] of medals[n]?.ids || []) {
       if (rd > at) continue;
-      const inPool = rarities.has(rare), inRes = reserved.has(n) && resRarities.has(rare);
+      const inPool = rarities.has(rare) && !traitOnly.has(n), inRes = reserved.has(n) && resRarities.has(rare);
       if (!inPool && !inRes) continue;
       tiers.set(id, tier || 0);
       medalInfo.set(id, { name: n, rare });
@@ -292,7 +295,8 @@ function rollReserved(banner, ex, rng, state) {
       return pickList(ex.slotNames[j], top && rng() < UPGRADE[rare] ? rare + 1 : rare, rng);
     }
     if (s?.kind === 'tier') return pickTier(banner, ex, s, j, rare, rng);
-    return pickSlot(banner, ex.pool, rare, rng); // trait (slot generico riservato) e slot liberi
+    if (s?.kind === 'trait' && (ex.slotNames?.[j] || []).length) return pickList(ex.slotNames[j], rare, rng); // Trait Medal #N
+    return pickSlot(banner, ex.pool, rare, rng); // trait senza numero noto (6★ di ripiego) e slot liberi
   });
   // pityMode 'every' (2c: B0584, B0770): il contatore si azzera solo quando la pity scatta
   const got = g.pityMode === 'every' ? pity.on : pity.on || medalIds.some((id) => (ex.pityIds || []).includes(id));
@@ -397,6 +401,7 @@ function slotOdds(banner, ex) {
       const odds = up && tierIds(ex, s, j, up.to).length ? base(rare) : [{ rare, pct: 100 }];
       return odds.map((o) => ({ ...o, kind: 'tier', tier: tierLabel(s) }));
     }
+    if (s?.kind === 'trait' && (ex.slotNames?.[j] || []).length) return [{ rare, pct: 100, kind: 'trait', names: ex.slotNames[j].map(([n]) => n) }];
     if (s?.kind === 'trait') return base(rare).map((o) => ({ ...o, kind: 'trait' }));
     return i === pitySlot ? base(rare).map((o) => ({ ...o, kind: 'pity' })) : base(rare);
   });
