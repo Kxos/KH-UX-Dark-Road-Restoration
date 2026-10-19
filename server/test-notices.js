@@ -49,7 +49,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
     'Seasonal draw currencies (Spooky Cookies, Moogle Points, Holiday Draw Tickets) are kept separately; the Shop shows one of them at a time.',
     'Some 2016-17 banners only drew Epic Medals; the game data no longer says which Medals were Epic, so these banners draw from their full sets.',
     'Blue Fairy Deal banners are in the Banner Catalog but cannot be drawn yet: Blue Fairies will come with a future update.',
-    'Trait Medals are back: a deal that guaranteed a Trait Medal gives it. Only where the Medal a Trait Medal belongs to is unknown (numbers missing from the surviving lists) you get a random Medal of the same rarity instead.',
+    'Trait Medals are back: a deal that guaranteed a Trait Medal gives it (all 313 Trait Medals, matched to their Medals from the community wiki).',
     'Boosted Medals: the chance of a boosted version on deals that offered one is reconstructed (5% per eligible Medal). Guaranteed max-level Skills are given only for Skills that exist in this restoration.',
     'Boosted stats on deals that did not state them are reconstructed (+1000 STR, +1000 DEF), and bonus support Medals earned through a guarantee arrive in your Presents.',
     'Free deals that could be drawn only once (or once per day) keep that limit.',

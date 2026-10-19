@@ -54,9 +54,6 @@ if ($LASTEXITCODE) { throw 'make_shop_lock fallito' }
 # Stock Medal (medaglia 1 degli slot vuoti, immagine 90000; I-075)
 python recon\tools\make_stock_medal.py "$D\reference\empty_slot\stock_medal_khuxwiki.png" "$D\catalog\files\img\medal" "$sg\files"
 if ($LASTEXITCODE) { throw 'make_stock_medal fallito' }
-# Trait Medal (I-084 parte B): medaglia associata in bianco e nero, id 9000000+N (server/trait_medals.json)
-python recon\tools\make_trait_medal_images.py server\trait_medals.json "$D\medal_gen\files" "$sg\files"
-if ($LASTEXITCODE) { throw 'make_trait_medal_images fallito' }
 # miniature dell'elenco Story stage_select_ico_<mondo>_<thumbId> (95 assenti: il carosello
 # mostrava miniature di altre missioni o il «?», I-064), dalle anteprime di Roboloid in cache
 python recon\tools\make_quest_thumbs.py server\master_data\stage.json "$D\catalog\files\img\adventure\stage" "$D\external\roboloid\cache\map" "$sg\files" --report "$sg\quest_thumbs\report.json"
@@ -222,6 +219,9 @@ python -I recon\tools\resource_pack.py "$sg\files" $key "$sg\gen.mp4" "$sg\gen.p
 $mg = "$D\medal_gen"
 $medalPack = @()
 if (Test-Path "$mg\files") {
+  # Trait Medal (I-084 parte B): medaglia associata in bianco e nero, id 9000000+N (server/trait_medals.json);
+  # ~180 MB, oltre la riserva del pacchetto generato: stanno col pacchetto delle medaglie
+  if (-not $Quick) { python recon\tools\make_trait_medal_images.py server\trait_medals.json "$mg\files" "$mg\files"; if ($LASTEXITCODE) { throw 'make_trait_medal_images fallito' } }
   if (-not $Quick) { python recon\tools\btf_fix.py "$mg\files"; python -I recon\tools\resource_pack.py --cache "$mg\files" $key "$mg\gen.mp4" "$mg\gen.png"; if ($LASTEXITCODE) { throw 'resource_pack medaglie fallito' } }
   if (Test-Path "$mg\gen.png") { $medalPack = @("$mg\gen.png", "$mg\gen.mp4") }
 }

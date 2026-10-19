@@ -388,8 +388,8 @@ try {
   const dTr = g.detailPage(trSlot(['trait medal #1']), { ...ex6, slotNames: [[['trait medal #1', 1, { 6: [9000001] }]]] }, medalNames, sctx);
   check(dTr.includes('1x Trait Medal #1 (6★, for Illustrated KH Riku [EX])'), `T7: riga slot Trait Medal #1 (${(dTr.match(/1x Trait[^<]*/) || [])[0]})`);
   check(g.detailPage(trSlot([]), ex6, medalNames, sctx).includes('1x Trait Medal (6★)'), 'T7: riga slot Trait senza numero');
-  const dUnk = g.detailPage(trSlot(['trait medal #190']), ex6, medalNames, sctx);
-  check(dUnk.includes('1x Trait Medal (6★)') && !dUnk.includes('Trait Medal #190'), 'T7: Trait Medal senza riga nel master: niente promessa del numero');
+  const dUnk = g.detailPage(trSlot(['trait medal #999']), ex6, medalNames, sctx);
+  check(dUnk.includes('1x Trait Medal (6★)') && !dUnk.includes('Trait Medal #999'), 'T7: Trait Medal senza riga nel master: niente promessa del numero');
   const opTr = g.oddsPage([{ banner: trSlot(['trait medal #1']), ex: { ...ex6, slotNames: [[['trait medal #1', 1, { 6: [9000001] }]]] }, medalNames }]);
   check(opTr.includes('Trait Medal #1 (for Illustrated KH Riku [EX])'), 'T7: Draw Odds dello slot Trait Medal #1');
   for (const [k, t] of [['trait', 'Trait Medal: not reproduced where the Medal it belongs to is unknown'], ['skill', 'max-level Skill'], ['epic', 'Epic'], ['pity', 'Pity Medal'], ['traitSlots', 'Trait'], ['imitation', 'Imitation Medal']]) {

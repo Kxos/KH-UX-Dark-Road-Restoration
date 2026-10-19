@@ -319,24 +319,28 @@ STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313
   (`import_jp_coco.py`, LWF_FILL e fill_idx).
 
 <a id="trait-medal-b"></a>
-- **Parte B (19-10, rev 148, risorse 45)**, piano `docs/superpowers/plans/2026-10-19-trait-medal-B.md`:
+- **Parte B (19-10, rev 150, risorse 45)**, piano `docs/superpowers/plans/2026-10-19-trait-medal-B.md`:
   - **Stessa medaglia = linea dell'Album** (`make-trait-groups.js`): gruppo = componenti connesse di stesso nome e stesso
     sortId > 0 (949 gruppi). Prova: il deal «SN+ - KH III Xemnas Trait Medal Deal» (notice 2019-08-05) vende la Trait
     Medal #130, che la khuxwiki lega a «SN - KH III Xemnas»; le 138 linee multi-nome del master sono tutte catene di
     Evolve. Vale anche per la parte A (SN fusa su SN+ da' un trait).
-  - **Elenco** `server/trait_medals.json` (189 voci, #1-#188 e #274) da `make-trait-medal-list.js` sul wikitesto della
-    khuxwiki: la prima colonna e' il numero di Album EN = sortId.
+  - **Elenco** `server/trait_medals.json` (313 voci) da `make-trait-medal-list.js`: #1-#188 e #274 dalla tabella della
+    khuxwiki (prima colonna = numero di Album EN = sortId); #189-#313 dalle pagine «Trait Medal N» della khuxwiki, che
+    rimandano alla medaglia («Trait Medal #190 ... can be used to add or re-roll a trait on SN++ - KH III Roxas»;
+    `reference	rait_medals\khuxwiki_trait_medal_189_313.json` e `_RESULT.md`). I notice dei deal SN++ non stampano il
+    numero; i 46 numeri che compaiono in altri notice (VIP, eventi, Moogle Shop) non contraddicono la wiki.
   - **Righe** (`make-trait-medals.js`, dopo make-trait-groups): medalId 9.000.000+N, type 9, 6★, STR/DEF 1, costo 999,
     15 Pet Point, sortId della medaglia, impilabili, senza slot dei trait, `shuffleSkillGroupId` della linea; burst
     9.000.000 «Lesser Attack» (1 nemico, 1 gauge, x1,00, 5 pallini); EXP, vendita e tier della guilt dalla medaglia
     (ricostruiti). Pallino: `burstEnhanceCategory[0]` di tutte le righe della linea = medalId della Trait Medal
     ([fn]). Album: la type 9 non e' una voce. La fusione non ha codice nuovo (test-medal-enhance.js sez. 12).
   - **Immagini** (`recon/tools/make_trait_medal_images.py`, in build-resources su stage_gen): luminanza della medaglia
-    (Medal_L/S e Cutin), media e deviazione entro il 7% delle 3 originali (`--check`). 66 MB: versione completa.
+    (Medal_L/S e Cutin), media e deviazione entro il 7% delle 3 originali (`--check`). ~180 MB: stanno nel pacchetto
+    `medal_gen` (versione completa), oltre la riserva di 128 MB del pacchetto generato.
   - **Banner**: lo slot Trait legge #N («Guarantees one Trait Medal #23»), il catalogo ha le voci «trait medal #N»
     (cls LIST, fuori dai pool standard), il server le estrae solo nello slot (non nel pool generico), nelle liste
-    (B0324 #18) e nelle pity «entro 5» (B0259...B0292). Ripiego dichiarato solo per i numeri senza medaglia nota
-    (38 banner su 259). Details e Draw Odds: «Trait Medal #N (for <medaglia>)». Le «boosted Trait Medal» dei
+    (B0324 #18) e nelle pity «entro 5» (B0259...B0292). Nessun banner resta col ripiego (prima 38, coi numeri
+    #189-#249 prima della ricerca del 19-10). Details e Draw Odds: «Trait Medal #N (for <medaglia>)». Le «boosted Trait Medal» dei
     notice sono ignorate (nessuna riga boosted).
 
 <a id="skill"></a>
