@@ -691,3 +691,12 @@ Notice 23113, 23538, 24587, 24593, 24843 («guaranteed at least one of the new M
   le tre 5★+ sono le due 6★ Tier 3+ e l'Atlantica 5★ del notice). La grafica e' la stessa dell'EMC B0058 (riusata per
   la riedizione; la wiki usa lo stesso file per entrambi), la wiki dice 6★ x2 5★ x8: il banner fa fede (utente).
   Banco: Atlantica Donald 5★, Crocodile e Axel A 6★, sette 4★.
+
+<a id="sp2c-g6"></a>
+## Sotto-progetto 2c, G6: Gem Deal 2017 (19-10, revisione 133)
+
+18 Gem Deal (B0142-B0144, B0160-B0162, B0177-B0179, B0191-B0193, B0209-B0211, B0232-B0234) scrivono nella wiki
+«Includes 3 Power Gems» senza «bonus»: `make_banner_catalog.BONUS` ora accetta la forma senza «bonus» solo davanti a
+Power/Speed/Magic/Sun/Moon Gem. Fonti: notice 30125/31604/32524/33510 («guarantees three Power Gems or Speed Gems or
+Magic Gems in each pull») e la grafica (medaglia epica x1, 4★+ x4, Gem x3). Solo quei 18 banner cambiano. Il server
+consegna il bonus nel Present Box (server.js, «Bonus: <banner>»): banco 19-10, B0142 -> «Power Gem × 3 — Bonus: Gem Deal».

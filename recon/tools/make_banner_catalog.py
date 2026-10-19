@@ -482,7 +482,9 @@ def is_boosted(r):
 
 
 # ---------- bonus (note «Includes N bonus ...») ----------
-BONUS = re.compile(r'[Ii]ncludes? (a|one|two|three|five|\d+) bonus ')
+# senza «bonus» solo le Gem: «Includes 3 Power Gems» delle Gem Deal 2017 (2c/G6, 18 banner B0142-B0234; notice 30125
+# «guarantees three Power Gems or Speed Gems or Magic Gems in each pull»)
+BONUS = re.compile(r'[Ii]ncludes? (a|one|two|three|five|\d+) (?:bonus |(?=(?:\[\[)?(?:Power|Speed|Magic|Sun|Moon) Gem))')
 
 
 def _bonus(notes, medal_rows, material_rows):
