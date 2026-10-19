@@ -67,6 +67,13 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
   check(shop.includes('## Weekly rotation') && shop.some((x) => /every \*\*Monday\*\*|Every \*\*Monday\*\*/.test(x)), 'Shop: rotazione settimanale (I-165)');
 }
 
+{
+  // trait dalla fusione (I-084 parte A)
+  const tr = (n.NOTICES.find((x) => x.title === 'Traits') || { body: [] }).body.join(' ');
+  check(/Fusing two copies of the same Medal gives it a random trait/.test(tr), 'Traits: copie identiche');
+  check(/each of the 11 traits has the same chance/.test(tr), 'Traits: probabilita uniforme');
+  check(/only from the Moogle Shop/.test(tr), 'Traits: i 5 trait della 4.1.0 solo nel Moogle Shop');
+}
 n.NOTICES.push({ date: '1', tag: 'X', title: 'a<b>"&', body: ['<script>'] });
 p = n.noticesPage(U(2026, 10, 16, 15));
 n.NOTICES.pop();
