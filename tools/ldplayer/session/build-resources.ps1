@@ -220,6 +220,10 @@ python -I recon\tools\import_originals.py recon\tools\originals.tsv "$D\tmp\thet
   "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1" "$sg\files" `
   --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --i440 $i440 --report "$sg\originals.json"
 if ($LASTEXITCODE) { throw 'import_originals fallito' }
+# suoni se_<nome> dei LWF originali appena importati (KeyBlade_Evolution/StepUp, training_SE dei pet): la
+# ricerca di import_jp_coco e' girata prima, sui LWF generati senza eventi (banco 19-10: evoluzione muta)
+python -I recon\tools\jp_sound_effects.py --out "$sg\files" --apply @seOpt
+if ($LASTEXITCODE) { throw 'jp_sound_effects fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
@@ -314,6 +318,11 @@ if ($Quick) {
   $dataSize = 176MB  # 128 MiB fino al 19 ottobre (originali di I-170, ~33 MB; 192 MiB portava i dati oltre 4 GiB); 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre), 32 MiB con la musica delle BGM Medals (15 ottobre, ~55 MB di audio)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
+# cartelle mixture/medal/compose/<imageId>/Medal_L dell'animazione di Level Up/Evolve come alias di
+# img/medal/Medal_L_<id>.png (nessun dato in piu'; il WW ne serviva 21: cornici vuote, banco 19-10)
+python -I recon\tools\medal_mixture_alias.py server\master_data\medal.json "$sg\mixture_alias.tsv"
+if ($LASTEXITCODE) { throw 'medal_mixture_alias fallito' }
+$mergeOpt += @('--alias', "$sg\mixture_alias.tsv")
 $genLen = (Get-Item "$sg\gen.mp4").Length
 if ($genLen -gt $dataSize) { throw "pacchetto generato di $genLen byte oltre la riserva di ${dataSize}: serve una versione completa" }
 $fs = [IO.File]::Open("$sg\gen.mp4", 'Open', 'ReadWrite'); $fs.SetLength($dataSize); $fs.Close()
@@ -327,7 +336,7 @@ if ($DryRun) {
   $quick = -not $LASTEXITCODE
   if (-not $quick) {
     # oltre la riserva dell'indice: si prova l'indice di una versione completa (riserva di 64 KiB)
-    $out2 = python -I recon\tools\resource_merge.py --last-wins --fast-md5 --filler 65536 recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$sg\misc_dry.png" @packs 2>&1
+    $out2 = python -I recon\tools\resource_merge.py --last-wins --fast-md5 --filler 65536 --alias "$sg\mixture_alias.tsv" recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$sg\misc_dry.png" @packs 2>&1
     if ($LASTEXITCODE) { $out2; throw 'resource_merge fallito anche come versione completa' }
   }
   $ErrorActionPreference = 'Stop'

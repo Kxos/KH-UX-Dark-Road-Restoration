@@ -165,15 +165,21 @@ function makeKeybladeEvo(ctx) {
     });
   }
 
-  // somma dei bonus per tier (guiltValue della riga medal) delle medaglie nei sub-slot
+  // somma dei bonus per tier delle medaglie nei sub-slot. Tier come il badge del client ([fn]): con
+  // guiltValue 0 si risale la catena dell'Evolve fino alla forma che ce l'ha (le 1-5★ hanno 0, la 6★ il tier)
+  function medalTier(byId, row) {
+    for (let r = row, n = 0; r && n < 10; r = r.validEvolve ? byId.get(r.evolveId) : null, n++) {
+      if (r.guiltValue) return r.guiltValue;
+    }
+    return 0;
+  }
   function subslotRate(k) {
-    const medals = ctx.masterRows('medal');
+    const byId = new Map(ctx.masterRows('medal').map((r) => [r.medalId, r]));
     const byUser = new Map(ctx.userMedalList().map((m) => [m.userMedalId, m]));
     let sum = 0;
     for (const s of subslotMedals(k)) {
       if (!s.userMedalId) continue;
-      const row = medals.find((r) => r.medalId === byUser.get(s.userMedalId)?.medalId);
-      sum += TIER_SUBSLOT[row?.guiltValue || 0] || 0;
+      sum += TIER_SUBSLOT[medalTier(byId, byId.get(byUser.get(s.userMedalId)?.medalId))] || 0;
     }
     return sum * SUBSLOT_SCALE;
   }

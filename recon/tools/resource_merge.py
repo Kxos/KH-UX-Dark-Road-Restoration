@@ -13,6 +13,9 @@ Formato del BGI (dopo lo strato esterno):
     in coda 8 byte: IV dello strato interno xor [constant]
 Lo strato interno copre da +0x0c fino agli 8 byte finali esclusi.
 
+--alias <tsv>: nomi in piu' che puntano al record di un nome esistente (es. le cartelle
+mixture/medal/compose/<id>/Medal_L dell'animazione di Level Up/Evolve -> img/medal/Medal_L_<id>.png).
+
 A parita' di nome vince il pacchetto che compare prima negli argomenti; con --last-wins
 vince invece l'ultimo (il pacchetto generato sostituisce i file originali che corregge,
 es. layout con testi giapponesi, senza cambiare l'ordine dei dati).
@@ -33,9 +36,12 @@ import struct
 import sys
 import tempfile
 
-filler, index_size, fast, last_wins = None, None, False, False
+filler, index_size, fast, last_wins, alias_file = None, None, False, False, None
 while sys.argv[1].startswith('--'):
     flag = sys.argv.pop(1)
+    if flag == '--alias':
+        alias_file = sys.argv.pop(1)
+        continue
     if flag == '--last-wins':
         last_wins = True
         continue
@@ -119,6 +125,24 @@ for index, datas in packs:
                 total_md5.update(chunk)
         base += os.path.getsize(d)
     print('%s: record %d, nomi %d (nuovi %d)' % (index, len(offs), len(names), kept))
+
+# --alias <tsv>: righe «nome<TAB>bersaglio»; il nome nuovo punta allo stesso record del bersaglio (nessun dato
+# in piu': l'indice originale ha gia' piu' nomi per record). Saltati i nomi gia' presenti e i bersagli assenti.
+if alias_file:
+    added = missing = 0
+    for line in open(alias_file, encoding='utf-8'):
+        if not line.strip():
+            continue
+        name, target = (x.encode() for x in line.rstrip('\r\n').split('\t'))
+        if name in seen:
+            continue
+        if target not in seen:
+            missing += 1
+            continue
+        seen[name] = len(entries)
+        entries.append((name, entries[seen[target]][1]))
+        added += 1
+    print('%s: %d alias aggiunti, %d con bersaglio assente' % (alias_file, added, missing))
 
 def _keystream(tag, n, gen):
     """Keystream di almeno n byte, in cache su disco (gen(da, a) produce i byte mancanti)."""

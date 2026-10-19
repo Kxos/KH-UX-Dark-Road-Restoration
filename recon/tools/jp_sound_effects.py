@@ -31,7 +31,7 @@ D = r'D:\Progetto_Restauro_KH_UX'
 JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
                        '[local reference data]', 'data', 'jp_final_4.3.1')
 STATIC_PACKS = ('medal_gen', 'rooms_gen', 'enemy_gen', 'raisedraw_gen')
-RESERVE = 128 * 1024 * 1024        # riserva del pacchetto generato (build-resources.ps1, versioni complete)
+RESERVE = 176 * 1024 * 1024        # riserva del pacchetto generato (build-resources.ps1 $dataSize, versioni complete)
 # playSE_<nome>: eventi delle LWF della ruota del trait (Kakusei_Get1/2: playSE_ui2_se_000075/76, AKB 509000750/760
 # assenti dalle risorse WW; il client ha il gestore «playSE», banco 19-10: animazione muta)
 PREFIXES = ('se_', 'playBGM_', 'playSE_')
@@ -325,6 +325,9 @@ def main(argv=None):
     ap.add_argument('--json', default=None, help='rapporto completo')
     ap.add_argument('--no-static', action='append', default=[], choices=STATIC_PACKS,
                     help="pacchetto statico non nell'indice (-NoRooms/-NoEnemies/-NoRaisedraw)")
+    ap.add_argument('--apply', action='store_true',
+                    help="copia in --out gli AKB e i testi mancanti (build-resources, dopo import_originals.py: "
+                         "i LWF originali importati dopo import_jp_coco hanno suoni propri)")
     a = ap.parse_args(argv)
     rep_dir = os.path.join(os.path.dirname(os.path.abspath(a.out)), 'jp_import')
     man = a.manifest or os.path.join(rep_dir, 'manifest.json')
@@ -348,6 +351,13 @@ def main(argv=None):
         gen, p['bytes'], gen + p['bytes'], RESERVE, 100.0 * (gen + p['bytes']) / RESERVE))
     if a.json:
         json.dump(p, open(a.json, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    if a.apply:
+        import shutil
+        for name, src in sorted(list(p['add'].items()) + list(p['texts'].items())):
+            dst = os.path.join(a.out, *name.split('/'))
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copyfile(src, dst)
+            print('copiato ' + name)
     return p
 
 

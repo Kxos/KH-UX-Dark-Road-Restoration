@@ -774,6 +774,14 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
   }
 }
 
+// tier solo sulle 6★/7★ e potenza degli speciali di Roboloid a pallini pieni (medal-power-fix.js)
+const powerFix = require('./medal-power-fix');
+const tiersOff = powerFix.tierFix(medals);
+const powerStats = powerFix.burstPowerFix(bursts, { origBursts, medals,
+  wikiInfo: powerFix.readWikiInfo(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json'),
+  multiOf: (id) => ROBO_BY_ID.get(id)?.Multi || ROBO_BY_ID.get(id)?.HighMulti });
+console.log(`medal-power-fix: tier tolto a ${tiersOff} medaglie sotto le 6★; burst ${JSON.stringify(powerStats)}`);
+
 fs.mkdirSync(OUT, { recursive: true });
 if (stagesOut) fs.writeFileSync(stagePath, JSON.stringify(stagesOut));
 fs.writeFileSync(path.join(OUT, 'burst.json'), JSON.stringify(bursts));

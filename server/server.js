@@ -2538,14 +2538,17 @@ function userMedalList() {
 // Medaglie impilabili (validPack, le medaglie di supporto): il salvataggio tiene le copie
 // separate, il client le vede come una cella sola con number = copie (badge rosso), con
 // userMedalId della prima copia (fino a 99 per cella, come negli screenshot originali).
+// Le copie col lucchetto fanno una cella a parte: il lucchetto e' della cella (userMedalId della prima
+// copia), e una copia bloccata in testa rendeva grigio tutto il mucchio negli Evolve (banco 19-10).
 function stackedMedalList() {
   const pack = new Set(masterRows('medal').filter((r) => r.validPack).map((r) => r.medalId));
   const out = [], stacks = new Map();
   for (const m of userMedalList()) {
-    const s = pack.has(m.medalId) && stacks.get(m.medalId);
+    const key = `${m.medalId}${player.medalLocks?.[m.userMedalId] ? 'L' : ''}`;
+    const s = pack.has(m.medalId) && stacks.get(key);
     if (s && s.number < 99) { s.number++; s.copies.push(m.userMedalId); continue; }
     const e = { ...m, number: 1, copies: [m.userMedalId] };
-    if (pack.has(m.medalId)) stacks.set(m.medalId, e);
+    if (pack.has(m.medalId)) stacks.set(key, e);
     out.push(e);
   }
   return out;
