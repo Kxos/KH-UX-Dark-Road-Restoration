@@ -1,6 +1,6 @@
 // Correzioni del master verso le regole originali (banco 19-10, salvataggio di prova):
 //
-// 1. Tier (guiltValue) solo sulle 6★ e 7★. Lo «Special Attack Bonus» e' un tratto delle 6★
+// 1. Tier (guiltValue) a 0 sulle 1-5★ che si evolvono in una rarita' maggiore. Lo «Special Attack Bonus» e' un tratto delle 6★
 //    (khuxwiki, reference\guilt\khuxwiki_raw.md: «a trait found on 6★ Medals»); Roboloid da' il Tier
 //    della famiglia anche alle 1-5★. Il client ([fn]) accende Evolve, se la medaglia ha un tier
 //    (+0x4c0) e l'evoluta ha rarita' (+0x4ac) maggiore, solo con la guilt al massimo del tier: con il
@@ -21,9 +21,15 @@ const path = require('path');
 const ROBO_BURST = 3000000;
 const step = (i) => 300 * ((i + 1) * (i + 2) / 2);   // potenza in piu' al pallino i+1 (tierPower)
 
+// Solo le righe sotto le 6★ che si evolvono in una rarita' maggiore (quelle che il client bloccherebbe): il
+// badge mostra comunque il Tier della forma evoluta; le 5★ senza Evolve (Halloween C) tengono il loro.
 function tierFix(medals) {
+  const byId = new Map(medals.map((m) => [m.medalId, m]));
   let n = 0;
-  for (const m of medals) if ((m.rare || 0) < 6 && m.guiltValue) { m.guiltValue = 0; n++; }
+  for (const m of medals) {
+    const evo = m.validEvolve ? byId.get(m.evolveId) : null;
+    if ((m.rare || 0) < 6 && m.guiltValue && evo && (evo.rare || 0) > (m.rare || 0)) { m.guiltValue = 0; n++; }
+  }
   return n;
 }
 
