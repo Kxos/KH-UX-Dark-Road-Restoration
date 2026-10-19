@@ -777,25 +777,31 @@ def apply_enhance_overrides(enh, ov_row):
     """Override del blocco enhance da banner_overrides.tsv (campo «preset»: «slots=0;dots=max;guilt=max»,
     «star=7;dots=3;guilt=none»): aggiunge la voce preset se non c'e' gia'. Serve quando la frase sta in un
     altro banner (B0306-B0308: «the 7★ Medal you receive ... maximum Special Attack Bonus» e' nel testo di
-    B0310, che annuncia i tre deal)."""
+    B0310, che annuncia i tre deal). Piu' voci separate da « || »; «dots=1-3» = da 1 a 3. Una voce per nome va
+    in testa (2c/G9: il server applica la prima voce che corrisponde, e «If you receive the following Medals ...
+    3 dots» deve vincere sui 1-3 pallini dello slot Tier, anche per la copia della pity sullo slot 0)."""
     v = (ov_row or {}).get('preset')
     if not v:
         return enh
-    kv = dict(x.split('=', 1) for x in v.split(';') if '=' in x)
-    if 'replace' in v.split(';'):  # «replace;slots=1,2;dots=3» (2c/G5, B0082): toglie i preset letti dal testo
-        enh['preset'] = []
-    if 'slots' in kv:
-        on = {'slots': [int(x) for x in kv['slots'].split(',')]}
-    elif 'star' in kv:
-        on = {'star': int(kv['star'])}
-    else:
-        on = {'names': [x.strip() for x in kv.get('names', '').split(',') if x.strip()]}
-    dots = kv.get('dots', 'max')
-    dots = dots if dots == 'max' else int(dots)
-    guilt = 'max' if kv.get('guilt') == 'max' else None
-    item = {'on': on, 'dots': dots, 'guilt': guilt}
-    if item not in enh['preset']:
-        enh['preset'].append(item)
+    for one in v.split(' || '):
+        kv = dict(x.split('=', 1) for x in one.split(';') if '=' in x)
+        if 'replace' in one.split(';'):  # «replace;slots=1,2;dots=3» (2c/G5, B0082): toglie i preset letti dal testo
+            enh['preset'] = []
+        if 'slots' in kv:
+            on = {'slots': [int(x) for x in kv['slots'].split(',')]}
+        elif 'star' in kv:
+            on = {'star': int(kv['star'])}
+        else:
+            on = {'names': [x.strip() for x in kv.get('names', '').split(',') if x.strip()]}
+        dots = kv.get('dots', 'max')
+        dots = dots if dots == 'max' else [int(x) for x in dots.split('-')] if '-' in dots else int(dots)
+        guilt = 'max' if kv.get('guilt') == 'max' else None
+        item = {'on': on, 'dots': dots, 'guilt': guilt}
+        if item not in enh['preset']:
+            if 'names' in on:
+                enh['preset'].insert(0, item)
+            else:
+                enh['preset'].append(item)
     return enh
 
 
@@ -809,15 +815,21 @@ def apply_slot_override(g, ov_row):
         return g
     # «new@2x1/5:names=a|b» (2c/G5): riserva a lista nuova dalla posizione 2, 1 medaglia, stella 5 (B0066: «you will
     # be guaranteed at least one of the new Medals», sulla prima posizione 5★: le due 6★ restano casuali)
-    m = re.fullmatch(r'new@(\d+)x(\d+)/(\d):names=(.+)', v)
+    # «new@0x1/6:tier=4-» (2c/G9, B0204): riserva Tier nuova, Tier minimo 4 senza massimo
+    m = re.fullmatch(r'new@(\d+)x(\d+)/(\d):(names|tier)=(.+)', v)
     if m:
         pos, n = int(m.group(1)), int(m.group(2))
         if any(set(range(pos, pos + n)) & set(range(s['slot'], s['slot'] + max(1, s['count'] or 1))) for s in g['slots']):
             raise SystemExit(f'override slot {v!r}: posizioni gia\' riservate')
-        g['slots'].append({'kind': 'list', 'slot': pos, 'count': n, 'star': int(m.group(3)),
-                           'names': [x.strip() for x in m.group(4).split('|') if x.strip()], 'tierMin': None, 'tierMax': None})
+        if m.group(4) == 'tier':
+            lo, _, hi = m.group(5).partition('-')
+            g['slots'].append({'kind': 'tier', 'slot': pos, 'count': n, 'star': int(m.group(3)), 'names': [],
+                               'tierMin': int(lo), 'tierMax': int(hi) if hi else None})
+        else:
+            g['slots'].append({'kind': 'list', 'slot': pos, 'count': n, 'star': int(m.group(3)),
+                               'names': [x.strip() for x in m.group(5).split('|') if x.strip()], 'tierMin': None, 'tierMax': None})
         g['slots'].sort(key=lambda s: s['slot'])
-        g['slot'] = next(s['slot'] for s in g['slots'] if s['kind'] == 'list')  # = prima riserva a lista
+        g['slot'] = next((s['slot'] for s in g['slots'] if s['kind'] == 'list'), 0)  # = prima riserva a lista
         return g
     idx, _, spec = v.partition(':')
     key, _, val = spec.partition('=')
@@ -981,7 +993,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -1029,6 +1041,10 @@ def build_catalog(inputs):
             end_src = 'original'
         refs = setrefs(notes)
         pool = pool_recipe(r, notes, typ, docs, sub_members, rel, M)
+        # 2c/G9: vetrina che sta solo nel notice (campo «featured», nomi separati da |; B0204 Illustrated Kairi [EX])
+        for n in [x.strip() for x in ((ov.get(rid) or {}).get('featured') or '').split('|') if x.strip()]:
+            if n not in pool['featured']:
+                pool['featured'].append(n)
         if refs:
             docs.append((r['start_pt'] or FIRST_DAY, pool['sets'], pool['names'], typ))
         # riserve degli slot, pity e Tier (sotto-progetto 2b): guarantee.list/count/slot = prima riserva a lista

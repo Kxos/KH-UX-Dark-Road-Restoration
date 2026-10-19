@@ -722,3 +722,14 @@ scopa l'aveva gia'; B0270 (Special EX Medal Deal, «One Draw Only!») non ha reg
 - B0741 (Free Deal VIP) dell'audit era un falso positivo: `vipFree` lo limita gia' a una al giorno (contatore
   condiviso delle Free Deal VIP, gacha.js).
 - Banco 19-10: B0080 «Chances left today: 3» -> 2 dopo un'estrazione, comment «3 times per day».
+
+<a id="sp2c-g9"></a>
+## Sotto-progetto 2c, G9: «If you receive the following Medals ... 3 dots» (19-10)
+
+Campo `preset` esteso: piu' voci con « || », `dots=1-3`, le voci per nome vanno in testa (il server applica la prima
+voce che corrisponde: i 3 pallini per nome vincono sui 1-3 dello slot Tier, anche sulla copia della pity). 3 pallini
+per nome su B0145 (30703), B0157 (31354), B0184 (33505), B0190 (33593), B0195 (33883), B0199-B0203 (34475), B0207
+(34669), B0212 (35138). B0204 (notice 34471, riga completata a mano senza nulla): slot Tier 4+ nuovo
+(`slot new@0x1/6:tier=4-`), 1-3 pallini sullo slot, Illustrated Kairi [EX] con 3 pallini, boosted +1000/+1000 «small»,
+vetrina (campo nuovo `featured`). B0158/B0182 (INCOMPLETE, gemelli) non toccati. Simulazione: ogni medaglia elencata
+esce con 3 pallini (B0145, B0190, B0199, B0207 anche come pity), B0204 Kairi [EX] 63 su 4000 estrazioni, tutte a 3.
