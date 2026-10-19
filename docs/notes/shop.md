@@ -756,6 +756,27 @@ bersagli sempre a 0, le altre medaglie dello slot sempre 1-3. Details (gacha.js 
 «comes with its Special Attack Bonus maxed» anche con 1-3 o 0 pallini; ora il testo segue la voce. Banco: pity di
 B0273 -> HD Vanitas [EX+] con 0 pallini; Details con le righe «0» e «1 to 3».
 
+<a id="sp2c-singoli"></a>
+## Sotto-progetto 2c, casi singoli dell'audit (19-10, revisione 138)
+
+Campi nuovi di `banner_overrides.tsv` (make_banner_catalog.py): `pity` («N;names=a|b;star=S;slot=K;mode=every»),
+`max_skill` («pity;skills=a|b»), `exclude` (riga doppia) e il selettore `pity` dei preset («pity;dots=5»: solo la copia
+data dalla pity; server `enhanceOn(on, ..., pitySlot)`). `pityMode: 'every'`: il contatore si azzera solo quando la
+pity scatta, non quando il bersaglio esce da solo (`rollReserved`); Details «guaranteed every N draws ... the count
+does not restart».
+- B0353 Phantom, B0374 Illustrated Dusk (notice 42156, 43561): pity alla 6★ (era 7★ sullo slot Tier) sullo slot 2,
+  fra le «remaining 8 Medals» (lo slot 1 e' la Trait Medal), con 5 pallini solo sulla copia della pity; B0374 anche G1
+  (SA e guilt al massimo sulla 7★ Tier 5).
+- B0435, B0452 Standard (48299, 48298): pity 5 alla 7★ Prime - Chernabog sullo slot 2 (la 6★ Chernabog di ogni estrazione
+  resta), con le 7 abilita' al massimo del notice solo su quella copia (G2).
+- B0447 (48293) pity 5 a Rai/Seifer/Fuu; B0645 (63324) pity 5 a SN++ - KH III Pooh 7★.
+- B0584 Standard (56838): pity 5 che non si azzera («will NOT reset even if you draw a Foreteller»); i VIP B0579-B0583
+  si azzerano come prima. B0770 (72828): «every 10th draw» (era pity 5).
+- B0704-B0706: fine il 01-09-2020 (notice 69285, ritirati e rimborsati; li sostituiscono B0708-B0710 dal 03-09).
+- B0507: escluso, doppione di B0500 (stesso notice 52345, 15-19/04/2019, una volta al giorno). Catalogo: 807 banner.
+- B0083 (24597): 3 pallini su due copie (slot 0 e 1), non su tutte e cinque.
+- Rimandati: B0418 Blue Fairy Deal (Tier 8 garantito) con le Blue Fairy estraibili (I-142); B0082 era gia' fatto in G5.
+
 <a id="pagine-stile"></a>
 ## Stile delle pagine Details, Draw Odds e Catalog (19-10, richiesta dell'utente)
 

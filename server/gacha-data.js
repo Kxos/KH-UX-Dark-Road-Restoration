@@ -290,15 +290,18 @@ function rollReserved(banner, ex, rng, state) {
     if (s?.kind === 'tier') return pickTier(banner, ex, s, j, rare, rng);
     return pickSlot(banner, ex.pool, rare, rng); // trait (slot generico riservato) e slot liberi
   });
-  return { medalIds, featured: pity.on || medalIds.some((id) => (ex.pityIds || []).includes(id)), pityFired: pity.on };
+  // pityMode 'every' (2c: B0584, B0770): il contatore si azzera solo quando la pity scatta
+  const got = g.pityMode === 'every' ? pity.on : pity.on || medalIds.some((id) => (ex.pityIds || []).includes(id));
+  return { medalIds, featured: got, pityFired: pity.on, pitySlot: pity.slot };
 }
 
 // Potenziamenti per slot (banner.enhance), dopo la scelta delle medaglie (cosi' i tiri delle medaglie non
 // cambiano): boosted (opts.boostedOf(normale, str, def) -> id della riga boosted; solo una medaglia gia'
 // estratta dal pool, la boosted non entra mai da sola), preset {dots, guilt} e skills (maxSkill).
 // on: {slots}, {names} o {star} con tierMin/tierMax/excludePrime (decisione 8, medal-boost.tierMatch).
-function enhanceOn(on, id, i, ex) {
+function enhanceOn(on, id, i, ex, pitySlot = -1) {
   if (!on) return false;
+  if (on.pity) return i === pitySlot; // solo la copia data dalla pity (2c: B0353 «pre-strengthened to 5 dots»)
   if (on.slots) return on.slots.includes(i);
   const info = ex.medalInfo?.get(id);
   if (on.names) return !!info && on.names.includes(info.name);
@@ -309,7 +312,7 @@ function enhanceOn(on, id, i, ex) {
   return false;
 }
 const dotsOf = (d, rng) => (Array.isArray(d) ? d[0] + pickIndex(d[1] - d[0] + 1, rng) : d);
-function enhanceDraw(banner, ex, medalIds, rng, opts) {
+function enhanceDraw(banner, ex, medalIds, rng, opts, pitySlot = -1) {
   const e = banner.enhance || {};
   const extras = [];
   const ids = medalIds.map((id, i) => {
@@ -317,13 +320,13 @@ function enhanceDraw(banner, ex, medalIds, rng, opts) {
     let out = id;
     // voci idonee con la riga boosted nel master: una «guaranteed» vince, altrimenti un solo tiro per slot
     // (BOOST_SMALL_CHANCE anche se lo slot e' coperto da piu' voci «small»: vince la prima)
-    const ok = (opts.boostedOf ? e.boosted || [] : []).filter((b) => enhanceOn(b.on, id, i, ex))
+    const ok = (opts.boostedOf ? e.boosted || [] : []).filter((b) => enhanceOn(b.on, id, i, ex, pitySlot))
       .map((b) => [b.chance, opts.boostedOf(id, b.str, b.def)]).filter(([c, bid]) => bid && (c === 'small' || c === 'guaranteed'));
     const hit = ok.find(([c]) => c === 'guaranteed') || (ok.length && rng() < BOOST_SMALL_CHANCE ? ok[0] : null);
     if (hit) { out = hit[1]; x.boostedFrom = id; }
-    const p = (e.preset || []).find((q) => enhanceOn(q.on, id, i, ex));
+    const p = (e.preset || []).find((q) => enhanceOn(q.on, id, i, ex, pitySlot));
     if (p) x.preset = { dots: dotsOf(p.dots, rng), guilt: p.guilt ?? null };
-    const m = (e.maxSkill || []).find((q) => enhanceOn(q.on, id, i, ex));
+    const m = (e.maxSkill || []).find((q) => enhanceOn(q.on, id, i, ex, pitySlot));
     if (m) x.skills = [...m.skills];
     extras.push(x);
     return out;
@@ -359,7 +362,7 @@ function rollDraw(banner, ex, rng, state = { draws: 0, sinceFeatured: 0 }, opts 
     });
     r = { medalIds, featured: medalIds.some((id) => ex.featuredIds.includes(id)), pityFired: pityOn };
   }
-  return { ...r, ...enhanceDraw(banner, ex, r.medalIds, rng, opts || {}) };
+  return { ...r, ...enhanceDraw(banner, ex, r.medalIds, rng, opts || {}, r.pitySlot ?? -1) };
 }
 
 // Probabilita' per slot (percento, 2 decimali) per Draw Odds; negli slot a lista le stesse salite dello

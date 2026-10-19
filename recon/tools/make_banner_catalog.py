@@ -806,7 +806,9 @@ def apply_enhance_overrides(enh, ov_row):
         kv = dict(x.split('=', 1) for x in one.split(';') if '=' in x)
         if 'replace' in one.split(';'):  # «replace;slots=1,2;dots=3» (2c/G5, B0082): toglie i preset letti dal testo
             enh['preset'] = []
-        if 'slots' in kv:
+        if 'pity' in one.split(';'):  # «pity;dots=5» (2c, B0353): solo la copia data dalla pity
+            on = {'pity': True}
+        elif 'slots' in kv:
             on = {'slots': [int(x) for x in kv['slots'].split(',')]}
         elif 'star' in kv:
             on = {'star': int(kv['star'])}
@@ -817,7 +819,7 @@ def apply_enhance_overrides(enh, ov_row):
         guilt = 'max' if kv.get('guilt') == 'max' else None
         item = {'on': on, 'dots': dots, 'guilt': guilt}
         if item not in enh['preset']:
-            if 'names' in on:
+            if 'names' in on or 'pity' in on:
                 enh['preset'].insert(0, item)
             else:
                 enh['preset'].append(item)
@@ -890,6 +892,50 @@ def apply_pity_label(g, ov_row):
     None senza override."""
     g['pityLabel'] = ((ov_row or {}).get('pity_label') or '').strip() or None
     return g
+
+
+def apply_pity_override(g, ov_row):
+    """2c, casi singoli: pity scritta solo nel notice o diversa dal testo del banner (campo «pity» di
+    banner_overrides.tsv): «5;names=a|b;star=6;slot=2;mode=every». N = estrazioni; names = bersagli (se mancano
+    restano quelli letti); star = stella promessa; slot = posizione sostituita (senza: pity_slot); mode=every =
+    contatore che non si azzera quando il bersaglio esce da solo (B0584 notice 56838, B0770 «every 10th draw»)."""
+    v = ((ov_row or {}).get('pity') or '').strip()
+    if not v:
+        return g
+    n, *rest = v.split(';')
+    kv = dict(x.split('=', 1) for x in rest if '=' in x)
+    g['pity'] = int(n)
+    if 'names' in kv:
+        g['pityNames'] = [x.strip() for x in kv['names'].split('|') if x.strip()]
+    if 'star' in kv:
+        g['_pityStarWritten'] = int(kv['star'])
+    if 'slot' in kv:
+        g['_pitySlotWritten'] = int(kv['slot'])
+    if kv.get('mode') == 'every':
+        g['pityMode'] = 'every'
+    return g
+
+
+def apply_max_skill_override(enh, ov_row, skill_rows):
+    """2c/G2: abilita' al massimo promesse solo dal notice (campo «max_skill»: «pity;skills=a|b|c», B0435
+    notice 48299: «The guaranteed ... 7★ Prime - Chernabog will come with one of the following skills at max skill
+    level»). Selettore come i preset (pity, slots=, names=); le abilita' assenti da skill.json -> notReproduced."""
+    v = ((ov_row or {}).get('max_skill') or '').strip()
+    if not v:
+        return enh
+    parts = v.split(';')
+    kv = dict(x.split('=', 1) for x in parts if '=' in x)
+    on = ({'pity': True} if 'pity' in parts else {'slots': [int(x) for x in kv['slots'].split(',')]} if 'slots' in kv
+          else {'names': [x.strip() for x in kv['names'].split('|') if x.strip()]})
+    known = {norm(r['name']) for r in skill_rows}
+    skills = [norm(x) for x in kv['skills'].split('|') if x.strip()]
+    have = [x for x in skills if x in known]
+    if len(have) < len(skills):
+        enh['notReproduced'] = sorted(set(enh['notReproduced']) | {'skill'})
+    item = {'on': on, 'skills': have}
+    if have and item not in enh['maxSkill']:
+        enh['maxSkill'].insert(0, item)
+    return enh
 
 
 # ---------- righe incomplete: fratello di serie (porta di incomplete.py) e override ----------
@@ -1004,7 +1050,9 @@ def build_catalog(inputs):
 
     notes_of = {r['row_id']: full_notes(r, wsx) for r in rows}
     types = {r['row_id']: classify(r, notes_of[r['row_id']][0]) for r in rows}
-    incl = [r for r in rows if not types[r['row_id']].startswith('X_')]
+    # 2c: righe doppie (campo «exclude»: B0507 = B0500, stesso notice 52345 e stesso periodo)
+    excl = {o['row_id'] for o in inputs['overrides'] if o.get('field') == 'exclude'}
+    incl = [r for r in rows if not types[r['row_id']].startswith('X_') and r['row_id'] not in excl]
     twins = vip_twins(incl)
     ov = collections.defaultdict(dict)
     ov_src = collections.defaultdict(dict)
@@ -1012,7 +1060,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured', 'pity', 'max_skill'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -1075,11 +1123,13 @@ def build_catalog(inputs):
                 lst['names'] = list(g['list'])
         apply_pity_label(g, labels.get(rid))
         apply_slot_override(g, ov.get(rid))
+        apply_pity_override(g, ov.get(rid))
         # potenziamenti per banner (guilt, pallini, boosted, abilita' al massimo): nomi risolti piu' sotto
         enh = bg.enhance_of(bg.enhance_text(notes, r['guarantees']), g['slots'], pool['featured'], M, inputs.get('skills') or [],
                             mix=rarity_mix(r['rarity_mix']))
         apply_enhance_overrides(enh, ov.get(rid))
         apply_boosted_override(enh, ov.get(rid))
+        apply_max_skill_override(enh, ov.get(rid), inputs.get('skills') or [])
         total = int((ov.get(rid) or {}).get('total_limit') or 0) or total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_ov or day_limit(notes, typ), total, vip_free)
@@ -1169,8 +1219,11 @@ def build_catalog(inputs):
         if first:
             g['list'] = list(first['names'])
         written = g.pop('_pityStarWritten', None)
+        slot_w = g.pop('_pitySlotWritten', None)
         if g['pity']:  # senza stella scritta, pityStar = stella dello slot finale (dopo la decisione 1)
             g['pitySlot'], g['pityStar'] = bg.pity_slot(g['pityNames'], written, g['slots'], b['rarityMix'])
+            if slot_w is not None:
+                g['pitySlot'] = slot_w
         if g['pity'] and not any(n in medals for n in g['pityNames']):
             # bersaglio fuori dal catalogo: medaglia di supporto del master -> regalo nel Present Box (nessuno slot
             # sostituito, D11 B0472/B0481); altrimenti (Trait Medal, nomi del notice) pity non riprodotta

@@ -404,6 +404,22 @@ try {
   check(dFb.includes('Tifa &amp; Aerith (7★) guaranteed'), 'T7 fix1: senza id risolto niceName');
   const dBtg = g.detailPage(g6({ enhance: { boosted: [{ on: { star: 7, tierMin: 1, tierMax: 4 }, str: 1000, def: 1000, chance: 'guaranteed' }] } }), ex6, medalNames, sctx);
   check(dBtg.includes('boosted version guaranteed (+1000 STR, +1000 DEF, reconstructed)') && dBtg.includes('7★ Tier 1-4 Medals'), 'T7 fix1: boosted garantita a Tier');
+  // 2c, casi singoli: selettore «pity» (preset e abilita' solo sulla copia della pity) e pityMode 'every'
+  const gP = g6({ guarantee: { pitySlot: 2, pityStar: 6 }, enhance: { preset: [{ on: { pity: true }, dots: 5, guilt: null }], maxSkill: [{ on: { pity: true }, skills: ['attack boost vi max'] }] } });
+  const exP = { ...ex6, pityNames: [['hd axel', 1, { 6: [9] }]], pityIds: [9] };
+  const rOn = gd.rollDraw(gP, exP, () => 0.5, { draws: 4, sinceFeatured: 4 });
+  check(rOn.pityFired && rOn.medalIds[2] === 9 && rOn.extras[2].preset?.dots === 5 && rOn.extras[2].skills?.[0] === 'attack boost vi max'
+    && rOn.extras.every((x, i) => i === 2 || (!x.preset && !x.skills)), `pity: 5 pallini e abilita' solo sullo slot della pity (${JSON.stringify(rOn.extras)})`);
+  const rOff = gd.rollDraw(gP, exP, () => 0.5, { draws: 0, sinceFeatured: 0 });
+  check(!rOff.pityFired && rOff.extras.every((x) => !x.preset && !x.skills), 'pity: senza pity nessun potenziamento «pity»');
+  check(g.detailPage(gP, exP, medalNames, sctx).includes('Guaranteed Medal (pity): comes with 5 Special Attack dots (original)'), 'pity: riga dei Details');
+  // bersaglio uscito da solo (slot 0 7★ = id 1 = pityIds): azzera la pity normale, non quella «every»
+  const exE = { ...ex6, pityIds: [1] };
+  const rN = gd.rollDraw(g6(), exE, () => 0.5, { draws: 0, sinceFeatured: 0 });
+  const rE = gd.rollDraw(g6({ guarantee: { pityMode: 'every' } }), exE, () => 0.5, { draws: 0, sinceFeatured: 0 });
+  check(rN.medalIds[0] === 1 && rN.featured && !rE.featured && !rE.pityFired, `every: il bersaglio uscito da solo non azzera il contatore (${rN.featured}/${rE.featured})`);
+  check(gd.rollDraw(g6({ guarantee: { pityMode: 'every' } }), exE, () => 0.5, { draws: 4, sinceFeatured: 4 }).featured, 'every: la pity scattata azzera il contatore');
+  check(g.detailPage(g6({ guarantee: { pityMode: 'every' } }), ex6, medalNames, sctx).includes('guaranteed every 5 draws (original): the count does not restart'), 'every: riga dei Details');
 } catch (err) { errors.push(`T7: eccezione ${err.stack}`); }
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }

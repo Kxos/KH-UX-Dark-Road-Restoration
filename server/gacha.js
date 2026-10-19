@@ -412,6 +412,8 @@ const pityText = (banner, ex, medalNames) => {
   const g = banner.guarantee;
   const who = hasSlotsOf(banner) && (g.pityNames || []).length ? `${niceList(g.pityNames, namer(ex, medalNames))}${g.pityStar ? ` (${g.pityStar}★)` : ''}` : 'Featured Medal';
   if (hasSlotsOf(banner) && g.pityGift) return esc(`${who} is sent to your Present Box (original: included in the draw) within ${g.pity} draws.`);
+  // pityMode 'every' (B0584, B0770): il notice dice che il contatore non si azzera se il bersaglio esce da solo
+  if (g.pityMode === 'every') return esc(`${who} guaranteed every ${g.pity} draws (original): the count does not restart when one of these Medals comes out earlier.${pityHasTargets(banner, ex) ? '' : ` ${NOT_REPRODUCED}`}`);
   return esc(`${who} guaranteed within ${g.pity} draws (original).${pityHasTargets(banner, ex) ? '' : ` ${NOT_REPRODUCED}`}`);
 };
 // v3: una riserva a lista con nomi scritti ma nessuna medaglia estraibile alla data (ex.slotNames[j] vuoto)
@@ -423,6 +425,7 @@ const listLost = (banner, ex) => !!ex && (hasSlotsOf(banner)
 const tierRange = (s) => (s.tierMin == null && s.tierMax == null ? '' : s.tierMin == null ? ` Tier ${s.tierMax} or lower`
   : s.tierMax == null ? ` Tier ${s.tierMin} or higher` : s.tierMin === s.tierMax ? ` Tier ${s.tierMin}` : ` Tier ${s.tierMin}-${s.tierMax}`);
 function onText(on, nm) {
+  if (on?.pity) return 'Guaranteed Medal (pity)';
   if (on?.slots) return `Medal ${on.slots.map((i) => i + 1).join(', ')}`;
   if (on?.names) return niceList(on.names, nm);
   if (on && ('star' in on || 'tierMin' in on)) {
