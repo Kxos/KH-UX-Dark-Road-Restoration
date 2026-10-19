@@ -14,7 +14,7 @@
 # se non sbloccati o fuori data (KHUX_GACHA_SHOW, prove al banco; docs/notes/shop.md)
 # -EnemyAtk N: attacco dei nemici x N (KHUX_BENCH_ENEMY_ATK, solo banco: per finire a terra e provare Second
 # Chance); la revisione servita cambia, quindi il client riscarica il master sia accendendola sia spegnendola
-param([int]$Revision = 138, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1)
+param([int]$Revision = 139, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null

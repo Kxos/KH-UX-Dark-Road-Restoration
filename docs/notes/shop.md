@@ -776,6 +776,10 @@ does not restart».
 - B0507: escluso, doppione di B0500 (stesso notice 52345, 15-19/04/2019, una volta al giorno). Catalogo: 807 banner.
 - B0083 (24597): 3 pallini su due copie (slot 0 e 1), non su tutte e cinque.
 - Rimandati: B0418 Blue Fairy Deal (Tier 8 garantito) con le Blue Fairy estraibili (I-142); B0082 era gia' fatto in G5.
+- G2 (revisione 139): le 7 abilita' al massimo («Attack Boost VI Max ... Triple Threat II») scritte solo nel notice,
+  campo `max_skill`: B0319 (7★ Tier 4 garantita), B0490/B0491 e B0498/B0499 («Guaranteed A slot»: tutte le 7★ dello slot
+  garantito), B0494/B0495 («Guaranteed and Stoppers slot»), B0502-B0504 (le tre Supernova HD per nome), B0508/B0509
+  (le quattro medaglie per nome), oltre a B0435/B0452 sulla copia della pity. Tutte le abilita' esistono (I-146).
 
 <a id="pagine-stile"></a>
 ## Stile delle pagine Details, Draw Odds e Catalog (19-10, richiesta dell'utente)
