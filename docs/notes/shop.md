@@ -744,3 +744,4 @@ nomi della wiki diversi da skill.json in `SKILL_ALIAS`: «ATK Boost II & ATK Pri
 Max & SP GA II»). Server: il regalo porta `skillId` e il nome nel commento («Bonus: Skills to Thrill Deal (Attack
 Boost III)»); al ritiro `giveSkill` salva la skill al livello massimo in `player.medalSkills`. Banco: B0080 ->
 Present Box -> Scrooge 6★ «Attack Boost III 20/20, Trigger Rate 54%».
+- Banco 19-10 (rev 136): pity di B0190 (salvataggio a 4 estrazioni) -> Illustrated Neku 6★ con ●●●○○ nel dettaglio; B0204 -> Illustrated Leon 6★ Tier 5 nello slot Tier 4+ con 3 pallini, nove 5★.
