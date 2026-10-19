@@ -25,6 +25,9 @@ PresentBOX_Panel_ver131.json            rev=0 need=Panel_Present,Txt_Gift_Name_L
 PresentBOX_IconPanel_ver131.json        need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
 
 # --- Medal List, vendita, Level Up, Evolve, Sort ---
+# finestra «Choose a trait to replace» dei trait in sospeso (I-084 A, azione 57; assente dalle risorse WW): widget
+# cercati dal decompilato (tmp/trait/re/skillchange.c); i testi li scrive il client
+MedalInfo_SkillChangeWindow.json        need=Button_OK,Button_NO,SkillPanel,kakusei_Icon,Txt_KakuseiSkill,Txt_KakuseiSkill_Taitl,Txt_SkillTitle,Txt_Skill_Num,KakuseiSkill_Window
 MedalListScene_ver130.json
 MedalSellScene_ver350.json
 PopupNormal_MedalSell_Check_ver350.json need=Alert_Area

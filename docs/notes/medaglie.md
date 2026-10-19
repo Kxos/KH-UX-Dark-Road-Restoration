@@ -308,6 +308,15 @@ STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313
   Trait 1024/1029/1032/1035; rate 100 solo sugli 11, 0 su Max HP +300 e sui 5 della 4.1.0). make-pet-tables.js
   non rimette piu' rate 100 sui trait solo-negozio. Test: `node server/test-trait-groups.js`. Dopo una rigenerazione
   dei banner: `make-boosted-medals.js`, `make-nova-rows.js`, `make-trait-groups.js` (le boosted nuove prendono il gruppo).
+- **Passi 2-4 (19-10)**: `server/medal-trait.js` (regole pure), fusione (`respondMedalEnhance`: un trait per fusione con
+  una copia dello stesso gruppo, slot pieni -> `player.traitPending`), azione 57 `POST /user/medal/shuffleskill`
+  (`respondMedalShuffleSkill`: Replace/Skip), `userData.medalResumption` al login, training del pet che non azzera la
+  coda. Test: test-medal-trait.js, test-medal-enhance.js (sezione 11), test-trait-choice.js.
+- **Passo 5 (19-10, risorse 44 con -Quick)**: dai dati JP le LWF originali `lwf/medal/Kakusei/Kakusei_Get1`, `Kakusei_Get2`
+  e le 11 `Kakusei_Icon0010-0100` (al posto delle nostre di make_pet_training_fx.py, ora ripiego) e il layout
+  `MedalInfo_SkillChangeWindow.json` (finestra «Choose a trait to replace», con Kakusei_New/Kakusei_Get_Eff).
+  Texture condivise: quelle di Get1 stanno in Kakusei_Get2, l'icona 0090 nella sua cartella senza il prefisso png_
+  (`import_jp_coco.py`, LWF_FILL e fill_idx).
 
 <a id="skill"></a>
 ## Skill e Overwrite Skill del Level Up (I-088)

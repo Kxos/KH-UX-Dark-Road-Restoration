@@ -614,6 +614,10 @@ JP_LWF += ['lwf/battle/Sburst', 'lwf/battle/SBurst_Revival', 'lwf/battle/BurstGa
 # (2010, 2100, 2180, 2400, 11110, 11140, 11250, 13150, 13220, 16160-16250) li usano
 NPC_JP = [5500] + list(range(5504, 5517)) + [5518, 5519, 5520, 5528, 5529]
 JP_LWF += ['lwf/character/npc/%d/wait' % n for n in NPC_JP]
+# Trait (I-084 A, 19-10): la ruota del trait ottenuto (fusione, Moogle Shop, training) e le 11 icone originali,
+# al posto delle nostre di make_pet_training_fx.py (come le LWF della guilt, I-163)
+JP_LWF += ['lwf/medal/Kakusei/Kakusei_Get1', 'lwf/medal/Kakusei/Kakusei_Get2']
+JP_LWF += ['lwf/medal/Kakusei/Kakusei_Icon%04d' % n for n in (10, 20, 30, 40, 50, 60, 61, 70, 80, 90, 100)]
 # Texture citate dal LWF ma assenti dall'estrazione JP: il nome e' <cartella>_<nome originale in
 # esadecimale>.png e lo stesso nome originale (effetti KeyBlade_ef*, png_ef0*, star01, 進化_KeyBlade_
 # ef*) sta in altre LWF. Senza, il client non disegna quei pezzi: «COMPLET» senza la seconda E
@@ -622,6 +626,11 @@ LWF_FILL = [os.path.join(JP_ROOT, 'lwf', 'battleresult', 'Result_Reward'),
             os.path.join(JP_ROOT, 'lwf', 'adventure', 'Colosseum_Open'),
             os.path.join(JP_ROOT, 'lwf', 'battle', 'Burst_Medal_Change'),
             os.path.join(D, 'layouts', 'orig', 'lwf', 'battleresult', 'Result_Reward')]
+# Kakusei_Get1 (ruota del trait, I-084 A): sh_plate, sh_skill_eff5/plate_hikari/star1/star2/white sono salvate solo in
+# Kakusei_Get2, l'icona 0090 in Kakusei_Icon0090
+_kak = os.path.join(JP_ROOT, 'lwf', 'medal', 'Kakusei')
+if os.path.isdir(_kak):
+    LWF_FILL += [os.path.join(_kak, n) for n in sorted(os.listdir(_kak)) if os.path.isdir(os.path.join(_kak, n))]
 _npc = os.path.join(JP_ROOT, 'lwf', 'character', 'npc')
 if os.path.isdir(_npc):
     LWF_FILL += [os.path.join(_npc, n, 'wait') for n in sorted(os.listdir(_npc)) if os.path.isdir(os.path.join(_npc, n, 'wait'))]
@@ -648,6 +657,13 @@ for fd in LWF_FILL:
         for rel, p in latest(fd).items():
             if rel.startswith(pre) and rel.endswith('.png'):
                 fill_idx.setdefault(rel[len(pre):], p)
+# icone del trait citate dentro Kakusei_Get1 come png_Kakusei_IconNNNN.png: nella loro cartella si chiamano
+# Kakusei_IconNNNN.png (senza il prefisso png_)
+if os.path.isdir(_kak):
+    for n in sorted(os.listdir(_kak)):
+        icon = os.path.join(_kak, n, '%s_%s.png' % (n, (n + '.png').encode().hex()))
+        if n.startswith('Kakusei_Icon') and os.path.isfile(icon):
+            fill_idx.setdefault(('png_%s.png' % n).encode().hex() + '.png', icon)
 for d in JP_LWF:
     src_dir = os.path.join(JP_ROOT, *d.split('/'))
     if not os.path.isdir(src_dir):
