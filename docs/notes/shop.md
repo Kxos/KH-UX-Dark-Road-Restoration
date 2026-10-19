@@ -745,3 +745,13 @@ Max & SP GA II»). Server: il regalo porta `skillId` e il nome nel commento («B
 Boost III)»); al ritiro `giveSkill` salva la skill al livello massimo in `player.medalSkills`. Banco: B0080 ->
 Present Box -> Scrooge 6★ «Attack Boost III 20/20, Trigger Rate 54%».
 - Banco 19-10 (rev 136): pity di B0190 (salvataggio a 4 estrazioni) -> Illustrated Neku 6★ con ●●●○○ nel dettaglio; B0204 -> Illustrated Leon 6★ Tier 5 nello slot Tier 4+ con 3 pallini, nove 5★.
+
+<a id="sp2c-g10"></a>
+## Sotto-progetto 2c, G10: «0 Special Attack Dots» (19-10, revisione 137)
+
+Preset per nome con `dots=0` in testa (vince sui 1-3 pallini dello slot, anche per la copia della pity): B0223-B0227
+(i cinque Foretellers [EX], notice 35521 «This does not apply to EX Foreteller Medals»), B0273 HD Vanitas [EX+]
+(38662), B0279 Key Art #16 [EX+] (39396), B0284 Sephiroth [EX+] (39400), B0288 KH II Cloud [EX+] (39402). Simulazione:
+bersagli sempre a 0, le altre medaglie dello slot sempre 1-3. Details (gacha.js `presetText`): ogni preset diceva
+«comes with its Special Attack Bonus maxed» anche con 1-3 o 0 pallini; ora il testo segue la voce. Banco: pity di
+B0273 -> HD Vanitas [EX+] con 0 pallini; Details con le righe «0» e «1 to 3».

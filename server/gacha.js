@@ -411,7 +411,12 @@ function guaranteeSection(banner, ex, medalNames, at) {
     else if (s.kind === 'trait') out.push(`${n}x Trait Medal (${s.star}★)`);
     else out.push(`${n}x one of the listed Medals (${s.star}★)`);
   }
-  for (const p of e.preset || []) out.push(`${onText(p.on, nm)}: comes with its Special Attack Bonus maxed (original)`);
+  // testo per voce (2c/G10): prima ogni preset diceva «Special Attack Bonus maxed», anche con 1-3 o 0 pallini
+  const presetText = (p) => (p.guilt === 'max' ? 'comes with its Special Attack Bonus maxed'
+    : p.dots === 'max' ? 'comes with all Special Attack dots filled'
+      : Array.isArray(p.dots) ? `comes with ${p.dots[0]} to ${p.dots[1]} Special Attack dots`
+        : `comes with ${p.dots} Special Attack dot${p.dots === 1 ? '' : 's'}`);
+  for (const p of e.preset || []) out.push(`${onText(p.on, nm)}: ${presetText(p)} (original)`);
   // decisione 13-bis: con i preset elencati, la regola generale delle 7★ di Tier 9-10 alla data del banner (server.js
   // respondGachaDraw), perche' i preset su altri slot non facciano pensare il contrario
   if ((e.preset || []).length && (banner.rarityMix || []).some(([r]) => r >= 7) && ruleLine(at)) out.push(ruleLine(at));
