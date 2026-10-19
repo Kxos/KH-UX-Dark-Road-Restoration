@@ -1345,7 +1345,7 @@ function respondGachaWeb(res, url) {
   if (!banner) return html('<!doctype html><meta charset="utf-8"><body style="background:#043654;color:#fff;font:18px sans-serif">Banner not found.</body>', 404);
   const skillNames = new Set(masterRows('skill').map((r) => r.name));
   const medalAttr = new Map(masterRows('medal').map((m) => [m.medalId, m.attribute]));
-  return html(gacha.detailPage(banner, expandFor(banner, story), medalNames, { ...ctx, skillNames, medalAttr }));
+  return html(gacha.detailPage(banner, expandFor(banner, story), medalNames, { ...ctx, skillNames, medalAttr, fromCatalog: /[?&]from=catalog\b/.test(url) }));
 }
 
 // POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo

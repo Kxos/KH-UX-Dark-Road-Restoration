@@ -291,7 +291,7 @@ const firstPrice = (b) => Math.max(1, (b.prices || [])[0] || 1);
 // Stile delle pagine originali (reference\shop_odds_details\NOTE.md: notice 46003 da Wayback e screenshot di Draw
 // Odds): fondo #043654, testo bianco spaziato, titoli «■» azzurri #00d4ed, frasi chiave arancio/giallo, tabelle con
 // bordi bianchi e intestazione #365e76, sezioni gialle «6★Medals» con «↑PAGE TOP», nomi colorati per attributo.
-function page(title, body) {
+function page(title, body, cls = '') {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<style>body{margin:0;background:#043654;color:#fff;font:17px/1.8 sans-serif;letter-spacing:.4px;padding:6px 18px 40px}'
     + 'h1{font-size:22px;margin:8px 0 4px;color:#fff}h2{color:#00d4ed;font-size:18px;margin:20px 0 6px}h2:before{content:"\\25A0  "}'
@@ -306,7 +306,15 @@ function page(title, body) {
     + 'td.l{text-align:left}ul{margin:4px 0 8px;padding-left:22px}li{margin:3px 0}'
     + '.ml{columns:3;column-gap:18px;list-style:none;padding:0;font-size:15px;line-height:1.6}.ml li{break-inside:avoid}'
     + '.p{color:#ff4a74}.g{color:#5cd94a}.m{color:#62a7ff}.f{font-weight:bold;text-decoration:underline}'
-    + '.top{text-align:right;font-size:15px}.box{border:2px solid #ffcd4a;padding:6px 10px;margin:8px 0}</style></head><body>'
+    + '.why{border-left:4px solid #8aa3b3;background:#0a4466;padding:6px 12px;margin:8px 0 4px;font-size:15px;line-height:1.6}'
+    + '.why.now{border-color:#2e9e3e}.why.locked{border-color:#7d8894}.why.later{border-color:#1a6fa8}'
+    + '.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:linear-gradient(rgba(2,24,40,0),rgba(2,24,40,.92) 35%)}'
+    + '.back{display:inline-block;padding:7px 26px 8px;border-radius:10px;border:2px solid #9fd4ff;color:#fff;text-decoration:none;'
+    + 'font:italic bold 20px sans-serif;letter-spacing:1px;background:linear-gradient(#5aa8ff,#2556c8 55%,#1b3f9c);'
+    + 'box-shadow:0 2px 0 #0b2a66,inset 0 1px 0 rgba(255,255,255,.5);text-shadow:0 1px 2px #0a2a6a}'
+    + '.back span{display:inline-block;margin-left:12px;width:14px;height:9px;border:3px solid #fff;border-left:0;border-radius:0 8px 8px 0;vertical-align:1px;position:relative}.back span:after{content:"";position:absolute;left:-7px;bottom:-8px;border-style:solid;border-width:6px 9px 6px 0;border-color:transparent #fff transparent transparent}'
+    + 'body.hb{padding-bottom:90px}'
+    + '.top{text-align:right;font-size:15px}.box{border:2px solid #ffcd4a;padding:6px 10px;margin:8px 0}</style></head><body' + (cls ? ` class="${cls}"` : '') + '>'
     + `<h1>${esc(title)}</h1>${body}</body></html>`;
 }
 
@@ -461,6 +469,12 @@ function guaranteeSection(banner, ex, medalNames, at) {
 
 // classe di colore dell'attributo (medal.attribute: 1 Power, 2 Speed, 3 Magic), come i nomi nei notice originali
 const ATTR_CLASS = { 1: 'p', 2: 'g', 3: 'm' };
+// cosa vuol dire lo stato del banner (richiesta dell'utente 19-10: «Not in the Shop now» non si capiva)
+const STATE_WHY = {
+  now: 'You can draw from this banner in the Shop now.',
+  later: 'This banner is unlocked, but it is not in the Shop at the moment. The Shop lists the banners that were running on the original date that matches your progress in the Story (in the original game they followed the calendar). This banner ran on a different date: you can look at its Medals and rates here, but you cannot draw from it now.',
+  locked: 'Clear the Story Quest above to reach the date of this banner. In the original game banners followed the calendar; here they follow your progress in the Story.',
+};
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
@@ -490,9 +504,10 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `${featured.size ? ', <span class="f">guaranteed Medal</span>' : ''}.</p>` : '';
   const rates = rated ? '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
+  const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<span class="s s-${st.key}">${esc(st.text)}</span><h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
-    + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}`);
+    + `<span class="s s-${st.key}">${esc(st.text)}</span>${STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}${back}`, back ? 'hb' : '');
 }
 
 function oddsPage(entries) {
@@ -508,7 +523,7 @@ function oddsPage(entries) {
 function catalogPage(banners, ctx) {
   const sorted = [...banners].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.drawMedalTypeId - b.drawMedalTypeId));
   return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
-    + sorted.map((b) => { const st = stateOf(b, ctx); return `<div class="b ${st.key}"><a href="/web/gacha/detail/${b.drawMedalTypeId}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
+    + sorted.map((b) => { const st = stateOf(b, ctx); return `<div class="b ${st.key}" id="c${b.drawMedalTypeId}"><a href="/web/gacha/detail/${b.drawMedalTypeId}?from=catalog"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
       + `<div class="n">${dates(b)}</div>${priceLine(b) ? `<div class="n">${priceLine(b)}</div>` : ''}`
       + `<span class="s s-${st.key}">${esc(st.text)}</span></div>`; }).join(''));
 }

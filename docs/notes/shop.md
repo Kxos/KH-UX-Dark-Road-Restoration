@@ -769,3 +769,8 @@ nomi nei notice, bersagli della pity sottolineati. Banco: B0082 Details e Probab
 - Stato dei banner nel Catalog e nei Details (19-10, richiesta dell'utente): «▶ In the Shop now» verde in grassetto
   (riquadro con bordo verde nel Catalog), «🔒 Unlocks after Story Quest N» grigio con l'immagine attenuata, «Not in the
   Shop now» blu, solo catalogo/dimensione non disponibile solo bordato (`gacha.js`, classi `s-<stato>`).
+- Details: riquadro che spiega lo stato (`STATE_WHY`: nello Shop, sbloccato ma fuori dallo Shop, bloccato dalla storia);
+  dettagli aperti dal Catalog (`?from=catalog`) con BACK fisso in basso che torna al banner nella lista (`#c<id>`).
+  Logica dello Shop (domanda dell'utente): a ogni blocco di missioni di storia corrisponde una data originale
+  (`catalog.story`), lo Shop mostra i banner attivi in quella data (al massimo `SHOP_MAX`); 517 banner su 734 non ci
+  cadono mai (I-165).
