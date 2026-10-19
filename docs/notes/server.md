@@ -18,7 +18,8 @@ $env:KHUX_REVISION      = "122"                    # BASE della revisione dei ma
 # KHUX_REAL_NOW = istante ISO (prove): l'ora reale del server parte da li' (orologio finto, #orologio)
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"
 $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # vedi sotto
-# KHUX_NEWCOMER=0/1 forza giocatore esistente/nuovo; KHUX_SAVE = file del salvataggio
+# KHUX_NEWCOMER=0/1 forza giocatore esistente/nuovo; KHUX_SAVE = file del salvataggio (run-server/relogin -Save <nome> = server\save\<nome>.json;
+# server/make-test-save.js crea prove.json per Level Up/Evolve/keyblade)
 node server\server.js
 ```
 
