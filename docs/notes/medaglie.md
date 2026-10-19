@@ -302,6 +302,13 @@ STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313
 - Stato: nessuna riga nel master locale; `shuffleskill.json` ha `rate` 0 (pesi ignoti). Il server
   non da' trait da fusione (ne' dalle copie identiche) e `medalResumption` e' sempre vuoto.
 
+- **Parte A, passo 1 (19-10, revisione 142)**: `server/make-trait-groups.js` (in fondo a make-game-tables.js,
+  idempotente) mette `shuffleSkillGroupId` = medalId piu' basso dello stesso nome (1.114 gruppi) e porta la ruota
+  sugli 11 trait originali (righe 14-17 nuove: Max HP +800, Poison/Sleep/Paralysis Resist 20%, copiate dai Special
+  Trait 1024/1029/1032/1035; rate 100 solo sugli 11, 0 su Max HP +300 e sui 5 della 4.1.0). make-pet-tables.js
+  non rimette piu' rate 100 sui trait solo-negozio. Test: `node server/test-trait-groups.js`. Dopo una rigenerazione
+  dei banner: `make-boosted-medals.js`, `make-nova-rows.js`, `make-trait-groups.js` (le boosted nuove prendono il gruppo).
+
 <a id="skill"></a>
 ## Skill e Overwrite Skill del Level Up (I-088)
 

@@ -442,7 +442,7 @@ Prova (17-10, fix finale): `make-game-tables.js` con `KHUX_MEDALS_ALL=1 KHUX_WOR
 (`tmp\master_fix_i2b`): `stage.json` +57 righe. Il master vero non e' stato riscritto.
 
 Strada piu' corta, se cambia solo il catalogo dei banner: sul master in uso bastano `node server/make-boosted-medals.js`
-e `node server/make-nova-rows.js` (idempotenti), poi `make-banners.js` e la revisione nuova. Se invece
+e `node server/make-nova-rows.js` e `node server/make-trait-groups.js` (idempotenti; il terzo da' il gruppo dei trait alle boosted nuove), poi `make-banners.js` e la revisione nuova. Se invece
 `make-game-tables.js` cambia le righe normali (medaglie o Tier nuovi), rilanciare dopo `make_banner_catalog.py`
 (Tier = `guiltValue` del master), poi i due patcher e `make-banners.js`.
 
