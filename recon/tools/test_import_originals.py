@@ -39,6 +39,11 @@ try:
     rep = io.run(io.parse(['img/stage/ico_*.png' + chr(9) + 'b16', 'img/ui/h.png' + chr(9) + 'jp']), b16, jp, out, {'img/stage/ico_2.png', 'img/ui/h.png'})
     assert os.path.exists(os.path.join(out, 'img/stage/ico_1.png')) and not os.path.exists(os.path.join(out, 'img/stage/ico_2.png')), 'glob: servito saltato'
     assert rd('img/ui/h.png') == 'plain' and rep[0]['servedWW'] == 1, 'destinazione esplicita scritta'
+    # IPA 4.4.0 gia' estratta
+    i440 = os.path.join(t, 'i440')
+    put(i440, 'img/union/Union_01.png', 'u1')
+    io.run(io.parse(['img/union/Union_0*.png' + chr(9) + 'i440']), b16, jp, out, set(), i440)
+    assert rd('img/union/Union_01.png') == 'u1', 'fonte i440'
     try:
         io.run(io.parse(['img/none.png\tb16,jp']), b16, jp, out)
         raise AssertionError('riga senza originale accettata')

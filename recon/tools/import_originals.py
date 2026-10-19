@@ -1,7 +1,7 @@
 """Originali al posto delle nostre ricostruzioni (I-170, audit del 19-10: tmp\\gen_audit\\RESULT.md).
 
     python -I recon/tools/import_originals.py <elenco.tsv> <bundle2016/files> <jp_final_4.3.1> <uscita>
-        [--served names_v4.tsv[,names_addnl.tsv]] [--report f.json]
+        [--served names_v4.tsv[,names_addnl.tsv]] [--i440 cartella] [--report f.json]
 
 Gira in build-resources.ps1 DOPO i generatori (make_layouts, make_textures, make_quest_thumbs...): i file scritti
 qui sostituiscono i nostri nel pacchetto generato. Elenco (recon/tools/originals.tsv), colonne separate da TAB:
@@ -12,7 +12,8 @@ qui sostituiscono i nostri nel pacchetto generato. Elenco (recon/tools/originals
   che li ha (es. img/adventure/stage/stage_select_ico_*.png); finita con / e' una cartella copiata per intero
   (LWF con le sue texture);
 - fonti: b16 (pacchetto WW inglese del 2016), jp (dati JP 4.3.1, nomi <nome>.<8 cifre>.<ext>: vince la
-  revisione piu' alta, il suffisso si toglie), separate da virgola in ordine di preferenza;
+  revisione piu' alta, il suffisso si toglie), i440 (file dell'IPA 4.4.0 WW gia' estratti con res_get.py in
+  --i440, es. catalog\ipa440_extract), separate da virgola in ordine di preferenza;
 - sorgente: percorso nella fonte se diverso dalla destinazione (stesso significato di glob e cartella).
 
 --served: nomi gia' serviti dalle risorse WW (OBB 5.0.1, IPA 4.3.1; prima colonna dei TSV): con glob e cartelle si
@@ -85,8 +86,8 @@ def served_names(paths):
     return names
 
 
-def run(rows, b16, jp, out, served=frozenset()):
-    roots = {'b16': (b16, 'b16'), 'jp': (jp, 'jp')}
+def run(rows, b16, jp, out, served=frozenset(), i440=None):
+    roots = {'b16': (b16, 'b16'), 'jp': (jp, 'jp'), 'i440': (i440 or '', 'i440')}
     report = []
     for r in rows:
         hits, used = [], None
@@ -116,11 +117,12 @@ def main(argv):
     lst, b16, jp, out = argv[1:5]
     rows = parse(open(lst, encoding='utf8').read().split('\n'))
     served = served_names(argv[argv.index('--served') + 1].split(',')) if '--served' in argv else frozenset()
-    report = run(rows, b16, jp, out, served)
+    i440 = argv[argv.index('--i440') + 1] if '--i440' in argv else None
+    report = run(rows, b16, jp, out, served, i440)
     if '--report' in argv:
         json.dump(report, open(argv[argv.index('--report') + 1], 'w', encoding='utf8'), indent=1)
     print('originali: %d righe, %d file (%s)' % (len(report), sum(r['files'] for r in report),
-          ', '.join('%s %d' % (k, sum(r['files'] for r in report if r['source'] == k)) for k in ('b16', 'jp'))))
+          ', '.join('%s %d' % (k, sum(r['files'] for r in report if r['source'] == k)) for k in ('b16', 'jp', 'i440'))))
 
 
 if __name__ == '__main__':

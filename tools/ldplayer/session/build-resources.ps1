@@ -209,10 +209,16 @@ foreach ($sp in @(@('rooms_gen', $NoRooms), @('enemy_gen', $NoEnemies), @('raise
 }
 python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt @seOpt
 if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
-# originali (2016, JP 4.3.1) al posto delle nostre ricostruzioni, dopo tutti i generatori (I-170, recon\tools\originals.tsv)
+# originali (2016, JP 4.3.1, IPA 4.4.0) al posto delle nostre ricostruzioni, dopo tutti i generatori (I-170,
+# recon\tools\originals.tsv); i file dell'IPA 4.4.0 si estraggono una volta in catalog\ipa440_extract
+$i440 = "$D\catalog\ipa440_extract"
+$i440Need = @('img/union/Union_01.png', 'img/union/Union_02.png', 'img/union/Union_03.png', 'img/union/Union_04.png', 'img/union/Union_05.png',
+  'cocostudio/publish/MenuDialog_account_select_ver401.json', 'cocostudio/publish/appleid_button_2x.png',
+  'cocostudio/publish/facebook_button_2x.png', 'cocostudio/publish/SQEXBridge_button_2x.png') | Where-Object { -not (Test-Path "$i440\$_") }
+if ($i440Need) { python -I recon\tools\res_get.py "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" $i440 @i440Need; if ($LASTEXITCODE) { throw 'res_get ipa440 fallito' } }
 python -I recon\tools\import_originals.py recon\tools\originals.tsv "$D\tmp\thethiny_x\bundle2016\files" `
   "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1" "$sg\files" `
-  --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --report "$sg\originals.json"
+  --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --i440 $i440 --report "$sg\originals.json"
 if ($LASTEXITCODE) { throw 'import_originals fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"

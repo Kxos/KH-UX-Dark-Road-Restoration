@@ -154,3 +154,14 @@ lwf/medal/compose/evolution/card_evolution_result_02/	b16
 lwf/medal/compose/evolution/card_evolution_result_03/	b16
 lwf/medal/compose/evolution/card_evolution_result_04/	b16
 lwf/medal/compose/evolution/card_evolution_result_05/	b16
+
+# 24. Icone delle Union (make_textures.py: Union_L ridotte): WW originali dell'IPA 4.4.0 (estratte con res_get.py in
+#     catalog\ipa440_extract, vedi build-resources.ps1)
+img/union/Union_0*.png	i440
+
+# 31. Popup di selezione dell'account (make_layouts.py: copia di dark_MenuDialog_account_select_ver401): WW 4.4.0,
+#     con i pulsanti Apple ID / Facebook / SQEX Bridge
+cocostudio/publish/MenuDialog_account_select_ver401.json	i440
+cocostudio/publish/appleid_button_2x.png	i440
+cocostudio/publish/facebook_button_2x.png	i440
+cocostudio/publish/SQEXBridge_button_2x.png	i440
