@@ -17,18 +17,26 @@ const medal = read(MASTER, 'medal');
 const shuffle = read(MASTER, 'shuffleskill');
 const bad = medal.filter((r) => (r.shuffleskillSlot || 0) > 0 && !r.shuffleSkillGroupId);
 check(!bad.length, `righe con slot e senza shuffleSkillGroupId: ${bad.length} (es. ${bad.slice(0, 3).map((r) => r.medalId)})`);
-// stesso nome = stesso gruppo (tutte le rarita', boosted e varianti >= 1.000.000), valore = medalId piu' basso
-const byName = new Map();
-for (const r of medal) if ((r.shuffleskillSlot || 0) > 0) (byName.get(r.name) || byName.set(r.name, []).get(r.name)).push(r);
-const split = [...byName].filter(([, rs]) => new Set(rs.map((r) => r.shuffleSkillGroupId)).size > 1);
-check(!split.length, `nomi con piu' gruppi: ${split.slice(0, 3).map(([n]) => n)}`);
-const wrong = [...byName].filter(([, rs]) => rs[0].shuffleSkillGroupId !== Math.min(...rs.map((r) => r.medalId)));
-check(!wrong.length, `gruppo diverso dal medalId piu' basso: ${wrong.slice(0, 3).map(([n]) => n)}`);
+// stesso nome = stesso gruppo (tutte le rarita', boosted e varianti >= 1.000.000); stesso numero di Album (sortId)
+// = stesso gruppo (evoluzioni rinominate, parte B); valore = medalId piu' basso della famiglia
+const byName = new Map(), bySort = new Map();
+for (const r of medal) if ((r.shuffleskillSlot || 0) > 0) {
+  (byName.get(r.name) || byName.set(r.name, []).get(r.name)).push(r);
+  if (r.sortId > 0) (bySort.get(r.sortId) || bySort.set(r.sortId, []).get(r.sortId)).push(r);
+}
+const split = [...byName, ...bySort].filter(([, rs]) => new Set(rs.map((r) => r.shuffleSkillGroupId)).size > 1);
+check(!split.length, `nomi o album con piu' gruppi: ${split.slice(0, 3).map(([n]) => n)}`);
+const fam = new Map();
+for (const r of medal) if ((r.shuffleskillSlot || 0) > 0) fam.set(r.shuffleSkillGroupId, Math.min(fam.get(r.shuffleSkillGroupId) ?? Infinity, r.medalId));
+const wrong = [...fam].filter(([g, low]) => g !== low);
+check(!wrong.length, `gruppo diverso dal medalId piu' basso: ${wrong.slice(0, 3).map(([g]) => g)}`);
 const seph = byName.get('Supernova - Sephiroth') || [];
 check(seph.length >= 2, `Supernova - Sephiroth con varianti (${seph.length})`);
 const gid = (n) => (byName.get(n) || [])[0]?.shuffleSkillGroupId;
-const sn = [...byName.keys()].find((n) => n.startsWith('SN - ') && byName.has('SN+ - ' + n.slice(5)));
-check(sn && gid(sn) !== gid('SN+ - ' + sn.slice(5)), `SN e SN+ in gruppi diversi (${sn})`);
+check(gid('SN - KH III Xemnas') && gid('SN - KH III Xemnas') === gid('SN+ - KH III Xemnas'), 'SN e SN+ della stessa linea: stesso gruppo (#130)');
+check(gid('Supernova - Sephiroth') === gid('Supernova+ - Sephiroth'), 'Supernova e Supernova+: stesso gruppo');
+check(gid('Sora & Peter Pan') === gid('Supernova - Sora & Peter Pan'), 'evoluzione rinominata: stesso gruppo');
+check(gid('SN - KH III Kairi A') !== gid('SN - KH III Kairi B'), 'linee diverse: gruppi diversi');
 // righe della ruota
 const row = (id) => shuffle.find((r) => r.shuffleSkillId === id);
 for (const [id, name, cat] of [[14, 'Max HP +800', 20], [15, 'Poison Resist 20%%', 30], [16, 'Sleep Resist 20%%', 50],

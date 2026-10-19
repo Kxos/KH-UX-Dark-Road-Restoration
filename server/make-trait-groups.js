@@ -4,7 +4,10 @@
 // 1. medal.shuffleSkillGroupId (+0x53c): il client ([fn], anteprima [fn]) conta un materiale come
 //    «da trait» se il suo shuffleSkillGroupId e' uguale a quello della base (e diverso da 0) e la base ha
 //    shuffleskillSlot > 0. Era 0 ovunque. Stessa medaglia = stesso nome (tutte le rarita', boosted, varianti
-//    >= 1.000.000; dalla 2.6.0 vale fra rarita' diverse, notice 40729); SN, SN+, SN++ restano medaglie diverse.
+//    >= 1.000.000; dalla 2.6.0 vale fra rarita' diverse, notice 40729) oppure stesso numero di Album (sortId > 0):
+//    le evoluzioni rinominate (SN -> SN+ -> SN++, X -> Supernova - X) sono la stessa medaglia. Prova (parte B, 19-10):
+//    il deal «SN+ - KH III Xemnas Trait Medal Deal» da' la Trait Medal #130, che la khuxwiki lega a «SN - KH III
+//    Xemnas», e la Trait Medal condivide la cella dell'Album con la sua medaglia (notice 38128).
 //    Valore = medalId piu' basso della famiglia (stabile fra le rigenerazioni).
 // 2. shuffleskill: la ruota della fusione estrae fra gli 11 trait originali (notice 27491, guida p. 21-23):
 //    mancavano come trait normali (type 1) Max HP +800 e Poison/Sleep/Paralysis Resist 20%, che esistevano solo
@@ -24,10 +27,20 @@ const path = require('path');
 const FUSION_TRAIT_IDS = [10, 8, 9, 11, 12, 13, 1, 14, 15, 16, 17];
 const NEW_ROWS = [[14, 1024], [15, 1029], [16, 1032], [17, 1035]]; // [id nuovo type 1, Special Trait da copiare]
 
+// medalId -> gruppo, per le righe con slot dei trait: componenti connesse di (stesso nome) e (stesso sortId > 0)
 function groups(medals) {
+  const parent = new Map();
+  const find = (k) => { while (parent.get(k) !== k) { parent.set(k, parent.get(parent.get(k))); k = parent.get(k); } return k; };
+  const union = (a, b) => { const x = find(a), y = find(b); if (x !== y) parent.set(x, y); };
+  const rows = medals.filter((r) => (r.shuffleskillSlot || 0) > 0);
+  for (const r of rows) {
+    for (const k of ['m' + r.medalId, 'n' + r.name, ...(r.sortId > 0 ? ['s' + r.sortId] : [])]) if (!parent.has(k)) parent.set(k, k);
+    union('m' + r.medalId, 'n' + r.name);
+    if (r.sortId > 0) union('m' + r.medalId, 's' + r.sortId);
+  }
   const low = new Map();
-  for (const r of medals) if ((r.shuffleskillSlot || 0) > 0 && !(low.get(r.name) <= r.medalId)) low.set(r.name, r.medalId);
-  return low;
+  for (const r of rows) { const c = find('m' + r.medalId); if (!(low.get(c) <= r.medalId)) low.set(c, r.medalId); }
+  return new Map(rows.map((r) => [r.medalId, low.get(find('m' + r.medalId))]));
 }
 
 function patch(masterDir) {
@@ -37,11 +50,11 @@ function patch(masterDir) {
   const low = groups(medals);
   let changed = 0;
   for (const r of medals) {
-    const g = low.get(r.name) || 0;
+    const g = low.get(r.medalId) || 0;
     if ((r.shuffleskillSlot || 0) > 0 && r.shuffleSkillGroupId !== g) { r.shuffleSkillGroupId = g; changed++; }
   }
   if (changed) fs.writeFileSync(medalFile, JSON.stringify(medals));
-  out.push(`medal: ${low.size} gruppi dei trait (cambiate ${changed})`);
+  out.push(`medal: ${new Set(low.values()).size} gruppi dei trait (cambiate ${changed})`);
 
   const shuffleFile = path.join(masterDir, 'shuffleskill.json');
   const rows = JSON.parse(fs.readFileSync(shuffleFile, 'utf8'));
