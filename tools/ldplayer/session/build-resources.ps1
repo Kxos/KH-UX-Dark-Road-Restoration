@@ -145,6 +145,9 @@ $jpImg = "$D\[local reference data]\\[local reference data]\data\[local referenc
 $imgJp = @(30, 31, 32, 35, 36, 37, 38, 39, 40, 41) | ForEach-Object { 'incentive\IncentiveIcon_{0:D2}' -f $_ }
 $imgJp += @('ui\AvtInfo_CrownIcon1', 'ui\AvtInfo_CrownIcon2', 'ui\AvtInfo_CrownIcon3', 'ui\AvtInfo_trophyIcon1', 'ui\AvtInfo_trophyIcon2')
 foreach ($k in 'GuardBreak', 'Reflection') { $imgJp += @(0..9 | ForEach-Object { "damage\dmg${k}_num$_" }) + "damage\dmg${k}_comma" }
+# - arco dell'HP in battaglia (PlayerStatusIndicator, I-032): oltre 3000 HP il client carica Avatar_Circle_06 e
+#   Avatar_Side_02-04, assenti dalle risorse WW (prima: HP del giocatore fermo a 3000)
+$imgJp += @('ui\PlayerStatusIndicator\Avatar_Circle_06') + (2..4 | ForEach-Object { "ui\PlayerStatusIndicator\Avatar_Side_0$_" })
 foreach ($n in $imgJp) {
     $leaf = Split-Path -Leaf $n
     $cand = @(Get-ChildItem (Split-Path "$jpImg\$n.png") -File | Where-Object { $_.Name -match ('^' + [regex]::Escape($leaf) + '(\.\d{8})?\.png$') } |
@@ -156,7 +159,9 @@ foreach ($n in $imgJp) {
 # Serviti solo sotto cocostudio/publish (non valgono per img/...): stesso file anche in img/ (WW localizzate:
 # CrownIcon4, trophyIcon3/4, IncentiveIcon_42 Premium Ticket). Estratti una volta in catalog\img_alias
 $alias = @{ 'ui\AvtInfo_CrownIcon4' = 'cocostudio/publish/AvtInfo_CrownIcon4.png'; 'ui\AvtInfo_trophyIcon3' = 'cocostudio/publish/AvtInfo_trophyIcon3.png'
-  'ui\AvtInfo_trophyIcon4' = 'cocostudio/publish/AvtInfo_trophyIcon4.png'; 'incentive\IncentiveIcon_42' = 'cocostudio/publish/IncentiveIcon_42.png' }
+  'ui\AvtInfo_trophyIcon4' = 'cocostudio/publish/AvtInfo_trophyIcon4.png'; 'incentive\IncentiveIcon_42' = 'cocostudio/publish/IncentiveIcon_42.png'
+  # arco dell'HP (I-032): nelle risorse WW solo sotto cocostudio/publish, stesse dimensioni di quelle in img/ui
+  'ui\PlayerStatusIndicator\Avatar_Circle_01' = 'cocostudio/publish/Avatar_Circle_01.png'; 'ui\PlayerStatusIndicator\Avatar_Side_01' = 'cocostudio/publish/Avatar_Side_01.png' }
 $ac = "$D\catalog\img_alias"
 $need = @($alias.Values | Where-Object { -not (Test-Path "$ac\$_") })
 if ($need) { python -I recon\tools\res_get.py "$D\resource_data\names_v4.tsv" "$D\resource_data\7\data" $ac @need; if ($LASTEXITCODE) { throw 'res_get img_alias fallito' } }

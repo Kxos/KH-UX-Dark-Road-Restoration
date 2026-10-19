@@ -414,10 +414,10 @@ if (enemies && fs.existsSync(namesFile)) {
 const players = [];
 const realPlayers = realTable('player');
 if (realPlayers) {
-  // livelli veri (soglie di Lux cumulative, AP, costo del deck, Lux medal); l'HP resta
-  // al massimo a KHUX_PLAYER_HP (sopra 3000 l'HUD va in crash, vedi sopra).
+  // livelli veri (soglie di Lux cumulative, AP, costo del deck, Lux medal, HP 3000-3530: le texture dell'arco
+  // dell'HP oltre 3000, Avatar_Circle_01/06 e Avatar_Side_01-04, sono nel pacchetto dal 19-10, I-032).
   // rewardId a 0: le righe di premio dei livelli non sono nella nostra tabella reward.
-  for (const r of realPlayers) players.push(Object.assign(blank('player'), r, { hp: Math.min(r.hp, hp), rewardId: 0 }));
+  for (const r of realPlayers) players.push(Object.assign(blank('player'), r, { rewardId: 0 }));
   // anche il livello 0 (vedi sotto)
   players.unshift(Object.assign(blank('player'), players[0], { lv: 0, needExp: 0 }));
 } else {

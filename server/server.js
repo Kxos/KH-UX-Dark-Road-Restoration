@@ -1089,6 +1089,9 @@ function apRecoverMs() {
   return (miscValue(101, 3) || 3) * 60 * 1000; // misc 101 = 3: 1 AP ogni 3 minuti
 }
 
+// HP del giocatore: colonna hp della tabella player al rango Lux + i nodi HP degli Avatar Boards
+const playerHp = () => levelHp(luxRankFor(player.lux)) + sphereBonus().hp;
+
 function maxAp() {
   return (masterRows('player').find((r) => r.lv === luxRankFor(player.lux))?.ap ?? 16) + sphereBonus().ap;
 }
@@ -1409,15 +1412,15 @@ function userPointData(now) {
     spherePoint: player.spherePoint || 0, // Avatar Coin
     kizunaPoint: 0, raidPoint: 0,
     // In battaglia il client mostra maxHp e colora l'HP in rapporto a hp/baseHp
-    // (provato con 111/222/333): per un giocatore integro coincidono, dal livello 1
-    // della tabella player.
+    // (provato con 111/222/333): per un giocatore integro coincidono, dalla riga della tabella
+    // player al rango Lux (3000 al livello 1, 3530 dal 200; I-032: prima sempre il livello 1).
     // attack/defense: somma di STR e DEF (livello 1) delle medaglie del deck. A 0 il
     // giocatore non ha difesa: nel Prologue moriva in un turno, e nel tutorial non si
     // poteva morire.
     ...deckStats(),
     // + i bonus dei nodi degli Avatar Boards (player.sphereBonus)
-    baseHp: levelHp(1) + sphereBonus().hp, hp: levelHp(1) + sphereBonus().hp, ap: ap.ap,
-    maxHp: levelHp(1) + sphereBonus().hp, maxAp: maxAp(),
+    baseHp: playerHp(), hp: playerHp(), ap: ap.ap,
+    maxHp: playerHp(), maxAp: maxAp(),
     lastApDatetime: serverTimeAt(ap.time), // da qui il client conta la ricarica
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
