@@ -687,4 +687,7 @@ Notice 23113, 23538, 24587, 24593, 24843 («guaranteed at least one of the new M
   crea righe solo per le varianti gia' uscite alla data del banner (niente 7★ boosted per il 2016-17): 18 righe nuove.
 - Simulazione: 0 estrazioni senza la medaglia nuova su 3000 per banner, 2,00 medaglie con pallini. Banco 19-10: B0082
   = WORLD OF FF Cloud + 2 6★; B0084 = Rai nella posizione garantita.
-- Aperto: la grafica di B0079 (EMC Illustrated Kairi) mostra 5★+ x3 e 4★+ x7, il catalogo (wiki) 6★ x2 e 5★ x8.
+- B0079 (EMC Illustrated Kairi, rev 132): mix della grafica originale, 6★ x2 + 5★ x1 + 4★ x7 (grafica 5★+ x3, 4★+ x7:
+  le tre 5★+ sono le due 6★ Tier 3+ e l'Atlantica 5★ del notice). La grafica e' la stessa dell'EMC B0058 (riusata per
+  la riedizione; la wiki usa lo stesso file per entrambi), la wiki dice 6★ x2 5★ x8: il banner fa fede (utente).
+  Banco: Atlantica Donald 5★, Crocodile e Axel A 6★, sette 4★.
