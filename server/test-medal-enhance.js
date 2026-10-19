@@ -79,8 +79,13 @@ log('2. senza Quest 34: guilt', r.afterEnhanceUserMedal.guiltFactor);
 p.lastClearStageId = stage.find((s) => s.id === 34).stageId;
 assert.equal(t.isGuiltUnlocked(), 1);
 const lv0 = t.userPointData('2026-10-12 00:00:00').guiltBurstLv;
+// tiro fisso: un primo tiro gia' al massimo dava Burst +6 e niente passo 6 (test intermittente, 19-10)
+const rndStep3 = Math.random;
+Math.random = () => 0.3;
 r = enhance(b, give(base.medalId));
+Math.random = rndStep3;
 const gf = r.afterEnhanceUserMedal.guiltFactor;
+assert.ok(gf < range.max, `tiro fisso sotto il massimo (${gf})`);
 assert.ok(gf >= range.min && gf <= range.max, `guilt ${gf} fuori da ${range.min}-${range.max}`);
 assert.equal(state(b).guiltFactor, gf, 'guilt salvata in medalState');
 const lv1 = r.userData.userPoint.guiltBurstLv;
@@ -94,6 +99,7 @@ log('3. Quest 34: guilt', gf, 'Burst', lv0, '->', lv1);
 // 4. Magic Mirror x2 (pila: una cella, numbers [2]): +1% ciascuno, fino al massimo
 const mirrors = give(90156, 2);
 r = enhance(b, [mirrors[0]], [2]);
+const rMirror = r; // se gli specchi arrivano gia' al massimo, la prima guilt massima e' qui (test intermittente, 19-10)
 assert.equal(r.afterEnhanceUserMedal.guiltFactor, Math.min(range.max, gf + 200));
 assert.equal(t.userMedalList().filter((m) => m.medalId === 90156).length, 0, 'specchi consumati');
 log('4. Mirror x2: guilt', r.afterEnhanceUserMedal.guiltFactor);
@@ -110,7 +116,7 @@ assert.equal(a.burstUpperNumber, 5, 'pallini conservati');
 log('5. Chip x10, Dale, Cid 10 x3: STR +', a.attackUpperNumber, 'DEF +', a.defenseUpperNumber, 'upperCost', a.upperCost);
 
 // 6. guilt al massimo (rilanci + specchi): Burst +5 (prima guilt massima)
-let rMax = null;
+let rMax = state(b).guiltFactor >= range.max ? rMirror : null;
 for (let i = 0; i < 200 && state(b).guiltFactor < range.max; i++) rMax = enhance(b, [give(90156)[0]]);
 assert.equal(state(b).guiltFactor, range.max);
 assert.equal(rMax.guiltBurstMaxLv, lv1 + 5, 'guiltBurstMaxLv = livello dopo la guilt massima');

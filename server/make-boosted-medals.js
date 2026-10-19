@@ -42,6 +42,8 @@ function patch(masterDir, catalogFile) {
     byName.get(n).push(r);
   }
   const have = mb.boostedIndex(medals);
+  const released = new Map(); // medalId -> data d'uscita del catalogo
+  for (const v of Object.values(catalog.medals || {})) for (const [id, , d] of v.ids || []) if (d && !released.has(id)) released.set(id, d);
   const seen = new Set(), missingNames = new Set(), missingIds = new Set();
   const families = {}, variants = {};
   const added = [];
@@ -67,10 +69,13 @@ function patch(masterDir, catalogFile) {
       // famiglia slots: solo la stella delle riserve con stella (B0046/B0047: le Organizzazione XIII 6★, non 5★/7★
       // inventate, 19-10)
       const stars = new Set(fam === 'slots' ? (on.slots || []).map((k) => mb.slotOf(banner, k)?.star).filter(Boolean) : []);
+      // solo le varianti gia' uscite all'inizio del banner (date del catalogo): niente 7★ boosted per i banner del
+      // 2016-17 (2c/G5, 19-10); un id fuori dal catalogo resta candidato
+      const out = (r) => banner.start && released.has(r.medalId) && released.get(r.medalId) > banner.start;
       for (const n of mb.resolveNames(entry, banner)) {
         const rows = byName.get(mb.norm(n));
         if (!rows) { missingNames.add(n); continue; }
-        for (const r of rows) if (!stars.size || stars.has(r.rare)) want(fam, r, entry.str, entry.def);
+        for (const r of rows) if ((!stars.size || stars.has(r.rare)) && !out(r)) want(fam, r, entry.str, entry.def);
       }
       for (const id of mb.resolveIds(entry, banner, catalog, byId)) {
         const r = byId.get(id);

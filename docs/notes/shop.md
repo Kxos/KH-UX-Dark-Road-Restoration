@@ -667,3 +667,24 @@ normali, quindi uscivano una volta su due al posto della normale. Ora `make-boos
 (`ORIG_BOOSTED`) e la famiglia «slots» dei boosted crea righe solo alla stella dello slot (niente rare 5★/7★
 inventate). Simulazione: B0046 = 2 Org XIII 6★ + 3 Org XIII 5★ per estrazione, rara ~5% delle estrazioni, 0 Tier 4.
 Banco 19-10 (rev 130): estrazione Big XIII = Larxene A e Marluxia A 6★, Xigbar A, Xaldin A, Luxord A 5★, 5x 3★.
+
+<a id="sp2c-g5"></a>
+## Sotto-progetto 2c, G5: «one Medal from set X» (19-10, revisione 131)
+
+Notice 23113, 23538, 24587, 24593, 24843 («guaranteed at least one of the new Medals»): prima nessuno slot. Campo
+`slot` nuovo valore `new@<pos>x<n>/<stella>:names=a|b` (riserva a lista aggiunta, `guarantee.slot` aggiornato):
+- B0066/B0068/B0084: medaglia nuova sulla prima posizione 5★ (pos 2; le due 6★ con 3 pallini restano casuali, «one of
+  which could be HD Sora if you're lucky»); la featured solo 6★ (HD Sora, Illustrated Xemnas, Key Art #1) non entra
+  nella lista a 5★ (decisione 1). Preset `replace;slots=0,1;dots=3`: i pallini solo sulle due 6★ della grafica, non
+  sulle 5★ promosse a 6★ (prima 2,3 pallini per estrazione).
+- B0079: Atlantica Sora/Donald/Goofy a pos 2 dopo le due 6★ Tier 3+.
+- B0082: una WoFF sulla 6★ x1 della grafica (pos 0), pallini sulle altre due 6★ (`preset replace;slots=1,2`);
+  `boosted names=world of ff sora;str=1000;def=1000` (notice: «1,000 more base strength AND defense»).
+- Date d'uscita dal notice (`medal_date`): Terra/Ventus/Aqua 09/12/2016, Atlantica 12/01/2017, Seifer/Fuu/Rai
+  28/01/2017; `apply_medal_dates` ora sposta solo le varianti uscite con la voce (le 7★ restano al 14/05/2018).
+- Parser (`banner_guarantees.SMALL_RE`): «small chance of drawing a **special** X with 1000 more base strength» (wiki
+  2016-17) ora e' una voce boosted: 18 banner B0041-B0082 avevano perso la versione rara. `make-boosted-medals.js`
+  crea righe solo per le varianti gia' uscite alla data del banner (niente 7★ boosted per il 2016-17): 18 righe nuove.
+- Simulazione: 0 estrazioni senza la medaglia nuova su 3000 per banner, 2,00 medaglie con pallini. Banco 19-10: B0082
+  = WORLD OF FF Cloud + 2 6★; B0084 = Rai nella posizione garantita.
+- Aperto: la grafica di B0079 (EMC Illustrated Kairi) mostra 5★+ x3 e 4★+ x7, il catalogo (wiki) 6★ x2 e 5★ x8.

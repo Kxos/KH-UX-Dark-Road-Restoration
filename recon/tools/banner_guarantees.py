@@ -246,8 +246,9 @@ MAXSAB_RE = re.compile(r'maximum Special Attack Bonus|Special Attack Bonus maxed
 WHEN_RE = re.compile(r'[Ww]hen drawing (?:an? )?(.+?),?\s+(?:it|the [Mm]edal) comes\b')
 PRONOUN = re.compile(r'^(?:\w+ )?(?:she|he|they|it)\b|\b(?:she|he) is (?:also )?guaranteed', re.I)
 STAR_ON = re.compile(r'(?:\bthe|including a|\d+|\bone|\btwo|\bthree|\ba) (\d)★(?: Medals?)?\b')
-# boosted: «small chance of drawing a boosted [version of] X with 1000 more base strength[ and defense][, or a boosted Y with ...]»
-SMALL_RE = re.compile(r'small chance of drawing a boost(?:ed|er) ')
+# boosted: «small chance of drawing a boosted [version of] X with 1000 more base strength[ and defense][, or a boosted Y with ...]»;
+# nel 2016-17 la wiki scrive «a special X» (18 banner, B0041-B0082: 2c/G5, 19-10)
+SMALL_RE = re.compile(r'small chance of drawing a (?:boost(?:ed|er)|special) ')
 CLAUSE_RE = re.compile(r'(?:,?\s*(?:or|and)\s+)?(?:an? )?(?:boost(?:ed|er) )?(?:version of )?(.+?)\s+with (\d+) more bases? strength'
                        r'( and d(?:efense|\w*$|$))?')
 BOOST_RES = re.compile(r'boosted (?:versions? of|SN\+)|Boosted Ver\b')

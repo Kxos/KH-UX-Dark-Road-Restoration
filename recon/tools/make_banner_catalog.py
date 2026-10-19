@@ -731,9 +731,13 @@ def apply_medal_dates(medals, overrides, starts):
         v = medals.get(norm(o.get('value') or '')) if o.get('field') == 'medal_date' else None
         d = starts.get(o['row_id'])
         if v and d:
+            old = v['date']
             v['date'] = d
             for i in v['ids']:
-                i[2] = d
+                # solo le varianti uscite con la voce: le stelle venute dopo (7★ del 14/05/2018) restano alla loro data
+                # (2c/G5: Terra/Ventus/Aqua, Atlantica, Seifer/Fuu/Rai)
+                if i[2] == old or d < i[2] <= old:
+                    i[2] = d
             n += 1
     return n
 
@@ -767,6 +771,8 @@ def apply_enhance_overrides(enh, ov_row):
     if not v:
         return enh
     kv = dict(x.split('=', 1) for x in v.split(';') if '=' in x)
+    if 'replace' in v.split(';'):  # «replace;slots=1,2;dots=3» (2c/G5, B0082): toglie i preset letti dal testo
+        enh['preset'] = []
     if 'slots' in kv:
         on = {'slots': [int(x) for x in kv['slots'].split(',')]}
     elif 'star' in kv:
@@ -789,6 +795,18 @@ def apply_slot_override(g, ov_row):
     Organizzazione XIII del notice 20865). Lo slot deve esistere: un override senza bersaglio e' un errore."""
     v = ((ov_row or {}).get('slot') or '').strip()
     if not v:
+        return g
+    # «new@2x1/5:names=a|b» (2c/G5): riserva a lista nuova dalla posizione 2, 1 medaglia, stella 5 (B0066: «you will
+    # be guaranteed at least one of the new Medals», sulla prima posizione 5★: le due 6★ restano casuali)
+    m = re.fullmatch(r'new@(\d+)x(\d+)/(\d):names=(.+)', v)
+    if m:
+        pos, n = int(m.group(1)), int(m.group(2))
+        if any(set(range(pos, pos + n)) & set(range(s['slot'], s['slot'] + max(1, s['count'] or 1))) for s in g['slots']):
+            raise SystemExit(f'override slot {v!r}: posizioni gia\' riservate')
+        g['slots'].append({'kind': 'list', 'slot': pos, 'count': n, 'star': int(m.group(3)),
+                           'names': [x.strip() for x in m.group(4).split('|') if x.strip()], 'tierMin': None, 'tierMax': None})
+        g['slots'].sort(key=lambda s: s['slot'])
+        g['slot'] = next(s['slot'] for s in g['slots'] if s['kind'] == 'list')  # = prima riserva a lista
         return g
     idx, _, spec = v.partition(':')
     key, _, val = spec.partition('=')
@@ -813,7 +831,10 @@ def apply_boosted_override(enh, ov_row):
     if not v:
         return enh
     kv = dict(x.split('=', 1) for x in v.split(';') if '=' in x)
-    item = {'on': {'slots': [int(x) for x in kv['slots'].split(',')]}, 'str': int(kv.get('str', 0)),
+    # «names=a|b;...» (2c/G5, B0082: WORLD OF FF Sora +1000 STR e DEF dal notice 24593, frase troncata nel TSV)
+    on = ({'slots': [int(x) for x in kv['slots'].split(',')]} if 'slots' in kv
+          else {'names': [x.strip() for x in kv['names'].split('|') if x.strip()]})
+    item = {'on': on, 'str': int(kv.get('str', 0)),
             'def': int(kv.get('def', 0)), 'chance': kv.get('chance', 'small')}
     if item not in enh['boosted']:
         enh['boosted'].append(item)
