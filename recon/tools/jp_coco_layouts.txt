@@ -199,10 +199,10 @@ Ranking_TacticalPanel_ver260.json
 Ranking_preparation.json
 TresLSI_RankingPanel.json
 TresLSI_RankingScene_ver310.json
-? Ranking_Result.json                   # Rank_Result_Deco.png e Rank_Title_3.png assenti ovunque
-? Ranking_Result_PvP.json               # Rank_Result_Deco.png assente ovunque
-? Ranking_Reward_ver1301.json           # Rank_Title_3.png assente ovunque
-? RankingRewardScene_ver1301.json       # Rank_Title_3.png assente ovunque (img/ranking/Rank_Title_%d.png)
+Ranking_Result.json                     +absent-ok  # Rank_Result_Deco (1x1) e Rank_Title_3 dal 2016 (originals.tsv, I-170)
+Ranking_Result_PvP.json                 +absent-ok  # Rank_Result_Deco (1x1) dal 2016 (originals.tsv, I-170)
+Ranking_Reward_ver1301.json             +absent-ok  # Rank_Title_3 dal 2016 (originals.tsv, I-170)
+RankingRewardScene_ver1301.json         +absent-ok  # Rank_Title_3 dal 2016 (originals.tsv, I-170; img/ranking/Rank_Title_%d.png)
 
 # --- Other: Notices e Album (I-104, I-105; 14-10) ---
 # WebView delle notizie ([fn], se il flag dark di [fn] e' spento): uguale al WW 4.4.0

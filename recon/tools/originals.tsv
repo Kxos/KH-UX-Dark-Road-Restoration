@@ -165,3 +165,17 @@ cocostudio/publish/MenuDialog_account_select_ver401.json	i440
 cocostudio/publish/appleid_button_2x.png	i440
 cocostudio/publish/facebook_button_2x.png	i440
 cocostudio/publish/SQEXBridge_button_2x.png	i440
+
+# 16. Texture dei layout JP lasciati in sospeso perche' «assenti ovunque» (jp_coco_layouts.txt): ci sono nel 2016.
+#     Rank_Result_Deco e SphereMap_Complete sono 1x1 (00_Dummy) anche nell'originale. World_Ico7A/7B/8A/8B del 2016
+#     sono segnaposto (= World_Ico1A): i pulsanti Events/Colosseum restano nostri
+cocostudio/publish/Rank_Title_3.png	b16
+img/ranking/Rank_Title_3.png	b16
+cocostudio/publish/Rank_Result_Deco.png	b16
+cocostudio/publish/SphereMap_Complete.png	b16
+cocostudio/publish/Camp_Balloon3.png	b16,jp
+
+# 12. Logo «SPECIAL ATTACK BONUS» di GuiltBonus_max/_result (import_jp_raisedraw.py usava «GUILT BONUS»,
+#     png_logo_guilt_bonus): texture inglese del 2016, 455x35 in uno spazio dichiarato 336x35 come nell'originale
+lwf/medal/guilt_bonus/GuiltBonus_max/GuiltBonus_max_706e675f6c6f676f5f6775696c745f626f6e7573322e706e67.png	b16
+lwf/medal/guilt_bonus/GuiltBonus_result/GuiltBonus_result_706e675f6c6f676f5f6775696c745f626f6e7573322e706e67.png	b16

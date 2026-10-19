@@ -89,8 +89,9 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
   (`name_index`/`by_name`, solo cartelle della guilt, mai «ビットマップ N»): cifre gialle di Yfix e _result da
   `GuiltBonus`, KeyBlade_ef1/ef2 da altre LWF JP, KeyBlade_ef6/ef8/star01 dalla LWF WW
   `lwf/battleresult/Result_LuxLevelUp`. Unico sostituto: `png_logo_guilt_bonus2.png` (336x35, in _result e _max,
-  assente da ogni fonte e da ogni revisione) = `png_logo_guilt_bonus.png` (stesso logo «GUILT BONUS», stesse
-  dimensioni); rapporto in `raisedraw_gen\raisedraw_report.json` (classi name-jp, name-ww, substitute). Copia
+  assente dal JP) = `png_logo_guilt_bonus.png` (stesso logo «GUILT BONUS», stesse dimensioni); dal 19-10 (I-170) la
+  sostituisce l'originale inglese «SPECIAL ATTACK BONUS» del pacchetto 2016 (455x35 nello spazio dichiarato 336x35,
+  come nella LWF del 2016; `recon/tools/originals.tsv`); rapporto in `raisedraw_gen\raisedraw_report.json` (classi name-jp, name-ww, substitute). Copia
   delle LWF nostre tolte: `D:\Progetto_Restauro_KH_UX\tmp\guilt_ours_backup`.
 
 ## 3. guilt-burst.js - fatto
