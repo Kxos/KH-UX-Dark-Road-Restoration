@@ -803,6 +803,8 @@ if (fs.existsSync(gachaCatalog)) require('./make-nova-rows').patch(OUT, gachaCat
 // Trait dalla fusione (I-084 A): shuffleSkillGroupId per nome (dopo le boosted) e ruota sugli 11 trait originali
 // (dopo make-pet-tables, che ha i Special Trait da cui si copiano le righe 14-17)
 require('./make-trait-groups').patch(OUT);
+// Trait Medal (I-084 parte B): righe type 9 9.000.000+N e legame del pallino sulle linee (make-trait-medals.js)
+require('./make-trait-medals').patch(OUT);
 // Livelli Lux 302-999 ricostruiti e misc 100 = 999 (make-lux-levels.js, richiesta dell'utente 19-10)
 require('./make-lux-levels').patch(OUT);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla

@@ -186,13 +186,14 @@ function noticesPage(realMs = Date.now()) {
 
 // owned: medaglie possedute [{medalId, guiltFactor}]; medalRows: tabella master medal;
 // maxGuilt(tier) -> fattore massimo del tier (medal-guilt.js GUILT_RANGES). Le boosted (groupId = normale,
-// medal-boost.js) non sono voci dell'album: la riga si trova per id, la copia conta per la normale
+// medal-boost.js) non sono voci dell'album: la riga si trova per id, la copia conta per la normale. Le Trait Medal
+// (type 9) condividono la cella della loro medaglia (notice 38128): non sono voci e non sbloccano la cella
 function albumData(owned, medalRows, maxGuilt) {
   const byId = new Map(medalRows.map((r) => [r.medalId, r]));
   const best = new Map();
   for (const m of owned) {
     const row = byId.get(m.medalId);
-    if (!row || m.medalId === 1) continue;
+    if (!row || m.medalId === 1 || row.type === 9) continue;
     const f = m.guiltFactor || 0;
     const top = maxGuilt(row.guiltValue || 0);
     const st = f <= 0 ? 0 : top && f >= top ? 2 : 1;
@@ -202,7 +203,7 @@ function albumData(owned, medalRows, maxGuilt) {
   return {
     userAlbum: {
       albumMedals: [...best].sort((a, b) => a[0] - b[0]).map(([medalId, guiltStatus]) => ({ medalId, guiltStatus })),
-      allMedalCount: medalRows.filter((r) => r.medalId !== 1 && !isBoosted(r)).length,
+      allMedalCount: medalRows.filter((r) => r.medalId !== 1 && !isBoosted(r) && r.type !== 9).length,
     },
   };
 }
