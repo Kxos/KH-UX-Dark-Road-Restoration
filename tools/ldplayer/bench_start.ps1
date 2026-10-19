@@ -1,4 +1,4 @@
-param([string]$Out, [string]$Shot = 'khuxstart', [double]$Settle = 8)
+﻿param([string]$Out, [string]$Shot = 'khuxstart', [double]$Settle = 8)
 # Giocatore esistente (server con KHUX_NEWCOMER=0): lancio e KHUX START, ritoccato
 # finche' il server ($Out) riceve POST /khux/login; poi, quando il log resta fermo
 # per $Settle secondi, screenshot e ultime richieste. Nessuna attesa fissa.
@@ -21,7 +21,10 @@ while (-not (Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -m
 }
 Write-Host ("  {0,-28} {1,5:N1} s" -f 'POST /khux/login', $sw.Elapsed.TotalSeconds)
 $n = LogLines $Out; $quiet = [Diagnostics.Stopwatch]::StartNew(); $pastLogin = $false
-while ($quiet.Elapsed.TotalSeconds -lt $Settle -and $sw.Elapsed.TotalSeconds -lt 300) {
+# finche' non arriva /tutorial/status (il dialogo «Download» puo' comparire dopo 10 s di log fermo: banco 19-10) si
+# continua a guardare anche col log fermo, al massimo 120 s dal login
+$loginAt = $sw.Elapsed.TotalSeconds
+while (($quiet.Elapsed.TotalSeconds -lt $Settle -or (-not $pastLogin -and $sw.Elapsed.TotalSeconds - $loginAt -lt 120)) -and $sw.Elapsed.TotalSeconds -lt 300) {
     Start-Sleep -Milliseconds 500
     # il dialogo «Download» (master aggiornati) arriva dopo /khux/login e prima di /tutorial/status (la prima richiesta
     # dopo i download): da li' niente piu' screencap, che ogni mezzo secondo rallentavano l'avvio della WebView
