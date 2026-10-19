@@ -37,12 +37,27 @@ function boostedRow(normal, str, def) {
   });
 }
 
-// 'normalId:str:def' -> medalId della boosted, per le righe boosted gia' nel master
+// Versioni rare originali SE (2c/G4, 19-10): id 1xxxxx = la normale id-100000 con stesso nome e stella e STR
+// piu' alta (le 17 Organizzazione XIII, notice 20865 «even rarer version ... 1,000 more base strength»). Nel
+// client 1.1.3 hanno groupId = la normale; make-game-tables.js lo azzera, make-boosted-medals.js lo rimette.
+// -> medalId della normale, o 0.
+function origBoostedBase(row, byId) {
+  const id = row?.medalId || 0;
+  if (id < 100000 || id >= 200000) return 0;
+  const b = byId.get(id - 100000);
+  return b && b.name === row.name && b.rare === row.rare && (row.attack || 0) > (b.attack || 0) ? b.medalId : 0;
+}
+
+// 'normalId:str:def' -> medalId della boosted, per le righe boosted gia' nel master (le rare originali SE
+// con la variante dalla differenza di STR e DEF rispetto alla normale)
 function boostedIndex(medalRows) {
   const byDigit = Object.fromEntries(Object.entries(VARIANTS).map(([k, v]) => [v, k]));
+  const byId = new Map(medalRows.map((r) => [r.medalId, r]));
   const out = new Map();
   for (const r of medalRows) {
-    const sd = isBoosted(r) && byDigit[Math.floor(r.medalId / 1000000)];
+    if (!isBoosted(r)) continue;
+    const base = r.medalId < 1000000 && byId.get(r.groupId);
+    const sd = base ? `${r.attack - base.attack}:${r.defense - base.defense}` : byDigit[Math.floor(r.medalId / 1000000)];
     if (sd) out.set(`${r.groupId}:${sd}`, r.medalId);
   }
   return out;
@@ -94,4 +109,4 @@ function resolveIds(entry, banner, catalog, rowsById) {
 const tierMatch = (on, row) => (on.star == null || row.rare === on.star) && (row.guiltValue || 0) >= (on.tierMin || 0)
   && (on.tierMax == null || (row.guiltValue || 0) <= on.tierMax) && !(on.excludePrime && norm(row.name).startsWith('prime - '));
 
-module.exports = { VARIANTS, BADGES, norm, boostedId, isBoosted, boostedRow, boostedIndex, slotOf, resolveNames, resolveIds, tierMatch };
+module.exports = { VARIANTS, BADGES, norm, boostedId, isBoosted, boostedRow, boostedIndex, origBoostedBase, slotOf, resolveNames, resolveIds, tierMatch };

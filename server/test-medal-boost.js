@@ -93,5 +93,13 @@ check(JSON.stringify(album.albumMedals) === JSON.stringify([{ medalId: 301993, g
 check(new Map(master3.map((x) => [x.medalId, x])).get(2301993) === B, 'ricerca per id: la boosted si trova');
 check(master3.filter((x) => !mb.isBoosted(x)).length === 3, 'enumerazione filtrata');
 
+// rare originali SE (2c/G4, 19-10): id + 100000, stesso nome e stella, STR piu' alta -> boosted della normale
+const X = { medalId: 31196, name: 'Xaldin A', rare: 6, attack: 5529, defense: 5421, groupId: 0 };
+const XR = { ...X, medalId: 131196, attack: 6529 };
+const orig = new Map([[X.medalId, X], [XR.medalId, XR]]);
+check(mb.origBoostedBase(XR, orig) === 31196 && mb.origBoostedBase(X, orig) === 0, 'rara originale: base');
+check(mb.origBoostedBase({ ...XR, name: 'Altro' }, orig) === 0, 'rara originale: nome diverso = no');
+check(mb.boostedIndex([X, { ...XR, groupId: 31196 }]).get('31196:1000:0') === 131196, 'indice: rara originale per differenza di STR');
+
 if (errors.length) { console.log(`ERRORI (${errors.length})`); errors.forEach((e) => console.log(' -', e)); process.exit(1); }
 console.log('OK: righe boosted (id, badge, statistiche, indice, patch idempotente, famiglie)');

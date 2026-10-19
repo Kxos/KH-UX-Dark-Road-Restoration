@@ -643,3 +643,27 @@ guaranteed! Draws left: 3»; B0619 ancora col nome; B0637 «A SN or higher Medal
 estrazione gia' fatta), 1 dopo un'estrazione, la seconda da' la pity (SN+ Sephiroth 7★ NEW) e la striscia torna a 3
 (i153_s0, tmp i153_d.png, i153_f.png). L'utente ha controllato la categoria: la pity copre solo medaglie SN, Supernova,
 SN+, Supernova+ e SN++ (67 nomi), quindi «SN or higher» e' giusto. I-153 chiuso.
+
+<a id="sp2c-g4"></a>
+## Sotto-progetto 2c, G4: Tier storici dei banner 2016-17 (19-10, revisione 130)
+
+Analisi in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\notice_audit\g4_historical_tiers.md` (scritta prima di I-160) e
+`tmp\sp2b\g4\pools2.json` (rifatta il 19-10 sul master con l'Organizzazione XIII Tier 3): per i banner 2017 il Tier di
+oggi coincide con quello storico, quindi basta il range del notice. Correzioni in `recon/tools/banner_overrides.tsv`,
+campi nuovi di `make_banner_catalog.py`:
+- `slot` = `0:tier=5-6` (Tier minimo e massimo dello slot) o `0:names=a|b|c` (lo slot diventa una lista):
+  B0120/B0139/B0141/B0146 Tier 4-5, B0170/B0181 Tier 5-6 (B0170 era T4+), B0154 i 17 «recent Tier 5» del notice
+  31346, B0046/B0047 le 10 Organizzazione XIII del notice 20865 (prima T3+, con SP Roxas/Axel/Xion Tier 4 che il
+  notice esclude). B0158 (INCOMPLETE, senza slot) escluso.
+- `boosted` = `slots=0;str=1000;def=0;chance=small`: B0046/B0047 «even rarer version ... 1,000 more base strength».
+- Mix di B0046/B0047: quello della **grafica originale del banner** (6★ x2, 5★ x3, 3★+ x5 + Huey & Dewey & Louie;
+  XIII 6★ x1, 5★ x1, 3★+ x3) = wiki: le 5 (2) Organizzazione XIII stanno nelle posizioni 6★ e 5★. Una prima
+  ricostruzione «7x 6★» dal solo testo del notice e' stata tolta (decisione dell'utente dopo lo screenshot).
+
+**Rare originali SE** (id + 100000, +1000 STR: 10 Organizzazione XIII 6★ e 7 altre 6★ come SP Axel 141026): nel
+client 1.1.3 hanno `groupId` = la normale, `make-game-tables.js` lo azzerava e il catalogo le contava come varianti
+normali, quindi uscivano una volta su due al posto della normale. Ora `make-boosted-medals.js` rimette il `groupId`
+(`medal-boost.origBoostedBase`), `boostedIndex` le riconosce dalla differenza di STR/DEF, il catalogo le esclude
+(`ORIG_BOOSTED`) e la famiglia «slots» dei boosted crea righe solo alla stella dello slot (niente rare 5★/7★
+inventate). Simulazione: B0046 = 2 Org XIII 6★ + 3 Org XIII 5★ per estrazione, rara ~5% delle estrazioni, 0 Tier 4.
+Banco 19-10 (rev 130): estrazione Big XIII = Larxene A e Marluxia A 6★, Xigbar A, Xaldin A, Luxord A 5★, 5x 3★.

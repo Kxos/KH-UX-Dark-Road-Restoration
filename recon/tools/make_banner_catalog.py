@@ -462,10 +462,23 @@ def vip_twins(rows):
 
 
 # ---------- righe boosted del master (sotto-progetto 2b, Task 3) ----------
+ORIG_BOOSTED = set()  # rare originali SE (id + 100000), riempito da build_catalog
+
+
+def orig_boosted_ids(rows):
+    """Versioni rare originali SE (2c/G4, 19-10): id 1xxxxx = medaglia id-100000 con stesso nome e stella e STR piu'
+    alta (le 17 Organizzazione XIII «even rarer version ... 1,000 more base strength», notice 20865). Sono boosted
+    (medal-boost.boostedIndex): escono solo col tiro «small» della voce boosted, mai come variante normale."""
+    by = {r['medalId']: r for r in rows}
+    return {i for i, r in by.items() if 100000 <= i < 200000 and (b := by.get(i - 100000))
+            and b['name'] == r['name'] and b['rare'] == r['rare'] and (r.get('attack') or 0) > (b.get('attack') or 0)}
+
+
 def is_boosted(r):
-    """riga boosted di medal.json (groupId = medaglia normale, o medalId >= 1000000): non entra in nessuna tabella
-    per nome del catalogo (medaglie, bonus, evoluzione, liste), che darebbe la boosted al posto della normale"""
-    return bool(r.get('groupId')) or r['medalId'] >= 1000000
+    """riga boosted di medal.json (groupId = medaglia normale, medalId >= 1000000 o rara originale SE): non entra in
+    nessuna tabella per nome del catalogo (medaglie, bonus, evoluzione, liste), che darebbe la boosted al posto della
+    normale"""
+    return bool(r.get('groupId')) or r['medalId'] >= 1000000 or r['medalId'] in ORIG_BOOSTED
 
 
 # ---------- bonus (note «Includes N bonus ...») ----------
@@ -769,6 +782,44 @@ def apply_enhance_overrides(enh, ov_row):
     return enh
 
 
+def apply_slot_override(g, ov_row):
+    """2c/G4: riserva di uno slot dal notice (campo «slot» di banner_overrides.tsv), prima della risoluzione dei nomi.
+    «0:tier=5-6» -> Tier minimo e massimo dello slot 0 (B0170: «one Tier 5 or Tier 6 Medal»); «0:names=a|b|c» ->
+    lo slot 0 diventa una lista di quei nomi (B0154: i 17 «recent Tier 5» del notice 31346; B0046/B0047: le 10
+    Organizzazione XIII del notice 20865). Lo slot deve esistere: un override senza bersaglio e' un errore."""
+    v = ((ov_row or {}).get('slot') or '').strip()
+    if not v:
+        return g
+    idx, _, spec = v.partition(':')
+    key, _, val = spec.partition('=')
+    s = next((x for x in g['slots'] if x['slot'] == int(idx)), None)
+    if s is None:
+        raise SystemExit(f'override slot {v!r}: nessuno slot {idx}')
+    if key == 'tier':
+        lo, _, hi = val.partition('-')
+        s['tierMin'], s['tierMax'] = int(lo), int(hi or lo)
+    elif key == 'names':
+        s.update(kind='list', names=[x.strip() for x in val.split('|') if x.strip()], tierMin=None, tierMax=None)
+    else:
+        raise SystemExit(f'override slot {v!r}: atteso tier= o names=')
+    return g
+
+
+def apply_boosted_override(enh, ov_row):
+    """2c/G4: versione boosted promessa dal notice ma assente dal testo del banner (campo «boosted»:
+    «slots=0;str=1000;def=0;chance=small», B0046/B0047 notice 20865: «a small chance of getting an even rarer
+    version of an Organization XIII Medal that has 1,000 more base strength»). Aggiunge la voce se non c'e'."""
+    v = ((ov_row or {}).get('boosted') or '').strip()
+    if not v:
+        return enh
+    kv = dict(x.split('=', 1) for x in v.split(';') if '=' in x)
+    item = {'on': {'slots': [int(x) for x in kv['slots'].split(',')]}, 'str': int(kv.get('str', 0)),
+            'def': int(kv.get('def', 0)), 'chance': kv.get('chance', 'small')}
+    if item not in enh['boosted']:
+        enh['boosted'].append(item)
+    return enh
+
+
 def apply_pity_label(g, ov_row):
     """I-153: guarantee.pityLabel = categoria dei bersagli della pity (campo «pity_label» di banner_overrides.tsv,
     dal notice del banner o, se il notice non la dice, dai pityNames: la fonte e' nel TSV). La legge
@@ -839,6 +890,8 @@ def default_inputs():
 def build_catalog(inputs):
     import banner_guarantees as bg  # qui dentro: banner_guarantees importa questo modulo (import circolare)
     wiki, rows, story, notices = inputs['wiki'], inputs['rows'], inputs['story'], inputs['notices']
+    ORIG_BOOSTED.clear()
+    ORIG_BOOSTED.update(orig_boosted_ids(inputs['medals']))
     M = [r for r in inputs['medals'] if not is_boosted(r)]  # le boosted (Task 3) non hanno voce nel catalogo
     MAT = inputs['materials']
     tier = {r['medalId']: r.get('guiltValue') or 0 for r in M}  # Tier = guiltValue (audit delle garanzie, sezione 5)
@@ -858,7 +911,7 @@ def build_catalog(inputs):
     for o in rel:
         ids = []
         for (mid, rare, typ, vp, dl) in o['rows']:
-            if typ != 1 or vp == 1:
+            if typ != 1 or vp == 1 or mid in ORIG_BOOSTED:
                 continue
             rd = o['rare_date'].get(rare) or o['rare_date'].get(str(rare)) or o['date']
             ids.append([mid, rare, max(rd, o['date']), tier.get(mid, 0)])
@@ -896,7 +949,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -952,10 +1005,12 @@ def build_catalog(inputs):
             if lst:
                 lst['names'] = list(g['list'])
         apply_pity_label(g, labels.get(rid))
+        apply_slot_override(g, ov.get(rid))
         # potenziamenti per banner (guilt, pallini, boosted, abilita' al massimo): nomi risolti piu' sotto
         enh = bg.enhance_of(bg.enhance_text(notes, r['guarantees']), g['slots'], pool['featured'], M, inputs.get('skills') or [],
                             mix=rarity_mix(r['rarity_mix']))
         apply_enhance_overrides(enh, ov.get(rid))
+        apply_boosted_override(enh, ov.get(rid))
         total = total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)

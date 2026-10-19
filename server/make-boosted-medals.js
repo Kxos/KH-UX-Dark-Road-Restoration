@@ -26,7 +26,14 @@ function patch(masterDir, catalogFile) {
   const medalFile = path.join(masterDir, 'medal.json');
   const medals = JSON.parse(fs.readFileSync(medalFile, 'utf8'));
   const catalog = JSON.parse(fs.readFileSync(catalogFile, 'utf8'));
-  const normals = medals.filter((r) => r.type === 1 && !mb.isBoosted(r) && r.medalId < 1000000);
+  // rare originali SE (id 1xxxxx, medal-boost.origBoostedBase): groupId = la normale, come nel client 1.1.3
+  const allById = new Map(medals.map((r) => [r.medalId, r]));
+  let regrouped = 0;
+  for (const r of medals) {
+    const base = !r.groupId && mb.origBoostedBase(r, allById);
+    if (base) { r.groupId = base; regrouped++; }
+  }
+  const normals =medals.filter((r) => r.type === 1 && !mb.isBoosted(r) && r.medalId < 1000000);
   const byId = new Map(normals.map((r) => [r.medalId, r]));
   const byName = new Map();
   for (const r of normals) {
@@ -57,10 +64,13 @@ function patch(masterDir, catalogFile) {
         for (const r of normals) if (mb.tierMatch(on, r)) want(fam, r, entry.str, entry.def);
         continue;
       }
+      // famiglia slots: solo la stella delle riserve con stella (B0046/B0047: le Organizzazione XIII 6★, non 5★/7★
+      // inventate, 19-10)
+      const stars = new Set(fam === 'slots' ? (on.slots || []).map((k) => mb.slotOf(banner, k)?.star).filter(Boolean) : []);
       for (const n of mb.resolveNames(entry, banner)) {
         const rows = byName.get(mb.norm(n));
         if (!rows) { missingNames.add(n); continue; }
-        for (const r of rows) want(fam, r, entry.str, entry.def);
+        for (const r of rows) if (!stars.size || stars.has(r.rare)) want(fam, r, entry.str, entry.def);
       }
       for (const id of mb.resolveIds(entry, banner, catalog, byId)) {
         const r = byId.get(id);
@@ -68,13 +78,13 @@ function patch(masterDir, catalogFile) {
       }
     }
   }
-  if (added.length) {
+  if (added.length || regrouped) {
     added.sort((a, b) => a.medalId - b.medalId);
     fs.writeFileSync(medalFile, JSON.stringify(medals.concat(added)));
   }
   for (const f of Object.values(families)) delete f.keys;
-  const res = { added: added.length, kept, missing: missingNames.size, missingIds: missingIds.size, families, variants };
-  console.log(`boosted: +${res.added} righe (${kept} gia' presenti), per variante ${JSON.stringify(variants)}, per famiglia (nuove/coppie) ` +
+  const res = { added: added.length, kept, regrouped, missing: missingNames.size, missingIds: missingIds.size, families, variants };
+  console.log(`boosted: +${res.added} righe (${kept} gia' presenti, ${regrouped} rare originali con groupId), per variante ${JSON.stringify(variants)}, per famiglia (nuove/coppie) ` +
     Object.entries(families).map(([k, v]) => `${k} +${v.added}/${v.pairs}`).join(', ') +
     `; nomi assenti da medal.json ${missingNames.size}${missingNames.size ? ` (${[...missingNames].slice(0, 8).join('; ')}${missingNames.size > 8 ? '; ...' : ''})` : ''}` +
     `; id del pool assenti ${missingIds.size}`);
