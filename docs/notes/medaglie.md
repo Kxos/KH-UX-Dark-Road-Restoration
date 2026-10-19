@@ -327,7 +327,7 @@ STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313
   - **Elenco** `server/trait_medals.json` (313 voci) da `make-trait-medal-list.js`: #1-#188 e #274 dalla tabella della
     khuxwiki (prima colonna = numero di Album EN = sortId); #189-#313 dalle pagine «Trait Medal N» della khuxwiki, che
     rimandano alla medaglia («Trait Medal #190 ... can be used to add or re-roll a trait on SN++ - KH III Roxas»;
-    `reference	rait_medals\khuxwiki_trait_medal_189_313.json` e `_RESULT.md`). I notice dei deal SN++ non stampano il
+    `reference\trait_medals\khuxwiki_trait_medal_189_313.json` e `_RESULT.md`). I notice dei deal SN++ non stampano il
     numero; i 46 numeri che compaiono in altri notice (VIP, eventi, Moogle Shop) non contraddicono la wiki.
   - **Righe** (`make-trait-medals.js`, dopo make-trait-groups): medalId 9.000.000+N, type 9, 6★, STR/DEF 1, costo 999,
     15 Pet Point, sortId della medaglia, impilabili, senza slot dei trait, `shuffleSkillGroupId` della linea; burst
@@ -455,7 +455,7 @@ testi del client 101300020-032 e 100620003.
     righe vere: 1114, 1117, 1120-1123).
 - Unita' dei campi d'effetto (verifica del 18-10, client 4.3.1 con l'aiuto del decompilato con simboli 1.0.1 di
   thethiny; parser `[fn]`, riga offuscata di 0x17c byte, offset `rank` 0x104 ... `raidUp` 0x178 nell'ordine
-  del master; decompilati in `D:Progetto_Restauro_KH_UX	mpskillcheck
+  del master; decompilati in `D:Progetto_Restauro_KH_UX\tmpskillcheck
 e`). 10000 = 1,0:
   | campo | unita' / effetto | prova |
   |---|---|---|
@@ -542,7 +542,7 @@ e`). 10000 = 1,0:
 - Dettagli: Attack Boost VI (ricostruita) 1/20 al 39% (`invokeProb` 3975), Second Chance (vera) 15/15 al 32%; icone e descrizioni giuste.
 - Crescita: Combat 101 da' `getPoint.exp` 14 con 17 nemici; con EXP a 595 la missione porta la skill a LV 3 e i RESULTS mostrano
   «Supernova+ - SP Roxas's Attack Boost VI leveled up!» (il client confronta il livello di `userSkills` prima e dopo la risposta di
-  `/stage/clear`, `[fn]`/`[fn]`; nessun campo dedicato, `D:\Progetto_Restauro_KH_UX	mp\skill\popupnswer.md`).
+  `/stage/clear`, `[fn]`/`[fn]`; nessun campo dedicato, `D:\Progetto_Restauro_KH_UX\tmp\skill\popupnswer.md`).
 - Overwrite: materiale Donald Ver. A con Attack Boost VII 20/20 a sinistra -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
   Attack Boost VII?», base con Attack Boost VII 20/20. Ordinamento «Skill» della lista: medaglie con skill in cima.
 - Combo «& GA N» (18-10, banco dell'utente): `burstLock` = costo fisso dello speciale in gauge x 10000; AB VIII Max &
