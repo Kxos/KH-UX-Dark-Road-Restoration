@@ -73,10 +73,12 @@ function resolver() {
 function build() {
   const resolve = resolver();
   const rows = [];
-  const rotation = { monthly: [], weekly: [] };
+  // weeklyMedalFrom[i]: data originale (ISO) della campagna settimanale i se regala una medaglia, altrimenti null
+  // (19-10, decisione dell'utente: W04 SN++ - FF7R Aerith 7★ solo dalla tranche della storia di aprile 2020)
+  const rotation = { monthly: [], weekly: [], weeklyMedalFrom: [] };
   const groups = new Map();
   const missing = new Set();
-  readTsv(path.join(D, 'limited_missions.tsv')).forEach(([group, , missionName, cond, target, reward], i) => {
+  readTsv(path.join(D, 'limited_missions.tsv')).forEach(([group, period, missionName, cond, target, reward], i) => {
     const conditionId = Number(cond);
     const r = resolve(reward);
     if (!r) missing.add(reward);
@@ -84,6 +86,11 @@ function build() {
     if (!groups.has(group)) {
       groups.set(group, []);
       (group.startsWith('M') ? rotation.monthly : rotation.weekly).push(groups.get(group));
+      if (!group.startsWith('M')) rotation.weeklyMedalFrom.push(null);
+    }
+    if (!group.startsWith('M') && r && r.rewardType === 3) {
+      const [mm, dd, yy] = period.split(' - ')[0].split('/');
+      rotation.weeklyMedalFrom[rotation.weekly.length - 1] = `20${yy}-${mm}-${dd}`;
     }
     groups.get(group).push(id);
     // condizione 30 (storia fino alla quest N): targetId = N, targetNum 1 (MISSION_DERIVED)

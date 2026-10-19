@@ -54,14 +54,28 @@ for (let m = 0; m < 35; m++) {
   check(act.length === 1, `mese ${m}: ${act.length} campagne mensili attive`);
   act.forEach((i) => seenM.add(i));
 }
+// campagne che regalano una medaglia (weeklyMedalFrom): solo dalla tranche della storia con quella data (19-10)
+const medalFrom = t.LIMITED_ROTATION.weeklyMedalFrom || [];
+const locked = medalFrom.map((d, i) => (d ? i : -1)).filter((i) => i >= 0);
+check(JSON.stringify(medalFrom) === JSON.stringify([null, null, null, '2020-04-10', null, null]), `weeklyMedalFrom ${JSON.stringify(medalFrom)}`);
 for (let w = 0; w < weekly.length; w++) {
   at(new Date(Date.UTC(2026, 9, 12, 12) + w * 7 * 86400000).toISOString());
   const act = weekly.map((ids, i) => (ids.every((id) => t.limitedActive(id)) ? i : -1)).filter((i) => i >= 0);
-  check(act.length === 1, `settimana ${w}: ${act.length} campagne brevi attive`);
+  check(act.length <= 1, `settimana ${w}: ${act.length} campagne brevi attive`);
   act.forEach((i) => seenW.add(i));
 }
 check(seenM.size === 35, `mensili viste ${seenM.size}/35`);
-check(seenW.size === weekly.length, `brevi viste ${seenW.size}/${weekly.length}`);
+check(seenW.size === weekly.length - locked.length && locked.every((i) => !seenW.has(i)), `brevi viste ${seenW.size}/${weekly.length} (la W04 di Aerith resta chiusa con la storia del 2016)`);
+// con la data sbloccata la campagna torna nella rotazione
+const saved = medalFrom.slice();
+medalFrom.forEach((d, i) => { if (d) medalFrom[i] = '2016-01-01'; });
+const seen2 = new Set();
+for (let w = 0; w < weekly.length; w++) {
+  at(new Date(Date.UTC(2026, 9, 12, 12) + w * 7 * 86400000).toISOString());
+  weekly.forEach((ids, i) => { if (ids.every((id) => t.limitedActive(id))) seen2.add(i); });
+}
+check(seen2.size === weekly.length, `con la storia arrivata alla data: brevi viste ${seen2.size}/${weekly.length}`);
+saved.forEach((d, i) => { medalFrom[i] = d; });
 
 // elenco: solo le righe Limited attive
 at('2026-10-16T12:00:00Z');

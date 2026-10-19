@@ -2136,7 +2136,14 @@ function limitedActive(id, realMs = realNow()) {
   const g = LIMITED_GROUP.get(id);
   if (!g) return false;
   const n = LIMITED_ROTATION[g.kind].length;
-  return limitedPeriod(g.kind, realMs) % n === g.index;
+  return limitedPeriod(g.kind, realMs) % n === g.index && limitedUnlocked(g);
+}
+// Campagne settimanali che regalano una medaglia (weeklyMedalFrom, make-limited-missions.js): solo dalla tranche
+// della storia con quella data, come i banner dello Shop (decisione dell'utente 19-10: W04 regala SN++ - FF7R
+// Aerith 7★, aprile 2020); prima la settimana resta senza campagna breve (la mensile dei Lux c'e' sempre).
+function limitedUnlocked(g) {
+  const from = g.kind === 'weekly' ? (LIMITED_ROTATION.weeklyMedalFrom || [])[g.index] : null;
+  return !from || gachaData.storyDay(gachaCatalog(), stageNumber(lastStoryStageId())) >= from;
 }
 // Condizioni delle Beginner (make-beginner-missions.js) calcolate dallo stato del giocatore a ogni elenco,
 // non da un contatore: 30 storia superata fino alla quest targetId, 31 STR del keyblade preferito,
