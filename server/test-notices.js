@@ -37,6 +37,7 @@ check(p.includes('Next update: in less than an hour'), 'meno di un ora');
   check(ms && /reconstructed/.test(t) && /163/.test(t) && /Skill EXP/.test(t) && /every Medal in your deck/.test(t), 'notizia Medal skills');
 }
 check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && /no purchases/.test(x.body.join(' '))), 'acquisti nelle differenze');
+check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && /maximum LV is \*\*999\*\*/.test(x.body.join(' ')) && /from LV 305 it is \*\*reconstructed\*\*/.test(x.body.join(' '))), 'livelli Lux ricostruiti nelle differenze');
 {
   const diff = n.NOTICES.find((x) => x.title === 'Differences from the original game').body;
   const shop = n.NOTICES.find((x) => x.title === 'Shop').body;
