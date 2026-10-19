@@ -312,6 +312,30 @@ enhance(nb, [withTrait]);
 assert.ok(!p.medalTraits[withTrait], 'trait del materiale consumato tolti');
 log('11. trait: una copia +1, tre copie +1, slot pieni ->', JSON.stringify(r.medalResumption), '; slot della base', slots);
 
+// 12. Trait Medal (I-084 parte B): sulla sua medaglia (anche 7★ e boosted) trait + pallino; tre impilate: un trait,
+// tre pallini; su un'altra medaglia niente trait ne' pallino (resta l'EXP)
+p.traitPending = [];
+const TM1 = 9000001;
+assert.equal(byId.get(TM1)?.type, 9, 'riga della Trait Medal #1');
+for (const id of [301426, 301427, 2301426]) {
+  const tmb = give(id)[0];
+  r = enhance(tmb, give(TM1));
+  assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 1, `Trait Medal #1 su ${id}: un trait`);
+  assert.equal(r.afterEnhanceUserMedal.burstUpperNumber, 1, `Trait Medal #1 su ${id}: un pallino`);
+}
+const tm3 = give(301426)[0];
+const pile = give(TM1, 3);
+r = enhance(tm3, [pile[0]], [3]);
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 1, 'tre Trait Medal: un trait');
+assert.equal(r.afterEnhanceUserMedal.burstUpperNumber, 3, 'tre Trait Medal: tre pallini');
+const tmOther = give(other11.medalId)[0];
+const exp0 = state(tmOther).exp || 0;
+r = enhance(tmOther, give(TM1));
+assert.equal(r.afterEnhanceUserMedal.userShuffleSkills.length, 0, 'Trait Medal su un\'altra medaglia: nessun trait');
+assert.equal(r.afterEnhanceUserMedal.burstUpperNumber || 0, 0, 'Trait Medal su un\'altra medaglia: nessun pallino');
+assert.ok((state(tmOther).exp || 0) > exp0 || state(tmOther).level > 1, 'Trait Medal su un\'altra medaglia: EXP');
+log('12. Trait Medal: trait + pallino sulla sua medaglia (6★, 7★, boosted), 3 impilate = 1 trait e 3 pallini, altrove solo EXP');
+
 // medaglia 1 (Stock Medal) intatta
 assert.equal(byId.get(1).imageId, 90000);
 try { fs.unlinkSync(SAVE); } catch {}
