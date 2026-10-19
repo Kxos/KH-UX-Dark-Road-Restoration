@@ -496,6 +496,25 @@ def is_boosted(r):
 BONUS = re.compile(r'[Ii]ncludes? (a|one|two|three|five|\d+) (?:bonus |(?=(?:\[\[)?(?:Power|Speed|Magic|Sun|Moon) Gem))')
 
 
+# Scrooge in regalo con la sua skill (70 banner Skills to Thrill e simili 2016-18: «Includes a bonus 6★ Scrooge Medal
+# with the Attack Boost III Skill»; segnalazione dell'utente 19-10, mai consegnato): voce [3, Scrooge alla stella,
+# 1, skillId]. Nomi della wiki scritti diversamente da skill.json:
+SCROOGE_RE = re.compile(r'Includes a bonus (\d)★ (?:\[\[)?Scrooge(?:\]\])? Medal with the (?:\[\[)?(.+?)(?:\]\])? Skill\b')
+SKILL_ALIAS = {'atk boost ii & atk prize+': 'atk prize+ & atk boost ii', 'sp attack gauge 1': 'sp attack gauge i',
+               'atk b iii max & sp ga ii': 'atk b iii max & sp ga 2'}
+
+
+def scrooge_bonus(notes, medal_rows, skill_rows):
+    """([3, Scrooge, 1, skillId] o None, nome non trovato o None) per «Includes a bonus N★ Scrooge Medal with the X Skill»."""
+    m = SCROOGE_RE.search(notes.replace("'''", ''))
+    if not m:
+        return None, None
+    star, name = int(m.group(1)), norm(m.group(2))
+    sid = {norm(s['name']): s['skillId'] for s in skill_rows}.get(SKILL_ALIAS.get(name, name))
+    mid = next((r['medalId'] for r in medal_rows if r['name'] == 'Scrooge' and r['rare'] == star), None)
+    return ([3, mid, 1, sid] if sid and mid else None), (None if sid and mid else m.group(2))
+
+
 def _bonus(notes, medal_rows, material_rows):
     """([[3|5, id, numero], ...], nomi non trovati): la frase finisce al primo punto fuori da link e
     abbreviazioni («Donald Ver. B»); «5★ A and 6★ B medal» = due oggetti."""
@@ -1065,6 +1084,12 @@ def build_catalog(inputs):
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_ov or day_limit(notes, typ), total, vip_free)
         found, sk = _bonus(notes, M, MAT)
+        scr, scr_miss = scrooge_bonus(notes, M, inputs.get('skills') or [])
+        if scr:
+            found.append(scr)
+            sk = [x for x in sk if 'scrooge' not in x]  # la frase generica non trovava «Scrooge Medal with the X Skill»
+        elif scr_miss:
+            sk.append(scr_miss)
         # 2c/G7: regalo che sta solo nel notice (campo «bonus» = «tipo,id,numero», B0212 Magic Broom, notice 35138)
         for v in [x for x in ((ov.get(rid) or {}).get('bonus') or '').split(';') if x.strip()]:
             item = [int(x) for x in v.split(',')]

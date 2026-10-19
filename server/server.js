@@ -1292,7 +1292,10 @@ function respondGachaDraw(res, body) {
     const gift = banner.guarantee?.pityGift;
     if (draw.pityFired && Array.isArray(gift)) addPresent(gift[0], gift[1], gift[2] || 1, 'Guaranteed bonus: ' + banner.name);
     // oggetti in omaggio dell'estrazione (Magic Mirror, gemme...): nel Present Box (spec 9.2)
-    for (const [type, itemId, n] of banner.bonus || []) addPresent(type, itemId, n, 'Bonus: ' + banner.name);
+    for (const [type, itemId, n, skillId] of banner.bonus || []) {
+      const sk = skillId && skillRowsById().get(skillId)?.name;
+      addPresent(type, itemId, n, 'Bonus: ' + banner.name + (sk ? ` (${sk})` : ''), skillId);
+    }
     missionCount('draw', 1); // Beginner «Draw Medal»: una per richiesta riuscita, non per medaglia
     price = gacha.payDraw(banner, player, realMs, draw.featured);
   } catch (e) {
@@ -2355,11 +2358,12 @@ function seedTestPresents() {
 }
 
 // un regalo nella scatola (id progressivi mai riusati), valido 30 giorni come gli originali
-function addPresent(resourceType, resourceId, number, comment) {
+// skillId: medaglia con quella skill al livello massimo (Scrooge dei Skills to Thrill, catalogo bonus[3])
+function addPresent(resourceType, resourceId, number, comment, skillId) {
   player.presents = player.presents || [];
   const id = Math.max(player.presentLastId || 0, ...player.presents.map((p) => p.userPresentId)) + 1;
   player.presents.push({ userPresentId: id, resourceType, resourceId, number,
-    limitDatetime: realNow() + 30 * 86400000, comment, created: realNow() });
+    limitDatetime: realNow() + 30 * 86400000, comment, created: realNow(), ...(skillId ? { skillId } : {}) });
   player.presentLastId = id;
 }
 
@@ -2407,7 +2411,9 @@ function respondPresentReceive(res, body) {
   const keep = [];
   for (const p of livePresents()) {
     if (!want.has(p.userPresentId)) { keep.push(p); continue; }
+    const before = (player.medals || []).length;
     grantItem(p.resourceType === 1 ? 2 : p.resourceType, p.resourceId, p.number);
+    if (p.skillId && p.resourceType === 3) giveSkill(player.medals.slice(before), p.skillId);
     console.log(`[presents] riscosso ${p.userPresentId}: tipo ${p.resourceType} id ${p.resourceId} x${p.number}`);
   }
   player.presents = keep;
@@ -2419,6 +2425,21 @@ function respondPresentReceive(res, body) {
     lastUserPresentIds: keep.map((p) => p.userPresentId),
     userStone: { freeStone: player.freeStone || 0, payStone: 0 },
   });
+}
+
+// Skill al livello massimo sulle medaglie appena ricevute (regalo con skillId: Scrooge «with the X Skill» dei
+// Skills to Thrill, catalogo bonus [3, Scrooge, 1, skillId]; le Scrooge originali la portano al massimo)
+function giveSkill(medals, skillId) {
+  const t = medalSkillTables();
+  const row = t.byId.get(skillId);
+  if (!row) { console.log(`  [skill] regalo con skill ${skillId} assente da skill.json`); return; }
+  const expRow = t.expRows.get(row.expType);
+  player.medalSkills = player.medalSkills || {};
+  for (const m of medals) {
+    player.nextUserSkillId = (player.nextUserSkillId || 0) + 1;
+    player.medalSkills[m.userMedalId] = { userSkillId: player.nextUserSkillId, skillId, level: row.maxLv || 1,
+      exp: expRow ? medalSkill.expToReach(expRow, row.maxLv || 1) : 0, getDatetime: realNow() };
+  }
 }
 
 // Inventario iniziale da initItem: categoria 3 = medaglie del deck (equipType 3,

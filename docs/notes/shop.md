@@ -733,3 +733,14 @@ per nome su B0145 (30703), B0157 (31354), B0184 (33505), B0190 (33593), B0195 (3
 (`slot new@0x1/6:tier=4-`), 1-3 pallini sullo slot, Illustrated Kairi [EX] con 3 pallini, boosted +1000/+1000 «small»,
 vetrina (campo nuovo `featured`). B0158/B0182 (INCOMPLETE, gemelli) non toccati. Simulazione: ogni medaglia elencata
 esce con 3 pallini (B0145, B0190, B0199, B0207 anche come pity), B0204 Kairi [EX] 63 su 4000 estrazioni, tutte a 3.
+
+<a id="scrooge-bonus"></a>
+## Scrooge con skill dei Skills to Thrill (19-10, revisione 136, segnalazione dell'utente)
+
+I 70 banner «Includes a bonus 6★ Scrooge Medal with the X Skill» (Skills to Thrill e simili, B0062-B0410) non davano
+lo Scrooge: la regex dei bonus non riconosceva «Scrooge Medal with the ... Skill» (lo scartava fra i «bonus
+saltati»). Ora `make_banner_catalog.scrooge_bonus` produce la voce `[3, 90126, 1, skillId]` (4° campo = skill;
+nomi della wiki diversi da skill.json in `SKILL_ALIAS`: «ATK Boost II & ATK Prize+», «SP Attack Gauge 1», «ATK B III
+Max & SP GA II»). Server: il regalo porta `skillId` e il nome nel commento («Bonus: Skills to Thrill Deal (Attack
+Boost III)»); al ritiro `giveSkill` salva la skill al livello massimo in `player.medalSkills`. Banco: B0080 ->
+Present Box -> Scrooge 6★ «Attack Boost III 20/20, Trigger Rate 54%».
