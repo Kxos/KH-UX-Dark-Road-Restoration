@@ -313,7 +313,7 @@ function page(title, body, cls = '') {
     + '.ml{columns:3;column-gap:18px;list-style:none;padding:0;font-size:15px;line-height:1.6}.ml li{break-inside:avoid}'
     + '.p{color:#ff4a74}.g{color:#5cd94a}.m{color:#62a7ff}.f{font-weight:bold;text-decoration:underline}'
     + '.why{border-left:4px solid #8aa3b3;background:#0a4466;padding:6px 12px;margin:8px 0 4px;font-size:15px;line-height:1.6}'
-    + '.why.now{border-color:#2e9e3e}.why.locked{border-color:#7d8894}.why.later{border-color:#1a6fa8}'
+    + '.why ol{margin:4px 0;padding-left:22px}.why li{margin:2px 0}.why .v{margin:8px 0 2px;padding:6px 10px;background:#0d5a86;border-radius:6px;color:#ffcd4a}.why .v b{color:#fff}.why.now{border-color:#2e9e3e}.why.locked{border-color:#7d8894}.why.later{border-color:#1a6fa8}'
     + '.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:linear-gradient(rgba(2,24,40,0),rgba(2,24,40,.92) 35%)}'
     + '.back{display:inline-block;padding:7px 26px 8px;border-radius:10px;border:2px solid #9fd4ff;color:#fff;text-decoration:none;'
     + 'font:italic bold 20px sans-serif;letter-spacing:1px;background:linear-gradient(#5aa8ff,#2556c8 55%,#1b3f9c);'
@@ -480,20 +480,31 @@ const STATE_WHY = {
   now: 'You can draw from this banner in the Shop now.',
   locked: 'Clear the Story Quest above to reach the date of this banner. In the original game banners followed the calendar; here they follow your progress in the Story.',
 };
-// «Not in the Shop now» con la rotazione settimanale (I-165): fra quante settimane torna, o periodo gia' passato
+// «Not in the Shop now» con la rotazione settimanale (I-165): passi brevi con le date vere del periodo e della
+// settimana mostrata, poi la risposta per questo banner in evidenza (HTML, testi gia' sicuri)
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const niceDay = (iso) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}, ${iso.slice(0, 4)}`;
 function laterWhy(banner, w) {
-  const head = 'The Shop shows one week of the original calendar at a time, inside the period that matches your progress in the Story, and moves to the next week every Monday.';
-  if (!w) return head;
+  if (!w) return esc('This banner is not in the Shop this week.');
   const end = banner.end || '2099-12-31';
-  if (end < w.day) return `${head} This banner ran before your current Story period, so it is no longer in the Shop: you can still look at its Medals and rates here.`;
-  if (banner.start > w.periodEnd) return `${head} This banner comes later in the Story.`;
-  for (let d = 1; d <= w.n; d++) {
-    const k = (w.k + d) % w.n;
-    const from = new Date(Date.parse(w.day + 'T00:00:00Z') + 7 * k * 86400000).toISOString().slice(0, 10);
-    const to = new Date(Math.min(Date.parse(from) + 6 * 86400000, Date.parse(w.periodEnd))).toISOString().slice(0, 10);
-    if (banner.start <= to && end >= from) return `${head} This banner comes back to the Shop ${d === 1 ? 'next week' : `in ${d} weeks`}.`;
+  let verdict;
+  if (end < w.day) verdict = 'This banner ran <b>before</b> your period, so it will not come back to the Shop. You can still see its Medals and rates here.';
+  else if (banner.start > w.periodEnd) verdict = 'This banner comes in a <b>later period</b>: keep going in the Story.';
+  else {
+    for (let d = 1; d <= w.n && !verdict; d++) {
+      const k = (w.k + d) % w.n;
+      const from = new Date(Date.parse(w.day + 'T00:00:00Z') + 7 * k * 86400000).toISOString().slice(0, 10);
+      const to = new Date(Math.min(Date.parse(from) + 6 * 86400000, Date.parse(w.periodEnd))).toISOString().slice(0, 10);
+      if (banner.start <= to && end >= from) verdict = `It comes to the Shop <b>${d === 1 ? 'next Monday' : `in ${d} weeks (on a Monday)`}</b>, when the Shop shows ${niceDay(from)} - ${niceDay(to)}.`;
+    }
+    verdict ||= 'It is in your period, but the Shop is full in its weeks.';
   }
-  return head;
+  const quests = w.qFrom ? ` (Story Quests ${w.qFrom}-${w.qTo})` : '';
+  return '<b>How the Shop works</b><ol>'
+    + `<li>Your progress in the Story${quests} matches this period of the original calendar: <b>${niceDay(w.day)} - ${niceDay(w.periodEnd)}</b>.</li>`
+    + `<li>The Shop shows one week of it at a time. This week: <b>${niceDay(w.from)} - ${niceDay(w.to)}</b>.</li>`
+    + `<li>Every Monday it moves to the next week${w.n > 1 ? `; after the last one it starts again (${w.n} weeks in this period)` : ' (this period is a single week)'}.</li></ol>`
+    + `<p class="v">${verdict}</p>`;
 }
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
@@ -526,7 +537,7 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<span class="s s-${st.key}">${esc(st.text)}</span>${(() => { const t = st.key === 'later' ? laterWhy(banner, ctx?.shopWeek) : STATE_WHY[st.key]; return t ? `<div class="why ${st.key}">${esc(t)}</div>` : ''; })()}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
     + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}${back}`, back ? 'hb' : '');
 }
 

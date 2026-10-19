@@ -69,7 +69,8 @@ function shopWindow(catalog, quest, week, rot) {
   const from = addDays(day, 7 * k);
   const end = next ? addDays(next, -1) : addDays(day, 6);
   const to = addDays(from, 6) < end ? addDays(from, 6) : end;
-  return { day, from, to, k, n, periodEnd: end };
+  const rows = (catalog.story || []).filter((r) => r[2] === day);
+  return { day, from, to, k, n, periodEnd: end, qFrom: rows.length ? rows[0][0] : 0, qTo: rows.length ? rows[rows.length - 1][1] : 0 };
 }
 
 // Decisione 13-bis, regola originale: dalla data del notice le 7★ di quel Tier estratte arrivano con pallini e guilt al
