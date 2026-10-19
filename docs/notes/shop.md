@@ -793,7 +793,13 @@ does not restart».
   (Tier 6+ con 1-3 pallini, Sephiroth [EX+] a 5 pallini e boosted, Magic Mirror x3; Trait Medal #2 non riprodotta).
 - D5 Frozen B0430/B0431 («Two 6 or 7★ Frozen Medals»): slot a lista 6★ con `up` (override slot «...;up»): sale a 7★
   con la probabilita' dello slot normale (3%, ricostruita, scritta nei Details); a 7★ entra anche Supernova - Elsa.
-- D8: notice di agosto 2019 - gennaio 2020 cercati da un agente (tmp\sp2c\d8\).
+- D8 (revisione 141): un agente ha provato 7.067 id su cache.sqex-bridge.jp (56500-62699 e finestre 2016-18) e
+  ritrovato 72 notice KHUX in inglese (copia in `referenceanners
+otices_recovered_d8.json`, abbinamenti in
+  `notices_recovered_d8_matches.tsv`): 20 dei 30 banner senza notice ora ce l'hanno. Il catalogo coincideva gia'
+  tranne B0590 (Standard: una fra 5 medaglie entro 5, notice 57597), B0591 (VIP: Supernova+ - Key Art #21 entro 10)
+  e B0618 (Foreteller entro 3, contatore che non si azzera, 59825). Restano senza notice B0001-B0004, B0077,
+  B0087/B0088, B0392; B0009 e' la campagna degli Avatar Board di Zootopia (17892), non un'estrazione.
 - D9 (righe solo-catalogo con le stesse frasi): rimandato a quando diventano estraibili.
 
 <a id="pagine-stile"></a>
