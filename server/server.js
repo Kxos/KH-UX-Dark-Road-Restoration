@@ -3508,7 +3508,8 @@ function handler(scheme) {
       // tempi del popup Notices (segnalazione dell'utente 19-10: a volte resta vuoto a lungo al primo avvio): la
       // pagina chiama /web/notices/shown appena disegnata; il log dice quanto e' passato dalla richiesta
       if (kind === 'noticesshown') {
-        console.log(`  [notices] pagina disegnata ${noticesServedAt ? Date.now() - noticesServedAt : '?'} ms dopo la richiesta`);
+        const q = new URLSearchParams((entry.url || req.url || '').split('?')[1] || '');
+        console.log(`  [notices] pagina disegnata ${noticesServedAt ? Date.now() - noticesServedAt : '?'} ms dopo la richiesta; fasi nella WebView (ms): risposta ${q.get('resp')}, DOM ${q.get('dom')}, primo disegno ${q.get('paint')}, load ${q.get('load')}, ora ${q.get('now')}`);
         res.writeHead(204);
         return res.end();
       }

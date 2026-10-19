@@ -136,10 +136,10 @@ function noticesPage(realMs = Date.now()) {
   };
   const rows = notices.map((n, i) => `<a class="row" href="#n${i}" onclick="show(${i});return false">`
     + `<span class="d">${esc(n.date)}</span><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
-    + `<span class="x">${esc(n.title)}</span><span class="a">&#9654;</span></a>`).join('');
+    + `<span class="x">${esc(n.title)}</span><span class="a"></span></a>`).join('');
   const details = notices.map((n, i) => `<div class="det" id="d${i}"><div class="meta"><span class="t" style="background:${TAG_COLOR[n.tag] || '#3f7fd0'}">${esc(n.tag)}</span>`
     + `<span class="d">${esc(n.date)}</span></div><h2>${esc(n.title)}</h2>${bodyHtml(n.body)}`
-    + '<div class="bar"><a class="back" href="#" onclick="show(-1);return false">BACK<span>&#10550;</span></a></div></div>').join('');
+    + '<div class="bar"><a class="back" href="#" onclick="show(-1);return false">BACK<span></span></a></div></div>').join('');
   return '<!doctype html><html><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<style>body{margin:0;background:#174a5c;color:#fff;font:18px sans-serif;letter-spacing:.3px}'
@@ -147,7 +147,7 @@ function noticesPage(realMs = Date.now()) {
     + '.row:active{background:#1f5d72}.d{width:62px}'
     + '.t{display:inline-block;width:124px;text-align:center;font-size:14px;padding:5px 0;margin-right:12px;border-radius:3px;'
     + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.18)}'
-    + '.x{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a{color:#e8242c;margin-left:10px}'
+    + '.x{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a{margin-left:10px;width:0;height:0;border-style:solid;border-width:8px 0 8px 13px;border-color:transparent transparent transparent #e8242c}'
     + '.det{display:none;min-height:100vh;box-sizing:border-box;background:#0d3350;padding:14px 22px 96px;line-height:1.85}'
     + '.meta{display:flex;align-items:center;color:#9fc3d6;font-size:15px}.meta .t{width:auto;padding:3px 12px}'
     + 'h2{color:#5fe0f0;font-size:21px;margin:10px 0 14px;padding-bottom:8px;border-bottom:2px solid #1e5f80}'
@@ -159,12 +159,15 @@ function noticesPage(realMs = Date.now()) {
     + '.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:linear-gradient(rgba(6,26,42,0),rgba(6,26,42,.92) 35%)}'
     + '.back{display:inline-block;padding:7px 26px 8px;border-radius:10px;border:2px solid #9fd4ff;color:#fff;text-decoration:none;'
     + 'font:italic bold 20px sans-serif;letter-spacing:1px;background:linear-gradient(#5aa8ff,#2556c8 55%,#1b3f9c);'
-    + 'box-shadow:0 2px 0 #0b2a66,inset 0 1px 0 rgba(255,255,255,.5);text-shadow:0 1px 2px #0a2a6a}.back span{margin-left:10px;font-style:normal}</style>'
+    + 'box-shadow:0 2px 0 #0b2a66,inset 0 1px 0 rgba(255,255,255,.5);text-shadow:0 1px 2px #0a2a6a}.back span{display:inline-block;margin-left:12px;width:14px;height:9px;border:3px solid #fff;border-left:0;border-radius:0 8px 8px 0;vertical-align:1px}</style>'
     + '<script>function show(i){document.getElementById("list").style.display=i<0?"block":"none";'
     + 'for(var k=0;k<' + notices.length + ';k++)document.getElementById("d"+k).style.display=k===i?"block":"none";'
     + 'window.scrollTo(0,0)}'
     // avvisa il server appena disegnata (tempi del popup al primo avvio, server.js noticesshown)
-    + 'window.addEventListener("load",function(){requestAnimationFrame(function(){new Image().src="/web/notices/shown?"+Date.now()})})'
+    // tempi delle fasi misurati dalla WebView (risposta, DOM pronto, primo disegno, load), in ms dall'inizio della navigazione
+    + 'window.addEventListener("load",function(){requestAnimationFrame(function(){var t=performance.timing,n=t.navigationStart,'
+    + 'p=(performance.getEntriesByType&&performance.getEntriesByType("paint"))||[],fp=p.length?Math.round(p[0].startTime):-1;'
+    + 'new Image().src="/web/notices/shown?resp="+(t.responseEnd-n)+"&dom="+(t.domContentLoadedEventEnd-n)+"&paint="+fp+"&load="+(t.loadEventStart-n)+"&now="+Math.round(performance.now())})})'
     + '</script></head><body>'
     + `<div id="list">${rows}</div>${details}</body></html>`;
 }

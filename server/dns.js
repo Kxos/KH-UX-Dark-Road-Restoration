@@ -88,6 +88,19 @@ function buildEmpty(buf, q) {
   return Buffer.concat([header, buf.subarray(12, q.qEnd)]);
 }
 
+/** Risposta «nome inesistente» (NXDOMAIN): la connessione fallisce subito invece di aspettare il timeout. */
+function buildNxdomain(buf, q) {
+  const r = buildEmpty(buf, q);
+  r.writeUInt16BE(0x8183, 2);        // QR=1 RD=1 RA=1, RCODE=3
+  return r;
+}
+
+// Host che rispondiamo inesistenti (segnalazione dell'utente 19-10, popup Notices vuoto ~10 s al login):
+// Google Play Services scarica un font da fonts.gstatic.com mentre la WebView prepara la pagina, la
+// connessione TLS fallisce dopo secondi (orologio del dispositivo al 2021, certificati non validi) e la
+// WebView aspetta. Con NXDOMAIN il tentativo fallisce subito; i font restano quelli in cache.
+const BLOCK = ['fonts.gstatic.com'];
+
 /**
  * @param {object} opts
  * @param {string} opts.ip        indirizzo verso cui dirottare
@@ -95,7 +108,7 @@ function buildEmpty(buf, q) {
  * @param {string} opts.upstream  resolver a cui inoltrare il resto
  * @param {string} opts.logFile   file NDJSON delle query
  */
-function startDns({ ip, hijack, upstream = '1.1.1.1', port = 53, logFile }) {
+function startDns({ ip, hijack, upstream = '1.1.1.1', port = 53, logFile, block = BLOCK }) {
   const sock = dgram.createSocket('udp4');
   let seq = 0;
 
@@ -125,6 +138,12 @@ function startDns({ ip, hijack, upstream = '1.1.1.1', port = 53, logFile }) {
     const q = parseQuery(msg);
     if (!q) return;
     const type = TYPE[q.qtype] || String(q.qtype);
+
+    if (block.includes(q.name.toLowerCase())) {
+      log({ name: q.name, type, action: 'block', from: rinfo.address, answer: ' -> inesistente (bloccato)' });
+      sock.send(buildNxdomain(msg, q), rinfo.port, rinfo.address);
+      return;
+    }
 
     if (shouldHijack(q.name)) {
       // Rispondiamo solo ad A: su AAAA una risposta vuota spinge il client su IPv4.
@@ -164,4 +183,4 @@ function startDns({ ip, hijack, upstream = '1.1.1.1', port = 53, logFile }) {
   return sock;
 }
 
-module.exports = { startDns, parseQuery, buildAnswer, readName };
+module.exports = { startDns, parseQuery, buildAnswer, buildNxdomain, readName, BLOCK };

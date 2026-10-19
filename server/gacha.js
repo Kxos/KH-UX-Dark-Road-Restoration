@@ -299,6 +299,7 @@ function page(title, body) {
     + 'img{width:100%;max-width:640px;height:auto;display:block;margin:8px 0}'
     + '.b{border-bottom:2px solid #9fb7c6;padding:10px 0 16px}hr{border:0;border-top:2px solid #9fb7c6;margin:20px 0}'
     + '.n{color:#b9cfdc;font-size:15px}.s{display:inline-block;background:#1a6fa8;border-radius:12px;padding:0 12px;font-size:14px;margin:4px 0}'
+    + '.s-now{background:#2e9e3e;font-weight:bold}.s-now:before{content:"\\25B6  "}.s-later{background:#1a6fa8}.s-locked{background:#5a6470;color:#e0e6ea}.s-locked:before{content:"\\1F512  "}.s-size,.s-catalog{background:transparent;border:1px solid #8aa3b3;color:#b9cfdc}.b.now{border-left:5px solid #2e9e3e;padding-left:10px}.b.locked img{opacity:.55;filter:grayscale(.6)}'
     + '.k{color:#ffa500;font-weight:bold}.y{color:#ffcd4a;font-weight:bold}'
     + 'table{width:97%;margin:6px auto 10px;border-collapse:collapse;table-layout:fixed;font-size:85%}'
     + 'th,td{border:1px solid #fff;padding:4px 8px;text-align:center;vertical-align:middle}th{background:#365e76;font-weight:normal}'
@@ -490,7 +491,7 @@ function detailPage(banner, ex, medalNames, ctx) {
   const rates = rated ? '<h2>Draw rates</h2><p class="n">Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.</p>'
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<span class="s">${esc(st.text)}</span><h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `<span class="s s-${st.key}">${esc(st.text)}</span><h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
     + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}`);
 }
 
@@ -507,9 +508,9 @@ function oddsPage(entries) {
 function catalogPage(banners, ctx) {
   const sorted = [...banners].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.drawMedalTypeId - b.drawMedalTypeId));
   return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
-    + sorted.map((b) => `<div class="b"><a href="/web/gacha/detail/${b.drawMedalTypeId}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
+    + sorted.map((b) => { const st = stateOf(b, ctx); return `<div class="b ${st.key}"><a href="/web/gacha/detail/${b.drawMedalTypeId}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
       + `<div class="n">${dates(b)}</div>${priceLine(b) ? `<div class="n">${priceLine(b)}</div>` : ''}`
-      + `<span class="s">${esc(stateOf(b, ctx).text)}</span></div>`).join(''));
+      + `<span class="s s-${st.key}">${esc(st.text)}</span></div>`; }).join(''));
 }
 
 module.exports = {

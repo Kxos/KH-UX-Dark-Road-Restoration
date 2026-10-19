@@ -747,4 +747,8 @@ eference\album\album_yt_01.jpg).
   Tempi del popup al login: misurati con `D:\Progetto_Restauro_KH_UX\tmp\ntime_login.ps1` (server 3 ms; client:
   ~1 s di cornice vuota prima che chieda /web/notices, pagina disegnata ~1 s dopo). La pagina chiama
   `/web/notices/shown` appena disegnata e il server scrive «[notices] pagina disegnata N ms dopo la richiesta»:
-  serve a cogliere i casi lenti segnalati dall'utente (non riprodotti in 4 prove).
+  con le fasi misurate dalla WebView (risposta, DOM, load). **Causa dei casi lenti (~10 s)**: mentre la WebView prepara
+  la pagina, Google Play Services scarica un font da `fonts.gstatic.com`; la connessione TLS fallisce dopo secondi
+  (orologio del dispositivo al 2021) e la pagina resta in attesa (risposta 0,6 s, DOM 9,4 s). `server/dns.js` risponde
+  NXDOMAIN a `fonts.gstatic.com` (lista `BLOCK`): 3 rientri su 3 con la pagina in 1,1-1,5 s. Simboli rari (⤶, ▶) del
+  BACK e della freccia sostituiti da forme CSS.

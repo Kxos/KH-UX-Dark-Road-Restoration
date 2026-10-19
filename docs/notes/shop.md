@@ -766,3 +766,6 @@ con intestazione #365e76. Probabilita' in tabella «Medal | Rarity | Probability
 raggruppate «Medal 4-10»); Draw Odds si chiama «Probabilities» come l'originale, sezioni «[banner]» gialle con
 «↑PAGE TOP»; medaglie in tre colonne colorate per attributo (Power #ff4a74, Speed #5cd94a, Magic #62a7ff) come i
 nomi nei notice, bersagli della pity sottolineati. Banco: B0082 Details e Probabilities.
+- Stato dei banner nel Catalog e nei Details (19-10, richiesta dell'utente): «▶ In the Shop now» verde in grassetto
+  (riquadro con bordo verde nel Catalog), «🔒 Unlocks after Story Quest N» grigio con l'immagine attenuata, «Not in the
+  Shop now» blu, solo catalogo/dimensione non disponibile solo bordato (`gacha.js`, classi `s-<stato>`).
