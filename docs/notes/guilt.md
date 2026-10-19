@@ -74,6 +74,13 @@ pallini solo con copie identiche (medalId) o Mickey & Brooms, come la wiki.
   (rilancio, +0x523, popup «Bonus range»); guilt al massimo: la copia tira un trait (+0x525). La guilt
   della copia non si legge mai; un solo tiro per fusione. Il risultato ([fn]) mostra solo il
   guiltFactor della risposta. `applyEnhance` segue questa regola; caso del banco in `test-medal-guilt.js`.
+- <a id="banco-1910"></a>**Provato al banco il 19-10** (rev 128, risorse 43, server con `-GachaShow B0280`):
+  Vexen [+] 2865 mostra «+201%» giallo in Medal List e dettaglio. Rilancio: 2865 (5 pallini, 20100) + copia da
+  2 pallini -> popup «Attempt to raise special attack bonus from +201%? Bonus range +150 - 230%. Outcome won't
+  lower current bonus %.», tiro 19300 < 20100, guilt resta 201% (giusto). Sblocco per eccedenza: copia da 3
+  pallini + copia da 2 (3 + 1 + 2 = 6 > 5) -> nessun popup, risultato ●●●○○ -> ●●●●● e riga «Special Attack
+  +171%», server 17100: anteprima e risultato coincidono. Entrambe le fusioni con `isGreatSuccess` 1 dal
+  client (EXP x1,5: 34.222 -> 51.333, l'anteprima mostra l'EXP senza il Great Success).
 
 ## 3. guilt-burst.js - fatto
 

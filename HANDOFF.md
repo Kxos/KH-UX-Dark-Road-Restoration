@@ -100,8 +100,10 @@ otice_audit\g4_historical_tiers.md`), B0154 lista di 17 nomi, XIII Deal 10 nomi.
   regalo visti; rev 128 nomi «X A» sulle 5★/6★ SE (e53b3d4); risorse 43 grafica «X A» sulle 23 6★ SE, che avevano quella
   della [+] (989d5de); immagini e filtri confermati. Revisione finale del piano: medalMapVersion 2 (record Nova), test,
   catalogo e docs (0e77901). Guilt: l'eccedenza dei pallini sblocca la guilt come l'anteprima del client (6f74ac2, Vexen
-  [+] 2865 del banco corretta a mano: guilt 20100). **Prossimo passo (19-10): vedere al banco la guilt 201% di Vexen [+]
-  e una fusione con eccedenza (server avviato con -GachaShow B0280), poi G4 del 2c.**
+  [+] 2865 del banco corretta a mano: guilt 20100). **Banco 19-10 fatto**: +201% visibile, rilancio (popup «Bonus
+  range», non scende) e sblocco per eccedenza (3 + 1 + 2 > 5 -> 171%) provati
+  ([guilt.md#banco-1910](docs/notes/guilt.md#banco-1910), [diario](docs/journal/2026-10-19.md)).
+  **Prossimo passo: G4 del 2c.**
 - **In coda dopo I-153 e il 2c (deciso dall'utente il 17-10): sotto-progetto «Trait Medal» (I-084)**. Oggi lo slot
   Trait dei banner (89 promesse, es. B0619/B0637 slot 2, icona grigia «x1») da' una 6★ qualsiasi (ripiego dichiarato in
   Details e Notices). Da fare: righe delle Trait Medal nel master (6★ in grigio legate a una medaglia, Album), fusione
