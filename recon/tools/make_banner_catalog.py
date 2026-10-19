@@ -834,6 +834,9 @@ def apply_slot_override(g, ov_row):
     v = ((ov_row or {}).get('slot') or '').strip()
     if not v:
         return g
+    # «...;up» (D5, B0430/B0431 «Two 6 or 7★ Frozen Medals»): lo slot a lista sale di una stella come uno slot normale
+    up = v.endswith(';up')
+    v = v[:-3] if up else v
     # «new@2x1/5:names=a|b» (2c/G5): riserva a lista nuova dalla posizione 2, 1 medaglia, stella 5 (B0066: «you will
     # be guaranteed at least one of the new Medals», sulla prima posizione 5★: le due 6★ restano casuali)
     # «new@0x1/6:tier=4-» (2c/G9, B0204): riserva Tier nuova, Tier minimo 4 senza massimo
@@ -864,6 +867,8 @@ def apply_slot_override(g, ov_row):
         s.update(kind='list', names=[x.strip() for x in val.split('|') if x.strip()], tierMin=None, tierMax=None)
     else:
         raise SystemExit(f'override slot {v!r}: atteso tier= o names=')
+    if up:
+        s['up'] = True
     return g
 
 
@@ -1060,7 +1065,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured', 'pity', 'max_skill'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit', 'featured', 'pity', 'max_skill', 'not_reproduced'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -1130,6 +1135,10 @@ def build_catalog(inputs):
         apply_enhance_overrides(enh, ov.get(rid))
         apply_boosted_override(enh, ov.get(rid))
         apply_max_skill_override(enh, ov.get(rid), inputs.get('skills') or [])
+        # promesse non riproducibili scritte solo nel notice (campo «not_reproduced», chiavi separate da virgola: B0126 epic)
+        nr_ov = [x.strip() for x in ((ov.get(rid) or {}).get('not_reproduced') or '').split(',') if x.strip()]
+        if nr_ov:
+            enh['notReproduced'] = sorted(set(enh['notReproduced']) | set(nr_ov))
         total = int((ov.get(rid) or {}).get('total_limit') or 0) or total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
         day = free_day_limit(typ, prices, day_ov or day_limit(notes, typ), total, vip_free)
@@ -1213,8 +1222,9 @@ def build_catalog(inputs):
                 pool = pool_names_at(b, medals, sub_members, sub_date, first_r)
                 s['names'] = [n for n in s['names'] if n in pool]
             s.pop('prefix', None)
-            if s['kind'] == 'list':
-                s['names'] = bg.star_filter(s['names'], s['star'], rares.get)
+            if s['kind'] == 'list':  # con «up» restano anche i nomi che hanno solo la stella sopra (Supernova - Elsa 7★)
+                keep = bg.star_filter(s['names'], s['star'], rares.get)
+                s['names'] = [n for n in s['names'] if n in keep or (s.get('up') and s['star'] + 1 in (rares.get(n) or ()))]
         first = next((s for s in g['slots'] if s['kind'] == 'list'), None)
         if first:
             g['list'] = list(first['names'])

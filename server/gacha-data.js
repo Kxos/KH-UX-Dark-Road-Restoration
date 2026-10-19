@@ -132,7 +132,7 @@ function expandPool(banner, catalog, at) {
   for (const [r] of banner.rarityMix) if (first[r + 1] && first[r + 1] <= at) rarities.add(r + 1);
   // stelle dei nomi riservati: quelle del pool piu' pityStar e le stelle degli slot gia' uscite
   const resRarities = new Set(rarities);
-  for (const r of [g.pityStar, ...res.map((s) => s.star)]) if (r && !out(r)) resRarities.add(r);
+  for (const r of [g.pityStar, ...res.map((s) => s.star), ...res.filter((s) => s.up).map((s) => s.star + 1)]) if (r && !out(r)) resRarities.add(r);
   const feat = new Set(p.featured || []), list = new Set(g.list || []);
   const pool = {}, featuredIds = new Set(), listIds = new Set(), byName = new Map(), resByName = new Map();
   const tiers = new Map(), medalInfo = new Map();
@@ -286,7 +286,11 @@ function rollReserved(banner, ex, rng, state) {
   const medalIds = rares.map((rare, i) => {
     if (i === pity.slot) return pickVariant(pickName(ex.pityNames, rng), g.pityStar || rare, rng);
     const j = reservationIndex(g, i), s = j >= 0 ? g.slots[j] : null;
-    if (s?.kind === 'list' && listOn && (ex.slotNames?.[j] || []).length) return pickList(ex.slotNames[j], rare, rng);
+    if (s?.kind === 'list' && listOn && (ex.slotNames?.[j] || []).length) {
+      // s.up (D5, Frozen «6 or 7★»): salita dello slot normale (UPGRADE) verso i nomi con la stella sopra
+      const top = s.up && UPGRADE[rare] && ex.slotNames[j].some(([, , v]) => poolOf(v, rare + 1).length);
+      return pickList(ex.slotNames[j], top && rng() < UPGRADE[rare] ? rare + 1 : rare, rng);
+    }
     if (s?.kind === 'tier') return pickTier(banner, ex, s, j, rare, rng);
     return pickSlot(banner, ex.pool, rare, rng); // trait (slot generico riservato) e slot liberi
   });

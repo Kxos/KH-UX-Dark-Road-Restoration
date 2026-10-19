@@ -474,7 +474,7 @@ function guaranteeSection(banner, ex, medalNames, at) {
     const n = s.count || 1;
     if (s.kind === 'tier') out.push(`${n}x ${s.star}★${tierRange(s)}${(s.names || []).length ? ` (or ${niceList(s.names, nm)})` : ''}`);
     else if (s.kind === 'trait') out.push(`${n}x Trait Medal (${s.star}★)`);
-    else out.push(`${n}x one of the listed Medals (${s.star}★)`);
+    else out.push(`${n}x one of the listed Medals (${s.star}★${s.up && gd.UPGRADE?.[s.star] ? `, ${Math.round(gd.UPGRADE[s.star] * 100)}% chance of ${s.star + 1}★, reconstructed` : ''})`);
   }
   // testo per voce (2c/G10): prima ogni preset diceva «Special Attack Bonus maxed», anche con 1-3 o 0 pallini
   const presetText = (p) => (p.guilt === 'max' ? 'comes with its Special Attack Bonus maxed'

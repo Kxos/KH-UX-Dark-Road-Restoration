@@ -781,6 +781,21 @@ does not restart».
   garantito), B0494/B0495 («Guaranteed and Stoppers slot»), B0502-B0504 (le tre Supernova HD per nome), B0508/B0509
   (le quattro medaglie per nome), oltre a B0435/B0452 sulla copia della pity. Tutte le abilita' esistono (I-146).
 
+<a id="sp2c-dubbi"></a>
+### Dubbi D1-D9 (19-10, decisioni dell'utente; revisione 140)
+
+- D1 Key Art #1/#2: NON e' un errore del master. La versione inglese ha scambiato i nomi dopo gennaio 2017 (wiki:
+  «Key Art #1, previously called "Key Art #2" in the English version»): il master ha i nomi definitivi, i notice
+  2016-17 quelli vecchi. Gli override dai notice usano i nomi di oggi (B0084, gia' fatto; B0156 corretto).
+- D2 (Tier di oggi), D4 (B0494 Standard, B0495 VIP), D6 (slot della pity), D7 (B0228 senza notice): chiusi.
+- D3 dai notice e dalla grafica: B0126 Cloud & Magic Mirrors (6★ x1 Illustrated Cloud + 5★ x9, Magic Mirror x5, 3 al
+  giorno, «ALL Epics» dichiarato non riproducibile: campo `not_reproduced`); B0267 EX Medal Deal Sephiroth [EX+]
+  (Tier 6+ con 1-3 pallini, Sephiroth [EX+] a 5 pallini e boosted, Magic Mirror x3; Trait Medal #2 non riprodotta).
+- D5 Frozen B0430/B0431 («Two 6 or 7★ Frozen Medals»): slot a lista 6★ con `up` (override slot «...;up»): sale a 7★
+  con la probabilita' dello slot normale (3%, ricostruita, scritta nei Details); a 7★ entra anche Supernova - Elsa.
+- D8: notice di agosto 2019 - gennaio 2020 cercati da un agente (tmp\sp2c\d8\).
+- D9 (righe solo-catalogo con le stesse frasi): rimandato a quando diventano estraibili.
+
 <a id="pagine-stile"></a>
 ## Stile delle pagine Details, Draw Odds e Catalog (19-10, richiesta dell'utente)
 
