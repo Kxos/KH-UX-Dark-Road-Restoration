@@ -71,6 +71,27 @@ function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, s
   return out;
 }
 
+// Conto alla rovescia sotto il pulsante (richiesta dell'utente 19-10; etichetta originale Plate_Limit del client,
+// [fn]: displayTimeLeft != 0 della riga drawMedalType -> tempo fino a endDate). Per ogni banner dello Shop
+// della settimana `week`: la prima settimana reale in cui la rotazione (gd.shopWindow) lo toglie dallo Shop, entro il
+// periodo della tranche (n settimane); null se resta in tutte (nessun conto alla rovescia).
+// -> Map drawMedalTypeId -> indice della settimana reale in cui esce (clock.weekStartOf = lunedi' 08:00 UTC).
+function shopLeaveWeeks(catalog, { storyQuest, week, rot: rot0, sizes, show }) {
+  const w0 = gd.shopWindow(catalog, storyQuest, week, rot0);
+  const rot = rot0 && rot0.day === w0.day ? rot0 : { day: w0.day, week }; // come storyCtx: la rotazione parte da qui
+  const at = (w) => {
+    const x = gd.shopWindow(catalog, storyQuest, w, rot);
+    return new Set(shopBanners(catalog.banners, { storyQuest, storyDay: x.from, shopFrom: x.from, shopTo: x.to, sizes, show }).map((b) => b.drawMedalTypeId));
+  };
+  const n = w0.n;
+  const now = at(week), out = new Map();
+  for (let j = 1; j < n && out.size < now.size; j++) {
+    const next = at(week + j);
+    for (const id of now) if (!out.has(id) && !next.has(id)) out.set(id, week + j);
+  }
+  return out;
+}
+
 // Piastra «Banner Catalog» (spec 4.1): Gold Ticket (payType 6, drawTicket3 sempre 0) prezzo 1: pulsante
 // grigio, il tocco non manda richieste ([fn]); Details apre il catalogo (detailUrl del master).
 function catalogRow() {
@@ -563,6 +584,6 @@ function catalogPage(banners, ctx) {
 }
 
 module.exports = {
-  SHOP_MAX, WALLET, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
+  SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
   dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
 };

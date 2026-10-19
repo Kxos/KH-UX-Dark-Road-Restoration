@@ -422,5 +422,25 @@ try {
   check(g.detailPage(g6({ guarantee: { pityMode: 'every' } }), ex6, medalNames, sctx).includes('guaranteed every 5 draws (original): the count does not restart'), 'every: riga dei Details');
 } catch (err) { errors.push(`T7: eccezione ${err.stack}`); }
 
+// conto alla rovescia dello Shop (shopLeaveWeeks): la settimana in cui la rotazione toglie il banner, sul catalogo vero
+try {
+  const cat = require('./game_data/gacha_catalog.json'), sizes = new Set([1, 3, 10]), show = new Set();
+  let seen = 0;
+  for (const q of [200, 525]) {
+    const rot = { day: gd.storyDay(cat, q), week: 1000 };
+    for (const week of [1000, 1001, 1002]) {
+      const m = g.shopLeaveWeeks(cat, { storyQuest: q, week, rot, sizes, show });
+      const shopAt = (w) => { const x = gd.shopWindow(cat, q, w, rot); return g.shopBanners(cat.banners, { storyQuest: q, storyDay: x.from, shopFrom: x.from, shopTo: x.to, sizes, show }).map((b) => b.drawMedalTypeId); };
+      for (const [id, w] of m) {
+        seen++;
+        check(w > week && shopAt(week).includes(id) && !shopAt(w).includes(id), `shopLeaveWeeks ${q}/${week}: ${id} esce alla settimana ${w}`);
+        for (let j = week + 1; j < w; j++) check(shopAt(j).includes(id), `shopLeaveWeeks ${q}/${week}: ${id} presente fino a ${w}`);
+      }
+    }
+  }
+  check(seen > 0, 'shopLeaveWeeks: almeno un conto alla rovescia');
+  check(g.shopLeaveWeeks(cat, { storyQuest: 200, week: 1000, rot: { day: gd.storyDay(cat, 200), week: 1000 }, sizes, show }).size === 0, 'shopLeaveWeeks: banner presenti in tutte le settimane senza conto');
+} catch (err) { errors.push(`shopLeaveWeeks: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

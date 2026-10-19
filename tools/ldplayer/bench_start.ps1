@@ -20,12 +20,17 @@ while (-not (Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -m
     Start-Sleep -Seconds 2
 }
 Write-Host ("  {0,-28} {1,5:N1} s" -f 'POST /khux/login', $sw.Elapsed.TotalSeconds)
-$n = LogLines $Out; $quiet = [Diagnostics.Stopwatch]::StartNew()
+$n = LogLines $Out; $quiet = [Diagnostics.Stopwatch]::StartNew(); $home = $false
 while ($quiet.Elapsed.TotalSeconds -lt $Settle -and $sw.Elapsed.TotalSeconds -lt 300) {
     Start-Sleep -Milliseconds 500
-    # il dialogo «Download» (master aggiornati) arriva dopo /khux/login
-    $c = Px @(@(1080, 740), @(600, 740))
-    if ((IsRed $c[0]) -and (IsOrange $c[1])) { Tap 1080 740; $quiet.Restart() }
+    # il dialogo «Download» (master aggiornati) arriva dopo /khux/login e prima di /tutorial/status (la prima richiesta
+    # dopo i download): da li' niente piu' screencap, che ogni mezzo secondo rallentavano l'avvio della WebView
+    # delle Notices (logcat 19-10: 42 screencap in 20 s mentre Chromium partiva)
+    if (-not $home) { $home = [bool](Get-Content $Out | Select-Object -Skip $from | Where-Object { $_ -match 'GET /tutorial/status' } | Select-Object -First 1) }
+    if (-not $home) {
+        $c = Px @(@(1080, 740), @(600, 740))
+        if ((IsRed $c[0]) -and (IsOrange $c[1])) { Tap 1080 740; $quiet.Restart() }
+    }
     $m = LogLines $Out
     if ($m -ne $n) { $n = $m; $quiet.Restart() }
 }

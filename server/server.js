@@ -432,7 +432,7 @@ function masterKey(name) {
 }
 
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
-const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0)
+const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + storyTranche() + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0)
   + (BENCH_SKILL_PROB !== null ? 80000 + BENCH_SKILL_PROB + 1 : 0);
 // Revisione della sessione: fissata all'inizio di ogni login (POST /system/login, la prima risposta
 // con ret() della sequenza) e usata da ret(), /system/resourcesize e dal master servito per tutta la
@@ -452,6 +452,19 @@ const sessionRealMs = () => (sessionFixed() ? player.sessionRealMs : realNow());
 const weeklySeriesOf = (row) => (row.id >= 3011 ? 1 : 0);
 const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeriesOf(row);
 
+// Settimana reale in cui ogni banner dello Shop esce con la rotazione (stessa scelta di /gacha/list alla data realMs)
+function shopLeave(realMs) {
+  const g = player.gacha || {};
+  return gacha.shopLeaveWeeks(gachaCatalog(), { storyQuest: stageNumber(lastStoryStageId()), week: clock.weekIndex(realMs),
+    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW });
+}
+// Tranche della storia del giocatore (indice della data in catalog.story): entra nella revisione del master, cosi'
+// il client riscarica drawMedalType (conti alla rovescia dello Shop) al login dopo un cambio di tranche
+function storyTranche() {
+  const cat = gachaCatalog(), day = gachaData.storyDay(cat, stageNumber(lastStoryStageId()));
+  return Math.max(0, [...new Set((cat.story || []).map((r) => r[2]))].sort().indexOf(day));
+}
+
 // righe servite: per «mission» le scadenze delle Weekly A/B e dei gruppi Limited (prossima
 // occorrenza), in ora finta con lo scostamento del mese della revisione
 function servedMasterRows(name, realMs) {
@@ -464,9 +477,13 @@ function servedMasterRows(name, realMs) {
   }
   // drawMedalType: bannerUrl/detailUrl sono percorsi (server/make-banners.js); l'indirizzo http si
   // aggiunge qui (max 128 byte, strncpy del client)
+  // displayTimeLeft/endDate: conto alla rovescia fino al lunedi' in cui la rotazione toglie il banner dallo Shop
+  // (gacha.shopLeaveWeeks), in ora finta come le missioni; gli altri banner restano senza (displayTimeLeft 0)
   if (name === 'drawMedalType') {
+    const leave = shopLeave(realMs), off = clock.twinOffset(realMs);
     return rows.map((r) => ({ ...r, bannerUrl: String(r.bannerUrl || '').startsWith('/') ? WEB_BASE + r.bannerUrl : r.bannerUrl,
-      detailUrl: String(r.detailUrl || '').startsWith('/') ? WEB_BASE + r.detailUrl : r.detailUrl }));
+      detailUrl: String(r.detailUrl || '').startsWith('/') ? WEB_BASE + r.detailUrl : r.detailUrl,
+      ...(leave.has(r.drawMedalTypeId) ? { displayTimeLeft: 1, endDate: clock.fakeString(clock.weekStartOf(leave.get(r.drawMedalTypeId)), off) } : {}) }));
   }
   if (name !== 'mission') return rows;
   const off = clock.twinOffset(realMs);

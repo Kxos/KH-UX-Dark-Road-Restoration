@@ -814,6 +814,13 @@ entravano mai. Ora (`gacha-data.shopWindow`, `server.js storyCtx`, `gacha.shopBa
 - simulazione su tutte le tranche e settimane: 734 banner estraibili su 734 raggiunti;
 - Details «Not in the Shop now»: fra quante settimane il banner torna, o «ran before your current Story period»;
   notizia Shop con la sezione «Weekly rotation». I banner di periodi superati restano solo nel Catalog.
+- Conto alla rovescia sotto il pulsante (19-10, richiesta dell'utente dal video Z_JRaJF7GbQ): etichetta originale
+  `Plate_Limit` della piastra (`[fn]`: se `displayTimeLeft` della riga drawMedalType non e' 0, tempo fino a
+  `endDate`; con payType 7-9 l'etichetta `Plate_Limit_LimitDraw` sotto i 100 giorni). Il server (`servedMasterRows`)
+  mette `displayTimeLeft: 1` e `endDate` = lunedi' 08:00 in cui la rotazione toglie il banner dallo Shop
+  (`gacha.shopLeaveWeeks`), in ora finta come le missioni; i banner che restano per tutto il periodo della tranche
+  non hanno conto. La revisione del master conta anche la tranche della storia (`storyTranche`), cosi' il client
+  riscarica drawMedalType al login dopo un cambio di tranche (dentro una sessione il master resta quello del login).
 
 Notices lente al login (seguito): esperimento con 3 rientri a pagina minima e 3 a pagina vera, tutti 1,2-1,4 s; i
 casi lenti (~9 s) sono intermittenti e coincidono con un aggiornamento di font di Google Play Services che fallisce
