@@ -1,5 +1,9 @@
 # Server privato KHUX — fase B
 
+> Pagina storica della fase B (ottobre 2026: primo avvio col telefono fisico). Il server di oggi (banco LDPlayer,
+> master, Shop, medaglie, trait...) e' descritto in [HANDOFF.md](../HANDOFF.md) e in [docs/notes/](../docs/notes/):
+> [server.md](../docs/notes/server.md), [banco.md](../docs/notes/banco.md), [medaglie.md](../docs/notes/medaglie.md), [shop.md](../docs/notes/shop.md).
+
 Node, **zero dipendenze**: `crypto` e `zlib` sono nativi, quindi AES-256-CBC e gzip
 senza installare nulla.
 
