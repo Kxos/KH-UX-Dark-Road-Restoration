@@ -209,6 +209,11 @@ foreach ($sp in @(@('rooms_gen', $NoRooms), @('enemy_gen', $NoEnemies), @('raise
 }
 python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt @seOpt
 if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
+# originali (2016, JP 4.3.1) al posto delle nostre ricostruzioni, dopo tutti i generatori (I-170, recon\tools\originals.tsv)
+python -I recon\tools\import_originals.py recon\tools\originals.tsv "$D\tmp\thethiny_x\bundle2016\files" `
+  "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1" "$sg\files" `
+  --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --report "$sg\originals.json"
+if ($LASTEXITCODE) { throw 'import_originals fallito' }
 # PNG veri e BTF non premoltiplicati -> BTF come le originali (alpha premoltiplicata)
 python recon\tools\btf_fix.py "$sg\files"
 if ($LASTEXITCODE) { throw 'btf_fix fallito' }
@@ -300,7 +305,7 @@ if ($Quick) {
   for ($i = 1; $i -lt $staticPacks.Count; $i += 2) { Copy-Item $staticPacks[$i] ("$v\data\d{0:D4}" -f (35 + ($i - 1) / 2)) }
   $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }; if ($raisedrawPack) { $names += 'raisedraw_gen' }
   Set-Content -Encoding ascii "$v\packs.txt" $names
-  $dataSize = 128MB  # 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre), 32 MiB con la musica delle BGM Medals (15 ottobre, ~55 MB di audio)
+  $dataSize = 192MB  # 128 MiB fino al 19 ottobre (originali di I-170, ~33 MB); 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre), 32 MiB con la musica delle BGM Medals (15 ottobre, ~55 MB di audio)
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
 $genLen = (Get-Item "$sg\gen.mp4").Length

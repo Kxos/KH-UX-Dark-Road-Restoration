@@ -1,0 +1,156 @@
+# Originali al posto delle nostre ricostruzioni (I-170; import_originals.py, in build-resources.ps1 dopo i generatori).
+# destinazione	fonti	[sorgente]	# nota.  Le righe dopo vincono: prima JP, poi il 2016 inglese dove c'e'.
+
+# 1. Miniature dell'elenco Story (al posto di make_quest_thumbs.py, ritagli delle mappe di Roboloid): 96/96 nel 2016
+img/adventure/stage/stage_select_ico_*.png	jp
+img/adventure/stage/stage_select_ico_*.png	b16
+
+# 2. Icone dei Tier dello Special Attack Bonus (al posto di make_textures.py: icone della khuxwiki e 9-10 disegnate)
+img/ui/guilt/*.png	jp
+img/ui/guilt/*.png	b16
+cocostudio/publish/MedalInfo_Guilt*.png	jp
+img/ui/guilt/MedalInfo_Guilt9.png	jp	cocostudio/publish/MedalInfo_Guilt9.png
+img/ui/guilt/MedalInfo_Guilt10.png	jp	cocostudio/publish/MedalInfo_Guilt10.png
+
+# 3. Icone dei materiali (al posto di fetch_material_icons.py, khuxwiki): 44/44 nel JP, 39 nel 2016
+img/material/material_*.png	jp
+img/material/material_*.png	b16
+
+# 4. NPC delle storie (wait.lwf vuote dal 9-10: invisibili): 41 completi nel 2016. Restano vuoti 7002, 8004, 9005,
+#    9007, 9010-9018: assenti dal 2016, nel JP mancano texture dai nomi generici («ビットマップ N», diverse per NPC)
+lwf/character/npc/3002/wait/	b16
+lwf/character/npc/3003/wait/	b16
+lwf/character/npc/3014/wait/	b16
+lwf/character/npc/3015/wait/	b16
+lwf/character/npc/3016/wait/	b16
+lwf/character/npc/3017/wait/	b16
+lwf/character/npc/3018/wait/	b16
+lwf/character/npc/3019/wait/	b16
+lwf/character/npc/4002/wait/	b16
+lwf/character/npc/4003/wait/	b16
+lwf/character/npc/4004/wait/	b16
+lwf/character/npc/4005/wait/	b16
+lwf/character/npc/4006/wait/	b16
+lwf/character/npc/4007/wait/	b16
+lwf/character/npc/4009/wait/	b16
+lwf/character/npc/4018/wait/	b16
+lwf/character/npc/4025/wait/	b16
+lwf/character/npc/5001/wait/	b16
+lwf/character/npc/5002/wait/	b16
+lwf/character/npc/5003/wait/	b16
+lwf/character/npc/5004/wait/	b16
+lwf/character/npc/5005/wait/	b16
+lwf/character/npc/5006/wait/	b16
+lwf/character/npc/5007/wait/	b16
+lwf/character/npc/5008/wait/	b16
+lwf/character/npc/5009/wait/	b16
+lwf/character/npc/5010/wait/	b16
+lwf/character/npc/5016/wait/	b16
+lwf/character/npc/5017/wait/	b16
+lwf/character/npc/5019/wait/	b16
+lwf/character/npc/5020/wait/	b16
+lwf/character/npc/5530/wait/	b16
+lwf/character/npc/5531/wait/	b16
+lwf/character/npc/8000/wait/	b16
+lwf/character/npc/8002/wait/	b16
+lwf/character/npc/9000/wait/	b16
+lwf/character/npc/9001/wait/	b16
+lwf/character/npc/9002/wait/	b16
+lwf/character/npc/9003/wait/	b16
+lwf/character/npc/9004/wait/	b16
+lwf/character/npc/9009/wait/	b16
+
+# 5. Moogle del Moogle Shop (I-021, era la LWF vuota: invisibile) e suono dell'animazione del training (I-082): JP completi
+lwf/mogshop/mog_wait/	jp
+lwf/pet/demo/training_SE/	jp
+
+# 6. Potenziamento ed evoluzione del keyblade (I-057/I-067: LWF vuote e KeyBlade_Evolution di make_kb_evolution_lwf.py):
+#    tutte complete nel 2016 (inglese)
+lwf/keyblade/KeyEvo/KeyEvo_eff/	b16
+lwf/keyblade/KeyEvo/KeyEvo_Medal_01/	b16
+lwf/keyblade/KeyEvo/KeyEvo_Medal_01B/	b16
+lwf/keyblade/KeyEvo/KeyEvo_Medal_02/	b16
+lwf/keyblade/KeyEvo/medal_blank_slot1/	b16
+lwf/keyblade/KeyEvo/medal_blank_slot2/	b16
+lwf/keyblade/KeyEvo/medal_blank_slot3/	b16
+lwf/memudemo/KeyBlade_StepUp/	b16
+lwf/memudemo/KeyBlade_Evolution/	b16
+
+# 7. Immagini dei keyblade nei popup (make_keyblade_images.py, dalla bitmap delle LWF): 64/64 (JP 58, 2016 21)
+img/keyBlade/KeyBlade_*.png	jp
+img/keyBlade/KeyBlade_*.png	b16
+
+# 8. Grafica del deck per keyblade (make_keyblade_decks.py, copie ricolorate della 001): 60/61 nel JP;
+#    DeckMedalNumUI_pvp_001 senza originale resta nostra
+img/carouselDeck/*.png	jp
+img/carouselDeck/*.png	b16
+
+# 9. Bagliori di deck e slot (make_keyblade_decks.py, make_medaltype_lwf.py): Type1/2 completi nel 2016, MedalType01
+#    completo nel JP; MedalDeck_Type01 (texture da riempire) e Type11/21/31 (nessun originale) restano nostri
+lwf/medal/medaldeck/MedalDeck_Type1/	b16
+lwf/medal/medaldeck/MedalDeck_Type2/	b16
+lwf/medal/medaltype/MedalType1/	b16
+lwf/medal/medaltype/MedalType2/	b16
+lwf/medal/medaltype/MedalType01/	jp
+
+# 13. Transizioni fra le aree (I-027: copie di wipe_1): 2-8 originali; 9, 10, 10000, 10001 senza originale
+img/wipe/wipe_[2-8].png	jp
+img/wipe/wipe_[2-8].png	b16
+
+# 14. Biglietti col segno provvisorio «仮» (I-135): grafica finale JP. Star7_Ticket_39 resta quella della piastra
+#     Banner Catalog (make_shop_art.py): scelta dell'utente in sospeso
+img/incentive/draw_Ticket_40.png	jp
+img/incentive/draw_Ticket_41.png	jp
+img/incentive/Star7_Ticket_38.png	jp
+
+# 15. Armature delle Avatar Board (gen_sphere_armatures.py, linee sottili): originali con barre e sfera «START»
+cocostudio/publish/Z_SpRoute_*	jp
+cocostudio/publish/Z_SpRoute_*	b16
+cocostudio/publish/SphereAnimation*	jp
+cocostudio/publish/SphereAnimation*	b16
+cocostudio/publish/Z_SpCursor*	jp
+cocostudio/publish/Z_SpCursor*	b16
+
+# 17-23. Texture minori ricostruite da make_textures.py / copie di make_layouts.py (audit I-170 righe 17-23)
+cocostudio/publish/Av_Panel1.png	b16,jp
+cocostudio/publish/Av_Panel2.png	b16,jp
+cocostudio/publish/Ico_Param_HP.png	b16,jp
+cocostudio/publish/Av_Panel_Colosseum.png	b16,jp
+cocostudio/publish/AvInfo_PetInfoPanel.png	b16,jp
+cocostudio/publish/MyMission_Category_On.png	jp	img/ui/MyMission_Category_On.png
+cocostudio/publish/MyMission_Category_Off.png	jp	img/ui/MyMission_Category_Off.png
+cocostudio/publish/MyMission_GroupIcon1.png	jp	img/ui/MyMission_GroupIcon1.png
+img/ui/MyMission_Category_On.png	jp
+img/ui/MyMission_Category_Off.png	jp
+img/ui/MyMission_GroupIcon1.png	jp
+img/ui/MyMission_GroupIcon2.png	jp
+cocostudio/publish/Mogshop_plate1.png	jp	img/ui/Mogshop_plate1.png
+img/ui/Mogshop_plate1.png	jp
+img/ui/Subslot_MedalSlot*01.png	jp
+cocostudio/publish/Complete_icon1.png	jp	img/ui/Complete_icon1.png
+img/ui/Complete_icon1.png	jp
+img/ui/Complete_icon2.png	jp
+img/ui/But15_On.png	b16
+cocostudio/publish/ShopBut_Lock.png	jp
+img/ui/ShopBut_Lock.png	jp
+img/ui/ShopBut_Lock_Disable.png	jp
+img/ui/But07_Disable.png	b16,jp
+img/ui/But06_Disable.png	b16,jp
+img/ui/Deck_Slot_Num_4.png	b16,jp
+img/ui/Deck_Slot_Num_5.png	b16,jp
+img/ui/Deck_Slot_Num_6.png	b16,jp
+cocostudio/publish/Panel07.png	b16,jp
+cocostudio/publish/Plate21.png	b16,jp
+
+# 11. Risultato di Level Up (2-5 materiali) ed Evolve (1-5) (I-024; make_layouts.py _lwf_copy: copie rinominate di
+#     card_strength_result_01, una carta sola): originali del 2016 complete di texture; le Medal_D_* che caricano sono
+#     in lwf/raisedraw/medal (raisedraw_gen)
+lwf/medal/compose/strength/card_strength_result_02/	b16
+lwf/medal/compose/strength/card_strength_result_03/	b16
+lwf/medal/compose/strength/card_strength_result_04/	b16
+lwf/medal/compose/strength/card_strength_result_05/	b16
+lwf/medal/compose/evolution/card_evolution_result_01/	b16
+lwf/medal/compose/evolution/card_evolution_result_02/	b16
+lwf/medal/compose/evolution/card_evolution_result_03/	b16
+lwf/medal/compose/evolution/card_evolution_result_04/	b16
+lwf/medal/compose/evolution/card_evolution_result_05/	b16
