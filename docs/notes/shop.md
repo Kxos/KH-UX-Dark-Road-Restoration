@@ -709,3 +709,16 @@ B0212 (EX Falling Price HD King Mickey [EX]): Magic Broom (300948) a ogni estraz
 x1). B0270 dell'audit era un abbinamento sbagliato: il notice 38660 e' di B0271 (Illustrated Kairi [EX]), che la
 scopa l'aveva gia'; B0270 (Special EX Medal Deal, «One Draw Only!») non ha regali. Banco 19-10: Present Box
 «Magic Broom — Bonus: EX Falling Price Deal».
+
+<a id="sp2c-g8"></a>
+## Sotto-progetto 2c, G8: limiti di estrazione (19-10, revisione 135)
+
+- Parser: `day_limit` legge anche «N times a day» (B0080/B0081), `total_limit` legge «Available N times» (B0651, B0660,
+  B0683, B0696 = 3 in tutto; notice 66862/68371 «Up to 3 times only!»).
+- Campi nuovi `day_limit` / `total_limit` di banner_overrides.tsv per i limiti solo nel notice: B0035 (3/giorno,
+  notice 19882), B0255/B0277/B0287 (3, INCOMPLETE), B0304 (1, 40169), B0334-B0338 (3, 41615), B0339 (1, 41617),
+  B0413 (5, 46013). B0242 (Top-Drawer Deal) fissato a 1: le «three times a day» della nota <ref> della wiki sono le
+  campagne B0255/B0277/B0287.
+- B0741 (Free Deal VIP) dell'audit era un falso positivo: `vipFree` lo limita gia' a una al giorno (contatore
+  condiviso delle Free Deal VIP, gacha.js).
+- Banco 19-10: B0080 «Chances left today: 3» -> 2 dopo un'estrazione, comment «3 times per day».

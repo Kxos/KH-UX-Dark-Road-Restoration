@@ -238,7 +238,8 @@ def unlock_quest(start, story):
 
 
 def day_limit(notes, typ):
-    m = re.search(r'\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten) times per day|(3)×/day', notes, re.I)
+    # «3 times a day» (B0080/B0081, 2c/G8) come «3 times per day»
+    m = re.search(r'\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten) times (?:per|a|each) day|(3)×/day', notes, re.I)
     if m:
         v = (m.group(1) or m.group(2)).lower()
         return int(v) if v.isdigit() else NUM[v]
@@ -252,8 +253,16 @@ def day_limit(notes, typ):
 ONCE = re.compile(r'\b(?:available|can only be (?:drawn|pulled|purchased)) once\b(?!\s*(?:per|a|each) day)', re.I)
 
 
+# «Available three times.» (B0651, B0660, B0683, B0696; notice 66862 «Up to 3 times only!», 2c/G8)
+TIMES = re.compile(r'\bavailable (\d+|two|three|four|five) times\b(?!\s*(?:per|a|each) day)', re.I)
+
+
 def total_limit(notes):
-    """estrazioni in tutto (Ruling 28): 1 per «Available once», 0 = nessun limite"""
+    """estrazioni in tutto (Ruling 28): 1 per «Available once», N per «Available N times», 0 = nessun limite"""
+    m = TIMES.search(notes)
+    if m:
+        v = m.group(1).lower()
+        return int(v) if v.isdigit() else NUM[v]
     return 1 if ONCE.search(notes) else 0
 
 
@@ -972,7 +981,7 @@ def build_catalog(inputs):
     for o in inputs['overrides']:
         if o.get('field') == 'pity_label':
             labels[o['row_id']]['pity_label'] = o['value']
-        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus'):
+        elif o.get('field') in ('price', 'draw_size', 'rarity_mix', 'start_pt', 'end_pt', 'preset', 'slot', 'boosted', 'bonus', 'day_limit', 'total_limit'):
             ov[o['row_id']][o['field']] = o['value']
             ov_src[o['row_id']][o['field']] = o.get('source') or 'override'
 
@@ -995,7 +1004,9 @@ def build_catalog(inputs):
         flags = []
         if r['status'].startswith('permanent'):
             flags.append('PERMANENT')
-        if day_limit(notes, typ) or re.search(r'once (per|a) day', notes, re.I):
+        # 2c/G8: limite giornaliero che sta solo nel notice (campo day_limit di banner_overrides.tsv)
+        day_ov = int((ov.get(rid) or {}).get('day_limit') or 0)
+        if day_ov or day_limit(notes, typ) or re.search(r'once (per|a) day', notes, re.I):
             flags.append('DAY_LIMITED')
         if is_vip(r):
             flags.append('VIP')
@@ -1034,9 +1045,9 @@ def build_catalog(inputs):
                             mix=rarity_mix(r['rarity_mix']))
         apply_enhance_overrides(enh, ov.get(rid))
         apply_boosted_override(enh, ov.get(rid))
-        total = total_limit(notes)
+        total = int((ov.get(rid) or {}).get('total_limit') or 0) or total_limit(notes)
         vip_free = typ == 'FREE' and 'VIP' in flags
-        day = free_day_limit(typ, prices, day_limit(notes, typ), total, vip_free)
+        day = free_day_limit(typ, prices, day_ov or day_limit(notes, typ), total, vip_free)
         found, sk = _bonus(notes, M, MAT)
         # 2c/G7: regalo che sta solo nel notice (campo «bonus» = «tipo,id,numero», B0212 Magic Broom, notice 35138)
         for v in [x for x in ((ov.get(rid) or {}).get('bonus') or '').split(';') if x.strip()]:
