@@ -211,6 +211,8 @@ const cb = [sb({ name: 'A <b>bold</b>' }), sb({ name: 'Second', catalogOnly: 'VI
 const cp = g.catalogPage(cb, { ...sctx, shown: new Set([inShop.drawMedalTypeId]) });
 check(/\^#c\/\.test\(location\.hash\)/.test(cp) && cp.includes('sessionStorage.removeItem(KEY)'), 'catalogo: filtri ripristinati solo con hash #c, altrimenti azzerati');
 check((cp.match(/loading="lazy"/g) || []).length === 3, 'catalogo: 3 immagini lazy');
+check(g.PAY_ICON_KEYS.every((k) => cp.includes(`<img class="ic" src="/web/gacha/icon/${k}.png" alt="">`)) && !/[💎🎫🎟🎃👑]/u.test(cp), 'catalogo: icone originali al posto delle emoji (filtro, tag, righe)');
+check(/data-v="jewel">[^<]*<img class="ic"[^>]*jewel\.png" alt="">Jewels</.test(cp) && cp.includes('class="pay"><img class="ic"'), 'catalogo: icona prima di Jewels e nella riga prezzo');
 check(cp.includes('A &lt;b&gt;bold&lt;/b&gt;') && !cp.includes('<b>bold'), 'catalogo: escape del nome');
 check(cp.includes('In the Shop now') && cp.includes('VIP variant, not reproduced'), 'catalogo: stati');
 check(cp.includes(`/web/gacha/detail/${cb[0].drawMedalTypeId}`), 'catalogo: link ai dettagli');
@@ -579,8 +581,8 @@ try {
   const yp = g.catalogPage(yb, { ...sctx, storyQuest: 525 });
   for (const t of ['All years', 'Launch year', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Final months']) check(yp.includes(`<b>${t}</b>`), `catalogo: scheda ${t}`);
   check(yp.includes('GAME YEAR <span>— each year runs from one anniversary (April 7) to the next</span>'), 'catalogo: titolo GAME YEAR');
-  for (const t of ['⚙ Filters', 'FIND A MEDAL', 'Shows the banners where this Medal can be drawn.', 'PAID WITH', '💎 Jewels', '🎫 Platinum Ticket', '🎟 Draw Ticket',
-    '🎃 Seasonal tickets', '👑 VIP', '>Other<', '>SHOW<', '>All banners<', '▶ In the Shop now', 'Unlocked, not in the Shop now', '🔒 Still locked', 'Reset filters', 'Show 7 banners', 'Clear all']) {
+  for (const t of ['⚙ Filters', 'FIND A MEDAL', 'Shows the banners where this Medal can be drawn.', 'PAID WITH', 'alt="">Jewels<', 'alt="">Platinum Ticket<', 'alt="">Draw Ticket<',
+    'alt="">Seasonal tickets<', 'alt="">VIP<', '>Other<', '>SHOW<', '>All banners<', '▶ In the Shop now', 'Unlocked, not in the Shop now', '🔒 Still locked', 'Reset filters', 'Show 7 banners', 'Clear all']) {
     check(yp.includes(t), `catalogo: testo «${t}»`);
   }
   check(yp.includes('/web/gacha/search?q=') && yp.includes('encodeURIComponent(') && yp.includes('Searching…'), 'catalogo: ricerca con encodeURIComponent e «Searching…»');

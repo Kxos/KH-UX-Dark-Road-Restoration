@@ -675,8 +675,12 @@ function payGroupOf(b) {
   return 'other';
 }
 const isVip = (b) => (b.flags || []).includes('VIP');
-const PAY_ICON = { jewel: '💎 ', platinum: '🎫 ', draw: '🎟 ', seasonal: '🎃 ', other: '' };
-const PAY_OPTS = [['all', 'All'], ['jewel', '💎 Jewels'], ['platinum', '🎫 Platinum Ticket'], ['draw', '🎟 Draw Ticket'], ['seasonal', '🎃 Seasonal tickets'], ['vip', '👑 VIP'], ['other', 'Other']];
+// icone originali delle valute (JP 4.3.1, servite da /web/gacha/icon/<chiave>.png; recon/tools/shop_icons.py le prepara).
+// Se non si caricano l'<img> resta un quadrato vuoto di misura fissa: l'impaginazione non cambia.
+const PAY_ICON_KEYS = ['jewel', 'platinum', 'draw', 'seasonal', 'vip', 'other'];
+const payIcon = (k) => `<img class="ic" src="/web/gacha/icon/${k}.png" alt="">`;
+const PAY_ICON = Object.fromEntries(PAY_ICON_KEYS.map((k) => [k, `${payIcon(k)} `]));
+const PAY_OPTS = [['all', 'All'], ['jewel', `${payIcon('jewel')}Jewels`], ['platinum', `${payIcon('platinum')}Platinum Ticket`], ['draw', `${payIcon('draw')}Draw Ticket`], ['seasonal', `${payIcon('seasonal')}Seasonal tickets`], ['vip', `${payIcon('vip')}VIP`], ['other', `${payIcon('other')}Other`]];
 // SHOW: «In the Shop now» comprende il fissato; «Unlocked, not in the Shop now» = later e size; i banner solo catalogo
 // (stato catalog) compaiono solo con «All banners»
 const SHOW_OPTS = [['all', 'All banners'], ['now', '▶ In the Shop now'], ['unl', 'Unlocked, not in the Shop now'], ['lock', '🔒 Still locked']];
@@ -686,7 +690,8 @@ function niceRange(b) {
   const from = b.start.slice(0, 4) === b.end.slice(0, 4) ? niceDay(b.start).replace(/, \d{4}$/, '') : niceDay(b.start);
   return `${from} – ${niceDay(b.end)}${b.endSource !== 'original' ? ' (end date reconstructed)' : ''}`;
 }
-const CATALOG_CSS = '.hdr{display:flex;align-items:center;justify-content:space-between;gap:10px}'
+const CATALOG_CSS = 'img.ic{display:inline-block;width:1.3em;height:1.3em;max-width:none;vertical-align:middle;margin:-.15em .25em 0 0;border:0}'
+  + '.hdr{display:flex;align-items:center;justify-content:space-between;gap:10px}'
   + '.fbtn,.ok{border:0;color:#fff;background:linear-gradient(#f08a3a,#d4541c);border-radius:18px;padding:5px 16px;font:bold 15px sans-serif;box-shadow:0 2px 0 #8a3510;cursor:pointer;white-space:nowrap}'
   + '.dot{display:inline-block;background:#fff;color:#d4541c;border-radius:10px;padding:0 7px;margin-left:6px;font-size:13px;line-height:1.5}.dot:empty{display:none}'
   + '.gy{color:#00d4ed;font-size:13px;letter-spacing:.5px;margin:10px 0 3px;line-height:1.4}.gy span{color:#b9cfdc;letter-spacing:0}'
@@ -826,7 +831,7 @@ function catalogPage(banners, ctx) {
 }
 
 module.exports = {
-  KEPT_STYLE,
+  KEPT_STYLE, PAY_ICON_KEYS,
   SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, catalogRow, catalogPlate,
   dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
 };

@@ -1168,6 +1168,8 @@ const GACHA_IMG = process.env.KHUX_GACHA_IMG || path.join(__dirname, 'game_data'
 // Immagini con il bollino «KEPT IN SHOP» del banner fissato (bannerUrl .../<id>-kept<stile>.png, stile = gacha.KEPT_STYLE): generate una volta da
 // recon/tools/kept_banner_badge.py (Pillow) e tenute accanto alle altre immagini generate, fuori dal repo
 const GACHA_IMG_KEPT = process.env.KHUX_GACHA_IMG_KEPT || path.join(__dirname, 'game_data', 'gacha_img_kept');
+// Icone originali delle valute del Catalog (recon/tools/shop_icons.py): solo le chiavi della lista, mai un percorso libero
+const SHOP_ICONS = process.env.KHUX_SHOP_ICONS || path.join(__dirname, 'game_data', 'shop_icons');
 const KEPT_BADGE_PY = path.join(__dirname, '..', 'recon', 'tools', 'kept_banner_badge.py');
 const keptFailed = new Set();
 // File del banner con il bollino (generato se manca o se l'originale e' piu' recente); se non riesce, quello normale
@@ -1430,6 +1432,14 @@ function respondGachaWeb(res, url) {
     if (!fs.existsSync(file)) return html('not found', 404);
     const b = fs.readFileSync(file);
     res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
+    return res.end(b);
+  }
+  const icon = /^\/web\/gacha\/icon\/([a-z]+)\.png$/.exec(p);
+  if (icon) {
+    const file = gacha.PAY_ICON_KEYS.includes(icon[1]) && path.join(SHOP_ICONS, `${icon[1]}.png`);
+    if (!file || !fs.existsSync(file)) return html('not found', 404);
+    const b = fs.readFileSync(file);
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length, 'Cache-Control': 'public, max-age=3600' });
     return res.end(b);
   }
   // /web/gacha/search?q=<testo>: ids dei banner del Catalog con una medaglia che contiene il testo (vuoto = tutti)

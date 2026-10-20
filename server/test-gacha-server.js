@@ -36,6 +36,9 @@ process.env.KHUX_GACHA_SIZES = '1,3,10';
 const IMG = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-gacha-img-')), IMG_KEPT = path.join(IMG, 'kept');
 process.env.KHUX_GACHA_IMG = IMG; process.env.KHUX_GACHA_IMG_KEPT = IMG_KEPT;
 process.on('exit', () => { try { fs.rmSync(IMG, { recursive: true, force: true }); } catch { /* gia' tolta */ } });
+const ICONS = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-gacha-icons-'));
+process.env.KHUX_SHOP_ICONS = ICONS;
+process.on('exit', () => { try { fs.rmSync(ICONS, { recursive: true, force: true }); } catch { /* gia' tolta */ } });
 process.env.KHUX_GACHA_SHOW = 'B0005,B0008';
 delete process.env.KHUX_REAL_NOW; delete process.env.KHUX_SERVER_TIME;
 const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
@@ -252,6 +255,7 @@ w = raw(t.respondGachaWeb, '/web/gacha/catalog');
 {
   const c = String(w.body);
   check(banners.every((b) => c.includes(`/web/gacha/detail/${b.drawMedalTypeId}`)), 'catalogo: tutti i banner');
+  check(['jewel', 'platinum', 'draw', 'seasonal', 'vip', 'other'].every((k) => c.includes(`<img class="ic" src="/web/gacha/icon/${k}.png" alt="">`)), 'catalogo: icona per ogni gruppo PAID WITH');
   check(c.includes('In the Shop now') && c.includes('Not in the Shop now') && c.includes('Medals not available yet'), 'catalogo: stati');
 }
 w = raw(t.respondGachaWeb, '/web/gacha/detail/77');
@@ -276,6 +280,18 @@ check(w.headers && String(w.body).includes('not found'), 'banner sconosciuto: pa
   check(!fs.existsSync(path.join(IMG_KEPT, '10002-kept2.png')), 'immagine -kept: niente file se la generazione fallisce');
   check(String(raw(t.respondGachaWeb, '/web/gacha/img/99999-kept2.png').body).includes('not found'), 'immagine -kept: banner senza immagine -> 404');
   check(String(raw(t.respondGachaWeb, '/web/gacha/img/10001-kept.png').body).includes('not found') && String(raw(t.respondGachaWeb, '/web/gacha/img/10001-kept1.png').body).includes('not found'), 'immagine -kept: URL senza stile o di stile vecchio -> 404');
+}
+// icone delle valute: lista fissa di chiavi, PNG con Content-Type giusto, 404 per il resto
+{
+  const PNG = Buffer.from('iVBORw0KGgo=', 'base64');
+  fs.writeFileSync(path.join(ICONS, 'jewel.png'), PNG);
+  fs.writeFileSync(path.join(ICONS, 'secret.png'), PNG); // presente ma fuori lista
+  const ok = raw(t.respondGachaWeb, '/web/gacha/icon/jewel.png');
+  check(ok.headers && ok.headers['Content-Type'] === 'image/png' && Buffer.compare(ok.body, PNG) === 0, 'icona: PNG con Content-Type image/png');
+  const nf = (u) => String(raw(t.respondGachaWeb, u).body).includes('not found');
+  check(nf('/web/gacha/icon/vip.png'), 'icona: in lista ma file mancante -> 404');
+  check(nf('/web/gacha/icon/secret.png') && nf('/web/gacha/icon/Jewel.png') && nf('/web/gacha/icon/jewel.jpg'), 'icona: fuori lista -> 404');
+  check(nf('/web/gacha/icon/../../save/x.png') && nf('/web/gacha/icon/..%2Fjewel.png') && nf('/web/gacha/icon/jewel/../secret.png'), 'icona: niente percorsi fuori cartella');
 }
 w = raw(t.respondGachaWeb, '/web/gacha/img/../../save/x.png');
 check(!w.headers || w.headers['Content-Type'] !== 'image/png', 'immagine: niente percorsi fuori cartella');

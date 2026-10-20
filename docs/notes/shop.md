@@ -855,3 +855,9 @@ casi lenti (~9 s) sono intermittenti e coincidono con un aggiornamento di font d
   ha chiesto `GET /web/gacha/jsok?<Date.now()>` all'apertura da Details della piastra Banner Catalog: JavaScript e'
   attivo (come nelle Notices). Filtri e fissaggio possono usare script inline e `fetch`/`XMLHttpRequest` verso il server.
   Nota: `Date.now()` nella WebView da' l'ora del guest (maggio 2021), non quella del server.
+
+- **Icone delle valute nel Catalog** (20-10): al posto delle emoji, PAID WITH, tag dei filtri e righe prezzo usano le icone
+  originali JP 4.3.1 (Jewel, Platinum Ticket, Draw Ticket, Spooky Cookie, corona VIP, Gold Ticket), servite da
+  `GET /web/gacha/icon/<jewel|platinum|draw|seasonal|vip|other>.png`. Sono asset Square Enix: non sono nel repo, stanno in
+  `server/game_data/shop_icons/` (ignorata da git). Per rigenerarle: `python -I recon/tools/shop_icons.py [BASE_JP] [CARTELLA_OUT]`
+  (BASE_JP anche da env `KHUX_JP_BASE`; riduce ogni icona a 48x48 RGBA). Se un'icona manca la rotta da' 404 e la pagina resta intatta.
