@@ -343,6 +343,15 @@ STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313
     #189-#249 prima della ricerca del 19-10). Details e Draw Odds: «Trait Medal #N (for <medaglia>)». Le «boosted Trait Medal» dei
     notice sono ignorate (nessuna riga boosted).
 
+- **Banco 20-10** (salvataggio `provetm` = prove525 + regali #106 x3, #108 x2, #131; `-GachaShow B0513`): regali in bianco e
+  nero, filtro «Trait» della Medal List, dettagli (STR/DEF 1, costo 999, Lesser Attack x1,00), niente Level Up sulla Trait
+  Medal; nel Level Up di Illustrated Sora A la #106 sta fra i materiali da pallino, anteprima «Trait», fusione ->
+  Paralysis Resist 20% (slot 1/2) + 1 pallino + EXP (Great x1,5). Deal B0513: Details «Guarantees one Trait Medal #106», la
+  pescata da' la 7★ e la #106. Nel Level Up i materiali si aggiungono trascinandoli sullo slot (`Swipe 1430 410 240 630 900`).
+- Limite: i deal Trait (dal 13-3-2018) sono oltre la data della storia (quest 525 = 8-12-2016), quindi oggi non si
+  raggiungono giocando (solo con `-GachaShow`); il Moogle Shop originale le vendeva anche («Trait Medal #N x10», 1.000
+  jewel, nella finestra del deal; khuxwiki per #189-#313): non ancora fatto.
+
 <a id="skill"></a>
 ## Skill e Overwrite Skill del Level Up (I-088)
 
