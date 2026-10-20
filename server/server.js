@@ -1799,7 +1799,7 @@ function respondUserProfile(res) {
       userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
     },
     // 6° slot del keyblade preferito (server/pet.js; 0 con KHUX_PET spento)
-    petBaseSlotMedal: petBaseSlotMedal(player, favoriteKeyblade().userKeybladeId,
+    petBaseSlotMedal: petBaseSlotMedal(player, deckIdOf(favoriteKeybladeId(), activeDeck(favoriteKeybladeId())),
       new Set(userMedalList().map((m) => m.userMedalId))),
     userPvpRanking: { rank: 0, class: 0, point: 0 },
     followerNum: 0,
@@ -3380,6 +3380,7 @@ function respondMedalRemove(res, body) {
   player.deck = deckMedalIds().map((x) => (x === id ? 0 : x));
   // anche dai deck degli altri keyblade (il corpo non dice quale: la si toglie da tutti)
   for (const d of Object.values(player.keybladeDecks || {})) d.forEach((x, i) => { if (x === id) d[i] = 0; });
+  for (const set of Object.values(player.keybladeDeckSets || {})) for (const n of [2, 3]) (set[n] || []).forEach((x, i) => { if (x === id) set[n][i] = 0; });
   if (PET_ENABLED) pet().onMedalRemoved(id); // Gear del pet e 6° slot dei deck
   savePlayer();
   console.log(`  [unequip] ${id}: deck ${player.deck.join(',')}`);
@@ -3410,9 +3411,28 @@ function ownedKeyblades() {
   ];
 }
 
+// 3 deck per keyblade (update 1.1.2 del 01/09/2016: «Save 3 decks per Keyblade», con almeno un keyblade a +20; pulsanti
+// 1/2/3 di StartDeckEdit2_Panel_KB_ver230 e DeckEdit_SubChange_Ver131). Il client conta i deck di un keyblade dagli
+// userDecks con il suo userKeybladeId, nell'ordine dell'array ([fn]): il deck attivo e' userKeyblades[].userDeckId
+// e i pulsanti cambiano quello ([fn] / [fn]), salvato con l'azione 45 (ricerca 20-10,
+// D:\Progetto_Restauro_KH_UX	mp\deckset\RESEARCH.md). Deck 1 = userDeckId = userKeybladeId (player.deck /
+// player.keybladeDecks, come prima), deck 2 e 3 = n x 1.000.000 + userKeybladeId in player.keybladeDeckSets[kb] =
+// {active, 2: [...], 3: [...]}; il 6° slot del pet per deck (petBaseSlots per userDeckId).
+const DECK_ID_STEP = 1000000;
+const deckIdOf = (kb, n) => (n === 1 ? kb : n * DECK_ID_STEP + kb);
+const deckOfId = (id) => ({ kb: id % DECK_ID_STEP, n: Math.floor(id / DECK_ID_STEP) || 1 });
+function multiDecksUnlocked() {
+  const rows = new Map(masterRows('keyblade').map((r) => [r.keybladeId, r]));
+  return ownedKeyblades().some((k) => (rows.get(k.keybladeId)?.lv || 0) >= 20);
+}
+const activeDeck = (kb) => (multiDecksUnlocked() && [2, 3].includes(player.keybladeDeckSets?.[kb]?.active) ? player.keybladeDeckSets[kb].active : 1);
+function deckMedalsOf(kb, n) {
+  if (n !== 1) return player.keybladeDeckSets?.[kb]?.[n] || [];
+  if (kb === USER_KEYBLADE_ID) return deckMedalIds();
+  return (player.keybladeDecks || {})[kb] || [];
+}
 function keybladeDeckIds(userKeybladeId) {
-  if (userKeybladeId === USER_KEYBLADE_ID) return deckMedalIds();
-  return (player.keybladeDecks || {})[userKeybladeId] || [];
+  return deckMedalsOf(userKeybladeId, activeDeck(userKeybladeId));
 }
 
 // deckMedals da mandare: le medaglie non piu' possedute (vendute, usate come materiale) diventano
@@ -3430,9 +3450,9 @@ function keybladeSlotCount(userKeybladeId) {
   return Math.min(5, masterRows('keyblade').find((r) => r.keybladeId === k?.keybladeId)?.validConsist || 3);
 }
 
-function sentKeybladeDeck(userKeybladeId, compact = false) {
+function sentKeybladeDeck(userKeybladeId, compact = false, n = activeDeck(userKeybladeId)) {
   const owned = new Set(userMedalList().map((m) => m.userMedalId));
-  const ids = keybladeDeckIds(userKeybladeId).slice(0, 5).map((id) => (id > 0 && owned.has(id) ? id : 0));
+  const ids = deckMedalsOf(userKeybladeId, n).slice(0, 5).map((id) => (id > 0 && owned.has(id) ? id : 0));
   const filled = ids.filter((id) => id > 0);
   if (compact && filled.length) return filled;
   const slots = keybladeSlotCount(userKeybladeId);
@@ -3442,7 +3462,7 @@ function sentKeybladeDeck(userKeybladeId, compact = false) {
 }
 
 function keybladeDeckStats(userKeybladeId) {
-  if (userKeybladeId === USER_KEYBLADE_ID) return deckStats();
+  if (userKeybladeId === USER_KEYBLADE_ID && activeDeck(userKeybladeId) === 1) return deckStats();
   const medals = masterRows('medal');
   const byId = new Map(userMedalList().map((m) => [m.userMedalId, m]));
   let attack = 0;
@@ -3493,7 +3513,7 @@ function userKeybladeData(k) {
   const { attack, defense } = keybladeDeckStats(k.userKeybladeId);
   return {
     userKeybladeId: k.userKeybladeId, // uint64
-    userDeckId: k.userKeybladeId, // uint64
+    userDeckId: deckIdOf(k.userKeybladeId, activeDeck(k.userKeybladeId)), // uint64: il deck attivo
     userKeybladeSubslotId: k.userKeybladeId, // uint64 (vedi /keyblade/subslot)
     category: masterRows('keyblade').find((r) => r.keybladeId === k.keybladeId)?.category ?? 1,
     keybladeId: k.keybladeId,
@@ -3522,11 +3542,12 @@ function respondUserKeyblade(res) {
 // KHUX_PET e' spento o lo slot e' vuoto (server/pet.js)
 function userDecksData(compact = false) {
   const ownedMedals = new Set(userMedalList().map((m) => m.userMedalId));
-  return ownedKeyblades().map((k) => ({
-    userDeckId: k.userKeybladeId, userKeybladeId: k.userKeybladeId, // uint64
-    deckMedals: sentKeybladeDeck(k.userKeybladeId, compact),
-    petBaseSlotMedal: petBaseSlotMedal(player, k.userKeybladeId, ownedMedals),
-  }));
+  const ns = multiDecksUnlocked() ? [1, 2, 3] : [1];
+  return ownedKeyblades().flatMap((k) => ns.map((n) => ({
+    userDeckId: deckIdOf(k.userKeybladeId, n), userKeybladeId: k.userKeybladeId, // uint64
+    deckMedals: sentKeybladeDeck(k.userKeybladeId, compact, n),
+    petBaseSlotMedal: petBaseSlotMedal(player, deckIdOf(k.userKeybladeId, n), ownedMedals),
+  })));
 }
 
 // POST /user/keyblade/update/170516 (azione 45): il client salva i deck e il preferito.
@@ -3535,18 +3556,26 @@ function userDecksData(compact = false) {
 // ([fn]) e userDecks ([fn]), gli elenchi completi.
 function respondKeybladeUpdate(res, body) {
   const owned = new Set(ownedKeyblades().map((k) => k.userKeybladeId));
+  const multi = multiDecksUnlocked();
   for (const k of body?.userKeyblades || []) {
     const id = Number(k.userKeybladeId);
     if (owned.has(id) && Number(k.isFavorite)) player.favoriteKeybladeId = id;
+    // deck attivo (pulsanti 1/2/3)
+    const { kb, n } = deckOfId(Number(k.userDeckId) || id);
+    if (owned.has(id) && kb === id && (n === 1 || (multi && n <= 3)) && n !== activeDeck(id)) {
+      ((player.keybladeDeckSets ||= {})[id] ||= {}).active = n;
+      console.log(`  [keyblade] ${id}: deck attivo ${n}`);
+    }
   }
   for (const d of body?.userDecks || []) {
-    const id = Number(d.userDeckId); // userDeckId = userKeybladeId
-    if (!owned.has(id) || !Array.isArray(d.medals)) continue;
+    const { kb: id, n } = deckOfId(Number(d.userDeckId)); // deck 1 = userKeybladeId, 2/3 = n x 1.000.000 + id
+    if (!owned.has(id) || !Array.isArray(d.medals) || n > 3 || (n > 1 && !multi)) continue;
     const medals = d.medals.map(Number).slice(0, 5);
-    if (id === USER_KEYBLADE_ID) player.deck = medals;
+    if (n > 1) ((player.keybladeDeckSets ||= {})[id] ||= {})[n] = medals;
+    else if (id === USER_KEYBLADE_ID) player.deck = medals;
     else (player.keybladeDecks = player.keybladeDecks || {})[id] = medals;
-    setPetBaseSlotMedal(player, id, d.petBaseSlotMedal); // 6° slot (solo con KHUX_PET=1)
-    console.log(`  [keyblade] deck ${id}: ${medals.join(',')}` + (PET_ENABLED ? ` + pet ${d.petBaseSlotMedal || 0}` : ''));
+    setPetBaseSlotMedal(player, deckIdOf(id, n), d.petBaseSlotMedal); // 6° slot (solo con KHUX_PET=1)
+    console.log(`  [keyblade] deck ${id}/${n}: ${medals.join(',')}` + (PET_ENABLED ? ` + pet ${d.petBaseSlotMedal || 0}` : ''));
   }
   savePlayer();
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userDecks: userDecksData() });
@@ -4197,6 +4226,8 @@ module.exports._test = {
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-login-bonus.js
   respondLoginBonus, loginBonusAcquirable,
+  // server/test-deck-sets.js
+  respondKeybladeUpdate, userDecksData, multiDecksUnlocked, activeDeck, keybladeDeckIds, respondMedalRemove,
   // server/test-pet-tricks.js
   applySteal, stealMultiplier, respondStageStart, respondStageClear, STAGE_POI, rewardRowById, ENEMY_DROP_TYPE,
   // server/test-limited.js
