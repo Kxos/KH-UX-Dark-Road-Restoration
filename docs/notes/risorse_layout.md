@@ -27,20 +27,68 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
   `d0037` **grafiche originali dei nemici** (`enemy_gen`, `make_jp_enemies.py`, 53 MB;
   `-NoEnemies` per farne a meno, con il master rigenerato a `KHUX_NO_ENEMY_GEN=1`:
   [battaglia.md#nemici-jp](battaglia.md#nemici-jp)), poi il generato (`stage_gen`, `d0037` fino alla
-  35, `d0038` dalla 36, riserva 32 MiB) che vince su tutti. Elenco dei pacchetti statici in
+  35, `d0038` dalla 36, `d0039` dalla 46; riserva 176 MiB nella 47, 168 MiB dalla 48) che vince su tutti. Elenco dei pacchetti statici in
   `resource_data\<N>\packs.txt`: `-Quick`/`-DryRun` rimettono nell'indice quelli della versione
   installata (senza `packs.txt`, versioni <= 34: niente stanze) e non ricostruiscono mai `rooms_gen`
   ne' `enemy_gen`.
-  Il client spezza i dati in `misc.mp4` + `misc.mp4.1` a 2 GiB: la 34 ha 3,20 GB, la 35 con le
-  stanze 3.934.001.779 byte (3,66 GiB), la 36 con i nemici ~3.987.229.000 byte (3,71 GiB,
-  **~293 MiB sotto i 4 GiB**; oltre servirebbe `misc.mp4.2`, mai provato, e `-Quick` si ferma); con
-  `make_jp_rooms.py --story-only` meno ancora. Dettagli:
-  [mappe_storia.md#stanze-jp](mappe_storia.md#stanze-jp).
+  Il client spezza i dati in `misc.mp4`, `misc.mp4.1`, `misc.mp4.2` ... a 2 GiB: la 47 ha
+  4.286.993.546 byte (3,99 GiB, **7,6 MiB sotto i 4 GiB**); limiti e misure in [Pezzi e 4 GiB](#pezzi).
+  Stanze: [mappe_storia.md#stanze-jp](mappe_storia.md#stanze-jp).
 - Strumenti: `res_get.py <nomi.tsv> <resource_data\N\data> <uscita> <nome>...` (estrae per nome in
   `D:\Progetto_Restauro_KH_UX\layouts\orig\`), `res_bulk.py` (estrazione in blocco, 16 s per 4000
   file), `catalog.py` (catalogo, 2 min), `asset_coverage.py` (asset citati dal binario contro un
   indice), `resource_split.py` (pezzi da 64 MB), `remote_zip.py` (un file da uno zip remoto con
   Range).
+
+<a id="pezzi"></a>
+## Pezzi e 4 GiB (I-171)
+
+Analisi statica del client WW 4.3.1 (20-10, `D:\Progetto_Restauro_KH_UX	mp
+es4g\client-analysis.md`):
+- I "data" scaricati si accodano in `files/r/misc.mp4` e, ogni 2 GiB (0x80000000), nel pezzo dopo:
+  `misc.mp4.1`, `misc.mp4.2` ... (`[fn]`, `"%s.%d"`). Il lettore (`[fn]`) apre al
+  massimo **10 file** (`misc.mp4` .. `misc.mp4.9`): tetto **20 GiB** (21.474.836.480 byte). Oltre, lo
+  scrittore crea `misc.mp4.10` che nessuno legge: dimensioni diverse all'avvio, risorse cancellate e
+  riscaricate a ogni avvio.
+- Offset, posizioni e totali a 64 bit: pezzo = offset >> 31, offset locale = offset & 0x7fffffff
+  (`DividedFilesInputStream::read`, `[fn]`). Gli offset dei record nell'indice BGI sono **u64
+  assoluti** nel flusso concatenato (la divisione in pezzi non si vede dall'indice). Dimensione salvata
+  `resource_size_64` (8 byte).
+- Ogni file di `/system/resource` ha `size` letto come int: **ogni pezzo servito sotto i 2 GiB** (i
+  nostri: 64 MiB per OBB/addnl, medaglie ~0,96 GB il piu' grande).
+- Il record `size` dell'indice vale solo se < 2^32: oltre 4 GiB e' ignorato (nessun errore, solo un
+  controllo in meno).
+- **Nessun controllo dello spazio libero** prima del download: disco pieno = «Save error. Please check the
+  storage space on your device.» (`fwrite` corto). Picco = dati installati + un pezzo in cache.
+- Ancora da provare al banco: un download con `misc.mp4.2` (ricetta in
+  `D:\Progetto_Restauro_KH_UX	mp
+es4gench-recipe.md`).
+
+Misure della 47 (`D:\Progetto_Restauro_KH_UX	mp
+es4g\inventory.md`): 40 pezzi, 4.286.993.546 byte; OBB
+main+patch 2.185.902.806, addnl 132.056.004, medaglie 965.832.467, stanze 731.805.396, nemici 53.227.192,
+raisedraw 33.620.305, generato 184.549.376 (contenuto 138.817.141 + 45.732.235 di zeri della riserva).
+
+Strumenti (20-10):
+- `bgad.py read_index` legge gli offset u64 (prima u32: oltre 4 GiB troncati).
+- `-Quick` scrive il generato nel pezzo del guest `offset >> 31` e, se lo attraversa, nel successivo
+  (`resource_parts.py`); prima controlla che i pacchetti prima del generato siano lunghi quanto i pezzi
+  installati.
+- **Compattazione** (`resource_compact.py`, di default nelle versioni complete dalla 48, `-NoCompact` per
+  farne a meno): OBB, addnl e medaglie riscritti con i soli record citabili dall'indice unito (un record e'
+  vivo se un nome del suo pacchetto lo cita e nessun pacchetto prima ha quel nome; restano quelli dei nomi
+  che il generato sostituisce, cosi' un `-Quick` che smette di sostituirli ritrova l'originale). Sugli
+  ingressi della 47: OBB -30.080.308, addnl -54.662.654, medaglie -4.911.439 byte (stanze, nemici,
+  raisedraw: 0). `resource_compare.py` ha verificato che ogni nome (396.297) ha gli stessi byte. Cache
+  in `D:\Progetto_Restauro_KH_UX\compact` (pezzi di OBB e addnl condivisi con hard link fra le versioni),
+  elenco in `resource_data\<N>\compact.txt`.
+- Riserva del generato **168 MiB** (era 176): contenuto 132,4 MiB nella 47, restano ~35,6 MiB di `-Quick`
+  (piu' del blocco di originali di I-170, ~33 MB). Una versione completa con queste regole: **~4.188.950.537
+  byte (3,90 GiB), ~101 MiB sotto i 4 GiB**, prima di nuovi contenuti.
+- Non tolte: le 41 immagini di medaglia senza `imageId`/`thumbId`/`cutinId` in `medal.json` (16 MB): 17
+  hanno ancora una riga (le copie 1xxxxx dell'Organizzazione XIII, rimappate da `MEDAL_MAP_FIX` di
+  `make-game-tables.js`), 13 sono i doppioni 3004xx di `server.js`; solo 10 (2,6 MB) non sono citate da
+  nulla.
 
 <a id="btf"></a>
 ## Texture BTF

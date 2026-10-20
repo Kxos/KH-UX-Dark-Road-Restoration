@@ -5,11 +5,12 @@
 #   .\build-resources.ps1 -Version N
 #
 # Ciclo rapido per le prove (~1 min invece di ~5): -Quick rigenera il pacchetto dentro
-# l'ultima versione gia' installata (sostituisce d0035 e l'indice) e lo scrive direttamente
+# l'ultima versione gia' installata (sostituisce l'ultimo pezzo e l'indice) e lo scrive direttamente
 # nel guest. I dati del client sono i pezzi concatenati e spezzati a 2 GiB (files/r/misc.mp4,
-# misc.mp4.1): il pacchetto generato e' la coda, gli offset dei pezzi prima non cambiano.
-# Si tronca misc.mp4.1 dove inizia d0035, si accoda il nuovo, si copia misc.png, poi
-# riavvio dell'app (il server resta acceso). Dimensioni fisse: vedi sotto.
+# misc.mp4.1, misc.mp4.2 ...): il pacchetto generato e' la coda, gli offset dei pezzi prima non
+# cambiano. Si tronca il pezzo del guest dove inizia il generato, si accoda il nuovo (e si riscrive
+# il pezzo dopo, se il generato ci arriva: resource_parts.py), si copia misc.png, poi riavvio
+# dell'app (il server resta acceso). Dimensioni fisse: vedi sotto.
 #   .\build-resources.ps1 -Quick
 #
 # Prova a secco (-DryRun): stessi generatori su una copia di stage_gen\files in

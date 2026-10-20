@@ -64,15 +64,18 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 ## Ciclo rapido `-Quick` e versioni delle risorse
 
 - `tools\ldplayer\session\build-resources.ps1 -Quick` (~40 s): rigenera il pacchetto generato
-  dentro l'ultima versione e lo scrive direttamente nei file del guest (coda di
-  `files/r/misc.mp4.1` + `misc.png`), poi riavvia solo l'app. Niente download **a patto che le
+  dentro l'ultima versione e lo scrive direttamente nei file del guest (coda dei dati nel pezzo
+  `files/r/misc.mp4.N` dove cade, N = offset >> 31, anche a cavallo di due pezzi con
+  `resource_parts.py`; piu' `misc.png`), poi riavvia solo l'app. Niente download **a patto che le
   dimensioni non cambino**: se cambiano il client butta le risorse (`resourceRevision 0`) e
   riscarica tutto. Le versioni complete (dalla 26) riservano 4 MiB al pacchetto generato (16 MiB
   dalla 29) e un nome di riempimento nell'indice (riserva indice 64 KB); `-Quick` torna alle
   dimensioni installate (`resource_merge.py --index-size`). Se il pacchetto supera la riserva serve
   una versione completa.
 - `-Quick` riscrive solo l'ultimo pezzo: le immagini delle medaglie (`medal_gen`, penultimo pezzo)
-  entrano solo con una versione completa.
+  entrano solo con una versione completa. Si ferma se i pacchetti prima del generato (anche quelli
+  compattati in `D:\Progetto_Restauro_KH_UX\compact`, elenco in `resource_data\<N>\compact.txt`) non sono
+  lunghi quanto i pezzi installati: [risorse_layout.md#pezzi](risorse_layout.md#pezzi).
 - **Mai `-Quick` se esiste una cartella di versione piu' nuova di quella installata**: scrive la
   piu' nuova nel guest (dati corrotti).
 - Una versione completa (`build-resources.ps1 -Version N`) viene annunciata subito dal server e
