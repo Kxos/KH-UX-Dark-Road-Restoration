@@ -783,6 +783,9 @@ const powerStats = powerFix.burstPowerFix(bursts, { origBursts, medals,
   wikiInfo: powerFix.readWikiInfo(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json'),
   multiOf: (id) => ROBO_BY_ID.get(id)?.Multi || ROBO_BY_ID.get(id)?.HighMulti });
 console.log(`medal-power-fix: tier tolto a ${tiersOff} medaglie sotto le 6★; burst ${JSON.stringify(powerStats)}`);
+// animazioni originali degli speciali, colpi = testo (burst-anim-fix.js)
+const animFix = require('./burst-anim-fix');
+console.log('burst-anim-fix:', JSON.stringify(animFix.applyBurstAnim(bursts, animFix.readMapping(), { origBursts, texts: true })));
 
 fs.mkdirSync(OUT, { recursive: true });
 if (stagesOut) fs.writeFileSync(stagePath, JSON.stringify(stagesOut));
