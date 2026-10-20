@@ -463,8 +463,10 @@ const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeri
 // Settimana reale in cui ogni banner dello Shop esce con la rotazione (stessa scelta di /gacha/list alla data realMs)
 function shopLeave(realMs) {
   const g = player.gacha || {};
-  return gacha.shopLeaveWeeks(gachaCatalog(), { storyQuest: stageNumber(lastStoryStageId()), week: clock.weekIndex(realMs),
-    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW, ...seasonCtx(realMs), pinned: pinnedNow() });
+  const storyQuest = stageNumber(lastStoryStageId()), week = clock.weekIndex(realMs);
+  const w = gachaData.shopWindow(gachaCatalog(), storyQuest, week, g.rot);
+  return gacha.shopLeaveWeeks(gachaCatalog(), { storyQuest, week,
+    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW, ...seasonCtx(realMs), pinned: pinnedNow(storyQuest, w) });
 }
 // Tranche della storia del giocatore (indice della data in catalog.story): entra nella revisione del master, cosi'
 // il client riscarica drawMedalType (conti alla rovescia dello Shop) al login dopo un cambio di tranche
@@ -1207,15 +1209,17 @@ function seasonCtx(realMs) {
   for (const s of seasons) for (const b of s.banners) if (!seasonEnds.has(b.drawMedalTypeId)) seasonEnds.set(b.drawMedalTypeId, s.end);
   return { seasonal: seasons.flatMap((s) => s.banners), seasonEnds };
 }
-// Banner fissato del giocatore (spec Shop sp3 6.2): lo riempie il Task 3, fino ad allora nessuno
-const pinnedNow = () => null;
+// Banner fissato del giocatore (spec Shop sp3 6.2) se e' ancora fissabile; w = finestra dello Shop (w.day = inizio del periodo)
+const pinnedNow = (storyQuest, w) => gacha.pinnedBanner(gachaCatalog().banners, player, { storyQuest, sizes: GACHA_SIZES, show: GACHA_SHOW, periodStart: w.day });
 function storyCtx() {
   const storyQuest = stageNumber(lastStoryStageId());
   const week = clock.weekIndex(realNow());
   const g = (player.gacha ||= {});
   const w = gachaData.shopWindow(gachaCatalog(), storyQuest, week, g.rot);
   if (!g.rot || g.rot.day !== w.day) { g.rot = { day: w.day, week }; savePlayer(); }
-  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w, ...seasonCtx(realNow()), pinned: pinnedNow() };
+  const pinned = pinnedNow(storyQuest, w);
+  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w, ...seasonCtx(realNow()), pinned,
+    periodStart: w.day, pinnedRowId: pinned?.rowId, pinnedName: pinned?.name };
 }
 // Pool del banner alla data di riferimento (i PERMANENT seguono la storia); undefined per i banner
 // senza composizione (INCOMPLETE): detailPage li mostra senza probabilita'.
@@ -1395,6 +1399,29 @@ function respondGachaWeb(res, url) {
   const skillNames = new Set(masterRows('skill').map((r) => r.name));
   const medalAttr = new Map(masterRows('medal').map((m) => [m.medalId, m.attribute]));
   return html(gacha.detailPage(banner, expandFor(banner, story), medalNames, { ...ctx, skillNames, medalAttr, fromCatalog: /[?&]from=catalog\b/.test(url) }));
+}
+
+// POST /web/gacha/pin/<drawMedalTypeId> e /web/gacha/unpin (spec Shop sp3 6.3), dai pulsanti dei Details dal Catalog.
+// Fissa solo i banner fissabili (gacha.pinnable); risposta JSON {ok, why?}.
+function respondGachaPost(res, url) {
+  const p = url.split('?')[0];
+  const json = (code, o) => { const b = Buffer.from(JSON.stringify(o), 'utf8'); res.writeHead(code, { 'Content-Type': 'application/json', 'Content-Length': b.length }); res.end(b); };
+  if (/^\/web\/gacha\/unpin$/i.test(p)) {
+    if (player.gacha) delete player.gacha.pinned;
+    savePlayer();
+    return json(200, { ok: true });
+  }
+  const m = /^\/web\/gacha\/pin\/(\d+)$/i.exec(p);
+  if (!m) return json(404, { ok: false, why: 'unknown route' });
+  const banner = gachaData.bannerById(gachaCatalog().banners, m[1]);
+  if (!banner) return json(404, { ok: false, why: 'unknown banner' });
+  const story = storyCtx();
+  if (!gacha.pinnable(banner, { storyQuest: story.storyQuest, sizes: GACHA_SIZES, show: GACHA_SHOW, periodStart: story.periodStart })) {
+    return json(409, { ok: false, why: 'this banner cannot be kept in the Shop' });
+  }
+  (player.gacha ||= {}).pinned = banner.rowId;
+  savePlayer();
+  return json(200, { ok: true });
 }
 
 // POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo
@@ -3659,7 +3686,7 @@ function handler(scheme) {
       // Shop > Draw (azioni 75/76) e pagine/immagini dei banner
       if (kind === 'gachalist') return respondGachaList(res);
       if (kind === 'gachadraw') return respondGachaDraw(res, entry.bodyDecoded);
-      if (kind === 'gachaweb') return respondGachaWeb(res, req.url);
+      if (kind === 'gachaweb') return req.method === 'POST' ? respondGachaPost(res, req.url) : respondGachaWeb(res, req.url);
       // tempi del popup Notices (segnalazione dell'utente 19-10: a volte resta vuoto a lungo al primo avvio): la
       // pagina chiama /web/notices/shown appena disegnata; il log dice quanto e' passato dalla richiesta
       if (kind === 'noticesshown') {
@@ -4036,5 +4063,5 @@ module.exports._test = {
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-gacha-server.js
-  handler, sanitizeBanners, gachaCatalog, respondGachaList, respondGachaDraw, respondGachaWeb, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
+  handler, sanitizeBanners, gachaCatalog, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };

@@ -487,5 +487,48 @@ try {
   check(gl.gachaList[1].drawMedalTypeId === sea.drawMedalTypeId && gl.gachaList[2].drawMedalTypeId === pin.drawMedalTypeId, 'gachaListData: stagionale e fissato dopo Catalog');
 } catch (err) { errors.push(`stagionali: eccezione ${err.stack}`); }
 
+
+// banner fissato (sp3 6): fissabilita', stato, pagine
+try {
+  const pc = { storyQuest: 300, sizes, show: new Set(), periodStart: '2016-06-01' };
+  const old = (o) => mk({ unlockQuest: 200, start: '2016-05-01', end: '2016-05-30', ...o });
+  const okb = old({ prices: [0, 3000] });
+  check(g.pinnable(okb, pc) === true, 'pinnable: [0,3000] di un periodo passato');
+  const seasonOf = require('./gacha-seasons').seasonOf;
+  const seaRow = require('./game_data/gacha_catalog.json').banners.find((b) => seasonOf(b));
+  const bad = {
+    bloccato: old({ unlockQuest: 400 }), futuro: old({ start: '2016-07-01', end: '2016-07-30' }), 'periodo attuale': old({ end: '2016-06-15' }),
+    'prices [0]': old({ prices: [0] }), 'prices [1]': old({ prices: [1] }), vipFree: old({ vipFree: true }),
+    'Free Jewels Draw': old({ name: 'Free Jewels Draw' }), stagionale: old({ rowId: seaRow ? seaRow.rowId : 'B0057' }),
+    catalogOnly: old({ catalogOnly: 'VIP_TWIN' }), dimensione: old({ lotCount: 5 }),
+  };
+  check(!!seaRow, 'fissato: il catalogo generato ha un banner stagionale per la prova');
+  for (const [k, b] of Object.entries(bad)) check(g.pinnable(b, pc) === false, `pinnable: ${k} non fissabile`);
+  check(g.pinnable(okb, { ...pc, periodStart: undefined }) === false, 'pinnable: senza periodStart no');
+  check(g.isFreeLike(old({ prices: [0, 1] })) && !g.isFreeLike(okb) && g.isFreeLike(old({ name: 'Free Deal' })) && !g.isFreeLike(old({ name: 'Freedom Draw' })), 'isFreeLike');
+  const pb = [okb, old({ prices: [3000] })];
+  check(g.pinnedBanner(pb, { gacha: { pinned: 'B9999' } }, pc) === null, 'pinnedBanner: rowId inesistente');
+  check(g.pinnedBanner(pb, { gacha: {} }, pc) === null && g.pinnedBanner(pb, {}, pc) === null, 'pinnedBanner: niente fissato');
+  check(g.pinnedBanner(pb, { gacha: { pinned: okb.rowId } }, pc) === okb, 'pinnedBanner: fissabile');
+  const pl2 = { gacha: { pinned: okb.rowId } };
+  check(g.pinnedBanner(pb, pl2, { ...pc, periodStart: '2016-05-10' }) === null, 'pinnedBanner: non piu fissabile -> null');
+  check(pl2.gacha.pinned === okb.rowId, 'pinnedBanner: il campo resta nel salvataggio');
+  // stato
+  check(JSON.stringify(g.stateOf(okb, { ...sctx, ...pc, pinnedRowId: okb.rowId })) === '{"key":"pinned","text":"📌 Kept in the Shop"}', 'stato pinned');
+  check(g.stateOf(okb, { ...sctx, ...pc }).text === 'Not in the Shop now — can be kept in the Shop', 'stato later fissabile');
+  check(g.stateOf(bad.vipFree, { ...sctx, ...pc }).text === 'Not in the Shop now', 'stato later non fissabile');
+  // pagine
+  const dctx = { ...sctx, ...pc, skillNames: new Set(), fromCatalog: true };
+  const dk = g.detailPage(okb, undefined, medalNames, dctx);
+  check(dk.includes('📌 Keep in the Shop') && dk.includes(`/web/gacha/pin/${okb.drawMedalTypeId}`) && dk.includes('Pinned! Leave and re-enter the Shop to see it.'), 'dettagli: pulsante Keep');
+  check(!dk.includes('Replaces:'), 'dettagli: niente Replaces senza fissato');
+  const dk2 = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: 'B1', pinnedName: 'Old <i>one</i>' });
+  check(dk2.includes('Replaces: Old &lt;i&gt;one&lt;/i&gt;'), 'dettagli: Replaces con nome');
+  const dr = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: okb.rowId });
+  check(dr.includes('Remove from the Shop') && dr.includes('/web/gacha/unpin') && dr.includes('Removed. Leave and re-enter the Shop.') && !dr.includes('📌 Keep in the Shop'), 'dettagli: Remove');
+  check(!g.detailPage(okb, undefined, medalNames, { ...dctx, fromCatalog: false }).includes('Keep in the Shop'), 'dettagli: niente pulsante fuori dal Catalog');
+  check(!g.detailPage(bad.vipFree, undefined, medalNames, dctx).includes('Keep in the Shop'), 'dettagli: niente pulsante se non fissabile');
+} catch (err) { errors.push(`fissato: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

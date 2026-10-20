@@ -552,6 +552,28 @@ try {
   check(d3 && d3.warrantMedalIds.length === 0 && d3.userWarrantDisplayOfTime === 1, 'master riallineato: piastra di prima');
 }
 
+// banner fissato (sp3 6.3): POST pin/unpin; a quest 525 (tranche 2016-05-05) il banner 10002 (fine 2016-04-30) e' passato
+{
+  setQuest(525);
+  const post = (url) => { let code = 0, b = null; quiet(() => t.respondGachaPost({ writeHead(c) { code = c; }, end(x) { b = JSON.parse(x.toString('utf8')); } }, url)); return { code, b }; };
+  const detail = () => page('/web/gacha/detail/10002?from=catalog');
+  check(detail().includes('Keep in the Shop'), 'fissato: Details dal Catalog con pulsante');
+  let r1 = post('/web/gacha/pin/10002');
+  check(r1.code === 200 && r1.b.ok === true && p.gacha.pinned === 'B0002', `fissato: pin ok (${r1.code} ${JSON.stringify(r1.b)} ${p.gacha.pinned})`);
+  check(saved().gacha.pinned === 'B0002', 'fissato: salvato');
+  check(detail().includes('Remove from the Shop') && detail().includes('Kept in the Shop'), 'fissato: Details con Remove e stato');
+  check(page('/web/gacha/catalog').includes('Kept in the Shop'), 'fissato: Catalog mostra lo stato');
+  check(ids(call(t.respondGachaList)).includes(10002), 'fissato: nella lista dello Shop');
+  r1 = post('/web/gacha/pin/10001');
+  check(r1.code === 409 && r1.b.ok === false && r1.b.why && p.gacha.pinned === 'B0002', 'fissato: banner non fissabile -> 409, invariato');
+  r1 = post('/web/gacha/pin/99999');
+  check(r1.code === 404 && r1.b.ok === false, 'fissato: banner sconosciuto -> 404');
+  r1 = post('/web/gacha/unpin');
+  check(r1.code === 200 && r1.b.ok === true && !('pinned' in p.gacha) && !('pinned' in saved().gacha), 'fissato: unpin toglie il campo');
+  check(!ids(call(t.respondGachaList)).includes(10002), 'fissato: tolto dalla lista');
+  setQuest(200);
+}
+
 // catalogo assente: solo la piastra Catalog, estrazione rifiutata
 writeCatalog('non json');
 t.reloadGachaBanners();

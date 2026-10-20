@@ -14,6 +14,7 @@
 'use strict';
 const clock = require('./clock');
 const gd = require('./gacha-data');
+const { seasonOf } = require('./gacha-seasons');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
 const { SKILL_TABLES } = gd;
 
@@ -49,6 +50,20 @@ function priceFor(b, player) {
   return Math.max(1, p.length ? p[Math.min(drawCount(player, b), p.length - 1)] : 1);
 }
 const drawable = (b, sizes) => !b.catalogOnly && [1, 7, 8].includes(b.payType) && sizes.has(b.lotCount);
+// Banner fissabile nello Shop (sp3 6.1): vecchio (finito prima dell'inizio del periodo della tranche, ctx.periodStart),
+// sbloccato, estraibile, ne' Free Deal / 1 Jewel (tutti i prezzi <= 1, vipFree, nome «Free...») ne' stagionale.
+const isFreeLike = (b) => (b.prices || []).every((x) => x <= 1) || !!b.vipFree || /^Free\b/i.test(b.name || '');
+function pinnable(b, ctx) {
+  if (!ctx.periodStart || b.catalogOnly || !drawable(b, ctx.sizes)) return false;
+  if (b.unlockQuest > ctx.storyQuest && !ctx.show?.has(b.rowId)) return false;
+  return (b.end || '2099-12-31') < ctx.periodStart && !isFreeLike(b) && !seasonOf(b);
+}
+// Il banner di player.gacha.pinned se e' ancora fissabile (altrimenti null; il campo resta nel salvataggio).
+function pinnedBanner(banners, player, ctx) {
+  const id = player?.gacha?.pinned;
+  const b = id && banners.find((x) => x.rowId === id);
+  return b && pinnable(b, ctx) ? b : null;
+}
 const activeOn = (b, day) => b.start <= day && day <= (b.end || '2099-12-31');
 
 // shopFrom/shopTo: settimana della rotazione (gacha-data.shopWindow, I-165): entra ogni banner attivo in almeno un
@@ -332,7 +347,7 @@ function page(title, body, cls = '') {
     + 'img{width:100%;max-width:640px;height:auto;display:block;margin:8px 0}'
     + '.b{border-bottom:2px solid #9fb7c6;padding:10px 0 16px}hr{border:0;border-top:2px solid #9fb7c6;margin:20px 0}'
     + '.n{color:#b9cfdc;font-size:15px}.s{display:inline-block;background:#1a6fa8;border-radius:12px;padding:0 12px;font-size:14px;margin:4px 0}'
-    + '.s-now{background:#2e9e3e;font-weight:bold}.s-now:before{content:"\\25B6  "}.s-later{background:#1a6fa8}.s-locked{background:#5a6470;color:#e0e6ea}.s-locked:before{content:"\\1F512  "}.s-size,.s-catalog{background:transparent;border:1px solid #8aa3b3;color:#b9cfdc}.b.now{border-left:5px solid #2e9e3e;padding-left:10px}.b.locked img{opacity:.55;filter:grayscale(.6)}'
+    + '.s-now{background:#2e9e3e;font-weight:bold}.s-now:before{content:"\\25B6  "}.s-later{background:#1a6fa8}.s-pinned{background:#b8860b;font-weight:bold}.b.pinned{border-left:5px solid #b8860b;padding-left:10px}.s-locked{background:#5a6470;color:#e0e6ea}.s-locked:before{content:"\\1F512  "}.s-size,.s-catalog{background:transparent;border:1px solid #8aa3b3;color:#b9cfdc}.b.now{border-left:5px solid #2e9e3e;padding-left:10px}.b.locked img{opacity:.55;filter:grayscale(.6)}'
     + '.k{color:#ffa500;font-weight:bold}.y{color:#ffcd4a;font-weight:bold}'
     + 'table{width:97%;margin:6px auto 10px;border-collapse:collapse;table-layout:fixed;font-size:85%}'
     + 'th,td{border:1px solid #fff;padding:4px 8px;text-align:center;vertical-align:middle}th{background:#365e76;font-weight:normal}'
@@ -347,6 +362,7 @@ function page(title, body, cls = '') {
     + 'box-shadow:0 2px 0 #0b2a66,inset 0 1px 0 rgba(255,255,255,.5);text-shadow:0 1px 2px #0a2a6a}'
     + '.back span{display:inline-block;margin-left:12px;width:14px;height:9px;border:3px solid #fff;border-left:0;border-radius:0 8px 8px 0;vertical-align:1px;position:relative}.back span:after{content:"";position:absolute;left:-7px;bottom:-8px;border-style:solid;border-width:6px 9px 6px 0;border-color:transparent #fff transparent transparent}'
     + 'body.hb{padding-bottom:90px}'
+    + '.pin{margin:10px 0}.btn{display:inline-block;padding:7px 22px;border-radius:10px;border:2px solid #ffe08a;color:#fff;text-decoration:none;font:bold 18px sans-serif;background:linear-gradient(#e0a020,#a8700a)}'
     + '.top{text-align:right;font-size:15px}.box{border:2px solid #ffcd4a;padding:6px 10px;margin:8px 0}</style></head><body' + (cls ? ` class="${cls}"` : '') + '>'
     + `<h1>${esc(title)}</h1>${body}</body></html>`;
 }
@@ -367,8 +383,9 @@ function stateOf(b, ctx) {
     return { key: 'locked', text: `Unlocks after Story Quest ${b.unlockQuest}${b.unlockQuest > RESTORED_QUEST ? FUTURE : ''}` };
   }
   if (!ctx.sizes.has(b.lotCount)) return { key: 'size', text: 'This draw size is not available yet' };
+  if (ctx.pinnedRowId === b.rowId && pinnable(b, ctx)) return { key: 'pinned', text: '📌 Kept in the Shop' };
   if (ctx.shown?.has(b.drawMedalTypeId)) return { key: 'now', text: 'In the Shop now' };
-  return { key: 'later', text: 'Not in the Shop now' };
+  return { key: 'later', text: `Not in the Shop now${pinnable(b, ctx) ? ' — can be kept in the Shop' : ''}` };
 }
 
 const dates = (b) => `${esc(b.start)} to ${esc(b.end || 'open end')}${b.end && b.endSource !== 'original' ? ' (end date reconstructed)' : ''}`;
@@ -545,6 +562,18 @@ function laterWhy(banner, w) {
     + `<li>Every Monday it moves to the next week${w.n > 1 ? `; after the last one it starts again (${w.n} weeks in this period)` : ' (this period is a single week)'}.</li></ol>`
     + `<p class="v">${verdict}</p>`;
 }
+// Pulsante «Keep in the Shop» / «Remove from the Shop» (solo dal Catalog): POST al server con XMLHttpRequest inline.
+function pinButton(banner, ctx) {
+  if (!ctx?.fromCatalog || !pinnable(banner, ctx)) return '';
+  const pinned = ctx.pinnedRowId === banner.rowId;
+  const url = pinned ? '/web/gacha/unpin' : `/web/gacha/pin/${banner.drawMedalTypeId}`;
+  const done = pinned ? 'Removed. Leave and re-enter the Shop.' : 'Pinned! Leave and re-enter the Shop to see it.';
+  const repl = !pinned && ctx.pinnedRowId && ctx.pinnedName ? `<div class="n">Replaces: ${esc(ctx.pinnedName)}</div>` : '';
+  return `<div class="pin">${repl}<a class="btn" id="pinbtn" href="#" onclick="return pinGo()">${pinned ? 'Remove from the Shop' : '📌 Keep in the Shop'}</a><div id="pinmsg" class="n"></div></div>`
+    + `<script>function pinGo(){var m=document.getElementById('pinmsg'),b=document.getElementById('pinbtn'),x=new XMLHttpRequest();x.open('POST',${JSON.stringify(url)});`
+    + `x.onload=function(){if(x.status===200){b.style.display='none';m.textContent=${JSON.stringify(done)};}else{m.textContent='Could not change the Shop: this banner cannot be kept.';}};`
+    + `x.onerror=function(){m.textContent='Could not reach the server.';};x.send('');return false;}</script>`;
+}
 function detailPage(banner, ex, medalNames, ctx) {
   const evolve = banner.pool?.mode === 'evolve';
   const st = stateOf(banner, ctx);
@@ -576,7 +605,7 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}${pinButton(banner, ctx)}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
     + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}${back}`, back ? 'hb' : '');
 }
 
@@ -600,5 +629,5 @@ function catalogPage(banners, ctx) {
 
 module.exports = {
   SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
 };
