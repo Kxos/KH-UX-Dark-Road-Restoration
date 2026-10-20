@@ -98,3 +98,4 @@ server/game_data/
 
 # area di lavoro dei piani (superpowers)
 .superpowers/
+*.stackdump
