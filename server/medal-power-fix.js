@@ -47,6 +47,9 @@ function burstPowerFix(bursts, opts) {
     Object.assign(b, { basePower: base, displayPower: display, basePowerPerEnforce: per, displayPowerPerEnforce: [...dper] });
   const stats = { orig: 0, wiki: 0, robo: 0, none: 0 };
   for (const b of bursts) {
+    // danno fisso (damageType 2, fixed-damage.js): basePower 0 e danno per colpo in sp1, non un moltiplicatore;
+    // letto come tale superava int32 e il server scartava l'intera tabella (banco 20-10)
+    if (b.damageType === 2) { stats.fixed = (stats.fixed || 0) + 1; continue; }
     const want = b.maxEnhanceCount || 0;
     const o = origBursts.get(b.burstId);
     if (o && o.basePower > 1) {
