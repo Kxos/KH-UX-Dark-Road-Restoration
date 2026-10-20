@@ -264,17 +264,18 @@ check(w.headers && String(w.body).includes('not found'), 'banner sconosciuto: pa
   fs.writeFileSync(path.join(IMG, '10002.png'), Buffer.from('not a png'));
   const plain = raw(t.respondGachaWeb, '/web/gacha/img/10001.png');
   check(plain.headers && plain.headers['Content-Type'] === 'image/png' && Buffer.compare(plain.body, png) === 0, 'immagine: normale');
-  const kept = raw(t.respondGachaWeb, '/web/gacha/img/10001-kept.png');
+  const kept = raw(t.respondGachaWeb, '/web/gacha/img/10001-kept2.png');
   if (fs.existsSync(realImg)) {
     check(kept.headers && kept.headers['Content-Type'] === 'image/png' && Buffer.compare(kept.body, png) !== 0 && kept.body.subarray(1, 4).toString() === 'PNG', 'immagine -kept: PNG diverso dall originale');
-    check(fs.existsSync(path.join(IMG_KEPT, '10001.png')), 'immagine -kept: messa in cache accanto alle altre');
-    const again = raw(t.respondGachaWeb, '/web/gacha/img/10001-kept.png');
+    check(fs.existsSync(path.join(IMG_KEPT, '10001-kept2.png')), 'immagine -kept: messa in cache accanto alle altre');
+    const again = raw(t.respondGachaWeb, '/web/gacha/img/10001-kept2.png');
     check(Buffer.compare(again.body, kept.body) === 0, 'immagine -kept: stessa dalla cache');
   } else console.log('  (immagine -kept: PNG di partenza assente, prova di generazione saltata)');
-  const bad = raw(t.respondGachaWeb, '/web/gacha/img/10002-kept.png');
+  const bad = raw(t.respondGachaWeb, '/web/gacha/img/10002-kept2.png');
   check(bad.headers && bad.headers['Content-Type'] === 'image/png' && String(bad.body) === 'not a png', 'immagine -kept: generazione fallita -> immagine normale');
-  check(!fs.existsSync(path.join(IMG_KEPT, '10002.png')), 'immagine -kept: niente file se la generazione fallisce');
-  check(String(raw(t.respondGachaWeb, '/web/gacha/img/99999-kept.png').body).includes('not found'), 'immagine -kept: banner senza immagine -> 404');
+  check(!fs.existsSync(path.join(IMG_KEPT, '10002-kept2.png')), 'immagine -kept: niente file se la generazione fallisce');
+  check(String(raw(t.respondGachaWeb, '/web/gacha/img/99999-kept2.png').body).includes('not found'), 'immagine -kept: banner senza immagine -> 404');
+  check(String(raw(t.respondGachaWeb, '/web/gacha/img/10001-kept.png').body).includes('not found') && String(raw(t.respondGachaWeb, '/web/gacha/img/10001-kept1.png').body).includes('not found'), 'immagine -kept: URL senza stile o di stile vecchio -> 404');
 }
 w = raw(t.respondGachaWeb, '/web/gacha/img/../../save/x.png');
 check(!w.headers || w.headers['Content-Type'] !== 'image/png', 'immagine: niente percorsi fuori cartella');

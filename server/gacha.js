@@ -18,6 +18,8 @@ const { seasonOf, windowText } = require('./gacha-seasons');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
 const { SKILL_TABLES } = gd;
 
+// Versione dello stile del bollino «KEPT IN SHOP»: sta nell'URL (<id>-kept<N>.png) cosi' il client non riusa le vecchie immagini
+const KEPT_STYLE = 2;
 const SHOP_MAX = 20; // fino a 19 banner nella stessa settimana dell originale (2020-09-10); prima 8 (I-165)
 const WALLET = { 1: 'freeStone', 7: 'limitedDrawTicket1' }; // payType 8: player.drawTickets[currency]
 const TICKET_CURRENCIES = ['draw', 'holiday', 'spooky', 'moogle'];
@@ -137,7 +139,7 @@ function plate(b, webBase, userLimitedCount, price, sortId, warrant = warrantFie
     validAdd: 0, drawMedalTypeId: b.drawMedalTypeId, drawType: 1, sortId, payType: b.payType, price,
     lotCount: b.lotCount, isDayLimited: b.dayLimit || b.vipFree || b.totalLimit ? 1 : 0, userLimitedCount,
     userWarrantDisplayOfTime: warrant.userWarrantDisplayOfTime,
-    name: b.name, description: b.name, bannerUrl: `${webBase}/web/gacha/img/${b.drawMedalTypeId}${kept ? '-kept' : ''}.png`, // -kept: stessa immagine con il bollino «KEPT IN SHOP»
+    name: b.name, description: b.name, bannerUrl: `${webBase}/web/gacha/img/${b.drawMedalTypeId}${kept ? `-kept${KEPT_STYLE}` : ''}.png`, // -kept: stessa immagine con il bollino «KEPT IN SHOP»
     warrantMedalIds: warrant.warrantMedalIds, drawTicketlimitDate: '2030-12-31 23:59:59',
   };
 }
@@ -824,6 +826,7 @@ function catalogPage(banners, ctx) {
 }
 
 module.exports = {
+  KEPT_STYLE,
   SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, catalogRow, catalogPlate,
   dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
 };

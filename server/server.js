@@ -1165,14 +1165,14 @@ function respondMedalMax(res, body) {
 // recon/tools/import_jp_raisedraw.py).
 const GACHA_FILE = process.env.KHUX_GACHA_BANNERS || path.join(__dirname, 'game_data', 'gacha_catalog.json');
 const GACHA_IMG = process.env.KHUX_GACHA_IMG || path.join(__dirname, 'game_data', 'gacha_img');
-// Immagini con il bollino «KEPT IN SHOP» del banner fissato (bannerUrl .../<id>-kept.png): generate una volta da
+// Immagini con il bollino «KEPT IN SHOP» del banner fissato (bannerUrl .../<id>-kept<stile>.png, stile = gacha.KEPT_STYLE): generate una volta da
 // recon/tools/kept_banner_badge.py (Pillow) e tenute accanto alle altre immagini generate, fuori dal repo
 const GACHA_IMG_KEPT = process.env.KHUX_GACHA_IMG_KEPT || path.join(__dirname, 'game_data', 'gacha_img_kept');
 const KEPT_BADGE_PY = path.join(__dirname, '..', 'recon', 'tools', 'kept_banner_badge.py');
 const keptFailed = new Set();
 // File del banner con il bollino (generato se manca o se l'originale e' piu' recente); se non riesce, quello normale
 function keptImageFile(id) {
-  const src = path.join(GACHA_IMG, `${id}.png`), dst = path.join(GACHA_IMG_KEPT, `${id}.png`);
+  const src = path.join(GACHA_IMG, `${id}.png`), dst = path.join(GACHA_IMG_KEPT, `${id}-kept${gacha.KEPT_STYLE}.png`);
   if (!fs.existsSync(src)) return src;
   try {
     if (fs.existsSync(dst) && fs.statSync(dst).mtimeMs >= fs.statSync(src).mtimeMs) return dst;
@@ -1423,8 +1423,9 @@ function respondGachaDraw(res, body) {
 function respondGachaWeb(res, url) {
   const p = url.split('?')[0];
   const html = (s, code = 200) => { const b = Buffer.from(s, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
-  const img = /^\/web\/gacha\/img\/(\d+)(-kept)?\.png$/i.exec(p);
+  const img = /^\/web\/gacha\/img\/(\d+)(?:-kept(\d+))?\.png$/i.exec(p);
   if (img) {
+    if (img[2] && Number(img[2]) !== gacha.KEPT_STYLE) return html('not found', 404); // stile vecchio o sconosciuto
     const file = img[2] ? keptImageFile(Number(img[1])) : path.join(GACHA_IMG, `${Number(img[1])}.png`);
     if (!fs.existsSync(file)) return html('not found', 404);
     const b = fs.readFileSync(file);

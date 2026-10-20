@@ -491,7 +491,8 @@ try {
   check(!ids(g.shopBanners([...rot3, spk, drw], { ...o3, seasonal: [spk], pinned: drw })).includes(drw.drawMedalTypeId), 'fissato: perde contro la stagione con valuta diversa');
   // bollino sulla piastra del fissato: bannerUrl -kept.png, le altre invariate
   const bu = (id) => gl.gachaList.find((x) => x.drawMedalTypeId === id).bannerUrl;
-  check(bu(pin.drawMedalTypeId) === `/web/gacha/img/${pin.drawMedalTypeId}-kept.png` && bu(sea.drawMedalTypeId) === `/web/gacha/img/${sea.drawMedalTypeId}.png` && bu(rot3[0].drawMedalTypeId).endsWith(`${rot3[0].drawMedalTypeId}.png`) && !bu(rot3[0].drawMedalTypeId).includes('-kept'), 'piastra del fissato: bannerUrl -kept');
+  check(bu(pin.drawMedalTypeId) === `/web/gacha/img/${pin.drawMedalTypeId}-kept${g.KEPT_STYLE}.png` && bu(sea.drawMedalTypeId) === `/web/gacha/img/${sea.drawMedalTypeId}.png` && bu(rot3[0].drawMedalTypeId).endsWith(`${rot3[0].drawMedalTypeId}.png`) && !bu(rot3[0].drawMedalTypeId).includes('-kept'), 'piastra del fissato: bannerUrl -kept<stile>');
+  check(g.KEPT_STYLE >= 2 && !/-kept\.png/.test(bu(pin.drawMedalTypeId)), 'piastra del fissato: URL con versione di stile (niente cache vecchia)');
   check(!g.gachaListData([...rot3, sea], { gacha: {} }, { realMs: t0, webBase: '', sizes, ...o3, seasonal: [sea] }).gachaList.some((x) => x.bannerUrl.includes('-kept')), 'senza fissato: nessun -kept');
 } catch (err) { errors.push(`stagionali: eccezione ${err.stack}`); }
 
