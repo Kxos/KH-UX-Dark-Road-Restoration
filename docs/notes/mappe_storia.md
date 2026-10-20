@@ -466,10 +466,17 @@ pacchetto: `make_jp_rooms.py --story-only` le esclude), 386 uscite tutte porte P
 Decisioni dell'utente (20-10):
 1. dove ci sono gli originali valgono gli originali: si importano gli stage JP, niente tour prima;
 2. Q617 (20320) e Q661 (23010), parte 1 assente: si ricostruisce solo quella parte nella stanza della porta originale;
-3. Q555 (18300-18304, Aced/Invi/Ira/Ira/Gula): si affronta il leader della **propria Unione** (ricordo dell'utente,
-   non certo: da verificare con fonti), cambiando Unione cambia il boss;
+3. Q555 (18300-18304): si affronta il maestro della **propria Unione** (utente; confermato 20-10, eccezione Vulpes -> Ira):
+   stageId = 18300 + unionId - 1 (Ursus 1 Aced, Anguis 2 Invi, Unicornis 3 Ira, Vulpes 4 Ira, Leopardus 5 Gula). Lo sceglie
+   il client: riga master 18300 con `branchType: 1` (carica mappoi_stg stageId + v - 1) + i 5 stage JP. Prove: decompilato
+   1.2.3, master 1.1.3 (una riga 18300, 5 mappe in stage_maps.json), wiki Q555, testi JP del dramma. Nessun'altra
+   missione 526-979 cambia per Unione;
 4. SR_0009_01_00: grafica di SR_0009_00_00 con la geometria propria;
 5. nomi delle stanze (mapName): solo **originali**, con ricerca approfondita dove mancano o divergono.
+   Ricerca 20-10 (`oltre525\RICERCA_Q555_NOMI.md`): 37 stanze, 9 certe dal mapName WW (AG_0003_04/05_00 Tortuous/Parched
+   Sands, DB_0010_* Clock Tower: Level, DB_0013_00_00 Clock Tower: Elevator), 27 probabili (room1 della wiki, che coincide col
+   mapName WW in 537/555), 1 introvabile (DB_0011_01_00). mapName delle righe 526-979: room1 della wiki per missione
+   (526-555: mapName della master 1.1.3).
 Lavoro tecnico: 312 enemyId mancanti nel master (`enemies_oltre525.json`), righe master 526-979 dalla wiki (Lv dalla
 wiki, 87 STG con Lv 1), worldId e tendina dei mondi di Ralph (I-027).
 
