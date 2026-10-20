@@ -81,3 +81,20 @@ Nomi lunghi dei trait che toccano l'icona; moogle invisibile; targa `LB_Munnies`
 left» mostra 1980 giorni (orologio del guest al 2021, `endDate` sul 2026) (ISSUES I-021). Cursore rosso
 dello slot da sostituire (armatura `MedalInfo_Anim`, `animeCursor`) piu' largo della finestra; trait
 speciali (Spirit Training) non gestiti (ISSUES I-043).
+
+<a id="trait-medal"></a>
+## Trait Medal nel Moogle Shop (ricerca 20-10, rimandata a I-164)
+
+Decisione dell'utente (20-10): si fa insieme al bilanciamento delle risorse (I-164). Offerte originali trovate
+(notice in `referenceanners
+otices.json`, khuxwiki in `reference	rait_medals\`; elenco completo in
+`D:\Progetto_Restauro_KH_UX	mp	m\MOOGLE_TRAIT.md` e `moogle_trait_offers.json`):
+- 25-10-2019 (notice 59270): Trait Medal #155 x30 a 300 jewel, una volta, durante il deal della stessa medaglia.
+- 22-11-2019 (60076, Black Friday): «99 Trait Medal per 1.000 jewel», lineup giornaliera; numeri non scritti.
+- 17 e 24-02-2020 (63137/63138): 12 Trait Medal di deal passati, x15 a 800 jewel, senza limite, una settimana l'una.
+- 7-12-2020 / 7-3-2021 (khuxwiki, scheda Limited-Time): 35 righe x10 a 1.000 jewel, senza limite (#282-#313 e
+  alcune vecchie).
+- #189-#313 (khuxwiki): 102 periodi «Moogle Shop from X to Y» (30-3-2020 / 1-3-2021), quasi sempre quelli del deal;
+  prezzo e quantita' ignoti per mar-nov 2020.
+- Le vendite WJE «Moogle Shop Sale» (500/100/1.000 jewel) sono di Trait, non di Trait Medal. Nessuna condizione VIP
+  scritta per le Trait Medal.
