@@ -123,7 +123,7 @@ const NOTICES = [
       'When you clear enough Story Quests to reach the next period, the Shop moves to the first week of the new period. Banners of periods you have passed stay in the Banner Catalog, where you can still see their Medals and rates.',
       'Each banner\'s **Details** say whether it is in the Shop now and, if not, in how many weeks it comes back.',
       '## Seasonal banners',
-      'During each of these windows of the **real calendar**, the most recent unlocked edition of that season\'s banners appears at the top of the Shop, right after the Banner Catalog. If no edition is unlocked yet, nothing appears.',
+      'During each of these windows of the **real calendar**, the most recent unlocked edition of that season\'s banners appears at the top of the Shop, right after the Banner Catalog (and the kept banner, if any). If no edition is unlocked yet, nothing appears.',
       'Windows (UTC):',
       ...seasonLines(),
       'When two seasons overlap, both appear, unless they use different special tickets (Spooky Cookies, Moogle Points, Holiday Draw Tickets): then only the first one in the list above shows. A seasonal banner that is already in the week\'s rotation is not shown twice.',

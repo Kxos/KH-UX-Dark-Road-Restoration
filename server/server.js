@@ -1179,12 +1179,14 @@ function keptImageFile(id) {
     if (keptFailed.has(id)) return src;
     fs.mkdirSync(GACHA_IMG_KEPT, { recursive: true });
     const tmp = `${dst}.${process.pid}.tmp`;
-    require('child_process').execFileSync(process.env.KHUX_PYTHON || 'python', ['-I', KEPT_BADGE_PY, src, tmp], { timeout: 20000, stdio: 'ignore', windowsHide: true });
+    require('child_process').execFileSync(process.env.KHUX_PYTHON || 'python', ['-I', KEPT_BADGE_PY, src, tmp], { timeout: 20000, stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
     fs.renameSync(tmp, dst);
     return dst;
   } catch (e) {
     keptFailed.add(id);
-    console.log(`  [gacha] immagine -kept ${id}: ${e.message.split(String.fromCharCode(10))[0]}; servo quella normale`);
+    try { fs.rmSync(`${dst}.${process.pid}.tmp`, { force: true }); } catch { /* niente da togliere */ }
+    const nl = String.fromCharCode(10), err = String(e.stderr || '').trim().split(nl).pop() || e.message.split(nl)[0]; // ultima riga di Python (es. ModuleNotFoundError: PIL)
+    console.log(`  [gacha] immagine -kept ${id}: ${err}; servo quella normale`);
     return src;
   }
 }
