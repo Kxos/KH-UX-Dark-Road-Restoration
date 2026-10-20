@@ -43,8 +43,7 @@ mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
 <a id="pezzi"></a>
 ## Pezzi e 4 GiB (I-171)
 
-Analisi statica del client WW 4.3.1 (20-10, `D:\Progetto_Restauro_KH_UX	mp
-es4g\client-analysis.md`):
+Analisi statica del client WW 4.3.1 (20-10, `D:\Progetto_Restauro_KH_UX\tmp\res4g\client-analysis.md`):
 - I "data" scaricati si accodano in `files/r/misc.mp4` e, ogni 2 GiB (0x80000000), nel pezzo dopo:
   `misc.mp4.1`, `misc.mp4.2` ... (`[fn]`, `"%s.%d"`). Il lettore (`[fn]`) apre al
   massimo **10 file** (`misc.mp4` .. `misc.mp4.9`): tetto **20 GiB** (21.474.836.480 byte). Oltre, lo
@@ -61,11 +60,12 @@ es4g\client-analysis.md`):
 - **Nessun controllo dello spazio libero** prima del download: disco pieno = «Save error. Please check the
   storage space on your device.» (`fwrite` corto). Picco = dati installati + un pezzo in cache.
 - Ancora da provare al banco: un download con `misc.mp4.2` (ricetta in
-  `D:\Progetto_Restauro_KH_UX	mp
-es4gench-recipe.md`).
+  `D:\Progetto_Restauro_KH_UX\tmp\res4g\bench-recipe.md`): `build-resources.ps1 -Version N -TestStraddle <nome>`
+  mette prima del generato un pezzo di zeri (`resource_parts.py --straddle`, nome del pezzo in
+  `resource_data\<N>\testpad.txt`, rispettato da `-Quick`) perche' il record <nome> del generato stia a
+  cavallo dei 4 GiB; la versione dopo, senza, torna sotto.
 
-Misure della 47 (`D:\Progetto_Restauro_KH_UX	mp
-es4g\inventory.md`): 40 pezzi, 4.286.993.546 byte; OBB
+Misure della 47 (`D:\Progetto_Restauro_KH_UX\tmp\res4g\inventory.md`): 40 pezzi, 4.286.993.546 byte; OBB
 main+patch 2.185.902.806, addnl 132.056.004, medaglie 965.832.467, stanze 731.805.396, nemici 53.227.192,
 raisedraw 33.620.305, generato 184.549.376 (contenuto 138.817.141 + 45.732.235 di zeri della riserva).
 
