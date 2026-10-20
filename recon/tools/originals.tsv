@@ -207,3 +207,11 @@ lwf/ability/hit_effect/pet_eff_0004/pet_eff_0004_e38393e38383e38388e3839ee38383e
 lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031312e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e3839720392e706e67.png
 lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031322e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031302e706e67.png
 lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031332e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031312e706e67.png
+
+# 35. Numero del deck nel popup di Optimize («Optimize Medals for <keyblade>?», I-179): [fn] carica
+#     img/ui/Deck_But%02d_On.png (N = deck attivo + 1), assente da WW 5.0.1, JP 4.3.1 e 2016: restava l'immagine del
+#     layout (Deck_But01_On, StartDeckEdit2_Popup_AutoChangeCheck_ver260), quindi sempre «1» anche col deck 2 o 3 (banco
+#     20-10). Stesse texture dei pulsanti 1/2/3 (cocostudio/publish), sotto il nome che il codice cerca
+img/ui/Deck_But01_On.png	b16	cocostudio/publish/Deck_But01_On.png
+img/ui/Deck_But02_On.png	b16	cocostudio/publish/Deck_But02_On.png
+img/ui/Deck_But03_On.png	b16	cocostudio/publish/Deck_But03_On.png

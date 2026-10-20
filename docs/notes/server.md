@@ -331,6 +331,10 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   `player.keybladeDeckSets[kb] = {active, 2, 3}`; 6° slot del pet per userDeckId; Unequip anche da 2/3. Test
   `test-deck-sets.js`. Banco 20-10: pulsanti in Equipment, deck 2 vuoto, ritorno al deck 1 intatto. Da provare: riempire il
   deck 2 e combattere con quello; `userPoint` (STR/DEF della home) resta quello del deck 1 di Starlight come prima.
+  Popup di Optimize in «Select a Keyblade» ([fn] -> [fn]): il numero del deck e' la texture
+  `img/ui/Deck_But%02d_On.png`, assente da tutte le risorse (WW, JP, 2016): restava `Deck_But01_On` del layout, sempre
+  «1» (banco 20-10, deck 2). Servite come copie dei pulsanti (`originals.tsv` sezione 35); Optimize stesso usava gia' il
+  deck acceso (deck 3 riempito al banco).
 - `/stage/start` salva `userKeybladeId` (`player.currentUserKeybladeId`): la gauge di `/stage/clear`
   va in quel keyblade. Unequip (`/user/medal/remove`) toglie la medaglia da tutti i deck.
 - Immagini: il popup del keyblade ottenuto (`BattleResult_KB`, `[fn]`) e le icone dei premi
