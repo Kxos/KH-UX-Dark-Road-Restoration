@@ -3885,6 +3885,12 @@ function start() {
   console.log('nativeSessionId          :', SESSION.nativeSessionId);
   console.log('sharedSecurityKey        :', SESSION.sharedSecurityKey);
   console.log('log delle richieste      :', LOG_FILE);
+  // una tabella che non passa lo schema non viene servita e il client tiene la sua copia vecchia senza errori
+  // (20-10: burst scartata per 4 valori oltre int32, Lexaeus A 7★ fermo a x1.95): avviso all'avvio
+  const allTables = fs.existsSync(MASTER_DIR) ? fs.readdirSync(MASTER_DIR).filter((f) => f.endsWith('.json') && MASTER_SCHEMA[f.slice(0, -5)]).length : 0;
+  const served = masterTables().filter((n) => MASTER_SCHEMA[n]).length;
+  if (served < allTables) console.log(`!!! MASTER: ${allTables - served} tabelle scartate dallo schema (vedi [master] sopra), il client non le riceve`);
+  else console.log(`master                   : ${served} tabelle valide`);
   console.log();
 
   http.createServer(handler('http')).listen(HTTP_PORT, '0.0.0.0', () => {
