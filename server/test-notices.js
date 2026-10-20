@@ -88,6 +88,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
     summer: 'Summer: August 22 – September 1', halloween: 'Halloween: October 12 – November 2',
     blackfriday: 'Black Friday / Cyber Monday: November 22 – December 9', holiday: 'Winter Holidays: December 7 – January 6' };
   for (const k of Object.keys(win)) check(shop.includes(win[k]), `Shop: finestra ${k}`);
+  check(shop.includes('Windows (UTC):'), 'Shop: finestre in UTC');
   check(require('./gacha-seasons').SEASONS.length === 8, 'otto stagioni');
   check(/most recent unlocked edition/.test(all) && /nothing appears/.test(all), 'Shop: edizione piu recente, niente se nessuna');
   check(/Keep in the Shop/.test(all) && /Banner Catalog/.test(all) && /Leave and re-enter the Shop/.test(all), 'Shop: pulsante e rientro');

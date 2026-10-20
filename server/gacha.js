@@ -14,7 +14,7 @@
 'use strict';
 const clock = require('./clock');
 const gd = require('./gacha-data');
-const { seasonOf } = require('./gacha-seasons');
+const { seasonOf, windowText } = require('./gacha-seasons');
 const BOOST_PCT = gd.BOOST_SMALL_CHANCE * 100;
 const { SKILL_TABLES } = gd;
 
@@ -547,11 +547,14 @@ const STATE_WHY = {
 // settimana mostrata, poi la risposta per questo banner in evidenza (HTML, testi gia' sicuri)
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const niceDay = (iso) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}, ${iso.slice(0, 4)}`;
-function laterWhy(banner, w) {
+function laterWhy(banner, w, ctx) {
+  const sea = seasonOf(banner);
+  if (sea) return `<p class="v">Seasonal banner: it returns to the top of the Shop every year, <b>${windowText(sea)}</b> (UTC, real calendar), when it is the most recent unlocked edition of its season.</p>`;
   if (!w) return esc('This banner is not in the Shop this week.');
   const end = banner.end || '2099-12-31';
   let verdict;
-  if (end < w.day) verdict = 'This banner ran <b>before</b> your period, so it will not come back to the Shop. You can still see its Medals and rates here.';
+  if (end < w.day) verdict = 'This banner ran <b>before</b> your period, so it will not come back to the Shop'
+    + (pinnable(banner, ctx || {}) ? (ctx.fromCatalog ? ', unless you keep it in the Shop with the button below' : ', unless you keep it in the Shop from the Banner Catalog') : '') + '. You can still see its Medals and rates here.';
   else if (banner.start > w.periodEnd) verdict = 'This banner comes in a <b>later period</b>: keep going in the Story.';
   else {
     for (let d = 1; d <= w.n && !verdict; d++) {
@@ -612,7 +615,7 @@ function detailPage(banner, ex, medalNames, ctx) {
     + `${oddsTable(banner, ex, medalNames)}${pity}${garanzie}${skillSection(banner, ctx.skillNames)}${evolve ? '' : `<hr><h2>Medals in this draw</h2>${legend}`}${pool}` : '';
   const back = ctx?.fromCatalog ? `<div class="bar"><a class="back" href="/web/gacha/catalog#c${banner.drawMedalTypeId}">BACK<span></span></a></div>` : '';
   return page(banner.name, `<img src="/web/gacha/img/${banner.drawMedalTypeId}.png" alt="">${head}`
-    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}${pinButton(banner, ctx)}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
+    + `<span class="s s-${st.key}">${esc(st.text)}</span>${st.key === 'later' ? `<div class="why later">${laterWhy(banner, ctx?.shopWeek, ctx)}</div>` : STATE_WHY[st.key] ? `<div class="why ${st.key}">${esc(STATE_WHY[st.key])}</div>` : ''}${pinButton(banner, ctx)}<h2>Campaign Period</h2><p>Original banner: ${dates(banner)}.</p>`
     + `${gtext ? `<h2>Deal Details</h2><p>${gtext}</p>` : ''}${rates}${back}`, back ? 'hb' : '');
 }
 
@@ -756,7 +759,7 @@ $('fok').onclick=function(){if(!dr||this.disabled)return;var s=dr;s.y=cur.y;clos
 $('sum').onclick=function(e){var x=attr(e.target,'data-x');if(!x)return;e.preventDefault();
 if(x==='pay'||x==='all')cur.pay='all';if(x==='show'||x==='all')cur.show='all';if(x==='q'||x==='all'){cur.q='';cur.ids=null;}render();};
 document.querySelector('.tabs').onclick=function(e){var t=e.target;while(t&&!attr(t,'data-y'))t=t.parentNode;if(!t)return;cur.y=attr(t,'data-y');render();};
-try{var s=JSON.parse(sessionStorage.getItem(KEY)||'null');if(s&&/^(all|[0-5])$/.test(s.y)){cur.y=s.y;cur.pay=LAB.pay[s.pay]?s.pay:'all';cur.show=LAB.show[s.show]?s.show:'all';
+try{var s=null;if(/^#c/.test(location.hash))s=JSON.parse(sessionStorage.getItem(KEY)||'null');else sessionStorage.removeItem(KEY);if(s&&/^(all|[0-5])$/.test(s.y)){cur.y=s.y;cur.pay=LAB.pay[s.pay]?s.pay:'all';cur.show=LAB.show[s.show]?s.show:'all';
 if(s.q&&s.ids){cur.q=s.q;cur.ids={};s.ids.forEach(function(i){cur.ids[i]=1;});cache[s.q]=cur.ids;}}}catch(e){}
 render();
 var t=location.hash&&document.getElementById(location.hash.slice(1));if(t&&t.className.indexOf(' hide')<0&&t.scrollIntoView)t.scrollIntoView();

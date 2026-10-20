@@ -209,6 +209,7 @@ check(g.shopBanners([sb({ unlockQuest: 0, start: '2016-04-07', end: '2016-04-30'
 const medalNames = new Map([[1, 'Alpha'], [2, 'Beta'], [3, 'Gamma'], [301495, 'Fairy LV1'], [301496, 'Fairy LV2'], [301497, 'Fairy LV3']]);
 const cb = [sb({ name: 'A <b>bold</b>' }), sb({ name: 'Second', catalogOnly: 'VIP_TWIN', start: '2016-06-01', endSource: 'estimated' }), inShop];
 const cp = g.catalogPage(cb, { ...sctx, shown: new Set([inShop.drawMedalTypeId]) });
+check(/\^#c\/\.test\(location\.hash\)/.test(cp) && cp.includes('sessionStorage.removeItem(KEY)'), 'catalogo: filtri ripristinati solo con hash #c, altrimenti azzerati');
 check((cp.match(/loading="lazy"/g) || []).length === 3, 'catalogo: 3 immagini lazy');
 check(cp.includes('A &lt;b&gt;bold&lt;/b&gt;') && !cp.includes('<b>bold'), 'catalogo: escape del nome');
 check(cp.includes('In the Shop now') && cp.includes('VIP variant, not reproduced'), 'catalogo: stati');
@@ -528,6 +529,14 @@ try {
   check(dr.includes('Remove from the Shop') && dr.includes('/web/gacha/unpin') && dr.includes('Removed. Leave and re-enter the Shop.') && !dr.includes('📌 Keep in the Shop'), 'dettagli: Remove');
   check(!g.detailPage(okb, undefined, medalNames, { ...dctx, fromCatalog: false }).includes('Keep in the Shop'), 'dettagli: niente pulsante fuori dal Catalog');
   check(!g.detailPage(bad.vipFree, undefined, medalNames, dctx).includes('Keep in the Shop'), 'dettagli: niente pulsante se non fissabile');
+  // verdetti dei Details (finale): stagionale fuori finestra, fissabile passato
+  const wk = { day: '2016-06-01', periodEnd: '2016-06-30', from: '2016-06-06', to: '2016-06-12', k: 0, n: 1 };
+  const dctx2 = { ...dctx, shopWeek: wk };
+  const dSea = g.detailPage({ ...okb, rowId: seaRow.rowId }, undefined, medalNames, dctx2);
+  check(/Seasonal banner: it returns to the top of the Shop every year, <b>[A-Z][a-z]+ \d+ – [A-Z][a-z]+ \d+<\/b> \(UTC, real calendar\)/.test(dSea) && !dSea.includes('will not come back') && !dSea.includes('later period'), 'dettagli: stagionale, verdetto stagionale');
+  check(dk2.length > 0 && g.detailPage(okb, undefined, medalNames, dctx2).includes('will not come back to the Shop, unless you keep it in the Shop with the button below.'), 'dettagli: passato fissabile dal Catalog');
+  check(g.detailPage(okb, undefined, medalNames, { ...dctx2, fromCatalog: false }).includes('unless you keep it in the Shop from the Banner Catalog.'), 'dettagli: passato fissabile fuori dal Catalog');
+  check(g.detailPage(bad.vipFree, undefined, medalNames, dctx2).includes('will not come back to the Shop. You can still') && !g.detailPage(bad.vipFree, undefined, medalNames, dctx2).includes('unless you keep'), 'dettagli: non fissabile senza clausola');
 } catch (err) { errors.push(`fissato: eccezione ${err.stack}`); }
 
 // ricerca per medaglia (sp3 7.1, I-150): nomi per banner -> ids dei banner

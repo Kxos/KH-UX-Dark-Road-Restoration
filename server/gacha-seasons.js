@@ -65,4 +65,9 @@ const seasonBanners = (banners, realMs, isUnlockedDrawable) => {
   return out;
 };
 
-module.exports = { SEASONS, seasonOf, activeSeasons, editionOf, seasonBanners };
+// testo della finestra («December 22 – January 17»), condiviso da Notices e Details
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const mmdd = (s) => { const [m, d] = s.split('-').map(Number); return MONTHS[m - 1] + ' ' + d; };
+const windowText = (key) => { const s = SEASONS.find((x) => x.key === key); return s ? mmdd(s.from) + ' – ' + mmdd(s.to) : ''; };
+
+module.exports = { SEASONS, seasonOf, activeSeasons, editionOf, seasonBanners, mmdd, windowText };

@@ -25,13 +25,11 @@
 
 const clock = require('./clock');
 const { isBoosted } = require('./medal-boost');
-const { SEASONS } = require('./gacha-seasons');
+const { SEASONS, mmdd } = require('./gacha-seasons');
 
 // Finestre stagionali dello Shop: generate dalla tabella SEASONS, cosi' la notizia non puo' divergere
 const SEASON_LABEL = { newyear: 'New Year', lunar: 'Lunar New Year', valentine: "Valentine's Day", anniversary: 'Anniversary',
   summer: 'Summer', halloween: 'Halloween', blackfriday: 'Black Friday / Cyber Monday', holiday: 'Winter Holidays' };
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const mmdd = (s) => { const [m, d] = s.split('-').map(Number); return MONTHS[m - 1] + ' ' + d; };
 const seasonLines = () => SEASONS.map((x) => (SEASON_LABEL[x.key] || x.key) + ': ' + mmdd(x.from) + ' – ' + mmdd(x.to));
 
 // Ogni funzione che differisce dall'originale ha una notizia (docs/notes/home_profilo.md#notices-album)
@@ -126,6 +124,7 @@ const NOTICES = [
       'Each banner\'s **Details** say whether it is in the Shop now and, if not, in how many weeks it comes back.',
       '## Seasonal banners',
       'During each of these windows of the **real calendar**, the most recent unlocked edition of that season\'s banners appears at the top of the Shop, right after the Banner Catalog. If no edition is unlocked yet, nothing appears.',
+      'Windows (UTC):',
       ...seasonLines(),
       'When two seasons overlap, both appear, unless they use different special tickets (Spooky Cookies, Moogle Points, Holiday Draw Tickets): then only the first one in the list above shows. A seasonal banner that is already in the week\'s rotation is not shown twice.',
       '## Keep one banner in the Shop',
