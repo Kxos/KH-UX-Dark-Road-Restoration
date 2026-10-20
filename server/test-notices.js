@@ -96,6 +96,8 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
   check(/steps aside until the season ends/.test(all), 'Shop: precedenza delle valute stagionali');
   check(/GAME YEAR/.test(all) && /Filters/.test(all) && /Find a Medal/.test(all) && /Paid with/.test(all) && /Show/.test(all), 'Shop: filtri del Catalog');
   const diff = n.NOTICES.find((x) => x.title === 'Differences from the original game').body;
+  check(/unless they use different special tickets/.test(all) && /only the first one in the list above shows/.test(all), 'Shop: stagioni con valute diverse');
+  check(/the seasonal banner wins, then the kept banner, then the weekly rotation/.test(all) && /for example Spooky Cookies, Moogle Points or Holiday Draw Tickets/.test(all), 'Shop: precedenza delle valute');
   check(diff.some((s) => /fixed dates of the real calendar/.test(s) && /most recent unlocked edition/.test(s)), 'differenze: stagionali');
   check(diff.some((s) => /Keep in the Shop/.test(s) && /did not exist in the original/.test(s)), 'differenze: banner fissato');
   check(diff.some((s) => /Platinum Tickets or Draw Tickets/.test(s) && /only after a banner that uses them/.test(s)), 'differenze: Limited coi biglietti');
