@@ -15,7 +15,7 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 | A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint | ✅ completata |
 | B | Server REST minimo → il client raggiunge la home screen | ✅ APK 4.3.1 **originale** su LDPlayer 9 (Android 9): nuovo giocatore, Prologue, home |
 | C | Schema dei campi delle 54 tabelle master | ✅ completata — 106 tabelle, 1.739 campi |
-| D | Popolamento master data, quest e combattimento single-player | 🔄 dal nuovo giocatore alla home; missioni di storia 1–525 (mappe generate); Medal List, vendita, Level Up (pallini e guilt, skill, trait, Trait Medal), Evolve, Moogle Shop, Shop con i banner originali (807 deal con garanzie, pity e rotazione settimanale), Profilo, Missioni e campagne Limited, Avatar Boards, pet, livelli Lux fino a 999. In corso: schema esatto dei mondi (aree e collegamenti) prima di ricostruire le mappe delle missioni |
+| D | Popolamento master data, quest e combattimento single-player | 🔄 dal nuovo giocatore alla home; missioni di storia 1–525 (mappe generate); Medal List, vendita, Level Up (pallini e guilt, skill, trait, Trait Medal), Evolve, Moogle Shop, Shop con i banner originali (807 deal con garanzie, pity, rotazione settimanale, stagionali, banner fissato e catalogo con filtri), Profilo, Missioni e campagne Limited, Avatar Boards, pet, livelli Lux fino a 999. In corso: schema esatto dei mondi (aree e collegamenti) prima di ricostruire le mappe delle missioni |
 | E | Photon self-hosted per Union Cross / raid / PvP | ⬜ |
 
 Stato aggiornato al 19 ottobre 2026. Le schermate che il client 4.3.1 non trova più nelle

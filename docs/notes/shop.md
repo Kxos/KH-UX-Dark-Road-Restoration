@@ -861,3 +861,20 @@ casi lenti (~9 s) sono intermittenti e coincidono con un aggiornamento di font d
   `GET /web/gacha/icon/<jewel|platinum|draw|seasonal|vip|other>.png`. Sono asset Square Enix: non sono nel repo, stanno in
   `server/game_data/shop_icons/` (ignorata da git). Per rigenerarle: `python -I recon/tools/shop_icons.py [BASE_JP] [CARTELLA_OUT]`
   (BASE_JP anche da env `KHUX_JP_BASE`; riduce ogni icona a 48x48 RGBA). Se un'icona manca la rotta da' 404 e la pagina resta intatta.
+
+- **Cosa fa il sotto-progetto 3** (20-10, provato al banco con `prove525`):
+  - stagionali sul calendario reale (`server/gacha-seasons.js`, 8 finestre fisse in UTC, edizione piu' recente
+    sbloccata), conto alla rovescia fino alla fine della finestra, revisione del master che cambia con le stagioni;
+  - un banner vecchio fissato (`player.gacha.pinned`, `POST /web/gacha/pin/<id>` e `/web/gacha/unpin`), dai Details o
+    dalla lista del Catalog; esclusi Free Deal, 1 Jewel, stagionali; nello Shop subito sotto il Catalog, sopra le
+    stagionali (la precedenza delle valute payType 8 resta stagione > fissato > rotazione); piastra con
+    `/web/gacha/img/<id>-kept2.png` (etichetta C3c, `recon/tools/kept_banner_badge.py`, cache in
+    `server/game_data/gacha_img_kept/`; `KEPT_STYLE` in gacha.js da alzare a ogni nuovo disegno);
+  - Limited con Platinum/Draw Ticket solo dalla quest 815/840 (soglie dal catalogo, `ticketUnlockQuest`);
+  - Catalog con schede GAME YEAR (nascoste se vuote), pannello Filters, ricerca per medaglia (`/web/gacha/search`);
+  - l'estrazione accetta anche i banner dell'ultima `/gacha/list` mandata al client (pagina dello Shop non ricaricata).
+- **Salvataggio di prova `prove525`**: `prove.json` con `stageScores` di tutte le 525 quest (creato il 20-10 con uno
+  script node). Serve per stagionali, fissabili e soglie; `prove.json` e' alla quest ~132.
+- Rimandati (registro del piano): conto alla rovescia della rotazione sfasato di una settimana ai bordi di una stagione
+  o dopo un fissaggio; stagione che inizia dentro una sessione (conto alla rovescia dal login dopo); righe boosted di
+  Axel Art [EX] / KH II Kairi [EX+] nel master (B0238, B0362, B0363 senza boost); estate solo con la dimensione 4.
