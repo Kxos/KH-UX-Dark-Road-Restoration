@@ -32,6 +32,10 @@ process.env.KHUX_MASTER_DIR = MASTER;
 process.env.KHUX_REVISION = '118';
 process.env.KHUX_GACHA_BANNERS = BANNERS;
 process.env.KHUX_GACHA_SIZES = '1,3,10';
+// immagini dei banner: cartelle temporanee (PNG vero 640x140 copiato da game_data/gacha_img se c'e')
+const IMG = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-test-gacha-img-')), IMG_KEPT = path.join(IMG, 'kept');
+process.env.KHUX_GACHA_IMG = IMG; process.env.KHUX_GACHA_IMG_KEPT = IMG_KEPT;
+process.on('exit', () => { try { fs.rmSync(IMG, { recursive: true, force: true }); } catch { /* gia' tolta */ } });
 process.env.KHUX_GACHA_SHOW = 'B0005,B0008';
 delete process.env.KHUX_REAL_NOW; delete process.env.KHUX_SERVER_TIME;
 const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
@@ -252,6 +256,26 @@ w = raw(t.respondGachaWeb, '/web/gacha/catalog');
 }
 w = raw(t.respondGachaWeb, '/web/gacha/detail/77');
 check(w.headers && String(w.body).includes('not found'), 'banner sconosciuto: pagina di errore');
+// immagine del banner fissato (-kept): generata una volta dallo script Python, in cache, ripiego sull'immagine normale
+{
+  const realImg = path.join(__dirname, 'game_data', 'gacha_img', '10001.png');
+  const png = fs.existsSync(realImg) ? fs.readFileSync(realImg) : Buffer.from('iVBORw0KGgo=', 'base64');
+  fs.writeFileSync(path.join(IMG, '10001.png'), png);
+  fs.writeFileSync(path.join(IMG, '10002.png'), Buffer.from('not a png'));
+  const plain = raw(t.respondGachaWeb, '/web/gacha/img/10001.png');
+  check(plain.headers && plain.headers['Content-Type'] === 'image/png' && Buffer.compare(plain.body, png) === 0, 'immagine: normale');
+  const kept = raw(t.respondGachaWeb, '/web/gacha/img/10001-kept.png');
+  if (fs.existsSync(realImg)) {
+    check(kept.headers && kept.headers['Content-Type'] === 'image/png' && Buffer.compare(kept.body, png) !== 0 && kept.body.subarray(1, 4).toString() === 'PNG', 'immagine -kept: PNG diverso dall originale');
+    check(fs.existsSync(path.join(IMG_KEPT, '10001.png')), 'immagine -kept: messa in cache accanto alle altre');
+    const again = raw(t.respondGachaWeb, '/web/gacha/img/10001-kept.png');
+    check(Buffer.compare(again.body, kept.body) === 0, 'immagine -kept: stessa dalla cache');
+  } else console.log('  (immagine -kept: PNG di partenza assente, prova di generazione saltata)');
+  const bad = raw(t.respondGachaWeb, '/web/gacha/img/10002-kept.png');
+  check(bad.headers && bad.headers['Content-Type'] === 'image/png' && String(bad.body) === 'not a png', 'immagine -kept: generazione fallita -> immagine normale');
+  check(!fs.existsSync(path.join(IMG_KEPT, '10002.png')), 'immagine -kept: niente file se la generazione fallisce');
+  check(String(raw(t.respondGachaWeb, '/web/gacha/img/99999-kept.png').body).includes('not found'), 'immagine -kept: banner senza immagine -> 404');
+}
 w = raw(t.respondGachaWeb, '/web/gacha/img/../../save/x.png');
 check(!w.headers || w.headers['Content-Type'] !== 'image/png', 'immagine: niente percorsi fuori cartella');
 

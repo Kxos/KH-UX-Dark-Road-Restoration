@@ -128,7 +128,7 @@ const NOTICES = [
       ...seasonLines(),
       'When two seasons overlap, both appear, unless they use different special tickets (Spooky Cookies, Moogle Points, Holiday Draw Tickets): then only the first one in the list above shows. A seasonal banner that is already in the week\'s rotation is not shown twice.',
       '## Keep one banner in the Shop',
-      'Open a banner\'s **Details** in the Banner Catalog and tap **📌 Keep in the Shop**. It then stays in the Shop every week, after the seasonal banners.',
+      'In the Banner Catalog, tap **📌 Keep in the Shop** on a banner\'s row (or in its **Details**). It then stays in the Shop every week, right after the Banner Catalog plate and above the seasonal banners, marked with a **📌 KEPT IN SHOP** badge.',
       'You can keep only banners from a period you have already passed in the Story. Free Deals, draws that cost 1 Jewel and seasonal banners cannot be kept.',
       'Keep one banner at a time: keeping another replaces the first, and **Remove from the Shop** takes it out whenever you like.',
       '**Leave and re-enter the Shop** after keeping a banner to see it.',

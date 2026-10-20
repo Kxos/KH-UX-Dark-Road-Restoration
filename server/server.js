@@ -1164,7 +1164,30 @@ function respondMedalMax(res, body) {
 // medaglie con l'animazione del risultato nelle risorse (lwf/raisedraw/demo/raidgacha_result_display_NN,
 // recon/tools/import_jp_raisedraw.py).
 const GACHA_FILE = process.env.KHUX_GACHA_BANNERS || path.join(__dirname, 'game_data', 'gacha_catalog.json');
-const GACHA_IMG = path.join(__dirname, 'game_data', 'gacha_img');
+const GACHA_IMG = process.env.KHUX_GACHA_IMG || path.join(__dirname, 'game_data', 'gacha_img');
+// Immagini con il bollino «KEPT IN SHOP» del banner fissato (bannerUrl .../<id>-kept.png): generate una volta da
+// recon/tools/kept_banner_badge.py (Pillow) e tenute accanto alle altre immagini generate, fuori dal repo
+const GACHA_IMG_KEPT = process.env.KHUX_GACHA_IMG_KEPT || path.join(__dirname, 'game_data', 'gacha_img_kept');
+const KEPT_BADGE_PY = path.join(__dirname, '..', 'recon', 'tools', 'kept_banner_badge.py');
+const keptFailed = new Set();
+// File del banner con il bollino (generato se manca o se l'originale e' piu' recente); se non riesce, quello normale
+function keptImageFile(id) {
+  const src = path.join(GACHA_IMG, `${id}.png`), dst = path.join(GACHA_IMG_KEPT, `${id}.png`);
+  if (!fs.existsSync(src)) return src;
+  try {
+    if (fs.existsSync(dst) && fs.statSync(dst).mtimeMs >= fs.statSync(src).mtimeMs) return dst;
+    if (keptFailed.has(id)) return src;
+    fs.mkdirSync(GACHA_IMG_KEPT, { recursive: true });
+    const tmp = `${dst}.${process.pid}.tmp`;
+    require('child_process').execFileSync(process.env.KHUX_PYTHON || 'python', ['-I', KEPT_BADGE_PY, src, tmp], { timeout: 20000, stdio: 'ignore', windowsHide: true });
+    fs.renameSync(tmp, dst);
+    return dst;
+  } catch (e) {
+    keptFailed.add(id);
+    console.log(`  [gacha] immagine -kept ${id}: ${e.message.split(String.fromCharCode(10))[0]}; servo quella normale`);
+    return src;
+  }
+}
 const GACHA_SHOW = new Set((process.env.KHUX_GACHA_SHOW || '').split(',').map((s) => s.trim()).filter(Boolean));
 const GACHA_SIZES = new Set((process.env.KHUX_GACHA_SIZES || '1,3,10').split(',').map(Number));
 const GACHA_WIDEST_DAY = '2021-06-29'; // ultimo giorno del gioco: il pool piu' largo di un banner permanente
@@ -1393,9 +1416,9 @@ function respondGachaDraw(res, body) {
 function respondGachaWeb(res, url) {
   const p = url.split('?')[0];
   const html = (s, code = 200) => { const b = Buffer.from(s, 'utf8'); res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': b.length }); res.end(b); };
-  const img = /^\/web\/gacha\/img\/(\d+)\.png$/i.exec(p);
+  const img = /^\/web\/gacha\/img\/(\d+)(-kept)?\.png$/i.exec(p);
   if (img) {
-    const file = path.join(GACHA_IMG, `${Number(img[1])}.png`);
+    const file = img[2] ? keptImageFile(Number(img[1])) : path.join(GACHA_IMG, `${Number(img[1])}.png`);
     if (!fs.existsSync(file)) return html('not found', 404);
     const b = fs.readFileSync(file);
     res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });

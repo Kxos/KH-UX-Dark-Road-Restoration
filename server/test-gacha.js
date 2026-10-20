@@ -460,7 +460,7 @@ try {
   const sea = mk({ unlockQuest: 525, start: '2015-01-01', end: '2030-01-01' }), pin = mk({ unlockQuest: 525 });
   const base = ids(g.shopBanners(rot3, o3));
   check(JSON.stringify(ids(g.shopBanners([...rot3, sea], { ...o3, seasonal: [sea] }))) === JSON.stringify([sea.drawMedalTypeId, ...base]), 'stagionale prima della rotazione');
-  check(JSON.stringify(ids(g.shopBanners([...rot3, sea, pin], { ...o3, seasonal: [sea], pinned: pin }))) === JSON.stringify([sea.drawMedalTypeId, pin.drawMedalTypeId, ...base]), 'ordine stagionale, fissato, rotazione');
+  check(JSON.stringify(ids(g.shopBanners([...rot3, sea, pin], { ...o3, seasonal: [sea], pinned: pin }))) === JSON.stringify([pin.drawMedalTypeId, sea.drawMedalTypeId, ...base]), 'ordine fissato, stagionale, rotazione (richiesta 20-10)');
   const dup = ids(g.shopBanners([...rot3, sea], { ...o3, seasonal: [sea] })).filter((x) => x === sea.drawMedalTypeId);
   check(dup.length === 1, 'stagionale anche in rotazione: una volta sola');
   const inRot = mk({ unlockQuest: 525 });
@@ -473,7 +473,7 @@ try {
   const many = Array.from({ length: 25 }, () => mk({ unlockQuest: 525 }));
   const s2 = [mk({ unlockQuest: 525 }), mk({ unlockQuest: 525 })], p1 = mk({ unlockQuest: 525 });
   r = g.shopBanners([...many, ...s2, p1], { ...o3, seasonal: s2, pinned: p1 });
-  check(r.length === 20 && ids(r).slice(0, 3).join() === [...ids(s2), p1.drawMedalTypeId].join(), `tetto 20 con stagionali e fissato (${r.length})`);
+  check(r.length === 20 && ids(r).slice(0, 3).join() === [p1.drawMedalTypeId, ...ids(s2)].join(), `tetto 20 con stagionali e fissato (${r.length})`);
   // shopLeaveWeeks ignora stagionali e fissato
   const cat = require('./game_data/gacha_catalog.json'), q = 525, rot = { day: gd.storyDay(cat, q), week: 1000 };
   const lm = g.shopLeaveWeeks(cat, { storyQuest: q, week: 1000, rot, sizes, show: new Set() });
@@ -485,7 +485,14 @@ try {
   } else check(false, 'shopLeaveWeeks: servono due banner in uscita per la prova');
   // gachaListData: piastre nell'ordine
   const gl = g.gachaListData([...rot3, sea, pin], { gacha: {} }, { realMs: t0, webBase: '', sizes, ...o3, seasonal: [sea], pinned: pin });
-  check(gl.gachaList[1].drawMedalTypeId === sea.drawMedalTypeId && gl.gachaList[2].drawMedalTypeId === pin.drawMedalTypeId, 'gachaListData: stagionale e fissato dopo Catalog');
+  check(gl.gachaList[1].drawMedalTypeId === pin.drawMedalTypeId && gl.gachaList[2].drawMedalTypeId === sea.drawMedalTypeId, 'gachaListData: fissato e poi stagionale dopo Catalog');
+  // il fissato perde la valuta payType 8 contro la stagione (precedenza stagione > fissato) anche se l'ordine lo mette per primo
+  const spk = mk({ unlockQuest: 525, payType: 8, currency: 'spooky' }), drw = mk({ unlockQuest: 525, payType: 8, currency: 'draw' });
+  check(!ids(g.shopBanners([...rot3, spk, drw], { ...o3, seasonal: [spk], pinned: drw })).includes(drw.drawMedalTypeId), 'fissato: perde contro la stagione con valuta diversa');
+  // bollino sulla piastra del fissato: bannerUrl -kept.png, le altre invariate
+  const bu = (id) => gl.gachaList.find((x) => x.drawMedalTypeId === id).bannerUrl;
+  check(bu(pin.drawMedalTypeId) === `/web/gacha/img/${pin.drawMedalTypeId}-kept.png` && bu(sea.drawMedalTypeId) === `/web/gacha/img/${sea.drawMedalTypeId}.png` && bu(rot3[0].drawMedalTypeId).endsWith(`${rot3[0].drawMedalTypeId}.png`) && !bu(rot3[0].drawMedalTypeId).includes('-kept'), 'piastra del fissato: bannerUrl -kept');
+  check(!g.gachaListData([...rot3, sea], { gacha: {} }, { realMs: t0, webBase: '', sizes, ...o3, seasonal: [sea] }).gachaList.some((x) => x.bannerUrl.includes('-kept')), 'senza fissato: nessun -kept');
 } catch (err) { errors.push(`stagionali: eccezione ${err.stack}`); }
 
 
@@ -521,12 +528,12 @@ try {
   // pagine
   const dctx = { ...sctx, ...pc, skillNames: new Set(), fromCatalog: true };
   const dk = g.detailPage(okb, undefined, medalNames, dctx);
-  check(dk.includes('📌 Keep in the Shop') && dk.includes(`/web/gacha/pin/${okb.drawMedalTypeId}`) && dk.includes('Pinned! Leave and re-enter the Shop to see it.'), 'dettagli: pulsante Keep');
+  check(dk.includes('📌 Keep in the Shop') && dk.includes(`/web/gacha/pin/${okb.drawMedalTypeId}`) && dk.includes('Pinned!') && dk.includes('Leave and re-enter the Shop to see it.') && dk.includes('class="pinmsg"') && dk.includes('scrollIntoView'), 'dettagli: pulsante Keep e riquadro di conferma');
   check(!dk.includes('Replaces:'), 'dettagli: niente Replaces senza fissato');
   const dk2 = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: 'B1', pinnedName: 'Old <i>one</i>' });
   check(dk2.includes('Replaces: Old &lt;i&gt;one&lt;/i&gt;'), 'dettagli: Replaces con nome');
   const dr = g.detailPage(okb, undefined, medalNames, { ...dctx, pinnedRowId: okb.rowId });
-  check(dr.includes('Remove from the Shop') && dr.includes('/web/gacha/unpin') && dr.includes('Removed. Leave and re-enter the Shop.') && !dr.includes('📌 Keep in the Shop'), 'dettagli: Remove');
+  check(dr.includes('Remove from the Shop') && dr.includes('/web/gacha/unpin') && dr.includes('Removed.') && dr.includes('Leave and re-enter the Shop.') && dr.includes('pinmsg off') && !dr.includes('>📌 Keep in the Shop</a>'), 'dettagli: Remove');
   check(!g.detailPage(okb, undefined, medalNames, { ...dctx, fromCatalog: false }).includes('Keep in the Shop'), 'dettagli: niente pulsante fuori dal Catalog');
   check(!g.detailPage(bad.vipFree, undefined, medalNames, dctx).includes('Keep in the Shop'), 'dettagli: niente pulsante se non fissabile');
   // verdetti dei Details (finale): stagionale fuori finestra, fissabile passato
@@ -591,6 +598,25 @@ try {
   const rc = counts(g.catalogPage(real, { ...sctx, storyQuest: 525 }));
   const sum = [0, 1, 2, 3, 4, 5].reduce((s, i) => s + (rc[i] || 0), 0);
   check(rc.all === real.length && sum === real.length, `catalogo vero: anni ${JSON.stringify(rc)} sommano a ${real.length}`);
+  // schede vuote nascoste (richiesta 20-10): senza banner in un anno la scheda non c'e'; con tutti i filtri a parte
+  const only = g.catalogPage([yb[0], yb[1]], { ...sctx, storyQuest: 525 });
+  check(only.includes('<b>Launch year</b>') && only.includes('<b>Year 2</b>') && !only.includes('<b>Final months</b>') && !only.includes('<b>Year 3</b>') && only.includes('<b>All years</b>'), 'catalogo: scheda senza banner nascosta');
+  check(g.catalogPage(real, { ...sctx, storyQuest: 525 }).includes('<b>Final months</b>') === (rc[5] > 0), 'catalogo vero: Final months solo se ha banner');
+  // pulsanti Keep/Remove sulle righe (richiesta 20-10)
+  const pcx = { storyQuest: 300, sizes, show: new Set(), periodStart: '2016-06-01' };
+  const o1 = mk({ unlockQuest: 200, start: '2016-05-01', end: '2016-05-30', prices: [0, 3000] }), o2 = mk({ unlockQuest: 200, start: '2016-05-02', end: '2016-05-30', prices: [3000] }), no = mk({ unlockQuest: 200, start: '2016-07-01', end: '2016-07-30' });
+  const cp = g.catalogPage([o1, o2, no], { ...sctx, ...pcx, pinnedRowId: o2.rowId });
+  const rowHtml = (b) => cp.slice(cp.indexOf(`id="c${b.drawMedalTypeId}"`)).split('<div class="b ')[0];
+  check(rowHtml(o1).includes(`data-pin="/web/gacha/pin/${o1.drawMedalTypeId}" data-on="1">📌 Keep in the Shop</button>`), 'catalogo: pulsante Keep sulla riga fissabile');
+  check(rowHtml(o2).includes('data-pin="/web/gacha/unpin" data-on="0">Remove from the Shop</button>') && rowHtml(o2).includes('📌 Kept in the Shop'), 'catalogo: Remove sulla riga fissata');
+  check(!rowHtml(no).includes('class="pk"'), 'catalogo: niente pulsante se non fissabile');
+  check(!/<a [^>]*>(?:(?!<\/a>)[\s\S])*class="pk"/.test(cp), 'catalogo: il pulsante non sta dentro un link ai Details');
+  check(cp.includes('function khuxPin(') && cp.includes('XMLHttpRequest') && !/=>|\blet\b|\bconst\b|fetch\(/.test(cp.slice(cp.indexOf('var KHUX_PIN'), cp.indexOf('</script>', cp.indexOf('var KHUX_PIN')))), 'catalogo: codice condiviso ES5');
+  check(!g.catalogPage([o1], { ...sctx, storyQuest: 300 }).includes('class="pk"'), 'catalogo: senza periodStart niente pulsanti');
+  // script inline (Catalog e Details): ES5 puro, niente frecce/let/const/template literal/fetch
+  const dkx = g.detailPage(o1, undefined, medalNames, { ...sctx, ...pcx, skillNames: new Set(), fromCatalog: true });
+  const inl = [cp, dkx].map((h) => [...h.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join(' '));
+  for (const code of inl) { check(!/=>|\blet\b|\bconst\b|`|\bfetch\(/.test(code), 'script inline ES5'); try { new Function(code); } catch (e) { check(false, `script inline: sintassi ${e.message}`); } }
 } catch (err) { errors.push(`catalogo per anni: eccezione ${err.stack}`); }
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }

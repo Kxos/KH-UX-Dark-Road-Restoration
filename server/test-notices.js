@@ -94,6 +94,7 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
   check(/Keep in the Shop/.test(all) && /Banner Catalog/.test(all) && /Leave and re-enter the Shop/.test(all), 'Shop: pulsante e rientro');
   check(/already passed in the Story/.test(all) && /Free Deals/.test(all) && /1 Jewel/.test(all) && /one banner at a time/.test(all)
     && /limits still apply/.test(all), 'Shop: regole del banner fissato');
+  check(/right after the Banner Catalog plate and above the seasonal banners/.test(all) && /KEPT IN SHOP/.test(all) && /on a banner's row/.test(all), 'Shop: posizione e bollino del banner fissato');
   check(/steps aside until the season ends/.test(all), 'Shop: precedenza delle valute stagionali');
   check(/GAME YEAR/.test(all) && /Filters/.test(all) && /Find a Medal/.test(all) && /Paid with/.test(all) && /Show/.test(all), 'Shop: filtri del Catalog');
   const diff = n.NOTICES.find((x) => x.title === 'Differences from the original game').body;

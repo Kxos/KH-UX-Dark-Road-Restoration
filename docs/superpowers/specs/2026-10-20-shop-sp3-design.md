@@ -85,7 +85,10 @@ dalla prima data di inizio all'ultima di fine fra tutte le edizioni, riportate a
   22/12/2017) l'edizione 2017-18, B0774 la 2020-21. Lo stesso per `holiday` (B0068 2016-17, B0758/B0759 2020-21).
 - Nessuna edizione sbloccata: nessun banner di quella stagione.
 - Piu' stagioni insieme (dicembre: Black Friday, holiday, newyear): tutte, nell'ordine della tabella 4.1.
-- Posizione nello Shop: subito dopo la piastra Catalog, prima del banner fissato (6) e della rotazione.
+- Posizione nello Shop: dopo la piastra Catalog e il banner fissato (6), prima della rotazione. **Decisione dell'utente
+  (20-10, dal banco):** ordine di visualizzazione Catalog, fissato, stagionali, rotazione (prima: Catalog, stagionali,
+  fissato, rotazione). La precedenza sotto resta quella di prima: si decide quali banner sopravvivono (stagione >
+  fissato > rotazione) e poi si ordinano i superstiti col fissato in cima.
 - Un banner stagionale gia' presente nella settimana della rotazione non si duplica (resta al posto della stagione).
 - payType 8 (Spooky Cookies, Holiday Draw Tickets): mai due valute payType 8 insieme. In caso di conflitto (dalla
   quest 940: banner a Draw Ticket fissato o in rotazione durante Halloween o le feste) **vince la stagione**, poi il
@@ -129,9 +132,17 @@ Un banner e' **fissabile** se:
 - Al massimo **un** banner fissato per giocatore (`player.gacha.pinned` = rowId o assente).
 - Nei Details di un banner fissabile, aperti dal Catalog: pulsante **«📌 Keep in the Shop»**. Se un altro e' gia'
   fissato, il testo dice quale verra' sostituito. Nei Details del banner fissato: **«Remove from the Shop»**.
-- Dopo il tocco la pagina conferma: **«Pinned! Leave and re-enter the Shop to see it.»** (vincolo 3).
-- Nello Shop: dopo la piastra Catalog e le stagionali, prima della rotazione; nome con «📌» davanti se il campo
-  nome della piastra lo permette (altrimenti solo nei Details); nessun conto alla rovescia.
+- Dopo il tocco la pagina conferma con un riquadro ben visibile (bordo e testo grande, verde per «Pinned!», arancio per
+  «Removed.») al posto del pulsante, portato in vista: **«Pinned! Leave and re-enter the Shop to see it.»** (vincolo 3).
+  **Decisione dell'utente (20-10):** lo stesso pulsante («📌 Keep in the Shop» / «Remove from the Shop») sta anche su
+  ogni riga fissabile del Catalog, senza lasciare la lista: la riga del banner fissato prima perde lo stato, quella
+  nuova diventa «📌 Kept in the Shop», con lo stesso riquadro di conferma. Il codice della richiesta e' condiviso con i
+  Details.
+- Nello Shop: **subito dopo la piastra Catalog, sopra le stagionali** (decisione dell'utente, 20-10; vedi 4.2), prima
+  della rotazione; nessun conto alla rovescia. La piastra mostra solo l'immagine del banner, quindi per il fissato il
+  `bannerUrl` e' `/web/gacha/img/<id>-kept.png`: lo stesso banner (stessa dimensione) con il bollino «📌 KEPT IN SHOP»
+  in alto a destra (puntina disegnata come forma), generato una volta da `recon/tools/kept_banner_badge.py` (Pillow)
+  e tenuto in `game_data/gacha_img_kept/`; se la generazione fallisce si serve l'immagine normale.
 - Se il banner fissato smette di essere fissabile (non dovrebbe succedere: i periodi passati restano passati), sparisce
   dallo Shop e il Catalog lo mostra di nuovo come fissabile o no.
 - Conta nel tetto `SHOP_MAX`.
@@ -152,6 +163,8 @@ Riferimento visivo: `catalog-filters-v3.html` (flusso in tre passi) e `catalog-y
 - Titolo sopra le schede: **«GAME YEAR — each year runs from one anniversary (April 7) to the next»**.
 - Schede: **All years** (2016-2021), **Launch year** (Apr 7, 2016 → 1st 🎂), **Year 2** (1st 🎂 → 2nd 🎂),
   **Year 3**, **Year 4**, **Year 5**, **Final months** (5th 🎂 → end). Anno di un banner = data di inizio.
+  **Decisione dell'utente (20-10):** una scheda anno senza alcun banner nell'intero catalogo (indipendente dai filtri) non
+  si mostra (oggi «Final months»: l'ultimo inizio e' 2021-02-25); ricompare da sola se arrivano dati.
 - Ogni scheda mostra quanti banner corrispondono ai filtri attivi.
 - La frase sopra la lista ripete le date esatte: «12 banners from the launch year (Apr 7, 2016 – Apr 6, 2017) match
   your filters».
