@@ -51,8 +51,14 @@ JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]'
 TILE = 256
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 # segnaposto delle tessere vuote originali (map/DB_0000_00_00/..._base1_001.png della 5.0.1)
-PLACEHOLDER = bytes.fromhex('8942544600000100000000000000000000010000000000000100010000000001'
+# 45 byte, come l'originale. Fino al 20-10 qui c'era un 00 in piu' all'offset 16 (46 byte): campi slittati, il
+# client leggeva 0x05000100 byte di dati da un file di 46 e andava in crash entrando nelle 86 stanze generate con
+# tessere trasparenti (quest 13 e 524, banco 20-10); le tessere scritte cosi' si riscrivono (BAD_PLACEHOLDER)
+PLACEHOLDER = bytes.fromhex('89425446000001000000000000000000010000000000000100010000000001'
                             '0001000100050000000000000000')
+BAD_PLACEHOLDER = bytes.fromhex('8942544600000100000000000000000000010000000000000100010000000001'
+                                '0001000100050000000000000000')
+assert len(PLACEHOLDER) == 45
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--merged', default=os.path.join(D, 'tmp', 'thethiny_x', 'rooms_merged'))
@@ -275,7 +281,8 @@ def plan_room(room):
 def convert(job):
     name, src, dst = job
     try:
-        if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src):
+        if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src) and not (
+                os.path.getsize(dst) == len(BAD_PLACEHOLDER) and open(dst, 'rb').read() == BAD_PLACEHOLDER):
             return name, 'tenuto', os.path.getsize(dst)
         d = open(src, 'rb').read()
         if name.endswith('.png'):

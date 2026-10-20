@@ -16,7 +16,7 @@
 # fatto da server/make-test-save.js)
 # -EnemyAtk N: attacco dei nemici x N (KHUX_BENCH_ENEMY_ATK, solo banco: per finire a terra e provare Second
 # Chance); la revisione servita cambia, quindi il client riscarica il master sia accendendola sia spegnendola
-param([int]$Revision = 161, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1, [string]$Save)
+param([int]$Revision = 165, [switch]$TutorialFinished, [switch]$KbFree, [switch]$Pet, [switch]$NoPet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1, [string]$Save, [int]$StealUid = 0)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $logs = 'D:\Progetto_Restauro_KH_UX\logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
@@ -27,6 +27,7 @@ $env:KHUX_REVISION = "$Revision"                      # BASE: alzarla dopo ogni 
 $env:KHUX_GACHA_SIZES = "1,2,3,4,5,6,7,8,9,10"
 if ($GachaShow) { $env:KHUX_GACHA_SHOW = $GachaShow } else { Remove-Item Env:KHUX_GACHA_SHOW -ErrorAction SilentlyContinue }
 if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow } else { Remove-Item Env:KHUX_REAL_NOW -ErrorAction SilentlyContinue }
+if ($StealUid -gt 0) { $env:KHUX_BENCH_STEAL_UID = "$StealUid" } else { Remove-Item Env:KHUX_BENCH_STEAL_UID -ErrorAction SilentlyContinue }
 if ($EnemyAtk -gt 1) { $env:KHUX_BENCH_ENEMY_ATK = "$EnemyAtk" } else { Remove-Item Env:KHUX_BENCH_ENEMY_ATK -ErrorAction SilentlyContinue }
 # -SkillProb P: attivazione di tutte le skill delle medaglie al P% (KHUX_BENCH_SKILL_PROB, solo banco)
 if ($SkillProb -ge 0) { $env:KHUX_BENCH_SKILL_PROB = "$SkillProb" } else { Remove-Item Env:KHUX_BENCH_SKILL_PROB -ErrorAction SilentlyContinue }

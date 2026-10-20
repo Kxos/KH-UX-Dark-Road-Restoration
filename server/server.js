@@ -1112,7 +1112,9 @@ function applySteal(stageId, drops, rng = Math.random, mult = stealMultiplier())
   const rows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
   // solo i nemici con un record nella mappa: gli altri uid (mandati per sicurezza, es. 1) non compaiono mai (banco 20-10)
   const withDrop = drops.filter((d) => rows.has(d.uniqueEnemyId) && rewardRowById(rows.get(d.uniqueEnemyId))?.type.includes(ENEMY_DROP_TYPE));
-  const hit = withDrop.find(() => rng() < STEAL_CHANCE);
+  // solo banco: KHUX_BENCH_STEAL_UID forza il nemico rubato (prova del crash di I-137)
+  const forced = Number(process.env.KHUX_BENCH_STEAL_UID || 0);
+  const hit = forced ? withDrop.find((d) => d.uniqueEnemyId === forced) : withDrop.find(() => rng() < STEAL_CHANCE);
   if (!hit) return drops;
   player.steal = { stageId, uid: hit.uniqueEnemyId, mult };
   console.log(`[pet] Steal: drop del nemico ${hit.uniqueEnemyId} x${mult}`);

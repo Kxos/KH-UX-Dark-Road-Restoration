@@ -156,6 +156,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
    restano spenti). Ferma il processo sospendendo `[crash service]`, legge la memoria con
    `[memory read]` (LIAPP uccide il gioco se si apre `/proc/<pid>/mem`: codice [code]) e i
    registri ARM emulati dallo stato di houdini. `vmread` si ricostruisce con `build_vmread.py`.
+   `freeze_on_crash.sh` scatta solo se il `crash_dump64` e' per un thread del gioco: il renderer della WebView
+   delle Notices crasha da solo e prima dava catture vuote (20-10).
 3. `armtrace\stackcap.ps1 -Tag x [-MenuY 697] [-NoMenu] -Taps 'x,y'` cattura lo stack ARM al crash;
    `-NoStart -WaitSec N` arma la cattura mentre un altro script provoca il crash. **Non troncare
    l'output con `Select-Object -First`**: interrompe lo script prima del `-Release`.

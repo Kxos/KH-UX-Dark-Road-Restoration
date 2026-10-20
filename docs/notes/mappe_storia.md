@@ -198,6 +198,14 @@ agli offset scritti nell'intestazione (+ 0x34), in quest'ordine e contigue:
   tessere di base1 assenti ovunque). 39.816 file, **1.035 MB** (map 994, lwf 41). Oggetti lwf: 203
   aggiunti, 22 gia' serviti, 116 non copiati (texture assenti: l'oggetto manca, tollerato come in
   DW_0001).
+- <a id="segnaposto-46"></a>**Crash nelle stanze generate (I-182, 20-10)**: il segnaposto di `make_jp_rooms.py` aveva un
+  `00` in piu' all'offset 16 (46 byte invece dei 45 dell'originale `DB_0000_00_00_base1_001.png`): campi del BTF
+  slittati, il decodificatore (`[fn]`, `memcpy` della dimensione a +0x22) leggeva 0x05000100 byte da un file di
+  46 e usciva dalla memoria (SIGSEGV a fine mappatura) entrando in una delle **86 stanze** generate con tessere
+  trasparenti (3.208 tessere; quest 13 DW_0004_00_00, 524 BC_0012_01_00). Dal 14-10 (risorse 35): non visto prima
+  perche' dal 18-10 `save/smoke.json` lasciava solo la quest 132 (stanze WW). Trovato con `armtrace\stackcap.ps1`
+  (catena `[fn]` <- lettore dei pacchetti <- caricamento della stanza, nome della tessera nello stack).
+  Costante corretta (`assert len == 45`), le tessere col segnaposto sbagliato si riscrivono; risorse 51.
 - **Stanze di storia** (porte `scope` storia di `schema_v2\schema_mondi.json`, stanza e destinazione):
   231; con `rooms_gen` **230 complete** (`check_rooms.py --rooms-gen --out rooms_gen\rooms_check.json`:
   405 stanze, 0 incomplete; senza, come prima: 86 stanze, 2 incomplete). Manca solo **SR_0009_01_00** (porta SR_0008_00_00 <-> SR_0009_01_00, solo
