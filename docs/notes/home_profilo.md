@@ -753,6 +753,24 @@ eference\album\album_yt_01.jpg).
   NXDOMAIN a `fonts.gstatic.com` (lista `BLOCK`): 3 rientri su 3 con la pagina in 1,1-1,5 s. Simboli rari (⤶, ▶) del
   BACK e della freccia sostituiti da forme CSS.
 
+<a id="tricks"></a>
+## Tricks, punti e ranghi dello Spirit (I-137, 20-10)
+
+Ricerca: `D:\Progetto_Restauro_KH_UX	mp\pettricks\RESEARCH.md` (tabelle e posti) e `reference\pet\medal_points_wiki.json` (punti).
+- `make-pet-tables.js`: 22 petSkill (invokeType = posto del PetActor, [fn]: 1 Steal, 3 Blast, 5 Esuna, 6 HP
+  Recovery, 7/8/9 Poison/Sleep/Paralysis Boost, 10 Combo, 4 + sv3 1/2/3 = posti 11/12/13 P/S/M Attack Boost; sv1 =
+  cariche); petRank con needPt e moltiplicatore della wiki, **validOpenSkill = numero di id** ([fn] copia quel
+  numero di id nella lista: con 1 la lista mostrava solo il primo). Blast: medal 3-7 (copie della 2) con burst 12-16
+  damageType 2, sp1 = danno x 10000, un colpo; soglia 25% ricostruita.
+- `pet.js`: Tricks accesi (`KHUX_PET_SKILLS=0` li spegne), un id per posto; punti = addPetPt +20% con almeno un trait.
+- `server.js`: Steal (isSteal a /stage/start -> 50% per nemico con drop, il primo marcato stealType 1; /stage/clear x
+  sv3). Missioni multi: nessun drop, niente Steal.
+- Punti delle medaglie: `server/pet_points.json` (406 nomi con `|pet=` della khuxwiki o la regola SN/SN+ 120), il resto
+  per tier del SAB (15/15/15/20/20/20/30/80/180/270), sotto le 6★ 15 (ricostruito). Notices «Spirit Tricks», «Spirit
+  points and ranks».
+- Banco 20-10 (`provetm`, rev 158): lista con gli 11 trick del rango, rango 14 x3,600, «LV Up in 162» (1944 - 1782),
+  SN++ MoM Riku 432 (360 + trait), le altre 270.
+
 <a id="spirit-trait-scelta"></a>
 ## Special Trait del training: tenere o sostituire (20-10)
 
