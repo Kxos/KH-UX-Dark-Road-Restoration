@@ -31,7 +31,7 @@ const medals = JSON.parse(fs.readFileSync(path.join(tmp, 'medal.json'), 'utf8'))
 for (const [mid, bid, dmg] of [[3, 12, 1e4], [5, 14, 1e5], [7, 16, 75e4]]) {
   const m = medals.find((r) => r.medalId === mid), b = bursts.find((r) => r.burstId === bid);
   check(m && m.burstId === bid && m.addPetPt === 0 && b && b.damageType === 2 && b.specialPowerType === 2 && b.sp1 === dmg * 1e4
-    && b.basePower === 0 && b.hitCount === 1 && b.target === 1 && b.bufAttack === 0, `Blast medal ${mid} / burst ${bid}`);
+    && b.basePower === 0 && b.hitCount === 1 && b.target === 2 && b.bufAttack === 0, `Blast medal ${mid} / burst ${bid}`);
 }
 fs.rmSync(tmp, { recursive: true, force: true });
 

@@ -761,7 +761,10 @@ Ricerca: `D:\Progetto_Restauro_KH_UX	mp\pettricks\RESEARCH.md` (tabelle e posti)
   Recovery, 7/8/9 Poison/Sleep/Paralysis Boost, 10 Combo, 4 + sv3 1/2/3 = posti 11/12/13 P/S/M Attack Boost; sv1 =
   cariche); petRank con needPt e moltiplicatore della wiki, **validOpenSkill = numero di id** ([fn] copia quel
   numero di id nella lista: con 1 la lista mostrava solo il primo). Blast: medal 3-7 (copie della 2) con burst 12-16
-  damageType 2, sp1 = danno x 10000, un colpo; soglia 25% ricostruita.
+  damageType 2, sp1 = danno x 10000, un colpo; soglia 25% ricostruita. **`target 2`** (20-10): i bersagli sono i nemici
+  marcati dalla condizione (flag +0xe80.., [fn]); con `target 1` il client prendeva il nemico scelto dal giocatore,
+  nullo per il pet, e andava in crash alla sconfitta ([fn] -> [fn], [nemico+0x558]). Banco 20-10 notte
+  (quest 524): Blast V, HP Recovery, Esuna e Combo visti, missione finita.
 - `pet.js`: Tricks accesi (`KHUX_PET_SKILLS=0` li spegne), un id per posto; punti = addPetPt +20% con almeno un trait.
 - `server.js`: Steal (isSteal a /stage/start -> 50% per nemico con drop, il primo marcato stealType 1; /stage/clear x
   sv3). Missioni multi: nessun drop, niente Steal.

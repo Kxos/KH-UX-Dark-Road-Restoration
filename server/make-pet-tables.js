@@ -245,6 +245,9 @@ function patch(dir) {
 }
 
 // Medaglie 3-7 e burst 12-16 del Blast (vedi BLAST): dopo make-guilt-burst.js, di cui copiano medal 2 e burst 11
+// target 2: i bersagli del Blast sono i nemici marcati dalla condizione (flag +0xe80.., [fn]); con target 1 il
+// client prende il nemico scelto dal giocatore, nullo per il pet: crash alla sconfitta ([fn] -> [fn]
+// legge [nemico+0x558], banco 20-10, quest 524)
 function patchBlast(dir) {
   const read = (n) => JSON.parse(fs.readFileSync(path.join(dir, n + '.json'), 'utf8'));
   const write = (n, rows) => fs.writeFileSync(path.join(dir, n + '.json'), JSON.stringify(rows));
@@ -256,7 +259,7 @@ function patchBlast(dir) {
   const medalRows = BLAST.map((b) => ({ ...m2, medalId: b.medalId, name: b.name, flavor: b.name, advantage: b.name,
     attack: 1, maxAttack: 1, defense: 1, maxDefense: 1, addPetPt: 0, burstId: b.burstId, shuffleSkillGroupId: b.medalId }));
   const burstRows = BLAST.map((b) => ({ ...b11, ...zeroBuffs, burstId: b.burstId, name: b.name,
-    description: `Deals ${b.damage.toLocaleString('en-US')} damage.`, maxEnhanceCount: 0, attribute: 0, target: 1, hitCount: 1,
+    description: `Deals ${b.damage.toLocaleString('en-US')} damage.`, maxEnhanceCount: 0, attribute: 0, target: 2, hitCount: 1,
     gauge: 0, critical: 0, criticalPower: 10000, damageType: 2, specialPowerType: 2, basePower: 0,
     basePowerPerEnforce: [1, 1, 1, 1, 1], sp1: b.damage * 10000, sp2: 0, sp1PerEnforce: [0, 0, 0, 0, 0],
     sp2PerEnforce: [0, 0, 0, 0, 0], displayPower: b.damage * 10000, displayPowerPerEnforce: [1, 1, 1, 1, 1] }));
