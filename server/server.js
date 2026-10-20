@@ -1095,6 +1095,29 @@ function stageEnemyDrops(stageId) {
   return ids.map((id) => ({ uniqueEnemyId: id, dropItemTypeIds: [ENEMY_DROP_TYPE], stealType: 0 }));
 }
 
+// Trick Steal del pet (I-137): il client manda isSteal a /stage/start se un trick aperto ha invokeType 1
+// ([fn]); il server sceglie il drop rubato (stealType != 0 -> nemico +0x35a, banner e recovery_skill alla morte)
+// e a /stage/clear ne da' la quantita' x skillValue3, la stessa che il client mostra nei risultati ([fn]: max
+// sv3 dei trick con invokeType 1). Wiki: «50% trigger rate when enemies drop an item. 1 charge per battle»: un tiro
+// del 50% per nemico con drop, in ordine di uid, il primo che riesce.
+const STEAL_CHANCE = 0.5;
+function stealMultiplier() {
+  if (!PET_ENABLED) return 0;
+  const open = new Set(pet().petSubslotData().openSkillIds);
+  return Math.max(0, ...masterRows('petSkill').filter((r) => open.has(r.skillId) && r.invokeType === 1).map((r) => r.skillValue3 || 0));
+}
+function applySteal(stageId, drops, rng = Math.random, mult = stealMultiplier()) {
+  player.steal = null;
+  if (mult < 2) return drops;
+  const rows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
+  const withDrop = drops.filter((d) => rewardRowById(rows.get(d.uniqueEnemyId) ?? 1)?.type.includes(ENEMY_DROP_TYPE));
+  const hit = withDrop.find(() => rng() < STEAL_CHANCE);
+  if (!hit) return drops;
+  player.steal = { stageId, uid: hit.uniqueEnemyId, mult };
+  console.log(`[pet] Steal: drop del nemico ${hit.uniqueEnemyId} x${mult}`);
+  return drops.map((d) => (d === hit ? { ...d, stealType: 1 } : d));
+}
+
 // userData.userPoint, letto da [fn] sia in GET /user sia in POST /stage/start.
 // Il livello del giocatore e' il rango Lux: la barra dei risultati ([fn] ->
 // [fn]) usa userDetail.luxRank come livello e userPoint.lux come valore,
@@ -1622,7 +1645,8 @@ function respondStageStart(res, req) {
       highScore: 0,
     },
     userRandomEnemies: [],
-    userEnemyDropItems: stageEnemyDrops(req?.stageId ?? START_STAGE_ID),
+    userEnemyDropItems: req?.isSteal ? applySteal(req?.stageId ?? START_STAGE_ID, stageEnemyDrops(req?.stageId ?? START_STAGE_ID))
+      : (player.steal = null, stageEnemyDrops(req?.stageId ?? START_STAGE_ID)),
     userTreasures: stageTreasures(req?.stageId ?? START_STAGE_ID),
     campaigns: [],
     luxMagnifications: { campaign: 0, party: 0 },
@@ -1992,10 +2016,13 @@ function respondStageClear(res, req) {
   // contenuto e' la riga di reward del nemico nella mappa (1 se l'uid non ha record),
   // come in CONGRATULATIONS (es. Spring Water x12 in Combat 102)
   const enemyRows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
+  const steal = player.steal?.stageId === stageId ? player.steal : null;
   for (const uid of req?.getEnemyDropItems || []) {
     const row = rewardRowById(enemyRows.get(uid) ?? 1);
-    row?.type.forEach((t, i) => { if (t === ENEMY_DROP_TYPE) grantItem(t, row.id[i], row.num[i]); });
+    const k = steal && steal.uid === uid ? steal.mult : 1; // drop rubato dal pet (Steal): x skillValue3
+    row?.type.forEach((t, i) => { if (t === ENEMY_DROP_TYPE) grantItem(t, row.id[i], row.num[i] * k); });
   }
+  player.steal = null;
   // premio del primo completamento («Quest Complete!»: es. Combat 101, 300 jewel)
   if (first && stage?.validClearGetItem) {
     stage.clearGetItemType.forEach((t, i) => grantItem(t, stage.clearGetItemId[i], stage.clearGetItemNum[i]));
@@ -4169,6 +4196,8 @@ module.exports._test = {
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-login-bonus.js
   respondLoginBonus, loginBonusAcquirable,
+  // server/test-pet-tricks.js
+  applySteal, stealMultiplier, respondStageStart, respondStageClear, STAGE_POI, rewardRowById, ENEMY_DROP_TYPE,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet, limitedGroupQuest, forceStoryQuest: (q) => { storyQuestForced = q; },
   // server/test-mission-settle.js

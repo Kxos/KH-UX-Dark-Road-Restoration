@@ -48,17 +48,13 @@
 
 const ENABLED = process.env.KHUX_PET === '1';
 const PET_NAME = process.env.KHUX_PET_NAME || 'Spirit';
-// Tricks in battaglia (petSubslot.openSkillIds), spenti salvo KHUX_PET_SKILLS=1. A inizio
-// battaglia [fn] -> [fn] mette ogni id aperto (riga petSkill, [fn]) in
-// uno dei 16 posti del PetActor (+0x388 + 0x48*i) scelto da invokeType (riga +0x2dc; 4 = per
-// skillValue3 0..5 -> posti 0/11..15, tabella 0x188a950). Posti visti: 1 = alla morte di un
-// nemico ([fn], recovery_skill), 3 = Blast ([fn]/[fn]: battle_skill al
-// posto del colpo dell'avatar), 6 = HP Recovery ([fn]), 7-9 = potenziamenti di stato
-// ([fn]), 10 = Combo ([fn]: probabilita' skillValue2/10000 -> rolling1-3),
-// 11-15 = Steal per tipo di drop ([fn]). La nostra petSkill (make-pet-tables.js) ha
-// invokeType 1 per tutti e valori stimati: finche' la corrispondenza trick -> posto non e'
-// verificata, il pet in battaglia segue solo l'avatar (niente trick).
-const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS === '1';
+// Tricks in battaglia (petSubslot.openSkillIds, accesi; KHUX_PET_SKILLS=0 li spegne). A inizio battaglia
+// [fn] -> [fn] mette ogni id aperto (riga petSkill, [fn]) nel posto del PetActor (+0x388 +
+// 0x48*i) scelto da invokeType (riga +0x2dc; 4 = per skillValue3 1..5 -> posti 11..15, tabella 0x188a950); se il posto
+// e' occupato l'id si scarta (vince il primo). Posti: 1 Steal (il server sceglie il drop rubato, server.js), 3 Blast,
+// 5 Esuna, 6 HP Recovery, 7/8/9 Poison/Sleep/Paralysis Boost, 10 Combo, 11/12/13 P/S/M Attack Boost. Valori e posti
+// in make-pet-tables.js (ricerca del 20-10). Il server manda un id per posto (il primo della lista del rango).
+const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS !== '0';
 // Parti della serie 001 per il pet visibile (default). KHUX_PET_PARTS=0 = ripiego: id 0, pet
 // invisibile come prima (i movimenti mandano comunque gli eventi e i pet_eff restano visibili).
 const DEFAULT_PART = process.env.KHUX_PET_PARTS === '0' ? 0 : 1;
@@ -180,13 +176,27 @@ function makePet(ctx) {
     return row;
   }
 
+  // un id per posto del PetActor (invokeType, o 10 + skillValue3 per invokeType 4), il primo; id senza riga scartati
+  function onePerSlot(ids) {
+    const rows = new Map(ctx.masterRows('petSkill').map((r) => [r.skillId, r]));
+    const seen = new Set();
+    return ids.filter((id) => {
+      const r = rows.get(id);
+      if (!(id > 0) || !r) return false;
+      const slot = r.invokeType === 4 ? 10 + r.skillValue3 : r.invokeType;
+      if (seen.has(slot)) return false;
+      seen.add(slot);
+      return true;
+    }).slice(0, 15);
+  }
+
   function petSubslotData(ids = gearIds()) {
     const pt = pointsOf(ids);
     const r = rankFor(pt);
     return {
       subslotUserMedalIds: ids, // uint64, <= 6
       // uint, <= 15; vuoto = nessun trick in battaglia (vedi SKILLS_ENABLED)
-      openSkillIds: SKILLS_ENABLED ? (r.openSkillIds || []).filter((x) => x > 0).slice(0, 15) : [],
+      openSkillIds: SKILLS_ENABLED ? onePerSlot(r.openSkillIds || []) : [],
       rank: r.rank, pt, magnification: r.magnification, // uint
     };
   }
