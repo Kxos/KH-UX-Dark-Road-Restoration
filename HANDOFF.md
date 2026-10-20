@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 47 installate** (20-10: LDPlayer riavviato, Notices di nuovo piene), **revisione master: BASE 154** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 49 installate** (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 155** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
