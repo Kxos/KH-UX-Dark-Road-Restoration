@@ -53,17 +53,21 @@ const activeOn = (b, day) => b.start <= day && day <= (b.end || '2099-12-31');
 
 // shopFrom/shopTo: settimana della rotazione (gacha-data.shopWindow, I-165): entra ogni banner attivo in almeno un
 // giorno della finestra; senza finestra, il solo storyDay (comportamento di prima, test)
-function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, show = new Set() }) {
+// seasonal (banner delle stagioni attive, gia' in ordine, sp3 4.2) e pinned (banner fissato, 6.2) stanno in cima, prima
+// della rotazione; un banner presente anche nella rotazione compare una volta sola (al posto della stagione/del fissato)
+function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, show = new Set(), seasonal = [], pinned = null }) {
   const inside = (b) => (b.start >= shopFrom && (b.end || '2099-12-31') <= shopTo ? 1 : 0);
   const inWindow = (b) => (shopFrom ? b.start <= shopTo && (b.end || '2099-12-31') >= shopFrom : activeOn(b, storyDay));
-  const pick = banners.filter((b) => drawable(b, sizes)
+  const top = [...seasonal, ...(pinned ? [pinned] : [])].filter((b, i, a) => a.findIndex((x) => x.drawMedalTypeId === b.drawMedalTypeId) === i);
+  const topIds = new Set(top.map((b) => b.drawMedalTypeId));
+  const pick = banners.filter((b) => !topIds.has(b.drawMedalTypeId) && drawable(b, sizes)
     && ((b.unlockQuest <= storyQuest && inWindow(b)) || show.has(b.rowId)))
     // con la finestra, prima i banner che stanno tutti dentro la settimana (non avranno un'altra occasione: con lo Shop
     // pieno restavano fuori), poi i piu' recenti
     .sort((a, b) => (shopFrom ? inside(b) - inside(a) : 0) || (a.start < b.start ? 1 : a.start > b.start ? -1 : a.drawMedalTypeId - b.drawMedalTypeId));
   let currency = null;
   const out = [];
-  for (const b of pick) {
+  for (const b of [...top, ...pick]) {
     if (b.payType === 8) { if (currency && currency !== b.currency) continue; currency = b.currency; }
     out.push(b);
     if (out.length === SHOP_MAX) break;
@@ -76,15 +80,17 @@ function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, s
 // della settimana `week`: la prima settimana reale in cui la rotazione (gd.shopWindow) lo toglie dallo Shop, entro il
 // periodo della tranche (n settimane); null se resta in tutte (nessun conto alla rovescia).
 // -> Map drawMedalTypeId -> indice della settimana reale in cui esce (clock.weekStartOf = lunedi' 08:00 UTC).
-function shopLeaveWeeks(catalog, { storyQuest, week, rot: rot0, sizes, show }) {
+function shopLeaveWeeks(catalog, { storyQuest, week, rot: rot0, sizes, show, seasonal = [], pinned = null }) {
   const w0 = gd.shopWindow(catalog, storyQuest, week, rot0);
   const rot = rot0 && rot0.day === w0.day ? rot0 : { day: w0.day, week }; // come storyCtx: la rotazione parte da qui
   const at = (w) => {
     const x = gd.shopWindow(catalog, storyQuest, w, rot);
-    return new Set(shopBanners(catalog.banners, { storyQuest, storyDay: x.from, shopFrom: x.from, shopTo: x.to, sizes, show }).map((b) => b.drawMedalTypeId));
+    return new Set(shopBanners(catalog.banners, { storyQuest, storyDay: x.from, shopFrom: x.from, shopTo: x.to, sizes, show, seasonal, pinned }).map((b) => b.drawMedalTypeId));
   };
   const n = w0.n;
-  const now = at(week), out = new Map();
+  // stagionali e fissato non escono con la rotazione (la stagione ha il suo conto alla rovescia): fuori dalla mappa
+  const fixed = new Set([...seasonal, ...(pinned ? [pinned] : [])].map((b) => b.drawMedalTypeId));
+  const now = new Set([...at(week)].filter((id) => !fixed.has(id))), out = new Map();
   for (let j = 1; j < n && out.size < now.size; j++) {
     const next = at(week + j);
     for (const id of now) if (!out.has(id) && !next.has(id)) out.set(id, week + j);
@@ -242,9 +248,9 @@ function drawsLeft(player, b, realMs) {
 // per la striscia della garanzia; validCommentOf(banner) = validComment della riga drawMedalType servita, safeMedalId =
 // ultimo ripiego per warrantMedalIds (guardWarrant), nameOf(medalId) = nome della riga medal servita (I-153: un id per
 // nome e lunghezza della striscia)
-function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, shopFrom, shopTo, show, exFor, catalog, validCommentOf, safeMedalId, nameOf }) {
+function gachaListData(banners, player, { realMs, webBase, sizes, storyQuest, storyDay, shopFrom, shopTo, show, seasonal, pinned, exFor, catalog, validCommentOf, safeMedalId, nameOf }) {
   ticketsOf(player);
-  const list = shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, show });
+  const list = shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, show, seasonal, pinned });
   gstate(player).listedCurrency = list.find((b) => b.payType === 8)?.currency || 'draw';
   const warrantOfList = (b) => {
     const ex = exFor?.(b);

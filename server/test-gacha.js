@@ -451,5 +451,41 @@ try {
   check(g.shopLeaveWeeks(cat, { storyQuest: 200, week: 1000, rot: { day: gd.storyDay(cat, 200), week: 1000 }, sizes, show }).size === 0, 'shopLeaveWeeks: banner presenti in tutte le settimane senza conto');
 } catch (err) { errors.push(`shopLeaveWeeks: eccezione ${err.stack}`); }
 
+// stagionali e fissato (Shop sp3, spec 4.2/6.2): ordine, doppioni, payType 8, tetto
+try {
+  const o3 = { storyQuest: 525, storyDay: '2016-12-08', sizes, show: new Set() };
+  const rot3 = [mk({ unlockQuest: 525 }), mk({ unlockQuest: 525 }), mk({ unlockQuest: 525 })];
+  const ids = (l) => l.map((b) => b.drawMedalTypeId);
+  const sea = mk({ unlockQuest: 525, start: '2015-01-01', end: '2030-01-01' }), pin = mk({ unlockQuest: 525 });
+  const base = ids(g.shopBanners(rot3, o3));
+  check(JSON.stringify(ids(g.shopBanners([...rot3, sea], { ...o3, seasonal: [sea] }))) === JSON.stringify([sea.drawMedalTypeId, ...base]), 'stagionale prima della rotazione');
+  check(JSON.stringify(ids(g.shopBanners([...rot3, sea, pin], { ...o3, seasonal: [sea], pinned: pin }))) === JSON.stringify([sea.drawMedalTypeId, pin.drawMedalTypeId, ...base]), 'ordine stagionale, fissato, rotazione');
+  const dup = ids(g.shopBanners([...rot3, sea], { ...o3, seasonal: [sea] })).filter((x) => x === sea.drawMedalTypeId);
+  check(dup.length === 1, 'stagionale anche in rotazione: una volta sola');
+  const inRot = mk({ unlockQuest: 525 });
+  check(ids(g.shopBanners([inRot, ...rot3], { ...o3, seasonal: [inRot] }))[0] === inRot.drawMedalTypeId && ids(g.shopBanners([inRot, ...rot3], { ...o3, seasonal: [inRot], pinned: inRot })).length === 4, 'stagionale/fissato gia in rotazione: nessun doppione');
+  const spooky = mk({ unlockQuest: 525, payType: 8, currency: 'spooky' }), draw = mk({ unlockQuest: 525, payType: 8, currency: 'draw' }), holiday = mk({ unlockQuest: 525, payType: 8, currency: 'holiday' });
+  let r = ids(g.shopBanners([...rot3, spooky, draw], { ...o3, seasonal: [spooky], pinned: draw }));
+  check(r.includes(spooky.drawMedalTypeId) && !r.includes(draw.drawMedalTypeId), 'payType 8: la stagione batte il fissato');
+  r = ids(g.shopBanners([...rot3, draw, holiday], { ...o3, pinned: draw }));
+  check(r.includes(draw.drawMedalTypeId) && !r.includes(holiday.drawMedalTypeId), 'payType 8: il fissato batte la rotazione');
+  const many = Array.from({ length: 25 }, () => mk({ unlockQuest: 525 }));
+  const s2 = [mk({ unlockQuest: 525 }), mk({ unlockQuest: 525 })], p1 = mk({ unlockQuest: 525 });
+  r = g.shopBanners([...many, ...s2, p1], { ...o3, seasonal: s2, pinned: p1 });
+  check(r.length === 20 && ids(r).slice(0, 3).join() === [...ids(s2), p1.drawMedalTypeId].join(), `tetto 20 con stagionali e fissato (${r.length})`);
+  // shopLeaveWeeks ignora stagionali e fissato
+  const cat = require('./game_data/gacha_catalog.json'), q = 525, rot = { day: gd.storyDay(cat, q), week: 1000 };
+  const lm = g.shopLeaveWeeks(cat, { storyQuest: q, week: 1000, rot, sizes, show: new Set() });
+  const [idA, idB] = [...lm.keys()];
+  const byId = (id) => cat.banners.find((b) => b.drawMedalTypeId === id);
+  if (idA !== undefined && idB !== undefined) {
+    const m2 = g.shopLeaveWeeks(cat, { storyQuest: q, week: 1000, rot, sizes, show: new Set(), seasonal: [byId(idA)], pinned: byId(idB) });
+    check(!m2.has(idA) && !m2.has(idB), 'shopLeaveWeeks: stagionale e fissato senza conto alla rovescia');
+  } else check(false, 'shopLeaveWeeks: servono due banner in uscita per la prova');
+  // gachaListData: piastre nell'ordine
+  const gl = g.gachaListData([...rot3, sea, pin], { gacha: {} }, { realMs: t0, webBase: '', sizes, ...o3, seasonal: [sea], pinned: pin });
+  check(gl.gachaList[1].drawMedalTypeId === sea.drawMedalTypeId && gl.gachaList[2].drawMedalTypeId === pin.drawMedalTypeId, 'gachaListData: stagionale e fissato dopo Catalog');
+} catch (err) { errors.push(`stagionali: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

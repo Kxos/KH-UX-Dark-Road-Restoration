@@ -35,6 +35,7 @@ const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranki
 const medalSkill = require('./medal-skill');
 const gachaData = require('./gacha-data');
 const gacha = require('./gacha');
+const gachaSeasons = require('./gacha-seasons');
 const medalBoost = require('./medal-boost');
 // Pet / 6° slot (server/pet.js): KHUX_PET=1, default spento
 const { routePet, makePet, petBaseSlotMedal, setPetBaseSlotMedal, ENABLED: PET_ENABLED } = require('./pet');
@@ -433,8 +434,13 @@ function masterKey(name) {
   return crypto.createHash('sha256').update('khux-master:' + name).digest('hex').slice(0, 32);
 }
 
+// Stagioni attive (gacha-seasons): il client riscarica drawMedalType solo se la revisione cambia, quindi l'insieme delle
+// stagioni attive entra nella revisione (1000 * somma di indice+1 nella tabella, al massimo 36000: sotto lo scalino di BASE)
+const seasonTerm = (realMs) => 1000 * gachaSeasons.activeSeasons(realMs)
+  .reduce((n, a) => n + gachaSeasons.SEASONS.findIndex((x) => x.key === a.key) + 1, 0);
+
 // revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
-const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + storyTranche() + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0)
+const masterRevisionNow = () => clock.masterRevision(REVISION, realNow()) + storyTranche() + seasonTerm(realNow()) + (BENCH_ENEMY_ATK > 1 ? 90000 + BENCH_ENEMY_ATK : 0)
   + (BENCH_SKILL_PROB !== null ? 80000 + BENCH_SKILL_PROB + 1 : 0);
 // Revisione della sessione: fissata all'inizio di ogni login (POST /system/login, la prima risposta
 // con ret() della sequenza) e usata da ret(), /system/resourcesize e dal master servito per tutta la
@@ -458,7 +464,7 @@ const weeklyActive = (row, realMs) => clock.weekIndex(realMs) % 2 === weeklySeri
 function shopLeave(realMs) {
   const g = player.gacha || {};
   return gacha.shopLeaveWeeks(gachaCatalog(), { storyQuest: stageNumber(lastStoryStageId()), week: clock.weekIndex(realMs),
-    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW });
+    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW, ...seasonCtx(realMs), pinned: pinnedNow() });
 }
 // Tranche della storia del giocatore (indice della data in catalog.story): entra nella revisione del master, cosi'
 // il client riscarica drawMedalType (conti alla rovescia dello Shop) al login dopo un cambio di tranche
@@ -482,10 +488,11 @@ function servedMasterRows(name, realMs) {
   // displayTimeLeft/endDate: conto alla rovescia fino al lunedi' in cui la rotazione toglie il banner dallo Shop
   // (gacha.shopLeaveWeeks), in ora finta come le missioni; gli altri banner restano senza (displayTimeLeft 0)
   if (name === 'drawMedalType') {
-    const leave = shopLeave(realMs), off = clock.twinOffset(realMs);
+    const leave = shopLeave(realMs), off = clock.twinOffset(realMs), ends = seasonCtx(realMs).seasonEnds;
     return rows.map((r) => ({ ...r, bannerUrl: String(r.bannerUrl || '').startsWith('/') ? WEB_BASE + r.bannerUrl : r.bannerUrl,
       detailUrl: String(r.detailUrl || '').startsWith('/') ? WEB_BASE + r.detailUrl : r.detailUrl,
-      ...(leave.has(r.drawMedalTypeId) ? { displayTimeLeft: 1, endDate: clock.fakeString(clock.weekStartOf(leave.get(r.drawMedalTypeId)), off) } : {}) }));
+      ...(ends.has(r.drawMedalTypeId) ? { displayTimeLeft: 1, endDate: clock.fakeString(ends.get(r.drawMedalTypeId), off) }
+        : leave.has(r.drawMedalTypeId) ? { displayTimeLeft: 1, endDate: clock.fakeString(clock.weekStartOf(leave.get(r.drawMedalTypeId)), off) } : {}) }));
   }
   if (name !== 'mission') return rows;
   const off = clock.twinOffset(realMs);
@@ -1191,13 +1198,24 @@ function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; 
 // storyDay = primo giorno della settimana dello Shop (rotazione I-165): data dei pool dei PERMANENT e della regola
 // 13-bis; shopFrom/shopTo = la settimana mostrata. player.gacha.rot ricorda in che settimana reale si e' entrati nella
 // tranche della storia, cosi' la rotazione parte dalla sua prima settimana.
+// Stagionali attive alla data reale (spec Shop sp3 4.2): banner dell'edizione piu' recente sbloccata di ogni stagione,
+// nell'ordine della tabella, e la fine della finestra (ms) di ciascuno per il conto alla rovescia. Senza effetti collaterali.
+function seasonCtx(realMs) {
+  const storyQuest = stageNumber(lastStoryStageId());
+  const seasons = gachaSeasons.seasonBanners(gachaCatalog().banners, realMs, (b) => b.unlockQuest <= storyQuest && gacha.drawable(b, GACHA_SIZES));
+  const seasonEnds = new Map();
+  for (const s of seasons) for (const b of s.banners) if (!seasonEnds.has(b.drawMedalTypeId)) seasonEnds.set(b.drawMedalTypeId, s.end);
+  return { seasonal: seasons.flatMap((s) => s.banners), seasonEnds };
+}
+// Banner fissato del giocatore (spec Shop sp3 6.2): lo riempie il Task 3, fino ad allora nessuno
+const pinnedNow = () => null;
 function storyCtx() {
   const storyQuest = stageNumber(lastStoryStageId());
   const week = clock.weekIndex(realNow());
   const g = (player.gacha ||= {});
   const w = gachaData.shopWindow(gachaCatalog(), storyQuest, week, g.rot);
   if (!g.rot || g.rot.day !== w.day) { g.rot = { day: w.day, week }; savePlayer(); }
-  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w };
+  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w, ...seasonCtx(realNow()), pinned: pinnedNow() };
 }
 // Pool del banner alla data di riferimento (i PERMANENT seguono la storia); undefined per i banner
 // senza composizione (INCOMPLETE): detailPage li mostra senza probabilita'.
