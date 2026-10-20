@@ -763,7 +763,8 @@ choose whether to keep or overwrite the current Special Trait», video kTJoSgXii
 in `medalResumption` status 1 un pending con lo userMedalId della medaglia), OK «Replace X with Y?» / Skip «Y will be lost.
 Okay?» -> azione 57 come la fusione. Server (`pet.js spiritTrait`): slot occupato -> `player.traitPending` (type 1), la
 risposta 244 manda i pending delle medaglie allenate in testa; `medal-trait.resumption` manda tutta la coda.
-Test: `test-trait-choice.js` (sezione Special Trait).
+Test: `test-trait-choice.js` (sezione Special Trait). Banco 20-10: provato dall'utente (training su SN++ MoM Riku/Xion
+con Special Trait gia' presente: finestra di scelta), ok.
 
 <a id="login-bonus"></a>
 ## Login bonus (I-176, 20-10)
