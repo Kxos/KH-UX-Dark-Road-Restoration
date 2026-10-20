@@ -194,3 +194,16 @@ lwf/loginbonus/LoginBonus_Stamp/	b16
 #     restano quelle del 2016 (il JP non ha png_KeyBlade_ef1); suono del timbro (codice della scena, [fn])
 lwf/loginbonus/LoginBonus_Stamp/LoginBonus_Stamp.lwf	jp
 audio/509100630.akb	b16,jp
+
+# 34. Effetti dei Tricks del pet (I-137): [fn] 0xe Esuna/HP Recovery -> pet_eff_0004, 0xf P/S/M Attack Boost -> pet_eff_0005
+#     (codice - 10); senza il LWF crash NULL in [fn] (banco 20-10, speciale di Naminé). Dal JP 4.3.1; 6 texture
+#     assenti dall'estrazione JP sono copie di quelle di pet_eff_0005/0006 (stessi offset nel 2016)
+lwf/ability/hit_effect/pet_eff_0004/	jp
+lwf/ability/hit_effect/pet_eff_0005/	jp
+lwf/ability/hit_effect/pet_eff_0006/	jp
+lwf/ability/hit_effect/pet_eff_0004/pet_eff_0004_e38393e38383e38388e3839ee38383e383972031302e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e3839720382e706e67.png
+lwf/ability/hit_effect/pet_eff_0004/pet_eff_0004_e38393e38383e38388e3839ee38383e383972031352e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e3839720392e706e67.png
+lwf/ability/hit_effect/pet_eff_0004/pet_eff_0004_e38393e38383e38388e3839ee38383e383972031372e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031312e706e67.png
+lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031312e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e3839720392e706e67.png
+lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031322e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031302e706e67.png
+lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031332e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031312e706e67.png

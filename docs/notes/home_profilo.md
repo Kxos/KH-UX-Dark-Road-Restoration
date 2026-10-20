@@ -770,6 +770,10 @@ Ricerca: `D:\Progetto_Restauro_KH_UX	mp\pettricks\RESEARCH.md` (tabelle e posti)
   points and ranks».
 - Banco 20-10 (`provetm`, rev 158): lista con gli 11 trick del rango, rango 14 x3,600, «LV Up in 162» (1944 - 1782),
   SN++ MoM Riku 432 (360 + trait), le altre 270.
+- **Crash alla speciale di Naminé** (banco 20-10): [fn] (P/S/M Attack Boost) -> [fn](pet, 0xf) apre
+  `lwf/ability/hit_effect/pet_eff_0005` (codice - 10; 0xe Esuna/HP Recovery = pet_eff_0004), assente dalle risorse:
+  [fn] non controlla il NULL. Importati dal JP 4.3.1 pet_eff_0004-0006 (`originals.tsv` sezione 34, 6 texture
+  copiate dalle cartelle sorelle; analisi in `D:\Progetto_Restauro_KH_UX	mp\pettricks\CRASH.md`), `-Quick` sulla 49.
 
 <a id="spirit-trait-scelta"></a>
 ## Special Trait del training: tenere o sostituire (20-10)
