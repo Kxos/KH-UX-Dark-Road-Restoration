@@ -117,6 +117,11 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
   visto dall'utente). Supernova a 1 colpo come l'originale (rev 160). **Attacchi originali dei nemici** (I-181 chiuso: stati alterati di nuovo, Esuna visto). **Crash nelle 86 stanze generate** (I-182 chiuso: segnaposto BTF da 45 byte, risorse 51). Banco: revisione **166**, **risorse 51** (4,09 GiB, tre pezzi), salvataggio `provetm`
   (prove525 + Trait Medal), `relogin.ps1 -Save provetm -RealNow 2026-12-08T10:00:00Z`. Dopo una modifica al server
   usare sempre `relogin.ps1`: riavviare solo il server fa perdere la sessione al client («6 ERROR :185»).
+- **Prossimo passo (dal 21-10): importare le missioni 526-979** dagli stage originali JP 4.3.1 (I-009, decisioni dell'utente e
+  ricerca in [mappe_storia.md#oltre525](docs/notes/mappe_storia.md#oltre525); rapporti in `reference\world_schema\oltre525\`):
+  righe master dalla wiki (526-555 anche dal master 1.1.3), 312 nemici mancanti dal JP, 27 stanze da aggiungere, Q555 per
+  Unione (`branchType 1`), Q617/Q661 parte ricostruita, SR_0009_01_00 con la grafica della _00, mapName originali. Prima:
+  prova automatica di tutte le stanze generate (dopo I-182).
 - **Trait Medal (I-084)**: parti A e B fatte, **banco 20-10 ok** ([medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).
   Moogle Shop delle Trait Medal rimandato al bilanciamento (I-164); resta la raggiungibilita' dei deal Trait (storia oltre il 2018).
 - Aperti dello Shop: I-139 (24 INCOMPLETE), I-140 (filtro Epic), I-141 (immagine di B0612), I-142 (Blue Fairy Deal),
