@@ -323,6 +323,14 @@ Le schermate hanno le loro API, descritte nei file d'area: medaglie
   [{userKeybladeId, userDeckId, isFavorite}] + `userDecks` [{userDeckId, medals[], petBaseSlotMedal}]:
   il server salva i deck e il preferito e risponde `userKeyblades` + `userDecks`. Prima finiva nello
   schema automatico (elenchi vuoti). Da vedere sul banco il corpo vero (log `[keyblade] deck`).
+- **3 deck per keyblade** (20-10; update 1.1.2 del 01/09/2016 «Save 3 decks per Keyblade», sbloccati da un keyblade a
+  +20; immagine dell'utente e fonti in `reference\keyblade_decks\`, ricerca in `D:\Progetto_Restauro_KH_UX	mp\deckset\RESEARCH.md`):
+  il client conta i deck di un keyblade dagli `userDecks` con il suo `userKeybladeId` (ordine dell'array, [fn]) e
+  mostra i pulsanti 1/2/3 solo con piu' di un deck; deck attivo = `userKeyblades[].userDeckId`, cambiato e salvato con
+  l'azione 45. Server: deck 1 = `userKeybladeId` (player.deck / keybladeDecks come prima), deck 2/3 = n x 1.000.000 + id in
+  `player.keybladeDeckSets[kb] = {active, 2, 3}`; 6° slot del pet per userDeckId; Unequip anche da 2/3. Test
+  `test-deck-sets.js`. Banco 20-10: pulsanti in Equipment, deck 2 vuoto, ritorno al deck 1 intatto. Da provare: riempire il
+  deck 2 e combattere con quello; `userPoint` (STR/DEF della home) resta quello del deck 1 di Starlight come prima.
 - `/stage/start` salva `userKeybladeId` (`player.currentUserKeybladeId`): la gauge di `/stage/clear`
   va in quel keyblade. Unequip (`/user/medal/remove`) toglie la medaglia da tutti i deck.
 - Immagini: il popup del keyblade ottenuto (`BattleResult_KB`, `[fn]`) e le icone dei premi
