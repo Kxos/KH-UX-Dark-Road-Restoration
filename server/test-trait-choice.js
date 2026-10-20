@@ -88,6 +88,32 @@ r = call((res) => t.pet().respondExpedition(res, 'POST', { userMedalIds: [102] }
 check(r.medalResumption && r.medalResumption.resumptionStatus === 1 && r.medalResumption.userShuffleSkills[0].userShuffleSkillId === 9, `training: ${JSON.stringify(r.medalResumption)}`);
 check(p.traitPending.length === 1, 'training: coda intatta');
 
+// Special Trait del training (originale: notice NA 52202 v3.2.0, scelta fra tenere e sostituire)
+const special = JSON.parse(fs.readFileSync(path.join(MASTER, 'shuffleskill.json'), 'utf8')).filter((x) => x.type === 2).map((x) => x.shuffleSkillId);
+if (special.length) {
+  // slot libero: entra subito, niente pending
+  p.medalTraits = { 101: [T(1, 10)], 102: [] }; p.traitPending = [];
+  r = call((res) => t.pet().respondExpedition(res, 'POST', { userMedalIds: [102] }, '/pet/expedition'));
+  check(p.medalTraits[102].length === 1 && special.includes(p.medalTraits[102][0].shuffleSkillId) && p.traitPending.length === 0
+    && r.medalResumption.resumptionStatus === 0, `training, slot libero: ${JSON.stringify(p.medalTraits[102])}`);
+  // slot occupato su due medaglie: il vecchio resta, due pending nella risposta (uno per medaglia)
+  const old102 = p.medalTraits[102][0];
+  p.medalTraits[101] = [T(1, 10), T(5, special[0])];
+  r = call((res) => t.pet().respondExpedition(res, 'POST', { userMedalIds: [101, 102] }, '/pet/expedition'));
+  check(same(p.medalTraits[102], [old102]) && p.medalTraits[101].map((x) => x.userShuffleSkillId).join() === '1,5', 'training, slot occupato: trait vecchi intatti');
+  const pend = r.medalResumption.userShuffleSkills;
+  check(r.medalResumption.resumptionStatus === 1 && pend.length === 2 && pend.map((x) => x.userMedalId).sort().join() === '101,102'
+    && pend.every((x) => special.includes(x.shuffleSkillId)), `training, slot occupato: pending ${JSON.stringify(r.medalResumption)}`);
+  // Replace sulla 101: il nuovo prende il posto del vecchio Special Trait; la risposta propone ancora quello della 102
+  const p101 = pend.find((x) => x.userMedalId === 101), p102 = pend.find((x) => x.userMedalId === 102);
+  r = call(t.respondMedalShuffleSkill, { userMedalId: 101, userShuffleSkillId: 5, enableUserShuffleSkillId: p101.userShuffleSkillId });
+  check(p.medalTraits[101].map((x) => x.userShuffleSkillId).join() === `1,${p101.userShuffleSkillId}`, `Replace dello Special Trait: ${JSON.stringify(p.medalTraits[101])}`);
+  check(r.medalResumption.resumptionStatus === 1 && r.medalResumption.userShuffleSkills[0].userMedalId === 102, 'dopo la 101 resta il pending della 102');
+  // Skip sulla 102: si tiene il vecchio
+  r = call(t.respondMedalShuffleSkill, { userMedalId: 102, userShuffleSkillId: p102.userShuffleSkillId, enableUserShuffleSkillId: 0 });
+  check(same(p.medalTraits[102], [old102]) && p.traitPending.length === 0 && r.medalResumption.resumptionStatus === 0, 'Skip dello Special Trait: vecchio tenuto');
+} else errors.push('nessuno Special Trait (type 2) in shuffleskill');
+
 try { fs.unlinkSync(SAVE); } catch { /* gia' tolto */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 log('OK: trait-choice');

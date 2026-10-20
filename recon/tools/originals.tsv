@@ -190,3 +190,7 @@ cocostudio/publish/LBonusAnimation*	b16
 lwf/loginbonus/LoginBonus_BG/	b16
 lwf/loginbonus/LoginBonus_Welcome/	b16
 lwf/loginbonus/LoginBonus_Stamp/	b16
+#     timbro piccolo nell'angolo (screenshot 2020-21): LWF JP piu' recente (rev. 00191275, scala 0.439), le 5 texture
+#     restano quelle del 2016 (il JP non ha png_KeyBlade_ef1); suono del timbro (codice della scena, [fn])
+lwf/loginbonus/LoginBonus_Stamp/LoginBonus_Stamp.lwf	jp
+audio/509100630.akb	b16,jp

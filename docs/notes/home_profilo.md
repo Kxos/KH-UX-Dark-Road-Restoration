@@ -753,6 +753,18 @@ eference\album\album_yt_01.jpg).
   NXDOMAIN a `fonts.gstatic.com` (lista `BLOCK`): 3 rientri su 3 con la pagina in 1,1-1,5 s. Simboli rari (⤶, ▶) del
   BACK e della freccia sostituiti da forme CSS.
 
+<a id="spirit-trait-scelta"></a>
+## Special Trait del training: tenere o sostituire (20-10)
+
+Segnalazione dell'utente: il training sostituiva subito lo Special Trait. Originale (notice NA 52202 v3.2.0 «you can
+choose whether to keep or overwrite the current Special Trait», video kTJoSgXii1E; ricerca in
+`D:\Progetto_Restauro_KH_UX	mp\pettrait\RESEARCH.md`): slot vuoto -> entra subito; slot occupato -> finestra
+`MedalInfo_SkillChangeWindow` con la sezione «Special Trait» ([fn], aperta da «TAP SCREEN» se [fn] trova
+in `medalResumption` status 1 un pending con lo userMedalId della medaglia), OK «Replace X with Y?» / Skip «Y will be lost.
+Okay?» -> azione 57 come la fusione. Server (`pet.js spiritTrait`): slot occupato -> `player.traitPending` (type 1), la
+risposta 244 manda i pending delle medaglie allenate in testa; `medal-trait.resumption` manda tutta la coda.
+Test: `test-trait-choice.js` (sezione Special Trait).
+
 <a id="login-bonus"></a>
 ## Login bonus (I-176, 20-10)
 
@@ -776,4 +788,10 @@ Ricerca completa in `D:\Progetto_Restauro_KH_UX\tmp\loginbonus\RESEARCH.md` (fon
   Bonus». Test: `node server/test-login-bonus.js`.
 - **Asset**: nessuno nelle risorse WW 5.0.1/4.3.1; dal pacchetto WW 2016 (`originals.tsv` sezione 33: 6 layout
   `LBonus*`, `LoginBonus_*.png`, `Result_Num.png`, `LBonusAnimation*`, i 3 LWF di `lwf/loginbonus`, 58 file). Testi
-  `text/ui` 104500001-008 gia' serviti.
+  `text/ui` 104500001-008 gia' serviti. Timbro: il LWF del 2016 (= JP .00103151) chiude grande al centro; quello degli
+  screenshot 2020-21 (piccolo in alto a destra, anche su Total e popup speciale) e' la revisione JP 00191275 (scala
+  0.439), con le 5 texture del 2016. Suono: nessun evento nei LWF, la scena suona `audio/509100630.akb` a ogni timbro
+  ([fn], [fn], [fn]), assente nelle risorse WW: dal 2016. Nessuna BGM propria.
+- **Banco 20-10** (`provetm`, -RealNow 8-12): la scena parte dopo la chiusura delle Notices; giorno 1 (timbro 1,
+  Total «Day 0001» 300 jewel, «Day 2 Reward»), giorno 4 (titolo 14001 x1, «Received a title!» dai Presents). Dopo un
+  cambio di revisione il primo login (popup «Download» del master) non apre la scena: si apre al login successivo.

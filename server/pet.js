@@ -260,10 +260,11 @@ function makePet(ctx) {
   // Il trait: uno Special Trait (righe shuffleskill type 2, make-pet-tables.js: le 36 della tabella
   // ufficiale v3.2.0 / khwiki «Special Traits») estratto col peso rate (= «Unlock Rate» in
   // centesimi di punto, somma 10000), come l'originale (reference\pet\NOTE.md §10). Uno solo per
-  // medaglia («one Special Trait slot», separato dai 5 trait normali): un nuovo allenamento
-  // sostituisce quello vecchio. Nell'originale, se la medaglia ne aveva gia' uno, si sceglieva
-  // quale tenere (popup «Choose a trait to replace.», Skip/OK: medalResumption.resumptionStatus 1
-  // -> [fn], MedalInfo_SkillChangeWindow.json assente): qui sostituzione diretta.
+  // medaglia («one Special Trait slot», separato dai 5 trait normali). Se la medaglia ne ha gia' uno il nuovo resta in
+  // sospeso e il giocatore sceglie se tenerlo o no, come nell'originale (notice NA 52202 v3.2.0: «you can choose whether
+  // to keep or overwrite the current Special Trait»; video kTJoSgXii1E): player.traitPending come la fusione,
+  // medalResumption status 1 nella risposta 244 -> [fn] trova il pending per userMedalId, «TAP SCREEN» apre
+  // [fn] (MedalInfo_SkillChangeWindow, sezione «Special Trait»), OK/Skip -> azione 57 (server.js).
   // Senza righe type 2 (master non rigenerati) ripiego di prima: un trait normale a caso.
   // Restituisce lo shuffleSkillId.
   function pickWeighted(rows) {
@@ -282,15 +283,16 @@ function makePet(ctx) {
     const isSpecial = new Set(special.map((r) => r.shuffleSkillId));
     player.medalTraits = player.medalTraits || {};
     t.spirit = t.spirit || {};
-    // via il vecchio trait dello Spirit (quello registrato o qualunque riga type 2)
-    const list = (player.medalTraits[userMedalId] || []).filter((x) =>
-      x.userShuffleSkillId !== t.spirit[userMedalId] && !isSpecial.has(x.shuffleSkillId));
-    if (list.length >= 6) list.length = 5;          // al massimo 6 trait per medaglia ([fn])
     player.nextShuffleSkillId = (player.nextShuffleSkillId || 1000) + 1;
-    list.unshift({ userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0,
-      getDatetime: ctx.realNow() });
-    player.medalTraits[userMedalId] = list;
-    t.spirit[userMedalId] = player.nextShuffleSkillId;
+    const trait = { userShuffleSkillId: player.nextShuffleSkillId, shuffleSkillId: row.shuffleSkillId, type: 0, getDatetime: ctx.realNow() };
+    const list = player.medalTraits[userMedalId] || [];
+    if (list.some((x) => isSpecial.has(x.shuffleSkillId))) {
+      // slot dello Special Trait occupato: in sospeso finche' il giocatore sceglie (azione 57)
+      (player.traitPending ||= []).push({ ...trait, type: 1, userMedalId });
+    } else {
+      player.medalTraits[userMedalId] = [trait, ...list];
+      t.spirit[userMedalId] = trait.userShuffleSkillId;
+    }
     return row.shuffleSkillId;
   }
 
@@ -317,8 +319,12 @@ function makePet(ctx) {
       return ctx.send(res, 200, {
         ret: ctx.ret(),
         userMedals: ids.map((id) => ctx.userMedalElement(owned.get(id), now)),
-        // il valore della sessione lo sostituisce: un trait in sospeso della fusione (I-084 A) non va cancellato
-        medalResumption: ctx.medalResumption ? ctx.medalResumption() : { userShuffleSkills: [], resumptionStatus: 0 },
+        // i Special Trait in sospeso delle medaglie allenate (il client li cerca per userMedalId, [fn]), poi il
+        // resto della coda: il valore della sessione lo sostituisce, un trait in sospeso della fusione non va cancellato
+        medalResumption: ctx.medalResumption
+          ? ctx.medalResumption([...(player.traitPending || []).filter((x) => ids.includes(x.userMedalId)),
+            ...(player.traitPending || []).filter((x) => !ids.includes(x.userMedalId))])
+          : { userShuffleSkills: [], resumptionStatus: 0 },
       });
     }
     // GET: slot 2..TRAIN_SLOTS aperti fino a fine mese; scadenze settimana/mese

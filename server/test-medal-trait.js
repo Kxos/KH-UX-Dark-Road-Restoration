@@ -49,7 +49,7 @@ check(same(mt.resolvePending(three, nw, 77), three), 'id sconosciuto: invariata'
 // resumption
 check(same(mt.resumption([]), { userShuffleSkills: [], resumptionStatus: 0 }), 'coda vuota');
 const p = { ...nw, userMedalId: 500 }, q = { ...T(10, 9, 1), userMedalId: 501 };
-check(same(mt.resumption([p, q]), { userShuffleSkills: [p], resumptionStatus: 1 }), 'coda con due pending: il primo');
+check(same(mt.resumption([p, q]), { userShuffleSkills: [p, q], resumptionStatus: 1 }), 'coda con due pending: tutta, il primo in testa');
 check(same(mt.resumption(undefined), { userShuffleSkills: [], resumptionStatus: 0 }), 'coda assente');
 
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }

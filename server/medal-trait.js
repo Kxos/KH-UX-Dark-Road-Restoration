@@ -6,8 +6,10 @@
 //   percentuali originali non sono mai state pubblicate). Doppioni ammessi, come nell'originale.
 // - Slot pieni: il trait resta in sospeso finche' il giocatore sceglie quale sostituire (prende la sua posizione)
 //   o lo scarta (Skip). Lo Special Trait del pet (shuffleskill type 2) ha uno slot a parte.
-// - medalResumption ([fn]): con trait in sospeso {[il primo], 1}, altrimenti {[], 0}; con status 1 la
-//   lista non deve mai essere vuota (il client legge [0] senza controllo).
+// - medalResumption ([fn]): con trait in sospeso {[tutta la coda], 1}, altrimenti {[], 0}; con status 1 la
+//   lista non deve mai essere vuota (il client legge [0] senza controllo). Tutta la coda: lo Spirit Training cerca il
+//   pending di ogni medaglia allenata per userMedalId ([fn]), e la risposta della scelta (azione 57) riscrive
+//   la sessione prima della medaglia successiva.
 'use strict';
 
 const { FUSION_TRAIT_IDS } = require('./make-trait-groups');
@@ -34,7 +36,7 @@ function resolvePending(list, pending, removeId) {
 }
 
 const resumption = (queue) => ((queue || []).length
-  ? { userShuffleSkills: [queue[0]], resumptionStatus: 1 }
+  ? { userShuffleSkills: [...queue], resumptionStatus: 1 }
   : { userShuffleSkills: [], resumptionStatus: 0 });
 
 module.exports = { gainsTrait, rollTrait, addTrait, resolvePending, resumption, FUSION_TRAIT_IDS };
