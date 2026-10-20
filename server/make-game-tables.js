@@ -217,6 +217,8 @@ for (const m of medals) {
   const name = m.medalId < 200000 && (orgName.get(m.medalId % 100000) || orgName.get(m.medalId % 100000 + 1));
   if (name && name.replace(/ A$/, '') === m.name) m.name = name;
 }
+// «Illustrated Sora A»/«Riku A» 6★ (41036, 42036): stesso suffisso delle 7★ (medal-name-fix.js)
+const nameFixed = require('./medal-name-fix').applyNameFix(medals);
 
 // Level Up con medaglie speciali (I-079/I-080, server/medal-guilt.js, docs/notes/guilt.md): le due
 // medaglie di Roboloid senza attributo che il ciclo sopra scarta, Magic Broom (300948, materiale

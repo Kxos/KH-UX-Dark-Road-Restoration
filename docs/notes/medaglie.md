@@ -581,6 +581,9 @@ e`). 10000 = 1,0:
   stelle uguali a Roboloid.
 - Nomi (e53b3d4, rev 128): il master di thethiny (2017) chiama le 5★/6★ SE solo «Lexaeus»; nel 4.3.1 sono «X A» dall'uscita delle
   «B». Le 36 righe prendono il nome della 7★ «X A» di arrivo dell'Evolve; catalogo rigenerato (5 banner: solo chiavi dei nomi).
+- Nomi 6★ «Illustrated Sora A»/«Riku A» (20-10): 41036 e 42036 (e le boosted 2041036/2042036) erano «Illustrated Sora»/«Riku»; come le 7★ 300572/300576 e la khuxwiki
+  (sortId 448/449) sono «... A». `server/medal-name-fix.js` (`NAME_FIX`, chiamata da make-game-tables.js; da sola corregge il master sul posto); `make-boosted-medals.js`
+  aggiunge 1041036/1042036 (+1000 STR) per B0362/B0363 e gli altri banner con quei nomi. Il catalogo li risolveva gia' per id. Evolve verso la 7★: I-162.
 - Salvataggio (247fbed, `migrateMedalMap` in `server/server.js`, `medalMapVersion` 1-2): `ORGXIII_MEDAL_MAP` (36 voci) porta 3004xx/3006xx
   all'id SE e le potenziate 20xxxxx/21xxxxx alla 2301xxx; campi con `medalId`: `medals[]`, `medalState`, regali `resourceType` 3;
   il resto segue `userMedalId`. Salvataggio del banco: 14 copie, nessuna potenziata. Versione 2 (revisione finale): il record del
