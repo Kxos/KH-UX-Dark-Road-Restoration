@@ -795,3 +795,5 @@ Ricerca completa in `D:\Progetto_Restauro_KH_UX\tmp\loginbonus\RESEARCH.md` (fon
 - **Banco 20-10** (`provetm`, -RealNow 8-12): la scena parte dopo la chiusura delle Notices; giorno 1 (timbro 1,
   Total «Day 0001» 300 jewel, «Day 2 Reward»), giorno 4 (titolo 14001 x1, «Received a title!» dai Presents). Dopo un
   cambio di revisione il primo login (popup «Download» del master) non apre la scena: si apre al login successivo.
+  Giorno 5 col timbro JP: piccolo in alto a destra su tutti i pannelli e sul Total, come gli screenshot; suono a ogni
+  timbro (confermato dall'utente).
