@@ -752,3 +752,28 @@ eference\album\album_yt_01.jpg).
   (orologio del dispositivo al 2021) e la pagina resta in attesa (risposta 0,6 s, DOM 9,4 s). `server/dns.js` risponde
   NXDOMAIN a `fonts.gstatic.com` (lista `BLOCK`): 3 rientri su 3 con la pagina in 1,1-1,5 s. Simboli rari (⤶, ▶) del
   BACK e della freccia sostituiti da forme CSS.
+
+<a id="login-bonus"></a>
+## Login bonus (I-176, 20-10)
+
+Ricerca completa in `D:\Progetto_Restauro_KH_UX\tmp\loginbonus\RESEARCH.md` (fonti in `reference\login_bonus\NOTE.md`).
+- **Protocollo**: `/khux/login` (e `/user/create`) `gameLogin.acquirableLoginBonus` -> con true `[fn]` chiama
+  l'azione 65 `POST /login/bonus` (corpo `isTrackingEnabled`, `advertisingId`, ignorati) e apre `SceneLoginBonus`.
+  Risposta (`[fn]`, tutti obbligatori): `loginBonus {continue {loginBonusId, dayCount}, total {loginBonusId,
+  dayCount}, specials [id]}`. Nessun inventario nella risposta: premi nei Presents.
+- **Scena** (`[fn]`/`[fn]`): pannelli Daily = tutte le righe `bonusType` 1 (servono esattamente 5,
+  widget `Area_Cont`.._5); timbri fino al `day` della riga `continue`; Total «Day N» = `total.dayCount`, icona della riga
+  `total.loginBonusId` (0 = nessuna), «Day %d Reward» = prima riga tipo 2 oltre N; `specials` = popup blu
+  `LBonus_Memory`. Ogni id mandato deve esistere nel master (riga mancante = crash).
+- **Master** `loginBonus` (tolta nella 5.0.1, servita vuota fino al 20-10): `server/make-login-bonus.js` dalla tabella
+  1.1.3 decodificata (`reference\login_bonus\loginBonus_1.1.3_decoded.json`, fuori dal repo): Daily 100-104 con
+  100/100/200/200/300 jewel (v2.3.1, notice 32990; la 1.1.3 aveva 50/50/100/100/200), Total 200-292 (93 traguardi
+  fino al giorno 1850, jewel o titoli 14001-14047). Speciali (tipi 3/4) non serviti.
+- **Regole** (`server/login-bonus.js`, scelte dell'utente 20-10): giorno = giorno delle missioni (08:00 UTC; originale
+  4:00 a.m. PT), un login bonus al giorno, Daily = (Total - 1) mod 5 + 1 senza azzeramento se si salta un giorno,
+  premi nei Presents («Daily Login Bonus Reward», «Total Login Bonus Reward»), stato `player.loginBonus {lastDay,
+  total}`. Solo a tutorial finito (i layout arrivano con le risorse). `KHUX_LOGIN_BONUS=0` lo spegne. Notices: «Login
+  Bonus». Test: `node server/test-login-bonus.js`.
+- **Asset**: nessuno nelle risorse WW 5.0.1/4.3.1; dal pacchetto WW 2016 (`originals.tsv` sezione 33: 6 layout
+  `LBonus*`, `LoginBonus_*.png`, `Result_Num.png`, `LBonusAnimation*`, i 3 LWF di `lwf/loginbonus`, 58 file). Testi
+  `text/ui` 104500001-008 gia' serviti.

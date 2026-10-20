@@ -179,3 +179,14 @@ cocostudio/publish/Camp_Balloon3.png	b16,jp
 #     png_logo_guilt_bonus): texture inglese del 2016, 455x35 in uno spazio dichiarato 336x35 come nell'originale
 lwf/medal/guilt_bonus/GuiltBonus_max/GuiltBonus_max_706e675f6c6f676f5f6775696c745f626f6e7573322e706e67.png	b16
 lwf/medal/guilt_bonus/GuiltBonus_result/GuiltBonus_result_706e675f6c6f676f5f6775696c745f626f6e7573322e706e67.png	b16
+
+# 33. Login bonus (I-176): scena, pannelli e popup speciale (LBonus*_ver131 e inclusi), texture, cifre dell'AtlasLabel
+#     (Result_Num) e i tre LWF di lwf/loginbonus: tutti assenti dalle risorse WW 5.0.1/4.3.1, completi nel 2016 (nel JP
+#     LoginBonus_Welcome e _Stamp hanno texture mancanti). Testi in text/ui 104500001-008 (gia' serviti)
+cocostudio/publish/LBonus*.json	b16
+cocostudio/publish/LoginBonus_*.png	b16
+cocostudio/publish/Result_Num.png	b16
+cocostudio/publish/LBonusAnimation*	b16
+lwf/loginbonus/LoginBonus_BG/	b16
+lwf/loginbonus/LoginBonus_Welcome/	b16
+lwf/loginbonus/LoginBonus_Stamp/	b16

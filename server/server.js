@@ -29,6 +29,7 @@ const { makeKeybladeEvo, routeKeybladeEvo } = require('./keyblade-evo');
 const { makeGuiltBurst } = require('./guilt-burst');
 const medalGuilt = require('./medal-guilt');
 const medalTrait = require('./medal-trait');
+const loginBonus = require('./login-bonus');
 const infoAlbum = require('./routes-info-album');
 const legalPages = require('./legal-pages');
 const { routePartyRanking, respondPartyRanking } = require('./routes-party-ranking');
@@ -162,6 +163,7 @@ function route(url) {
   if (p.startsWith('/resource/')) return 'resourcefile';
   if (p.includes('tutorial/status')) return 'tutorialstatus';
   if (p.includes('khux/login')) return 'khuxlogin';
+  if (p === '/login/bonus') return 'loginbonus';
   if (p === '/user/create') return 'usercreate';
   if (p === '/user/keyblade') return 'userkeyblade';
   if (p.startsWith('/user/keyblade/update')) return 'keybladeupdate';
@@ -790,7 +792,29 @@ function respondKhuxLogin(res) {
   // nuovo login: il client riprende l'ora da qui, il gemello del mese corrente vale fino al prossimo
   player.clockOffset = clock.twinOffset(realNow());
   savePlayer();
-  send(res, 200, { ret: ret(), gameLogin: { acquirableLoginBonus: false } });
+  send(res, 200, { ret: ret(), gameLogin: { acquirableLoginBonus: loginBonusAcquirable() } });
+}
+
+// Login bonus (I-176, login-bonus.js): true se il giorno (cambio alle 08:00 UTC, come le missioni) non e' ancora stato
+// riscosso; allora il client chiama POST /login/bonus e apre SceneLoginBonus ([fn]). Solo a tutorial finito:
+// i layout del login bonus arrivano con le risorse, che un giocatore nuovo scarica dopo il tutorial (un layout mancante
+// = crash in GUIReader). KHUX_LOGIN_BONUS=0 lo spegne.
+const LOGIN_BONUS_ON = process.env.KHUX_LOGIN_BONUS !== '0';
+function loginBonusAcquirable() {
+  if (!LOGIN_BONUS_ON || !(player.tutorialPhase >= TUTORIAL_LAST_PHASE) || !masterRows('loginBonus').length) return false;
+  return loginBonus.acquirable(player.loginBonus, clock.dayIndex(realNow()));
+}
+
+function respondLoginBonus(res) {
+  // POST /login/bonus (azione 65, corpo isTrackingEnabled/advertisingId ignorato). Risposta letta da [fn]:
+  // loginBonus {continue {loginBonusId, dayCount}, total {loginBonusId, dayCount}, specials [id]}, tutti obbligatori.
+  // I premi vanno nei Presents (la risposta non porta inventario).
+  const { state, rewards, response } = loginBonus.claim(player.loginBonus, clock.dayIndex(realNow()), masterRows('loginBonus'));
+  player.loginBonus = state;
+  for (const r of rewards) addPresent(r.type, r.id, r.num, r.comment);
+  if (rewards.length) console.log(`[login bonus] giorno ${state.total}: ${rewards.map((r) => `${r.type}/${r.id} x${r.num}`).join(', ')} nei Presents`);
+  savePlayer();
+  send(res, 200, { ret: ret(), loginBonus: response });
 }
 
 // ---------------------------------------------------------------------------
@@ -3724,6 +3748,7 @@ function handler(scheme) {
       if (kind === 'resourcefile') return respondResourceFile(req, res);
       if (kind === 'tutorialstatus') return respondTutorialStatus(res, entry.bodyDecoded);
       if (kind === 'khuxlogin') return respondKhuxLogin(res);
+      if (kind === 'loginbonus') return respondLoginBonus(res);
       if (kind === 'usercreate') return respondUserCreate(res, entry.bodyDecoded);
       if (kind === 'userkeyblade') return respondUserKeyblade(res);
       if (kind === 'keybladeupdate') return respondKeybladeUpdate(res, entry.bodyDecoded);
@@ -4142,6 +4167,8 @@ module.exports._test = {
   migrateClock, clockMonthIndex: clock.monthIndex, userSkillElement, userSphereData, userKeybladeData,
   // server/test-clock-server.js
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
+  // server/test-login-bonus.js
+  respondLoginBonus, loginBonusAcquirable,
   // server/test-limited.js
   missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet, limitedGroupQuest, forceStoryQuest: (q) => { storyQuestForced = q; },
   // server/test-mission-settle.js

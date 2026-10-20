@@ -817,6 +817,8 @@ require('./make-trait-groups').patch(OUT);
 require('./make-trait-medals').patch(OUT);
 // Livelli Lux 302-999 ricostruiti e misc 100 = 999 (make-lux-levels.js, richiesta dell'utente 19-10)
 require('./make-lux-levels').patch(OUT);
+// Login bonus (I-176): Daily 100/100/200/200/300 e Total della 1.1.3 (make-login-bonus.js)
+require('./make-login-bonus').patch(OUT);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
 // khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
 const TABLES = path.join(__dirname, 'tables');
