@@ -847,3 +847,11 @@ Notices lente al login (seguito): esperimento con 3 rientri a pagina minima e 3 
 casi lenti (~9 s) sono intermittenti e coincidono con un aggiornamento di font di Google Play Services che fallisce
 (orologio del guest al 2021, obbligatorio per il client): non dipendono dalla pagina. Il blocco DNS li accorcia.
 - Details «Not in the Shop now» (19-10, richiesta dell'utente): «How the Shop works» in tre passi con le date vere (periodo della tranche con le sue missioni, settimana mostrata, avanzamento il lunedi' e numero di settimane) e la risposta in evidenza (next Monday / in N weeks con le date / ran before your period / later period). Banco: Disney Friends -> next Monday, Apr 14 - Apr 20, 2016.
+
+<a id="sp3"></a>
+## Sotto-progetto 3 (20-10, spec 2026-10-20-shop-sp3-design.md, piano 2026-10-20-shop-sp3.md)
+
+- **JavaScript nella WebView dello Shop** (Task 0, banco 20-10): uno `<script>` inline in fondo alla pagina del Catalog
+  ha chiesto `GET /web/gacha/jsok?<Date.now()>` all'apertura da Details della piastra Banner Catalog: JavaScript e'
+  attivo (come nelle Notices). Filtri e fissaggio possono usare script inline e `fetch`/`XMLHttpRequest` verso il server.
+  Nota: `Date.now()` nella WebView da' l'ora del guest (maggio 2021), non quella del server.
