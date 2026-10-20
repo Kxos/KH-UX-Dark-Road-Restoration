@@ -162,10 +162,15 @@ function makePet(ctx) {
     return (state().subslot || []).map(Number).filter((id) => id > 0 && owned.has(id)).slice(0, 6);
   }
 
+  // punti della medaglia: addPetPt, +20% con almeno un trait (anche lo Special Trait), come il client li mostra nel
+  // Gear (SN++ MoM Riku 360 -> 432 con il solo Special Trait; khuxwiki Pet_System «Points (1+ Trait)»)
   function pointsOf(ids) {
     const rows = new Map(ctx.masterRows('medal').map((r) => [r.medalId, r]));
     const list = new Map(ctx.userMedalList().map((m) => [m.userMedalId, m]));
-    return ids.reduce((s, id) => s + (rows.get(list.get(id)?.medalId)?.addPetPt || 0), 0);
+    return ids.reduce((s, id) => {
+      const pt = rows.get(list.get(id)?.medalId)?.addPetPt || 0;
+      return s + ((player.medalTraits?.[id] || []).length ? Math.floor((pt * 12) / 10) : pt);
+    }, 0);
   }
 
   // rango dai punti (petRank: needPt cumulativo); senza tabella rango 1, x1.0

@@ -16,6 +16,7 @@ check(sv(61) === '10,6,2500,4000,0' && sv(63) === '10,6,5000,4000,0', 'Combo');
 check(sv(21) === '5,1,7,0,0' && sv(31) === '6,1,0,0,0' && sv(42) === '9,1,0,0,0' && sv(43) === '8,2,4,0,0', 'Esuna, HP Recovery, Boost di stato');
 const ranks = tables.petRankRows();
 check(JSON.stringify(ranks[16].openSkillIds) === '[3,15,21,31,41,42,43,54,55,56,63]', `rango 17: ${ranks[16].openSkillIds}`);
+check(ranks.map((r) => r.validOpenSkill).join() === '0,1,2,3,4,4,7,7,10,10,11,11,11,11,11,11,11', 'validOpenSkill = numero di id');
 check(JSON.stringify(ranks[0].openSkillIds) === '[]' && JSON.stringify(ranks[1].openSkillIds) === '[1]' && ranks[2].rankUpSkill === 11, 'ranghi 1-3');
 // Blast: medaglie 3-7 con burst 12-16 a danno fisso esatto, idempotente
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'khux-tricks-'));

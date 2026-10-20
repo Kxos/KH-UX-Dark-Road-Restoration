@@ -5,12 +5,9 @@
 // dagli screenshot e dalla khwiki (D:\Progetto_Restauro_KH_UX\reference\pet\NOTE.md).
 //
 // - petRank (rank, needPt, magnification, rankUpSkill, validOpenSkill, openSkillIds int[15]):
-//   17 ranghi (khwiki: massimo 17). needPt = punti cumulativi per arrivare al rango, scelti in
-//   modo che pet_ref_14 torni (Rank 11 con 4 x 250 = 1000 punti, «To next rank: 100» -> rango 12
-//   a 1100) e che 6 medaglie di punta (~400) diano il rango 17. magnification in decimillesimi
-//   come accord/partnerRate dei keyblade (10000 = x1.0): 22000 + 1000 x rango, cioe' Rank 5 =
-//   x2.700, Rank 15 = x3.700, Rank 16 = x3.800 (dialog SPIRIT della build finale,
-//   pet_spirit_yt_03 / pet_spirit_training_02 / pet_spirit_edit_01). Il client la legge dal
+//   17 ranghi. needPt (punti cumulativi) e magnification dalla khuxwiki (Pet_System, «Slot Multiplier»):
+//   magnification in decimillesimi come accord/partnerRate dei keyblade (10000 = x1.0): rango 1 x1.00, poi
+//   22000 + 1000 x rango (Rank 5 = x2.700, Rank 16 = x3.800 come i dialog SPIRIT della build finale). Il client la legge dal
 //   petSubslot che manda il server ([fn], +0x74) e la somma al partnerRate del keyblade
 //   per la cella del 6° slot ([fn] -> [fn]): l'unita' va confermata sul banco.
 // - petSkill (skillId, thumbId, name, description, invokeDescription, invokeType, skillValue1-5):
@@ -25,10 +22,7 @@
 //   livelli oltre il limite di ±20, [fn]/[fn]). openSkillIds di un rango = il livello piu' alto di
 //   ogni linea, in ordine di apprendimento. RICOSTRUITI (Notices): soglia % del Blast, valori di Poison/Sleep Boost,
 //   maschera di Esuna, cariche dei P/S/M Attack Boost, medaglie e burst del Blast.
-// - medal.addPetPt (punti pet della medaglia, riga medal +addPetPt, 0 in tutte le nostre righe):
-//   stima per rarita' + tier (guiltValue). Fonti: 15/20 punti nelle promo 2017 (medaglie basse),
-//   250-432 nelle build successive (medaglie 7 stelle con SA+ e trait; la khwiki dice che i punti
-//   dipendono da SA Bonus Level e trait, cosa che qui non si modella).
+// - medal.addPetPt (punti Spirit della medaglia, riga medal +addPetPt): dalla khuxwiki (vedi addPetPtFor).
 //
 // - shuffleskill type 2 = Special Trait («特別覚醒能力», trait dello Spirit Training, I-082): le 36
 //   righe della tabella «Special Traits» della khwiki (pagina Medal, D:\Progetto_Restauro_KH_UX\
@@ -92,9 +86,11 @@ const BLAST = SKILLS.filter((s) => s[5] === 3).map(([, name, , , , , v]) => ({ n
 // linea del trick = nome senza il numero romano (il livello piu' alto aperto sostituisce gli altri)
 const lineOf = (name) => name.replace(/ [IV]+$/, '');
 
-const NEED_PT = [0, 50, 100, 150, 200, 300, 400, 500, 650, 800, 1000, 1100, 1300, 1500, 1750, 2000, 2300];
+// punti cumulativi e moltiplicatore dello slot per rango: khuxwiki Pet_System «Slot Multiplier» (x1.00 al rango 1, poi
+// x2.40 ... x3.90; il rango 17 = 6 medaglie da 432 punti)
+const NEED_PT = [0, 108, 144, 162, 216, 288, 360, 468, 576, 720, 864, 1080, 1296, 1620, 1944, 2160, 2592];
 const MAX_RANK = NEED_PT.length; // 17
-const magnification = (rank) => 22000 + 1000 * rank;
+const magnification = (rank) => (rank <= 1 ? 10000 : 22000 + 1000 * rank);
 
 // livello piu' alto di ogni linea aperta, linee nell'ordine di apprendimento (Map: ordine del primo inserimento)
 function openSkillsAt(rank) {
@@ -114,7 +110,7 @@ function petRankRows() {
     const opened = SKILLS.filter((s) => s[4] === rank).map((s) => s[0]);
     const open = openSkillsAt(rank);
     return { rank, needPt, magnification: magnification(rank), rankUpSkill: opened[0] || 0,
-      validOpenSkill: open.length ? 1 : 0, openSkillIds: open };
+      validOpenSkill: open.length, openSkillIds: open }; // validOpenSkill = numero di id della lista ([fn])
   });
 }
 
@@ -182,9 +178,16 @@ function specialTraitRows() {
 }
 
 // punti pet per rarita' (1-7 stelle) piu' 25 per livello di tier
-const RARE_PT = [0, 10, 15, 20, 40, 60, 120, 200];
+// punti Spirit per tier del Special Attack Bonus (guiltValue): khuxwiki Pet_System «Spirit Points», 1-3 = 15, 4-6 = 20,
+// 7 = 30, 8 = 80, 9 = 180, 10 = 270; senza tier (sotto le 6★) 15 come le medaglie evento [ricostruito]
+const TIER_PT = [15, 15, 15, 15, 20, 20, 20, 30, 80, 180, 270];
+// valori fissi per nome (server/pet_points.json, 406 nomi): `|pet=` delle pagine della khuxwiki (categorie Event/VIP 15,
+// Prime 80, eccezioni 25-360) e la regola delle SN/SN+ (120; 80 al tier 7) degli avvisi 2019; ricerca 20-10 in
+// reference\pet\medal_points_wiki.json. Il +20% con almeno un trait lo applicano client e server (pet.js pointsOf).
+const PET_POINTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'pet_points.json'), 'utf8'));
 function addPetPtFor(m) {
-  return (RARE_PT[m.rare] || 10) + 25 * Math.max(0, m.guiltValue || 0);
+  if (Object.prototype.hasOwnProperty.call(PET_POINTS, m.name)) return PET_POINTS[m.name];
+  return TIER_PT[Math.min(10, Math.max(0, m.guiltValue || 0))];
 }
 
 function patch(dir) {
