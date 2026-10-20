@@ -6,7 +6,7 @@
 # -Save nome: salvataggio server\save\<nome>.json (run-server.ps1; es. -Save prove)
 # -EnemyAtk N: nemici con attacco x N (solo banco, run-server.ps1)
 # [string[]]: senza virgolette PowerShell passa B0306,B0456 come lista, qui riunita con le virgole)
-param([string]$Tag = 'rl', [int]$Revision = 160, [switch]$KbFree, [switch]$Pet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string[]]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1, [string]$Save)
+param([string]$Tag = 'rl', [int]$Revision = 161, [switch]$KbFree, [switch]$Pet, [switch]$TestPresents, [switch]$AllParts, [string]$RealNow, [string[]]$GachaShow, [int]$EnemyAtk = 0, [int]$SkillProb = -1, [string]$Save)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 $log = 'D:\Progetto_Restauro_KH_UX\logs\server.log'
 Set-Location $repo

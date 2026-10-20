@@ -114,7 +114,7 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
   effetti pet_eff_0004-0006 dal JP (crash della speciale di Naminé risolto); **3 deck per keyblade** (I-179, pulsanti
   1/2/3 visti; da provare il deck 2 in battaglia); annotate I-178 (evoluzione delle Blue Fairy con 5 copie) e le Trait
   Medal nel Moogle Shop dentro I-164. **Animazioni originali degli speciali** (I-180, sera: colpi = testo, Terra 13 colpi
-  visto dall'utente). Supernova a 1 colpo come l'originale (rev 160). Banco: revisione **160**, **risorse 50** (4,09 GiB, tre pezzi), salvataggio `provetm`
+  visto dall'utente). Supernova a 1 colpo come l'originale (rev 160). **Attacchi originali dei nemici** (I-181, rev 161: stati alterati di nuovo, da provare con la quest 524 e il deck 2 debole). Banco: revisione **161**, **risorse 50** (4,09 GiB, tre pezzi), salvataggio `provetm`
   (prove525 + Trait Medal), `relogin.ps1 -Save provetm -RealNow 2026-12-08T10:00:00Z`. Dopo una modifica al server
   usare sempre `relogin.ps1`: riavviare solo il server fa perdere la sessione al client («6 ERROR :185»).
 - **Trait Medal (I-084)**: parti A e B fatte, **banco 20-10 ok** ([medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).

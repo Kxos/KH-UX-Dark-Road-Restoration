@@ -383,6 +383,9 @@ if (enemies && fs.existsSync(namesFile)) {
         attacksAdded++;
       });
     }
+    // righe originali (stati alterati, potenza, buff) dai dati di thethiny: enemy-attack-fix.js
+    const atkFix = require('./enemy-attack-fix');
+    atkFix.applyEnemyAttacks(atts, atkFix.readOrig());
     fs.writeFileSync(attPath, JSON.stringify(atts));
   }
   // effetto di comparsa: lwf/character/enemy/show_effect_fla/show_effect<showSwf>/ (nelle

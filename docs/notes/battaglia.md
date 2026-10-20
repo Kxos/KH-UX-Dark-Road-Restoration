@@ -341,6 +341,22 @@ eport.md`. Dichiarato nella notice «Differences from the original game».
   sparizione a fine turno, danno piu' alto, una riga «N attacks», una riga con attributo e una medaglia di altro
   attributo (la targhetta del giocatore segue la medaglia), «targets [Medal STR -N]» sul nemico (targhetta sulla barra del nemico, anche boss).
 
+<a id="attacchi-nemici"></a>
+## Attacchi originali dei nemici (I-181, 20-10)
+
+Il master WW 5.0.1 ha solo 13 righe `enemyAttack` (1, 100, 101, 300, 301, 600, 601, 700, 701, 800, 801, 1700,
+15100); i nemici ne citano 289 (`skillId`). `make-game-tables.js` copiava le mancanti da 1/101/601: nessun
+veleno, sonno o paralisi, potenza ed effetti generici. I dati di thethiny (`enemyAttack.json`, 294 righe, 41
+campi) hanno tutte le 289, e le 13 WW coincidono campo per campo: sono la fonte. `server/enemy-attack-fix.js`
+le copia (253 righe cambiate) tranne due campi che caricano risorse:
+- `hitEffect` -> `lwf/character/enemy/hit_effect_fla/eff_N/`: 55 righe citano effetti non serviti (1010,
+  1011, 1014, 1018-1021, 1026, 1028, 1032, 1035, 1038-1049, 2001-2007 tranne 2003/2005): resta l'effetto di
+  oggi (Notice «Enemy attacks»). Da cercare nel 2016/JP per servirli.
+- `attackMotion`: 1 = `atk1_o`, 2 = `atkSp` (ricade su `wait` se manca); dall'originale solo 1 e 2.
+I campi assenti nei dati di thethiny (riflessi, upright/reverse, spEffect) restano quelli del master.
+39 attacchi con stato (es. 9301 «High Chance of Poison» della Poison Apple, poison 10000), usati da
+Flower Rider, Possessor, Loudmouth, Neoshadow, Creeper/Fire/Ice Plant, White Rose, Bad Dog, Stinging Bee...
+
 <a id="cornice-avatar"></a>
 ## Cornice dell'avatar nell'HUD (I-125, 14-10)
 
