@@ -1397,6 +1397,12 @@ function respondUnionChange(res, body) {
 
 // Elemento giocatore [fn] (supportUsers di /stage/support/list, partyLeader e partyUserList del
 // party): il giocatore stesso con una medaglia (userMedal [fn], userSkills[], userAvatar).
+// La medaglia condivisa (Share, player.supportUserMedalId) come userMedal; se manca, la prima dell'elenco
+function sharedMedalData(now) {
+  const list = userMedalsData(now);
+  return list.find((u) => u.userMedalId === player.supportUserMedalId) || list[0];
+}
+
 function selfPlayerElement(now, medal, partyId = 0) {
   return {
     supportUserId: 1, level: luxRankFor(player.lux), unionId: player.unionId, userName: player.name,
@@ -3658,7 +3664,7 @@ function handler(scheme) {
       // Party (82, 87) e classifiche (129-140, 178-184): server/routes-party-ranking.js
       if (['partylogin', 'partysearch', 'rankinglist', 'partycreate', 'party', 'partymembers', 'partydetail', 'partyupdate', 'partyleave', 'partyemptylist'].includes(kind)) {
         return respondPartyRanking({ send, ret, serverTime, realNow, outTime, player, userObject, userDetailData, userAvatarData, savePlayer, addPresent,
-          selfElement: (now, partyId) => selfPlayerElement(now, userMedalsData(now)[0], partyId),
+          selfElement: (now, partyId) => selfPlayerElement(now, sharedMedalData(now), partyId),
           keyblade: () => userKeybladeData(favoriteKeyblade()), lastStoryQuest: () => stageNumber(lastStoryStageId()), weeklyLux: () => weeklyLux() },
           res, kind, req.url.split('?')[0].toLowerCase(), entry.bodyDecoded);
       }
@@ -3738,10 +3744,10 @@ function handler(scheme) {
       // scelta del deck. Con la lista vuota il client va in crash sulle statistiche di una
       // medaglia senza riga ([fn]). Elemento [fn], con userMedal
       // ([fn] -> [fn]), userSkills[] e userAvatar ([fn]). Un
-      // supporto: il giocatore stesso, con la prima medaglia del deck.
+      // supporto: il giocatore stesso, con la medaglia condivisa (Share).
       if (kind === 'supportlist') {
         const now = serverTime();
-        const medal = userMedalsData(now)[0];
+        const medal = sharedMedalData(now);
         const supportUsers = medal ? [selfPlayerElement(now, medal)] : [];
         return send(res, 200, { ret: ret(), supportUsers });
       }
