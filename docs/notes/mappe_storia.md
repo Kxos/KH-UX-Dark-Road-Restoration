@@ -455,6 +455,24 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   rigenerazione. Dubbi: AG_0003_01_00 con tre nomi, thumbId diverso dalla stanza nominata in alcune
   righe (OC_0001_00, WL_0001/0002, DW_0004, DB_0007), prefisso del Corridor of Darkness dedotto.
 
+<a id="oltre525"></a>
+## Missioni 526-979: stage originali JP e decisioni dell'utente (20-10)
+
+Rapporto: `D:\Progetto_Restauro_KH_UXeference\world_schema\oltre525\RAPPORTO.md` (tabelle in `_tables.md`,
+abbinamenti in `oltre525.json`, script `match_oltre525.py`). Tutte le 453 missioni di battaglia 526-979 hanno lo
+stage originale nei dati JP 4.3.1 (330 esatte, 39 buone, 83 probabili nei mondi di Ralph, 979 <-> 39159 a mano;
+978 solo filmato); le 526-555 identiche nel 2016. 253 stanze (203 nuove, 225 servite, 27 da aggiungere al
+pacchetto: `make_jp_rooms.py --story-only` le esclude), 386 uscite tutte porte P dello schema v2.
+Decisioni dell'utente (20-10):
+1. dove ci sono gli originali valgono gli originali: si importano gli stage JP, niente tour prima;
+2. Q617 (20320) e Q661 (23010), parte 1 assente: si ricostruisce solo quella parte nella stanza della porta originale;
+3. Q555 (18300-18304, Aced/Invi/Ira/Ira/Gula): si affronta il leader della **propria Unione** (ricordo dell'utente,
+   non certo: da verificare con fonti), cambiando Unione cambia il boss;
+4. SR_0009_01_00: grafica di SR_0009_00_00 con la geometria propria;
+5. nomi delle stanze (mapName): solo **originali**, con ricerca approfondita dove mancano o divergono.
+Lavoro tecnico: 312 enemyId mancanti nel master (`enemies_oltre525.json`), righe master 526-979 dalla wiki (Lv dalla
+wiki, 87 STG con Lv 1), worldId e tendina dei mondi di Ralph (I-027).
+
 <a id="tour-v2"></a>
 ## Tour v2: un giro per zona sulle porte originali (I-116)
 
