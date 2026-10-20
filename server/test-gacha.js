@@ -454,6 +454,30 @@ try {
   check(g.shopLeaveWeeks(cat, { storyQuest: 200, week: 1000, rot: { day: gd.storyDay(cat, 200), week: 1000 }, sizes, show }).size === 0, 'shopLeaveWeeks: banner presenti in tutte le settimane senza conto');
 } catch (err) { errors.push(`shopLeaveWeeks: eccezione ${err.stack}`); }
 
+// conto alla rovescia ai margini di una stagione: ogni settimana simulata usa le stagionali attive a quella settimana (seasonalAt)
+try {
+  const cat = { story: [[1, 525, '2016-12-08'], [526, 600, '2017-01-05']] }; // 4 settimane di rotazione (12-08 .. 12-29)
+  const rot = { day: '2016-12-08', week: 1000 }, wk = (w) => clock.weekStartOf(w);
+  const fill = (n) => Array.from({ length: n }, (_, i) => mk({ unlockQuest: 200, start: `2016-12-${String(2 + i % 5).padStart(2, '0')}`, end: '2017-01-04' }));
+  const sea = mk({ unlockQuest: 525, start: '2015-01-01', end: '2030-01-01' });
+  const zeta = mk({ unlockQuest: 200, start: '2016-12-01', end: '2017-01-04' }); // il piu' vecchio: il primo a restare fuori col tetto
+  const nuovo = mk({ unlockQuest: 200, start: '2016-12-15', end: '2017-01-04' }); // entra alla seconda settimana
+  const base = { storyQuest: 525, week: 1000, rot, sizes, show: new Set() };
+  // stagione che finisce la settimana prossima: Shop 20 = stagionale + 19; la settimana dopo entra «nuovo», ma senza stagionale c'e' posto per zeta
+  let banners = [...fill(18), zeta, nuovo];
+  let m = g.shopLeaveWeeks({ ...cat, banners }, { ...base, seasonal: [sea], seasonalAt: (ms) => (ms < wk(1001) ? [sea] : []) });
+  check(!m.has(zeta.drawMedalTypeId), `stagione che finisce: zeta resta (esce ${m.get(zeta.drawMedalTypeId)})`);
+  const vecchio = g.shopLeaveWeeks({ ...cat, banners }, { ...base, seasonal: [sea] }); // senza seasonalAt: la stagione resta (comportamento di prima)
+  check(vecchio.get(zeta.drawMedalTypeId) === 1001, 'senza seasonalAt: la stagione corrente vale per tutte le settimane');
+  check(!m.has(sea.drawMedalTypeId) && !vecchio.has(sea.drawMedalTypeId), 'stagionale fuori dalla mappa');
+  // stagione che comincia la settimana prossima: lo Shop e' pieno senza stagionale, la stagionale spinge fuori zeta una settimana prima
+  banners = [...fill(18), zeta, mk({ unlockQuest: 200, start: '2016-12-02', end: '2017-01-04' })];
+  m = g.shopLeaveWeeks({ ...cat, banners }, { ...base, seasonal: [], seasonalAt: (ms) => (ms >= wk(1001) ? [sea] : []) });
+  check(m.get(zeta.drawMedalTypeId) === 1001, `stagione che comincia: zeta esce alla settimana 1001 (${m.get(zeta.drawMedalTypeId)})`);
+  check(!g.shopLeaveWeeks({ ...cat, banners }, { ...base, seasonal: [] }).has(zeta.drawMedalTypeId), 'senza stagione: zeta resta');
+  check(!m.has(sea.drawMedalTypeId), 'stagionale futura fuori dalla mappa');
+} catch (err) { errors.push(`shopLeaveWeeks stagioni: eccezione ${err.stack}`); }
+
 // stagionali e fissato (Shop sp3, spec 4.2/6.2): ordine, doppioni, payType 8, tetto
 try {
   const o3 = { storyQuest: 525, storyDay: '2016-12-08', sizes, show: new Set() };

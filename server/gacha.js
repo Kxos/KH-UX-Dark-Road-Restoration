@@ -106,21 +106,25 @@ function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, s
 // della settimana `week`: la prima settimana reale in cui la rotazione (gd.shopWindow) lo toglie dallo Shop, entro il
 // periodo della tranche (n settimane); null se resta in tutte (nessun conto alla rovescia).
 // -> Map drawMedalTypeId -> indice della settimana reale in cui esce (clock.weekStartOf = lunedi' 08:00 UTC).
-function shopLeaveWeeks(catalog, { storyQuest, week, rot: rot0, sizes, show, seasonal = [], pinned = null }) {
+// seasonal: stagionali della settimana `week`; seasonalAt (opzionale): ms reali -> stagionali attive in quel momento, usata
+// per le settimane future (inizio settimana, clock.weekStartOf) cosi' una stagione che comincia o finisce nel periodo
+// cambia posti liberi e valuta payType 8 della simulazione; senza, le stagionali restano quelle di `week`.
+function shopLeaveWeeks(catalog, { storyQuest, week, rot: rot0, sizes, show, seasonal = [], seasonalAt = null, pinned = null }) {
   const w0 = gd.shopWindow(catalog, storyQuest, week, rot0);
   const rot = rot0 && rot0.day === w0.day ? rot0 : { day: w0.day, week }; // come storyCtx: la rotazione parte da qui
+  const fixed = new Set([...seasonal, ...(pinned ? [pinned] : [])].map((b) => b.drawMedalTypeId));
   const at = (w) => {
     const x = gd.shopWindow(catalog, storyQuest, w, rot);
-    return new Set(shopBanners(catalog.banners, { storyQuest, storyDay: x.from, shopFrom: x.from, shopTo: x.to, sizes, show, seasonal, pinned }).map((b) => b.drawMedalTypeId));
+    const sea = w > week && seasonalAt ? seasonalAt(clock.weekStartOf(w)) : seasonal;
+    for (const b of sea) fixed.add(b.drawMedalTypeId);
+    return new Set(shopBanners(catalog.banners, { storyQuest, storyDay: x.from, shopFrom: x.from, shopTo: x.to, sizes, show, seasonal: sea, pinned }).map((b) => b.drawMedalTypeId));
   };
   const n = w0.n;
-  // stagionali e fissato non escono con la rotazione (la stagione ha il suo conto alla rovescia): fuori dalla mappa
-  const fixed = new Set([...seasonal, ...(pinned ? [pinned] : [])].map((b) => b.drawMedalTypeId));
-  const now = new Set([...at(week)].filter((id) => !fixed.has(id))), out = new Map();
-  for (let j = 1; j < n && out.size < now.size; j++) {
-    const next = at(week + j);
-    for (const id of now) if (!out.has(id) && !next.has(id)) out.set(id, week + j);
-  }
+  // stagionali (di ogni settimana simulata) e fissato non escono con la rotazione (la stagione ha il suo conto alla rovescia): fuori dalla mappa
+  const nowAll = at(week), nexts = [];
+  for (let j = 1; j < n; j++) nexts.push(at(week + j)); // riempie `fixed` con le stagionali di tutte le settimane
+  const now = new Set([...nowAll].filter((id) => !fixed.has(id))), out = new Map();
+  nexts.forEach((next, i) => { for (const id of now) if (!out.has(id) && !next.has(id)) out.set(id, week + i + 1); });
   return out;
 }
 

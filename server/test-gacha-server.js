@@ -650,6 +650,29 @@ try {
   setQuest(200);
 }
 
+// stagione decisa al login: la sessione fissa l'ora reale; dentro la finestra senza un nuovo login la stagionale non c'e'
+{
+  const rowIds = new Set(banners.map((b) => 10000 + banners.indexOf(b) + 1)), mrow = t.masterRows('drawMedalType').find((r) => r.drawMedalTypeId !== 9001 && !rowIds.has(r.drawMedalTypeId));
+  const sea = mk({ rowId: 'B0106', drawMedalTypeId: mrow.drawMedalTypeId, name: 'Anniversary Deal', start: '2016-05-20', end: '2016-05-30', unlockQuest: 200, pool: { mode: 'sets', sets: ['1.1'], names: [], featured: [], filter: [] } });
+  writeCatalog({ ...catalog, banners: [...banners, sea] });
+  t.reloadGachaBanners();
+  setQuest(200);
+  at('2026-04-05T12:00:00Z');
+  call(t.respondLogin, {}); // sessione appena prima della finestra (6-30 aprile)
+  at('2026-04-10T12:00:00Z');
+  check(!plate(call(t.respondGachaList), sea.drawMedalTypeId), 'stagione: nessuna piastra senza un nuovo login');
+  check(!t.servedMasterRows('drawMedalType', t.sessionRealMs()).find((r) => r.drawMedalTypeId === sea.drawMedalTypeId).displayTimeLeft, 'stagione: nemmeno il conto alla rovescia del master');
+  call(t.respondLogin, {}); // nuovo login dentro la finestra
+  check(!!plate(call(t.respondGachaList), sea.drawMedalTypeId), 'stagione: piastra dopo il nuovo login');
+  const sr = t.servedMasterRows('drawMedalType', t.sessionRealMs()).find((r) => r.drawMedalTypeId === sea.drawMedalTypeId);
+  check(sr && sr.displayTimeLeft === 1 && !!sr.endDate, `stagione: conto alla rovescia dopo il login (${sr && sr.displayTimeLeft})`);
+  at('2026-05-03T12:00:00Z'); // finestra finita, ancora la stessa sessione: la stagionale resta fino al login dopo
+  check(!!plate(call(t.respondGachaList), sea.drawMedalTypeId), 'stagione: resta fino al primo login dopo la fine');
+  call(t.respondLogin, {});
+  check(!plate(call(t.respondGachaList), sea.drawMedalTypeId), 'stagione: sparisce al primo login dopo la fine');
+  writeCatalog(catalog); t.reloadGachaBanners(); at('2026-10-16T15:00:00Z');
+}
+
 // catalogo assente: solo la piastra Catalog, estrazione rifiutata
 writeCatalog('non json');
 t.reloadGachaBanners();

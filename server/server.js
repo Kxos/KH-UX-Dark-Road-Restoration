@@ -466,7 +466,7 @@ function shopLeave(realMs) {
   const storyQuest = stageNumber(lastStoryStageId()), week = clock.weekIndex(realMs);
   const w = gachaData.shopWindow(gachaCatalog(), storyQuest, week, g.rot);
   return gacha.shopLeaveWeeks(gachaCatalog(), { storyQuest, week,
-    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW, ...seasonCtx(realMs), pinned: pinnedNow(storyQuest, w) });
+    rot: g.rot, sizes: GACHA_SIZES, show: GACHA_SHOW, ...seasonCtx(realMs), seasonalAt: (ms) => seasonCtx(ms).seasonal, pinned: pinnedNow(storyQuest, w) });
 }
 // Tranche della storia del giocatore (indice della data in catalog.story): entra nella revisione del master, cosi'
 // il client riscarica drawMedalType (conti alla rovescia dello Shop) al login dopo un cambio di tranche
@@ -1228,6 +1228,8 @@ function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; 
 // storyDay = primo giorno della settimana dello Shop (rotazione I-165): data dei pool dei PERMANENT e della regola
 // 13-bis; shopFrom/shopTo = la settimana mostrata. player.gacha.rot ricorda in che settimana reale si e' entrati nella
 // tranche della storia, cosi' la rotazione parte dalla sua prima settimana.
+// Le stagioni dello Shop si decidono all'ora reale del login (sessionRealMs, come il conto alla rovescia del master servito):
+// una stagione compare al primo login dentro la finestra e sparisce al primo login dopo la fine.
 // Stagionali attive alla data reale (spec Shop sp3 4.2): banner dell'edizione piu' recente sbloccata di ogni stagione,
 // nell'ordine della tabella, e la fine della finestra (ms) di ciascuno per il conto alla rovescia. Senza effetti collaterali.
 function seasonCtx(realMs) {
@@ -1246,7 +1248,7 @@ function storyCtx() {
   const w = gachaData.shopWindow(gachaCatalog(), storyQuest, week, g.rot);
   if (!g.rot || g.rot.day !== w.day) { g.rot = { day: w.day, week }; savePlayer(); }
   const pinned = pinnedNow(storyQuest, w);
-  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w, ...seasonCtx(realNow()), pinned,
+  return { storyQuest, storyDay: w.from, shopFrom: w.from, shopTo: w.to, shopWeek: w, ...seasonCtx(sessionRealMs()), pinned,
     periodStart: w.day, pinnedRowId: pinned?.rowId, pinnedName: pinned?.name };
 }
 // Pool del banner alla data di riferimento (i PERMANENT seguono la storia); undefined per i banner
@@ -4147,5 +4149,5 @@ module.exports._test = {
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-gacha-server.js
-  handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
+  sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };
