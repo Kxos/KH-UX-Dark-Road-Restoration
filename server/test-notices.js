@@ -77,6 +77,29 @@ check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && 
   check(/Evolved versions count as the same Medal/.test(tr) && /Trait Medal #130/.test(tr), 'Traits: stessa medaglia = linea Album');
   check(/\*\*Trait Medals\*\* are back/.test(tr) && /only give EXP/.test(tr) && /black and white/.test(tr), 'Traits: Trait Medal');
 }
+{
+  // Shop sp3: stagionali, banner fissato, filtri (spec 8)
+  const shopN = n.NOTICES.find((x) => x.title === 'Shop');
+  const shop = shopN.body, all = shop.join('\n');
+  check(shopN.date === '10/20', 'Shop: data 10/20');
+  for (const s of ['## Seasonal banners', '## Keep one banner in the Shop', '## Catalog filters']) check(shop.includes(s), `Shop: sezione ${s}`);
+  const win = { newyear: 'New Year: December 22 – January 17', lunar: 'Lunar New Year: January 28 – February 3',
+    valentine: 'Valentine\'s Day: February 3 – February 17', anniversary: 'Anniversary: April 6 – April 30',
+    summer: 'Summer: August 22 – September 1', halloween: 'Halloween: October 12 – November 2',
+    blackfriday: 'Black Friday / Cyber Monday: November 22 – December 9', holiday: 'Winter Holidays: December 7 – January 6' };
+  for (const k of Object.keys(win)) check(shop.includes(win[k]), `Shop: finestra ${k}`);
+  check(require('./gacha-seasons').SEASONS.length === 8, 'otto stagioni');
+  check(/most recent unlocked edition/.test(all) && /nothing appears/.test(all), 'Shop: edizione piu recente, niente se nessuna');
+  check(/Keep in the Shop/.test(all) && /Banner Catalog/.test(all) && /Leave and re-enter the Shop/.test(all), 'Shop: pulsante e rientro');
+  check(/already passed in the Story/.test(all) && /Free Deals/.test(all) && /1 Jewel/.test(all) && /one banner at a time/.test(all)
+    && /limits still apply/.test(all), 'Shop: regole del banner fissato');
+  check(/steps aside until the season ends/.test(all), 'Shop: precedenza delle valute stagionali');
+  check(/GAME YEAR/.test(all) && /Filters/.test(all) && /Find a Medal/.test(all) && /Paid with/.test(all) && /Show/.test(all), 'Shop: filtri del Catalog');
+  const diff = n.NOTICES.find((x) => x.title === 'Differences from the original game').body;
+  check(diff.some((s) => /fixed dates of the real calendar/.test(s) && /most recent unlocked edition/.test(s)), 'differenze: stagionali');
+  check(diff.some((s) => /Keep in the Shop/.test(s) && /did not exist in the original/.test(s)), 'differenze: banner fissato');
+  check(diff.some((s) => /Platinum Tickets or Draw Tickets/.test(s) && /only after a banner that uses them/.test(s)), 'differenze: Limited coi biglietti');
+}
 n.NOTICES.push({ date: '1', tag: 'X', title: 'a<b>"&', body: ['<script>'] });
 p = n.noticesPage(U(2026, 10, 16, 15));
 n.NOTICES.pop();

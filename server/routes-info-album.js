@@ -25,6 +25,14 @@
 
 const clock = require('./clock');
 const { isBoosted } = require('./medal-boost');
+const { SEASONS } = require('./gacha-seasons');
+
+// Finestre stagionali dello Shop: generate dalla tabella SEASONS, cosi' la notizia non puo' divergere
+const SEASON_LABEL = { newyear: 'New Year', lunar: 'Lunar New Year', valentine: "Valentine's Day", anniversary: 'Anniversary',
+  summer: 'Summer', halloween: 'Halloween', blackfriday: 'Black Friday / Cyber Monday', holiday: 'Winter Holidays' };
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const mmdd = (s) => { const [m, d] = s.split('-').map(Number); return MONTHS[m - 1] + ' ' + d; };
+const seasonLines = () => SEASONS.map((x) => (SEASON_LABEL[x.key] || x.key) + ': ' + mmdd(x.from) + ' – ' + mmdd(x.to));
 
 // Ogni funzione che differisce dall'originale ha una notizia (docs/notes/home_profilo.md#notices-album)
 const DIFFERENCES_BODY = [
@@ -48,6 +56,10 @@ const DIFFERENCES_BODY = [
   'Trait Medals are back: a deal that guaranteed a Trait Medal gives it (all 313 Trait Medals, matched to their Medals from the community wiki).',
   'Boosted Medals: the chance of a boosted version on deals that offered one is reconstructed (5% per eligible Medal). Guaranteed max-level Skills are given only for Skills that exist in this restoration.',
   'Boosted stats on deals that did not state them are reconstructed (+1000 STR, +1000 DEF), and bonus support Medals earned through a guarantee arrive in your Presents.',
+  '## Seasonal banners and pinned banner',
+  'Seasonal banners follow fixed dates of the real calendar, and the Shop shows the most recent unlocked edition of each season. In the original game each edition ran on its own dates.',
+  'The banner you keep in the Shop with **Keep in the Shop** did not exist in the original game.',
+  'Limited Missions that give Platinum Tickets or Draw Tickets appear only after a banner that uses them is unlocked.',
   '## Purchases',
   'There are no purchases: Jewels and items come from quests, missions and presents.',
 ];
@@ -101,7 +113,7 @@ const NOTICES = [
       'The chances of each trait were never published: here **each of the 11 traits has the same chance** (reconstructed). The stronger traits added in 2020 (Extra Attack: 50% Power, Enemy DEF -70%, STR +1500, Damage in Raids +50%) are available **only from the Moogle Shop**.',
       'Evolved versions count as the same Medal: SN, SN+ and SN++ of the same character, or a Medal and its Supernova, share their Album slot and give each other traits (reconstructed from the original deals: Trait Medal #130 was sold for SN+ - KH III Xemnas, the wiki lists it for SN - KH III Xemnas).',
       '**Trait Medals** are back: grey 6★ Medals that belong to one Medal and share its Album slot. Fused onto their Medal they give a trait and one Special Attack dot, or unlock or re-roll the Special Attack Bonus when the dots are full; fused onto other Medals they only give EXP. Their pictures are recreated in black and white from their Medal, and their EXP and sell price are those of their Medal (reconstructed).'] },
-  { date: '10/19', tag: 'INFORMATION', title: 'Shop',
+  { date: '10/20', tag: 'INFORMATION', title: 'Shop',
     body: ['The first banner in the Shop, **Banner Catalog**, cannot be drawn: tap its **Details** to see the banners and the Medals they contain.',
       'Draws cost Jewels or Tickets earned in the game. **Draw Odds** shows the rates used by this restoration.',
       'Guarantees work as on the original banners: the yellow line under a banner counts down the draws left to its guaranteed Medal.',
@@ -111,7 +123,22 @@ const NOTICES = [
       'Each part of the Story matches a period of the original calendar. The Shop shows **one week** of that period at a time: every banner that ran during that week, up to 20.',
       'Every **Monday** the Shop moves to the next week; after the last week of the period it starts again from the first one, so every banner of your period comes back.',
       'When you clear enough Story Quests to reach the next period, the Shop moves to the first week of the new period. Banners of periods you have passed stay in the Banner Catalog, where you can still see their Medals and rates.',
-      'Each banner\'s **Details** say whether it is in the Shop now and, if not, in how many weeks it comes back.'] },
+      'Each banner\'s **Details** say whether it is in the Shop now and, if not, in how many weeks it comes back.',
+      '## Seasonal banners',
+      'During each of these windows of the **real calendar**, the most recent unlocked edition of that season\'s banners appears at the top of the Shop, right after the Banner Catalog. If no edition is unlocked yet, nothing appears.',
+      ...seasonLines(),
+      'When two seasons overlap, both appear. A seasonal banner that is already in the week\'s rotation is not shown twice.',
+      '## Keep one banner in the Shop',
+      'Open a banner\'s **Details** in the Banner Catalog and tap **📌 Keep in the Shop**. It then stays in the Shop every week, after the seasonal banners.',
+      'You can keep only banners from a period you have already passed in the Story. Free Deals, draws that cost 1 Jewel and seasonal banners cannot be kept.',
+      'Keep one banner at a time: keeping another replaces the first, and **Remove from the Shop** takes it out whenever you like.',
+      '**Leave and re-enter the Shop** after keeping a banner to see it.',
+      'The banner\'s own draw limits still apply.',
+      'During a season, if the kept banner uses a different special ticket (Spooky Cookies, Holiday Draw Tickets) than the seasonal banner, it steps aside until the season ends.',
+      '## Catalog filters',
+      'The **GAME YEAR** tabs split the Banner Catalog by year, each year running from one anniversary (April 7) to the next.',
+      'The **Filters** panel has three parts: **Find a Medal** (the banners where it can be drawn), **Paid with** (Jewels, Tickets and so on) and **Show** (all banners, those in the Shop now, unlocked or still locked ones).',
+      'Filters only change the Catalog, never the Shop.'] },
   { date: '10/14', tag: 'INFORMATION', title: 'Supernova and Dual Meow Wow',
     body: ['Equipping a Supernova Medal lets you unleash its powerful Supernova once per quest: tap the button under the Burst gauge during your turn.',
       'Five of the same Dual Meow Wow Medals are needed to grant Supernova or strengthen the Supernova of a specific Medal (Evolve, with the base Medal at max level).'] },
