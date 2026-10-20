@@ -67,10 +67,18 @@ function applyEvolveRules(medalRows, rules, robo) {
 // tabella «List of Supernovas» della khuxwiki. Una riga per medaglia, burstId 4000000 + id
 // Roboloid (SN e SN+ hanno moltiplicatori diversi). superburstTiming = slot prima del quale scatta
 // in difesa nel PvP. Animazioni: le 51 abl_500N1 servite (con eff_500N1, o la precedente se manca),
-// assegnate in ordine di uscita (numero d'album) a ogni Supernova diversa: l'abbinamento originale
-// medaglia -> animazione non e' in nessun dato disponibile.
+// assegnate a rotazione a ogni Supernova diversa fra quelle con i suoi colpi (assignSnMotions): l'abbinamento
+// originale medaglia -> animazione non e' in nessun dato disponibile.
 const SN_MOTIONS = [];
 for (let n = 1; n <= 52; n++) if (n !== 43) SN_MOTIONS.push(50000 + n * 10 + 1);
+// Colpi (eventi knockback_N) di ogni animazione servita: il danno arriva un colpo per evento, ciascuno
+// attacco x potenza / hitCount (burst-anim-fix.js). Contati con reference\burst_anim\scripts\lwfev.py.
+// Banco 20-10 (utente): animazione a 0 colpi = nessun danno, a 4 e 11 colpi = 4 e 11 colpi pieni.
+const SN_KNOCKBACK = { 50011: 1, 50021: 1, 50031: 1, 50041: 1, 50051: 1, 50061: 1, 50071: 0, 50081: 0, 50091: 0,
+  50101: 0, 50111: 4, 50121: 6, 50131: 11, 50141: 1, 50151: 4, 50161: 0, 50171: 0, 50181: 0, 50191: 2, 50201: 2,
+  50221: 8, 50231: 3, 50241: 3, 50251: 4, 50261: 13, 50271: 2, 50281: 1, 50291: 0, 50301: 3, 50311: 5, 50321: 12,
+  50331: 6, 50341: 1, 50351: 2, 50361: 1, 50371: 11, 50381: 8, 50391: 7, 50401: 13, 50411: 4, 50421: 0, 50441: 11,
+  50451: 8, 50461: 9, 50471: 1, 50481: 9, 50491: 4, 50501: 3, 50511: 9, 50521: 11 };
 const SN_EFFECTS = new Set([50011, 50041, 50051, 50061, 50081, 50111, 50121, 50131, 50141, 50151, 50191,
   50201, 50211, 50221, 50231, 50241, 50251, 50261, 50271, 50301, 50311, 50321, 50331, 50351, 50361,
   50371, 50381, 50391, 50401, 50411, 50421, 50441, 50451, 50461, 50471, 50481, 50491, 50501, 50511, 50521]);
@@ -79,6 +87,26 @@ const effectFor = (motion) => {
   while (e > 50011 && !SN_EFFECTS.has(e)) e -= 10;
   return 100000 + e;
 };
+
+// Animazione di ogni riga Supernova: una servita con tanti colpi quanti hitCount (Roboloid: 1, 4 per le tre
+// «Reversed Strike All M»), a rotazione per nome in ordine di burstId. Idempotente; anche sul master servito.
+function assignSnMotions(bursts) {
+  const rows = bursts.filter((b) => b.burstId >= 4000000 && b.burstId < 5000000).sort((a, b) => a.burstId - b.burstId);
+  const seen = new Map(); const used = {};
+  let changed = 0;
+  for (const b of rows) {
+    const key = `${b.hitCount}|${b.name}`;
+    if (!seen.has(key)) {
+      const pool = SN_MOTIONS.filter((m) => SN_KNOCKBACK[m] === b.hitCount);
+      if (!pool.length) continue;
+      used[b.hitCount] = (used[b.hitCount] || 0) + 1;
+      seen.set(key, pool[(used[b.hitCount] - 1) % pool.length]);
+    }
+    const motion = seen.get(key);
+    if (b.motionId !== motion || b.effectId !== effectFor(motion)) { b.motionId = motion; b.effectId = effectFor(motion); changed++; }
+  }
+  return changed;
+}
 
 function supernovaBursts(medalRows, burstRows, robo, buffFields) {
   const byBurst = new Map(burstRows.map((b) => [b.burstId, b]));
@@ -110,7 +138,8 @@ function supernovaBursts(medalRows, burstRows, robo, buffFields) {
     const plus = /^(?:SN|Supernova)(\+*)\s*-/.exec(m.name);
     if (plus) m.displayId = 100 * Math.min(plus[1].length + 1, 3) + (row.recurringAttribute ? 1000 : 0);
   }
+  assignSnMotions(rows);
   return rows;
 }
 
-module.exports = { MEOW, meowRows, evolveRules, applyEvolveRules, supernovaBursts };
+module.exports = { MEOW, meowRows, evolveRules, applyEvolveRules, supernovaBursts, assignSnMotions, SN_KNOCKBACK };

@@ -17,6 +17,12 @@ const bad = bursts.filter((b) => used.has(b.burstId) && textHits(b.description) 
 check(bad.length === 0, `colpi diversi dal testo: ${bad.slice(0, 5).map((b) => `${b.burstId} ${b.name} ${b.hitCount}`).join('; ')} (${bad.length})`);
 const ars = bursts.find((b) => b.burstId === 3002013);
 check(ars && ars.motionId === 10416 && ars.hitCount === 13, `Ars Solum EX: ${ars && [ars.motionId, ars.hitCount]}`);
+// Supernova: colpi dell'animazione = hitCount (0 colpi = nessun danno, banco 20-10)
+const sn = require('./supernova');
+sn.assignSnMotions(bursts);
+check(sn.assignSnMotions(bursts) === 0, 'Supernova: seconda assegnazione diversa');
+const snBad = bursts.filter((b) => b.burstId >= 4000000 && b.burstId < 5000000 && sn.SN_KNOCKBACK[b.motionId] !== b.hitCount);
+check(snBad.length === 0, `Supernova con colpi diversi: ${snBad.slice(0, 5).map((b) => `${b.burstId} m${b.motionId} h${b.hitCount}`).join('; ')} (${snBad.length})`);
 // ogni cartella usata e' servita (WW) o importata (originals.tsv)
 const tsv = fs.readFileSync(path.join(__dirname, '..', 'recon', 'tools', 'originals.tsv'), 'utf8').split(/\r?\n/).map((l) => l.split('\t')[0]);
 const NAMES = process.env.KHUX_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';

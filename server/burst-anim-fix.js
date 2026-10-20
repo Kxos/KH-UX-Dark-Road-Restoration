@@ -92,6 +92,8 @@ if (require.main === module) {
   const file = path.join(dir, 'burst.json');
   const bursts = JSON.parse(fs.readFileSync(file, 'utf8'));
   const stats = applyBurstAnim(bursts, readMapping(), { origBursts, texts: argv.includes('--texts') });
+  // Supernova: animazione con tanti colpi quanti hitCount (supernova.js, banco 20-10)
+  stats.supernova = require('./supernova').assignSnMotions(bursts);
   console.log('burst-anim-fix:', JSON.stringify(stats));
-  if (stats.patched || stats.texts) fs.writeFileSync(file, JSON.stringify(bursts));
+  if (stats.patched || stats.texts || stats.supernova) fs.writeFileSync(file, JSON.stringify(bursts));
 }
