@@ -1110,7 +1110,8 @@ function applySteal(stageId, drops, rng = Math.random, mult = stealMultiplier())
   player.steal = null;
   if (mult < 2) return drops;
   const rows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
-  const withDrop = drops.filter((d) => rewardRowById(rows.get(d.uniqueEnemyId) ?? 1)?.type.includes(ENEMY_DROP_TYPE));
+  // solo i nemici con un record nella mappa: gli altri uid (mandati per sicurezza, es. 1) non compaiono mai (banco 20-10)
+  const withDrop = drops.filter((d) => rows.has(d.uniqueEnemyId) && rewardRowById(rows.get(d.uniqueEnemyId))?.type.includes(ENEMY_DROP_TYPE));
   const hit = withDrop.find(() => rng() < STEAL_CHANCE);
   if (!hit) return drops;
   player.steal = { stageId, uid: hit.uniqueEnemyId, mult };

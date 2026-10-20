@@ -47,6 +47,7 @@ const stageId = Object.keys(t.STAGE_POI).map(Number).find((id) => (t.STAGE_POI[i
 const enemy = t.STAGE_POI[stageId].enemies.find((e) => t.rewardRowById(e.reward)?.type.includes(t.ENEMY_DROP_TYPE));
 const row = t.rewardRowById(enemy.reward), at = row.type.indexOf(t.ENEMY_DROP_TYPE);
 const drops = [{ uniqueEnemyId: enemy.uid, dropItemTypeIds: [5], stealType: 0 }];
+check(t.applySteal(stageId, [{ uniqueEnemyId: 999999, dropItemTypeIds: [5], stealType: 0 }], () => 0, 3)[0].stealType === 0, 'Steal: uid senza record nella mappa scartato');
 check(t.applySteal(stageId, drops, () => 0.9, 3).every((d) => d.stealType === 0) && t.player.steal === null, 'Steal: tiro fallito, niente');
 check(t.applySteal(stageId, drops, () => 0, 1).every((d) => d.stealType === 0), 'senza Steal aperto (moltiplicatore < 2): niente');
 const out = quiet(() => t.applySteal(stageId, drops, () => 0, 3));
