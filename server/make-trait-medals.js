@@ -65,6 +65,9 @@ function patch(masterDir, list = JSON.parse(fs.readFileSync(path.join(__dirname,
   const byId = new Map(medals.map((r) => [r.medalId, r]));
   const model = bursts.find((b) => b.burstId === byId.get(10095)?.burstId) || bursts.find((b) => b.target === 1);
   const want = lesserAttack(model);
+  // animazione da 1 colpo come nel testo (burst-anim-fix.js; il modello ha l'animazione della sua medaglia)
+  const animFix = require('./burst-anim-fix');
+  animFix.applyBurstAnim([want], animFix.readMapping());
   const bi = bursts.findIndex((b) => b.burstId === LESSER_ATTACK);
   const burstChanged = bi < 0 || JSON.stringify(bursts[bi]) !== JSON.stringify(want);
   if (bi < 0) bursts.push(want); else bursts[bi] = want;

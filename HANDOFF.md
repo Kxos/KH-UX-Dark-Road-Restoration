@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 49 installate** (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 155** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 50 installate** (20-10 sera, 4,09 GiB su misc.mp4.2; prima: 49 (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 155** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -113,7 +113,8 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
   provati in battaglia; restano Blast, Esuna, HP Recovery), punti Spirit/ranghi dalla khuxwiki (`server/pet_points.json`),
   effetti pet_eff_0004-0006 dal JP (crash della speciale di Naminé risolto); **3 deck per keyblade** (I-179, pulsanti
   1/2/3 visti; da provare il deck 2 in battaglia); annotate I-178 (evoluzione delle Blue Fairy con 5 copie) e le Trait
-  Medal nel Moogle Shop dentro I-164. Banco: revisione **158**, risorse 49 (due `-Quick`), salvataggio `provetm`
+  Medal nel Moogle Shop dentro I-164. **Animazioni originali degli speciali** (I-180, sera: colpi = testo, Terra 13 colpi
+  visto dall'utente). Banco: revisione **159**, **risorse 50** (4,09 GiB, tre pezzi), salvataggio `provetm`
   (prove525 + Trait Medal), `relogin.ps1 -Save provetm -RealNow 2026-12-08T10:00:00Z`. Dopo una modifica al server
   usare sempre `relogin.ps1`: riavviare solo il server fa perdere la sessione al client («6 ERROR :185»).
 - **Trait Medal (I-084)**: parti A e B fatte, **banco 20-10 ok** ([medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).

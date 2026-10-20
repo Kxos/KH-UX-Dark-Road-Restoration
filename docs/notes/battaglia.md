@@ -144,6 +144,14 @@ Codice: `CarouselGuiltBurst`, setup `[fn]` (battaglia) -> `[fn]` (UI).
 - Da verificare: `abl_15031` (tabella delle mosse dell'avatar, accanto a `fburst_1/2`) assente; altri
   lettori di `isGuilt` (es. `PopupNormal_Guilt_ver130`, layout mancante) non cercati a fondo.
 
+<a id="animazioni-speciali"></a>
+## Animazioni degli speciali (I-180, 20-10)
+
+- Il danno di uno speciale arriva solo dagli eventi `knockback_N` del LWF della motion (`lwf/burst/motion/abl_N`): un EnemyDamage per evento, colpo = attacco x potenza / hitCount (BattleMisc::normalizeAttack, 1.0.1 con simboli). hitCount = knockback della motion in 750/750 righe originali: motion e hitCount vanno cambiati insieme (il totale resta).
+- Regola degli originali: motion = famiglia x 10 + {1,1,3,3,5,6}[livello-1], effectId = 100000 + motion (14 eccezioni), supporto 15001/15011/15021. Il WW 5.0.1 serve solo 9 motion non Supernova; il 2016 ne ha 339 complete, il JP 671 (660 con texture mancanti).
+- `server/burst-anim-fix.js` legge `referenceurst_anim\mapping_final.json` (fatto da `finalize.js` sulla ricerca `RESEARCH.md`): originali dove noti, altrimenti motion originale con gli stessi colpi del testo; Lesser Attack delle Trait Medal 10061 (1 colpo). Risorse: `originals.tsv` #36 (versione 50). Prima le risorse, poi il master: una motion citata e non servita fa quasi certamente crash.
+- Da provare: Supernova (129 righe su motion senza knockback).
+
 <a id="hud"></a>
 ## HUD: confronto con l'originale (I-124)
 
