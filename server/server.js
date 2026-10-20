@@ -1487,7 +1487,9 @@ function respondStageStart(res, req) {
     userTreasures: stageTreasures(req?.stageId ?? START_STAGE_ID),
     campaigns: [],
     luxMagnifications: { campaign: 0, party: 0 },
-    supportUsers: [],
+    // l'amico scelto (supportUserId 1 = il giocatore stesso, /stage/support/list) con la medaglia condivisa:
+    // con la lista vuota il client non ha la medaglia dell'amico da mettere nel deck della battaglia
+    supportUsers: req?.supportUserId ? [selfPlayerElement(now, sharedMedalData(now))] : [],
     // deck senza gli slot vuoti per la battaglia (vedi sentKeybladeDeck); da verificare che il
     // ramo 113 li rilegga (I-075)
     userDecks: userDecksData(true),
