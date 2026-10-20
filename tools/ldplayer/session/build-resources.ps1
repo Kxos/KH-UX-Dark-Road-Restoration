@@ -27,7 +27,10 @@
 # -DryRun usano quelli della versione installata (senza packs.txt: niente stanze, versioni <= 34).
 # -NoCompact: versione completa con OBB, addnl e medaglie non compattati (resource_compact.py, I-171: senza,
 #   i record che l'indice unito non cita restano nei dati, ~90 MB).
-param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw, [switch]$NoCompact)
+# -TestStraddle <nome>: solo per la prova al banco dei pezzi oltre 4 GiB (I-171, risorse_layout.md#pezzi): versione
+#   completa con un pezzo di zeri prima del generato, perche' il record <nome> del generato stia a cavallo dei 4 GiB.
+#   La versione dopo, senza -TestStraddle, torna sotto i 4 GiB (nuovo download completo).
+param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw, [switch]$NoCompact, [string]$TestStraddle)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 Set-Location $repo
@@ -368,6 +371,18 @@ if ($Quick) {
   }
   # pacchetti statici come pezzi seguenti (copie: le versioni dopo li ricostruiscono)
   for ($i = 2; $i -lt $plist.Count - 1; $i++) { Copy-Item $plist[$i][2] ("$v\data\d{0:D4}" -f $nx); $nx++ }
+  # -TestStraddle: pezzo di zeri prima del generato, lungo quanto basta perche' il record scelto stia a cavallo
+  # di misc.mp4.1 / misc.mp4.2 (resource_parts.py --straddle); il nome del pezzo resta in testpad.txt per -Quick
+  if ($TestStraddle) {
+    $start = 0; foreach ($p in $plist[0..($plist.Count - 2)]) { foreach ($f in $p[2] -split ',') { $start += (Get-Item $f).Length } }
+    $padLen = [int64](python -I recon\tools\resource_parts.py --straddle "$sg\gen.png" "$sg\gen.mp4" $TestStraddle $start)
+    if ($LASTEXITCODE) { throw "-TestStraddle: $TestStraddle assente dal pacchetto generato o gia' oltre 4 GiB" }
+    if ($padLen -ge 2147483648) { throw "riempimento di $padLen byte: un pezzo deve stare sotto i 2 GiB" }
+    $padName = 'd{0:D4}' -f $nx
+    $fs = [IO.File]::Create("$v\data\$padName"); $fs.SetLength($padLen); $fs.Close(); $nx++
+    Set-Content -Encoding ascii "$v\testpad.txt" $padName
+    "prova I-171: riempimento $padName di $padLen byte, $TestStraddle a cavallo di misc.mp4.1 / misc.mp4.2"
+  }
   $genName = 'd{0:D4}' -f $nx
   $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }; if ($raisedrawPack) { $names += 'raisedraw_gen' }
   Set-Content -Encoding ascii "$v\packs.txt" $names
@@ -387,6 +402,11 @@ $mergeOpt += @('--alias', "$sg\mixture_alias.tsv")
 $genLen = (Get-Item "$sg\gen.mp4").Length
 if ($genLen -gt $dataSize) { throw "pacchetto generato di $genLen byte oltre la riserva di ${dataSize}: serve una versione completa" }
 $fs = [IO.File]::Open("$sg\gen.mp4", 'Open', 'ReadWrite'); $fs.SetLength($dataSize); $fs.Close()
+# riempimento di -TestStraddle: dati in piu' in coda al pacchetto prima del generato (nessun nome lo cita)
+$padFile = $null
+if ($Quick -and (Test-Path "$v\testpad.txt")) { $padFile = "$v\data\$(Get-Content "$v\testpad.txt")" }
+elseif (-not $Quick -and $TestStraddle) { $padFile = "$v\data\$padName" }
+if ($padFile) { $plist[$plist.Count - 2][2] += ",$padFile" }
 # argomenti di resource_merge.py: indice e dati di ogni pacchetto, nell'ordine dei dati
 $packs = @(); foreach ($p in $plist) { $packs += @($p[1], $p[2]) }
 if ($Quick) {

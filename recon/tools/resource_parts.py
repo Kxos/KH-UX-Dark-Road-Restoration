@@ -14,8 +14,18 @@ guest il pacchetto generato (la coda dei dati) dovunque cada.
 
 scrive i segmenti del file in <prefisso>.<pezzo> e stampa, uno per riga e separati da tab:
 nome del pezzo, offset locale, lunghezza, file del segmento.
+
+Prova al banco dei pezzi oltre 4 GiB (build-resources.ps1 -TestStraddle):
+
+    python -I recon/tools/resource_parts.py --straddle <indice.png> <dati.mp4> <nome> <offset del pacchetto>
+
+stampa quanti byte di riempimento mettere prima del pacchetto (che comincia all'offset globale dato)
+perche' il record <nome> stia a cavallo dei 4 GiB, fra misc.mp4.1 e misc.mp4.2.
 """
+import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 PART = 1 << 31          # 0x80000000 a 0x19265a0 della libreria
 MAX_PARTS = 10          # misc.mp4 + .1 .. .9 (0x19265a8)
@@ -40,7 +50,33 @@ def segments(offset, length, part_size=PART, max_parts=MAX_PARTS):
     return out
 
 
+def straddle_pad(start, rec_off, rec_len, boundary=2 * PART):
+    """Riempimento prima di un pacchetto che comincia a start perche' il suo record (rec_off, rec_len)
+    abbia meta' dei byte prima del confine e meta' dopo."""
+    if rec_len < 2:
+        raise ValueError('record troppo corto per stare a cavallo')
+    pad = boundary - (start + rec_off + rec_len // 2)
+    if pad < 0:
+        raise ValueError("il record e' gia' oltre il confine di %d byte" % -pad)
+    return pad
+
+
+def record_span(index, data, name):
+    """(offset, lunghezza) del record <name> in un pacchetto di resource_pack.py."""
+    import bgad
+    for n, off in bgad.read_index(index, None):
+        if n == name:
+            with open(data, 'rb') as fh:
+                fh.seek(off)
+                return off, bgad.parse(fh.read(bgad.HDR.size))['end']
+    raise KeyError(name)
+
+
 def main(argv):
+    if argv[0] == '--straddle':
+        index, data, name, start = argv[1], argv[2], argv[3], int(argv[4])
+        print(straddle_pad(start, *record_span(index, data, name)))
+        return
     part_size = PART
     if argv[0] == '--part-size':
         part_size = int(argv[1])

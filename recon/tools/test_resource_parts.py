@@ -53,4 +53,31 @@ with tempfile.TemporaryDirectory() as td:
     assert [r[:3] for r in rows] == [['misc.mp4.1', '900', '100'], ['misc.mp4.2', '0', '924']], rows
     assert open(rows[0][3], 'rb').read() == data[:100]
     assert open(rows[1][3], 'rb').read() == data[100:]
+# riempimento per un record a cavallo dei 4 GiB (prova al banco): meta' prima, meta' dopo
+pad = rp.straddle_pad(4012789769, 1000, 7484)
+assert 4012789769 + pad + 1000 + 3742 == 2 * G, pad
+segs = rp.segments(4012789769 + pad + 1000, 7484)
+assert segs == [(1, G - 3742, 3742), (2, 0, 3742)], segs
+for bad in ((2 * G, 0, 10), (0, 0, 1)):
+    try:
+        rp.straddle_pad(*bad)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(bad)
+# --straddle su un pacchetto di resource_pack.py
+sys.path.insert(0, HERE)
+from resource_compact import index_bytes  # noqa: E402
+from resource_index import record  # noqa: E402
+with tempfile.TemporaryDirectory() as td:
+    recs = [record(b'a/x', b'1' * 100, b'k' * 32), record(b'b/y', b'2' * 50, b'k' * 32)]
+    with open(os.path.join(td, 'g.mp4'), 'wb') as fh:
+        fh.write(b''.join(recs))
+    with open(os.path.join(td, 'g.png'), 'wb') as fh:
+        fh.write(index_bytes([0, len(recs[0])], [(b'a/x', 0), (b'b/y', 1)]))
+    assert rp.record_span(os.path.join(td, 'g.png'), os.path.join(td, 'g.mp4'), 'b/y') == (len(recs[0]), len(recs[1]))
+    out = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'resource_parts.py'), '--straddle',
+                          os.path.join(td, 'g.png'), os.path.join(td, 'g.mp4'), 'b/y', '1000'],
+                         capture_output=True, text=True, check=True).stdout
+    assert int(out) == 2 * G - 1000 - len(recs[0]) - len(recs[1]) // 2, out
 print('resource_parts: ok')
