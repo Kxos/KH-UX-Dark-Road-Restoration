@@ -81,3 +81,27 @@ with tempfile.TemporaryDirectory() as td:
                          capture_output=True, text=True, check=True).stdout
     assert int(out) == 2 * G - 1000 - len(recs[0]) - len(recs[1]) // 2, out
 print('resource_parts: ok')
+
+# check_installed: risorse nel guest (righe di «stat -c '%n %s'») contro la versione che -Quick riscrive
+R = '/data/data/x/files/r/'
+ok47 = [R + 'misc.mp4 %d' % G, R + 'misc.mp4.1 2139509898', R + 'misc.png 34772214']
+assert rp.check_installed(ok47, G + 2139509898, 34772214) is None
+assert rp.check_installed(ok47 + [''], G + 2139509898, 34772214) is None          # righe vuote ignorate
+three = [R + 'misc.mp4 %d' % G, R + 'misc.mp4.1 %d' % G, R + 'misc.mp4.2 5', R + 'misc.png 9']
+assert rp.check_installed(three, 2 * G + 5, 9) is None
+# versione diversa (somma), indice diverso, pezzo mancante o corto, buco nella numerazione, niente installato
+assert 'somma' in rp.check_installed(ok47, G + 2139509899, 34772214)
+assert 'misc.png' in rp.check_installed(ok47, G + 2139509898, 34772215)
+assert 'misc.png' in rp.check_installed(ok47[:2], G + 2139509898, 34772214)
+assert 'misc.mp4 di' in rp.check_installed([R + 'misc.mp4 %d' % (G - 1), R + 'misc.mp4.1 3', R + 'misc.png 9'], G + 2, 9)
+assert 'misc.mp4.1 assente' in rp.check_installed([R + 'misc.mp4 %d' % G, R + 'misc.mp4.2 5', R + 'misc.png 9'], G + 5, 9)
+assert 'misc.mp4' in rp.check_installed([R + 'misc.png 9'], 0, 9)
+assert rp.check_installed([R + 'misc.mp4 0', R + 'misc.png 9'], 0, 9) is not None  # pezzo vuoto
+# riga di comando: righe di stat su stdin, «ok» e codice 0 oppure il motivo e codice 1
+r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'resource_parts.py'), '--check-installed',
+                    str(G + 2139509898), '34772214'], input='\n'.join(ok47) + '\n', capture_output=True, text=True)
+assert r.returncode == 0 and r.stdout.strip() == 'ok', (r.returncode, r.stdout)
+r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'resource_parts.py'), '--check-installed',
+                    str(G + 1), '34772214'], input='\n'.join(ok47) + '\n', capture_output=True, text=True)
+assert r.returncode == 1 and 'somma' in r.stdout, (r.returncode, r.stdout)
+print('resource_parts check_installed: ok')

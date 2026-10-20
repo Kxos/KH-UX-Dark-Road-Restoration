@@ -75,7 +75,13 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - `-Quick` riscrive solo l'ultimo pezzo: le immagini delle medaglie (`medal_gen`, penultimo pezzo)
   entrano solo con una versione completa. Si ferma se i pacchetti prima del generato (anche quelli
   compattati in `D:\Progetto_Restauro_KH_UX\compact`, elenco in `resource_data\<N>\compact.txt`) non sono
-  lunghi quanto i pezzi installati: [risorse_layout.md#pezzi](risorse_layout.md#pezzi).
+  lunghi quanto i pezzi installati: [risorse_layout.md#pezzi](risorse_layout.md#pezzi). Prima di toccare
+  versione e guest legge le dimensioni nel guest (`resource_parts.py --check-installed`): se la somma dei
+  pezzi o `misc.png` non sono quelli della versione (versione piu' nuova non ancora scaricata, download a
+  meta') si ferma: «esegui update-resources.ps1, non usare -Quick».
+- Una versione completa si costruisce in `resource_data\_build_<N>` (cartella non numerica: il server non
+  la vede) e si rinomina in `<N>` solo dopo i controlli finali (pezzi sotto i 2 GiB, 20 GiB); `-Version N`
+  di una cartella esistente si ferma prima di ogni generatore e della compattazione.
 - **Mai `-Quick` se esiste una cartella di versione piu' nuova di quella installata**: scrive la
   piu' nuova nel guest (dati corrotti).
 - Una versione completa (`build-resources.ps1 -Version N`) viene annunciata subito dal server e

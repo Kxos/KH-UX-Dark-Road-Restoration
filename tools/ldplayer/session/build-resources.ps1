@@ -48,6 +48,10 @@ if ($Quick) {
   $Version = [int](Get-ChildItem "$D\resource_data" -Directory | Where-Object Name -match '^\d+$' |
     Sort-Object { [int]$_.Name } | Select-Object -Last 1).Name
 } elseif (-not $Version) { throw 'serve -Version N oppure -Quick' }
+# controlli prima di ogni generatore (I-171): una versione completa non tocca una cartella esistente ne' (con la
+# compattazione) i pacchetti condivisi di $D\compact su cui conta il -Quick della versione installata
+if ($TestStraddle -and $Quick) { throw '-TestStraddle vale solo per una versione completa (-Version N), non con -Quick o -DryRun' }
+if (-not $Quick -and (Test-Path "$D\resource_data\$Version")) { throw "$D\resource_data\$Version esiste gia'" }
 $key = python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[[offset]:[offset]+32].hex())" "$D\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so"
 python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
@@ -314,8 +318,14 @@ $plist += , @('stage_gen', "$sg\gen.png", "$sg\gen.mp4")
 # di una versione sta in resource_data\<N>\compact.txt: -Quick e -DryRun usano gli stessi (mai ricompattati:
 # lo controlla la somma delle dimensioni piu' sotto). -NoCompact: pacchetti come sono (versioni <= 47).
 $cdir = "$D\compact"
+# impronta di un pacchetto compattato in compact.txt: etichetta, byte dei dati, SHA1 dell'indice (cambia con ogni
+# offset), impronta degli ingressi (.png.src); -Quick la ricalcola e si ferma se non coincide
+function Compact-Stamp([string]$l) {
+  "$l`t$((Get-Item "$cdir\$l.mp4").Length)`t$((Get-FileHash -Algorithm SHA1 "$cdir\$l.png").Hash)`t$(Get-Content "$cdir\$l.png.src")"
+}
 if ($Quick) {
-  $compact = if (Test-Path "$v\compact.txt") { @(Get-Content "$v\compact.txt") } else { @() }
+  $cLines = if (Test-Path "$v\compact.txt") { @(Get-Content "$v\compact.txt" | Where-Object { $_ }) } else { @() }
+  $compact = @($cLines | ForEach-Object { ($_ -split "`t")[0] })
 } elseif ($NoCompact) {
   $compact = @()
 } else {
@@ -331,6 +341,15 @@ foreach ($p in $plist) {
     $p[1] = "$cdir\$($p[0]).png"; $p[2] = "$cdir\$($p[0]).mp4"
   }
 }
+if ($Quick) {
+  foreach ($line in $cLines) {
+    $l = ($line -split "`t")[0]
+    if ((Compact-Stamp $l) -ne $line) {
+      $msg = "pacchetto compattato $cdir\$l diverso da quello della versione $Version (compact.txt): rifatto da un build successivo, serve una versione completa"
+      if ($DryRun) { Write-Warning $msg } else { throw $msg }
+    }
+  }
+}
 # Dimensioni fisse: il client confronta le dimensioni dei file installati con quelle del
 # download e, se cambiano, butta le risorse e riscarica tutto (resourceRevision 0). Il
 # pacchetto generato si riempie di zeri fino a una riserva (letto per offset, la coda non
@@ -344,7 +363,10 @@ if ($Quick) {
   $dataSize = (Get-Item "$v\data\$genName").Length
   $mergeOpt = @('--fast-md5', '--index-size', (Get-Item "$v\index\misc.png").Length)
 } else {
-  if (Test-Path $v) { throw "$v esiste gia'" }
+  # si costruisce in resource_data\_build_<N> (il server annuncia solo le cartelle numeriche) e si rinomina dopo i
+  # controlli finali: un build fallito non lascia una versione nuova rotta che il server servirebbe
+  $vFinal = $v; $v = "$D\resource_data\_build_$Version"
+  if (Test-Path $v) { Remove-Item -Recurse -Force $v }   # resto di un build fallito
   New-Item -ItemType Directory -Force "$v\data", "$v\index" | Out-Null
   $nx = 0
   # OBB e addnl: hard link a pezzi da 64 MiB condivisi fra le versioni; non compattati quelli della 7,
@@ -386,7 +408,7 @@ if ($Quick) {
   $genName = 'd{0:D4}' -f $nx
   $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }; if ($raisedrawPack) { $names += 'raisedraw_gen' }
   Set-Content -Encoding ascii "$v\packs.txt" $names
-  if ($compact) { Set-Content -Encoding ascii "$v\compact.txt" $compact }
+  if ($compact) { Set-Content -Encoding ascii "$v\compact.txt" @($compact | ForEach-Object { Compact-Stamp $_ }) }
   # 168 MiB dal 20 ottobre (I-171): contenuto 138,8 MB (132,4 MiB) nella 47, restano ~35,6 MiB per i -Quick (piu'
   # degli originali di I-170, ~33 MB in un colpo; 160 MiB ne lasciava 27,6). 176 MiB dal 19 ottobre, 128 MiB prima
   # (192 MiB portava i dati oltre 4 GiB); 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le
@@ -436,6 +458,16 @@ if ($DryRun) {
   else { "indice oltre la riserva di -Quick ($($out | Select-Object -Last 1)): serve una versione completa (-Version $($Version + 1)); come versione completa l'indice e' di $ix byte. Niente scritto in resource_data ne' nel guest" }
   return
 }
+if ($Quick) {
+  . "$repo\tools\ldplayer\bench_lib.ps1"
+  # prima di toccare la versione o il guest: le risorse installate devono essere quelle della versione $Version
+  # (somma dei pezzi = pezzi prima del generato + generato installato, stesso indice). Altrimenti (versione piu'
+  # nuova non ancora scaricata, download a meta') -Quick scriverebbe la coda di un'altra versione: dati corrotti
+  $r = "/data/data/$PKG/files/r"
+  $inst = @(Sh "stat -c '%n %s' $r/misc.mp4 $r/misc.mp4.* $r/misc.png 2>/dev/null")
+  $why = $inst | python -I recon\tools\resource_parts.py --check-installed ($before + $dataSize) (Get-Item "$v\index\misc.png").Length
+  if ($LASTEXITCODE) { throw "le risorse installate nel guest non corrispondono alla versione ${Version} ($why): esegui update-resources.ps1, non usare -Quick" }
+}
 # l'ultimo pezzo e' una copia (non un hard link): sovrascriverlo non tocca le altre versioni
 Copy-Item "$sg\gen.mp4" "$v\data\$genName" -Force
 python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$v\index\misc.png" @packs
@@ -450,10 +482,11 @@ if (-not $Quick) {
   if ($big) { throw "pezzi da 2 GiB o piu' (il client li rifiuta): $($big.Name -join ', ')" }
   if ($total -gt 10 * [int64]2147483648) { throw "dati oltre 20 GiB ($total byte): il client legge solo misc.mp4 .. misc.mp4.9" }
   if ($total -gt 2 * [int64]2147483648) { Write-Warning "dati oltre 4 GiB ($total byte): misc.mp4.2, non ancora provato al banco (I-171)" }
+  Rename-Item $v (Split-Path -Leaf $vFinal)
+  "versione $Version pronta in $vFinal (il server la annuncia da ora)"
   return
 }
 
-. "$repo\tools\ldplayer\bench_lib.ps1"
 # Il pacchetto generato e' la coda dei dati: comincia all'offset globale $before (somma dei pezzi prima) e
 # cade nel pezzo $before >> 31 del guest (misc.mp4, .1, .2 ...), magari a cavallo di due. resource_parts.py
 # lo spezza nei segmenti (pezzo, offset locale, lunghezza): il primo si scrive troncando il suo pezzo
@@ -462,7 +495,6 @@ $genLen = (Get-Item "$v\data\$genName").Length
 $segs = @(python -I recon\tools\resource_parts.py "$v\data\$genName" $before "$SHARED\q_gen")
 if ($LASTEXITCODE -or -not $segs) { throw 'resource_parts fallito' }
 Copy-Item "$v\index\misc.png" "$SHARED\q_index.bin" -Force
-$r = "/data/data/$PKG/files/r"
 $cmd = "u=`$(stat -c %u:%g $r/misc.mp4)"
 $check = @(); $want = @(); $first = $true
 foreach ($sgm in $segs) {

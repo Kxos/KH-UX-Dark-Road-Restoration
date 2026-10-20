@@ -81,7 +81,9 @@ Strumenti (20-10):
   ingressi della 47: OBB -30.080.308, addnl -54.662.654, medaglie -4.911.439 byte (stanze, nemici,
   raisedraw: 0). `resource_compare.py` ha verificato che ogni nome (396.297) ha gli stessi byte. Cache
   in `D:\Progetto_Restauro_KH_UX\compact` (pezzi di OBB e addnl condivisi con hard link fra le versioni),
-  elenco in `resource_data\<N>\compact.txt`.
+  elenco in `resource_data\<N>\compact.txt` con l'impronta di ogni pacchetto compattato (byte dei dati,
+  SHA1 dell'indice, impronta degli ingressi): `-Quick` la ricalcola e si ferma se un build successivo li ha
+  rifatti.
 - Riserva del generato **168 MiB** (era 176): contenuto 132,4 MiB nella 47, restano ~35,6 MiB di `-Quick`
   (piu' del blocco di originali di I-170, ~33 MB). Una versione completa con queste regole: **~4.188.950.537
   byte (3,90 GiB), ~101 MiB sotto i 4 GiB**, prima di nuovi contenuti.

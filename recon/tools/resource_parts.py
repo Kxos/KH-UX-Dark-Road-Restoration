@@ -21,6 +21,11 @@ Prova al banco dei pezzi oltre 4 GiB (build-resources.ps1 -TestStraddle):
 
 stampa quanti byte di riempimento mettere prima del pacchetto (che comincia all'offset globale dato)
 perche' il record <nome> stia a cavallo dei 4 GiB, fra misc.mp4.1 e misc.mp4.2.
+
+    stat -c '%n %s' misc.mp4 misc.mp4.* misc.png | python -I recon/tools/resource_parts.py --check-installed <dati> <indice>
+
+controlla (prima di -Quick) che le risorse del guest siano quelle della versione: stampa «ok» o il motivo
+(codice 1).
 """
 import os
 import sys
@@ -72,7 +77,44 @@ def record_span(index, data, name):
     raise KeyError(name)
 
 
+def check_installed(lines, data_total, index_size, part_size=PART):
+    """Le risorse installate nel guest (righe «percorso dimensione» di stat -c '%n %s') sono quelle della
+    versione che -Quick sta per riscrivere? None se si', altrimenti il motivo. Pezzi misc.mp4, .1, .2 ...
+    senza buchi, tutti da part_size tranne l'ultimo, somma = data_total; misc.png lungo index_size."""
+    parts, index = {}, None
+    for line in lines:
+        f = line.split()
+        if len(f) < 2:
+            continue
+        name, size = f[0].rsplit('/', 1)[-1], int(f[-1])
+        if name == 'misc.png':
+            index = size
+        elif name == 'misc.mp4':
+            parts[0] = size
+        elif name.startswith('misc.mp4.') and name[9:].isdigit():
+            parts[int(name[9:])] = size
+    if index is None:
+        return 'misc.png assente'
+    if 0 not in parts:
+        return 'misc.mp4 assente'
+    for i in range(max(parts) + 1):
+        if i not in parts:
+            return '%s assente (buco fra i pezzi)' % part_name('misc.mp4', i)
+        if parts[i] < 1 or parts[i] > part_size or (i < max(parts) and parts[i] != part_size):
+            return '%s di %d byte (attesi %d)' % (part_name('misc.mp4', i), parts[i], part_size)
+    total = sum(parts.values())
+    if total != data_total:
+        return 'somma dei pezzi %d byte invece di %d' % (total, data_total)
+    if index != index_size:
+        return 'misc.png di %d byte invece di %d' % (index, index_size)
+    return None
+
+
 def main(argv):
+    if argv[0] == '--check-installed':
+        why = check_installed(sys.stdin.read().splitlines(), int(argv[1]), int(argv[2]))
+        print(why or 'ok')
+        sys.exit(1 if why else 0)
     if argv[0] == '--straddle':
         index, data, name, start = argv[1], argv[2], argv[3], int(argv[4])
         print(straddle_pad(start, *record_span(index, data, name)))
