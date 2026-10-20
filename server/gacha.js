@@ -625,6 +625,14 @@ function oddsPage(entries) {
       + `${oddsTable(banner, ex, medalNames)}${list.length > 1 ? '<div class="top"><a href="#top">↑PAGE TOP</a></div>' : ''}</div>`).join(''));
 }
 
+// Ricerca per medaglia del Catalog (sp3 7.1): entries = [{ banner, names: [nome di medaglia] }] (pool espanso piu' nomi delle
+// garanzie); confronto senza maiuscole, con gli spazi multipli ridotti, per parte del nome. q vuota = tutti i banner.
+const searchKey = (s) => String(s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+function medalSearch(entries, q) {
+  const key = searchKey(q);
+  return new Set(entries.filter((e) => !key || (e.names || []).some((n) => searchKey(n).includes(key))).map((e) => e.banner.drawMedalTypeId));
+}
+
 function catalogPage(banners, ctx) {
   const sorted = [...banners].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.drawMedalTypeId - b.drawMedalTypeId));
   return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
@@ -635,5 +643,5 @@ function catalogPage(banners, ctx) {
 
 module.exports = {
   SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
 };

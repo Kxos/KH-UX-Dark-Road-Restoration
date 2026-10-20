@@ -294,6 +294,7 @@ def list_names(seg, keep_star=False):
     la stella davanti («7★ Prime - KH Cloud») si toglie, salvo keep_star (bonus: sceglie la rarita')"""
     seg = seg[:_cut(seg)]
     seg = re.split(r',?\s+with (?:its|one|a|their)\b', seg)[0]  # «..., or [[X]], with one of the following skills: ...»
+    seg = re.sub(r'(\]\]|\}\})[ \t]+(?=\[\[|\{\{)', r'\1, ', seg)  # «[[A]] [[B]]» senza virgola nel testo (B0692): due nomi
     seg = LINK.sub(lambda m: (bsrc.toks(m.group(0)) or [' '])[0], seg)
     seg = KEEP_COMMA.sub(lambda m: m.group(0).replace(',', '§'), seg)
     parts = re.split(r',\s*(?:or |and )?|\s+(?:or|and)\s+', seg)
@@ -305,7 +306,8 @@ def list_names(seg, keep_star=False):
 
 def featured_col(row):
     """medaglie della colonna featured_medals (voci «;», a volte elenchi «A, B, and C»)"""
-    return [n for x in re.split(r';\s*', row['featured_medals']) if x.strip() for n in list_names(x)]
+    return [n for x in re.split(r';\s*', row['featured_medals']) if x.strip() for n in list_names(x)
+            if not n.startswith('of the following')]  # B0637/B0638/B0646: la colonna del TSV ha solo «of the following Medals»
 
 
 SET_FILTERS = [('disney', r'disney'), ('ffkh', r'final fantasy|kingdom hearts'), ('power', r'\bpower\b'),
@@ -663,10 +665,17 @@ def clean_name(n):
     return n
 
 
+# refusi della wiki nei nomi delle medaglie boosted (I-150): la medaglia vera e' una sola
+WIKI_TYPOS = {'launchpad mcquakc': 'launchpad mcquack', 'webby vanderquakc': 'webby vanderquack',
+              'axel [ex]': 'axel art [ex]',  # B0238: «{{EX|Axel Art}}» in garanzia, «Axel [EX]» nella frase boosted
+              'kairi [ex+]': 'kh ii kairi [ex+]'}  # B0362/B0363: «{{b|Kairi|EX+}}», il nome della medaglia e' KH II Kairi
+
+
 def resolve_name(name, start, medals, rd):
     """chiave di `medals` per un nome di vetrina/garanzia, o None. Ordine: nome esatto, nome ripulito
     («7★ », «boosted », «(EX+)»), redirect della wiki, poi le varianti SN/SN+/SN++/Supernova dello stesso
     nome: la famiglia piu' alta gia' uscita all'inizio del banner (es. {{KA|20}} -> SN++ dal 08/11/2019)."""
+    name = WIKI_TYPOS.get(name, name)
     for n in _dedup([name, clean_name(name)]):
         for _ in range(3):
             if n in medals:

@@ -530,5 +530,19 @@ try {
   check(!g.detailPage(bad.vipFree, undefined, medalNames, dctx).includes('Keep in the Shop'), 'dettagli: niente pulsante se non fissabile');
 } catch (err) { errors.push(`fissato: eccezione ${err.stack}`); }
 
+// ricerca per medaglia (sp3 7.1, I-150): nomi per banner -> ids dei banner
+try {
+  const bA = mk({ name: 'A' }), bB = mk({ name: 'B' }), bC = mk({ name: 'C' });
+  const entries = [{ banner: bA, names: ['HD Roxas', 'Sora'] }, { banner: bB, names: ['Roxas [+]'] }, { banner: bC, names: ['Xion', 'SN++  -  Master   Eraqus'] }];
+  const ids = (s) => [...s].sort((a, b) => a - b);
+  const both = ids([bA.drawMedalTypeId, bB.drawMedalTypeId]);
+  check(JSON.stringify(ids(g.medalSearch(entries, 'roxas'))) === JSON.stringify(both), 'medalSearch: roxas trova HD Roxas e Roxas [+], non Xion');
+  check(JSON.stringify(ids(g.medalSearch(entries, ' RoXaS '))) === JSON.stringify(both), 'medalSearch: maiuscole e spazi ai bordi');
+  check(g.medalSearch(entries, '').size === 3 && g.medalSearch(entries, '   ').size === 3, 'medalSearch: q vuota = tutti');
+  check(g.medalSearch(entries, 'master eraqus').has(bC.drawMedalTypeId) && g.medalSearch(entries, 'sn++ - master').size === 1, 'medalSearch: spazi multipli ridotti');
+  check(g.medalSearch(entries, 'hd rox').size === 1 && g.medalSearch(entries, 'nessuna').size === 0, 'medalSearch: per parte del nome, nessun risultato');
+  check(g.medalSearch([{ banner: bA, names: [] }], 'x').size === 0, 'medalSearch: banner senza nomi');
+} catch (err) { errors.push(`ricerca: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');

@@ -1169,6 +1169,7 @@ const GACHA_SHOW = new Set((process.env.KHUX_GACHA_SHOW || '').split(',').map((s
 const GACHA_SIZES = new Set((process.env.KHUX_GACHA_SIZES || '1,3,10').split(',').map(Number));
 const GACHA_WIDEST_DAY = '2021-06-29'; // ultimo giorno del gioco: il pool piu' largo di un banner permanente
 let gachaCatalogMemo = null;
+let gachaSearchMemo = null; // indice dei nomi per la ricerca del Catalog: { day, entries: [{ banner, names }] }
 const gachaPoolCache = new Map(); // `${drawMedalTypeId}@${asOf}` -> expandPool
 // Un banner estraibile (non catalogOnly, non evolve) con uno slot senza medaglie alla sua stella o sotto
 // anche alla data piu' larga (rollDraw lancerebbe) passa a catalogOnly 'NO_MEDALS': fuori dalla lista e
@@ -1194,7 +1195,7 @@ const gachaCatalog = () => (gachaCatalogMemo ??= sanitizeBanners(gachaData.loadC
 // righe boosted del master medal (medal-boost.boostedIndex: 'normale:str:def' -> medalId), per enhance.boosted
 let gachaBoostMemo = null;
 const gachaBoostedIndex = () => (gachaBoostMemo ??= medalBoost.boostedIndex(masterRows('medal')));
-function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; gachaPoolCache.clear(); }
+function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; gachaPoolCache.clear(); gachaSearchMemo = null; }
 
 // Punto della storia del giocatore: ultima quest superata (1-525) e data della sua tranche.
 // storyDay = primo giorno della settimana dello Shop (rotazione I-165): data dei pool dei PERMANENT e della regola
@@ -1228,6 +1229,25 @@ function expandFor(b, ctx = storyCtx()) {
   const asOf = gachaData.asOf(b, ctx.storyDay), key = `${b.drawMedalTypeId}@${asOf}`;
   if (!gachaPoolCache.has(key)) gachaPoolCache.set(key, gachaData.expandPool(b, gachaCatalog(), asOf));
   return gachaPoolCache.get(key);
+}
+// Indice dei nomi per la ricerca per medaglia del Catalog (sp3 7.1): per ogni banner i nomi delle medaglie del pool espanso
+// alla data della storia piu' quelli scritti nel catalogo (vetrina, lista, riserve, pity). Si calcola una volta per storyDay
+// (cambia quando la tranche o la settimana dello Shop cambia) e resta in memoria; expandFor che lancia: niente pool, restano
+// i nomi delle garanzie.
+function gachaSearchEntries(ctx) {
+  if (gachaSearchMemo?.day === ctx.storyDay) return gachaSearchMemo.entries;
+  const medalNames = new Map(masterRows('medal').map((m) => [m.medalId, m.name]));
+  const entries = gachaCatalog().banners.map((banner) => {
+    const g = banner.guarantee || {};
+    const names = new Set([...(banner.pool?.featured || []), ...(g.list || []), ...(g.pityNames || []), ...(g.slots || []).flatMap((s) => s.names || [])]);
+    let ex;
+    try { ex = expandFor(banner, ctx); } catch (e) { console.log(`  [gacha] ${banner.rowId} ${banner.name}: pool non espandibile per la ricerca (${e.message})`); }
+    const ids = [...Object.values(ex?.pool || {}).flat(), ...(ex?.weighted || []).map(([id]) => id)];
+    for (const id of ids) { const n = medalNames.get(id); if (n) names.add(n); }
+    return { banner, names: [...names] };
+  });
+  gachaSearchMemo = { day: ctx.storyDay, entries };
+  return entries;
 }
 // Banner della lista attuale (stessa scelta di /gacha/list)
 const gachaShopList = (ctx = storyCtx()) => gacha.shopBanners(gachaCatalog().banners, { ...ctx, sizes: GACHA_SIZES, show: GACHA_SHOW });
@@ -1379,6 +1399,13 @@ function respondGachaWeb(res, url) {
     if (!fs.existsSync(file)) return html('not found', 404);
     const b = fs.readFileSync(file);
     res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': b.length });
+    return res.end(b);
+  }
+  // /web/gacha/search?q=<testo>: ids dei banner del Catalog con una medaglia che contiene il testo (vuoto = tutti)
+  if (/^\/web\/gacha\/search$/i.test(p)) {
+    const q = new URLSearchParams(url.split('?')[1] || '').get('q') || '';
+    const b = Buffer.from(JSON.stringify({ ids: [...gacha.medalSearch(gachaSearchEntries(storyCtx()), q)] }), 'utf8');
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': b.length });
     return res.end(b);
   }
   const banners = gachaCatalog().banners, story = storyCtx(), shop = gachaShopList(story);

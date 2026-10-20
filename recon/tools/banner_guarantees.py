@@ -36,6 +36,7 @@ def clean_markup(text):
     """markup della wiki -> testo: {{EX|X}} -> «X [EX]», {{b|X|Y}} -> «X [Y]», {{KA|n}} -> «Key Art #n»,
     {{n|Trait Medal|48}} -> «Trait Medal #48», [[X]] / [[X|Y]] -> «X» / «Y»; via le <ref> e il grassetto"""
     t = re.sub(r'<ref[^>/]*>.*?</ref>|<ref[^>]*/>', '', text.replace("'''", ''), flags=re.S)
+    t = re.sub(r'(\]\]|\}\})[ \t]+(?=\[\[|\{\{)', r'\1, ', t)  # «[[A]] [[B]]» senza virgola (B0692, I-150)
     return mbc.LINK.sub(lambda m: (bsrc.toks(m.group(0)) or [''])[0], t)
 
 

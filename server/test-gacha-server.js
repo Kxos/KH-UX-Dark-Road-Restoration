@@ -235,6 +235,15 @@ w = raw(t.respondGachaWeb, '/web/gacha/odds/10002');
 check(String(w.body).includes('Epic Medal Carnival') && !String(w.body).includes('DAILY DEAL!'), 'odds di una piastra (id accodato dal client)');
 w = raw(t.respondGachaWeb, '/web/gacha/odds/9001');
 check(String(w.body).includes('Epic Medal Carnival') && String(w.body).includes('DAILY DEAL!') && !String(w.body).includes('VIP Twin Deal'), 'odds della piastra Catalog: i banner della lista');
+// ricerca per medaglia (sp3 7.1): ids dei banner, senza maiuscole; vuota = tutti; indice in memoria per storyDay
+{
+  const search = (q) => JSON.parse(String(raw(t.respondGachaWeb, `/web/gacha/search?q=${encodeURIComponent(q)}`).body)).ids;
+  const w1 = search('wakka'), w2 = search(' WaKKa ');
+  check(w1.includes(10002) && w1.includes(10007) && JSON.stringify(w1) === JSON.stringify(w2), `ricerca wakka: ${w1}`);
+  check(!search('tidus').includes(10007) && search('zzz-nessuna').length === 0, 'ricerca: banner senza la medaglia / nessun risultato');
+  check(search('').length === banners.length && JSON.stringify(JSON.parse(String(raw(t.respondGachaWeb, '/web/gacha/search').body))) === JSON.stringify({ ids: search('') }), 'ricerca: vuota = tutti i banner');
+  check(/application\/json/.test(raw(t.respondGachaWeb, '/web/gacha/search?q=x').headers['Content-Type']), 'ricerca: JSON');
+}
 w = raw(t.respondGachaWeb, '/web/gacha/catalog');
 {
   const c = String(w.body);
