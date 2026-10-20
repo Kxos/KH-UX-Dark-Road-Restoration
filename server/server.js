@@ -2197,9 +2197,25 @@ function limitedActive(id, realMs = realNow()) {
 // Campagne settimanali che regalano una medaglia (weeklyMedalFrom, make-limited-missions.js): solo dalla tranche
 // della storia con quella data, come i banner dello Shop (decisione dell'utente 19-10: W04 regala SN++ - FF7R
 // Aerith 7★, aprile 2020); prima la settimana resta senza campagna breve (la mensile dei Lux c'e' sempre).
+// I premi Platinum/Draw Ticket (rewardType 40/41) delle righe di un gruppo compaiono solo dopo lo sblocco di un banner
+// che li spende (gacha.ticketUnlockQuest, sp3 5); soglie calcolate una volta per catalogo, valgono anche per le mensili.
+let limitedTicketMemo = null;
+function limitedGroupQuest(g) {
+  const cat = gachaCatalog();
+  if (limitedTicketMemo?.cat !== cat) limitedTicketMemo = { cat, byGroup: new Map() };
+  const key = `${g.kind}${g.index}`;
+  if (!limitedTicketMemo.byGroup.has(key)) {
+    const ids = new Set(LIMITED_ROTATION[g.kind][g.index]);
+    const types = new Set(masterRows('mission').filter((r) => ids.has(r.id) && (r.rewardType === 40 || r.rewardType === 41)).map((r) => r.rewardType));
+    limitedTicketMemo.byGroup.set(key, Math.max(0, ...[...types].map((t) => gacha.ticketUnlockQuest(cat.banners, t, GACHA_SIZES))));
+  }
+  return limitedTicketMemo.byGroup.get(key);
+}
+let storyQuestForced = null; // solo per i test: la storia ferma a 525 non arriva alle soglie dei biglietti
 function limitedUnlocked(g) {
+  const storyQuest = storyQuestForced ?? stageNumber(lastStoryStageId());
   const from = g.kind === 'weekly' ? (LIMITED_ROTATION.weeklyMedalFrom || [])[g.index] : null;
-  return !from || gachaData.storyDay(gachaCatalog(), stageNumber(lastStoryStageId())) >= from;
+  return (!from || gachaData.storyDay(gachaCatalog(), storyQuest) >= from) && storyQuest >= limitedGroupQuest(g);
 }
 // Condizioni delle Beginner (make-beginner-missions.js) calcolate dallo stato del giocatore a ogni elenco,
 // non da un contatore: 30 storia superata fino alla quest targetId, 31 STR del keyblade preferito,
@@ -4057,7 +4073,7 @@ module.exports._test = {
   // server/test-clock-server.js
   serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin,
   // server/test-limited.js
-  missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet,
+  missionsData, missionCount, respondMissionReceive, limitedActive, LIMITED_ROTATION, pet, limitedGroupQuest, forceStoryQuest: (q) => { storyQuestForced = q; },
   // server/test-mission-settle.js
   settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js

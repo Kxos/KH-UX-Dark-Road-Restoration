@@ -50,6 +50,12 @@ function priceFor(b, player) {
   return Math.max(1, p.length ? p[Math.min(drawCount(player, b), p.length - 1)] : 1);
 }
 const drawable = (b, sizes) => !b.catalogOnly && [1, 7, 8].includes(b.payType) && sizes.has(b.lotCount);
+// Prima quest della storia da cui un banner estraibile spende il biglietto di una missione Limited (sp3 5): rewardType 40
+// Platinum Ticket (payType 7), 41 Draw Ticket (payType 8, valuta draw). Infinity se nessun banner lo spende.
+function ticketUnlockQuest(banners, rewardType, sizes) {
+  const spends = rewardType === 40 ? (b) => b.payType === 7 : rewardType === 41 ? (b) => b.payType === 8 && b.currency === 'draw' : () => false;
+  return banners.filter((b) => drawable(b, sizes) && spends(b)).reduce((m, b) => Math.min(m, b.unlockQuest), Infinity);
+}
 // Banner fissabile nello Shop (sp3 6.1): vecchio (finito prima dell'inizio del periodo della tranche, ctx.periodStart),
 // sbloccato, estraibile, ne' Free Deal / 1 Jewel (tutti i prezzi <= 1, vipFree, nome «Free...») ne' stagionale.
 const isFreeLike = (b) => (b.prices || []).every((x) => x <= 1) || !!b.vipFree || /^Free\b/i.test(b.name || '');
@@ -628,6 +634,6 @@ function catalogPage(banners, ctx) {
 }
 
 module.exports = {
-  SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, shopBanners, catalogRow, catalogPlate,
+  SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, catalogRow, catalogPlate,
   dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
 };

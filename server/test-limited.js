@@ -21,6 +21,7 @@ try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
 process.env.KHUX_MASTER_DIR = MASTER;
 process.env.KHUX_SAVE = SAVE;
 process.env.KHUX_PET = '1';
+process.env.KHUX_GACHA_SIZES = '1,2,3,4,5,6,7,8,9,10'; // come run-server.ps1: B0456 (Platinum) ha 5 medaglie
 delete process.env.KHUX_PET_ALL_PARTS;
 const log = console.log;
 const quiet = (fn) => { console.log = () => {}; try { return fn(); } finally { console.log = log; } };
@@ -38,6 +39,7 @@ const realNow = Date.now;
 const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
 
 call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
+t.forceStoryQuest(840); // la storia vera si ferma a 525: da 840 in su i biglietti Limited sono sbloccati (sp3 5)
 t.player.medals = t.player.medals || [];
 const rows = t.masterRows('mission').filter((r) => r.missionType === 4);
 const byId = new Map(rows.map((r) => [r.id, r]));
@@ -76,6 +78,27 @@ for (let w = 0; w < weekly.length; w++) {
 }
 check(seen2.size === weekly.length, `con la storia arrivata alla data: brevi viste ${seen2.size}/${weekly.length}`);
 saved.forEach((d, i) => { medalFrom[i] = d; });
+
+// biglietti Limited (sp3 5): rewardType 40 Platinum e 41 Draw Ticket solo dopo lo sblocco di un banner che li spende
+const gachaMod = require('./gacha');
+const cat = t.gachaCatalog().banners, sizes = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+check(gachaMod.ticketUnlockQuest(cat, 40, sizes) === 815, `ticketUnlockQuest 40 = ${gachaMod.ticketUnlockQuest(cat, 40, sizes)}, atteso 815`);
+check(gachaMod.ticketUnlockQuest(cat, 41, sizes) === 840, `ticketUnlockQuest 41 = ${gachaMod.ticketUnlockQuest(cat, 41, sizes)}, atteso 840`);
+check(gachaMod.ticketUnlockQuest(cat, 99, sizes) === Infinity, 'rewardType senza biglietto: Infinity');
+const w01 = weekly.findIndex((ids) => ids.includes(4059)), w02 = weekly.findIndex((ids) => ids.includes(4091));
+const clk = require('./clock');
+const weekOf = (i) => { for (let k = 0; k < weekly.length; k++) { const ms = Date.UTC(2026, 9, 12, 12) + k * 7 * 86400000; if (clk.weekIndex(ms) % weekly.length === i) return new Date(ms).toISOString(); } return null; };
+for (const [quest, want] of [[525, false], [814, false], [840, true]]) {
+  t.forceStoryQuest(quest);
+  for (const [wi, ids] of [[w01, [4059, 4060]], [w02, [4091]]]) {
+    if (wi < 0) { check(false, 'W01/W02 non trovate'); continue; }
+    at(weekOf(wi));
+    const got = quiet(() => t.missionsData()).map((m) => m.id);
+    if (quest === 814 && ids[0] === 4091) continue; // 815 sblocca solo i Platinum: i Draw Ticket servono 840
+    check(ids.every((id) => got.includes(id) === want), `quest ${quest}, settimana ${wi}: righe ${ids} ${want ? 'attese' : 'assenti'} (${ids.map((id) => got.includes(id))})`);
+  }
+}
+t.forceStoryQuest(840);
 
 // elenco: solo le righe Limited attive
 at('2026-10-16T12:00:00Z');
