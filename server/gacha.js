@@ -345,7 +345,8 @@ const firstPrice = (b) => Math.max(1, (b.prices || [])[0] || 1);
 // Stile delle pagine originali (reference\shop_odds_details\NOTE.md: notice 46003 da Wayback e screenshot di Draw
 // Odds): fondo #043654, testo bianco spaziato, titoli «■» azzurri #00d4ed, frasi chiave arancio/giallo, tabelle con
 // bordi bianchi e intestazione #365e76, sezioni gialle «6★Medals» con «↑PAGE TOP», nomi colorati per attributo.
-function page(title, body, cls = '') {
+// side: HTML accanto al titolo, a destra (pulsante «⚙ Filters» del Catalog)
+function page(title, body, cls = '', side = '') {
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<style>body{margin:0;background:#043654;color:#fff;font:17px/1.8 sans-serif;letter-spacing:.4px;padding:6px 18px 40px}'
     + 'h1{font-size:22px;margin:8px 0 4px;color:#fff}h2{color:#00d4ed;font-size:18px;margin:20px 0 6px}h2:before{content:"\\25A0  "}'
@@ -370,7 +371,7 @@ function page(title, body, cls = '') {
     + 'body.hb{padding-bottom:90px}'
     + '.pin{margin:10px 0}.btn{display:inline-block;padding:7px 22px;border-radius:10px;border:2px solid #ffe08a;color:#fff;text-decoration:none;font:bold 18px sans-serif;background:linear-gradient(#e0a020,#a8700a)}'
     + '.top{text-align:right;font-size:15px}.box{border:2px solid #ffcd4a;padding:6px 10px;margin:8px 0}</style></head><body' + (cls ? ` class="${cls}"` : '') + '>'
-    + `<h1>${esc(title)}</h1>${body}</body></html>`;
+    + `${side ? `<div class="hdr"><h1>${esc(title)}</h1>${side}</div>` : `<h1>${esc(title)}</h1>`}${body}</body></html>`;
 }
 
 // Ultima quest della storia restaurata (spec 4.4): oltre, i banner restano bloccati «in attesa dell'aggiornamento».
@@ -633,15 +634,166 @@ function medalSearch(entries, q) {
   return new Set(entries.filter((e) => !key || (e.names || []).some((n) => searchKey(n).includes(key))).map((e) => e.banner.drawMedalTypeId));
 }
 
+// Catalog per anno di gioco e pannello Filters (sp3 7.1-7.2). Anno di un banner = data di inizio; gli anni vanno da un
+// anniversario (7 aprile, uscita del gioco nel 2016) al giorno prima del successivo: 0 = Launch year ... 5 = Final months
+// (dal 2021-04-07); date fuori intervallo ripiegano su 0 / 5.
+function gameYearOf(start) {
+  const s = String(start || '');
+  const i = Number(s.slice(0, 4)) - 2016 - (s.slice(5, 10) < '04-07' ? 1 : 0);
+  return Number.isFinite(i) ? Math.max(0, Math.min(5, i)) : 0;
+}
+const GAME_YEARS = [0, 1, 2, 3, 4, 5].map((i) => ({
+  name: i === 0 ? 'Launch year' : i === 5 ? 'Final months' : `Year ${i + 1}`,
+  sub: i === 0 ? 'Apr 2016 → 1st 🎂' : i === 5 ? '5th 🎂 → end' : `${ordinal(i)} 🎂 → ${ordinal(i + 1)} 🎂`,
+  phrase: i === 0 ? 'the launch year' : i === 5 ? 'the final months' : `Year ${i + 1}`,
+  dates: i === 5 ? 'Apr 7, 2021 – end' : `Apr 7, ${2016 + i} – Apr 6, ${2017 + i}`,
+}));
+// PAID WITH (spec 7.2, revisione del 20-10): Jewels = payType 1, Platinum = 7, Draw Ticket = 8 con valuta draw, Seasonal =
+// 8 con spooky/holiday/moogle, Other = 4/5/6/9 (e ogni payType sconosciuto). VIP e' a parte (flag del banner, qualunque moneta).
+const SEASONAL_CURRENCIES = new Set(['spooky', 'holiday', 'moogle']);
+function payGroupOf(b) {
+  if (b.payType === 1) return 'jewel';
+  if (b.payType === 7) return 'platinum';
+  if (b.payType === 8) return b.currency === 'draw' ? 'draw' : SEASONAL_CURRENCIES.has(b.currency) ? 'seasonal' : 'other';
+  return 'other';
+}
+const isVip = (b) => (b.flags || []).includes('VIP');
+const PAY_ICON = { jewel: '💎 ', platinum: '🎫 ', draw: '🎟 ', seasonal: '🎃 ', other: '' };
+const PAY_OPTS = [['all', 'All'], ['jewel', '💎 Jewels'], ['platinum', '🎫 Platinum Ticket'], ['draw', '🎟 Draw Ticket'], ['seasonal', '🎃 Seasonal tickets'], ['vip', '👑 VIP'], ['other', 'Other']];
+// SHOW: «In the Shop now» comprende il fissato; «Unlocked, not in the Shop now» = later e size; i banner solo catalogo
+// (stato catalog) compaiono solo con «All banners»
+const SHOW_OPTS = [['all', 'All banners'], ['now', '▶ In the Shop now'], ['unl', 'Unlocked, not in the Shop now'], ['lock', '🔒 Still locked']];
+// date della riga: «Apr 7 – Apr 13, 2016», «Dec 16, 2016 – Jan 6, 2017» (come le bozze)
+function niceRange(b) {
+  if (!b.end) return `${niceDay(b.start)} – open end`;
+  const from = b.start.slice(0, 4) === b.end.slice(0, 4) ? niceDay(b.start).replace(/, \d{4}$/, '') : niceDay(b.start);
+  return `${from} – ${niceDay(b.end)}${b.endSource !== 'original' ? ' (end date reconstructed)' : ''}`;
+}
+const CATALOG_CSS = '.hdr{display:flex;align-items:center;justify-content:space-between;gap:10px}'
+  + '.fbtn,.ok{border:0;color:#fff;background:linear-gradient(#f08a3a,#d4541c);border-radius:18px;padding:5px 16px;font:bold 15px sans-serif;box-shadow:0 2px 0 #8a3510;cursor:pointer;white-space:nowrap}'
+  + '.dot{display:inline-block;background:#fff;color:#d4541c;border-radius:10px;padding:0 7px;margin-left:6px;font-size:13px;line-height:1.5}.dot:empty{display:none}'
+  + '.gy{color:#00d4ed;font-size:13px;letter-spacing:.5px;margin:10px 0 3px;line-height:1.4}.gy span{color:#b9cfdc;letter-spacing:0}'
+  + '.tabs{display:flex;gap:3px}.tab{flex:1 1 0;min-width:0;border:0;font-family:inherit;cursor:pointer;text-align:center;background:#0d4a70;border-radius:7px 7px 0 0;padding:4px 1px 3px;line-height:1.15;color:#b9cfdc;letter-spacing:0}'
+  + '.tab b{display:block;font-size:11.5px;color:#fff}.tab small{display:block;font-size:9px}.tab .c{display:block;color:#ffa500;font-weight:bold;font-size:12px}'
+  + '.tab.on{background:linear-gradient(#25c4d8,#0a8fa3);color:#e9fbff}.tabline{height:3px;background:#0a8fa3;margin-bottom:8px}'
+  + '.sum{background:#06283e;border-radius:6px;padding:6px 10px;margin:0 0 6px;font-size:15px;line-height:1.7}.sum .n1{color:#ffa500;font-weight:bold}'
+  + '.tag{display:inline-block;background:#0d5f86;border:1px solid #39a7cf;border-radius:14px;padding:0 4px 0 10px;margin:3px 4px 0 0;font-size:14px;line-height:1.6}'
+  + '.tag a{display:inline-block;background:#043654;border-radius:10px;width:20px;text-align:center;margin-left:5px;color:#fff;text-decoration:none}.clear{font-size:14px;margin-left:3px}'
+  + '.cat .b{display:flex;gap:12px;align-items:center;padding-top:8px;padding-bottom:8px;border-bottom:1px solid #2f5d78}.cat .b.hide{display:none}'
+  + '.cat .im{flex:0 0 46%;max-width:300px}.cat .im img{margin:0;border-radius:4px}.cat .info{flex:1;min-width:0;line-height:1.4}'
+  + '.cat .nm{color:#fff;font-weight:bold;text-decoration:none}.cat .n,.cat .pay{font-size:14px}.pay{color:#ffcd4a}.cat .s{font-size:13px;margin:3px 0 0}'
+  + '.dim{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(1,12,20,.68);z-index:5}'
+  + '.sheet{display:none;position:fixed;left:10px;right:10px;top:52px;max-width:560px;margin:0 auto;max-height:calc(100% - 64px);overflow:auto;box-sizing:border-box;'
+  + 'background:#0b3d5c;border:2px solid #39a7cf;border-radius:10px;padding:10px 14px;box-shadow:0 6px 18px rgba(0,0,0,.6);z-index:6;line-height:1.5}'
+  + 'body.fo .dim,body.fo .sheet{display:block}.shd{display:flex;justify-content:space-between;align-items:center}.shd b{font-size:18px}'
+  + '.x{background:#043654;border:1px solid #39a7cf;border-radius:50%;width:30px;height:30px;color:#fff;font-size:15px;cursor:pointer;padding:0}'
+  + '.sheet h4{margin:10px 0 4px;color:#00d4ed;font-size:13px;letter-spacing:1px}'
+  + '.search{display:flex;align-items:center;background:#fff;border-radius:18px;padding:2px 12px;color:#7a8a96}'
+  + '.search input{flex:1;min-width:0;border:0;outline:0;font:16px sans-serif;color:#222;background:transparent;padding:4px 6px}'
+  + '.hint{color:#9fb7c6;font-size:13px;margin:3px 0 0 4px}.opts{display:flex;flex-wrap:wrap;gap:6px}'
+  + '.o{border:1px solid #5d8aa6;border-radius:16px;padding:3px 12px;font:14px sans-serif;color:#d9e6ee;background:#083048;cursor:pointer}'
+  + '.o.on{background:#00a6bb;border-color:#7beaf7;color:#fff;font-weight:bold}.o.st-now.on{background:#2e9e3e;border-color:#7be08a}'
+  + '.o.st-unl.on{background:#1a6fa8;border-color:#62a7ff}.o.st-lock.on{background:#5a6470;border-color:#9aa4ae}'
+  + '.foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px}.ok{padding:6px 20px}.ok:disabled{opacity:.6;cursor:default}.reset{color:#b9cfdc;font-size:14px}';
+// Filtro tutto lato pagina (ES5, nessuno script esterno). cur = filtri applicati, dr = bozza del pannello (la X la
+// scarta, «Show N banners» la applica). Ricerca per medaglia: /web/gacha/search?q= (encodeURIComponent: un «+» crudo
+// diventerebbe uno spazio) con 300 ms di attesa dopo l'ultimo tasto e «Searching…» finche' non risponde; risultati in
+// cache per testo. Filtri ricordati in sessionStorage (facoltativo, spec 7.2) perche' BACK dai Details ritrovi la lista.
+const CATALOG_JS = `(function(){
+var Y=__YEARS__,LAB={pay:__PAY__,show:__SHOW__};
+var SHOW={now:{now:1,pinned:1},unl:{later:1,size:1},lock:{locked:1}};
+var HINT='Shows the banners where this Medal can be drawn.',KEY='khuxCatalog';
+function $(id){return document.getElementById(id);}
+function attr(el,a){return el&&el.getAttribute?el.getAttribute(a):null;}
+var rows=[].map.call(document.querySelectorAll('.cat .b'),function(el){return {el:el,id:el.id.slice(1),y:attr(el,'data-year'),pay:attr(el,'data-pay'),vip:attr(el,'data-vip')==='1',st:attr(el,'data-state')};});
+var cur={y:'all',pay:'all',show:'all',q:'',ids:null},dr=null,cache={},timer=null,xhr=null,busy=false,err=false;
+function copy(s){return {y:s.y,pay:s.pay,show:s.show,q:s.q,ids:s.ids};}
+function match(r,s,anyYear){
+if(!anyYear&&s.y!=='all'&&r.y!==s.y)return false;
+if(s.pay==='vip'?!r.vip:(s.pay!=='all'&&r.pay!==s.pay))return false;
+if(s.show!=='all'&&!SHOW[s.show][r.st])return false;
+return !s.q||!s.ids||!!s.ids[r.id];}
+function count(s){var n=0;for(var i=0;i<rows.length;i++)if(match(rows[i],s))n++;return n;}
+function nf(s){return (s.pay!=='all'?1:0)+(s.show!=='all'?1:0)+(s.q?1:0);}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function plural(n){return n+' banner'+(n===1?'':'s');}
+function tag(g,l){return '<span class="tag">'+l+'<a href="#" data-x="'+g+'" aria-label="Remove">×</a></span>';}
+function save(){try{sessionStorage.setItem(KEY,JSON.stringify({y:cur.y,pay:cur.pay,show:cur.show,q:cur.q,ids:cur.ids?Object.keys(cur.ids):null}));}catch(e){}}
+function render(){
+var c={all:0},n=0,i,r,on;for(i=0;i<6;i++)c[i]=0;
+for(i=0;i<rows.length;i++){r=rows[i];if(match(r,cur,true)){c.all++;c[r.y]++;}
+on=match(r,cur);if(on)n++;r.el.className=r.el.className.replace(/ hide/g,'')+(on?'':' hide');}
+[].forEach.call(document.querySelectorAll('.tab'),function(t){var y=attr(t,'data-y');t.className='tab'+(y===cur.y?' on':'');$('yc'+y).textContent=c[y];});
+var k=nf(cur),y=cur.y,h='<span class="n1">'+plural(n)+'</span>';
+if(y!=='all')h+=' from <b>'+Y[y].phrase+'</b> ('+Y[y].dates+')';
+if(!k)h+=y==='all'?' · all years, no filters':' · no filters';
+else{h+=y==='all'?' match:':' match your filters:';
+if(cur.pay!=='all')h+=' '+tag('pay',LAB.pay[cur.pay]);
+if(cur.show!=='all')h+=' '+tag('show',LAB.show[cur.show]);
+if(cur.q)h+=' '+tag('q','🔍 &quot;'+esc(cur.q)+'&quot;');
+h+=' <a href="#" class="clear" data-x="all">Clear all</a>';}
+$('sum').innerHTML=h;$('fdot').textContent=k?k:'';save();}
+function sync(){
+[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){var g=attr(box,'data-g');[].forEach.call(box.children,function(o){o.className=o.className.replace(/ on/g,'')+(attr(o,'data-v')===dr[g]?' on':'');});});
+var b=$('fok'),wait=!!dr.q&&!dr.ids;b.disabled=wait;
+b.textContent=busy?'Searching…':wait?'Show banners':'Show '+plural(count(dr));
+$('fh').textContent=busy?'Searching…':err?'Could not reach the server. Try again.':HINT;}
+function stop(){clearTimeout(timer);if(xhr){var x=xhr;xhr=null;x.abort();}busy=false;err=false;}
+function find(q){var x=xhr=new XMLHttpRequest();x.open('GET','/web/gacha/search?q='+encodeURIComponent(q));
+x.onload=function(){if(xhr!==x)return;xhr=null;busy=false;var ids={},ok=x.status===200;
+if(ok){try{JSON.parse(x.responseText).ids.forEach(function(i){ids[i]=1;});}catch(e){ok=false;}}
+if(ok){cache[q]=ids;if(dr&&dr.q===q)dr.ids=ids;}else err=true;if(dr)sync();};
+x.onerror=function(){if(xhr!==x)return;xhr=null;busy=false;err=true;if(dr)sync();};x.send();}
+function openF(){dr=copy(cur);stop();$('fq').value=dr.q;if(document.body.className.indexOf('fo')<0)document.body.className+=' fo';sync();}
+function closeF(){stop();dr=null;document.body.className=document.body.className.replace(/ ?fo/g,'');}
+$('fbtn').onclick=openF;$('fx').onclick=closeF;$('dim').onclick=closeF;
+$('fq').oninput=function(){var q=this.value.replace(/\\s+/g,' ').replace(/^ | $/g,'');stop();dr.q=q;
+if(!q)dr.ids=null;else if(cache[q])dr.ids=cache[q];else{dr.ids=null;busy=true;timer=setTimeout(function(){find(q);},300);}sync();};
+$('fq').onkeydown=function(e){if(e.keyCode===13)this.blur();};
+[].forEach.call(document.querySelectorAll('.sheet .opts'),function(box){box.onclick=function(e){var v=attr(e.target,'data-v');if(!v||!dr)return;dr[attr(box,'data-g')]=v;sync();};});
+$('freset').onclick=function(e){e.preventDefault();stop();dr.pay='all';dr.show='all';dr.q='';dr.ids=null;$('fq').value='';sync();};
+$('fok').onclick=function(){if(!dr||this.disabled)return;var s=dr;s.y=cur.y;closeF();cur=s;render();};
+$('sum').onclick=function(e){var x=attr(e.target,'data-x');if(!x)return;e.preventDefault();
+if(x==='pay'||x==='all')cur.pay='all';if(x==='show'||x==='all')cur.show='all';if(x==='q'||x==='all'){cur.q='';cur.ids=null;}render();};
+document.querySelector('.tabs').onclick=function(e){var t=e.target;while(t&&!attr(t,'data-y'))t=t.parentNode;if(!t)return;cur.y=attr(t,'data-y');render();};
+try{var s=JSON.parse(sessionStorage.getItem(KEY)||'null');if(s&&/^(all|[0-5])$/.test(s.y)){cur.y=s.y;cur.pay=LAB.pay[s.pay]?s.pay:'all';cur.show=LAB.show[s.show]?s.show:'all';
+if(s.q&&s.ids){cur.q=s.q;cur.ids={};s.ids.forEach(function(i){cur.ids[i]=1;});cache[s.q]=cur.ids;}}}catch(e){}
+render();
+var t=location.hash&&document.getElementById(location.hash.slice(1));if(t&&t.className.indexOf(' hide')<0&&t.scrollIntoView)t.scrollIntoView();
+})();`;
 function catalogPage(banners, ctx) {
   const sorted = [...banners].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.drawMedalTypeId - b.drawMedalTypeId));
-  return page('Banner Catalog', `<p class="n">${sorted.length} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
-    + sorted.map((b) => { const st = stateOf(b, ctx); return `<div class="b ${st.key}" id="c${b.drawMedalTypeId}"><a href="/web/gacha/detail/${b.drawMedalTypeId}?from=catalog"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt="">${esc(b.name)}</a>`
-      + `<div class="n">${dates(b)}</div>${priceLine(b) ? `<div class="n">${priceLine(b)}</div>` : ''}`
-      + `<span class="s s-${st.key}">${esc(st.text)}</span></div>`; }).join(''));
+  const perYear = [0, 0, 0, 0, 0, 0];
+  const rows = sorted.map((b) => {
+    const st = stateOf(b, ctx), y = gameYearOf(b.start), pay = payGroupOf(b), href = `/web/gacha/detail/${b.drawMedalTypeId}?from=catalog`;
+    perYear[y]++;
+    return `<div class="b ${st.key}" id="c${b.drawMedalTypeId}" data-year="${y}" data-pay="${pay}" data-vip="${isVip(b) ? 1 : 0}" data-state="${st.key}">`
+      + `<a class="im" href="${href}"><img loading="lazy" width="640" height="140" src="/web/gacha/img/${b.drawMedalTypeId}.png" alt=""></a>`
+      + `<div class="info"><a class="nm" href="${href}">${esc(b.name)}</a><div class="n">${esc(niceRange(b))}</div>`
+      + `${priceLine(b) ? `<div class="pay">${PAY_ICON[pay]}${priceLine(b)}</div>` : ''}<span class="s s-${st.key}">${esc(st.text)}</span></div></div>`;
+  });
+  const tab = (y, name, sub, n) => `<button type="button" class="tab${y === 'all' ? ' on' : ''}" data-y="${y}"><b>${name}</b><small>${sub}</small><span class="c" id="yc${y}">${n}</span></button>`;
+  const opts = (list, cls = () => '') => list.map(([v, l], i) => `<button type="button" class="o${cls(v)}${i ? '' : ' on'}" data-v="${v}">${l}</button>`).join('');
+  const n = sorted.length, nb = `${n} banner${n === 1 ? '' : 's'}`;
+  const js = CATALOG_JS.replace('__YEARS__', JSON.stringify(GAME_YEARS.map(({ phrase, dates: d }) => ({ phrase, dates: d }))))
+    .replace('__PAY__', JSON.stringify(Object.fromEntries(PAY_OPTS.slice(1)))).replace('__SHOW__', JSON.stringify(Object.fromEntries(SHOW_OPTS.slice(1))));
+  return page('Banner Catalog', `<style>${CATALOG_CSS}</style>`
+    + `<p class="n">${n} original banners. Banners unlock as you progress through the Story; in the original game they followed the calendar.</p>`
+    + '<div class="gy">GAME YEAR <span>— each year runs from one anniversary (April 7) to the next</span></div>'
+    + `<div class="tabs">${tab('all', 'All years', '2016–2021', n)}${GAME_YEARS.map((g, i) => tab(i, g.name, g.sub, perYear[i])).join('')}</div><div class="tabline"></div>`
+    + `<div class="sum" id="sum"><span class="n1">${nb}</span> · all years, no filters</div>`
+    + `<div class="cat">${rows.join('')}</div>`
+    + '<div class="dim" id="dim"></div><div class="sheet" id="sheet" role="dialog" aria-label="Filters">'
+    + '<div class="shd"><b>Filters</b><button type="button" class="x" id="fx" aria-label="Close">✕</button></div>'
+    + '<h4>FIND A MEDAL</h4><div class="search">🔍<input type="search" id="fq" placeholder="Medal name" autocomplete="off"></div>'
+    + '<div class="hint" id="fh">Shows the banners where this Medal can be drawn.</div>'
+    + `<h4>PAID WITH</h4><div class="opts" data-g="pay">${opts(PAY_OPTS)}</div>`
+    + `<h4>SHOW</h4><div class="opts" data-g="show">${opts(SHOW_OPTS, (v) => (v === 'all' ? '' : ` st-${v}`))}</div>`
+    + `<div class="foot"><a href="#" class="reset" id="freset">Reset filters</a><button type="button" class="ok" id="fok">Show ${nb}</button></div></div>`
+    + `<script>${js}</script>`, '', '<button type="button" class="fbtn" id="fbtn">⚙ Filters<span class="dot" id="fdot"></span></button>');
 }
 
 module.exports = {
   SHOP_MAX, WALLET, shopLeaveWeeks, TICKET_CURRENCIES, ticketsOf, walletName, balance, priceFor, drawable, ticketUnlockQuest, shopBanners, catalogRow, catalogPlate,
-  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
+  dayLeft, drawsLeft, gachaListData, warrantFields, guardWarrant, warrantDedupe, warrantStripBytes, WARRANT_LIST_MAX, WARRANT_HARD_MAX, checkDraw, payDraw, drawState, drawResultFields, detailPage, oddsPage, catalogPage, gameYearOf, payGroupOf, isVip, medalSearch, stateOf, RESTORED_QUEST, isFreeLike, pinnable, pinnedBanner,
 };

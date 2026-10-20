@@ -544,5 +544,45 @@ try {
   check(g.medalSearch([{ banner: bA, names: [] }], 'x').size === 0, 'medalSearch: banner senza nomi');
 } catch (err) { errors.push(`ricerca: eccezione ${err.stack}`); }
 
+// Catalog: schede per anno di gioco e pannello Filters (sp3 7.1-7.2)
+try {
+  const gy = (d) => g.gameYearOf(d);
+  check(gy('2016-04-07') === 0 && gy('2017-04-06') === 0 && gy('2017-04-07') === 1, `gameYearOf: confine del primo anniversario (${gy('2016-04-07')},${gy('2017-04-06')},${gy('2017-04-07')})`);
+  check(gy('2020-04-06') === 3 && gy('2020-04-07') === 4 && gy('2021-04-06') === 4 && gy('2021-04-07') === 5 && gy('2021-09-30') === 5, 'gameYearOf: Year 4/5 e Final months');
+  check(gy('2016-01-01') === 0 && gy('2030-01-01') === 5, 'gameYearOf: fuori intervallo -> 0 / 5');
+  const pg = (o) => g.payGroupOf(mk(o));
+  check(pg({ payType: 1 }) === 'jewel' && pg({ payType: 7, currency: 'platinum' }) === 'platinum', 'payGroupOf: jewel, platinum');
+  check(pg({ payType: 8, currency: 'draw' }) === 'draw', 'payGroupOf: Draw Ticket');
+  check(['spooky', 'holiday', 'moogle'].every((c) => pg({ payType: 8, currency: c }) === 'seasonal'), 'payGroupOf: stagionali');
+  check([4, 5, 6, 9].every((p) => pg({ payType: p }) === 'other'), 'payGroupOf: other');
+  check(g.isVip(mk({ flags: ['DAY_LIMITED', 'VIP'] })) && !g.isVip(mk({ flags: [] })) && !g.isVip(mk({ flags: undefined })), 'isVip: flag VIP');
+  // pagina sintetica: un banner per anno piu' uno stagionale VIP e uno solo catalogo
+  const yb = [sb({ start: '2016-04-07', name: 'Launch' }), sb({ start: '2017-04-07', name: 'Y2', unlockQuest: 999 }), sb({ start: '2018-05-01', payType: 8, currency: 'spooky' }),
+    sb({ start: '2019-06-01', flags: ['VIP'] }), sb({ start: '2020-04-07', payType: 7, currency: 'platinum' }), sb({ start: '2021-04-07', catalogOnly: 'VIP_TWIN' }), sb({ start: '2016-12-01', payType: 9, currency: 'points' })];
+  const yp = g.catalogPage(yb, { ...sctx, storyQuest: 525 });
+  for (const t of ['All years', 'Launch year', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Final months']) check(yp.includes(`<b>${t}</b>`), `catalogo: scheda ${t}`);
+  check(yp.includes('GAME YEAR <span>— each year runs from one anniversary (April 7) to the next</span>'), 'catalogo: titolo GAME YEAR');
+  for (const t of ['⚙ Filters', 'FIND A MEDAL', 'Shows the banners where this Medal can be drawn.', 'PAID WITH', '💎 Jewels', '🎫 Platinum Ticket', '🎟 Draw Ticket',
+    '🎃 Seasonal tickets', '👑 VIP', '>Other<', '>SHOW<', '>All banners<', '▶ In the Shop now', 'Unlocked, not in the Shop now', '🔒 Still locked', 'Reset filters', 'Show 7 banners', 'Clear all']) {
+    check(yp.includes(t), `catalogo: testo «${t}»`);
+  }
+  check(yp.includes('/web/gacha/search?q=') && yp.includes('encodeURIComponent(') && yp.includes('Searching…'), 'catalogo: ricerca con encodeURIComponent e «Searching…»');
+  const rows = [...yp.matchAll(/<div class="b [^"]*" id="c(\d+)" data-year="(\d)" data-pay="(\w+)" data-vip="([01])" data-state="(\w+)">/g)];
+  check(rows.length === yb.length, `catalogo: data-* su ogni banner (${rows.length})`);
+  const row = (b) => rows.find((r) => Number(r[1]) === b.drawMedalTypeId) || [];
+  check(row(yb[0])[2] === '0' && row(yb[1])[2] === '1' && row(yb[5])[2] === '5', 'catalogo: data-year');
+  check(row(yb[2])[3] === 'seasonal' && row(yb[4])[3] === 'platinum' && row(yb[6])[3] === 'other' && row(yb[3])[4] === '1' && row(yb[0])[4] === '0', 'catalogo: data-pay e data-vip');
+  check(row(yb[1])[5] === 'locked' && row(yb[5])[5] === 'catalog' && row(yb[0])[5] === 'later', 'catalogo: data-state');
+  check(yp.includes(`href="/web/gacha/detail/${yb[0].drawMedalTypeId}?from=catalog"`), 'catalogo: link ai dettagli con from=catalog');
+  const counts = (html) => Object.fromEntries([...html.matchAll(/data-y="(\w+)"><b>[^<]+<\/b><small>[^<]*<\/small><span class="c" id="yc\w+">(\d+)<\/span>/g)].map((m) => [m[1], Number(m[2])]));
+  const yc = counts(yp);
+  check(JSON.stringify(yc) === '{"0":2,"1":1,"2":1,"3":1,"4":1,"5":1,"all":7}', `catalogo: conteggi per anno ${JSON.stringify(yc)}`);
+  // catalogo vero: i conteggi per anno sommano al totale
+  const real = require('./game_data/gacha_catalog.json').banners;
+  const rc = counts(g.catalogPage(real, { ...sctx, storyQuest: 525 }));
+  const sum = [0, 1, 2, 3, 4, 5].reduce((s, i) => s + (rc[i] || 0), 0);
+  check(rc.all === real.length && sum === real.length, `catalogo vero: anni ${JSON.stringify(rc)} sommano a ${real.length}`);
+} catch (err) { errors.push(`catalogo per anni: eccezione ${err.stack}`); }
+
 if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log('OK: gacha');
