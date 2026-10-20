@@ -607,6 +607,32 @@ try {
   setQuest(200);
 }
 
+// bug banco 20-10: il Catalog cambia il banner fissato senza uscire dallo Shop (il client non ricarica /gacha/list):
+// l'estrazione sulla piastra ancora a schermo vale se il banner era nell'ultima lista inviata
+{
+  setQuest(525);
+  const post = (url) => { quiet(() => t.respondGachaPost({ writeHead() {}, end() {} }, url)); };
+  const draw = (id) => { p.freeStone = 10000; p.gacha.count = {}; delete p.gacha.used; return call(t.respondGachaDraw, { drawMedalTypeId: id, count: 1 }); };
+  post('/web/gacha/pin/10002');
+  const shown = ids(call(t.respondGachaList));
+  check(shown.includes(10002), 'draw dopo cambio pin: 10002 nella lista inviata');
+  post('/web/gacha/pin/10004');
+  check(p.gacha.pinned === 'B0004' && !t.gachaShopList().map((b) => b.drawMedalTypeId).includes(10002), 'draw dopo cambio pin: 10002 fuori dalla lista attuale');
+  logs.length = 0;
+  let before = p.freeStone = 10000;
+  let rr = call(t.respondGachaDraw, { drawMedalTypeId: 10002, count: 1 });
+  check(rr.userMedalIds && p.freeStone < before, `draw dopo cambio pin: piastra ancora a schermo accettata (${logs.join(' | ')})`);
+  rr = draw(99999);
+  check(!rr.userMedalIds, 'draw dopo cambio pin: banner sconosciuto rifiutato');
+  const outside = t.gachaCatalog().banners.find((b) => !shown.includes(b.drawMedalTypeId) && !t.gachaShopList().map((b) => b.drawMedalTypeId).includes(b.drawMedalTypeId) && !b.catalogOnly);
+  if (outside) { rr = draw(outside.drawMedalTypeId); check(!rr.userMedalIds, `draw dopo cambio pin: ${outside.rowId} in nessuna lista rifiutato`); }
+  call(t.respondGachaList);
+  rr = draw(10002);
+  check(!rr.userMedalIds, 'draw dopo nuova lista: 10002 non listato rifiutato');
+  post('/web/gacha/unpin');
+  setQuest(200);
+}
+
 // catalogo assente: solo la piastra Catalog, estrazione rifiutata
 writeCatalog('non json');
 t.reloadGachaBanners();

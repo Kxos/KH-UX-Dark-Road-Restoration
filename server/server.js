@@ -1278,6 +1278,8 @@ function gachaSearchEntries(ctx) {
 const gachaShopList = (ctx = storyCtx()) => gacha.shopBanners(gachaCatalog().banners, { ...ctx, sizes: GACHA_SIZES, show: GACHA_SHOW });
 
 // Piastre con la striscia della garanzia (gacha.warrantFields): il pool alla data del giocatore da' i bersagli della pity.
+// drawMedalTypeId dell'ultima /gacha/list inviata (in memoria, per processo): e' cio' che il client ha a schermo
+let gachaLastListed = new Set();
 const gachaListWarned = new Set(); // banner il cui pool non si espande per /gacha/list (log una volta)
 function respondGachaList(res) {
   const migrate = !player.drawTickets, listed = player.gacha?.listedCurrency, ctx = storyCtx();
@@ -1300,6 +1302,7 @@ function respondGachaList(res) {
   const data = gacha.gachaListData(gachaCatalog().banners, player, { realMs: realNow(), webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW,
     ...ctx, exFor, catalog: gachaCatalog(), validCommentOf: (b) => comments.get(b.drawMedalTypeId), safeMedalId, nameOf });
   if (migrate || player.gacha.listedCurrency !== listed) savePlayer();
+  gachaLastListed = new Set(data.gachaList.map((x) => x.drawMedalTypeId));
   send(res, 200, { ret: ret(), ...data });
 }
 
@@ -1307,7 +1310,9 @@ function respondGachaList(res) {
 // [fn] (userMedals, userSkills, userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds,
 // effectNumbers: tutti obbligatori) e [fn] (guiltBurstFirst/MaxUserMedalIds). Un rifiuto
 // risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop ([fn]). Si estrae solo dai
-// banner della lista attuale o di KHUX_GACHA_SHOW: una richiesta forgiata non arriva ai banner fuori periodo.
+// banner della lista attuale, dell'ultima /gacha/list inviata o di KHUX_GACHA_SHOW: una richiesta forgiata non arriva ai
+// banner fuori periodo. L'ultima lista conta perche' il client non ricarica /gacha/list quando il Catalog si chiude: pin,
+// unpin o cambio di settimana a Shop aperto lasciano a schermo piastre che la lista attuale non ha piu'.
 // Potenziamenti del catalogo v3 (sotto-progetto 2b, rollDraw extras): boosted = la riga boosted del master al
 // posto della normale (cella propria, validPack 0); preset = pallini (fino a maxEnhanceCount della burst, gia'
 // corretto da burstDotFixes in make-game-tables) e guilt al massimo del Tier (guilt 'max': pallini sempre pieni,
@@ -1320,7 +1325,7 @@ function respondGachaDraw(res, body) {
   const banner = gachaData.bannerById(gachaCatalog().banners, body?.drawMedalTypeId);
   const freeSlots = maxMedal() - stackedMedalList().length;
   let why = gacha.checkDraw(banner, player, body, { ...ctx, realMs, freeSlots, sizes: GACHA_SIZES, show: GACHA_SHOW });
-  if (!why && !GACHA_SHOW.has(banner.rowId) && !gachaShopList(ctx).includes(banner)) why = `${banner.rowId} non e' nella lista dello Shop`;
+  if (!why && !GACHA_SHOW.has(banner.rowId) && !gachaShopList(ctx).includes(banner) && !gachaLastListed.has(banner.drawMedalTypeId)) why = `${banner.rowId} non e' nella lista dello Shop`;
   if (why) {
     console.log(`  [gacha] estrazione rifiutata: ${why} (corpo ${JSON.stringify(body)})`);
     return send(res, 200, { ret: ret() });
@@ -4131,5 +4136,5 @@ module.exports._test = {
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-gacha-server.js
-  handler, sanitizeBanners, gachaCatalog, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
+  handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };
