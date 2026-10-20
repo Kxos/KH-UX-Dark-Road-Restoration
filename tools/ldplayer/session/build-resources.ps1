@@ -24,7 +24,9 @@
 #   import_jp_raisedraw.py); KHUX_GACHA_SIZES va ridotto a 1 (solo raidgacha_result_display_01 servita).
 # I pacchetti statici di una versione completa sono scritti in resource_data\<N>\packs.txt: -Quick e
 # -DryRun usano quelli della versione installata (senza packs.txt: niente stanze, versioni <= 34).
-param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw)
+# -NoCompact: versione completa con OBB, addnl e medaglie non compattati (resource_compact.py, I-171: senza,
+#   i record che l'indice unito non cita restano nei dati, ~90 MB).
+param([int]$Version, [switch]$Quick, [switch]$DryRun, [switch]$NoJp, [switch]$NoRooms, [switch]$NoEnemies, [switch]$NoRaisedraw, [switch]$NoCompact)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 Set-Location $repo
@@ -295,27 +297,85 @@ if ($Quick) {
   $raisedrawPack = @("$xg\gen.png", "$xg\gen.mp4")
 }
 $staticPacks = $medalPack + $roomsPack + $enemyPack + $raisedrawPack
+# Pacchetti nell'ordine dei dati (etichetta, indice, dati separati da virgola): OBB 5.0.1 main + patch
+# (indice aliud.png), addnl 4.3.1, i pacchetti statici, il generato per ultimo
+$o = "$D\obb76"
+$plist = @(@('obb', "$D\apk501\ext\assets\aliud.png", "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb"),
+           @('addnl', "$D\ipa431\addnl.png", "$D\ipa431\addnl.mp4"))
+for ($i = 0; $i -lt $staticPacks.Count; $i += 2) { $plist += , @((Split-Path -Leaf (Split-Path $staticPacks[$i])), $staticPacks[$i], $staticPacks[$i + 1]) }
+$plist += , @('stage_gen', "$sg\gen.png", "$sg\gen.mp4")
+# Compattazione (I-171, resource_compact.py): nei dati restano solo i record che l'indice unito puo' citare
+# (via ~85 MB nella 47: addnl 54,7, OBB 30,1, medaglie 4,9; verificato nome per nome con resource_compare.py).
+# Pacchetti compattati in $D\compact (<etichetta>.mp4/.png, rifatti solo se cambiano gli ingressi); l'elenco
+# di una versione sta in resource_data\<N>\compact.txt: -Quick e -DryRun usano gli stessi (mai ricompattati:
+# lo controlla la somma delle dimensioni piu' sotto). -NoCompact: pacchetti come sono (versioni <= 47).
+$cdir = "$D\compact"
+if ($Quick) {
+  $compact = if (Test-Path "$v\compact.txt") { @(Get-Content "$v\compact.txt") } else { @() }
+} elseif ($NoCompact) {
+  $compact = @()
+} else {
+  $compact = @(@('obb', 'addnl', 'medal_gen') | Where-Object { $l = $_; $plist | Where-Object { $_[0] -eq $l } })
+  $cArgs = @(); foreach ($l in $compact) { $cArgs += @('--compact', $l) }
+  $pArgs = @(); foreach ($p in $plist) { $pArgs += $p }
+  python -I recon\tools\resource_compact.py @cArgs recon\tools recon\ext\ww431\libcocos2dcpp.so $key $cdir @pArgs
+  if ($LASTEXITCODE) { throw 'resource_compact fallito' }
+}
+foreach ($p in $plist) {
+  if ($compact -contains $p[0]) {
+    if (-not (Test-Path "$cdir\$($p[0]).png")) { throw "manca $cdir\$($p[0]).png (pacchetto compattato della versione $Version)" }
+    $p[1] = "$cdir\$($p[0]).png"; $p[2] = "$cdir\$($p[0]).mp4"
+  }
+}
 # Dimensioni fisse: il client confronta le dimensioni dei file installati con quelle del
 # download e, se cambiano, butta le risorse e riscarica tutto (resourceRevision 0). Il
 # pacchetto generato si riempie di zeri fino a una riserva (letto per offset, la coda non
 # e' mai letta) e l'indice ha un nome di riempimento (resource_merge.py): una versione
-# completa riserva 16 MiB e 64 KiB, -Quick ritorna alle dimensioni installate.
-# l'ultimo pezzo dei dati e' il pacchetto generato: d0035 + uno per pacchetto statico (medaglie
-# d0035, stanze d0036, nemici d0037, estrazioni raisedraw d0038, generato d0039)
-$genName = if ($Quick) { (Get-ChildItem "$v\data" | Sort-Object Name | Select-Object -Last 1).Name } else { 'd{0:D4}' -f (35 + $staticPacks.Count / 2) }
+# completa riserva 168 MiB e 64 KiB, -Quick ritorna alle dimensioni installate.
+# Pezzi dei dati, numerati di seguito: OBB (d0000-d0032 nella 7), addnl (d0033-d0034), uno per pacchetto
+# statico, il generato per ultimo (nella 47: medaglie d0035, stanze d0036, nemici d0037, raisedraw d0038,
+# generato d0039)
 if ($Quick) {
+  $genName = (Get-ChildItem "$v\data" | Sort-Object Name | Select-Object -Last 1).Name
   $dataSize = (Get-Item "$v\data\$genName").Length
   $mergeOpt = @('--fast-md5', '--index-size', (Get-Item "$v\index\misc.png").Length)
 } else {
   if (Test-Path $v) { throw "$v esiste gia'" }
   New-Item -ItemType Directory -Force "$v\data", "$v\index" | Out-Null
-  Get-ChildItem "$D\resource_data\7\data" | Where-Object Name -ne 'd0035' |
-    ForEach-Object { New-Item -ItemType HardLink -Path "$v\data\$($_.Name)" -Target $_.FullName | Out-Null }
-  # pacchetti statici come pezzi d0035.. (copie: le versioni dopo li ricostruiscono)
-  for ($i = 1; $i -lt $staticPacks.Count; $i += 2) { Copy-Item $staticPacks[$i] ("$v\data\d{0:D4}" -f (35 + ($i - 1) / 2)) }
+  $nx = 0
+  # OBB e addnl: hard link a pezzi da 64 MiB condivisi fra le versioni; non compattati quelli della 7,
+  # compattati quelli di $cdir\pieces\<etichetta> (resource_split.py, rifatti quando cambia il pacchetto)
+  $v7 = @(Get-ChildItem "$D\resource_data\7\data" | Sort-Object Name)
+  foreach ($b in @(@('obb', 0, 33), @('addnl', 33, 2))) {
+    $l = $b[0]
+    if ($compact -contains $l) {
+      $pd = "$cdir\pieces\$l"; $stamp = Get-Content "$cdir\$l.png.src"
+      if (-not (Test-Path "$pd.src") -or (Get-Content "$pd.src") -ne $stamp) {
+        if (Test-Path $pd) { Remove-Item -Recurse -Force $pd }   # i pezzi gia' collegati alle versioni restano
+        python -I recon\tools\resource_split.py $pd 64 "$cdir\$l.mp4"
+        if ($LASTEXITCODE) { throw "resource_split $l fallito" }
+        Set-Content -Encoding ascii "$pd.src" $stamp
+      }
+      $src = @(Get-ChildItem $pd -File | Sort-Object Name)
+    } else {
+      $src = $v7[$b[1]..($b[1] + $b[2] - 1)]
+      $p = $plist | Where-Object { $_[0] -eq $l }
+      $sum = 0; foreach ($f in $p[2] -split ',') { $sum += (Get-Item $f).Length }
+      if (($src | Measure-Object Length -Sum).Sum -ne $sum) { throw "i pezzi della 7 per $l non sono lunghi quanto il pacchetto" }
+    }
+    foreach ($f in $src) { New-Item -ItemType HardLink -Path ("$v\data\d{0:D4}" -f $nx) -Target $f.FullName | Out-Null; $nx++ }
+  }
+  # pacchetti statici come pezzi seguenti (copie: le versioni dopo li ricostruiscono)
+  for ($i = 2; $i -lt $plist.Count - 1; $i++) { Copy-Item $plist[$i][2] ("$v\data\d{0:D4}" -f $nx); $nx++ }
+  $genName = 'd{0:D4}' -f $nx
   $names = @(); if ($medalPack) { $names += 'medal_gen' }; if ($roomsPack) { $names += 'rooms_gen' }; if ($enemyPack) { $names += 'enemy_gen' }; if ($raisedrawPack) { $names += 'raisedraw_gen' }
   Set-Content -Encoding ascii "$v\packs.txt" $names
-  $dataSize = 176MB  # 128 MiB fino al 19 ottobre (originali di I-170, ~33 MB; 192 MiB portava i dati oltre 4 GiB); 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le miniature Story (11 ottobre), 32 MiB con la musica delle BGM Medals (15 ottobre, ~55 MB di audio)
+  if ($compact) { Set-Content -Encoding ascii "$v\compact.txt" $compact }
+  # 168 MiB dal 20 ottobre (I-171): contenuto 138,8 MB (132,4 MiB) nella 47, restano ~35,6 MiB per i -Quick (piu'
+  # degli originali di I-170, ~33 MB in un colpo; 160 MiB ne lasciava 27,6). 176 MiB dal 19 ottobre, 128 MiB prima
+  # (192 MiB portava i dati oltre 4 GiB); 4 MiB finiti con le icone dei materiali (10 ottobre), 16 MiB con le
+  # miniature Story (11 ottobre), 32 MiB con la musica delle BGM Medals (15 ottobre, ~55 MB di audio)
+  $dataSize = 168MB
   $mergeOpt = @('--filler', 65536)   # riserva dell'indice per i cicli -Quick (4 KB finivano presto)
 }
 # cartelle mixture/medal/compose/<imageId>/Medal_L dell'animazione di Level Up/Evolve come alias di
@@ -326,10 +386,19 @@ $mergeOpt += @('--alias', "$sg\mixture_alias.tsv")
 $genLen = (Get-Item "$sg\gen.mp4").Length
 if ($genLen -gt $dataSize) { throw "pacchetto generato di $genLen byte oltre la riserva di ${dataSize}: serve una versione completa" }
 $fs = [IO.File]::Open("$sg\gen.mp4", 'Open', 'ReadWrite'); $fs.SetLength($dataSize); $fs.Close()
+# argomenti di resource_merge.py: indice e dati di ogni pacchetto, nell'ordine dei dati
+$packs = @(); foreach ($p in $plist) { $packs += @($p[1], $p[2]) }
+if ($Quick) {
+  # i pacchetti prima del generato devono essere lunghi quanto i pezzi installati: altrimenti gli offset
+  # dell'indice nuovo non cadrebbero sui record (pacchetto statico o compattato rifatto dopo la versione)
+  $before = (Get-ChildItem "$v\data" | Where-Object Name -ne $genName | Measure-Object Length -Sum).Sum
+  $sum = 0; foreach ($p in $plist[0..($plist.Count - 2)]) { foreach ($f in $p[2] -split ',') { $sum += (Get-Item $f).Length } }
+  if ($sum -ne $before) {
+    $msg = "pacchetti prima del generato di $sum byte, pezzi installati della versione $Version di ${before}: serve una versione completa"
+    if ($DryRun) { Write-Warning $msg } else { throw $msg }
+  }
+}
 if ($DryRun) {
-  $o = "$D\obb76"
-  $packs = @("$D\apk501\ext\assets\aliud.png", "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb",
-             "$D\ipa431\addnl.png", "$D\ipa431\addnl.mp4") + $staticPacks + @("$sg\gen.png", "$sg\gen.mp4")
   $want = (Get-Item "$v\index\misc.png").Length
   $ErrorActionPreference = 'Continue'
   $out = python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$sg\misc_dry.png" @packs 2>&1
@@ -346,38 +415,54 @@ if ($DryRun) {
   else { "indice oltre la riserva di -Quick ($($out | Select-Object -Last 1)): serve una versione completa (-Version $($Version + 1)); come versione completa l'indice e' di $ix byte. Niente scritto in resource_data ne' nel guest" }
   return
 }
-# d0035 e' una copia (non un hard link): sovrascriverla non tocca le altre versioni
+# l'ultimo pezzo e' una copia (non un hard link): sovrascriverlo non tocca le altre versioni
 Copy-Item "$sg\gen.mp4" "$v\data\$genName" -Force
-$o = "$D\obb76"
-python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$v\index\misc.png" `
-  "$D\apk501\ext\assets\aliud.png" "$o\main.76.com.square_enix.android_googleplay.khuxww.obb,$o\patch.87.com.square_enix.android_googleplay.khuxww.obb" `
-  "$D\ipa431\addnl.png" "$D\ipa431\addnl.mp4" @staticPacks "$sg\gen.png" "$sg\gen.mp4"
+python -I recon\tools\resource_merge.py --last-wins @mergeOpt recon\tools recon\ext\ww431\libcocos2dcpp.so $key "$v\index\misc.png" @packs
 if ($LASTEXITCODE) { throw 'resource_merge fallito' }
 if (-not $Quick) {
-  # il client spezza i dati in misc.mp4 + misc.mp4.1 a 2 GiB; oltre 4 GiB servirebbe misc.mp4.2
-  # (mai provato) e -Quick non saprebbe dove sta il pacchetto generato
-  $total = (Get-ChildItem "$v\data" | Measure-Object Length -Sum).Sum
-  "versione ${Version}: dati $([math]::Round($total / 1GB, 2)) GiB in $((Get-ChildItem "$v\data").Count) pezzi, pacchetti statici: $((Get-Content "$v\packs.txt") -join ', ')"
-  if ($total -gt 2 * [int64]2147483648) { Write-Warning "dati oltre 4 GiB ($total byte): misc.mp4.2 mai provato sul client" }
+  # il client spezza i dati in misc.mp4, misc.mp4.1, misc.mp4.2 ... a 2 GiB e ne legge al massimo 10 (20 GiB);
+  # ogni file di /system/resource deve stare sotto i 2 GiB (size letto come int); risorse_layout.md#pezzi
+  $files = @(Get-ChildItem "$v\data")
+  $total = ($files | Measure-Object Length -Sum).Sum
+  "versione ${Version}: dati $([math]::Round($total / 1GB, 2)) GiB in $($files.Count) pezzi, pacchetti statici: $((Get-Content "$v\packs.txt") -join ', '); compattati: $($compact -join ', ')"
+  $big = @($files | Where-Object Length -ge 2147483648)
+  if ($big) { throw "pezzi da 2 GiB o piu' (il client li rifiuta): $($big.Name -join ', ')" }
+  if ($total -gt 10 * [int64]2147483648) { throw "dati oltre 20 GiB ($total byte): il client legge solo misc.mp4 .. misc.mp4.9" }
+  if ($total -gt 2 * [int64]2147483648) { Write-Warning "dati oltre 4 GiB ($total byte): misc.mp4.2, non ancora provato al banco (I-171)" }
   return
 }
 
 . "$repo\tools\ldplayer\bench_lib.ps1"
-$before = (Get-ChildItem "$v\data" | Where-Object Name -ne $genName | Measure-Object Length -Sum).Sum
-$split = [int64]2147483648
-if ($before -lt $split -or $before -ge 2 * $split) { throw 'il pacchetto generato non sta in misc.mp4.1' }
-$tail = $before - $split
+# Il pacchetto generato e' la coda dei dati: comincia all'offset globale $before (somma dei pezzi prima) e
+# cade nel pezzo $before >> 31 del guest (misc.mp4, .1, .2 ...), magari a cavallo di due. resource_parts.py
+# lo spezza nei segmenti (pezzo, offset locale, lunghezza): il primo si scrive troncando il suo pezzo
+# all'offset locale e accodando, gli altri riscrivono il pezzo da zero
 $genLen = (Get-Item "$v\data\$genName").Length
-Copy-Item "$v\data\$genName" "$SHARED\q_gen.bin" -Force
+$segs = @(python -I recon\tools\resource_parts.py "$v\data\$genName" $before "$SHARED\q_gen")
+if ($LASTEXITCODE -or -not $segs) { throw 'resource_parts fallito' }
 Copy-Item "$v\index\misc.png" "$SHARED\q_index.bin" -Force
 $r = "/data/data/$PKG/files/r"
+$cmd = "u=`$(stat -c %u:%g $r/misc.mp4)"
+$check = @(); $want = @(); $first = $true
+foreach ($sgm in $segs) {
+  $f = $sgm -split "`t"
+  $seg = "/sdcard/Pictures/$(Split-Path -Leaf $f[3])"
+  if ($first) { $cmd += " && truncate -s $($f[1]) $r/$($f[0]) && cat $seg >> $r/$($f[0])" }
+  else { $cmd += " && cat $seg > $r/$($f[0])" }
+  $cmd += " && chown `$u $r/$($f[0])"
+  $check += "$r/$($f[0])"; $want += [int64]$f[1] + [int64]$f[2]; $first = $false
+}
+$cmd += " && cat /sdcard/Pictures/q_index.bin > $r/misc.png && chown `$u $r/misc.png"
+$check += "$r/misc.png"; $want += (Get-Item "$v\index\misc.png").Length
 Sh "am force-stop $PKG" | Out-Null
-Sh "u=`$(stat -c %u:%g $r/misc.mp4); truncate -s $tail $r/misc.mp4.1 && cat /sdcard/Pictures/q_gen.bin >> $r/misc.mp4.1 && cat /sdcard/Pictures/q_index.bin > $r/misc.png && chown `$u $r/misc.mp4.1 $r/misc.png" | Out-Null
-Remove-Item "$SHARED\q_gen.bin", "$SHARED\q_index.bin"
-$got = "$(Sh "stat -c %s $r/misc.mp4.1 $r/misc.png")" -split '\s+' | Where-Object { $_ }
-$want = @(($tail + $genLen), (Get-Item "$v\index\misc.png").Length)
-if ([int64]$got[0] -ne $want[0] -or [int64]$got[1] -ne $want[1]) { throw "scrittura nel guest non riuscita: $got invece di $want" }
-"versione $Version aggiornata nel guest: misc.mp4.1 $($got[0]), misc.png $($got[1])"
+Sh $cmd | Out-Null
+foreach ($sgm in $segs) { Remove-Item ($sgm -split "`t")[3] }
+Remove-Item "$SHARED\q_index.bin"
+$got = "$(Sh "stat -c %s $($check -join ' ')")" -split '\s+' | Where-Object { $_ }
+for ($i = 0; $i -lt $want.Count; $i++) {
+  if ([int64]$got[$i] -ne $want[$i]) { throw "scrittura nel guest non riuscita: $got invece di $want" }
+}
+"versione $Version aggiornata nel guest: $(($check | ForEach-Object { Split-Path -Leaf $_ }) -join ', ') = $($got -join ', ')"
 # solo l'app riparte: il server resta acceso (riavviarlo ricalcolerebbe gli md5 di 2,3 GB;
 # la revisione delle risorse non cambia, quindi nessun download)
 if (Get-Process node -ErrorAction SilentlyContinue) {

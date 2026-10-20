@@ -19,6 +19,8 @@ mixture/medal/compose/<id>/Medal_L dell'animazione di Level Up/Evolve -> img/med
 A parita' di nome vince il pacchetto che compare prima negli argomenti; con --last-wins
 vince invece l'ultimo (il pacchetto generato sostituisce i file originali che corregge,
 es. layout con testi giapponesi, senza cambiare l'ordine dei dati).
+I record perdenti restano nei dati: build-resources.ps1 passa prima OBB, addnl e medaglie da
+resource_compact.py, che tiene solo i record citabili (I-171; verifica con resource_compare.py).
 
     python -I recon/tools/resource_merge.py [--filler N | --index-size N] recon/tools <lib 4.3.1> \\
         <chiave hex> <uscita.png> <indice1.png> <dati1a>[,<dati1b>...] [<indice2.png> <dati2>[,...] ...]
@@ -58,6 +60,7 @@ while sys.argv[1].startswith('--'):
 sys.path.insert(0, sys.argv[1])
 import bgad                                             # noqa: E402
 from resource_index import obfuscate_name, record      # noqa: E402
+import resource_compact                                 # noqa: E402
 
 lib = bgad.lib_key(sys.argv[2])
 skey = bytes.fromhex(sys.argv[3])
@@ -82,20 +85,7 @@ def read_bgi(path):
 
 
 def _read_bgi(path):
-    raw = open(path, 'rb').read()
-    b = bytearray(bgad.decode(raw, bgad.parse(raw), lib))
-    assert b[:4] == b'\x89BGI', path
-    if struct.unpack_from('<I', b, 8)[0] & 1:
-        iv = struct.pack('<Q', struct.unpack_from('<Q', b, len(b) - 8)[0] ^ bgad.INDEX_IV_XOR)
-        b[0xc:len(b) - 8] = bgad.chacha_xor(bytes(b[0xc:len(b) - 8]), skey, iv)
-    n_rec, n_names = struct.unpack_from('<II', b, 0xc)
-    offs = struct.unpack_from('<%dQ' % n_rec, b, 0x14)
-    p_idx = 0x14 + n_rec * 8
-    recs = struct.unpack_from('<%dI' % n_names, b, p_idx)
-    nos = struct.unpack_from('<%dI' % n_names, b, p_idx + n_names * 4)
-    pool = p_idx + n_names * 8
-    names = [bytes(b[pool + no:b.index(0, pool + no)]) for no in nos]
-    return offs, list(zip(names, recs))
+    return resource_compact.read_bgi(path, lib, skey)
 
 
 offsets, seen, entries, base, total_md5 = [], {}, [], 0, hashlib.md5()
