@@ -59,6 +59,14 @@ lwf/character/npc/9002/wait/	b16
 lwf/character/npc/9003/wait/	b16
 lwf/character/npc/9004/wait/	b16
 lwf/character/npc/9009/wait/	b16
+#    I-185 (21-10): 992, 999, 3001, 4015, 5528, 5529 completi nel 2016 ma riempiti da import_jp_coco.py con le texture
+#    dai nomi generici di un altro NPC (5529 = fulmini, servito come faccia e mano: «mano» nella quest 16180)
+lwf/character/npc/992/wait/	b16
+lwf/character/npc/999/wait/	b16
+lwf/character/npc/3001/wait/	b16
+lwf/character/npc/4015/wait/	b16
+lwf/character/npc/5528/wait/	b16
+lwf/character/npc/5529/wait/	b16
 
 # 5. Moogle del Moogle Shop (I-021, era la LWF vuota: invisibile) e suono dell'animazione del training (I-082): JP completi
 lwf/mogshop/mog_wait/	jp

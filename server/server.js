@@ -173,6 +173,7 @@ function route(url) {
   if (routePet(p)) return routePet(p);
   if (p === '/user/medal') return 'usermedal';
   if (p === '/user/skill') return 'userskill';
+  if (p === '/user/detail') return 'userdetail';
   if (p === '/user/medal/sell') return 'medalsell';
   if (p === '/user/medal/lock') return 'medallock';
   if (p === '/user/medal/enhance') return 'medalenhance';
@@ -3835,6 +3836,9 @@ function handler(scheme) {
       // tabella di sessione +0x1c8 senza trovarlo: riga skill 0 = crash in [fn] (pc 0xeb78a4,
       // chiamata da [fn]). Moogle Shop > Traits > Select Medal (I-121, banco 14-10)
       if (kind === 'userskill') return send(res, 200, { ret: ret(), userSkills: userSkillsData() });
+      // GET /user/detail (azione 4, parser [fn]: userData.userDetail): dettaglio di un altro giocatore, chiesto
+      // toccando la medaglia del friend nella lista amici (I-186). L'unico friend (supportUserId 1) e' il giocatore stesso
+      if (kind === 'userdetail') return send(res, 200, { ret: ret(), userData: { userDetail: userDetailData() } });
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
       if (kind === 'medallock') return respondMedalLock(res, entry.bodyDecoded);
       if (kind === 'medalenhance') return respondMedalEnhance(res, entry.bodyDecoded);
