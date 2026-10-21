@@ -8,8 +8,12 @@
 //   rispetto alle sole 4 cifre (190110117: 117 hp [2700,4700,...], 10117 [5200,9000,...]).
 // - gli altri 250 (id solo JP, id lunghi senza base): nessuna statistica esiste (wiki: la pagina «Enemies» da' solo nome,
 //   descrizione, attributo, tipo; ricerca in rete 0/250) -> clone del nemico ORIGINALE piu' simile, dichiarato nelle
-//   Notices (Task 5). Proposta: D:\Progetto_Restauro_KH_UX\tmp\enemy_src\clone_proposal.json ({"<id>": {base, reason,
-//   confidence, name, attribute, max_quest_lvl}}, script in tmp\enemy_src\scripts\prop.py). Della base si copiano curve
+//   Notices (Task 5). Proposta (ricerca in rete del 21-10: 0/250 fonti con statistiche; base scelta per famiglia di
+//   nome, ruolo mob/elite/boss e attributo): reference\world_schema\oltre525\enemy_clone_proposal.json ({"<id>": {base,
+//   reason, confidence, name, attribute, max_quest_lvl}}, obbligatoria: assente -> errore), rigenerata da
+//   `python -I enemy_clone_proposal.py` nella stessa cartella (ingressi in enemy_clone_inputs\: uncovered_info.json e
+//   wiki_enemies.json dalla tabella «Enemies» di khuxwiki; legge anche oltre525.json e server/master_data/enemy.json).
+//   Della base si copiano curve
 //   (validGrowth, baseLv, hp, attack, defense, exp, money, raidPoint, lux, score) e campi di battaglia (abilita', taglia,
 //   velocita', comparsa); nome e attributo della proposta se noti; grafica della famiglia dell'id (id % 10000 delle
 //   ultime 5 cifre) se servita, altrimenti quella della base. Gli id lunghi di queste famiglie riusano il clone della
@@ -30,7 +34,7 @@ const path = require('path');
 const MAX_ID = 2 ** 31 - 1;
 const OLTRE_DIR = 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525';
 const MISSING_PATH = process.env.KHUX_ENEMIES_OLTRE525 || path.join(OLTRE_DIR, 'enemies_oltre525.json');
-const PROPOSAL_PATH = process.env.KHUX_ENEMY_CLONE_PROPOSAL || 'D:\\Progetto_Restauro_KH_UX\\tmp\\enemy_src\\clone_proposal.json';
+const PROPOSAL_PATH = process.env.KHUX_ENEMY_CLONE_PROPOSAL || path.join(OLTRE_DIR, 'enemy_clone_proposal.json');
 const STATS_PATH = process.env.KHUX_ENEMY_STATS_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\wiki\\enemy_stats_oltre.json';
 const SOURCES_PATH = process.env.KHUX_ENEMY_OLTRE_SOURCES || path.join(OLTRE_DIR, 'enemy_oltre_sources.json');
 const NAMES_PATH = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
