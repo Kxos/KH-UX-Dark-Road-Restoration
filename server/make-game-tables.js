@@ -305,14 +305,15 @@ const hp = Number(process.env.KHUX_PLAYER_HP || 3000);
 // Molti non hanno grafica nelle risorse (HANDOFF, «Mappe generate»): conta solo per le
 // mappe che li usano.
 let enemies = null;
+const enemyOltre = require('./make-enemy-oltre');
 const realEnemies = realTable('enemy');
 if (realEnemies) {
   enemies = JSON.parse(fs.readFileSync(path.join(OUT, 'enemy.json'), 'utf8'));
   const have = new Set(enemies.map((e) => e.enemyId));
   for (const r of realEnemies) if (!have.has(r.enemyId)) enemies.push(fromReal('enemy', r));
-  // nemici degli stage JP delle missioni 526-979 (make-enemy-oltre.js, D-A): cloni della base, dalla wiki; qui, prima di
-  // grafica sostitutiva, abilita' e comparsa (valgono anche per loro) e di make-story-oltre.js (obiettivi «Defeat X»)
-  require('./make-enemy-oltre').addRows(enemies, OUT);
+  // nemici degli stage JP delle missioni 526-979 (make-enemy-oltre.js): le righe di un giro precedente via, si
+  // rigenerano sotto, dopo la scelta della grafica delle basi
+  enemyOltre.strip(enemies, enemyOltre.defaultSources().missing);
 }
 
 // Grafica dei nemici: lwf/character/enemy/<displayId>/wait/ esiste solo per 6 nemici KHUX
@@ -345,12 +346,8 @@ const DR_MAP_PATH = path.join(ROOT, 'recon', 'tools', 'enemy_display_map.json');
 const DR_MAP = process.env.KHUX_NO_DARKROAD || !fs.existsSync(DR_MAP_PATH) ? {} : JSON.parse(fs.readFileSync(DR_MAP_PATH, 'utf8'));
 const namesFile = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
 if (enemies && fs.existsSync(namesFile)) {
-  const drawn = new Set();
-  for (const line of fs.readFileSync(namesFile, 'utf8').split('\n')) {
-    const m = /^lwf\/character\/enemy\/(\d+)\/wait\//.exec(line);
-    if (m) drawn.add(Number(m[1]));
-  }
-  for (const d of drawnJp) drawn.add(d);
+  // grafiche servite: nomi delle risorse + enemy_gen (make-enemy-oltre.js drawnDisplays, la usa anche lui)
+  const drawn = enemyOltre.drawnDisplays(namesFile, drawnJp);
   const origPath = path.join(OUT, 'enemy_display_orig.json');
   const orig = fs.existsSync(origPath) ? JSON.parse(fs.readFileSync(origPath, 'utf8')) : {};
   for (const e of enemies) {
@@ -368,6 +365,9 @@ if (enemies && fs.existsSync(namesFile)) {
     displaysSubstituted++;
   }
   fs.writeFileSync(origPath, JSON.stringify(orig));
+  // nemici delle missioni 526-979 (make-enemy-oltre.js): cloni delle basi, ora col displayId servito, o grafica della
+  // famiglia se servita; prima di abilita', comparsa e make-story-oltre.js (obiettivi «Defeat X»)
+  enemyOltre.addRows(enemies, { ...enemyOltre.defaultSources(), drawn, sourcesOut: enemyOltre.SOURCES_PATH });
   // abilita' dei nemici: enemyAttack della 5.0.1 ha 13 righe, i nemici veri ne citano
   // centinaia (skillId). Le mancanti si copiano dagli attacchi veri: prima abilita' =
   // «Attack» (1), seconda = «Moderate Attack» (101), le altre «Powerful Attack» (601). I nemici
@@ -418,6 +418,9 @@ if (enemies && fs.existsSync(namesFile)) {
       showsSubstituted++;
     }
   }
+} else if (enemies) {
+  // senza i nomi delle risorse niente scelta della grafica: i cloni tengono il displayId della base
+  enemyOltre.addRows(enemies, { ...enemyOltre.defaultSources(), drawn: new Set(), sourcesOut: enemyOltre.SOURCES_PATH });
 }
 
 const players = [];
