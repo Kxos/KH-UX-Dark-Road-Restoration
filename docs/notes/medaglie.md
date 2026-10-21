@@ -600,3 +600,35 @@ e`). 10000 = 1,0:
   (niente secondo +5 con popup per la stessa medaglia, livello che non scende); la migrazione gira prima di `migrateSkills`.
 - Seguiti aperti dall'audit: I-161 (SN++ 302008-302012 «adjusted» del 07-09-2020, evoluzione con Fantasia Mickey B 300913) e I-162
   (167 6★ originali senza `validEvolve` verso la 7★).
+
+<a id="danno-variabile"></a>
+## Speciali a danno variabile (I-189, analisi 21-10, non ancora corretti)
+
+Segnalazione dell'utente: Cloud II EX nel video https://www.youtube.com/watch?v=eLmkNDzwuPE (2:02) mostra «x7.12 - 8.64»,
+da noi «x6.90». Analisi offline (decompilato in `D:\Progetto_Restauro_KH_UX\tmp\i189\`, soprattutto `disp.c`):
+
+- Riga burst (lettore `[fn]`, ricerca per id `[fn]`): displayPower +0x2c0 (int64), displayPowerPerEnforce
+  +0x2c8 (5 int64), **displayMaxPower +0x2f0** (int32), displayMaxPowerPerEnforce +0x2f4 (5 int32), basePower +0x308,
+  basePowerPerEnforce +0x30c, damageType +0x320, **specialPowerType +0x324**, sp1 +0x328, sp2 +0x330 (int64),
+  sp1PerEnforce +0x338, sp2PerEnforce +0x360.
+- Dettaglio (`[fn]`): pallini da userMedal +0xc, displayPower o displayPowerPerEnforce[pallini-1] / 10000 per il
+  fattore guilt ((userMedal +0x10 + 10000)/10000 + (+0x5c)/10000). damageType 2 = testo del danno fisso; altrimenti
+  specialPowerType 1 = un valore, **ogni altro tipo = intervallo** «x a - b» con b = fattore x displayMaxPower(PerEnforce)
+  / 10000. `[fn](dots, row, wantMax)` usa la stessa regola (max solo se il tipo non e' 1 ne' 2).
+- Nostri dati: tutte le 2276 righe burst hanno specialPowerType 1/2 e displayMaxPower 0: sono copie dei modelli di
+  `burst_base.json` (tipo 1) e `medal-power-fix.js` copia da thethiny solo le potenze base/display. Cloud II EX 7★
+  (300999 -> burst 3000999) = tipo 1, 69000 (x6.90; x7.12 a 5 pallini).
+- Originali: thethiny `burst.json` ha 173 righe variabili, tutte con displayMaxPower; tipi 3 (meno HP) e 4 (piu' HP),
+  38/38: displayPower = basePower*sp1/1e4, displayMaxPower = basePower*(sp1+sp2)/1e4, sp2 = 10000. Roboloid (ID 999):
+  LowMulti 7.12, HighMulti 8.64, Condition HigherHP (i numeri del video a 5 pallini).
+- Condizioni Roboloid -> tipo (abbinate per nome d'attacco): LowerHP 3, HigherHP 4, DrainsHP 5, MoreTurns 6, SPSuccession 7,
+  DrainsDEF 16, Poison 20, Sleep 21, Paralysis 22, GaugesFull 23, GaugesUsed 25, LessLUX 27, MoreGaugesPrevMedal 28,
+  MoreLUX 30, HigherSlot 40 (HigherSlot anche 5 e MoreEnemiesDefeated 28: collisioni probabili).
+- Righe colpite: **661** burst Roboloid con Low/High appiattiti (146 HigherHP): 548 col valore basso, **104 col valore
+  alto** (`make-game-tables.js:189` usa `Multi || HighMulti`: oggi fanno troppo danno), 9 nessuno dei due; 391 con una
+  condizione mappata, 270 no (OneEnemy 130, LowerSlot 69, Critical, MoreParty, Slot3-6, MoreSkillsStage: tipo da trovare
+  nel codice del danno). Altre **65** righe con id in thethiny di tipo > 2 hanno perso il tipo.
+- Correzione proposta (non applicata): passo `variablePower` dopo `burstPowerFix` (copia verbatim dei campi variabili da
+  thethiny per le 65; per le 391 tipo dalla mappa e, per 3/4, bp = hi - lo, sp1 = lo*1e4/bp, sp2 = 10000, per pallino
+  bp_i = lo_i*1e4/sp1); riga 189 dal LowMulti. Da verificare in battaglia: l'uso di specialPowerType/sp1/sp2 nel danno
+  (`[fn]`/`[fn]` leggono +0x324) e' dedotto. Formule ricostruite -> Notices.
