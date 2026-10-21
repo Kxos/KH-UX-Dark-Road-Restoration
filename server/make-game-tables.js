@@ -310,6 +310,9 @@ if (realEnemies) {
   enemies = JSON.parse(fs.readFileSync(path.join(OUT, 'enemy.json'), 'utf8'));
   const have = new Set(enemies.map((e) => e.enemyId));
   for (const r of realEnemies) if (!have.has(r.enemyId)) enemies.push(fromReal('enemy', r));
+  // nemici degli stage JP delle missioni 526-979 (make-enemy-oltre.js, D-A): cloni della base, dalla wiki; qui, prima di
+  // grafica sostitutiva, abilita' e comparsa (valgono anche per loro) e di make-story-oltre.js (obiettivi «Defeat X»)
+  require('./make-enemy-oltre').addRows(enemies, OUT);
 }
 
 // Grafica dei nemici: lwf/character/enemy/<displayId>/wait/ esiste solo per 6 nemici KHUX
