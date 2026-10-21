@@ -39,7 +39,7 @@ const realNow = Date.now;
 const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
 
 call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
-t.forceStoryQuest(840); // la storia vera si ferma a 525: da 840 in su i biglietti Limited sono sbloccati (sp3 5)
+t.forceStoryQuest(840); // giocatore finto oltre la 840 senza giocarla: da 840 in su i biglietti Limited sono sbloccati (sp3 5)
 t.player.medals = t.player.medals || [];
 const rows = t.masterRows('mission').filter((r) => r.missionType === 4);
 const byId = new Map(rows.map((r) => [r.id, r]));
@@ -96,6 +96,23 @@ for (const [quest, want] of [[525, false], [814, false], [840, true]]) {
     const got = quiet(() => t.missionsData()).map((m) => m.id);
     if (quest === 814 && ids[0] === 4091) continue; // 815 sblocca solo i Platinum: i Draw Ticket servono 840
     check(ids.every((id) => got.includes(id) === want), `quest ${quest}, settimana ${wi}: righe ${ids} ${want ? 'attese' : 'assenti'} (${ids.map((id) => got.includes(id))})`);
+  }
+}
+// storia vera fino alla 979 (piano 526-979): con le righe 840 del master superata, senza forzare, i Draw Ticket si sbloccano
+{
+  const s840 = t.masterRows('stage').find((r) => r.stageKind === 1 && r.id === 840);
+  if (!s840) log('SKIP storia vera: master senza la missione 840 (righe 526-979 di make-story-oltre.js)');
+  else {
+    t.forceStoryQuest(null);
+    const keep = t.player.stageScores;
+    const wi = w02;
+    for (const [n, want] of [[839, false], [840, true]]) {
+      t.player.stageScores = Object.fromEntries(t.masterRows('stage').filter((r) => r.stageKind === 1 && r.id <= n).map((r) => [r.stageId, 1]));
+      at(weekOf(wi));
+      const got = quiet(() => t.missionsData()).map((m) => m.id);
+      check(wi >= 0 && got.includes(4091) === want, `storia vera fino alla ${n}: W02 4091 ${want ? 'attesa' : 'assente'}`);
+    }
+    t.player.stageScores = keep;
   }
 }
 t.forceStoryQuest(840);

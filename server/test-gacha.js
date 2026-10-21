@@ -186,14 +186,15 @@ g.payDraw(tSpooky, pNan, t0, false);
 check(pNan.drawTickets.spooky === -1, 'spend su valuta assente: -1, non NaN');
 
 // stato di un banner (spec 4.4)
-check(g.RESTORED_QUEST === 525, 'RESTORED_QUEST 525');
+check(g.RESTORED_QUEST === 979, 'RESTORED_QUEST 979 (storia fino alla 979, piano 526-979)');
 const sctx = { storyQuest: 300, storyDay: '2016-05-12', sizes, show: new Set(), shown: new Set() };
 const sb = (o) => mk({ endSource: 'original', unlockQuest: 200, start: '2016-05-01', end: '2016-05-30', ...o });
 const inShop = sb({});
 const st = (b, c = {}) => g.stateOf(b, { ...sctx, shown: new Set([inShop.drawMedalTypeId]), ...c });
 check(JSON.stringify(st(inShop)) === '{"key":"now","text":"In the Shop now"}', `stato now: ${JSON.stringify(st(inShop))}`);
 check(JSON.stringify(st(sb({ unlockQuest: 450 }))) === '{"key":"locked","text":"Unlocks after Story Quest 450"}', 'stato locked 450');
-check(JSON.stringify(st(sb({ unlockQuest: 600 }))) === '{"key":"locked","text":"Unlocks after Story Quest 600 — coming with a future update"}', 'stato locked 600');
+check(JSON.stringify(st(sb({ unlockQuest: 600 }))) === '{"key":"locked","text":"Unlocks after Story Quest 600"}', 'stato locked 600 (storia restaurata)');
+check(st(sb({ unlockQuest: 980 })).text === 'Unlocks after Story Quest 980 — coming with a future update', 'stato locked oltre la 979');
 check(st(sb({ catalogOnly: 'PVP_TICKETS' })).text === 'Requires PvP tickets — coming with a future update', 'stato PvP');
 check(st(sb({ catalogOnly: 'DRAW_POINTS' })).text === 'Draw Points — coming with a future update', 'stato Draw Points');
 check(st(sb({ catalogOnly: 'VIP_TWIN' })).text === 'VIP variant, not reproduced', 'stato VIP_TWIN');

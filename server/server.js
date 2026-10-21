@@ -949,6 +949,22 @@ function migrateClockV2() {
 }
 if (player.created) migrateClock(); else player.clockVersion = 2; // nuovo giocatore: gia' in ms reali
 
+// Unione valida (1-5) per chi ha gia' creato il giocatore (Review Focus 2 del piano 526-979, 21-10): la Q555 «Master
+// of the Union» ha branchType 1 e il client vi carica mappoi_stg(18300 + unionId - 1) (Ursus 1 ... Leopardus 5); un
+// salvataggio vecchio o un /user/create senza il campo ha unionId 0/assente e il client cercherebbe la 18299, che non
+// esiste. Si corregge al caricamento (prima di qualunque /user: il client legge userDetail.unionId al login), alla
+// creazione e a ogni userDetail. DEFAULT_UNION = 1 (Ursus): nessuna scelta da ricordare, la si cambia dal Profilo (/union).
+const DEFAULT_UNION = 1;
+function ensureUnion() {
+  const id = Number(player.unionId);
+  if (!player.created || (id >= 1 && id <= 5)) return player.unionId;
+  console.log(`[save] unionId ${player.unionId} non valido: Unione ${DEFAULT_UNION} (la Q555 carica 18300 + unionId - 1)`);
+  player.unionId = DEFAULT_UNION;
+  savePlayer();
+  return player.unionId;
+}
+ensureUnion();
+
 function savePlayer() {
   fs.mkdirSync(path.dirname(SAVE_FILE), { recursive: true });
   fs.writeFileSync(SAVE_FILE + '.tmp', JSON.stringify(player, null, 1));
@@ -1009,12 +1025,13 @@ function respondUserCreate(res, req) {
   // (gameLogin.acquirableLoginBonus, bool): entrambi obbligatori.
   if (req) {
     player.name = req.name ?? player.name;
-    player.unionId = req.unionId ?? player.unionId;
+    player.unionId = Number(req.unionId ?? player.unionId) || 0;
     player.birthday = req.birthday ?? player.birthday;
     player.avatar = req.updateAvatarData ?? player.avatar;
     player.gender = player.avatar?.gender ?? player.gender;
   }
   player.created = true;
+  ensureUnion(); // unionId assente o fuori 1-5 -> 1 (Q555)
   // primo ingresso: lo scostamento dell'ora finta si fissa qui come a /khux/login
   player.clockOffset = clock.twinOffset(realNow());
   grantMissingKeyblades(); // I-087: keyblade senza premio nel master
@@ -1275,7 +1292,7 @@ let gachaBoostMemo = null;
 const gachaBoostedIndex = () => (gachaBoostMemo ??= medalBoost.boostedIndex(masterRows('medal')));
 function reloadGachaBanners() { gachaCatalogMemo = null; gachaBoostMemo = null; gachaPoolCache.clear(); gachaSearchMemo = null; }
 
-// Punto della storia del giocatore: ultima quest superata (1-525) e data della sua tranche.
+// Punto della storia del giocatore: ultima quest superata (1-979, STORY_LAST) e data della sua tranche.
 // storyDay = primo giorno della settimana dello Shop (rotazione I-165): data dei pool dei PERMANENT e della regola
 // 13-bis; shopFrom/shopTo = la settimana mostrata. player.gacha.rot ricorda in che settimana reale si e' entrati nella
 // tranche della storia, cosi' la rotazione parte dalla sua prima settimana.
@@ -1625,11 +1642,14 @@ function respondStageStart(res, req) {
   // highScore uint64).
   const now = serverTime();
   // /stage/clear non riporta lo stage: vale quello avviato qui
-  player.currentStageId = req?.stageId ?? START_STAGE_ID;
+  // (la variante della Q555 cosi' com'e': i suoi drop; riga e punteggio dalla 18300, stageRowOf)
+  player.currentStageId = Number(req?.stageId ?? START_STAGE_ID);
   player.currentUserKeybladeId = Number(req?.userKeybladeId) || USER_KEYBLADE_ID; // gauge: setKeybladeBurst
   // costo in AP: campo useAp della tabella stage (Quest 130 = 10). Il client controlla
   // prima l'AP (popup PopupNormal_AP_Recovery se non basta); /stage/retire non rimborsa
-  const useAp = Number(masterRows('stage').find((r) => r.stageId === Number(player.currentStageId))?.useAp) || 0;
+  // Q978 (onlyDrama, solo filmato): useAp 0, nessun POI -> nessun drop ne' forziere; il client salta la mappa
+  // (StageSkipActionMap) e manda subito /stage/clear (task-1-report D-B)
+  const useAp = Number(stageRowOf(player.currentStageId)?.useAp) || 0;
   if (useAp) {
     const before = apState().ap;
     if (before < useAp) console.log(`[ap] stage ${player.currentStageId}: costo ${useAp} AP, disponibili ${before}`);
@@ -1643,7 +1663,7 @@ function respondStageStart(res, req) {
       stageId: req?.stageId ?? START_STAGE_ID,
       supportUserId: req?.supportUserId ?? 0,
       userKeybladeId: req?.userKeybladeId ?? USER_KEYBLADE_ID,
-      clearMissionIds: stageClearMissions(req?.stageId ?? START_STAGE_ID),
+      clearMissionIds: stageClearMissions(storyKeyOf(req?.stageId ?? START_STAGE_ID)),
       stageSkip: req?.stageSkip ?? 0,
       eventId: req?.eventId ?? 0,
       highScore: 0,
@@ -1859,22 +1879,36 @@ function userMaterialsData() {
     .map(([id, n]) => ({ userMaterialId: Number(id), materialId: Number(id), number: n }));
 }
 
-// Missione di storia (id 1-525) piu' avanzata gia' superata. Il suo numero (stageNumber) va in lastStageId dei
-// membri del party: la bolla della home in Quest Progress mostra il valore com'e' («Quest 5020» con lo stageId,
+// Missione di storia (id 1-STORY_LAST = 979, piano 526-979 del 21-10; prima 525) piu' avanzata gia' superata. Il suo
+// numero (stageNumber) va in lastStageId dei membri del party: la bolla della home in Quest Progress mostra il valore com'e' («Quest 5020» con lo stageId,
 // «Quest 0» con 0; banco 16-10).
+const STORY_LAST = 979;
 function lastStoryStageId() {
   const done = new Set(Object.keys(player.stageScores || {}).map(Number));
   let best = null;
   for (const r of masterRows('stage')) {
-    if (done.has(r.stageId) && r.id >= 1 && r.id <= 525 && (!best || r.id > best.id)) best = r;
+    if (done.has(r.stageId) && r.id >= 1 && r.id <= STORY_LAST && (!best || r.id > best.id)) best = r;
   }
   return best ? best.stageId : 0;
 }
 
 function stageNumber(stageId) {
   if (!stageId) return 0;
-  return masterRows('stage').find((r) => r.stageId === stageId)?.id ?? 0;
+  return stageRowOf(stageId)?.id ?? 0;
 }
+
+// Riga master dello stage che il client gioca. La Q555 (riga 18300, branchType 1, make-story-oltre.js) il client la
+// carica come 18300 + unionId - 1 (5 varianti 18300-18304, una per Unione: Task 3 ne ha messo le uid sotto ognuna):
+// se /stage/start riporta la variante, valgono la riga 18300 (AP, premi, obiettivi) e il suo stageId per
+// stageScores/clearMissions, cosi' l'elenco passa alla 556. Forzieri e drop (STAGE_POI) restano dell'id ricevuto.
+const BRANCH_VARIANTS = 5;
+function stageRowOf(stageId) {
+  const id = Number(stageId);
+  const rows = masterRows('stage');
+  return rows.find((r) => r.stageId === id)
+    || rows.find((r) => r.branchType === 1 && id > r.stageId && id < r.stageId + BRANCH_VARIANTS);
+}
+const storyKeyOf = (stageId) => stageRowOf(stageId)?.stageId ?? Number(stageId);
 
 // Titolo del giocatore (tabella title: due parole + targa, il cui label sceglie
 // img/userTitle/title_%04d). Con 0 il Profilo va in crash ([fn]). Di default i
@@ -1899,7 +1933,7 @@ function userDetailData() {
     // limite superato (PopupNormal_MedalOver.json, assente dalle risorse): crash.
     // 300 e' un segnaposto, il valore iniziale vero non e' noto; sempre sopra le medaglie
     // possedute (prova con tutte le medaglie: server/grant-all-medals.js)
-    unionId: player.unionId,
+    unionId: ensureUnion(),
     maxMedal: maxMedal(), mvpCount: 0,
     equipCoordinateNo: player.avatar ? AVATAR_COORDINATE : 0, // coordinato indossato (userAvatars)
     // numero della missione (campo id della tabella stage: Prologue = 1), non lo stageId
@@ -2000,10 +2034,12 @@ function respondStageClear(res, req) {
   // guiltBurstMaxUserMedalIds[]).
   const now = serverTime();
   // il corpo non porta stageId (solo l'esito): lo stage e' quello di /stage/start
-  const stageId = req?.stageId ?? player.currentStageId ?? START_STAGE_ID;
+  // playedId = l'id giocato (POI, Steal); stageId = quello della riga master (la 18300 per le varianti della Q555)
+  const playedId = Number(req?.stageId ?? player.currentStageId ?? START_STAGE_ID);
+  const stage = stageRowOf(playedId);
+  const stageId = stage ? stage.stageId : playedId;
   player.stageScores = player.stageScores || {};
   const first = !(stageId in player.stageScores); // mai completato prima
-  const stage = masterRows('stage').find((r) => r.stageId === stageId);
   // l'ultimo stage completato avanza solo (rigiocare il Prologue non lo riporta indietro)
   if (stageNumber(stageId) >= stageNumber(player.lastClearStageId)) player.lastClearStageId = stageId;
   // munny e materiali raccolti (sacchetti dei nemici, forzieri) come li riporta il client
@@ -2019,8 +2055,8 @@ function respondStageClear(res, req) {
   // sacchetti dei nemici: il client riporta solo gli uid (getEnemyDropItems), il
   // contenuto e' la riga di reward del nemico nella mappa (1 se l'uid non ha record),
   // come in CONGRATULATIONS (es. Spring Water x12 in Combat 102)
-  const enemyRows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
-  const steal = player.steal?.stageId === stageId ? player.steal : null;
+  const enemyRows = new Map((STAGE_POI[playedId]?.enemies || []).map((e) => [e.uid, e.reward]));
+  const steal = player.steal?.stageId === playedId ? player.steal : null;
   for (const uid of req?.getEnemyDropItems || []) {
     const row = rewardRowById(enemyRows.get(uid) ?? 1);
     const k = steal && steal.uid === uid ? steal.mult : 1; // drop rubato dal pet (Steal): x skillValue3
@@ -2336,7 +2372,7 @@ function limitedGroupQuest(g) {
   }
   return limitedTicketMemo.byGroup.get(key);
 }
-let storyQuestForced = null; // solo per i test: la storia ferma a 525 non arriva alle soglie dei biglietti
+let storyQuestForced = null; // solo per i test: un giocatore finto oltre le soglie dei biglietti senza giocare la storia
 function limitedUnlocked(g) {
   const storyQuest = storyQuestForced ?? stageNumber(lastStoryStageId());
   const from = g.kind === 'weekly' ? (LIMITED_ROTATION.weeklyMedalFrom || [])[g.index] : null;
@@ -2351,7 +2387,7 @@ function limitedUnlocked(g) {
 // hanno ancora la funzione nel server (nessuno stage di quel tipo, tabelle evStage/colosseum vuote, Union Cross senza
 // Photon) e restano a 0, come il 3 (Raid Boss: nessun contatore 'raid' chiamato).
 const MISSION_DERIVED = {
-  // la storia piu' avanzata dagli stage superati (1-525), non lastClearStageId: i Tour (id 91xx) lo portano oltre la storia
+  // la storia piu' avanzata dagli stage superati (1-979), non lastClearStageId: i Tour (id 91xx) lo portano oltre la storia
   30: (r) => (stageNumber(lastStoryStageId()) >= (r.targetId?.[0] || 0) ? 1 : 0),
   31: () => keybladeDeckStats(favoriteKeybladeId()).attack || 0,
   32: (r) => {
@@ -4167,8 +4203,9 @@ function start() {
 //    senza Three Wishes);
 // 2. serie senza nessun premio nel master 5.0.1: Moogle O' Glory (Moogle Quest), Sleeping Lion,
 //    Counterpoint, Fenrir, Darkgnaw, Missing Ache, Diamond Dust (Proud Mode, assente), Stroke of
-//    Midnight, Fairy Stars, Bad Guy Breaker (quest 595/683/880, oltre la 525): altrimenti
-//    irraggiungibili (khuxwiki, reference\keyblades\keyblade_levels.json «obtain»);
+//    Midnight, Fairy Stars, Bad Guy Breaker (quest 595/683/880: con le righe 526-979 del master sono premi di
+//    missione e da qui non passano piu'): altrimenti irraggiungibili (khuxwiki,
+//    reference\keyblades\keyblade_levels.json «obtain»);
 // 3. KHUX_KB_ALL=1: anche le serie della storia non ancora raggiunte (Divine Rose, Quest 433).
 // KHUX_KB_UNOBTAINABLE=0 spegne il punto 2. Un keyblade per serie (grantKeyblade), mai doppioni.
 function keybladeRewardIds() {
@@ -4242,6 +4279,8 @@ module.exports._test = {
   settleClock, MISSION_COUNTER, MISSION_DERIVED, missionProgress, petSubslotNow, guiltBurst,
   // server/test-master-clock.js
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
+  // server/test-story-oltre.js (missioni 526-979)
+  respondStageList, lastStoryStageId, stageNumber, stageRowOf, userDetailData, ensureUnion,
   // server/test-gacha-server.js
   sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };

@@ -100,7 +100,9 @@ if (fs.existsSync(path.join(MASTER, 'enemy.json')) && fs.existsSync(MISSING)) {
     if (fs.existsSync(p)) fs.copyFileSync(p, path.join(dir, f + '.json'));
   }
   const all = JSON.parse(fs.readFileSync(MISSING, 'utf8')).missing;
-  const before = JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8'));
+  // master gia' rifatto con questo patch (Task 6, 21-10): le sue righe via, come strip(), cosi' «prima» = master senza
+  const before = JSON.parse(fs.readFileSync(path.join(dir, 'enemy.json'), 'utf8')).filter((r) => !(String(r.enemyId) in all));
+  fs.writeFileSync(path.join(dir, 'enemy.json'), JSON.stringify(before));
   const beforeIds = new Set(before.map((r) => r.enemyId));
   const drawn = drawnDisplays();
   const srcOut = path.join(dir, 'enemy_oltre_sources.json');

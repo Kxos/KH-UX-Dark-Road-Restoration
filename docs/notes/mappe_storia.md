@@ -510,6 +510,18 @@ Decisioni dell'utente (20-10):
 Lavoro tecnico: 312 enemyId mancanti nel master (`enemies_oltre525.json`), righe master 526-979 dalla wiki (Lv dalla
 wiki, 87 STG con Lv 1), worldId e tendina dei mondi di Ralph (I-027).
 
+Server e master (Task 6, 21-10): storia fino alla 979 in `server.js` (`STORY_LAST`: `lastStoryStageId`, Beginner 30,
+Shop/biglietti; `gacha.js` `RESTORED_QUEST` 979); l'elenco va 525 -> 526 e 979 -> tour 991001 (ordine per `id`).
+Q555: `stageRowOf` fa valere la riga 18300 per le varianti 18301-18304 (AP, premi, obiettivi, `stageScores`), drop e
+forzieri dall'id ricevuto; `ensureUnion` porta a 1 (Ursus) un `unionId` 0/assente di un giocatore creato (al
+caricamento, a `/user/create`, in `userDetail`): con 0 il client cercherebbe la 18299. Q978 (`onlyDrama`): nessun POI,
+`/stage/start` senza drop ne' forzieri, `/stage/clear` registra la missione e da' i premi. Obiettivi 1.1.3 di 542-544,
+546, 548-552, 555 (nemico fuori dallo stage JP) sostituiti con quelli della wiki (`make-story-oltre.js`, ruling del
+controller). Master rifatto con
+`KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1 KHUX_STAGE_POI_EXTRA=<stage_gen\orig_stages\stage_poi_orig.json>;<stage_gen\orig_stages_oltre\stage_poi_oltre.json> node server/make-game-tables.js <wiki\medals.json>`
+(+454 stage, +4 world, +312 enemy, +96 reward; -37 righe boosted rimaste da un catalogo vecchio, nessun riferimento) e
+`stage_poi_oltre.json` unito a `server/game_data/stage_poi.json` (457 stage, 1041 in tutto).
+
 <a id="tour-v2"></a>
 ## Tour v2: un giro per zona sulle porte originali (I-116)
 

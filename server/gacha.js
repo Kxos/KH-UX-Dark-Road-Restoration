@@ -386,7 +386,7 @@ function page(title, body, cls = '', side = '') {
 }
 
 // Ultima quest della storia restaurata (spec 4.4): oltre, i banner restano bloccati «in attesa dell'aggiornamento».
-const RESTORED_QUEST = 525;
+const RESTORED_QUEST = 979; // 525 fino al 21-10; poi le missioni 526-979 (I-009)
 const FUTURE = ' — coming with a future update';
 const CATALOG_ONLY_TEXT = {
   PVP_TICKETS: `Requires PvP tickets${FUTURE}`, DRAW_POINTS: `Draw Points${FUTURE}`,

@@ -32,6 +32,11 @@
 // Filmati: solo id presenti nelle risorse (names_v4.tsv, regola di
 // make-game-tables.js); per 556-979 dal theater (stessa stageId: 5 prima, il resto dopo, il client ne legge al massimo 5
 // per lato). Obiettivi «Defeat X» su nemici assenti dalla tabella enemy -> 1 (Shadow) come le 1-525.
+// Obiettivi delle 526-555 (ruling del controller, Task 6, 21-10): le righe 1.1.3 vengono da una versione successiva allo
+// stage: 10 di loro (542-544, 546, 548-552, 555) hanno un «Defeat X» (submissionIdType 1, anche nel 28 «all enemies»)
+// su un enemyId che non e' nello stage JP 4.3.1 (= stage del 2016; stage_poi_oltre.json del Task 3, la 555 con le 5
+// varianti 18300-18304), es. 544 -> 10092 Candy Apple / 93 Poison Apple, 555 -> 10211 Darklings: per quelle righe gli
+// obiettivi (e i loro premi) sono quelli della wiki, che coincidono con lo stage; il resto della riga resta 1.1.3.
 // Idempotente; in fondo a make-game-tables.js. KHUX_STORY_OLTRE=0 lo spegne. Dopo: alzare la revisione del master.
 //
 //   node server/make-story-oltre.js [cartella master]
@@ -150,8 +155,8 @@ function objectiveReward(o, ctx, titleIdx) {
 
 function buildRows(stageRows, sources) {
   const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
-    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null } = sources;
-  const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [] };
+    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null } = sources;
+  const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [], wikiObjectives: [] };
   const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
   const byName = (rows, key, name) => rows.filter((r) => r[key] === name);
   const ctxBase = {
@@ -211,6 +216,29 @@ function buildRows(stageRows, sources) {
     });
   };
 
+  // obiettivi della wiki (al massimo 3) -> [[codici, premio]]; ctx col bersaglio dello stage JP (oltre525.json)
+  const wikiSubs = (n, q, mis, raw) => {
+    const ctx = { ...ctxBase, target: mis.stage.target_id || 0, targetName: mis.target || q.target || '',
+      raw: { titles: [...raw.matchAll(/\|naotitle\d?=([^\n|]*)/g)].map((m) => m[1].trim()) } };
+    const subs = [];
+    let titleIdx = 0;
+    for (const [i, o] of (q.objectives || []).slice(0, 3).entries()) {
+      let c = objectiveCodes(o.text, ctx);
+      if (!c) {
+        // TAPPABUCHI: codice del client non ricavato; testo della wiki, valutato come «senza continue» (10)
+        report.stopgapObjectives.push([n, i + 1, o.text]);
+        c = { name: o.text, req: 10, dt: 1, it: 0, id: 0, n: 0 };
+      }
+      let rw = objectiveReward(o, ctx, o.reward === 'Title' ? titleIdx++ : 0);
+      if (!rw) { report.missingRewards.push([n, i + 1, o.reward]); rw = [0, 0, 0]; }
+      subs.push([c, rw]);
+    }
+    return subs;
+  };
+  // nemici dello stage JP (POI); la 555 con le 5 varianti dell'Unione
+  const stageEnemyIds = (stageId) => new Set((stageId === Q555_STAGE ? [0, 1, 2, 3, 4] : [0]).flatMap((k) =>
+    ((stagePoi[stageId + k] || {}).enemies || []).map((e) => e.enemyId)));
+
   const rows = [];
   let prev = story[story.length - 1] || {};
   for (let n = FIRST; n <= LAST; n++) {
@@ -250,6 +278,17 @@ function buildRows(stageRows, sources) {
       if (q) row.useAp = q.ap === 'zero' ? 0 : num(q.ap);
       row.worldId = roomWorld(mis && mis.stage.rooms[0]) || r.worldId;
       row.chapterId = Math.floor(row.stageId / 1000);
+      // «Defeat X» su un nemico assente dallo stage JP -> obiettivi della wiki (ruling, intestazione)
+      if (stagePoi) {
+        const inStage = stageEnemyIds(r.stageId);
+        const bad = [...Array(Math.min(3, r.validSubmission || 0)).keys()]
+          .some((i) => row.submissionIdType[i] === 1 && !inStage.has(row.submissionId[i]));
+        if (bad) {
+          if (!q || !mis) throw new Error(`missione ${n}: obiettivi 1.1.3 fuori dallo stage e nessuna pagina wiki/oltre525.json`);
+          setSubs(row, wikiSubs(n, q, mis, wikiRaw[q.title] || ''));
+          report.wikiObjectives.push(n);
+        }
+      }
     } else {
       if (!q || !mis) throw new Error(`missione ${n}: assente dalla wiki o da oltre525.json`);
       const raw = wikiRaw[q.title] || '';
@@ -264,22 +303,7 @@ function buildRows(stageRows, sources) {
         thumbId: thumbs && roomThumb !== null && thumbs.has(`${worldId}_${roomThumb}`) ? roomThumb
           : ref ? ref.thumbId : (worldId in WORLD_THUMB ? WORLD_THUMB[worldId] : prev.thumbId || 0),
         raidBoss: (ref || prev).raidBoss || 0, bgmField: bgm[0] || 0, bgmBattle: bgm[1] || 0, bgmBoss: bgm[2] || 0 };
-      const ctx = { ...ctxBase, target: mis.stage.target_id || 0, targetName: mis.target || q.target || "",
-        raw: { titles: [...raw.matchAll(/\|naotitle\d?=([^\n|]*)/g)].map((m) => m[1].trim()) } };
-      const subs = [];
-      let titleIdx = 0;
-      for (const [i, o] of (q.objectives || []).slice(0, 3).entries()) {
-        let c = objectiveCodes(o.text, ctx);
-        if (!c) {
-          // TAPPABUCHI: codice del client non ricavato; testo della wiki, valutato come «senza continue» (10)
-          report.stopgapObjectives.push([n, i + 1, o.text]);
-          c = { name: o.text, req: 10, dt: 1, it: 0, id: 0, n: 0 };
-        }
-        let rw = objectiveReward(o, ctx, o.reward === 'Title' ? titleIdx++ : 0);
-        if (!rw) { report.missingRewards.push([n, i + 1, o.reward]); rw = [0, 0, 0]; }
-        subs.push([c, rw]);
-      }
-      setSubs(row, subs);
+      setSubs(row, wikiSubs(n, q, mis, raw));
       const clear = [];
       if (num(q.jewel)) clear.push([2, 0, num(q.jewel)]);
       if ((q.rewards || {}).namunny) clear.push([4, 0, num(q.rewards.namunny)]);
@@ -369,6 +393,8 @@ function defaultSources() {
     wiki: readRequired(process.env.KHUX_WIKI_QUESTS || 'D:\\Progetto_Restauro_KH_UX\\wiki\\quests.json'),
     wikiRaw: Object.fromEntries(Object.entries(wikiAll).filter(([k]) => /^Quest \d+: /.test(k))),
     oltre: readRequired(process.env.KHUX_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\oltre525.json'),
+    // nemici degli stage JP (Task 3): obiettivi 1.1.3 su nemici fuori dallo stage -> quelli della wiki
+    stagePoi: readRequired(process.env.KHUX_STAGE_POI_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage_poi_oltre.json'),
     dramas: dramas || new Set(),
     thumbs,
   };
@@ -408,7 +434,8 @@ function patch(masterDir, src) {
   const rep = rows.report;
   console.log(`story-oltre: +${rows.length} missioni 526-979 (978 solo filmato); ${rep.enemiesToShadow} obiettivi su nemici assenti -> 1; `
     + `${rep.stopgapObjectives.length} obiettivi tappabuchi, ${rep.missingRewards.length} premi non ricavati, `
-    + `${rep.droppedDramas.length} missioni con filmati assenti tolti, ${rep.overflow.length} oltre i limiti`);
+    + `${rep.droppedDramas.length} missioni con filmati assenti tolti, ${rep.overflow.length} oltre i limiti; `
+    + `obiettivi della wiki al posto dei 1.1.3 (nemico fuori dallo stage): ${rep.wikiObjectives.join(', ') || 'nessuno'}`);
   return rows.length;
 }
 

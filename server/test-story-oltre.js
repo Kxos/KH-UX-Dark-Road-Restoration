@@ -147,6 +147,31 @@ check(r978.validClearGetTitle === 1 && r978.clearGetTitle === 13120, '978 titolo
 check(JSON.stringify(r978.clearGetItemType) === '[2,3]' && r978.clearGetItemId[1] === 90056 && r978.clearGetItemNum[1] === 5,
   `978 premi: ${r978.clearGetItemType}`);
 check(rows.filter((r) => r.onlyDrama).length === 1, 'solo la 978 senza mappa');
+// Task 6 (ruling del controller): righe 1.1.3 con «Defeat X» (submissionIdType 1) su un nemico assente dallo stage JP
+// (POI di stage_poi_oltre.json; la 555 con le 5 varianti 18300-18304) -> obiettivi della wiki, che coincidono con lo
+// stage JP (= stage del 2016). Fake: 544 (18190) senza il 99, 555 senza il 10001 in nessuna variante.
+{
+  const stagePoi = {};
+  for (const r of stage113) stagePoi[r.stageId] = { chests: [], enemies: [{ uid: 1, enemyId: 10001 }, { uid: 2, enemyId: 99 }] };
+  stagePoi[18190].enemies = [{ uid: 1, enemyId: 10001 }];
+  stagePoi[18300].enemies = [{ uid: 1, enemyId: 99 }];
+  for (const v of [18301, 18302, 18303, 18304]) stagePoi[v] = { chests: [], enemies: [{ uid: 1, enemyId: 77 }] };
+  const rw = buildRows(stageRows, { ...sources, stagePoi });
+  const by = new Map(rw.map((r) => [r.id, r]));
+  const r544 = by.get(544), r555 = by.get(555), r530w = by.get(530);
+  check(JSON.stringify(r544.submissionRequire) === '[28,12,10]' && r544.submissionId[1] === 10001
+    && JSON.stringify(r544.submissionRewardType) === '[14,14,5]' && r544.submissionName[2] === 'Complete without having to continue',
+    `544: obiettivi della wiki (${r544.submissionRequire})`);
+  check(JSON.stringify(r555.submissionRequire) === '[28,12,10]' && r555.stageId === 18300 && r555.branchType === 1,
+    `555: obiettivi della wiki, riga 18300 branchType 1 (${r555.submissionRequire})`);
+  check(JSON.stringify(r530w.submissionRequire) === '[28,12,4]' && r530w.submissionId[2] === 99, '530: nemici nello stage, obiettivi 1.1.3');
+  check(r544.clearGetItemNum[0] === 150 && r544.mapName === 'Mappa 1.1.3 544', '544: il resto della riga resta 1.1.3');
+  check(JSON.stringify(rw.report.wikiObjectives) === '[544,555]', `report.wikiObjectives: ${rw.report.wikiObjectives}`);
+  // senza POI (fonti vecchie) nessuna sostituzione
+  check(JSON.stringify(byId.get(544).submissionRequire) === '[28,12,4]' && rows.report.wikiObjectives.length === 0,
+    'senza stagePoi: obiettivi 1.1.3');
+}
+
 // stessa forma delle righe 1-525 (stesse chiavi, stesso ordine)
 const KEYS = Object.keys(rows[0]).join();
 check(rows.every((r) => Object.keys(r).join() === KEYS), 'tutte le righe con le stesse chiavi');
@@ -250,12 +275,83 @@ const dir3 = mkTmp();
 fs.writeFileSync(path.join(dir3, 'stage.json'), JSON.stringify(stageRows));
 check(throws(() => patch(dir3, { ...src, stage113: [] }), /1\.1\.3/)
   && fs.readFileSync(path.join(dir3, 'stage.json'), 'utf8') === JSON.stringify(stageRows), 'patch: 1.1.3 assente -> errore, file intatto');
-for (const k of ['KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL']) {
+for (const k of ['KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL', 'KHUX_STAGE_POI_OLTRE']) {
   const old = process.env[k];
   process.env[k] = path.join(dir3, 'manca.json');
   check(throws(() => defaultSources(), /fonte obbligatoria .*manca\.json/), `${k} assente -> errore col percorso`);
   if (old === undefined) delete process.env[k]; else process.env[k] = old;
 }
+
+// --- Task 6: server.js con le righe 526-979 (master finto = `out` del patch sopra, salvataggio finto) --------------
+{
+  const mdir = mkTmp(), sdir = mkTmp();
+  fs.writeFileSync(path.join(mdir, 'stage.json'), JSON.stringify(out));
+  const SAVE = path.join(sdir, 'player.json');
+  // salvataggio vecchio: creato ma senza Unione (unionId 0) -> la 555 caricherebbe mappoi_stg18299 (Review Focus 2)
+  fs.writeFileSync(SAVE, JSON.stringify({ name: 'Prova', created: true, unionId: 0, tutorialPhase: 995, clockVersion: 2,
+    clearMissions: {}, stageScores: {}, lux: 0, freeStone: 0 }));
+  Object.assign(process.env, { KHUX_SAVE: SAVE, KHUX_MASTER_DIR: mdir });
+  for (const k of ['KHUX_REAL_NOW', 'KHUX_SERVER_TIME', 'KHUX_NEWCOMER', 'KHUX_START_STAGE']) delete process.env[k];
+  const log = console.log, warn = console.warn;
+  const quiet = (fn) => { console.log = () => {}; console.warn = () => {}; try { return fn(); } finally { console.log = log; console.warn = warn; } };
+  const { _test: t } = quiet(() => require('./server'));
+  const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(x) { b = JSON.parse(x.toString('utf8')); } }, ...a)); return b; };
+  const p = t.player;
+  const sidOf = (n) => out.find((r) => r.id === n && r.stageKind === 1).stageId;
+  const clearUpTo = (n) => { p.stageScores = {}; for (const r of out) if (r.stageKind === 1 && r.id <= n) p.stageScores[r.stageId] = 1; };
+  // Review Focus 2: unionId 1-5 garantito prima di servire la 555 (al caricamento e in userDetail)
+  check(p.unionId >= 1 && p.unionId <= 5, `unionId del salvataggio vecchio portato a 1-5: ${p.unionId}`);
+  check(JSON.parse(fs.readFileSync(SAVE, 'utf8')).unionId === p.unionId, 'unionId corretto salvato');
+  p.unionId = 0;
+  const ud = quiet(() => t.userDetailData());
+  check(ud.unionId >= 1 && ud.unionId <= 5 && p.unionId === ud.unionId, `userDetail: unionId ${ud.unionId}`);
+  p.unionId = 3;
+  check(quiet(() => t.userDetailData()).unionId === 3, 'unionId valido invariato');
+  // Review Focus 1: 525 finite -> newStageId 526 (non il tour); 979 finite -> il tour dopo
+  clearUpTo(525);
+  let r = call(t.respondStageList);
+  check(r.newStageId === sidOf(526), `525 finite -> newStageId ${r.newStageId} (526 = ${sidOf(526)})`);
+  check(r.stories.length === 3 && r.stories[2].stageId === sidOf(526) && r.stories[2].playStatus === 0, 'elenco: 524, 525, 526 nuova');
+  clearUpTo(977);
+  check(call(t.respondStageList).newStageId === 39158, '977 finite -> la 978 (solo filmato)');
+  clearUpTo(979);
+  r = call(t.respondStageList);
+  check(r.newStageId === 991001, `979 finite -> il tour 991001 dopo la storia (${r.newStageId})`);
+  // storia superata fino alla 979 (lastStoryStageId, Beginner 30, shop): non piu' ferma alla 525
+  clearUpTo(600);
+  check(quiet(() => t.stageNumber(t.lastStoryStageId())) === 600, `storia fino alla 600: ${quiet(() => t.stageNumber(t.lastStoryStageId()))}`);
+  check(t.MISSION_DERIVED[30]({ targetId: [600] }) === 1 && t.MISSION_DERIVED[30]({ targetId: [601] }) === 0, 'Beginner 30 oltre la 525');
+  clearUpTo(979);
+  check(quiet(() => t.stageNumber(t.lastStoryStageId())) === 979, 'storia fino alla 979 (non i tour)');
+  // Q978 (onlyDrama, nessun POI): /stage/start e /stage/clear senza mappa, poi la 979
+  clearUpTo(977);
+  delete t.STAGE_POI[39158];
+  p.ap = 50; p.apTime = Date.now();
+  const st = call(t.respondStageStart, { stageId: 39158, supportUserId: 0, userKeybladeId: 1 });
+  check(st && st.startStageData.stageId === 39158 && st.userEnemyDropItems.length === 0 && st.userTreasures.length === 0,
+    '978: /stage/start senza POI');
+  const stone = p.freeStone || 0;
+  const cl = call(t.respondStageClear, { clearMissionIds: [], getPoint: { lux: 0, money: 0, exp: 0 }, getEnemyDropItems: [] });
+  check(cl && cl.firstClearFlag === 1 && 39158 in p.stageScores, '978: /stage/clear registra la missione');
+  check((p.freeStone || 0) - stone === 1000, `978: 1000 jewel del primo completamento (${(p.freeStone || 0) - stone})`);
+  check(call(t.respondStageList).newStageId === sidOf(979), '978 finita -> 979');
+  // Q555 (branchType 1): il client gioca 18300 + unionId - 1; la variante vale la riga 18300 (stage finito, premi,
+  // obiettivi), drop dal POI della variante ricevuta (Task 3: unione delle uid sotto ognuna delle 18300-18304)
+  clearUpTo(554);
+  p.lastClearStageId = sidOf(554); // avanza solo: la 978 giocata sopra la terrebbe
+  t.STAGE_POI[18302] = { chests: [{ uid: 9, reward: 1 }], enemies: [{ uid: 1, enemyId: 10228, reward: 1 }, { uid: 3, enemyId: 10228, reward: 1 }] };
+  const s5 = call(t.respondStageStart, { stageId: 18302, supportUserId: 0, userKeybladeId: 1 });
+  check(s5 && s5.startStageData.stageId === 18302 && s5.userEnemyDropItems.map((d) => d.uniqueEnemyId).join() === '1,2,3',
+    `555 variante 18302: drop dal suo POI (${s5 && s5.userEnemyDropItems.map((d) => d.uniqueEnemyId)})`);
+  const stone5 = p.freeStone || 0;
+  const c5 = call(t.respondStageClear, { clearMissionIds: [3], getPoint: { lux: 0 }, getEnemyDropItems: [] });
+  check(c5 && c5.firstClearFlag === 1 && 18300 in p.stageScores && !(18302 in p.stageScores), '555 variante: stage 18300 finito');
+  check((p.freeStone || 0) - stone5 === 150 && JSON.stringify(p.clearMissions[18300]) === '[3]', '555 variante: premi e obiettivi della riga 18300');
+  check(call(t.respondStageList).newStageId === sidOf(556), '555 (variante) finita -> 556');
+  check(p.lastClearStageId === 18300, `lastClearStageId della riga: ${p.lastClearStageId}`);
+  check(call(t.respondStageStart, { stageId: 18304 }).startStageData.clearMissionIds.join() === '3', '555 variante: obiettivi gia\' fatti');
+}
+
 for (const d of tmpDirs) fs.rmSync(d, { recursive: true, force: true });
 check(tmpDirs.every((d) => !fs.existsSync(d)), 'cartelle temporanee tolte');
 

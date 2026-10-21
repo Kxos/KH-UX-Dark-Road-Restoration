@@ -23,7 +23,7 @@ const banners = [
   banner({ drawMedalTypeId: 10001, rowId: 'B0001', name: 'DAILY DEAL!', flags: ['PERMANENT', 'DAY_LIMITED'], end: '2018-01-31', prices: [600], lotCount: 3, rarityMix: [[4, 1], [3, 2]], dayLimit: 1 }),
   banner({ drawMedalTypeId: 10011, rowId: 'B0011', name: 'Epic Medal Carnival', prices: [3000], lotCount: 10, rarityMix: [[3, 10]] }),
 ];
-const catalog = { firstRarity: { 3: '2016-04-07', 4: '2016-04-07', 5: '2016-04-07' }, story: [[1, 525, '2016-04-07']], subsets: {},
+const catalog = { firstRarity: { 3: '2016-04-07', 4: '2016-04-07', 5: '2016-04-07' }, story: [[1, 525, '2016-04-07'], [526, 979, '2017-01-12']], subsets: {},
   medals: { wakka: { date: '2016-04-07', ids: [[11013, 3, '2016-04-07'], [11014, 4, '2016-04-07']], std: true } }, banners };
 fs.writeFileSync(BANNERS, JSON.stringify(catalog));
 const log = console.log;
