@@ -280,10 +280,12 @@ All'uscita fra parti di una missione `[fn]` mostra `img/wipe/wipe_%d.png` con %d
 della tabella `world` il cui worldName e' il prefisso della stanza (`[fn]`, tabella master
 0x22; nessuna corrispondenza -> 1). Nelle risorse c'e' solo `wipe_1` (DB): senza file
 `Sprite::initWithFile` fallisce (`[fn]`) e il distruttore cocos crasha.
-`make_textures.py` copia `wipe_1` in `wipe_2..10`, `10000`, `10001`. Gli originali per mondo non
+`make_textures.py` copia `wipe_1` in `wipe_2..14`, `10000`, `10001` (rete: gli originali vengono dopo e vincono). Gli originali per mondo non
 si trovano online (ISSUES I-027). Poi `recon/tools/originals.tsv` mette gli originali JP 4.3.1 di
 `wipe_2..8` (sezione 13) e `wipe_11..14` dei mondi di Ralph (sezione 40: righe `world` 11-14 NL/HD/CS/SR aggiunte da
 `server/make-story-oltre.js`).
+I-196: `import_originals.py` prendeva i glob con `[..]` per file singoli (un file letterale `wipe_1[1-4].png`, nessun wipe_11..14 -> crash
+ad ogni cambio di parte nelle missioni di Ralph); ora `*`, `?` e `[` sono glob.
 
 <a id="addnl-431"></a>
 ## OBB 5.0.1 contro addnl 4.3.1 (I-091)

@@ -1046,7 +1046,7 @@ print('img/union/Union_01..05, Union_L_01..05')
 # che non si carica -> crash nel distruttore). Nelle risorse c'e' solo wipe_1 (DB): copie per gli altri.
 _wp = os.path.join(out, 'img', 'wipe')
 os.makedirs(_wp, exist_ok=True)
-_wids = (2, 3, 4, 5, 6, 7, 8, 9, 10, 10000, 10001)
+_wids = (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 10000, 10001)   # 11-14: Ralph; gli originali (import_originals, dopo) sovrascrivono
 for _n in _wids:
     shutil.copyfile(os.path.join(src, 'img', 'wipe', 'wipe_1.png'), os.path.join(_wp, 'wipe_%d.png' % _n))
 print('img/wipe/wipe_%s' % ','.join(map(str, _wids)))

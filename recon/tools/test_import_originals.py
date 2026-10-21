@@ -39,6 +39,13 @@ try:
     rep = io.run(io.parse(['img/stage/ico_*.png' + chr(9) + 'b16', 'img/ui/h.png' + chr(9) + 'jp']), b16, jp, out, {'img/stage/ico_2.png', 'img/ui/h.png'})
     assert os.path.exists(os.path.join(out, 'img/stage/ico_1.png')) and not os.path.exists(os.path.join(out, 'img/stage/ico_2.png')), 'glob: servito saltato'
     assert rd('img/ui/h.png') == 'plain' and rep[0]['servedWW'] == 1, 'destinazione esplicita scritta'
+    # glob con parentesi quadre (I-196): ogni file col proprio nome, mai un file letterale con '['
+    shutil.rmtree(out)
+    for k in (11, 12, 3):
+        put(jp, 'img/wipe/wipe_%d.00100000.png' % k, 'w%d' % k)
+    io.run(io.parse(['img/wipe/wipe_1[1-4].png' + chr(9) + 'jp', 'img/wipe/wipe_[2-8].png' + chr(9) + 'jp']), b16, jp, out)
+    assert rd('img/wipe/wipe_11.png') == 'w11' and rd('img/wipe/wipe_12.png') == 'w12' and rd('img/wipe/wipe_3.png') == 'w3', 'glob [..]'
+    assert not [f for f in os.listdir(os.path.join(out, 'img/wipe')) if '[' in f], 'file letterale con ['
     # IPA 4.4.0 gia' estratta
     i440 = os.path.join(t, 'i440')
     put(i440, 'img/union/Union_01.png', 'u1')

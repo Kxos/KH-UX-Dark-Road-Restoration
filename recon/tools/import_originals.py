@@ -99,7 +99,7 @@ def run(rows, b16, jp, out, served=frozenset(), i440=None):
         if not hits:
             raise SystemExit('nessun originale per %s (%s)' % (r['dest'], ','.join(r['sources'])))
         dest_dir = r['dest'] if r['dest'].endswith('/') else os.path.dirname(r['dest'])
-        single = not r['dest'].endswith('/') and '*' not in r['dest']
+        single = not r['dest'].endswith('/') and not any(c in r['dest'] for c in '*?[')
         skipped = 0
         for name, path in hits:
             rel = r['dest'] if single else (dest_dir.rstrip('/') + '/' + name)
