@@ -46,7 +46,12 @@ check(isClone(160911501) && isClone(1602111501) && !isClone(17111501) && !isClon
 check(baseOf(190110117, (x) => [10117, 117].includes(x)) === 10117 && baseOf(160921501, (x) => x === 1501) === 1501
   && baseOf(160921501, () => false) === null, 'baseOf: 5 cifre se la riga esiste, se no 4');
 check(familyOf(11516) === 1516 && familyOf(255) === 255 && familyOf(1905001500) === 1500 && familyOf(17112004) === 2004, 'familyOf');
-const res = enemyRowsFor(missing, enemies, { stats, proposal, drawn });
+// dati di comparsa JP (json/enemy/detail<displayId>.json, 21-10 Task 7): solo per la grafica della famiglia;
+// show/showSwf solo se l'effetto e' servito (shows), se no restano quelli della base
+const details = { 1500: { show: 2, show_swf: 12, show_frame: 19, hide_frame: 1, speed: 4, hit_radius: 33, width: 111, height: 222 },
+  24: { width: 999 } };
+const shows = new Set([1, 2]);
+const res = enemyRowsFor(missing, enemies, { stats, proposal, drawn, details, shows });
 const byId = new Map(res.rows.map((r) => [r.enemyId, r]));
 const c = byId.get(160911501);
 check(c && c.name === base.name && JSON.stringify(c.hp) === JSON.stringify(base.hp) && c.flavor === base.flavor
@@ -61,10 +66,18 @@ check(j && j.name === 'Diver' && j.hp.join() === '11,22,33,44,55' && j.attack.jo
   'solo JP con fonte: nome, HP e attacco della fonte');
 const f = byId.get(1500);
 check(f && f.name === "Bunch O' Balloons" && f.attribute === 2 && f.displayId === 1500 && JSON.stringify(f.hp) === JSON.stringify(tpl.hp) && JSON.stringify(f.baseLv) === JSON.stringify(tpl.baseLv)
-  && JSON.stringify(f.defense) === JSON.stringify(tpl.defense) && JSON.stringify(f.skillId) === '[7,8]' && f.width === 70,
+  && JSON.stringify(f.defense) === JSON.stringify(tpl.defense) && JSON.stringify(f.skillId) === '[7,8]' && f.tapRadius === tpl.tapRadius,
   'clone di famiglia: curve e battaglia della base, nome della proposta, attributo della base se ignoto, grafica della famiglia');
+check(f && f.width === 111 && f.height === 222 && f.hitRadius === 33 && f.moveSpeed === 4,
+  `dettaglio JP della famiglia: ${f && [f.width, f.height, f.hitRadius, f.moveSpeed]}`);
+check(f && f.show === tpl.show && f.showSwf === tpl.showSwf, 'show_swf 12 non servito: comparsa della base');
+check(res.sources[1500].graphic === 'family' && res.sources[1500].detail === true, `fonte grafica 1500: ${JSON.stringify(res.sources[1500])}`);
+const res2 = enemyRowsFor({ 1500: { missions: [1] } }, enemies, { proposal, drawn, details, shows: new Set([12]) });
+check(res2.rows[0].showSwf === 12 && res2.rows[0].show === 2 && res2.rows[0].showFrame === 19, 'show_swf servito: comparsa JP');
 const g = byId.get(255);
 check(g && g.name === tpl.name && g.attribute === 3 && g.displayId === 24, 'famiglia senza grafica -> grafica della base; nome della base se ignoto');
+check(g && g.width === tpl.width && res.sources[255].graphic === 'base' && !res.sources[255].detail,
+  'grafica della base: niente dettaglio JP (nemmeno quello del displayId della base)');
 check(res.sources[1500].kind === 'family-clone' && res.sources[1500].confidence === 'low' && res.sources[255].confidence === 'medium',
   'fonte: family-clone con la confidenza');
 const l = byId.get(1905001500);

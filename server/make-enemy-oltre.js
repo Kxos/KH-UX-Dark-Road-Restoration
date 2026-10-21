@@ -41,6 +41,12 @@ const NAMES_PATH = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_
 const ENEMY_GEN = process.env.KHUX_NO_ENEMY_GEN ? null
   : path.join(process.env.KHUX_ENEMY_GEN || 'D:\\Progetto_Restauro_KH_UX\\enemy_gen\\files', 'lwf', 'character', 'enemy');
 const SHADOW = 80001;
+// dati di comparsa JP 4.3.1 per displayId (json/enemy/detail<d>.json: 91 file, displayId 1-141 e 1001-1006)
+const JP_DETAIL_DIR = process.env.KHUX_JP_ENEMY_DETAIL || path.join('D:\\Progetto_Restauro_KH_UX\\[local reference data]', '',
+  '[local reference data]', 'data', '[local reference data]', 'data', 'jp_final_4.3.1', 'json', 'enemy');
+// campo JP -> campo della riga enemy (hit_effect sta in enemyAttack, non qui)
+const DETAIL_SIZE = { speed: 'moveSpeed', hit_radius: 'hitRadius', width: 'width', height: 'height' };
+const DETAIL_SHOW = { show: 'show', show_swf: 'showSwf', show_frame: 'showFrame', hide_frame: 'hideFrame' };
 
 // D-A: solo gli id di 9-10 cifre sono varianti di un nemico base
 const isClone = (id) => id >= 1e8 && id < 1e10;
@@ -66,10 +72,24 @@ function drawnDisplays(namesFile = NAMES_PATH, drawnJp = null) {
   return drawn;
 }
 
+// dettagli JP: {"<displayId>": {show, show_swf, show_frame, hide_frame, speed, hit_radius, width, height, hit_effect}}
+function readDetails(dir = JP_DETAIL_DIR) {
+  const out = {};
+  if (!dir || !fs.existsSync(dir)) return out;
+  for (const f of fs.readdirSync(dir)) {
+    const m = /^detail(\d+)\.json$/.exec(f);
+    if (m) { try { out[m[1]] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); } catch { /* file rotto: ignorato */ } }
+  }
+  return out;
+}
+
 // missing: {"<id>": {missions[]}}; enemyRows: tabella enemy (basi col displayId gia' servito);
-// src: {stats, proposal, drawn:Set}. -> { rows, sources{"<id>": {kind, base, ...}}, uncovered[], cloned, fromStats, family }
+// src: {stats, proposal, drawn:Set, details, shows:Set}. -> { rows, sources{"<id>": {kind, base, ...}}, uncovered[], cloned,
+// fromStats, family }. shows = showSwf serviti (assente: quelli delle righe originali, che make-game-tables.js ha gia'
+// ridotto ai serviti)
 function enemyRowsFor(missing, enemyRows, src = {}) {
-  const { stats = {}, proposal = {}, drawn = new Set() } = src;
+  const { stats = {}, proposal = {}, drawn = new Set(), details = {} } = src;
+  const shows = src.shows || new Set(enemyRows.map((r) => r.showSwf));
   const byId = new Map(enemyRows.map((r) => [r.enemyId, r]));
   const has = (id) => byId.has(id);
   const byName = new Map();
@@ -121,12 +141,23 @@ function enemyRowsFor(missing, enemyRows, src = {}) {
     row.enemyId = id;
     if (p.name) row.name = p.name;
     if (p.attribute) row.attribute = p.attribute;
-    // grafica: quella della famiglia dell'id se servita (mai una grafica assente: il client va in crash), se no la base
+    // grafica (decisione dell'utente del 21-10, Task 7: «se la grafica originale c'e', si usa»): displayId originale =
+    // famiglia dell'id (nel master ogni riga di storia da 1000 in su ha displayId = famiglia: 1001-1006, 1020-1023,
+    // 1501, 2001-2003...; JP 4.3.1 ha lwf/character/enemy/<famiglia>/ per tutte le 139 famiglie nuove) se servita, cioe'
+    // completa in enemy_gen (make_jp_enemies.py: mai una texture o un'animazione obbligatoria assente, il client va in
+    // crash); se no quella della base. Con la famiglia anche taglia, velocita' e comparsa del dettaglio JP se c'e'
+    // (la comparsa solo con l'effetto servito); con la base i suoi campi, che vanno col suo modello
     const fam = familyOf(id);
-    if (fam < 5000 && drawn.has(fam)) row.displayId = fam;
+    const own = fam < 5000 && drawn.has(fam);
+    const det = own ? details[String(fam)] : null;
+    if (own) row.displayId = fam;
+    if (det) {
+      for (const [k, f] of Object.entries(DETAIL_SIZE)) if (Number.isFinite(det[k])) row[f] = det[k];
+      if (shows.has(det.show_swf)) for (const [k, f] of Object.entries(DETAIL_SHOW)) if (Number.isFinite(det[k])) row[f] = det[k];
+    }
     out.family++;
     return add(row, { kind: 'family-clone', confidence: p.confidence, base: p.base, name: row.name, displayId: row.displayId,
-      reason: p.reason });
+      graphic: own ? 'family' : 'base', ...(own ? {} : { familyDisplay: fam }), detail: !!det, reason: p.reason });
   };
   for (const id of short) family(id);
   for (const id of pending) family(id);
@@ -160,6 +191,7 @@ function strip(enemies, missing) {
 // in memoria (make-game-tables.js): src = {missing, proposal, stats, drawn, sourcesOut?} oppure dalle fonti
 function addRows(enemies, src) {
   const s = src || { ...defaultSources(), drawn: drawnDisplays(), sourcesOut: SOURCES_PATH };
+  if (!s.details) s.details = readDetails();
   strip(enemies, s.missing);
   const res = enemyRowsFor(s.missing, enemies, s);
   enemies.push(...res.rows);
@@ -167,6 +199,9 @@ function addRows(enemies, src) {
     fs.writeFileSync(s.sourcesOut, JSON.stringify({ _doc: 'fonte di ogni riga enemy delle missioni 526-979 (make-enemy-oltre.js): '
       + 'exact-clone = base a 5/4 cifre; family-clone(confidence) = nemico originale piu\' simile (Notices); uncovered = fuori',
     sources: res.sources, uncovered: res.uncovered }, null, 1));
+    const g = Object.values(res.sources).filter((v) => v.kind === 'family-clone' && !v.via);
+    console.log(`enemy-oltre: grafica della famiglia ${g.filter((v) => v.graphic === 'family').length}, della base `
+      + `${g.filter((v) => v.graphic === 'base').length} (cloni di famiglia diretti; i lunghi «via» copiano la loro corta)`);
   }
   console.log(`enemy-oltre: +${res.rows.length} righe (${res.cloned} cloni esatti, ${res.family} cloni di famiglia, `
     + `${res.fromStats} da fonte); ${res.uncovered.length} senza base, fuori`);
@@ -188,4 +223,5 @@ if (require.main === module) {
   patch(process.argv[2] || path.join(__dirname, 'master_data'), { ...d, drawn: drawnDisplays(), sourcesOut: process.argv[3] || SOURCES_PATH });
 }
 
-module.exports = { MAX_ID, SOURCES_PATH, isClone, baseOf, familyOf, drawnDisplays, enemyRowsFor, defaultSources, strip, addRows, patch };
+module.exports = { MAX_ID, SOURCES_PATH, isClone, baseOf, familyOf, drawnDisplays, readDetails, enemyRowsFor, defaultSources, strip, addRows,
+  patch };

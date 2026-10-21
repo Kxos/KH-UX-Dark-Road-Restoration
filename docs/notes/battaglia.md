@@ -404,6 +404,16 @@ Tricholoma (texture di wait/knockback assenti, niente dead), 2001-2003 sEnm (nie
 dead in nessuna fonte). Stage di storia: 173 enemyId, 18 serviti WW, 152 con la grafica originale,
 3 col sostituto (1501 -> Dark Road 5038, 2001/2002 -> 17).
 
+Missioni 526-979 (21-10, I-009 Task 7): `--oltre` (enemies_oltre525.json) aggiunge le cartelle delle
+famiglie dei nemici nuovi (displayId = famiglia: nel master ogni riga di storia da 1000 in su ha
+displayId = famiglia; prova visiva: 1517 = casco da palombaro di Diver). Regola (3) estesa: texture
+col nome esatto in un'altra animazione dello stesso nemico. Su 124 famiglie nuove **5 complete** (20,
+139, 1512, 1517, 1559; +531 file, +2,69 MB); 119 no: l'estrazione JP ha scartato le texture doppione
+(1532, 1533, 1540, 1576... 0 PNG; Jafar 1550 2 su ~140) e nessun file con stesso nome e misure (LWF:
+sezione texture) le sostituisce altrove nell'albero `lwf`; 56 non hanno nemmeno `dead`. Le righe
+nuove (`make-enemy-oltre.js`) usano la famiglia se servita, piu' taglia/velocita'/comparsa di
+`json/enemy/detail<famiglia>.json` (solo 56 fra le nuove), altrimenti la grafica della base.
+
 `make-game-tables.js`: le cartelle `enemy_gen\files\lwf\character\enemy\<id>\wait\wait.lwf` e
 `show_effect_fla\show_effect<N>` contano come servite (`KHUX_ENEMY_GEN` per un'altra cartella,
 `KHUX_NO_ENEMY_GEN=1` per ignorarle); le righe vere a cui una corsa precedente aveva messo l'effetto

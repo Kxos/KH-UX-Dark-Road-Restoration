@@ -61,6 +61,8 @@ ap.add_argument('--index', action='append')
 ap.add_argument('--master', default=os.path.join(REPO, 'server', 'master_data'))
 ap.add_argument('--real', default=os.path.join(D, 'external', 'thethiny', 'enemy_dec.json'))
 ap.add_argument('--poi', action='append', help='stage_poi (enemyId degli stage di storia)')
+ap.add_argument('--oltre', default=os.path.join(D, 'reference', 'world_schema', 'oltre525', 'enemies_oltre525.json'),
+                help='nemici delle missioni 526-979 assenti dal master ({missing}): anche le cartelle delle loro famiglie')
 ap.add_argument('--out', default=os.path.join(D, 'enemy_gen'))
 ap.add_argument('--story-only', action='store_true', help='solo i nemici degli stage di storia (--poi)')
 ap.add_argument('--ids', help='solo questi displayId (elenco con virgole), per prove')
@@ -140,6 +142,11 @@ def plan_anim(root_rel, anim, jp_all):
             suf = t[len(anim) + 1:] if t.startswith(anim + '_') else None
             cands = [] if suf is None else [fs[o + '_' + suf] for o, fs in jp_all.items()
                                               if o != anim and (o + '_' + suf) in fs]
+            if not (cands and len({sha(c) for c in cands}) == 1):
+                # stesso nome esatto in un'altra animazione (21-10, I-009 Task 7): il LWF di wait cita
+                # wait_<x>.png e il file vero e' rimasto solo in atk1_o/ (che cita le stesse bitmap di wait),
+                # le altre copie erano stub di deduplicazione (es. 1532, 1550, 1561: 0 texture in wait/)
+                cands = [fs[t] for o, fs in jp_all.items() if o != anim and t in fs]
             if cands and len({sha(c) for c in cands}) == 1:
                 todo[pre + t] = cands[0]
                 filled.append(t)
@@ -187,6 +194,27 @@ def plan_enemy(d):
         return r, {}
     r.update(status='completo', files=len(todo))
     return r, todo
+
+
+def family_of(i):
+    """Famiglia grafica di un enemyId: ultime 4 cifre (delle ultime 5 per gli id da 8 cifre in su), come familyOf
+    di server/make-enemy-oltre.js."""
+    return (i % 100000 if i >= 10 ** 7 else i) % 10000
+
+
+def oltre_families(ids, served=()):
+    """Nemici delle missioni 526-979 assenti dal master (enemies_oltre525.json) -> {famiglia: [enemyId]} per le
+    famiglie con la cartella JP (o 2016) non servite dagli indici. displayId originale = famiglia: nel master ogni
+    riga di storia da 1000 in su ha displayId = famiglia (1001-1006, 1020-1023, 1501, 2001-2003, 11501, 12001...;
+    le eccezioni sono solo eventi 5xxx/6xxx/8xxx/9xxx) e le 139 famiglie nuove hanno tutte la loro cartella JP."""
+    out = {}
+    for i in ids:
+        f = family_of(i)
+        if f in served or f >= 5000:
+            continue
+        if os.path.isdir(os.path.join(a.jp, str(f))) or os.path.isdir(os.path.join(a.b2016, str(f))):
+            out.setdefault(f, []).append(i)
+    return out
 
 
 def plan_show(n):
@@ -248,6 +276,16 @@ def main():
     want = sorted({d for d in disp.values() if d not in served and d < 5000})
     if a.story_only:
         want = [d for d in want if d in story_disp]
+    # famiglie dei nemici delle missioni 526-979 (I-009 Task 7, 21-10): righe aggiunte da make-enemy-oltre.js, che
+    # prende il displayId della famiglia quando la sua cartella qui e' completa; sono tutte di storia
+    oltre = {}
+    if a.oltre and os.path.exists(a.oltre):
+        miss = json.load(open(a.oltre, encoding='utf-8')).get('missing', {})
+        # solo le famiglie che il master non chiede gia' (le altre, es. 3 o 56, sono il displayId di righe vere)
+        oltre = {f: v for f, v in oltre_families(sorted(int(k) for k in miss), served).items()
+                 if f not in want and f not in disp.values()}
+        story_disp |= set(oltre)
+        want = sorted(set(want) | set(oltre))
     if a.ids:
         want = [int(x) for x in a.ids.split(',') if x]
     results, plan = [], {}
@@ -255,6 +293,8 @@ def main():
         r, todo = plan_enemy(d)
         r['story'] = d in story_disp
         r['enemies'] = sorted(i for i, x in disp.items() if x == d)
+        if d in oltre:
+            r['oltre'] = sorted(oltre[d])
         results.append(r)
         plan.update(todo)
     # effetti di comparsa: showSwf originali (righe vere) non serviti
@@ -302,11 +342,20 @@ def main():
            'complete_ids': [r['displayId'] for r in ok], 'incomplete_ids': [r['displayId'] for r in bad],
            'story_displayIds': sorted(story_disp), 'story_enemies': len(story_ids & have),
            'story_enemies_served': len(story_en_served), 'story_enemies_substituted': story_en_bad,
+           'oltre_families': len(oltre), 'oltre_complete': [r['displayId'] for r in ok if r.get('oltre')],
+           'oltre_incomplete': [r['displayId'] for r in bad if r.get('oltre')],
            'move_from_wait': [r['displayId'] for r in ok if r['anims']['move']['status'].startswith('da wait')],
            'shows': show_res, 'results': results}
     os.makedirs(a.out, exist_ok=True)
     json.dump(rep, open(os.path.join(a.out, 'report.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     names = {e['enemyId']: e['name'] for e in enemies}
+    prop_p = os.path.join(os.path.dirname(a.oltre or ''), 'enemy_clone_proposal.json')
+    prop = json.load(open(prop_p, encoding='utf-8')) if a.oltre and os.path.exists(prop_p) else {}
+
+    def label(r):
+        if r['enemies']:
+            return ', '.join(names.get(i, '?') for i in r['enemies'][:3])
+        return '526-979: ' + ', '.join('%d %s' % (i, (prop.get(str(i)) or {}).get('name') or '?') for i in r.get('oltre', [])[:3])
     L = ['# enemy_gen: grafiche originali dei nemici', '',
          'Generato da `recon/tools/make_jp_enemies.py`%s. displayId non serviti usati dal master: %d; completi: %d '
          '(%d righe enemy); incompleti: %d. File: %d (%.1f MB).' % (
@@ -317,13 +366,13 @@ def main():
          '## Incompleti (restano col sostituto)', '']
     for r in bad:
         L.append('- %d%s (%s): %s; %s' % (r['displayId'], ' storia' if r['story'] else '',
-                                          ', '.join(names.get(i, '?') for i in r['enemies'][:3]), r['why'],
+                                          label(r), r['why'],
                                           '; '.join('%s %s%s' % (k, v['status'], ' (' + v['note'] + ')' if v.get('note') else '')
                                                     for k, v in r['anims'].items() if k in MANDATORY)))
     L += ['', '## Completi', '', '| displayId | nemici | animazioni |', '|---|---|---|']
     for r in ok:
         L.append('| %d%s | %s | %s |' % (r['displayId'], ' (storia)' if r['story'] else '',
-                                         ', '.join(names.get(i, '?') for i in r['enemies'][:3]),
+                                         label(r),
                                          ', '.join('%s:%s' % (k, v['status']) for k, v in r['anims'].items()
                                                    if v['status'] not in ('assente', 'incompleta'))))
     L += ['', '## Effetti di comparsa', '']
