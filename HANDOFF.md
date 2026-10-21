@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 51 installate** (21-10, -Quick con originals #37-39 e NPC; 4,09 GiB su misc.mp4.2; prima: 49 (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 167** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 56 installate** (21-10 sera, 4,22 GiB su misc.mp4.2; prima: 49 (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 174** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -117,19 +117,34 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
   visto dall'utente). Supernova a 1 colpo come l'originale (rev 160). **Attacchi originali dei nemici** (I-181 chiuso: stati alterati di nuovo, Esuna visto). **Crash nelle 86 stanze generate** (I-182 chiuso: segnaposto BTF da 45 byte, risorse 51). Banco: revisione **166**, **risorse 51** (4,09 GiB, tre pezzi), salvataggio `provetm`
   (prove525 + Trait Medal), `relogin.ps1 -Save provetm -RealNow 2026-12-08T10:00:00Z`. Dopo una modifica al server
   usare sempre `relogin.ps1`: riavviare solo il server fa perdere la sessione al client («6 ERROR :185»).
-- **Prossimo passo (dal 21-10): importare le missioni 526-979** dagli stage originali JP 4.3.1 (I-009, decisioni dell'utente e
-  ricerca in [mappe_storia.md#oltre525](docs/notes/mappe_storia.md#oltre525); rapporti in `reference\world_schema\oltre525\`):
-  righe master dalla wiki (526-555 anche dal master 1.1.3), 312 nemici mancanti dal JP, 27 stanze da aggiungere, Q555 per
-  Unione (`branchType 1`), Q617/Q661 parte ricostruita, SR_0009_01_00 con la grafica della _00, mapName originali.
-  **Piano scritto** (21-10): [docs/superpowers/plans/2026-10-21-missioni-526-979.md](docs/superpowers/plans/2026-10-21-missioni-526-979.md),
-  da far approvare all'utente con le decisioni D-A (statistiche dei ~250 nemici senza fonte), D-B (Q978 solo filmato),
-  D-C (mondi di Ralph senza riga `world`) e la scelta dell'esecuzione.
-- **21-10** ([mappe_storia.md#smoke-2110](docs/notes/mappe_storia.md#smoke-2110)): prova delle stanze generate fatta
-  (`btf_check.py` 0 incoerenti; 40 missioni, `smoke_quests.ps1` chiude ora le Notices); corretti I-183 (avviso Coerce),
-  I-184 (pioggia `hole_rain`), I-185 (NPC 5529 e altri 5 dal 2016), I-186 (`/user/detail`), I-187 (cut-in delle medaglie
-  con id in 2/4: righe alias, `make-cutin-alias.js`, **rev 167**), I-188 (musiche 426-500). Tutti provati al banco.
-  Aperti dall'utente: I-189 (moltiplicatore doppio di Cloud II EX), I-190 (Supernova in coda senza la medaglia): analisi
-  in corso. Restano da ricontrollare i 19 NPC senza 2016 riempiti dal JP (I-185).
+- **STATO AL 21-10 SERA — RIPARTIRE DA QUI.** Banco: **risorse 56** installate, **master rev 174**, salvataggio di prova
+  **`provefine`** (provetm con tutte le 979 missioni finite): `relogin.ps1 -Save provefine -RealNow 2026-12-08T10:00:00Z`.
+  Dopo `update-resources.ps1` toccare a mano KHUX START (200,1020) e Download (1220,715); se compare «Launcher3/UI sistema non
+  risponde»: «Attendi» (640,649) o reboot + `phaseb-guest.sh` + relogin. Registro dei lavori (non in git):
+  `.superpowers/sdd/2026-10-21-missioni-526-979/progress.md` (rulings, minor rimandati, esiti per task).
+- **Missioni 526-979 (I-009): FATTE e provate al banco** (piano `docs/superpowers/plans/2026-10-21-missioni-526-979.md`, Task 1-6
+  completi e revisionati, Task 7 = banco in corso): righe master (`make-story-oltre.js`: Q555 per Unione, Q978 onlyDrama, mondi di
+  Ralph 11-14, musiche per missione da khwiki I-198, 81 obiettivi originali + Trophy 61-63 di Bad Guy Breaker), nemici
+  (`make-enemy-oltre.js`: 62 cloni esatti base 5-poi-4 cifre, 250 cloni di famiglia dalla proposta in
+  `reference\world_schema\oltre525\enemy_clone_proposal.json`, D-A), 457 stage JP importati (`import_orig_stages.py --oltre`,
+  Lv dalla wiki I-195), 28 stanze (`make_jp_rooms.py`), tendine 11-14 (glob I-196), NPC segnaposto (`npc_placeholders.py`, I-197).
+  Provati: 526/527/555 (Unioni)/600/690/880 (Trophy)/911/951-955/979 (musica «The Key»). Chiusi I-183..I-193, I-195..I-198.
+- **Danni variabili (I-189/I-193): fatti e provati** (`server/variable-power.js`, 707 righe tipo>2, Critical con criticalPower).
+- **APERTO, priorita': grafica dei nemici/NPC (I-194).** Regola dell'utente: originali sempre prima; ordine = originali diretti >
+  copie originali (`recon/tools/jp_dedup_donors.tsv`, `extra_donors.tsv`, regole >=99% sul 2016) > ricostruiti
+  (`jp_reconstructed.tsv`) > ricolorati (`jp_recoloured.tsv`) > sostituto Dark Road stessa specie (`DR_LOOK` in
+  make-enemy-oltre.js). Oggi 312 righe 526-979: 44 grafica propria, 31 Dark Road, 147 base; 117 famiglie incomplete (boss: Jafar
+  Cobra/Genie, Dragon Maleficent, Darkness, Ephemer&Skuld (boss della 979, video https://www.youtube.com/watch?v=vgIlsu_W7Ns 12:22),
+  King Candy, Cy-Bug...; 52 NPC invisibili). Fonti automatiche ESAURITE (dump JP 4.3.1, OBB JP 5.0.1 in
+  `external\[archive item]`, IPA JP 4.4.1, WW 5.0.1, 2016, Wayback: niente). Prossimi passi: (1) 20 texture di effetti
+  `show_effect2`/`eff_1004`: usare gli originali UX dell'IPA 4.4.1 (`tmp\jp441esolved_441.tsv` righe exact441-over-501) al posto
+  delle immagini DR; 18 alias Shadow; bug `tools/segdl.ps1` ($args); (2) boss: abbinamento visivo dei pezzi nei filmati
+  `lwf/drama` (candidati in `tmp\enemy_src2`); (3) contatti dell'utente: thethiny (chi ha fatto lo zip JP 4.3.1?),
+  Roboloid/Ultimadei (Reddit [handle removed], [handle removed]), ShardofTruth (KH Wiki), appello community (testi pronti nella chat del
+  21-10); crediti gia' nel README (0cb3827).
+- **Altri aperti annotati dall'utente**: I-191 (banner attivi nella home), I-192 (WebView Beginner's Guide), controlli con i dati
+  Roboloid (Supernova, buff) e con la pagina Special Attack della wiki (16 colpi, Rapid Storm, 2 condizioni; tmp\sa_wiki), pagina
+  web finale «Kingdom Hearts Re-Union X» solo come ULTIMO task (memoria).
 - **Trait Medal (I-084)**: parti A e B fatte, **banco 20-10 ok** ([medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).
   Moogle Shop delle Trait Medal rimandato al bilanciamento (I-164); resta la raggiungibilita' dei deal Trait (storia oltre il 2018).
 - Aperti dello Shop: I-139 (24 INCOMPLETE), I-140 (filtro Epic), I-141 (immagine di B0612), I-142 (Blue Fairy Deal),
