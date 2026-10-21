@@ -46,6 +46,9 @@ const fs = require('fs');
 const path = require('path');
 
 const FIRST = 526, LAST = 979, CUTSCENE = 978, CUTSCENE_STAGE = 39158, Q555_STAGE = 18300;
+// varianti della Q555 (branchType 1): il client carica 18300 + unionId - 1
+const Q555_VARIANTS = [0, 1, 2, 3, 4].map((k) => Q555_STAGE + k);
+const STOPGAP_KEEP = 'Complete without having to continue';
 const ROOM_WORLD = { DB: 1, DW: 2, WL: 3, AG: 4, OC: 5, BC: 6, CD: 7, ED: 8, NL: 11, HD: 12, CS: 13, SR: 14 };
 const WIKI_WORLD = { 'Daybreak Town': 1, 'Dwarf Woodlands': 2, Wonderland: 3, Agrabah: 4, 'Olympus Coliseum': 5,
   "Beast's Castle": 6, 'Castle of Dreams': 7, 'Enchanted Dominion': 8, Niceland: 11, 'Cy-Bug Sector': 12,
@@ -156,7 +159,8 @@ function objectiveReward(o, ctx, titleIdx) {
 function buildRows(stageRows, sources) {
   const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
     enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null } = sources;
-  const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [], wikiObjectives: [] };
+  const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [], wikiObjectives: [],
+    branchObjectives: [] };
   const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
   const byName = (rows, key, name) => rows.filter((r) => r[key] === name);
   const ctxBase = {
@@ -289,6 +293,26 @@ function buildRows(stageRows, sources) {
           report.wikiObjectives.push(n);
         }
       }
+      // Q555 (fix round 1 del Task 6, 21-10): il client valuta gli obiettivi per id. [fn] (inizio battaglia)
+      // per ogni obiettivo 12 mette submissionId nello slot i di 0x4358 ([fn]); [fn](enemyId) conta
+      // solo lo slot con quell'id; il valutatore [fn] (case 0xc, [fn]) compie l'obiettivo se il
+      // conto e' fra 1 e submissionNum, poi [fn] lo mette in clearMissionIds (0x4254, letto da /stage/clear
+      // [fn]). Nessuna forma «bersaglio dello stage» senza id. Le 5 varianti hanno bersagli diversi (10230
+      // Aced, 10231 Invi, 10228 Ira x2, 10232 Gula): un obiettivo per id che una variante non ha diventa 7 «Complete
+      // within N turns» (case 7: turni 0x430c <= N), stesso N e stesso premio; dichiarato nelle Notices.
+      if (stagePoi && row.branchType === 1) {
+        const sets = Q555_VARIANTS.map((v) => new Set(((stagePoi[v] || {}).enemies || []).map((e) => e.enemyId)));
+        for (let i = 0; i < Math.min(3, row.validSubmission || 0); i++) {
+          if (row.submissionIdType[i] !== 1 || sets.every((x) => x.has(row.submissionId[i]))) continue;
+          if (row.submissionRequire[i] !== 12) throw new Error(`missione ${n}: obiettivo ${i + 1} (${row.submissionRequire[i]}) per id fuori da una variante`);
+          Object.assign(row, { submissionRequire: Object.assign([...row.submissionRequire], { [i]: 7 }),
+            submissionName: Object.assign([...row.submissionName], { [i]: 'Complete within ${1:%d :#turn:#turns}' }),
+            submissionDataType: Object.assign([...row.submissionDataType], { [i]: 2 }),
+            submissionIdType: Object.assign([...row.submissionIdType], { [i]: 0 }),
+            submissionId: Object.assign([...row.submissionId], { [i]: 0 }) });
+          report.branchObjectives.push([n, i + 1]);
+        }
+      }
     } else {
       if (!q || !mis) throw new Error(`missione ${n}: assente dalla wiki o da oltre525.json`);
       const raw = wikiRaw[q.title] || '';
@@ -327,6 +351,17 @@ function buildRows(stageRows, sources) {
   }
   Object.defineProperty(rows, 'report', { value: report });
   return rows;
+}
+
+// obiettivi tappabuchi delle 526-979 in una tabella stage (codice del client non ricavato: valutati come 10 col testo
+// della wiki), per la notizia «Story Quests 526-979»
+function countStopgaps(stageRows) {
+  let n = 0;
+  for (const r of stageRows || []) {
+    if (r.stageKind !== 1 || r.id < FIRST || r.id > LAST || r.stageId >= 100000) continue;
+    for (let i = 0; i < Math.min(3, r.validSubmission || 0); i++) if (r.submissionRequire[i] === 10 && r.submissionName[i] !== STOPGAP_KEEP) n++;
+  }
+  return n;
 }
 
 function setClear(row, items) {
@@ -435,10 +470,12 @@ function patch(masterDir, src) {
   console.log(`story-oltre: +${rows.length} missioni 526-979 (978 solo filmato); ${rep.enemiesToShadow} obiettivi su nemici assenti -> 1; `
     + `${rep.stopgapObjectives.length} obiettivi tappabuchi, ${rep.missingRewards.length} premi non ricavati, `
     + `${rep.droppedDramas.length} missioni con filmati assenti tolti, ${rep.overflow.length} oltre i limiti; `
-    + `obiettivi della wiki al posto dei 1.1.3 (nemico fuori dallo stage): ${rep.wikiObjectives.join(', ') || 'nessuno'}`);
+    + `obiettivi della wiki al posto dei 1.1.3 (nemico fuori dallo stage): ${rep.wikiObjectives.join(', ') || 'nessuno'}; `
+    + `per id fuori da una variante -> 7: ${rep.branchObjectives.map(([q, i]) => `${q}/${i}`).join(', ') || 'nessuno'}`);
   return rows.length;
 }
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { ROOM_WORLD, WIKI_WORLD, WORLD_THUMB, WORLD_BGM, NEW_WORLDS, thumbForRoom, readThumbs, buildWorldRows, buildRows, objectiveCodes, wikiLv, readDramas, defaultSources, patch };
+module.exports = { ROOM_WORLD, WIKI_WORLD, WORLD_THUMB, WORLD_BGM, NEW_WORLDS, thumbForRoom, readThumbs, buildWorldRows, buildRows, objectiveCodes, wikiLv, readDramas, defaultSources, patch,
+  countStopgaps, Q555_VARIANTS };

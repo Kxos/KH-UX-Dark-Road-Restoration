@@ -26,6 +26,15 @@
 const clock = require('./clock');
 const { isBoosted } = require('./medal-boost');
 const { SEASONS, mmdd } = require('./gacha-seasons');
+const fs = require('fs');
+const path = require('path');
+const { countStopgaps } = require('./make-story-oltre');
+
+// obiettivi tappabuchi delle 526-979 contati nel master servito (81 dopo il Task 6, 21-10; 81 anche senza master)
+function storyStopgaps() {
+  const dir = process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data');
+  try { return countStopgaps(JSON.parse(fs.readFileSync(path.join(dir, 'stage.json'), 'utf8'))) || 81; } catch { return 81; }
+}
 
 // Finestre stagionali dello Shop: generate dalla tabella SEASONS, cosi' la notizia non puo' divergere
 const SEASON_LABEL = { newyear: 'New Year', lunar: 'Lunar New Year', valentine: "Valentine's Day", anniversary: 'Anniversary',
@@ -102,7 +111,8 @@ const NOTICES = [
       '250 enemies of the later quests have no surviving stats: they use the stats of the most similar original enemy (same family and role). 62 other enemies are exact copies of their base enemy, as in the original game data.',
       'Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.',
       '## Objectives and rewards',
-      '80 mission objectives (for example time limits, barrels, treasure chests or the number of Medals equipped) show their original text, but they are checked as "Complete without having to continue", because the way the original game checked them is unknown.',
+      `${storyStopgaps()} mission objectives (for example time limits, barrels, treasure chests or the number of Medals equipped) show their original text, but they are checked as "Complete without having to continue", because the way the original game checked them is unknown.`,
+      'Quest 555 "Inside the Clock Tower Pt. 10": you face the Master of your own Union. The two objectives "Defeat the target enemy within 2 turns" can only name one Master, so they are shown as **"Complete within 2 turns"** (same reward), which every Union can complete.',
       'The 7 "Trophy" rewards of Quests 880-915 are not given: the game data has no trophy items.',
       'The Keyblades **Stroke of Midnight**, **Fairy Stars** and **Bad Guy Breaker** are the rewards of Quests 595, 683 and 880, as in the original game, and are no longer given earlier. If you already have them, you keep them.',
       '## Worlds',

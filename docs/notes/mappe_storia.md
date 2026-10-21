@@ -515,7 +515,11 @@ Shop/biglietti; `gacha.js` `RESTORED_QUEST` 979); l'elenco va 525 -> 526 e 979 -
 Q555: `stageRowOf` fa valere la riga 18300 per le varianti 18301-18304 (AP, premi, obiettivi, `stageScores`), drop e
 forzieri dall'id ricevuto; `ensureUnion` porta a 1 (Ursus) un `unionId` 0/assente di un giocatore creato (al
 caricamento, a `/user/create`, in `userDetail`): con 0 il client cercherebbe la 18299. Q978 (`onlyDrama`): nessun POI,
-`/stage/start` senza drop ne' forzieri, `/stage/clear` registra la missione e da' i premi. Obiettivi 1.1.3 di 542-544,
+`/stage/start` senza drop ne' forzieri, `/stage/clear` registra la missione e da' i premi; ripiego: un `/stage/clear`
+senza `/stage/start` (`stageInProgress` spento) con la missione corrente gia' finita e la prossima `onlyDrama` registra
+quella. Obiettivi per id del client (valutatore `[fn]`, slot 0x4358 riempiti da `[fn]`/`[fn]`
+con `submissionId`, contati da `[fn]` solo per quell'id): la 555 ha 5 bersagli diversi, quindi i suoi due «Defeat
+the target enemy within 2 turns» sono 7 «Complete within 2 turns» (stesso premio, nelle Notices). Obiettivi 1.1.3 di 542-544,
 546, 548-552, 555 (nemico fuori dallo stage JP) sostituiti con quelli della wiki (`make-story-oltre.js`, ruling del
 controller). Master rifatto con
 `KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1 KHUX_STAGE_POI_EXTRA=<stage_gen\orig_stages\stage_poi_orig.json>;<stage_gen\orig_stages_oltre\stage_poi_oltre.json> node server/make-game-tables.js <wiki\medals.json>`

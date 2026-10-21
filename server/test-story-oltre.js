@@ -3,7 +3,8 @@
 // Fonti finte minime costruite qui (nessun dato vero): 1.1.3 per 526-555, wiki e oltre525.json per le altre.
 'use strict';
 const fs = require('fs'), path = require('path');
-const { buildRows, patch, wikiLv, ROOM_WORLD, defaultSources, thumbForRoom, readThumbs, buildWorldRows } = require('./make-story-oltre');
+const { buildRows, patch, wikiLv, ROOM_WORLD, defaultSources, thumbForRoom, readThumbs, buildWorldRows, countStopgaps,
+  Q555_VARIANTS } = require('./make-story-oltre');
 // cartelle temporanee sul disco D (regola del progetto), tolte alla fine
 const TMP = process.env.KHUX_TMP || 'D:\\Progetto_Restauro_KH_UX\\tmp';
 fs.mkdirSync(TMP, { recursive: true });
@@ -162,8 +163,18 @@ check(rows.filter((r) => r.onlyDrama).length === 1, 'solo la 978 senza mappa');
   check(JSON.stringify(r544.submissionRequire) === '[28,12,10]' && r544.submissionId[1] === 10001
     && JSON.stringify(r544.submissionRewardType) === '[14,14,5]' && r544.submissionName[2] === 'Complete without having to continue',
     `544: obiettivi della wiki (${r544.submissionRequire})`);
-  check(JSON.stringify(r555.submissionRequire) === '[28,12,10]' && r555.stageId === 18300 && r555.branchType === 1,
-    `555: obiettivi della wiki, riga 18300 branchType 1 (${r555.submissionRequire})`);
+  // fix round 1: il client valuta il 12 per id ([fn] mette submissionId nello slot, [fn] conta solo
+  // quell'id): un id solo non va per 5 varianti -> 7 «Complete within N turns», stesso N e stesso premio
+  check(JSON.stringify(r555.submissionRequire) === '[28,7,10]' && JSON.stringify(r555.submissionNum) === '[0,2,0]'
+    && r555.submissionName[1] === 'Complete within ${1:%d :#turn:#turns}' && r555.submissionIdType[1] === 0
+    && r555.submissionId[1] === 0 && r555.submissionDataType[1] === 2 && r555.submissionRewardType[1] === 14
+    && r555.stageId === 18300 && r555.branchType === 1, `555: obiettivi della wiki, 12 -> 7 (${r555.submissionRequire})`);
+  // ogni variante 18300-18304 puo' compiere tutti e 3 gli obiettivi: nessun id che una variante non ha
+  const doable = (row, sid) => [0, 1, 2].slice(0, row.validSubmission).every((i) => row.submissionIdType[i] !== 1
+    || ((stagePoi[sid] || {}).enemies || []).some((e) => e.enemyId === row.submissionId[i]));
+  check(Q555_VARIANTS.length === 5 && Q555_VARIANTS.every((v) => doable(r555, v)), '555: obiettivi compibili in ogni variante');
+  check(JSON.stringify(rw.report.branchObjectives) === '[[555,2]]', `report.branchObjectives: ${JSON.stringify(rw.report.branchObjectives)}`);
+  check(countStopgaps(rw) === rw.report.stopgapObjectives.length && countStopgaps(rows) === 1, `countStopgaps: ${countStopgaps(rows)}`);
   check(JSON.stringify(r530w.submissionRequire) === '[28,12,4]' && r530w.submissionId[2] === 99, '530: nemici nello stage, obiettivi 1.1.3');
   check(r544.clearGetItemNum[0] === 150 && r544.mapName === 'Mappa 1.1.3 544', '544: il resto della riga resta 1.1.3');
   check(JSON.stringify(rw.report.wikiObjectives) === '[544,555]', `report.wikiObjectives: ${rw.report.wikiObjectives}`);
@@ -234,7 +245,13 @@ check(/^img\/wipe\/wipe_1\[1-4\]\.png\tjp/m.test(tsv), 'originals.tsv: wipe_11..
   const nt = NOTICES.find((x) => x.title === 'Story Quests 526-979');
   const t = nt ? nt.body.join(' ') : '';
   check(nt && nt.tag === 'IMPORTANT' && NOTICES.indexOf(nt) === 0, 'notizia IMPORTANT in cima');
-  for (const re of [/617/, /661/, /250/, /62/, /80/, /Trophy/, /Stroke of Midnight/, /Fairy Stars/, /Bad Guy Breaker/, /595/, /683/, /880/,
+  // numero dei tappabuchi dal master servito (81 dopo il Task 6: +552 «Complete within 2 battles»)
+  let master = [];
+  try { master = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'stage.json'), 'utf8')); } catch { /* assente */ }
+  const nStop = countStopgaps(master) || 81;
+  check(t.includes(`${nStop} mission objectives`), `notizia: ${nStop} tappabuchi (dal master)`);
+  check(/Quest 555/.test(t) && /Complete within 2 turns/.test(t), 'notizia: obiettivi della 555');
+  for (const re of [/617/, /661/, /250/, /62/, /Trophy/, /Stroke of Midnight/, /Fairy Stars/, /Bad Guy Breaker/, /595/, /683/, /880/,
     /978/, /What Comes After/, /reconstructed/]) check(re.test(t), `notizia: ${re}`);
 }
 
@@ -335,6 +352,18 @@ for (const k of ['KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WI
   check(cl && cl.firstClearFlag === 1 && 39158 in p.stageScores, '978: /stage/clear registra la missione');
   check((p.freeStone || 0) - stone === 1000, `978: 1000 jewel del primo completamento (${(p.freeStone || 0) - stone})`);
   check(call(t.respondStageList).newStageId === sidOf(979), '978 finita -> 979');
+  // fix round 1: /stage/clear senza /stage/start (se il client salta lo start della 978): currentStageId e' la 977
+  // gia' finita, nessuno stage in corso e la prossima missione e' onlyDrama -> si registra la 978
+  clearUpTo(977);
+  call(t.respondStageStart, { stageId: sidOf(977) });
+  call(t.respondStageClear, { clearMissionIds: [], getPoint: { lux: 0 } });
+  check(!(39158 in p.stageScores), 'clear dopo lo start della 977: la 977, non la 978');
+  const fb = call(t.respondStageClear, { clearMissionIds: [], getPoint: { lux: 0 } });
+  check(fb && fb.firstClearFlag === 1 && 39158 in p.stageScores, '978: clear senza start -> registrata la 978');
+  clearUpTo(976);
+  p.currentStageId = sidOf(976);
+  call(t.respondStageClear, { clearMissionIds: [], getPoint: { lux: 0 } });
+  check(!(39158 in p.stageScores) && !(sidOf(977) in p.stageScores), 'clear senza start, prossima non onlyDrama: nessun credito in piu\'');
   // Q555 (branchType 1): il client gioca 18300 + unionId - 1; la variante vale la riga 18300 (stage finito, premi,
   // obiettivi), drop dal POI della variante ricevuta (Task 3: unione delle uid sotto ognuna delle 18300-18304)
   clearUpTo(554);
@@ -350,6 +379,24 @@ for (const k of ['KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WI
   check(call(t.respondStageList).newStageId === sidOf(556), '555 (variante) finita -> 556');
   check(p.lastClearStageId === 18300, `lastClearStageId della riga: ${p.lastClearStageId}`);
   check(call(t.respondStageStart, { stageId: 18304 }).startStageData.clearMissionIds.join() === '3', '555 variante: obiettivi gia\' fatti');
+}
+
+// --- dati veri: riga 555 del master servito contro i nemici delle 5 varianti (stage_poi_oltre.json del Task 3) -------
+{
+  let m = null, poi = null;
+  try {
+    m = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'stage.json'), 'utf8')).find((r) => r.id === 555 && r.stageKind === 1);
+    poi = JSON.parse(fs.readFileSync(process.env.KHUX_STAGE_POI_OLTRE
+      || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage_poi_oltre.json', 'utf8'));
+  } catch { /* assenti */ }
+  if (!m || !poi) console.log('SKIP dati veri 555: master o stage_poi_oltre.json assenti');
+  else {
+    for (const v of Q555_VARIANTS) {
+      const ids = new Set(((poi[v] || {}).enemies || []).map((e) => e.enemyId));
+      const bad = [0, 1, 2].slice(0, m.validSubmission).filter((i) => m.submissionIdType[i] === 1 && !ids.has(m.submissionId[i]));
+      check(ids.size > 0 && bad.length === 0, `master 555, variante ${v}: obiettivi ${bad.map((i) => i + 1)} su nemici assenti`);
+    }
+  }
 }
 
 for (const d of tmpDirs) fs.rmSync(d, { recursive: true, force: true });

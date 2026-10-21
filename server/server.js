@@ -1644,6 +1644,7 @@ function respondStageStart(res, req) {
   // /stage/clear non riporta lo stage: vale quello avviato qui
   // (la variante della Q555 cosi' com'e': i suoi drop; riga e punteggio dalla 18300, stageRowOf)
   player.currentStageId = Number(req?.stageId ?? START_STAGE_ID);
+  player.stageInProgress = true; // /stage/clear lo spegne (ripiego della Q978 in respondStageClear)
   player.currentUserKeybladeId = Number(req?.userKeybladeId) || USER_KEYBLADE_ID; // gauge: setKeybladeBurst
   // costo in AP: campo useAp della tabella stage (Quest 130 = 10). Il client controlla
   // prima l'AP (popup PopupNormal_AP_Recovery se non basta); /stage/retire non rimborsa
@@ -1965,6 +1966,7 @@ function respondStageContinue(res, path, body) {
     player.freeStone = Math.max(0, (player.freeStone || 0) - CONTINUE_STONE);
     savePlayer();
   }
+  if (String(path).toLowerCase() === '/stage/retire') { player.stageInProgress = false; savePlayer(); }
   // Give Up: «the special attack gauge will reset», il corpo porta {burst: 0}
   if (String(path).toLowerCase() === '/stage/retire' && typeof body?.burst === 'number') {
     setKeybladeBurst(body.burst);
@@ -2035,7 +2037,20 @@ function respondStageClear(res, req) {
   const now = serverTime();
   // il corpo non porta stageId (solo l'esito): lo stage e' quello di /stage/start
   // playedId = l'id giocato (POI, Steal); stageId = quello della riga master (la 18300 per le varianti della Q555)
-  const playedId = Number(req?.stageId ?? player.currentStageId ?? START_STAGE_ID);
+  let playedId = Number(req?.stageId ?? player.currentStageId ?? START_STAGE_ID);
+  // Ripiego per la Q978 (onlyDrama, fix round 1 del Task 6): se il client ne mandasse /stage/clear senza /stage/start
+  // (StageSkipActionMap -> [fn], non provato al banco), currentStageId sarebbe ancora la missione prima, gia'
+  // finita. Nessuno stage in corso + currentStageId gia' finito + prossima missione di storia onlyDrama -> quella.
+  const pending = player.stageInProgress;
+  player.stageInProgress = false;
+  if (req?.stageId === undefined && !pending && playedId in (player.stageScores || {})) {
+    const next = nextStoryRow();
+    if (next?.onlyDrama) {
+      console.log(`[stage] /stage/clear senza /stage/start: ${next.stageId} (missione ${next.id}, solo filmato) al posto di ${playedId}`);
+      playedId = next.stageId;
+      player.currentStageId = playedId;
+    }
+  }
   const stage = stageRowOf(playedId);
   const stageId = stage ? stage.stageId : playedId;
   player.stageScores = player.stageScores || {};
@@ -3727,6 +3742,12 @@ function respondPvp(res, p, method, body) {
   return send(res, 200, { ret: ret() });
 }
 const STAGE_CLEARED = Number(process.env.KHUX_STAGE_CLEARED || 2);
+
+// prima missione di storia non ancora finita, nell'ordine di respondStageList
+function nextStoryRow() {
+  const scores = player.stageScores || {};
+  return masterRows('stage').filter((r) => r.stageKind === 1).sort((a, b) => a.id - b.id).find((r) => !(r.stageId in scores));
+}
 
 function respondStageList(res) {
   // GET /stage/160310 (azione 108, [fn]): stories[] (elemento [fn]:

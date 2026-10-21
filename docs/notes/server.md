@@ -209,6 +209,18 @@ node server\make-keyblade-levels.js             # keyblade +0..+35 e keybladeSub
 node server\make-passives.js                    # passive e passiveSetting (dopo make-keyblade-levels)
 ```
 
+POI degli stage (forzieri e nemici, `server/game_data/stage_poi.json`, letto dal server e da `check-stage-data.js`):
+`make-game-tables.js` usa i file di `KHUX_STAGE_POI_EXTRA` solo per le righe reward; il server legge **solo**
+`game_data/stage_poi.json`. Se lo si rigenera (`recon/tools/stage_poi.py`), riunirvi gli stage importati, altrimenti
+le missioni 1-525 originali e le 526-979 (457 stage, Task 6 del 21-10) restano senza drop ne' forzieri:
+
+```powershell
+node -e "const fs=require('fs'),f='server/game_data/stage_poi.json',p=JSON.parse(fs.readFileSync(f,'utf8'));for(const x of ['D:/Progetto_Restauro_KH_UX/stage_gen/orig_stages/stage_poi_orig.json','D:/Progetto_Restauro_KH_UX/stage_gen/orig_stages_oltre/stage_poi_oltre.json'])Object.assign(p,JSON.parse(fs.readFileSync(x,'utf8')));fs.writeFileSync(f,JSON.stringify(p))"
+$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'
+$env:KHUX_STAGE_POI_EXTRA='D:\Progetto_Restauro_KH_UX\stage_gen\orig_stages\stage_poi_orig.json;D:\Progetto_Restauro_KH_UX\stage_gen\orig_stages_oltre\stage_poi_oltre.json'
+node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # poi check-stage-data.js: 0 errori
+```
+
 - `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (da
   thethiny), burst generati, enemyAttack generati per tutti gli skillId (i nemici con `validSkill` 3
   andavano in crash), mission (`server/tables/mission.json`), sphere/sphereArray/sphereMasu
