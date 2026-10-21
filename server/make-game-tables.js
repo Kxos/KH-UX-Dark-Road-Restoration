@@ -825,6 +825,8 @@ require('./make-trait-medals').patch(OUT);
 require('./make-lux-levels').patch(OUT);
 // Login bonus (I-176): Daily 100/100/200/200/300 e Total della 1.1.3 (make-login-bonus.js)
 require('./make-login-bonus').patch(OUT);
+// Cut-in dello speciale (I-187): righe alias id-1 per le medaglie che finiscono in 2/4 senza la riga 1★/3★ (make-cutin-alias.js)
+require('./make-cutin-alias').patch(OUT);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
 // khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
 const TABLES = path.join(__dirname, 'tables');

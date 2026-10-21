@@ -6,6 +6,7 @@
 //
 //   node server/test-orgxiii-map.js
 'use strict';
+const { isCutinAlias } = require('./make-cutin-alias');
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
@@ -58,7 +59,8 @@ for (const [se, copy, robo, seven, plus6, plus7] of TABLE) {
     assert.ok(r, 'riga assente');
     assert.strictEqual(r.rare, 7, 'rare');
   });
-  check(`${300000 + robo}`, () => assert.ok(!byId.has(300000 + robo), 'doppione presente'));
+  // (puo' esserci la riga alias del cut-in della 7★, make-cutin-alias.js I-187: non e' una medaglia)
+  check(`${300000 + robo}`, () => assert.ok(!byId.has(300000 + robo) || isCutinAlias(byId.get(300000 + robo), byId), 'doppione presente'));
   // 6★ [+] propria: Tier 8, Evolve verso la 7★ [+]
   check(`${plus6}`, () => {
     const r = byId.get(plus6);

@@ -13,7 +13,11 @@ const read = (dir, n) => JSON.parse(fs.readFileSync(path.join(dir, n + '.json'),
 const tg = require('./make-trait-groups');
 check(JSON.stringify(tg.FUSION_TRAIT_IDS) === JSON.stringify([10, 8, 9, 11, 12, 13, 1, 14, 15, 16, 17]), 'FUSION_TRAIT_IDS');
 
-const medal = read(MASTER, 'medal');
+// senza le righe alias del cut-in (make-cutin-alias.js, I-187): non sono medaglie
+const { isCutinAlias } = require('./make-cutin-alias');
+const medalAll = read(MASTER, 'medal');
+const allById = new Map(medalAll.map((r) => [r.medalId, r]));
+const medal = medalAll.filter((r) => !isCutinAlias(r, allById));
 const shuffle = read(MASTER, 'shuffleskill');
 const bad = medal.filter((r) => (r.shuffleskillSlot || 0) > 0 && !r.shuffleSkillGroupId);
 check(!bad.length, `righe con slot e senza shuffleSkillGroupId: ${bad.length} (es. ${bad.slice(0, 3).map((r) => r.medalId)})`);

@@ -22,6 +22,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { isCutinAlias } = require('./make-cutin-alias');
 
 // ordine: Extra Attack 40%, Ground -60%, Aerial -60%, STR +1000, Raids +40%, DEF +2000, Gauges +2, HP +800, Resist x3
 const FUSION_TRAIT_IDS = [10, 8, 9, 11, 12, 13, 1, 14, 15, 16, 17];
@@ -32,7 +33,9 @@ function groups(medals) {
   const parent = new Map();
   const find = (k) => { while (parent.get(k) !== k) { parent.set(k, parent.get(parent.get(k))); k = parent.get(k); } return k; };
   const union = (a, b) => { const x = find(a), y = find(b); if (x !== y) parent.set(x, y); };
-  const rows = medals.filter((r) => (r.shuffleskillSlot || 0) > 0);
+  // senza le righe alias del cut-in (make-cutin-alias.js, I-187): id-1 della medaglia, non una medaglia
+  const byId = new Map(medals.map((r) => [r.medalId, r]));
+  const rows = medals.filter((r) => (r.shuffleskillSlot || 0) > 0 && !isCutinAlias(r, byId));
   for (const r of rows) {
     for (const k of ['m' + r.medalId, 'n' + r.name, ...(r.sortId > 0 ? ['s' + r.sortId] : [])]) if (!parent.has(k)) parent.set(k, k);
     union('m' + r.medalId, 'n' + r.name);
@@ -51,7 +54,7 @@ function patch(masterDir) {
   let changed = 0;
   for (const r of medals) {
     const g = low.get(r.medalId) || 0;
-    if ((r.shuffleskillSlot || 0) > 0 && r.shuffleSkillGroupId !== g) { r.shuffleSkillGroupId = g; changed++; }
+    if ((r.shuffleskillSlot || 0) > 0 && low.has(r.medalId) && r.shuffleSkillGroupId !== g) { r.shuffleSkillGroupId = g; changed++; }
   }
   if (changed) fs.writeFileSync(medalFile, JSON.stringify(medals));
   out.push(`medal: ${new Set(low.values()).size} gruppi dei trait (cambiate ${changed})`);
