@@ -874,3 +874,14 @@ audio/503001155.akb	b16,jp
 audio/503001156.akb	b16,jp
 audio/503001226.akb	b16,jp
 audio/503001227.akb	b16,jp
+
+# 37. Avviso «Coerce» dei nemici (I-183, smoke 21-10: 1160, 11170, 15050, 15340 crashavano all'avvio, GUIReader in
+#     [fn] con cocostudio/publish/ActionMapCoerceEnmAnim.ExportJson assente; armature Coerce_Alert/Coerce_EF01)
+cocostudio/publish/ActionMapCoerceEnmAnim.ExportJson	b16,jp
+cocostudio/publish/ActionMapCoerceEnmAnim0.plist	b16,jp
+cocostudio/publish/ActionMapCoerceEnmAnim0.png	b16,jp
+
+# 38. Pioggia delle stanze (I-184, smoke 21-10: 2140 e 10400 dei Dwarf Woodlands crashavano dopo il filmato):
+#     [fn] caso 1 apre lwf/map/hole_rain/hole_rain.lwf e non controlla il NULL. Completa nel 2016.
+#     hole_thunder (caso 4): nel JP solo la LWF, texture assenti ovunque: non servita finche' una stanza non la chiede.
+lwf/map/hole_rain/	b16,jp

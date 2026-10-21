@@ -474,12 +474,17 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
 - Banco (`smoke_quests.ps1`, salvataggio `provetm`, risorse 51, rev 166; lo script ora chiude le Notices se sono
   aperte all'avvio): **34 su 40 vive**. Crash: firma A (I-183) 1160, 11170, 15050, 15340; firma B (I-184) 2140,
   10400. Nessuno nel decodificatore BTF. Esiti in `D:\Progetto_Restauro_KH_UX\tmp\i182_smoke.json`.
+- Correzioni (risorse 51 con `-Quick`): I-183 = `cocostudio/publish/ActionMapCoerceEnmAnim.*` (avviso «Coerce»
+  dell'Armored Archer), I-184 = `lwf/map/hole_rain/` (pioggia, `[fn]`); dal 2016 in `originals.tsv` #37-38.
+  Le 6 missioni rifatte: tutte vive. Le altre armature `.ExportJson` non servite (MedalEvoAnimation, Z_SpIcon_*...)
+  il client WW non le apre (usa le LWF).
 - 16180: Bag O' visto come una mano (I-185).
 
 <a id="oltre525"></a>
 ## Missioni 526-979: stage originali JP e decisioni dell'utente (20-10)
 
-Rapporto: `D:\Progetto_Restauro_KH_UXeference\world_schema\oltre525\RAPPORTO.md` (tabelle in `_tables.md`,
+Rapporto: `D:\Progetto_Restauro_KH_UX
+eference\world_schema\oltre525\RAPPORTO.md` (tabelle in `_tables.md`,
 abbinamenti in `oltre525.json`, script `match_oltre525.py`). Tutte le 453 missioni di battaglia 526-979 hanno lo
 stage originale nei dati JP 4.3.1 (330 esatte, 39 buone, 83 probabili nei mondi di Ralph, 979 <-> 39159 a mano;
 978 solo filmato); le 526-555 identiche nel 2016. 253 stanze (203 nuove, 225 servite, 27 da aggiungere al
