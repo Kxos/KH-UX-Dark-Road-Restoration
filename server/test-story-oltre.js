@@ -2,8 +2,13 @@
 //   node server/test-story-oltre.js
 // Fonti finte minime costruite qui (nessun dato vero): 1.1.3 per 526-555, wiki e oltre525.json per le altre.
 'use strict';
-const fs = require('fs'), os = require('os'), path = require('path');
-const { buildRows, patch, wikiLv, ROOM_WORLD } = require('./make-story-oltre');
+const fs = require('fs'), path = require('path');
+const { buildRows, patch, wikiLv, ROOM_WORLD, defaultSources } = require('./make-story-oltre');
+// cartelle temporanee sul disco D (regola del progetto), tolte alla fine
+const TMP = process.env.KHUX_TMP || 'D:\\Progetto_Restauro_KH_UX\\tmp';
+fs.mkdirSync(TMP, { recursive: true });
+const tmpDirs = [];
+const mkTmp = () => { const d = fs.mkdtempSync(path.join(TMP, 'oltre-')); tmpDirs.push(d); return d; };
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
 
@@ -149,7 +154,7 @@ check(['stageBinId', 'onlyDrama', 'hideIcon', 'noPartner', 'validStopStage', 'br
   'combinedSubmissionFlag'].every((k) => k in rows[0]), 'campi della 5.0.1 presenti');
 
 // --- patch: idempotente, dopo la 525, KHUX_STORY_OLTRE=0 lo spegne -------------------------------------------
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oltre-'));
+const dir = mkTmp();
 fs.writeFileSync(path.join(dir, 'stage.json'), JSON.stringify(stageRows));
 for (const [f, v] of [['enemy', enemies], ['title', titles], ['medal', medals], ['keyblade', keyblades], ['theater', theater],
   ['skill', []]]) fs.writeFileSync(path.join(dir, f + '.json'), JSON.stringify(v));
@@ -165,11 +170,29 @@ check(out[1].id === 525 && out[2].id === 526 && out[455].id === 979 && out[456].
   'righe nuove subito dopo la 525, prima dei tour');
 check(JSON.stringify(out.filter((r) => !(r.id >= 526 && r.id <= 979))) === JSON.stringify(stageRows), 'righe esistenti invariate');
 process.env.KHUX_STORY_OLTRE = '0';
-const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'oltre-'));
+const dir2 = mkTmp();
 fs.writeFileSync(path.join(dir2, 'stage.json'), JSON.stringify(stageRows));
 patch(dir2, src);
 check(fs.readFileSync(path.join(dir2, 'stage.json'), 'utf8') === JSON.stringify(stageRows), 'KHUX_STORY_OLTRE=0: nessuna modifica');
 delete process.env.KHUX_STORY_OLTRE;
+
+// fonti obbligatorie: senza le 30 righe 1.1.3 (526-555) errore, mai righe generate al posto degli originali
+const throws = (f, re) => { try { f(); return false; } catch (e) { return re.test(e.message); } };
+check(throws(() => buildRows(stageRows, { ...sources, stage113: stage113.slice(1) }), /29 righe 18010-18300 su 30/),
+  'buildRows: 1.1.3 incompleta -> errore');
+check(throws(() => buildRows(stageRows, { ...sources, stage113: [] }), /0 righe/), 'buildRows: 1.1.3 assente -> errore');
+const dir3 = mkTmp();
+fs.writeFileSync(path.join(dir3, 'stage.json'), JSON.stringify(stageRows));
+check(throws(() => patch(dir3, { ...src, stage113: [] }), /1\.1\.3/)
+  && fs.readFileSync(path.join(dir3, 'stage.json'), 'utf8') === JSON.stringify(stageRows), 'patch: 1.1.3 assente -> errore, file intatto');
+for (const k of ['KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL']) {
+  const old = process.env[k];
+  process.env[k] = path.join(dir3, 'manca.json');
+  check(throws(() => defaultSources(), /fonte obbligatoria .*manca\.json/), `${k} assente -> errore col percorso`);
+  if (old === undefined) delete process.env[k]; else process.env[k] = old;
+}
+for (const d of tmpDirs) fs.rmSync(d, { recursive: true, force: true });
+check(tmpDirs.every((d) => !fs.existsSync(d)), 'cartelle temporanee tolte');
 
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
 console.log('test-story-oltre: ok');

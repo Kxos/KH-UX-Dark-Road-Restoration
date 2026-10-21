@@ -152,6 +152,8 @@ function buildRows(stageRows, sources) {
   const wikiByNum = new Map(Object.values(wiki).filter((q) => /^Quest \d+:/.test(q.title || '')).map((q) => [num(q.number), q]));
   const missionByNum = new Map((oltre.missions || []).map((m) => [m.q, m]));
   const s113 = new Map(stage113.filter((r) => r.stageId >= 18010 && r.stageId <= Q555_STAGE).map((r) => [r.id, r]));
+  // dove ci sono gli originali valgono gli originali: senza le 30 righe 1.1.3 (526-555) le si genererebbe dalla wiki
+  if (s113.size < 30) throw new Error(`story-oltre: fonte 1.1.3 con ${s113.size} righe 18010-18300 su 30 (KHUX_STAGE_113)`);
   // riferimenti per i campi senza fonte: ultima riga di storia 1-525 dello stesso mondo, poi le 1.1.3
   const story = stageRows.filter((r) => r.stageKind === 1 && r.stageId < 100000 && r.id <= 525).sort((a, b) => a.id - b.id);
   const refByWorld = new Map();
@@ -294,6 +296,10 @@ function setSubs(row, subs) {
 }
 
 const readJson = (p, dflt) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return dflt; } };
+// fonte obbligatoria: assente o illeggibile -> errore col percorso (mai righe generate al posto degli originali)
+function readRequired(p) {
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { throw new Error(`story-oltre: fonte obbligatoria ${p}: ${e.message}`); }
+}
 
 function readDramas(namesPath) {
   if (!fs.existsSync(namesPath)) return null;
@@ -307,15 +313,15 @@ function readDramas(namesPath) {
 
 // fonti esterne (dati Square Enix e wiki: fuori dal repo)
 function defaultSources() {
-  const wikiAll = readJson(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json', {});
+  const wikiAll = readRequired(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json');
   const names = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
   const dramas = readDramas(names);
   if (!dramas) console.log(`story-oltre: ${names} assente, nessun filmato (un id assente manda in crash il client)`);
   return {
-    stage113: readJson(process.env.KHUX_STAGE_113 || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data\\stage.json', []),
-    wiki: readJson(process.env.KHUX_WIKI_QUESTS || 'D:\\Progetto_Restauro_KH_UX\\wiki\\quests.json', {}),
+    stage113: readRequired(process.env.KHUX_STAGE_113 || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data\\stage.json'),
+    wiki: readRequired(process.env.KHUX_WIKI_QUESTS || 'D:\\Progetto_Restauro_KH_UX\\wiki\\quests.json'),
     wikiRaw: Object.fromEntries(Object.entries(wikiAll).filter(([k]) => /^Quest \d+: /.test(k))),
-    oltre: readJson(process.env.KHUX_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\oltre525.json', { missions: [] }),
+    oltre: readRequired(process.env.KHUX_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\oltre525.json'),
     dramas: dramas || new Set(),
   };
 }
