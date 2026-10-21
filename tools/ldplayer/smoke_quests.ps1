@@ -15,6 +15,9 @@ foreach ($id in $Stages) {
     "{`"stageId`": $id}" | Out-File -Encoding ascii $smoke
     & .\tools\ldplayer\bench_start.ps1 -Out $log -Shot "smoke_${id}_home" -Settle 6 | Out-Null
     $from = LogLines $log
+    # Notices aperte all'avvio (dal 16-10): bordo blu ai due lati, X bianca; sulla home (1722,58) e' MENU
+    $c = Px @(@(180, 560), @(1740, 560), @(1722, 58))
+    if ((IsNear $c[0] @(8, 81, 148)) -and (IsNear $c[1] @(16, 85, 156)) -and (IsBright $c[2])) { Tap 1722 58; Start-Sleep 4 }
     foreach ($t in '100,960', '640,400', '1305,692', '972,1005', '972,1005') {
         $x, $y = $t -split ','; Tap $x $y; Start-Sleep 6
     }

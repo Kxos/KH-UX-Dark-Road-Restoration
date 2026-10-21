@@ -463,6 +463,19 @@ Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   rigenerazione. Dubbi: AG_0003_01_00 con tre nomi, thumbId diverso dalla stanza nominata in alcune
   righe (OC_0001_00, WL_0001/0002, DW_0004, DB_0007), prefisso del Corridor of Darkness dedotto.
 
+<a id="smoke-2110"></a>
+## Prova delle stanze generate dopo I-182 (21-10)
+
+- Offline: `recon/tools/btf_check.py` (lunghezza dichiarata = lunghezza del file; tipo 8 `0x26 + u32@0x22`, tipi 1 e 9
+  `0x28 + u32@0x24`; il tipo 1 non e' solo il segnaposto da 45 byte: e' una palette senza zlib) su rooms_gen,
+  stage_gen, enemy_gen, medal_gen, raisedraw_gen: ~57.800 BTF, **0 incoerenti**.
+- Le 86 stanze col segnaposto sono usate oggi da 42 missioni (40 come prima stanza, 10400 e 16160 solo come seconda);
+  44 servono solo alle 526-979.
+- Banco (`smoke_quests.ps1`, salvataggio `provetm`, risorse 51, rev 166; lo script ora chiude le Notices se sono
+  aperte all'avvio): **34 su 40 vive**. Crash: firma A (I-183) 1160, 11170, 15050, 15340; firma B (I-184) 2140,
+  10400. Nessuno nel decodificatore BTF. Esiti in `D:\Progetto_Restauro_KH_UX\tmp\i182_smoke.json`.
+- 16180: Bag O' visto come una mano (I-185).
+
 <a id="oltre525"></a>
 ## Missioni 526-979: stage originali JP e decisioni dell'utente (20-10)
 
