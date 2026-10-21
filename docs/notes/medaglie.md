@@ -602,7 +602,7 @@ e`). 10000 = 1,0:
   (167 6★ originali senza `validEvolve` verso la 7★).
 
 <a id="danno-variabile"></a>
-## Speciali a danno variabile (I-189, analisi 21-10, non ancora corretti)
+## Speciali a danno variabile (I-189, analisi e correzione 21-10, da verificare al banco)
 
 Segnalazione dell'utente: Cloud II EX nel video https://www.youtube.com/watch?v=eLmkNDzwuPE (2:02) mostra «x7.12 - 8.64»,
 da noi «x6.90». Analisi offline (decompilato in `D:\Progetto_Restauro_KH_UX\tmp\i189\`, soprattutto `disp.c`):
@@ -632,3 +632,27 @@ da noi «x6.90». Analisi offline (decompilato in `D:\Progetto_Restauro_KH_UX\tm
   thethiny per le 65; per le 391 tipo dalla mappa e, per 3/4, bp = hi - lo, sp1 = lo*1e4/bp, sp2 = 10000, per pallino
   bp_i = lo_i*1e4/sp1); riga 189 dal LowMulti. Da verificare in battaglia: l'uso di specialPowerType/sp1/sp2 nel danno
   (`[fn]`/`[fn]` leggono +0x324) e' dedotto. Formule ricostruite -> Notices.
+
+**Applicato (21-10)**: `server/variable-power.js` `variablePower(bursts, {origBursts, robo, medals})`, chiamato in
+make-game-tables.js subito dopo `burstPowerFix` e dalla riga di comando di `medal-power-fix.js` (che rimette basePower =
+display: per i tipi 3/4 basePower e' il divario, quindi i due passi vanno sempre insieme); da solo
+`node server/variable-power.js [master] [--rows]`, idempotente. Prova: `node server/test-variable-power.js`.
+- a. **65** righe con id in thethiny tipo > 2: specialPowerType, sp1, sp2, displayMaxPower verbatim; sp1/sp2PerEnforce e
+  displayMaxPowerPerEnforce estesi ai pallini della riga come `ext()` (0 oltre).
+- b. Roboloid con condizione mappata, 391 righe:
+  - **157** tipo 3/4 (LowerHP/HigherHP): lo = LowMulti*1e4, hi = HighMulti*1e4 al pallino massimo, bp = hi - lo,
+    sp1 = round(lo*1e4/bp), sp2 = 10000; per pallino bp_i = round(lo_i*1e4/sp1), max_i = lo_i + bp_i, display = lo_i
+    esatto (scarto di base*sp1/1e4 dal display fino a sp1/2e4 per l'arrotondamento). Cloud II EX 7★: sp1 46842,
+    0 pallini 69000 - 83730 (x6.90 - 8.37), 5 pallini 71200 - 86400 (x7.12 - 8.64).
+  - **17** tipo 20/21/30 (Poison/Sleep/MoreLUX): sugli originali (6/6/14 righe, anche per pallino) max = base + sp1 con
+    sp2 costante 0/0/1e8: base = display = lo_i, sp1 = hi - lo, max_i = lo_i + sp1.
+  - **217** tipo 1 perche' la relazione non e' verificabile sugli originali dello stesso tipo: 5 (7, sp1 9000/9990 non
+    ricavabile), 6 (12), 7 (39), 16 (8), 22 (7, Dark Blizzaga 10511 ha max - base 6000 con sp1 8500), 23 (52), 25 (14),
+    27 (3), 28 (9), 40 (66).
+- c. **270** condizioni senza tipo noto, tipo 1: OneEnemy 130, LowerSlot 69, MoreParty 20, Critical 18,
+  MoreEnemiesDefeated 7, Slot5 7, MoreSkillsStage 6, Slot4 6, Slot3 4, Slot6 2, senza condizione 1.
+- Riga 189 di make-game-tables.js e `multiOf` di burstPowerFix (make-game-tables.js e medal-power-fix.js): `Multi ||
+  LowMulti` invece di `Multi || HighMulti`. Sul master: **104** righe cambiano (solo base/display e PerEnforce), il
+  resto identico; medal.json invariato. Una riga Roboloid tipo 4 (3000701) ha dalla khuxwiki 66500 a pallini pieni invece
+  di LowMulti 6.64: tenuto il display della riga, sp1 da Low/High.
+- Notice IMPORTANT «Variable Special Attacks» (routes-info-album.js) dichiara le 174 ricostruite e le altre al valore basso.

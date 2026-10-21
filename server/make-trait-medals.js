@@ -29,7 +29,9 @@ function lesserAttack(model) {
   const out = { ...model, burstId: LESSER_ATTACK, name: 'Lesser Attack', description: 'Deals 1 hit to one enemy.',
     target: 1, gauge: 1, hitCount: 1, maxEnhanceCount: 5, displayPower: 10000, displayPowerPerEnforce: flat,
     displayMaxPower: 0, displayMaxPowerPerEnforce: [0, 0, 0, 0, 0], basePower: 10000, basePowerPerEnforce: flat,
-    attributeChange: 0, addTurn: 0, addCount: 0 };
+    attributeChange: 0, addTurn: 0, addCount: 0,
+    // danno semplice: il modello (10221, tipo 7 di thethiny) e' a danno variabile dopo variable-power.js (I-189)
+    specialPowerType: 1 };
   // niente effetti: azzera buff, debuff, reset, cure e simili del modello
   for (const k of Object.keys(out)) {
     if (/^(buf|debuf|reset|copyBuf|heal|cure|recovery|addGuilt|reflection|addBase|match|unmatch|opr|sp[12])/.test(k)) {
