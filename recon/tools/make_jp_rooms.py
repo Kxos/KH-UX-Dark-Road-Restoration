@@ -22,7 +22,8 @@ il caricatore apre (formato BMI in check_rooms.py):
 Una stanza entra solo se TUTTI gli obbligatori sono serviti o recuperabili (mai una tessera
 assente); i file gia' serviti non si riscrivono mai (vince l'originale). Con --story-only solo le
 stanze delle porte di storia (schema_v2\\schema_mondi.json, porte scope 'storia': stanza e
-destinazione); senza, tutte le complete (le stanze di storia sono comunque l'insieme da coprire e
+destinazione) piu' le stanze degli stage di storia di stage_exits_v2.json (storia_master, storia_variante,
+storia_oltre: le 27 stanze delle missioni 526-979 a una parte o senza porte + SR_0009_01_00, 21-10); senza, tutte le complete (le stanze di storia sono comunque l'insieme da coprire e
 il rapporto dice quali mancano e perche').
 
 Texture: PNG veri (estrazione JP, alpha non premoltiplicata) -> BTF tipo 8 con btf.encode
@@ -149,9 +150,21 @@ def merged_dir(rel_dir):
     return _merged_dirs[rel_dir]
 
 
+# INFO alias (decisione dell'utente 20-10, missioni 526-979): SR_0009_01_00 (Q929, stage 39109 parte 1) ha dai
+# dati JP solo _cls/_chp/_jmp (nessuna INFO in nessuna fonte: rooms_merged, JP 4.3.1, 2016, stage_gen). _cls e _chp
+# sono identici byte per byte a quelli di SR_0009_00_00 (1.065.496 e 2.382 byte, stessa misura 0x1554 x 0x618);
+# il _jmp proprio e' quello JP (16 byte: zero salti, resta cosi'). L'INFO e' il BMI di SR_0009_00_00 senza
+# modifiche: il nome a +0x10 e tutti i livelli/immagini/oggetti citano gia' SR_0009_00_00, quindi tessere e lwf
+# sono quelli di 00_00 (come le stanze alias del BMI, es. DB_0021_*) e la stanza risulta 'graphics_of'.
+INFO_ALIAS = {'SR_0009_01_00': 'SR_0009_00_00'}
+
+
 def source(name):
     """Percorso della fonte di un nome del client (map/... o lwf/map/...), o None."""
     d, _, f = name.rpartition('/')
+    for room, src in INFO_ALIAS.items():
+        if name == 'map/%s/%s_info.bin' % (room, room) and not merged_dir(room).get(room + '_info.bin'):
+            return merged_dir(src).get(src + '_info.bin')
     if name.startswith('map/'):
         p = merged_dir(d[4:]).get(f)            # rooms_merged\<stanza>\... = map/<stanza>/...
         if p:
@@ -322,7 +335,7 @@ def main():
     if os.path.exists(ex):
         st = json.load(open(ex, encoding='utf-8'))['stages']
         for s in (st.values() if isinstance(st, dict) else st):
-            if s.get('stage_type') in ('storia_master', 'storia_variante'):
+            if s.get('stage_type') in ('storia_master', 'storia_variante', 'storia_oltre'):
                 story.update(r for r in s.get('rooms', {}).values() if r)
     rooms = sorted(f for f in os.listdir(a.merged) if os.path.isdir(os.path.join(a.merged, f)))
     if a.rooms:

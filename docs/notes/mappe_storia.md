@@ -210,6 +210,10 @@ agli offset scritti nell'intestazione (+ 0x34), in quest'ordine e contigue:
   231; con `rooms_gen` **230 complete** (`check_rooms.py --rooms-gen --out rooms_gen\rooms_check.json`:
   405 stanze, 0 incomplete; senza, come prima: 86 stanze, 2 incomplete). Manca solo **SR_0009_01_00** (porta SR_0008_00_00 <-> SR_0009_01_00, solo
   `storia_oltre`, fuori dalla master): nessuna INFO in nessuna fonte.
+  **21-10 (missioni 526-979, I-009)**: `make_jp_rooms.py` prende anche le stanze degli stage `storia_oltre` (+27 stanze, tutte
+  complete) e `INFO_ALIAS` costruisce l'INFO di SR_0009_01_00 (decisione dell'utente): copia byte per byte dell'INFO di
+  SR_0009_00_00 (il BMI cita gia' 00_00 per nome, livelli e oggetti), con `_cls` e `_chp` propri (identici a quelli di 00_00)
+  e il `_jmp` JP proprio (16 byte, zero salti). Pacchetto: 35.326 file, 853,7 MB (era 30.465, 728,9 MB; +124,8 MB).
 - `--story-only`: solo le stanze delle porte di storia (24.406 file, 615 MB). Default: tutte le
   complete. `build-resources.ps1` ne fa il pacchetto statico `rooms_gen\gen.*`
   ([risorse_layout.md#pacchetti](risorse_layout.md#pacchetti)). Finche' la 35 non e' costruita
