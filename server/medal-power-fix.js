@@ -12,7 +12,10 @@
 // 3. Passi per pallino: dove la riga burst di thethiny (originale) ha la stessa base, i suoi
 //    basePowerPerEnforce/displayPowerPerEnforce (es. 10566: +800 a pallino, x3.24 a 5 pallini).
 //
-// make-game-tables.js le applica prima di scrivere; da sola corregge server/master_data sul posto:
+// 4. Il Multi singolo di Roboloid e' il LowMulti quando la medaglia ha Low/High (danno variabile, I-189): prima HighMulti,
+//    104 righe facevano il danno del massimo anche senza la condizione.
+//
+// make-game-tables.js le applica prima di scrivere; da sola corregge server/master_data sul posto (con variable-power.js):
 //   node server/medal-power-fix.js [cartella master]
 'use strict';
 const fs = require('fs');
@@ -35,7 +38,8 @@ function tierFix(medals) {
 
 // Potenza di ogni burst, in ordine di fonte: 1) riga originale di thethiny (stesso burstId); 2) khuxwiki
 // della medaglia che la usa (dmgN = senza pallini, dmgNm = pallini pieni; 7★ con la sola dmg7 = pieni) con
-// passi uguali come negli originali (es. 10085: +400, 10566: +800); 3) Multi di Roboloid a pallini pieni.
+// passi uguali come negli originali (es. 10085: +400, 10566: +800); 3) Multi di Roboloid a pallini pieni (LowMulti per
+// gli speciali a danno variabile: il massimo HighMulti lo mette variable-power.js in displayMaxPower).
 // opts: {origBursts: Map, wikiInfo: Map nome -> campi InfoMedal, multiOf(roboId), medals}
 function burstPowerFix(bursts, opts) {
   const { origBursts = new Map(), wikiInfo = new Map(), multiOf = () => undefined, medals = [] } = opts;
@@ -134,8 +138,12 @@ if (require.main === module) {
   const medals = read('medal'), bursts = read('burst');
   const tiers = tierFix(medals);
   const wikiInfo = readWikiInfo(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json');
-  const p = burstPowerFix(bursts, { origBursts, wikiInfo, medals, multiOf: (id) => robo.get(id)?.Multi || robo.get(id)?.HighMulti });
+  const p = burstPowerFix(bursts, { origBursts, wikiInfo, medals, multiOf: (id) => robo.get(id)?.Multi || robo.get(id)?.LowMulti });
+  // speciali a danno variabile subito dopo, come in make-game-tables.js (variable-power.js, I-189): burstPowerFix rimette
+  // basePower = displayPower, che per i tipi 3/4 e' il divario tra massimo e minimo
+  const vp = require('./variable-power');
+  const vst = vp.variablePower(bursts, { origBursts, robo, medals });
   fs.writeFileSync(path.join(dir, 'medal.json'), JSON.stringify(medals));
   fs.writeFileSync(path.join(dir, 'burst.json'), JSON.stringify(bursts));
-  console.log(`${dir}: tier tolto a ${tiers} medaglie sotto le 6★; potenza delle burst: ${p.orig} da thethiny, ${p.wiki} dalla khuxwiki, ${p.robo} da Roboloid, ${p.none} invariate`);
+  console.log(`${dir}: tier tolto a ${tiers} medaglie sotto le 6★; potenza delle burst: ${p.orig} da thethiny, ${p.wiki} dalla khuxwiki, ${p.robo} da Roboloid, ${p.none} invariate; speciali variabili: ${vp.summary(vst)}`);
 }

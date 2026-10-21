@@ -93,6 +93,11 @@ function updateNotice(realMs) {
 // Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
 // elenchi di modifiche. In lista prima la notizia dinamica dei dati aggiornati (updateNotice), poi queste, dalla piu' recente.
 const NOTICES = [
+  // speciali a danno variabile (variable-power.js, I-189): righe thethiny verbatim, righe Roboloid ricostruite
+  { date: '10/21', tag: 'IMPORTANT', title: 'Variable Special Attacks',
+    body: ['Special Attacks whose damage depends on a condition (for example "Inflicts more damage the higher your HP") show their **damage range** again, as in the original game: the Medal details show "x7.12 - 8.64" instead of a single value, and in battle the damage follows the condition.',
+      'For 65 Special Attacks the original values are known and are used as they were. For 174 Special Attacks of later Medals (those that depend on your HP, on poison, sleep or Lux) the range comes from the community Medal list (lowest and highest multiplier) and the formula of the original attacks of the same kind (**reconstructed**).',
+      'For the other condition-based Special Attacks (for example more damage against a single enemy, from a lower slot or with a critical hit) the original formula is not known: they show and deal the **lowest** damage of their range. About 100 of them dealt the highest damage every time before, so they may now feel weaker.'] },
   { date: '10/18', tag: 'IMPORTANT', title: 'Medal skills',
     body: ['Medal skills are reconstructed: 25 of the 163 skills use the original values, the other 138 are rebuilt from the community skill list (power and max trigger rate from the wiki, other values estimated). Some long descriptions are shortened.',
       'After each mission, the Skill EXP of the battle goes to every Medal in your deck that has a skill. The original server could not know which Medals you used, so this is our deduction.',

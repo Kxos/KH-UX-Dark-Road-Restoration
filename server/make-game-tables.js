@@ -186,7 +186,8 @@ if (process.env.KHUX_MEDALS_ALL === '1' && ROBO.length) {
     newBursts.push(Object.assign({ _tpl: base.burstId }, {
       burstId, name: ab.Name || 'Special Attack', description: ab.Text || '',
       gauge: d.Gauge || 1, target: /single/i.test(d.Target || '') ? 1 : 2,
-      basePower: Math.round((d.Multi || d.HighMulti || 1) * 10000), maxEnhanceCount: 0,
+      // speciali a danno variabile: il valore singolo e' il minimo LowMulti (il massimo lo mette variable-power.js)
+      basePower: Math.round((d.Multi || d.LowMulti || 1) * 10000), maxEnhanceCount: 0,
     }));
     medals.push(Object.assign({}, base, {
       medalId: id, imageId: id, thumbId: id, cutinId: id, artId: id, displayId: id,
@@ -784,8 +785,11 @@ const powerFix = require('./medal-power-fix');
 const tiersOff = powerFix.tierFix(medals);
 const powerStats = powerFix.burstPowerFix(bursts, { origBursts, medals,
   wikiInfo: powerFix.readWikiInfo(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json'),
-  multiOf: (id) => ROBO_BY_ID.get(id)?.Multi || ROBO_BY_ID.get(id)?.HighMulti });
+  multiOf: (id) => ROBO_BY_ID.get(id)?.Multi || ROBO_BY_ID.get(id)?.LowMulti });
 console.log(`medal-power-fix: tier tolto a ${tiersOff} medaglie sotto le 6★; burst ${JSON.stringify(powerStats)}`);
+// speciali a danno variabile «x a - b»: tipo, sp1/sp2 e displayMaxPower da thethiny o da Low/HighMulti (variable-power.js, I-189)
+const varPower = require('./variable-power');
+console.log('variable-power:', varPower.summary(varPower.variablePower(bursts, { origBursts, robo: ROBO_BY_ID, medals })));
 // animazioni originali degli speciali, colpi = testo (burst-anim-fix.js)
 const animFix = require('./burst-anim-fix');
 console.log('burst-anim-fix:', JSON.stringify(animFix.applyBurstAnim(bursts, animFix.readMapping(), { origBursts, texts: true })));
