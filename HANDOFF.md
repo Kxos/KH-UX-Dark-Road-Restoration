@@ -18,7 +18,7 @@ Level Up, Evolve, Moogle Shop, Profilo, Missioni, Avatar Boards.
 
 ## Ripartire
 
-Stato del banco: **risorse 50 installate** (20-10 sera, 4,09 GiB su misc.mp4.2; prima: 49 (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 155** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
+Stato del banco: **risorse 51 installate** (21-10, -Quick con originals #37-39 e NPC; 4,09 GiB su misc.mp4.2; prima: 49 (20-10: compattate, 3,90 GiB; oltre 4 GiB provato con la 48, I-171 chiuso), **revisione master: BASE 167** (default dei 4 script di sessione; il server manda `BASE*100000 + scadenze passate`, [server.md](docs/notes/server.md#orologio)). Orologio finto
 (mesi gemelli 2016-2021), `-RealNow <ISO>` per provare un cambio di settimana: [server.md](docs/notes/server.md#orologio);
 storia completa in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -120,8 +120,16 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
 - **Prossimo passo (dal 21-10): importare le missioni 526-979** dagli stage originali JP 4.3.1 (I-009, decisioni dell'utente e
   ricerca in [mappe_storia.md#oltre525](docs/notes/mappe_storia.md#oltre525); rapporti in `reference\world_schema\oltre525\`):
   righe master dalla wiki (526-555 anche dal master 1.1.3), 312 nemici mancanti dal JP, 27 stanze da aggiungere, Q555 per
-  Unione (`branchType 1`), Q617/Q661 parte ricostruita, SR_0009_01_00 con la grafica della _00, mapName originali. Prima:
-  prova automatica di tutte le stanze generate (dopo I-182).
+  Unione (`branchType 1`), Q617/Q661 parte ricostruita, SR_0009_01_00 con la grafica della _00, mapName originali.
+  **Piano scritto** (21-10): [docs/superpowers/plans/2026-10-21-missioni-526-979.md](docs/superpowers/plans/2026-10-21-missioni-526-979.md),
+  da far approvare all'utente con le decisioni D-A (statistiche dei ~250 nemici senza fonte), D-B (Q978 solo filmato),
+  D-C (mondi di Ralph senza riga `world`) e la scelta dell'esecuzione.
+- **21-10** ([mappe_storia.md#smoke-2110](docs/notes/mappe_storia.md#smoke-2110)): prova delle stanze generate fatta
+  (`btf_check.py` 0 incoerenti; 40 missioni, `smoke_quests.ps1` chiude ora le Notices); corretti I-183 (avviso Coerce),
+  I-184 (pioggia `hole_rain`), I-185 (NPC 5529 e altri 5 dal 2016), I-186 (`/user/detail`), I-187 (cut-in delle medaglie
+  con id in 2/4: righe alias, `make-cutin-alias.js`, **rev 167**), I-188 (musiche 426-500). Tutti provati al banco.
+  Aperti dall'utente: I-189 (moltiplicatore doppio di Cloud II EX), I-190 (Supernova in coda senza la medaglia): analisi
+  in corso. Restano da ricontrollare i 19 NPC senza 2016 riempiti dal JP (I-185).
 - **Trait Medal (I-084)**: parti A e B fatte, **banco 20-10 ok** ([medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).
   Moogle Shop delle Trait Medal rimandato al bilanciamento (I-164); resta la raggiungibilita' dei deal Trait (storia oltre il 2018).
 - Aperti dello Shop: I-139 (24 INCOMPLETE), I-140 (filtro Epic), I-141 (immagine di B0612), I-142 (Blue Fairy Deal),
