@@ -250,6 +250,23 @@ check(bgmOf(890) === '501006052,501006053,501000130', `HD: hd_bgm (${bgmOf(890)}
 check(bgmOf(872) === '501006047,501006047,501000130', `CS: central_station (${bgmOf(872)})`);
 check(bgmOf(931) === '501006061,501006062,501000130', `SR: sr_bgm (${bgmOf(931)})`);
 check(bgmOf(560) === '501000610,501000620,501000630', 'mondi con righe 1-525: musica della riga di riferimento');
+// musica per missione (I-198, reference\world_schema\oltre525gm_per_quest.json, khwiki Notes 29): vale sulla regola del mondo
+{
+  const bgm = { 979: { bgmField: 501006057, bgmBattle: 501006057, bgmBoss: 501006057 },
+    977: { bgmField: 501000810, bgmBattle: 501000820, bgmBoss: 501001010 },
+    671: { bgmField: 501000510, bgmBattle: 501000520, bgmBoss: 501000130 },
+    825: { bgmField: 501000410, bgmBattle: 501000420, bgmBoss: 501000130 } };
+  const rb = buildRows(stageRows, { ...sources, bgm });
+  const bo = (n) => { const r = rb.find((x) => x.id === n); return [r.bgmField, r.bgmBattle, r.bgmBoss].join(); };
+  check(bo(979) === '501006057,501006057,501006057', `979 BBS_73_TheKey nelle tre colonne (${bo(979)})`);
+  check(bo(977) === '501000810,501000820,501001010', `977 capo bgm_raid_0001, campo/battaglia db (${bo(977)})`);
+  check(bo(671) === '501000510,501000520,501000130', `671 Underworld oc_bgm_001001/2 (${bo(671)})`);
+  check(bo(825) === '501000410,501000420,501000130', `825 Coliseum oc_bgm_000001/2 (${bo(825)})`);
+  check(bo(560) === bgmOf(560) && bo(880) === bgmOf(880) && bo(600) === bgmOf(600), 'missione assente dal file: regola del mondo');
+  check(JSON.stringify(rb.filter((r) => ![979, 977, 671, 825].includes(r.id))) === JSON.stringify(rows.filter((r) => ![979, 977, 671, 825].includes(r.id))),
+    'solo le 4 righe del file cambiano');
+  check(bo(540) === bgmOf(540) && rb.find((x) => x.id === 978).bgmField === byId.get(978).bgmField, '526-555 e 978 mai toccate dal file');
+}
 // miniature: stage_select_ico_<worldId>_<area*10000 + zona*100 + variante> della prima stanza, se servita
 const rowsT = buildRows(stageRows, { ...sources, thumbs: new Set(['11_10000', '4_10000', '1_10000']) });
 const byT = new Map(rowsT.map((r) => [r.id, r]));
@@ -314,12 +331,13 @@ fs.writeFileSync(path.join(dir, 'stage.json'), JSON.stringify(stageRows));
 fs.writeFileSync(path.join(dir, 'world.json'), JSON.stringify(worldRows));
 for (const [f, v] of [['enemy', enemies], ['title', titles], ['medal', medals], ['keyblade', keyblades], ['theater', theater],
   ['skill', []]]) fs.writeFileSync(path.join(dir, f + '.json'), JSON.stringify(v));
-const src = { stage113, wiki, wikiRaw, oltre, dramas };
+const src = { stage113, wiki, wikiRaw, oltre, dramas, bgm: { 979: { bgmField: 501006057, bgmBattle: 501006057, bgmBoss: 501006057 } } };
 patch(dir, src);
 const once = fs.readFileSync(path.join(dir, 'stage.json'), 'utf8');
 patch(dir, src);
 const twice = fs.readFileSync(path.join(dir, 'stage.json'), 'utf8');
 check(once === twice, 'patch due volte = stesso file');
+check(JSON.parse(twice).find((r) => r.id === 979).bgmBoss === 501006057, 'patch: musica per missione scritta nel master');
 const worldOut = JSON.parse(fs.readFileSync(path.join(dir, 'world.json'), 'utf8'));
 check(worldOut.map((r) => r.worldId).join() === '1,8,11,12,13,14,10001', `patch: world.json ${worldOut.map((r) => r.worldId)}`);
 const out = JSON.parse(twice);
@@ -345,7 +363,7 @@ const dir3 = mkTmp();
 fs.writeFileSync(path.join(dir3, 'stage.json'), JSON.stringify(stageRows));
 check(throws(() => patch(dir3, { ...src, stage113: [] }), /1\.1\.3/)
   && fs.readFileSync(path.join(dir3, 'stage.json'), 'utf8') === JSON.stringify(stageRows), 'patch: 1.1.3 assente -> errore, file intatto');
-for (const k of ['KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL', 'KHUX_STAGE_POI_OLTRE']) {
+for (const k of ['KHUX_BGM_OLTRE', 'KHUX_STAGE_113', 'KHUX_WIKI_QUESTS', 'KHUX_OLTRE525', 'KHUX_WIKI_ALL', 'KHUX_STAGE_POI_OLTRE']) {
   const old = process.env[k];
   process.env[k] = path.join(dir3, 'manca.json');
   check(throws(() => defaultSources(), /fonte obbligatoria .*manca\.json/), `${k} assente -> errore col percorso`);

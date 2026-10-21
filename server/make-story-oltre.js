@@ -37,6 +37,12 @@
 // su un enemyId che non e' nello stage JP 4.3.1 (= stage del 2016; stage_poi_oltre.json del Task 3, la 555 con le 5
 // varianti 18300-18304), es. 544 -> 10092 Candy Apple / 93 Poison Apple, 555 -> 10211 Darklings: per quelle righe gli
 // obiettivi (e i loro premi) sono quelli della wiki, che coincidono con lo stage; il resto della riga resta 1.1.3.
+// Musica per missione 556-979 (I-198, 21-10): bgmField/bgmBattle/bgmBoss da reference\world_schema\oltre525\bgm_per_quest.json
+// (fonte obbligatoria, KHUX_BGM_OLTRE; 423 missioni, tutte meno la 978), ricavata da khwiki «Forum:Notes 29 (Project Music:
+// Where songs play) - KeybladeSpyMaster» (tabelle dei capi di Union X per missione) incrociata coi master 1-555 (tema
+// dell'area della prima stanza); ogni riga porta l'evidenza e la confidenza. Vale sulla regola del mondo (WORLD_BGM / riga
+// di riferimento), che resta solo per le missioni assenti dal file. Es. 979 «The Key» -> BBS_73_TheKey 501006057 nelle tre
+// colonne, 977 capo bgm_raid_0001 501001010, 671-674 Underworld oc_bgm_001001/2, 825 Coliseum oc_bgm_000001/2.
 // Idempotente; in fondo a make-game-tables.js. KHUX_STORY_OLTRE=0 lo spegne. Dopo: alzare la revisione del master.
 //
 //   node server/make-story-oltre.js [cartella master]
@@ -195,7 +201,7 @@ function objectiveReward(o, ctx, titleIdx, slot) {
 
 function buildRows(stageRows, sources) {
   const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
-    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null, headers = null } = sources;
+    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null, headers = null, bgm = {} } = sources;
   const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [], wikiObjectives: [],
     branchObjectives: [] };
   const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
@@ -360,12 +366,15 @@ function buildRows(stageRows, sources) {
       const worldId = roomWorld(mis.stage.rooms[0]) || WIKI_WORLD[q.world] || 1;
       const ref = refByWorld.get(worldId) || [...rows].reverse().find((r) => r.worldId === worldId && r.id <= 555);
       const roomThumb = thumbForRoom(mis.stage.rooms[0]);
-      const bgm = ref ? [ref.bgmField, ref.bgmBattle, ref.bgmBoss] : WORLD_BGM[worldId] || [prev.bgmField, prev.bgmBattle, prev.bgmBoss];
+      const wb = ref ? [ref.bgmField, ref.bgmBattle, ref.bgmBoss] : WORLD_BGM[worldId] || [prev.bgmField, prev.bgmBattle, prev.bgmBoss];
+      // musica per missione dal file (I-198) sulla regola del mondo
+      const pq = bgm[n];
+      const music = pq ? [pq.bgmField, pq.bgmBattle, pq.bgmBoss] : wb;
       row = { stageId, id: n, name: q.name, mapName: (q.rooms || [])[0] || '', useAp: q.ap === 'zero' ? 0 : num(q.ap),
         chapterId: Math.floor(stageId / 1000), worldId,
         thumbId: thumbs && roomThumb !== null && thumbs.has(`${worldId}_${roomThumb}`) ? roomThumb
           : ref ? ref.thumbId : (worldId in WORLD_THUMB ? WORLD_THUMB[worldId] : prev.thumbId || 0),
-        raidBoss: (ref || prev).raidBoss || 0, bgmField: bgm[0] || 0, bgmBattle: bgm[1] || 0, bgmBoss: bgm[2] || 0 };
+        raidBoss: (ref || prev).raidBoss || 0, bgmField: music[0] || 0, bgmBattle: music[1] || 0, bgmBoss: music[2] || 0 };
       setSubs(row, wikiSubs(n, q, mis, raw));
       const clear = [];
       if (num(q.jewel)) clear.push([2, 0, num(q.jewel)]);
@@ -469,6 +478,7 @@ function defaultSources() {
     oltre: readRequired(process.env.KHUX_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\oltre525.json'),
     // nemici degli stage JP (Task 3): obiettivi 1.1.3 su nemici fuori dallo stage -> quelli della wiki
     stagePoi: readRequired(process.env.KHUX_STAGE_POI_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage_poi_oltre.json'),
+    bgm: readRequired(process.env.KHUX_BGM_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\bgm_per_quest.json'),
     dramas: dramas || new Set(),
     thumbs,
     headers: readHeaders(process.env.KHUX_STAGE_DIR_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage'),

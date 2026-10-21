@@ -642,3 +642,13 @@ campi: non parlano.
 ## NPC senza wait.lwf (I-197)
 
 Il client carica `lwf/character/npc/<id>/wait/wait.lwf` per ogni NPC della mappa (`[fn]`); se manca, `[fn]` torna NULL e `addChild(NULL)` manda in crash la stanza. Gli stage 526-979 usano 124 id NPC (solo 4001 e' servito dall'originale); `recon/tools/npc_placeholders.py` scrive `recon/tools/empty.lwf` (492 byte) per tutti quelli senza LWF, prima di `import_jp_coco.py`, che mette il JP 4.3.1 dove ha tutte le texture (13 NPC su 65 nuovi). I 52 restanti (e 1 vecchio) sono invisibili ma non crashano: per mostrarli servono le texture originali.
+
+## Musiche per missione (I-198)
+
+Le colonne `bgmField`/`bgmBattle`/`bgmBoss` delle 556-979 non vengono piu' dalla regola del mondo ma da
+`reference\world_schema\oltre525gm_per_quest.json` (423 missioni, tutte tranne la 978; ids, nomi AKB, evidenza e confidenza per riga).
+Fonte: khwiki «Forum:Notes 29 (Project Music: Where songs play) - KeybladeSpyMaster», tabelle dei capi di Union X per missione,
+incrociata coi master 1-555 (tema d'area della prima stanza; capo di default dw_bgm_000003). `make-story-oltre.js` la richiede
+(`KHUX_BGM_OLTRE`); la regola del mondo (`WORLD_BGM` / riga di riferimento) resta solo per le missioni assenti dal file.
+Applicato sul posto con `node server/make-story-oltre.js`: 30 righe cambiate (solo colonne bgm). 979 «The Key» = BBS_73_TheKey
+(501006057) nelle tre colonne; 977 capo bgm_raid_0001 (501001010). Da verificare: 979 contro il video, campo/battaglia (confidenza media).
