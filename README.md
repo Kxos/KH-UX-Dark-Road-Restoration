@@ -100,6 +100,21 @@ recon/dl/ ext/ web/     Proprietary material — NOT versioned
 | `action_case.py`, `batch_schema.py` | Branch of an action in the response dispatcher and parser schemas |
 | `who_refs.py` | Who uses an address (BL, ADRP/ADD, relocations) |
 
+## Credits
+
+This restoration stands on the work of people who preserved and documented the game long before us:
+
+- **thethiny** — [KHUxTools](https://github.com/thethiny/KHUxTools) (resource and master-data tools),
+  [KHUx-Server](https://github.com/thethiny/KHUx-Server) (server and API remake, original master data),
+  [KHUx-Recomp](https://github.com/thethiny/KHUx-Recomp) (static recompilation and decompile of the 1.0.1 client),
+  [Modding-Database](https://github.com/thethiny/Modding-Database), and the shared KHUx data archive (JP 4.3.1 data,
+  stage maps, the 1.1.3 master-data dump and the research journal). Most of what this project serves comes from the
+  formats and data he documented and shared.
+- **Roboloid** and **Ultimadei** — the [Roboloid KHUχ database](https://roboloid.github.io/khux/) (medal data,
+  multipliers, special attack conditions, asset gallery).
+- **KHUX Wiki** ([khuxwiki.com](https://www.khuxwiki.com/)) and **KH Wiki** ([khwiki.com](https://www.khwiki.com/)) —
+  quests, medals, special attacks, events and images used as references.
+
 ## Repository rules
 
 This repository contains **only original code and documentation**.
