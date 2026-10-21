@@ -893,3 +893,8 @@ cocostudio/publish/ActionMapCoerceEnmAnim0.png	b16,jp
 #     [fn] caso 1 apre lwf/map/hole_rain/hole_rain.lwf e non controlla il NULL. Completa nel 2016.
 #     hole_thunder (caso 4): nel JP solo la LWF, texture assenti ovunque: non servita finche' una stanza non la chiede.
 lwf/map/hole_rain/	b16,jp
+
+# 39. Musiche delle missioni non servite (I-188, utente 21-10: quest 493 senza musica di battaglia): 501005002 battaglia del
+#     Corridor of Darkness (491-500), 501000630 musica dei capi (bgmBoss) di 426-487
+audio/501005002.akb	b16,jp
+audio/501000630.akb	b16
