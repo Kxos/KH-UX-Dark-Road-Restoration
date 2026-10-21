@@ -112,6 +112,7 @@ const NOTICES = [
       '## Quests and enemies',
       'Quests 617 and 661: the first part of each quest was lost. It is rebuilt in the original room (Quest 661 with the number of enemies of the original stage).',
       '250 enemies of the later quests have no surviving stats: they use the stats of the most similar original enemy (same family and role). 62 other enemies are exact copies of their base enemy, as in the original game data.',
+      'Some enemies show their original look, but a few small graphic details that were lost (for example their **shadow**) are reconstructed from the same enemy or from a standard one.',
       'Quests 876-979: the original quest files do not say the level of each enemy (the original server gave it), so every enemy fights at the level of the quest: there are no weaker enemies mixed in.',
       'Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.',
       '## Objectives and rewards',

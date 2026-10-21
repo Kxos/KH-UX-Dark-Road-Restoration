@@ -401,6 +401,25 @@ In (3), senza copie dello stesso nemico, la texture viene dalla **tabella dei do
 (spesso `lwf/drama/<id>/`, numerazione delle bitmap diversa), regole misurate sul pacchetto 2016 (stub_of noto,
 776/777 a vista); la usa anche l'import degli NPC di `import_jp_coco.py`. Nemici in piu': 1545, 1591; NPC 2021.
 
+**Texture ricostruite** (I-194, 21-10, decisione dell'utente: ricostruire come nell'originale dai dati che abbiamo,
+dichiarato nelle Notices): `recon/tools/jp_reconstructed.tsv` (`jp_reconstructed.py`), distinta dai doppioni, usata in
+(3) dopo copie e doppioni e dall'import degli NPC. Per le famiglie con <= 4 texture ancora mancanti nelle animazioni
+obbligatorie, sempre con un file JP reale (mai una forma inventata) e solo se cosi' la famiglia diventa completa:
+`shadow-family` (ombra della stessa famiglia, stesse misure dichiarate, la piu' vicina alle altre), `shadow-common`
+(la variante piu' comune di quelle misure, es. 97x24), `family` (stessa parte da un'altra animazione della stessa
+famiglia: candidati tutti vicini, almeno 3 o con lo stesso numero di bitmap). Prove sul pacchetto 2016 (bersaglio
+noto, file vero escluso; `tmp\jp_table\recon\shadow16.py`, `family16.py`): ombre 458 casi, differenza media
+**1,98/255** alle misure dichiarate (mediana 1,09, max 8,2); family 772 casi, 11 (1,4%) oltre 8/255 (un solo
+candidato con numero di bitmap diverso: 20% oltre 8, escluso). 14 righe (6 shadow-family, 5 shadow-common, 3 family):
+nemici 227 Wily Bandit, 1512 Ferocious Fins, 1514 e 1515 Burrfish, 1519, 1637 Swaying Cactus; NPC 5009, 9002 (ombra
+144x35). Restano incompleti 1552, 1587, 1614 (nessun candidato della famiglia) e gli NPC con una parte mancante
+della sola wait (es. occhi: le sorelle nella stessa LWF sono fotogrammi diversi). Fogli:
+`tmp\jp_table\sheets\recon_<id>.png` (ricostruite col bordo rosso).
+Correzione della regola dello stesso nome (21-10): ora vale solo se la texture candidata ha le misure dichiarate
+(+-2 px; `tex_dims`, `fits`). Prima la wait di 1577 (Green Gearbit) prendeva le nuvole di fumo 146x148 di dead al
+posto degli ingranaggi 95x65 (in Flash la numerazione delle bitmap e' di ogni FLA) e 1512 un pezzo 244x61 al posto
+dell'ombra 97x24 (ora ricostruita).
+
 Risultato (14-10): 121 displayId da coprire, **116 completi** (605 righe enemy su 670, 12.267 file,
 51,8 MB; pacchetto 53,2 MB), move da wait per 16 (36, 38, 39, 73, 75, 76, 154, 184, 198, 199, 211,
 228, 230, 231, 232, 1023). Incompleti (restano col sostituto): 251 Cannoned Camel, 1501 Gold

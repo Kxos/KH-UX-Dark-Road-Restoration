@@ -756,7 +756,9 @@ for _name, _src in sorted(_rank_img.items()):
 # originale di 89 dei 93; nella copia di thethiny mancano alcune parti (file uguali scartati?). Si
 # importano gli NPC con tutte le parti, o a cui manca solo l'ombra 97x24: quella e' identica alla
 # wait_7 dell'NPC 4001 servito dal WW (BTF letto dalle risorse originali). Gli altri restano vuoti. Le parti
-# scartate come doppioni si prendono prima dalla tabella dei doppioni (jp_dedup_donors.tsv, 21-10).
+# scartate come doppioni si prendono prima dalla tabella dei doppioni (jp_dedup_donors.tsv, 21-10); poi le texture
+# perse ricostruite con un'altra texture JP reale (jp_reconstructed.tsv, I-194 del 21-10: ombre 144x35 di 5009 e 9002),
+# solo per gli NPC che cosi' diventano completi.
 def _lwf_textures(path):
     """{nome texture: (w, h)} dalla tabella texture di un LWF (formato di make_pet_motions.py)."""
     import struct
@@ -804,7 +806,9 @@ _npc_ok, _npc_skip, _shadow = [], [], None
 if os.path.isdir(_gen_npc) and os.path.isdir(_npc_root):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import jp_dedup_donors
+    import jp_reconstructed
     _npc_donors = jp_dedup_donors.load()
+    _npc_recon = jp_reconstructed.load()
     for _id in sorted(os.listdir(_gen_npc)):
         _dir = os.path.join(_npc_root, _id, 'wait')
         _lwf = os.path.join(_dir, 'wait.lwf')
@@ -817,6 +821,8 @@ if os.path.isdir(_gen_npc) and os.path.isdir(_npc_root):
         # (tabella recon/tools/jp_dedup_donors.tsv, jp_dedup_donors.py; regole misurate sul 2016, >= 99%)
         _don = {k: jp_dedup_donors.lookup(_npc_donors, _base + k, JP_ROOT) for k in _miss}
         _don = {k: v for k, v in _don.items() if v}
+        _don.update({k: v for k, v in ((k, jp_reconstructed.lookup(_npc_recon, _base + k, JP_ROOT)) for k in _miss
+                                       if k not in _don) if v})
         _miss = {k: v for k, v in _miss.items() if k not in _don}
         if any(v != (97, 24) for v in _miss.values()):
             _npc_skip.append(_id)

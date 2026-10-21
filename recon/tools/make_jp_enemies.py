@@ -29,6 +29,11 @@ incompleta; un nemico entra solo se tutte le obbligatorie sono complete (mai una
 In (3), se nessuna copia dello stesso nemico va bene, la texture si prende dalla tabella dei doppioni
 (recon/tools/jp_dedup_donors.tsv, jp_dedup_donors.py: file identico rimasto in un'altra cartella JP, spesso
 lwf/drama/<id>/; regole misurate sul pacchetto 2016, precisione >= 99%); `--donors ''` la esclude.
+Poi, solo per le famiglie che cosi' diventano complete, la tabella delle texture RICOSTRUITE
+(recon/tools/jp_reconstructed.tsv, jp_reconstructed.py, I-194 del 21-10: ombra standard o stessa parte da un'altra
+animazione della stessa famiglia, sempre un file JP reale); `--recon ''` la esclude. La regola dello stesso nome vale
+solo con le misure dichiarate dalla LWF (+-2 px, tex_dims/fits): lo stesso numero di bitmap in un'altra FLA non e'
+la stessa immagine (1577: fumo di dead al posto degli ingranaggi di wait).
 
 Effetti di comparsa: lwf/character/enemy/show_effect_fla/show_effect<N>/ per gli showSwf originali
 (external\\thethiny\\enemy_dec.json) non serviti, stesse regole (completi o niente).
@@ -61,6 +66,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--jp', default=os.path.join(JP_ROOT, 'lwf', 'character', 'enemy'))
 ap.add_argument('--jp-root', default=JP_ROOT, help='radice JP delle sorgenti della tabella dei doppioni')
 ap.add_argument('--donors', default=None, help="tabella dei doppioni (default recon/tools/jp_dedup_donors.tsv; '' = nessuna)")
+ap.add_argument('--recon', default=None,
+                help="tabella delle texture ricostruite (default recon/tools/jp_reconstructed.tsv; '' = nessuna)")
 ap.add_argument('--b2016', default=os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files', 'lwf', 'character', 'enemy'))
 ap.add_argument('--index', action='append')
 ap.add_argument('--master', default=os.path.join(REPO, 'server', 'master_data'))
@@ -80,11 +87,19 @@ a.poi = a.poi or [os.path.join(D, 'stage_gen', 'orig_stages', 'stage_poi_orig.js
 OUT_FILES = os.path.join(a.out, 'files')
 import jp_dedup_donors  # noqa: E402
 DONORS = jp_dedup_donors.load(jp_dedup_donors.TABLE if a.donors is None else a.donors)
+import jp_reconstructed  # noqa: E402
+RECON = jp_reconstructed.load(jp_reconstructed.TABLE if a.recon is None else a.recon)
 
 
 def donor(published):
     """Texture scartata come doppione dall'estrazione JP: il file identico rimasto altrove (tabella)."""
     return jp_dedup_donors.lookup(DONORS, published, a.jp_root)
+
+
+def recon(published):
+    """Texture persa ricostruita con un'altra texture JP reale (ombra standard, stessa parte da un'altra animazione):
+    tabella jp_reconstructed.tsv, solo per le famiglie che cosi' diventano complete (I-194, 21-10)."""
+    return jp_reconstructed.lookup(RECON, published, a.jp_root)
 
 
 def listing(p):
@@ -112,6 +127,53 @@ def sha(p):
 
 def refs_of(lwf):
     return sorted({m.decode() for m in PNGREF.findall(open(lwf, 'rb').read())})
+
+
+_dims = {}
+
+
+def tex_dims(lwf):
+    """{nome texture: (w, h) dichiarate} dalla sezione texture della LWF (GREE lwf_format.h: Data{offset, len} da 32,
+    texture = 9a sezione, record {stringId, format, width, height, scale}; stringhe dalla sezione stringData a 312).
+    None se il file non si legge come LWF (allora le dimensioni non si controllano)."""
+    if lwf not in _dims:
+        try:
+            _dims[lwf] = _tex_dims(open(lwf, 'rb').read())
+        except Exception:                   # noqa: BLE001
+            _dims[lwf] = None
+    return _dims[lwf]
+
+
+def _tex_dims(b):
+    import struct
+    sb = struct.unpack_from('<i', b, 32)[0]
+    so, sn = struct.unpack_from('<ii', b, 312)
+    strs = [b[sb + o:sb + o + n].decode('utf-8', 'replace') for o, n in
+            (struct.unpack_from('<ii', b, so + 8 * k) for k in range(sn))]
+    to, tn = struct.unpack_from('<ii', b, 32 + 8 * 8)
+    return {strs[t[0]]: (t[2], t[3]) for t in (struct.unpack_from('<iiiif', b, to + 20 * k) for k in range(tn))
+            if 0 <= t[0] < sn}
+
+
+def img_size(p):
+    """(w, h) di un PNG (IHDR) o di un BTF del 2016 (None se illeggibile)."""
+    d = open(p, 'rb').read(32)
+    if d[:8] == b'\x89PNG\r\n\x1a\n':
+        import struct
+        return struct.unpack('>II', d[16:24])
+    try:
+        import btf
+        return btf.decode(open(p, 'rb').read()).size
+    except Exception:                       # noqa: BLE001
+        return None
+
+
+def fits(p, wh):
+    """la texture p ha le dimensioni dichiarate wh (+-2 px dell'esportazione)? (21-10, I-194: senza questo controllo la
+    regola dello stesso nome prendeva per la wait di 1577 le nuvole di fumo 146x148 di dead al posto degli ingranaggi
+    95x65: in Flash la numerazione delle bitmap e' di ogni FLA, lo stesso numero non e' la stessa immagine)"""
+    s = img_size(p)
+    return s is not None and wh is not None and abs(s[0] - wh[0]) <= 2 and abs(s[1] - wh[1]) <= 2
 
 
 def plan_anim(root_rel, anim, jp_all):
@@ -147,7 +209,11 @@ def plan_anim(root_rel, anim, jp_all):
         # (dopo il prefisso dell'animazione) in un'altra animazione dello stesso nemico
         todo, filled, dons = {pre + lw: jl}, [], []
         ok = True
+        dims = tex_dims(jl)
+        recs = []
         for t in refs_of(jl):
+            def fit(q, t=t):
+                return dims is None or fits(q, dims.get(t))
             if t in jp:
                 todo[pre + t] = jp[t]
                 continue
@@ -155,18 +221,21 @@ def plan_anim(root_rel, anim, jp_all):
             dp = donor(pre + t)
             suf = t[len(anim) + 1:] if t.startswith(anim + '_') else None
             cands = [] if suf is None else [fs[o + '_' + suf] for o, fs in jp_all.items()
-                                              if o != anim and (o + '_' + suf) in fs]
+                                              if o != anim and (o + '_' + suf) in fs and fit(fs[o + '_' + suf])]
             if not (cands and len({sha(c) for c in cands}) == 1):
                 # stesso nome esatto in un'altra animazione (21-10, I-009 Task 7): il LWF di wait cita
                 # wait_<x>.png e il file vero e' rimasto solo in atk1_o/ (che cita le stesse bitmap di wait),
                 # le altre copie erano stub di deduplicazione (es. 1532, 1550, 1561: 0 texture in wait/)
-                cands = [fs[t] for o, fs in jp_all.items() if o != anim and t in fs]
+                cands = [fs[t] for o, fs in jp_all.items() if o != anim and t in fs and fit(fs[t])]
             if cands and len({sha(c) for c in cands}) == 1:
                 todo[pre + t] = cands[0]
                 filled.append(t)
             elif dp:
                 todo[pre + t] = dp
                 dons.append(t)
+            elif recon(pre + t):
+                todo[pre + t] = recon(pre + t)
+                recs.append(t)
             else:
                 ok = False
                 break
@@ -174,6 +243,8 @@ def plan_anim(root_rel, anim, jp_all):
             notes.append('%d texture da altre animazioni dello stesso nemico' % len(filled))
             if dons:
                 notes.append('%d dalla tabella dei doppioni' % len(dons))
+            if recs:
+                notes.append('%d ricostruite (jp_reconstructed.tsv)' % len(recs))
             return 'jp+riempite', todo, '; '.join(notes)
     if not jl and not bl:
         return 'assente', None, '; '.join(notes) or 'nessuna fonte'
