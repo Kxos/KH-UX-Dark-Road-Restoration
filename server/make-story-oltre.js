@@ -1,0 +1,346 @@
+#!/usr/bin/env node
+// Righe master `stage` delle missioni di storia 526-979 (I-009, piano docs/superpowers/plans/2026-10-21-missioni-526-979.md,
+// spec docs/notes/mappe_storia.md#oltre525). Oggi il master ne ha 1-525 (stage_dec di thethiny, make-game-tables.js);
+// stage_dec non ha righe oltre la 525. Fonti:
+// - 526-555: righe vere del master 1.1.3 (thethiny_2026-10-13 KHUx-Server/data/stage.json, stageId 18010-18300, id =
+//   numero); gli array oltre le lunghezze valide (validBeforeDrama, validAfterDrama, validClearGetItem) sono spazzatura
+//   e si tagliano come make-game-tables.js. Q555 = una riga 18300 con branchType 1: il client carica
+//   mappoi_stg(18300 + unionId - 1), il maestro della propria Unione (decisione dell'utente 20-10);
+// - 556-979: khuxwiki (wiki\quests.json + testo della pagina in wiki_all.json) per nome, AP ("zero" = 0), mapName
+//   (room1), obiettivi e premi; stageId e stanze da reference\world_schema\oltre525\oltre525.json (stage JP 4.3.1).
+// - Q978 «What Comes After» (D-B, 21-10): missione di solo filmato come nell'originale (wiki InfoQuestKHUX/Cutscene, nessuno
+//   stage 39158 nei dati JP). Il client 4.3.1 la regge col campo onlyDrama della riga stage (offset 0x120 del record,
+//   parser [fn]): finiti i filmati [fn] -> [fn] legge onlyDrama della missione corrente
+//   ([fn] = riga stage per stageId) e, se != 0, apre la scena StageSkipActionMap ([fn], RTTI
+//   18StageSkipActionMap) invece di SceneActionMap ([fn], la mappa); StageSkipActionMap::update ([fn])
+//   con onlyDrama != 0 salta la simulazione dei nemici e manda subito la richiesta di fine stage ([fn],
+//   corpo di /stage/clear). Filmati dal theater (stageId 39158: 2560701-2561201), premi dalla pagina wiki.
+// worldId dal prefisso della stanza; mondi di Ralph coi worldId originali (D-C): world_select_ico_11 «Niceland»,
+// _12 «Cy-Bug Sector», _14 «Candy Kingdom» (JP 4.3.1 img/adventure) e theater (NL 11, HD 12, SR 14); CS = 13 per
+// esclusione (stage_select_ico_13_100, wipe_13). Le righe world 11-14 le aggiunge il Task 5.
+// Campi senza fonte (bgm, thumbId, raidBoss) dall'ultima riga 1-525 dello stesso worldId (o della 1.1.3); per i mondi
+// che nelle 1-525 non ci sono (CD, ED, Ralph): miniatura della prima icona JP del mondo, bgm/raidBoss della missione
+// precedente (da rivedere col Task 5). Filmati: solo id presenti nelle risorse (names_v4.tsv, regola di
+// make-game-tables.js); per 556-979 dal theater (stessa stageId: 5 prima, il resto dopo, il client ne legge al massimo 5
+// per lato). Obiettivi «Defeat X» su nemici assenti dalla tabella enemy -> 1 (Shadow) come le 1-525.
+// Idempotente; in fondo a make-game-tables.js. KHUX_STORY_OLTRE=0 lo spegne. Dopo: alzare la revisione del master.
+//
+//   node server/make-story-oltre.js [cartella master]
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const FIRST = 526, LAST = 979, CUTSCENE = 978, CUTSCENE_STAGE = 39158, Q555_STAGE = 18300;
+const ROOM_WORLD = { DB: 1, DW: 2, WL: 3, AG: 4, OC: 5, BC: 6, CD: 7, ED: 8, NL: 11, HD: 12, CS: 13, SR: 14 };
+const WIKI_WORLD = { 'Daybreak Town': 1, 'Dwarf Woodlands': 2, Wonderland: 3, Agrabah: 4, 'Olympus Coliseum': 5,
+  "Beast's Castle": 6, 'Castle of Dreams': 7, 'Enchanted Dominion': 8, Niceland: 11, 'Cy-Bug Sector': 12,
+  'Game Central Station': 13, 'Candy Kingdom': 14 };
+// prima icona stage_select_ico_<worldId>_<thumbId> del mondo nei dati JP 4.3.1 (img/adventure/stage)
+const WORLD_THUMB = { 7: 10000, 8: 0, 11: 0, 12: 20000, 13: 100, 14: 0 };
+// chiavi e ordine delle righe 1-525 (make-game-tables.js, formato 5.0.1)
+const FIELDS = ['stageId', 'stageBinId', 'id', 'name', 'mapName', 'useAp', 'chapterId', 'worldId', 'thumbId', 'onlyDrama',
+  'stageKind', 'showIcon', 'hideIcon', 'noPartner', 'validStopStage', 'validBeforeDrama', 'beforeDramaId', 'beforeDramaType',
+  'validAfterDrama', 'afterDramaId', 'afterDramaType', 'branchType', 'disableContinue', 'addLevel', 'holdKeyblade',
+  'hardmodeRequire', 'hardmodeName', 'hardmodeComparison', 'hardmodeNum', 'validClearGetTitle', 'clearGetTitle',
+  'validClearGetSphere', 'clearGetSphere', 'resetClearGet', 'validClearGetItem', 'clearGetItemType', 'clearGetItemId',
+  'clearGetAssignSkillType', 'clearGetAssignSkillId', 'clearGetAssignSkillLv', 'clearGetItemNum', 'resetSubMission',
+  'validSubmission', 'submissionRequire', 'submissionName', 'submissionDataType', 'submissionIdType', 'submissionId',
+  'submissionNum', 'submissionRewardType', 'submissionItemId', 'submissionSkillType', 'submissionSkillId',
+  'submissionSkillLv', 'submissionItemNum', 'combinedSubmissionFlag', 'raidBoss', 'bgmField', 'bgmBattle', 'bgmBoss'];
+const DEFAULTS = { stageBinId: 0, onlyDrama: 0, stageKind: 1, showIcon: 0, hideIcon: 0, noPartner: 0, validStopStage: 0,
+  branchType: 0, disableContinue: 0, addLevel: 0, holdKeyblade: 0, hardmodeRequire: 0, hardmodeName: 'strDummy',
+  hardmodeComparison: 1, hardmodeNum: 0, validClearGetTitle: 0, clearGetTitle: 0, validClearGetSphere: 0, clearGetSphere: 0,
+  resetClearGet: 0, resetSubMission: 0, combinedSubmissionFlag: 0 };
+const SUB_FIELDS = ['submissionRequire', 'submissionName', 'submissionDataType', 'submissionIdType', 'submissionId',
+  'submissionNum', 'submissionRewardType', 'submissionItemId', 'submissionSkillType', 'submissionSkillId',
+  'submissionSkillLv', 'submissionItemNum'];
+const CLEAR_FIELDS = ['clearGetItemType', 'clearGetItemId', 'clearGetAssignSkillType', 'clearGetAssignSkillId',
+  'clearGetAssignSkillLv', 'clearGetItemNum'];
+
+const num = (s) => parseInt(String(s || '').replace(/,/g, ''), 10) || 0;
+const wikiLv = (q) => num(q && q.lvl);
+const rawField = (raw, k) => { const m = new RegExp(`\\|${k}=([^\\n|]*)`).exec(raw || ''); return m ? m[1].replace(/<!--.*?-->/g, '').trim() : null; };
+const roomWorld = (code) => ROOM_WORLD[String(code || '').slice(0, 2)] || 0;
+
+// Obiettivo dalla wiki -> campi del master (submissionRequire/DataType/IdType/Id/Num + nome). Codici e nomi delle righe
+// originali 1-555 (5.0.1, 1.1.3, stage_dec): DataType 1 testo, 2 %d = num, 3 %s = nome di id (IdType 5 keyblade, 6 skill),
+// 4 nemico (IdType 1). Senza codice noto (tempo, battaglie, colpi, barili, danni subiti...) -> null.
+function objectiveCodes(text, ctx) {
+  const t = String(text).replace(/\s+/g, ' ').trim();
+  let m;
+  // «Defeat the X ...»: X senza articolo; il bersaglio dello stage (STG [6]) col suo id pieno, come le righe originali
+  const enemy = (name) => {
+    const x = name.replace(/^the /i, '').trim();
+    return ctx.targetName && x.toLowerCase() === ctx.targetName.toLowerCase() && ctx.target ? ctx.target : ctx.enemyId(x);
+  };
+  const turns = (n) => (n === 1 ? 'turn' : 'turns');
+  // 28 = «in 1 turno» (num 0 nelle righe originali): con piu' turni nessun esempio originale
+  if ((m = /^Defeat all enemies (?:within|in) (\d+) turns?$/i.exec(t))) {
+    return num(m[1]) === 1 ? { name: 'Defeat all enemies within 1 turn', req: 28, dt: 1, it: 0, id: 0, n: 0 } : null;
+  }
+  if ((m = /^Defeat the target(?: enemy)? (?:within|without) (\d+) turns?$/i.exec(t))) {
+    const n = num(m[1]);
+    return { name: `Defeat the target enemy within\n${n} ${turns(n)}`, req: 12, dt: 4, it: 1, id: ctx.target, n };
+  }
+  if ((m = /^Defeat (.+?) (?:within|without) (\d+) turns?(?: for [\d,]+ Jewels)?$/i.exec(t))) {
+    return { name: 'Defeat the ${1:%s} within ${2:%d :#turn:#turns}', req: 12, dt: 4, it: 1, id: enemy(m[1]), n: num(m[2]) };
+  }
+  if ((m = /^Defeat (\d[\d,]*) or more enemies$/i.exec(t))) return { name: 'Defeat %d or more enemies', req: 3, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if ((m = /^Defeat (.+?) ?x ?(\d+)$/i.exec(t))) return { name: 'Defeat %s x %d', req: 4, dt: 4, it: 1, id: enemy(m[1]), n: num(m[2]) };
+  if ((m = /^Collect (\d[\d,]*) or more Lux$/i.exec(t))) return { name: 'Collect %d or more Lux', req: 29, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if ((m = /^Use (\d+) or more special attacks$/i.exec(t))) return { name: 'Use %d or more special attacks', req: 5, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  // «Open N or fewer special attacks» (1 pagina) = refuso della wiki per «Use»
+  if ((m = /^(?:Use|Open) (\d+) or (?:fewer|less) special attacks$/i.exec(t))) return { name: 'Use %d or less special attacks', req: 6, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if ((m = /^Complete within (\d+) turns?(?: for [\d,]+ Jewels)?$/i.exec(t))) return { name: 'Complete within ${1:%d :#turn:#turns}', req: 7, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if ((m = /^Inflict (\d[\d,]*) or more damage with 1 (?:hit|attack)( \(excl\. nova\))?$/i.exec(t))) {
+    return { name: `Inflict %d or more damage with 1 hit${m[2] ? ' (excl. Nova)' : ''}`, req: 13, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  }
+  if ((m = /^Equip (?:the )?(.+) Keyblade$/i.exec(t))) {
+    const id = ctx.keybladeId(m[1]);
+    return id ? { name: 'Equip the %s Keyblade', req: 25, dt: 3, it: 5, id, n: 0 } : null;
+  }
+  if ((m = /^Trigger the skill (.+)$/i.exec(t))) {
+    const id = ctx.skillId(m[1]);
+    return id ? { name: 'Trigger the skill %s', req: 14, dt: 3, it: 6, id, n: 0 } : null;
+  }
+  const plain = { 'Complete without having to continue': 10, 'Complete without being afflicted with a status ailment': 11,
+    'Open all treasure chests': 17, 'Collect all materials': 18, 'Complete without opening treasure chests': 20,
+    'Equip only Power Medals': 21, 'Equip only Speed Medals': 22, 'Equip only Magic Medals': 23 };
+  const key = Object.keys(plain).find((k) => k.toLowerCase() === t.toLowerCase());
+  if (key) return { name: key, req: plain[key], dt: 1, it: 0, id: 0, n: 0 };
+  return null;
+}
+
+// premio dell'obiettivo: tipo/id/numero come le righe 1-555 (14 Avatar Coin, 5:1 Mythril Shard, 7 titolo, 2 jewel, 3 medaglia)
+function objectiveReward(o, ctx, titleIdx) {
+  const q = num(o.qty);
+  switch (o.reward) {
+    case 'Avatar Coin': return [14, 0, q];
+    case 'Mythril Shard': return [5, 1, q];
+    case 'Jewel': return [2, 0, q];
+    case 'Title': { const id = ctx.titleId(ctx.raw.titles[titleIdx]); return id ? [7, id, 1] : null; }
+    default: { const id = ctx.medalId(o.reward); return id ? [3, id, q || 1] : null; }
+  }
+}
+
+function buildRows(stageRows, sources) {
+  const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
+    enemies = null, titles = [], medals = [], keyblades = [], skills = [] } = sources;
+  const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [] };
+  const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
+  const byName = (rows, key, name) => rows.filter((r) => r[key] === name);
+  const ctxBase = {
+    titleId: (name) => (byName(titles, 'title', name)[0] || {}).titleId || 0,
+    keybladeId: (name) => (keyblades.find((k) => k.name === name && !k.lv) || {}).keybladeId || 0,
+    skillId: (name) => (byName(skills, 'name', name)[0] || {}).skillId || 0,
+    medalId: (label) => {
+      const m = /^(.+?)\s*(\d*)★$/.exec(String(label || '').trim());
+      if (!m) return 0;
+      const rare = num(m[2]) || 1;
+      return (medals.filter((x) => x.name === m[1] && x.rare === rare).sort((a, b) => a.medalId - b.medalId)[0] || {}).medalId || 0;
+    },
+    // nemico per nome: id base (il piu' piccolo) come le righe originali («Defeat %s x %d» id 93, 109)
+    // poi i nomi imparati dagli stage JP (oltre525.json learned_enemy_names: id solo JP, righe enemy del Task 2)
+    enemyId: (name) => {
+      const n = name.trim().toLowerCase();
+      const ids = (enemies || []).filter((e) => String(e.name).toLowerCase() === n).map((e) => e.enemyId);
+      const jp = Object.entries(oltre.learned_enemy_names || {}).filter(([, v]) => String(v).toLowerCase() === n).map(([k]) => Number(k));
+      return (ids.length ? ids : jp).sort((a, b) => a - b)[0] || 0;
+    },
+  };
+  const wikiByNum = new Map(Object.values(wiki).filter((q) => /^Quest \d+:/.test(q.title || '')).map((q) => [num(q.number), q]));
+  const missionByNum = new Map((oltre.missions || []).map((m) => [m.q, m]));
+  const s113 = new Map(stage113.filter((r) => r.stageId >= 18010 && r.stageId <= Q555_STAGE).map((r) => [r.id, r]));
+  // riferimenti per i campi senza fonte: ultima riga di storia 1-525 dello stesso mondo, poi le 1.1.3
+  const story = stageRows.filter((r) => r.stageKind === 1 && r.stageId < 100000 && r.id <= 525).sort((a, b) => a.id - b.id);
+  const refByWorld = new Map();
+  for (const r of story) refByWorld.set(r.worldId, r);
+  const theaterBy = new Map();
+  for (const t of theater) {
+    if (!t.validTheater || !t.stageId) continue;
+    if (!theaterBy.has(t.stageId)) theaterBy.set(t.stageId, []);
+    theaterBy.get(t.stageId).push(t);
+  }
+  const present = (id) => id && (!dramas || dramas.has(id));
+  const setDramas = (row, before, after) => {
+    const b = before.filter(([id]) => present(id)), a = after.filter(([id]) => present(id));
+    const dropped = [...before, ...after].filter(([id]) => !present(id)).map(([id]) => id);
+    if (dropped.length) report.droppedDramas.push([row.id, dropped]);
+    const all = [...b, ...a];
+    // il client legge al massimo 5 filmati per lato (parser [fn]: conteggio < 6)
+    const pre = b.length ? b.slice(0, 5) : [], post = (b.length ? b.slice(5).concat(a) : a).slice(0, 5);
+    if (all.length > pre.length + post.length) report.overflow.push([row.id, all.slice(pre.length + post.length).map((d) => d[0])]);
+    Object.assign(row, { validBeforeDrama: pre.length, beforeDramaId: pre.map((d) => d[0]), beforeDramaType: pre.map((d) => d[1]),
+      validAfterDrama: post.length, afterDramaId: post.map((d) => d[0]), afterDramaType: post.map((d) => d[1]) });
+  };
+  const theaterDramas = (stageId) => (theaterBy.get(stageId) || []).flatMap((t) => t.dramaId.map((id, i) => [id, (t.dramaType || [])[i] || 0]));
+  const finish = (r) => Object.fromEntries(FIELDS.map((k) => [k, k in r ? r[k] : DEFAULTS[k]]));
+  const remapEnemies = (row) => {
+    if (!knownEnemies) return;
+    row.submissionId = row.submissionId.map((id, i) => {
+      // id 0 (nome non trovato) farebbe cercare la riga 0: anche quello sullo Shadow
+      if (row.submissionIdType[i] === 1 && i < row.validSubmission && !knownEnemies.has(id)) { report.enemiesToShadow++; return 1; }
+      return id;
+    });
+  };
+
+  const rows = [];
+  let prev = story[story.length - 1] || {};
+  for (let n = FIRST; n <= LAST; n++) {
+    const q = wikiByNum.get(n);
+    const mis = missionByNum.get(n);
+    let row;
+    if (n === CUTSCENE) {
+      // missione di solo filmato (D-B): nessuna mappa, nessun obiettivo, premi della pagina wiki
+      const title = Object.keys(wikiRaw).find((k) => /^Quest 978: /.test(k)) || 'Quest 978: What Comes After';
+      const raw = wikiRaw[title] || '';
+      const worldId = WIKI_WORLD[rawField(raw, 'world')] || 1;
+      const ref = refByWorld.get(worldId) || prev;
+      row = { stageId: CUTSCENE_STAGE, id: n, name: rawField(raw, 'nadesc') || title.replace(/^Quest \d+: /, ''), mapName: '',
+        useAp: 0, chapterId: Math.floor(CUTSCENE_STAGE / 1000), worldId, thumbId: ref.thumbId || 0, onlyDrama: 1,
+        validSubmission: 0, raidBoss: ref.raidBoss || 0, bgmField: ref.bgmField || 0, bgmBattle: ref.bgmBattle || 0, bgmBoss: ref.bgmBoss || 0 };
+      const clear = [];
+      if (num(rawField(raw, 'najewel'))) clear.push([2, 0, num(rawField(raw, 'najewel'))]);
+      const med = ctxBase.medalId(rawField(raw, 'namedal'));
+      if (med) clear.push([3, med, num(rawField(raw, 'namedalq')) || 1]);
+      const tid = ctxBase.titleId(rawField(raw, 'naqtitle'));
+      if (tid) Object.assign(row, { validClearGetTitle: 1, clearGetTitle: tid });
+      setClear(row, clear);
+      setSubs(row, []);
+      setDramas(row, theaterDramas(CUTSCENE_STAGE), []);
+    } else if (s113.has(n)) {
+      // 526-555: riga vera 1.1.3, array tagliati alle lunghezze valide
+      const r = s113.get(n);
+      row = JSON.parse(JSON.stringify(r));
+      for (const a of CLEAR_FIELDS) row[a] = (r[a] || []).slice(0, r.validClearGetItem);
+      for (const a of SUB_FIELDS) row[a] = (r[a] || []).slice(0, 3);
+      const before = (r.beforeDramaId || []).slice(0, r.validBeforeDrama).map((id, i) => [id, (r.beforeDramaType || [])[i] || 0]);
+      const after = (r.afterDramaId || []).slice(0, r.validAfterDrama).map((id, i) => [id, (r.afterDramaType || [])[i] || 0]);
+      // come make-game-tables.js: senza filmati prima rimasti nelle risorse, quelli del theater della stessa stageId
+      const keep = before.filter(([id]) => present(id));
+      setDramas(row, keep.length ? before : theaterDramas(r.stageId).concat(before), after);
+      if (n === 555) Object.assign(row, { stageId: Q555_STAGE, branchType: 1 });
+      if (q) row.useAp = q.ap === 'zero' ? 0 : num(q.ap);
+      row.worldId = roomWorld(mis && mis.stage.rooms[0]) || r.worldId;
+      row.chapterId = Math.floor(row.stageId / 1000);
+    } else {
+      if (!q || !mis) throw new Error(`missione ${n}: assente dalla wiki o da oltre525.json`);
+      const raw = wikiRaw[q.title] || '';
+      const stageId = mis.stage.stageId;
+      // stanze DG (Corridor of Darkness) non sono un mondo: quello della wiki (le 492-500 originali hanno worldId 1)
+      const worldId = roomWorld(mis.stage.rooms[0]) || WIKI_WORLD[q.world] || 1;
+      const ref = refByWorld.get(worldId) || [...rows].reverse().find((r) => r.worldId === worldId && r.id <= 555);
+      row = { stageId, id: n, name: q.name, mapName: (q.rooms || [])[0] || '', useAp: q.ap === 'zero' ? 0 : num(q.ap),
+        chapterId: Math.floor(stageId / 1000), worldId,
+        thumbId: ref ? ref.thumbId : (worldId in WORLD_THUMB ? WORLD_THUMB[worldId] : prev.thumbId || 0),
+        raidBoss: (ref || prev).raidBoss || 0, bgmField: (ref || prev).bgmField || 0,
+        bgmBattle: (ref || prev).bgmBattle || 0, bgmBoss: (ref || prev).bgmBoss || 0 };
+      const ctx = { ...ctxBase, target: mis.stage.target_id || 0, targetName: mis.target || q.target || "",
+        raw: { titles: [...raw.matchAll(/\|naotitle\d?=([^\n|]*)/g)].map((m) => m[1].trim()) } };
+      const subs = [];
+      let titleIdx = 0;
+      for (const [i, o] of (q.objectives || []).slice(0, 3).entries()) {
+        let c = objectiveCodes(o.text, ctx);
+        if (!c) {
+          // TAPPABUCHI: codice del client non ricavato; testo della wiki, valutato come «senza continue» (10)
+          report.stopgapObjectives.push([n, i + 1, o.text]);
+          c = { name: o.text, req: 10, dt: 1, it: 0, id: 0, n: 0 };
+        }
+        let rw = objectiveReward(o, ctx, o.reward === 'Title' ? titleIdx++ : 0);
+        if (!rw) { report.missingRewards.push([n, i + 1, o.reward]); rw = [0, 0, 0]; }
+        subs.push([c, rw]);
+      }
+      setSubs(row, subs);
+      const clear = [];
+      if (num(q.jewel)) clear.push([2, 0, num(q.jewel)]);
+      if ((q.rewards || {}).namunny) clear.push([4, 0, num(q.rewards.namunny)]);
+      if ((q.rewards || {}).naorichalcum) clear.push([5, 6, 1]);
+      else {
+        const med = ctxBase.medalId(rawField(raw, 'namedal'));
+        if (med) clear.push([3, med, num(rawField(raw, 'namedalq')) || 1]);
+      }
+      const kb = ctxBase.keybladeId(rawField(raw, 'nakeyblade'));
+      if (kb) clear.push([13, kb, 1]);
+      const tid = ctxBase.titleId(rawField(raw, 'naqtitle'));
+      if (tid) Object.assign(row, { validClearGetTitle: 1, clearGetTitle: tid });
+      if (clear.length > 3) report.overflow.push([n, 'clearGet', clear.slice(3)]);
+      setClear(row, clear.slice(0, 3));
+      setDramas(row, theaterDramas(stageId), []);
+    }
+    remapEnemies(row);
+    row = finish(row);
+    rows.push(row);
+    prev = row;
+  }
+  Object.defineProperty(rows, 'report', { value: report });
+  return rows;
+}
+
+function setClear(row, items) {
+  Object.assign(row, { validClearGetItem: items.length, clearGetItemType: items.map((x) => x[0]),
+    clearGetItemId: items.map((x) => x[1]), clearGetAssignSkillType: items.map(() => 1), clearGetAssignSkillId: items.map(() => 0),
+    clearGetAssignSkillLv: items.map(() => 1), clearGetItemNum: items.map((x) => x[2]) });
+}
+
+function setSubs(row, subs) {
+  const pad = (f) => [0, 1, 2].map((i) => (i < subs.length ? f(subs[i]) : 0));
+  Object.assign(row, { validSubmission: subs.length,
+    submissionRequire: pad(([c]) => c.req), submissionName: [0, 1, 2].map((i) => (i < subs.length ? subs[i][0].name : '')),
+    submissionDataType: pad(([c]) => c.dt), submissionIdType: pad(([c]) => c.it), submissionId: pad(([c]) => c.id),
+    submissionNum: pad(([c]) => c.n), submissionRewardType: pad(([, r]) => r[0]), submissionItemId: pad(([, r]) => r[1]),
+    submissionSkillType: [0, 0, 0], submissionSkillId: [0, 0, 0], submissionSkillLv: [0, 0, 0],
+    submissionItemNum: pad(([, r]) => r[2]) });
+}
+
+const readJson = (p, dflt) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return dflt; } };
+
+function readDramas(namesPath) {
+  if (!fs.existsSync(namesPath)) return null;
+  const set = new Set();
+  for (const line of fs.readFileSync(namesPath, 'utf8').split('\n')) {
+    const m = /^(?:img\/light\/SEQ\/(\d+)\.l|lwf\/drama\/(\d+)\/)/.exec(line);
+    if (m) set.add(Number(m[1] || m[2]));
+  }
+  return set;
+}
+
+// fonti esterne (dati Square Enix e wiki: fuori dal repo)
+function defaultSources() {
+  const wikiAll = readJson(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json', {});
+  const names = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
+  const dramas = readDramas(names);
+  if (!dramas) console.log(`story-oltre: ${names} assente, nessun filmato (un id assente manda in crash il client)`);
+  return {
+    stage113: readJson(process.env.KHUX_STAGE_113 || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data\\stage.json', []),
+    wiki: readJson(process.env.KHUX_WIKI_QUESTS || 'D:\\Progetto_Restauro_KH_UX\\wiki\\quests.json', {}),
+    wikiRaw: Object.fromEntries(Object.entries(wikiAll).filter(([k]) => /^Quest \d+: /.test(k))),
+    oltre: readJson(process.env.KHUX_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\oltre525.json', { missions: [] }),
+    dramas: dramas || new Set(),
+  };
+}
+
+// righe 526-979 dopo l'ultima missione di storia 1-525 (prima di tour e zoo); sostituisce quelle di un giro precedente
+function patch(masterDir, src) {
+  if (process.env.KHUX_STORY_OLTRE === '0') { console.log('story-oltre: spento (KHUX_STORY_OLTRE=0)'); return 0; }
+  const file = path.join(masterDir, 'stage.json');
+  const isOltre = (r) => r.stageKind === 1 && r.stageId < 100000 && r.id >= FIRST && r.id <= LAST;
+  const stages = JSON.parse(fs.readFileSync(file, 'utf8')).filter((r) => !isOltre(r));
+  const t = (name) => readJson(path.join(masterDir, name + '.json'), []);
+  const s = src || defaultSources();
+  const rows = buildRows(stages, { ...s, theater: t('theater'), enemies: fs.existsSync(path.join(masterDir, 'enemy.json')) ? t('enemy') : null,
+    titles: t('title'), medals: t('medal'), keyblades: t('keyblade'), skills: t('skill') });
+  let at = -1;
+  stages.forEach((r, i) => { if (r.stageKind === 1 && r.stageId < 100000 && r.id <= 525) at = i; });
+  const out = [...stages.slice(0, at + 1), ...rows, ...stages.slice(at + 1)];
+  fs.writeFileSync(file, JSON.stringify(out));
+  const rep = rows.report;
+  console.log(`story-oltre: +${rows.length} missioni 526-979 (978 solo filmato); ${rep.enemiesToShadow} obiettivi su nemici assenti -> 1; `
+    + `${rep.stopgapObjectives.length} obiettivi tappabuchi, ${rep.missingRewards.length} premi non ricavati, `
+    + `${rep.droppedDramas.length} missioni con filmati assenti tolti, ${rep.overflow.length} oltre i limiti`);
+  return rows.length;
+}
+
+if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
+
+module.exports = { ROOM_WORLD, WIKI_WORLD, WORLD_THUMB, buildRows, objectiveCodes, wikiLv, readDramas, defaultSources, patch };
