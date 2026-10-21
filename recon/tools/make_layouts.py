@@ -23,6 +23,18 @@ import sys
 SRC, OUT = sys.argv[1], sys.argv[2]
 PUB = 'cocostudio/publish/'
 
+
+def jp_latest(name):
+    """Percorso assoluto della revisione piu' alta di cocostudio/publish/<name> nei dati JP 4.3.1 di thethiny
+    (nomi <stem>.<8 cifre>.<ext>, come latest() di import_jp_coco.py); <name> nella cartella WW se i dati JP mancano.
+    Assoluto: os.path.join(SRC, PUB, assoluto) lo tiene cosi' com'e' nelle voci 'copy'."""
+    d = os.path.join(SRC, '..', '..', '[local reference data]', '', '[local reference data]', 'data',
+                     '[local reference data]', 'data', 'jp_final_4.3.1', 'cocostudio', 'publish')
+    stem, ext = os.path.splitext(name)
+    revs = sorted(f for f in os.listdir(d) if f.startswith(stem + '.') and f.endswith(ext)
+                  and f[len(stem) + 1:-len(ext)].isdigit()) if os.path.isdir(d) else []
+    return os.path.abspath(os.path.join(d, revs[-1])) if revs else name
+
 # Texture Dark Road -> KHUX: si toglie il prefisso dark_ se l'immagine esiste in KHUX,
 # altrimenti queste sostituzioni (scelte a occhio tra le cornici KHUX).
 DARK_TO_KHUX = {'dark_Plate07.png': 'Panel04.png', 'dark_Win02.png': 'Win01.png', 'dark_Win12.png': 'Win11.png',
@@ -1315,7 +1327,10 @@ LAYOUTS = {
         P('Tap_Screen_Area', 480, 15, 1, 1)]),
     # Pulsante Supernova in battaglia: l'icona SN dei filtri al posto della bussola SBurst_but01/02
     # (texture SBurst_SN_but01/02 di make_textures.py; sostituzione, --last-wins).
-    'ActionMap_SuperBurst_SelectWindow.json': ('copy', 'ActionMap_SuperBurst_SelectWindow.json', {}, False, [
+    # Revisione JP piu' recente (00338703): ha l'ImageView «Medal» sotto il pulsante, dove [fn] mette
+    # img/medal/Medal_S_<imageId>.png della Supernova scelta e messa in coda (animazione Receive, [fn] caso 3);
+    # la copia WW non l'ha e mostrava solo il lampo (I-190, utente 21-10). Nessun testo nel layout.
+    'ActionMap_SuperBurst_SelectWindow.json': ('copy', jp_latest('ActionMap_SuperBurst_SelectWindow.json'), {}, False, [
         ('opts', 'SuperBurst_but', dict(normalData={'path': 'SBurst_SN_but01.png', 'plistFile': '', 'resourceType': 0},
                                         pressedData={'path': 'SBurst_SN_but02.png', 'plistFile': '', 'resourceType': 0}))]),
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
