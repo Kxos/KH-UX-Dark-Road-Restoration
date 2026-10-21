@@ -27,7 +27,14 @@ def npc_ids(stage_dir):
     ids, errs = set(), {}
     for sid in sorted({k[0] for k in files}):
         try:
-            _stg, parts = mapfile.load_stage(files, sid)
+            if (sid, None) in files:
+                _stg, parts = mapfile.load_stage(files, sid)
+            else:
+                # parti senza STG (es. stage 1040): le MAP si leggono lo stesso
+                parts = [mapfile.parse_map(open(f, 'rb').read(), k[1])
+                         for k, f in sorted(files.items(), key=lambda kv: kv[0][1] or 0) if k[0] == sid and k[1] is not None]
+                if not parts:
+                    raise mapfile.FormatError('nessuna parte')
         except (mapfile.FormatError, OSError, ValueError) as e:
             errs[sid] = str(e)
             continue
@@ -75,7 +82,8 @@ if __name__ == '__main__':
     if rep:
         k = a.index('--report'); del a[k:k + 2]
     r = run(a[0], served_set(srv))
-    print('NPC nelle mappe: %d, segnaposto scritti: %d, gia\' presenti: %d, serviti: %d, stage non letti: %d'
-          % (r['npc_ids'], len(r['written']), len(r['already_generated']), len(r['served']), len(r['stage_errors'])))
+    print('NPC nelle mappe: %d, segnaposto scritti: %d, gia\' presenti: %d, serviti: %d, stage non letti: %d%s'
+          % (r['npc_ids'], len(r['written']), len(r['already_generated']), len(r['served']), len(r['stage_errors']),
+             (' (' + ' '.join(str(k) for k in r['stage_errors']) + ')') if r['stage_errors'] else ''))
     if rep:
         json.dump(r, open(rep, 'w'), indent=1)

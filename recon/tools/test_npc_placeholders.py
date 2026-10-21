@@ -19,7 +19,12 @@ def check(cond, msg):
 
 
 STAGES = {1: [[{'id': 11018}, {'raw': [0, 0, 2006]}], [{'id': 4001}]], 2: [[{'id': 11018}, {'id': 9}]], 3: None}
-mapfile.iter_stage_files = lambda d: {(s, None): 'x' for s in STAGES}
+# stage 4: parti 0 e 1 senza STG (come il 1040): le MAP si leggono direttamente
+PARTS_NO_STG = {(4, 0): [{'id': 777}], (4, 1): [{'id': 4001}, {'id': 778}]}
+mapfile.iter_stage_files = lambda d: {**{(s, None): 'x' for s in STAGES}, **{k: k for k in PARTS_NO_STG}}
+mapfile.parse_map = lambda b, part=0: {'npcs': PARTS_NO_STG[b]}
+_open = open
+p.open = lambda f, m='r', *a: type('F', (), {'read': lambda self: f})() if isinstance(f, tuple) else _open(f, m, *a)
 
 
 def fake_load(files, sid):
@@ -35,7 +40,7 @@ with tempfile.TemporaryDirectory() as t:
     os.makedirs(pre)
     open(os.path.join(pre, 'wait.lwf'), 'wb').write(b'gia')
     r = p.run(t, {'lwf/character/npc/4001/wait/wait.lwf'})
-    check(r['npc_ids'] == 4 and r['written'] == [2006, 11018], r)
+    check(r['npc_ids'] == 6 and r['written'] == [777, 778, 2006, 11018], r)
     check(r['already_generated'] == [9] and r['served'] == [4001] and list(r['stage_errors']) == [3], r)
     f = os.path.join(t, 'lwf', 'character', 'npc', '11018', 'wait', 'wait.lwf')
     check(open(f, 'rb').read() == open(p.EMPTY, 'rb').read() and os.path.getsize(f) == 492, 'contenuto segnaposto')
