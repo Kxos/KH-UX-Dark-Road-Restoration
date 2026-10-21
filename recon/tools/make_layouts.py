@@ -1327,12 +1327,9 @@ LAYOUTS = {
         P('Tap_Screen_Area', 480, 15, 1, 1)]),
     # Pulsante Supernova in battaglia: l'icona SN dei filtri al posto della bussola SBurst_but01/02
     # (texture SBurst_SN_but01/02 di make_textures.py; sostituzione, --last-wins).
-    # Revisione JP piu' recente (00338703): ha l'ImageView «Medal» sotto il pulsante, dove [fn] mette
-    # img/medal/Medal_S_<imageId>.png della Supernova scelta e messa in coda (animazione Receive, [fn] caso 3);
-    # la copia WW non l'ha e mostrava solo il lampo (I-190, utente 21-10). Nessun testo nel layout.
-    'ActionMap_SuperBurst_SelectWindow.json': ('copy', jp_latest('ActionMap_SuperBurst_SelectWindow.json'), {}, False, [
-        ('opts', 'SuperBurst_but', dict(normalData={'path': 'SBurst_SN_but01.png', 'plistFile': '', 'resourceType': 0},
-                                        pressedData={'path': 'SBurst_SN_but02.png', 'plistFile': '', 'resourceType': 0}))]),
+    # Layout WW (posizioni e animazioni del pulsante giuste) + l'ImageView «Medal» della revisione JP piu' recente,
+    # dove [fn] mette img/medal/Medal_S_<imageId>.png della Supernova messa in coda (I-190): superburst_select_window.
+    'ActionMap_SuperBurst_SelectWindow.json': ('func', 'superburst_select_window'),
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
                                      [# Win_Over (9-slice) usa Panel07, assente da ogni risorsa: stesso
                                       # crash di Plate21 (vedi NO_PLATE21); finestra blu Win04
@@ -2106,6 +2103,39 @@ def equip_sell_popup():
         # nome con uno spazio ideografico in coda (U+3000), come lo cerca il codice
         # (0x884688: "Txt_data" + 34 e3 80 80): senza, crash in enableShadow; testo 102000002 = " "
         L('Txt_data4　', 13, 30, 300, 24, '', 18)])
+
+
+def superburst_select_window():
+    """ActionMap_SuperBurst_SelectWindow (pulsante Supernova in battaglia). Base = copia WW: con l'intero layout JP
+    00338703 il pulsante saliva sopra quello del Burst (fotogrammi di SuperBurst_UI diversi, banco 21-10). Dal JP si
+    prende solo l'ImageView «Medal» (actiontag 12257514, sopra SuperBurst_but) coi suoi fotogrammi in ogni animazione:
+    [fn] ci mette img/medal/Medal_S_<imageId>.png della Supernova scelta e la animazione Receive
+    ([fn] caso 3) la mostra; senza il widget si vedeva solo il lampo (I-190). Pulsante: l'icona SN dei filtri al
+    posto della bussola SBurst_but01/02 (texture SBurst_SN_but01/02 di make_textures.py, decisione dell'utente 15-10)."""
+    name = 'ActionMap_SuperBurst_SelectWindow.json'
+
+    def find(n, k):
+        if n['options']['name'] == k:
+            return n
+        return next((r for c in n.get('children', []) for r in [find(c, k)] if r), None)
+
+    d = json.load(open(os.path.join(SRC, *PUB.split('/'), name), encoding='utf-8-sig'))
+    jp_path = jp_latest(name)
+    ui = find(d['widgetTree'], 'SuperBurst_UI')
+    if os.path.isabs(jp_path) and not find(ui, 'Medal'):
+        jp = json.load(open(jp_path, encoding='utf-8-sig'))
+        medal = find(jp['widgetTree'], 'Medal')
+        at = next(i for i, c in enumerate(ui['children']) if c['options']['name'] == 'SuperBurst_but') + 1
+        ui['children'].insert(at, medal)
+        tag = medal['options']['actiontag']
+        jp_acts = {a['name']: a for a in jp['animation']['actionlist']}
+        for act in d['animation']['actionlist']:
+            act['actionnodelist'] += [n for n in jp_acts.get(act['name'], {}).get('actionnodelist', [])
+                                      if n.get('ActionTag') == tag]
+    but = find(d['widgetTree'], 'SuperBurst_but')['options']
+    but['normalData'] = {'path': 'SBurst_SN_but01.png', 'plistFile': '', 'resourceType': 0}
+    but['pressedData'] = {'path': 'SBurst_SN_but02.png', 'plistFile': '', 'resourceType': 0}
+    return d
 
 
 def material_sell_popup():
