@@ -17,10 +17,19 @@
 //   corpo di /stage/clear). Filmati dal theater (stageId 39158: 2560701-2561201), premi dalla pagina wiki.
 // worldId dal prefisso della stanza; mondi di Ralph coi worldId originali (D-C): world_select_ico_11 «Niceland»,
 // _12 «Cy-Bug Sector», _14 «Candy Kingdom» (JP 4.3.1 img/adventure) e theater (NL 11, HD 12, SR 14); CS = 13 per
-// esclusione (stage_select_ico_13_100, wipe_13). Le righe world 11-14 le aggiunge il Task 5.
-// Campi senza fonte (bgm, thumbId, raidBoss) dall'ultima riga 1-525 dello stesso worldId (o della 1.1.3); per i mondi
-// che nelle 1-525 non ci sono (CD, ED, Ralph): miniatura della prima icona JP del mondo, bgm/raidBoss della missione
-// precedente (da rivedere col Task 5). Filmati: solo id presenti nelle risorse (names_v4.tsv, regola di
+// esclusione (stage_select_ico_13_100 = stanza CS_0000_01_00 con la regola delle miniature qui sotto, wipe_13, sfondo
+// raid bg_CS1 nel JP; il theater raggruppa i filmati delle 871-886 nel mondo 9 «?», che non e' una riga world).
+// Righe world 11-14 (Task 5, buildWorldRows): worldName = prefisso delle stanze NL/HD/CS/SR, perche' il client cerca la
+// riga world dal prefisso della stanza ([fn]) per la tendina img/wipe/wipe_<worldId>.png (originali JP 11-14 in
+// recon/tools/originals.tsv, sezione 40); resto come la riga 1 (DB): gli sfondi raid bg_NL1/HD1/CS1/SR1 del JP sono LWF
+// senza texture e non sono serviti (come bg_CD1/ED1 delle righe 7-8 WW), quindi bg_DB1 servito.
+// Miniature delle 556-979: stage_select_ico_<worldId>_<thumbId> con thumbId = area*10000 + zona*100 + variante della
+// prima stanza (XX_AAAA_BB_CC; regola verificata su 26 delle 30 righe 1.1.3 526-555 e su tutte le 11 icone JP di
+// Niceland), se l'icona e' servita (names_v4.tsv o img/adventure/stage del JP 4.3.1, importate tutte da originals.tsv
+// sezione 1). Altrimenti, come le altre colonne senza fonte (bgm, raidBoss), dall'ultima riga 1-525 dello stesso
+// worldId (o della 1.1.3); per i mondi che nelle 1-525 non ci sono (CD, ED, Ralph): prima icona JP del mondo
+// (WORLD_THUMB), musica dei nomi JP text/audio del mondo (WORLD_BGM), raidBoss della missione precedente.
+// Filmati: solo id presenti nelle risorse (names_v4.tsv, regola di
 // make-game-tables.js); per 556-979 dal theater (stessa stageId: 5 prima, il resto dopo, il client ne legge al massimo 5
 // per lato). Obiettivi «Defeat X» su nemici assenti dalla tabella enemy -> 1 (Shadow) come le 1-525.
 // Idempotente; in fondo a make-game-tables.js. KHUX_STORY_OLTRE=0 lo spegne. Dopo: alzare la revisione del master.
@@ -38,6 +47,16 @@ const WIKI_WORLD = { 'Daybreak Town': 1, 'Dwarf Woodlands': 2, Wonderland: 3, Ag
   'Game Central Station': 13, 'Candy Kingdom': 14 };
 // prima icona stage_select_ico_<worldId>_<thumbId> del mondo nei dati JP 4.3.1 (img/adventure/stage)
 const WORLD_THUMB = { 7: 10000, 8: 0, 11: 0, 12: 20000, 13: 100, 14: 0 };
+// musica dei mondi senza righe 1-525 [campo, battaglia, capo]: id dei testi JP 4.3.1 text/audio/<nome> ([fn]),
+// AKB serviti (names_v4.tsv). Campo/battaglia = tracce _000001/_000002 del mondo come nelle 1-525 (dw 110/120, ...);
+// capo = dw_bgm_000003 (501000130) come tutti i mondi salvo BC (ed_bgm_000003 501000730 non c'e' in nessuna risorsa).
+// CD: bbs_cd_F/bbs_cd_B (Castle of Dreams di BBS, nessun cd_bgm); CS: central_station, unica traccia del mondo, anche
+// in battaglia (ricostruzione).
+const WORLD_BGM = { 7: [501006005, 501006006, 501000130], 8: [501000710, 501000720, 501000130],
+  11: [501006048, 501006049, 501000130], 12: [501006052, 501006053, 501000130], 13: [501006047, 501006047, 501000130],
+  14: [501006061, 501006062, 501000130] };
+// righe world nuove (D-C): worldId -> worldName (prefisso delle stanze)
+const NEW_WORLDS = { 11: 'NL', 12: 'HD', 13: 'CS', 14: 'SR' };
 // chiavi e ordine delle righe 1-525 (make-game-tables.js, formato 5.0.1)
 const FIELDS = ['stageId', 'stageBinId', 'id', 'name', 'mapName', 'useAp', 'chapterId', 'worldId', 'thumbId', 'onlyDrama',
   'stageKind', 'showIcon', 'hideIcon', 'noPartner', 'validStopStage', 'validBeforeDrama', 'beforeDramaId', 'beforeDramaType',
@@ -62,6 +81,11 @@ const num = (s) => parseInt(String(s || '').replace(/,/g, ''), 10) || 0;
 const wikiLv = (q) => num(q && q.lvl);
 const rawField = (raw, k) => { const m = new RegExp(`\\|${k}=([^\\n|]*)`).exec(raw || ''); return m ? m[1].replace(/<!--.*?-->/g, '').trim() : null; };
 const roomWorld = (code) => ROOM_WORLD[String(code || '').slice(0, 2)] || 0;
+// miniatura della stanza: XX_AAAA_BB_CC -> AAAA*10000 + BB*100 + CC (stage_select_ico_<worldId>_<thumbId>)
+function thumbForRoom(code) {
+  const m = /^[A-Z]{2}_(\d{4})_(\d{2})_(\d{2})/.exec(String(code || ''));
+  return m ? Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3]) : null;
+}
 
 // Obiettivo dalla wiki -> campi del master (submissionRequire/DataType/IdType/Id/Num + nome). Codici e nomi delle righe
 // originali 1-555 (5.0.1, 1.1.3, stage_dec): DataType 1 testo, 2 %d = num, 3 %s = nome di id (IdType 5 keyblade, 6 skill),
@@ -126,7 +150,7 @@ function objectiveReward(o, ctx, titleIdx) {
 
 function buildRows(stageRows, sources) {
   const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
-    enemies = null, titles = [], medals = [], keyblades = [], skills = [] } = sources;
+    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null } = sources;
   const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [] };
   const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
   const byName = (rows, key, name) => rows.filter((r) => r[key] === name);
@@ -233,11 +257,13 @@ function buildRows(stageRows, sources) {
       // stanze DG (Corridor of Darkness) non sono un mondo: quello della wiki (le 492-500 originali hanno worldId 1)
       const worldId = roomWorld(mis.stage.rooms[0]) || WIKI_WORLD[q.world] || 1;
       const ref = refByWorld.get(worldId) || [...rows].reverse().find((r) => r.worldId === worldId && r.id <= 555);
+      const roomThumb = thumbForRoom(mis.stage.rooms[0]);
+      const bgm = ref ? [ref.bgmField, ref.bgmBattle, ref.bgmBoss] : WORLD_BGM[worldId] || [prev.bgmField, prev.bgmBattle, prev.bgmBoss];
       row = { stageId, id: n, name: q.name, mapName: (q.rooms || [])[0] || '', useAp: q.ap === 'zero' ? 0 : num(q.ap),
         chapterId: Math.floor(stageId / 1000), worldId,
-        thumbId: ref ? ref.thumbId : (worldId in WORLD_THUMB ? WORLD_THUMB[worldId] : prev.thumbId || 0),
-        raidBoss: (ref || prev).raidBoss || 0, bgmField: (ref || prev).bgmField || 0,
-        bgmBattle: (ref || prev).bgmBattle || 0, bgmBoss: (ref || prev).bgmBoss || 0 };
+        thumbId: thumbs && roomThumb !== null && thumbs.has(`${worldId}_${roomThumb}`) ? roomThumb
+          : ref ? ref.thumbId : (worldId in WORLD_THUMB ? WORLD_THUMB[worldId] : prev.thumbId || 0),
+        raidBoss: (ref || prev).raidBoss || 0, bgmField: bgm[0] || 0, bgmBattle: bgm[1] || 0, bgmBoss: bgm[2] || 0 };
       const ctx = { ...ctxBase, target: mis.stage.target_id || 0, targetName: mis.target || q.target || "",
         raw: { titles: [...raw.matchAll(/\|naotitle\d?=([^\n|]*)/g)].map((m) => m[1].trim()) } };
       const subs = [];
@@ -311,19 +337,53 @@ function readDramas(namesPath) {
   return set;
 }
 
+// icone stage_select_ico servite: indice delle risorse (names_v4.tsv) + JP 4.3.1 img/adventure/stage (originals.tsv
+// sezione 1, tutte; nomi con revisione «.NNNNNNNN» compresi). Set di «<worldId>_<thumbId>»; nessuna fonte -> null.
+function readThumbs(namesPath, jpRoot) {
+  const set = new Set();
+  let found = false;
+  const add = (s) => { const m = /stage_select_ico_(\d+)_(\d+)(?:\.\d{8})?\.png$/.exec(s); if (m) set.add(`${m[1]}_${m[2]}`); };
+  if (namesPath && fs.existsSync(namesPath)) {
+    found = true;
+    for (const line of fs.readFileSync(namesPath, 'utf8').split('\n')) {
+      if (line.startsWith('img/adventure/stage/')) add(line.split('\t')[0]);
+    }
+  }
+  const dir = jpRoot && path.join(jpRoot, 'img', 'adventure', 'stage');
+  if (dir && fs.existsSync(dir)) { found = true; for (const f of fs.readdirSync(dir)) add(f); }
+  return found ? set : null;
+}
+
+const JP_ROOT = 'D:\\Progetto_Restauro_KH_UX\\[local reference data]\\\\[local reference data]\\data\\[local reference data]\\data\\jp_final_4.3.1';
+
 // fonti esterne (dati Square Enix e wiki: fuori dal repo)
 function defaultSources() {
   const wikiAll = readRequired(process.env.KHUX_WIKI_ALL || 'D:\\Progetto_Restauro_KH_UX\\wiki\\wiki_all.json');
   const names = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
   const dramas = readDramas(names);
   if (!dramas) console.log(`story-oltre: ${names} assente, nessun filmato (un id assente manda in crash il client)`);
+  const thumbs = readThumbs(names, process.env.KHUX_JP_ROOT || JP_ROOT);
+  if (!thumbs) console.log('story-oltre: nessun elenco di icone, miniature dalle righe di riferimento');
   return {
     stage113: readRequired(process.env.KHUX_STAGE_113 || 'D:\\Progetto_Restauro_KH_UX\\external\\thethiny_2026-10-13\\KHUx-Server\\data\\stage.json'),
     wiki: readRequired(process.env.KHUX_WIKI_QUESTS || 'D:\\Progetto_Restauro_KH_UX\\wiki\\quests.json'),
     wikiRaw: Object.fromEntries(Object.entries(wikiAll).filter(([k]) => /^Quest \d+: /.test(k))),
     oltre: readRequired(process.env.KHUX_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\oltre525.json'),
     dramas: dramas || new Set(),
+    thumbs,
   };
+}
+
+// righe world 11-14 (D-C) come la riga 1 (DB) col worldName del prefisso; sostituisce quelle di un giro precedente,
+// subito dopo l'ultima riga < 10000 (le 10000+ sono varianti di DB)
+function buildWorldRows(worldRows) {
+  const keep = worldRows.filter((r) => !(r.worldId in NEW_WORLDS));
+  const tpl = keep.find((r) => r.worldId === 1);
+  if (!tpl) throw new Error('story-oltre: tabella world senza la riga 1 (modello delle righe 11-14)');
+  const add = Object.entries(NEW_WORLDS).map(([id, name]) => ({ ...JSON.parse(JSON.stringify(tpl)), worldId: Number(id), worldName: name }));
+  let at = -1;
+  keep.forEach((r, i) => { if (r.worldId < 10000) at = i; });
+  return [...keep.slice(0, at + 1), ...add, ...keep.slice(at + 1)];
 }
 
 // righe 526-979 dopo l'ultima missione di storia 1-525 (prima di tour e zoo); sostituisce quelle di un giro precedente
@@ -339,7 +399,12 @@ function patch(masterDir, src) {
   let at = -1;
   stages.forEach((r, i) => { if (r.stageKind === 1 && r.stageId < 100000 && r.id <= 525) at = i; });
   const out = [...stages.slice(0, at + 1), ...rows, ...stages.slice(at + 1)];
+  // righe world calcolate prima di scrivere: un errore non lascia stage.json e world.json disallineati
+  const worldFile = path.join(masterDir, 'world.json');
+  const world = fs.existsSync(worldFile) ? buildWorldRows(JSON.parse(fs.readFileSync(worldFile, 'utf8'))) : null;
   fs.writeFileSync(file, JSON.stringify(out));
+  if (world) fs.writeFileSync(worldFile, JSON.stringify(world));
+  else console.log(`story-oltre: ${worldFile} assente, righe world 11-14 non aggiunte`);
   const rep = rows.report;
   console.log(`story-oltre: +${rows.length} missioni 526-979 (978 solo filmato); ${rep.enemiesToShadow} obiettivi su nemici assenti -> 1; `
     + `${rep.stopgapObjectives.length} obiettivi tappabuchi, ${rep.missingRewards.length} premi non ricavati, `
@@ -349,4 +414,4 @@ function patch(masterDir, src) {
 
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
-module.exports = { ROOM_WORLD, WIKI_WORLD, WORLD_THUMB, buildRows, objectiveCodes, wikiLv, readDramas, defaultSources, patch };
+module.exports = { ROOM_WORLD, WIKI_WORLD, WORLD_THUMB, WORLD_BGM, NEW_WORLDS, thumbForRoom, readThumbs, buildWorldRows, buildRows, objectiveCodes, wikiLv, readDramas, defaultSources, patch };

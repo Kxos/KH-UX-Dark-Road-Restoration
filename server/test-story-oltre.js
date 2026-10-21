@@ -3,7 +3,7 @@
 // Fonti finte minime costruite qui (nessun dato vero): 1.1.3 per 526-555, wiki e oltre525.json per le altre.
 'use strict';
 const fs = require('fs'), path = require('path');
-const { buildRows, patch, wikiLv, ROOM_WORLD, defaultSources } = require('./make-story-oltre');
+const { buildRows, patch, wikiLv, ROOM_WORLD, defaultSources, thumbForRoom, readThumbs, buildWorldRows } = require('./make-story-oltre');
 // cartelle temporanee sul disco D (regola del progetto), tolte alla fine
 const TMP = process.env.KHUX_TMP || 'D:\\Progetto_Restauro_KH_UX\\tmp';
 fs.mkdirSync(TMP, { recursive: true });
@@ -153,9 +153,70 @@ check(rows.every((r) => Object.keys(r).join() === KEYS), 'tutte le righe con le 
 check(['stageBinId', 'onlyDrama', 'hideIcon', 'noPartner', 'validStopStage', 'branchType', 'hardmodeName',
   'combinedSubmissionFlag'].every((k) => k in rows[0]), 'campi della 5.0.1 presenti');
 
+// --- Task 5: musiche e miniature dei mondi nuovi, righe world 11-14 ---------------------------------------------
+// musica dei mondi senza righe 1-525 dai nomi JP text/audio (non piu' la missione precedente)
+const bgmOf = (n) => [byId.get(n).bgmField, byId.get(n).bgmBattle, byId.get(n).bgmBoss].join();
+check(bgmOf(600) === '501006005,501006006,501000130', `CD: bbs_cd_F/B (${bgmOf(600)})`);
+check(bgmOf(700) === '501000710,501000720,501000130', `ED: ed_bgm_000001/2 (${bgmOf(700)})`);
+check(bgmOf(880) === '501006048,501006049,501000130', `NL: nl_bgm (${bgmOf(880)})`);
+check(bgmOf(890) === '501006052,501006053,501000130', `HD: hd_bgm (${bgmOf(890)})`);
+check(bgmOf(872) === '501006047,501006047,501000130', `CS: central_station (${bgmOf(872)})`);
+check(bgmOf(931) === '501006061,501006062,501000130', `SR: sr_bgm (${bgmOf(931)})`);
+check(bgmOf(560) === '501000610,501000620,501000630', 'mondi con righe 1-525: musica della riga di riferimento');
+// miniature: stage_select_ico_<worldId>_<area*10000 + zona*100 + variante> della prima stanza, se servita
+const rowsT = buildRows(stageRows, { ...sources, thumbs: new Set(['11_10000', '4_10000', '1_10000']) });
+const byT = new Map(rowsT.map((r) => [r.id, r]));
+check(byT.get(880).thumbId === 10000 && byT.get(560).thumbId === 10000, `miniatura dalla stanza (${byT.get(880).thumbId}, ${byT.get(560).thumbId})`);
+check(byT.get(890).thumbId === 20000 && byT.get(872).thumbId === 100, 'icona assente: prima icona JP del mondo');
+check(byT.get(600).thumbId === 10000 && byT.get(560 + 1).thumbId === 10000, 'CD senza icona servita -> WORLD_THUMB');
+check(byT.get(540).thumbId === 5000 + 540 && byT.get(978).thumbId === byId.get(978).thumbId, '526-555 e 978 invariate');
+check(thumbForRoom('NL_0001_03_00') === 10300 && thumbForRoom('HD_0012_01_02') === 120102 && thumbForRoom('x') === null,
+  'regola stanza -> thumbId');
+{
+  const d = mkTmp();
+  const names = path.join(d, 'names.tsv');
+  fs.writeFileSync(names, 'revision\t1\nimg/adventure/stage/stage_select_ico_1_40100.png\t5\naudio/1.akb\t2\n');
+  fs.mkdirSync(path.join(d, 'img', 'adventure', 'stage'), { recursive: true });
+  for (const f of ['stage_select_ico_12_20100.00360971.png', 'stage_select_ico_13_100.png', 'altro.png']) {
+    fs.writeFileSync(path.join(d, 'img', 'adventure', 'stage', f), '');
+  }
+  const t = readThumbs(names, d);
+  check(t && [...t].sort().join() === '12_20100,13_100,1_40100', `readThumbs: ${t && [...t]}`);
+  check(readThumbs(path.join(d, 'manca.tsv'), path.join(d, 'manca')) === null, 'readThumbs senza fonti -> null');
+}
+// righe world 11-14 (D-C): worldName = prefisso delle stanze ([fn] -> wipe_<worldId>), sfondo servito
+const worldRows = [
+  { worldId: 1, worldName: 'DB', raidBackground: 'bg_DB1', instanceLwf: 'sDummy', instance: 'sDummy', xPos: 0, yPos: 0, rate: 10000,
+    validParts: 2, partsId: ['RB_0003_00_00_eff_back', 'RB_0003_00_00_eff_front'], xPostion: [0, 0], yPostion: [0, 0] },
+  { worldId: 8, worldName: 'ED', raidBackground: 'bg_ED1' }, { worldId: 10001, worldName: 'DB', raidBackground: 'bg_DB1' }];
+{
+  const w = buildWorldRows(worldRows);
+  const by = new Map(w.map((r) => [r.worldId, r]));
+  check(w.length === 7 && [11, 12, 13, 14].map((i) => by.get(i) && by.get(i).worldName).join() === 'NL,HD,CS,SR',
+    `world 11-14 NL/HD/CS/SR (${w.map((r) => r.worldId)})`);
+  check([11, 12, 13, 14].every((i) => Object.keys(by.get(i)).join() === Object.keys(worldRows[0]).join()
+    && by.get(i).raidBackground === 'bg_DB1' && by.get(i).partsId.join() === worldRows[0].partsId.join()), 'righe come la 1, sfondo servito');
+  check(JSON.stringify(w.filter((r) => r.worldId < 11 || r.worldId > 14)) === JSON.stringify(worldRows), 'righe world esistenti invariate');
+  check(w.findIndex((r) => r.worldId === 11) === 2 && w[w.length - 1].worldId === 10001, 'dopo la 8, prima delle 10000+');
+  check(JSON.stringify(buildWorldRows(w)) === JSON.stringify(w), 'buildWorldRows idempotente');
+}
+// tendine originali dei mondi nuovi servite (import_originals.py)
+const tsv = fs.readFileSync(path.join(__dirname, '..', 'recon', 'tools', 'originals.tsv'), 'utf8');
+check(/^img\/wipe\/wipe_1\[1-4\]\.png\tjp/m.test(tsv), 'originals.tsv: wipe_11..14 dal JP');
+// notizia «Story Quests 526-979» (IMPORTANT) fra le notizie del server
+{
+  const { NOTICES } = require('./routes-info-album');
+  const nt = NOTICES.find((x) => x.title === 'Story Quests 526-979');
+  const t = nt ? nt.body.join(' ') : '';
+  check(nt && nt.tag === 'IMPORTANT' && NOTICES.indexOf(nt) === 0, 'notizia IMPORTANT in cima');
+  for (const re of [/617/, /661/, /250/, /62/, /80/, /Trophy/, /Stroke of Midnight/, /Fairy Stars/, /Bad Guy Breaker/, /595/, /683/, /880/,
+    /978/, /What Comes After/, /reconstructed/]) check(re.test(t), `notizia: ${re}`);
+}
+
 // --- patch: idempotente, dopo la 525, KHUX_STORY_OLTRE=0 lo spegne -------------------------------------------
 const dir = mkTmp();
 fs.writeFileSync(path.join(dir, 'stage.json'), JSON.stringify(stageRows));
+fs.writeFileSync(path.join(dir, 'world.json'), JSON.stringify(worldRows));
 for (const [f, v] of [['enemy', enemies], ['title', titles], ['medal', medals], ['keyblade', keyblades], ['theater', theater],
   ['skill', []]]) fs.writeFileSync(path.join(dir, f + '.json'), JSON.stringify(v));
 const src = { stage113, wiki, wikiRaw, oltre, dramas };
@@ -164,6 +225,8 @@ const once = fs.readFileSync(path.join(dir, 'stage.json'), 'utf8');
 patch(dir, src);
 const twice = fs.readFileSync(path.join(dir, 'stage.json'), 'utf8');
 check(once === twice, 'patch due volte = stesso file');
+const worldOut = JSON.parse(fs.readFileSync(path.join(dir, 'world.json'), 'utf8'));
+check(worldOut.map((r) => r.worldId).join() === '1,8,11,12,13,14,10001', `patch: world.json ${worldOut.map((r) => r.worldId)}`);
 const out = JSON.parse(twice);
 check(out.length === stageRows.length + 454, `patch: ${out.length} righe`);
 check(out[1].id === 525 && out[2].id === 526 && out[455].id === 979 && out[456].stageId === 991001,
@@ -172,8 +235,10 @@ check(JSON.stringify(out.filter((r) => !(r.id >= 526 && r.id <= 979))) === JSON.
 process.env.KHUX_STORY_OLTRE = '0';
 const dir2 = mkTmp();
 fs.writeFileSync(path.join(dir2, 'stage.json'), JSON.stringify(stageRows));
+fs.writeFileSync(path.join(dir2, 'world.json'), JSON.stringify(worldRows));
 patch(dir2, src);
-check(fs.readFileSync(path.join(dir2, 'stage.json'), 'utf8') === JSON.stringify(stageRows), 'KHUX_STORY_OLTRE=0: nessuna modifica');
+check(fs.readFileSync(path.join(dir2, 'stage.json'), 'utf8') === JSON.stringify(stageRows)
+  && fs.readFileSync(path.join(dir2, 'world.json'), 'utf8') === JSON.stringify(worldRows), 'KHUX_STORY_OLTRE=0: nessuna modifica');
 delete process.env.KHUX_STORY_OLTRE;
 
 // fonti obbligatorie: senza le 30 righe 1.1.3 (526-555) errore, mai righe generate al posto degli originali

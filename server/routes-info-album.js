@@ -93,6 +93,20 @@ function updateNotice(realMs) {
 // Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
 // elenchi di modifiche. In lista prima la notizia dinamica dei dati aggiornati (updateNotice), poi queste, dalla piu' recente.
 const NOTICES = [
+  // missioni di storia 526-979 (I-009, piano docs/superpowers/plans/2026-10-21-missioni-526-979.md, make-story-oltre.js):
+  // parti ricostruite (617/661, nemici, obiettivi tappabuchi, trofei, keyblade, 978) e tappabuchi rimasti dei mondi nuovi
+  { date: '10/21', tag: 'IMPORTANT', title: 'Story Quests 526-979',
+    body: ['The Story now goes on after Quest 525, up to **Quest 979**, with the original maps, enemies, objectives and rewards wherever they survive. The parts that were lost are **reconstructed**, as explained below.',
+      '## Quests and enemies',
+      'Quests 617 and 661: the first part of each quest was lost. It is rebuilt in the original room (Quest 661 with the number of enemies of the original stage).',
+      '250 enemies of the later quests have no surviving stats: they use the stats of the most similar original enemy (same family and role). 62 other enemies are exact copies of their base enemy, as in the original game data.',
+      'Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.',
+      '## Objectives and rewards',
+      '80 mission objectives (for example time limits, barrels, treasure chests or the number of Medals equipped) show their original text, but they are checked as "Complete without having to continue", because the way the original game checked them is unknown.',
+      'The 7 "Trophy" rewards of Quests 880-915 are not given: the game data has no trophy items.',
+      'The Keyblades **Stroke of Midnight**, **Fairy Stars** and **Bad Guy Breaker** are the rewards of Quests 595, 683 and 880, as in the original game, and are no longer given earlier. If you already have them, you keep them.',
+      '## Worlds',
+      'Castle of Dreams, Enchanted Dominion and the Wreck-It Ralph worlds play their own original music, but which track each quest used is not known (reconstructed); Game Central Station has only one track, which also plays in battle. Some quests show in the Story list the picture of another room of the same world.'] },
   // speciali a danno variabile (variable-power.js, I-189): righe thethiny verbatim, righe Roboloid ricostruite
   { date: '10/21', tag: 'IMPORTANT', title: 'Variable Special Attacks',
     body: ['Special Attacks whose damage depends on a condition (for example "Inflicts more damage the higher your HP") show their **damage range** again, as in the original game: the Medal details show "x7.12 - 8.64" instead of a single value, and in battle the damage follows the condition.',
