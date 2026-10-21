@@ -4,7 +4,7 @@
 // enemies_oltre525.json vero, e gli obiettivi «Defeat X» di make-story-oltre.js sulla copia (Review Focus 4).
 'use strict';
 const fs = require('fs'), path = require('path');
-const { enemyRowsFor, addRows, patch, isClone, baseOf, familyOf, drawnDisplays, defaultSources, MAX_ID } = require('./make-enemy-oltre');
+const { enemyRowsFor, addRows, patch, isClone, baseOf, familyOf, drawnDisplays, defaultSources, MAX_ID, DR_LOOK } = require('./make-enemy-oltre');
 const TMP = process.env.KHUX_TMP || 'D:\\Progetto_Restauro_KH_UX\\tmp';
 fs.mkdirSync(TMP, { recursive: true });
 const tmpDirs = [];
@@ -87,6 +87,19 @@ const unc = res.uncovered.map((u) => u.enemyId).sort((a, b) => a - b);
 check(JSON.stringify(unc) === JSON.stringify([17111501, 160910999]), `scoperti elencati: ${unc}`);
 check(res.cloned === 3 && res.fromStats === 1 && res.family === 3, `conteggi ${res.cloned}/${res.fromStats}/${res.family}`);
 check(res.rows.every((r) => drawn.has(r.displayId)), 'ogni riga con una grafica servita');
+// aspetto Dark Road della stessa specie (DR_LOOK, I-194): solo senza la grafica della famiglia e con la DR servita;
+// taglia dal dettaglio JP della famiglia
+const drLook = { 255: { displayId: 5075, confidence: 'high' }, 1500: { displayId: 5075, confidence: 'high' } };
+const rd = enemyRowsFor({ 255: { missions: [1] }, 1500: { missions: [2] }, 1905001500: { missions: [3] } }, enemies,
+  { proposal, drawn, details: { 255: { width: 77, show_swf: 1, show: 1, show_frame: 3, hide_frame: 4 } }, shows, drLook });
+const rdBy = new Map(rd.rows.map((r) => [r.enemyId, r]));
+check(rdBy.get(255).displayId === 5075 && rd.sources[255].graphic === 'dark-road' && rd.sources[255].drConfidence === 'high'
+  && rdBy.get(255).width === 77 && rdBy.get(255).showFrame === 3, `DR: 255 -> 5075 col dettaglio JP: ${JSON.stringify(rd.sources[255])}`);
+check(rdBy.get(1500).displayId === 1500 && rd.sources[1500].graphic === 'family', 'DR: la grafica originale della famiglia vince');
+const rd2 = enemyRowsFor({ 255: { missions: [1] } }, enemies, { proposal, drawn: new Set([24]), drLook });
+check(rd2.rows[0].displayId === 24 && rd2.sources[255].graphic === 'base', 'DR non servita: grafica della base');
+check(Object.entries(DR_LOOK).every(([f, v]) => Number(f) < 5000 && v.displayId >= 5000 && ['high', 'medium'].includes(v.confidence) && v.note),
+  'DR_LOOK: famiglia KHUX -> displayId Dark Road, confidenza high/medium, nota');
 // gia' presenti: niente doppioni
 const again = enemyRowsFor(missing, enemies.concat(res.rows), { stats, proposal, drawn });
 check(again.rows.length === 0, `seconda corsa: +${again.rows.length}`);
@@ -142,6 +155,21 @@ if (fs.existsSync(path.join(MASTER, 'enemy.json')) && fs.existsSync(MISSING)) {
     const bad = added.filter((r) => !drawn.has(r.displayId));
     check(bad.length === 0, `righe nuove senza grafica servita: ${bad.slice(0, 5).map((r) => r.enemyId + '/' + r.displayId)}`);
   }
+  // DR_LOOK sui dati veri: ogni grafica scelta servita con wait, atk1_o, dead, knockback (move da wait al build,
+  // make_enemy_moves.py); righe dark-road col displayId della tabella
+  const NAMES = process.env.KHUX_RESOURCE_NAMES || 'D:\\Progetto_Restauro_KH_UX\\resource_data\\names_v4.tsv';
+  if (fs.existsSync(NAMES)) {
+    const anims = {};
+    for (const line of fs.readFileSync(NAMES, 'utf8').split('\n')) {
+      const m = /^lwf\/character\/enemy\/(\d+)\/(\w+)\//.exec(line);
+      if (m) (anims[m[1]] = anims[m[1]] || new Set()).add(m[2]);
+    }
+    const badDr = Object.values(DR_LOOK).filter((v) => !['wait', 'atk1_o', 'dead', 'knockback'].every((a) => anims[v.displayId] && anims[v.displayId].has(a)));
+    check(badDr.length === 0, `DR_LOOK senza le 4 animazioni servite: ${badDr.map((v) => v.displayId)}`);
+  }
+  const drRows = after.filter((r) => !beforeIds.has(r.enemyId) && DR_LOOK[familyOf(r.enemyId)] && r.displayId === DR_LOOK[familyOf(r.enemyId)].displayId);
+  check(drRows.every((r) => !drawn.has(familyOf(r.enemyId)) || familyOf(r.enemyId) >= 5000), 'DR solo per famiglie senza grafica servita');
+  console.log(`Dark Road della stessa specie: ${drRows.length} righe, displayId ${[...new Set(drRows.map((r) => r.displayId))].sort().join(' ')}`);
   const saved = JSON.parse(fs.readFileSync(srcOut, 'utf8'));
   check(Object.keys(saved.sources).length === r1.added, 'una fonte per riga');
   const kinds = {};

@@ -106,13 +106,15 @@ function updateNotice(realMs) {
 const NOTICES = [
   // missioni di storia 526-979 (I-009, piano docs/superpowers/plans/2026-10-21-missioni-526-979.md, make-story-oltre.js):
   // parti ricostruite (617/661, nemici, livelli dei nemici 876-979, keyblade, 978) e tappabuchi rimasti dei mondi nuovi;
-  // obiettivi (codici del client) e trofei (materiali 61-63) originali dal 21-10
+  // obiettivi (codici del client) e trofei (materiali 61-63) originali dal 21-10; aspetto Dark Road della stessa specie
+  // per le famiglie senza grafica originale (make-enemy-oltre.js DR_LOOK, I-194)
   { date: '10/21', tag: 'IMPORTANT', title: 'Story Quests 526-979',
     body: ['The Story now goes on after Quest 525, up to **Quest 979**, with the original maps, enemies, objectives and rewards wherever they survive. The parts that were lost are **reconstructed**, as explained below.',
       '## Quests and enemies',
       'Quests 617 and 661: the first part of each quest was lost. It is rebuilt in the original room (Quest 661 with the number of enemies of the original stage).',
       '250 enemies of the later quests have no surviving stats: they use the stats of the most similar original enemy (same family and role). 62 other enemies are exact copies of their base enemy, as in the original game data.',
       'Some enemies show their original look, but a few small graphic details that were lost (for example their **shadow**) are reconstructed from the same enemy or from a standard one.',
+      'Some later enemies whose original graphics are still missing use for now the **look of the same or a similar enemy from Dark Road** (for example the Archers, the Pot Heartless or Emerald Sonata), until their original graphics are recovered.',
       'Quests 876-979: the original quest files do not say the level of each enemy (the original server gave it), so every enemy fights at the level of the quest: there are no weaker enemies mixed in.',
       'Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.',
       '## Objectives and rewards',

@@ -16,7 +16,8 @@
 //   Della base si copiano curve
 //   (validGrowth, baseLv, hp, attack, defense, exp, money, raidPoint, lux, score) e campi di battaglia (abilita', taglia,
 //   velocita', comparsa); nome e attributo della proposta se noti; grafica della famiglia dell'id (id % 10000 delle
-//   ultime 5 cifre) se servita, altrimenti quella della base. Gli id lunghi di queste famiglie riusano il clone della
+//   ultime 5 cifre) se servita, altrimenti l'aspetto Dark Road della stessa specie (DR_LOOK, I-194) se c'e', altrimenti
+//   quella della base. Gli id lunghi di queste famiglie riusano il clone della
 //   loro base a 5 (o 4) cifre. Ogni riga ha la sua fonte in enemy_oltre_sources.json (per la Notice).
 // - le statistiche da una fonte vera (D:\Progetto_Restauro_KH_UX\wiki\enemy_stats_oltre.json, {"<id>": {name, hp[5],
 //   attack[5], displayId?, source}}, oggi assente) vincono sulla proposta.
@@ -47,6 +48,48 @@ const JP_DETAIL_DIR = process.env.KHUX_JP_ENEMY_DETAIL || path.join('D:\\Progett
 // campo JP -> campo della riga enemy (hit_effect sta in enemyAttack, non qui)
 const DETAIL_SIZE = { speed: 'moveSpeed', hit_radius: 'hitRadius', width: 'width', height: 'height' };
 const DETAIL_SHOW = { show: 'show', show_swf: 'showSwf', show_frame: 'showFrame', hide_frame: 'hideFrame' };
+
+// Aspetto Dark Road della STESSA specie per le famiglie senza grafica originale completa (I-194, passo approvato
+// dall'utente il 21-10: sostituto, non originale; dichiarato nella Notice «Story Quests 526-979»). Usato solo se la
+// famiglia non e' servita (enemy_gen incompleto) e la grafica DR lo e' (names_v4.tsv: wait, atk1_o, dead,
+// knockback; `move` la fa make_enemy_moves.py da wait per ogni displayId >= 5000 del master, al build successivo).
+// Riconoscimento a vista: fogli D:\Progetto_Restauro_KH_UX\tmp\dr_map\sheets\cmp_*.png (texture wait DR accanto a
+// khwiki <Nome>_KHUX.png), proposta tmp\dr_map\dr_proposal.json. Le LWF DR non hanno nomi (bitmap «ビットマップ N»):
+// la specie viene dalle parti. high = stessa creatura o stessa specie con altri colori; medium = specie vicina dello
+// stesso modello. Boss unici e personaggi (Jafar, Dragon Maleficent, Ralph...) mai su creature diverse: assenti.
+// Nota: 5043 (in enemy_display_map.json «Storming Sheep») e' lo Sleep Archer, 5075 (mappe_storia «Yellow Opera»)
+// l'Apricot Opera (corpo a trivella scuro e oro, fulmini).
+const DR_LOOK = {
+  1502: { displayId: 5003, confidence: 'high', note: 'Green Requiem: Opera, specie di Yellow Opera (5003), solo il colore cambia (alternativa 5039 verde con ali)' },
+  1503: { displayId: 5039, confidence: 'high', note: 'Emerald Sonata: stessa creatura (corpo verde, cappello d\'oro a spirale, ali d\'oro)' },
+  1562: { displayId: 5075, confidence: 'high', note: 'Apricot Opera: stessa creatura (trivella scura a righe d\'oro, fulmini)' },
+  1563: { displayId: 5039, confidence: 'high', note: 'Amber Opera: modello di Emerald Sonata, corpo giallo invece che verde' },
+  1508: { displayId: 5041, confidence: 'high', note: 'Poison Archer: stessa creatura (occhi a X, arco-tentacolo viola)' },
+  1509: { displayId: 5042, confidence: 'high', note: 'Paralysis Archer: stessa creatura (corona, arco a fulmine d\'oro)' },
+  1510: { displayId: 5043, confidence: 'high', note: 'Sleep Archer: stessa creatura (testa di lana, arco a ricciolo viola)' },
+  1521: { displayId: 5057, confidence: 'high', note: 'Fluttering: stessa creatura (ali viola e rosa, corpo a uovo)' },
+  1523: { displayId: 5044, confidence: 'high', note: 'Blitz Spear: stessa creatura (verde, lance a fulmine)' },
+  1524: { displayId: 5045, confidence: 'high', note: 'Chill Ripper: stessa creatura (blu, lame di ghiaccio)' },
+  1525: { displayId: 5046, confidence: 'high', note: 'Heat Saber: stessa creatura (rosso, lame di fuoco)' },
+  1534: { displayId: 5047, confidence: 'high', note: 'Barrier Master: stessa creatura (cilindro viola, libro col cuore, mani verdi)' },
+  1539: { displayId: 5055, confidence: 'high', note: 'Ferry Reaper: stessa creatura (falce, teschio, lanterne rosse, stendardo)' },
+  1540: { displayId: 5083, confidence: 'high', note: 'Volcanic Lord: stessa creatura (gonna di fiamme, corona d\'oro, scettro)' },
+  1542: { displayId: 5078, confidence: 'high', note: 'Golden Hook Bat: Hook Bat (5078) blu invece che d\'oro' },
+  1543: { displayId: 5048, confidence: 'high', note: 'Pot Spider: stessa creatura (vaso rosso, zampe gialle)' },
+  1544: { displayId: 5050, confidence: 'high', note: 'Pot Scorpion: stessa creatura (vaso rosso, corazza blu, coda)' },
+  1602: { displayId: 5066, confidence: 'high', note: 'Margoyle: stessa creatura (palla chiodata, collare d\'oro, ali, teschio cornuto)' },
+  2505: { displayId: 5058, confidence: 'high', note: 'Wight Knight: stessa creatura (mummia, artigli)' },
+  2506: { displayId: 5040, confidence: 'high', note: 'Shadow Witch: stessa creatura (testa di Shadow, cappello rosso, scopa)' },
+  2509: { displayId: 8015, confidence: 'high', note: 'Gargoyle Wizard: stessa creatura in colori scuri (piedistallo con globo, bastone, ali)' },
+  240: { displayId: 5074, confidence: 'high', note: 'Trickmaster: stessa creatura (corpo a scacchi arancio, bacchetta)' },
+  249: { displayId: 5065, confidence: 'high', note: 'Eliminator: stessa creatura (Defender rosso con muso di lupo)' },
+  1527: { displayId: 5057, confidence: 'medium', note: 'Flutterings (sciame): grafica del singolo Fluttering, come Possessors' },
+  1537: { displayId: 5034, confidence: 'medium', note: 'Martial Monkey: Powerwild, Heartless scimmia dello stesso tipo' },
+  1552: { displayId: 5016, confidence: 'medium', note: 'Luna Bandit: Red Bandit (turbante, scimitarra rossa)' },
+  1629: { displayId: 5017, confidence: 'medium', note: 'Cherry Kaboom: bomba con miccia (5017, famiglia Bomb)' },
+  2508: { displayId: 5061, confidence: 'medium', note: 'Warlock Step: Tornado Step, stessa famiglia Step (cappello a punta, gambe)' },
+  2510: { displayId: 5040, confidence: 'medium', note: 'Shadow Magician: Shadow Witch (Shadow con cappello e scopa)' },
+};
 
 // D-A: solo gli id di 9-10 cifre sono varianti di un nemico base
 const isClone = (id) => id >= 1e8 && id < 1e10;
@@ -147,17 +190,23 @@ function enemyRowsFor(missing, enemyRows, src = {}) {
     // completa in enemy_gen (make_jp_enemies.py: mai una texture o un'animazione obbligatoria assente, il client va in
     // crash); se no quella della base. Con la famiglia anche taglia, velocita' e comparsa del dettaglio JP se c'e'
     // (la comparsa solo con l'effetto servito); con la base i suoi campi, che vanno col suo modello
+    // Senza la grafica della famiglia: aspetto Dark Road della stessa specie (DR_LOOK) se servito, con taglia e comparsa
+    // del dettaglio JP della famiglia (misure della creatura vera)
     const fam = familyOf(id);
     const own = fam < 5000 && drawn.has(fam);
-    const det = own ? details[String(fam)] : null;
+    const look = src.drLook || DR_LOOK;
+    const dr = !own && look[fam] && drawn.has(look[fam].displayId) ? look[fam] : null;
+    const det = own || dr ? details[String(fam)] : null;
     if (own) row.displayId = fam;
+    else if (dr) row.displayId = dr.displayId;
     if (det) {
       for (const [k, f] of Object.entries(DETAIL_SIZE)) if (Number.isFinite(det[k])) row[f] = det[k];
       if (shows.has(det.show_swf)) for (const [k, f] of Object.entries(DETAIL_SHOW)) if (Number.isFinite(det[k])) row[f] = det[k];
     }
     out.family++;
     return add(row, { kind: 'family-clone', confidence: p.confidence, base: p.base, name: row.name, displayId: row.displayId,
-      graphic: own ? 'family' : 'base', ...(own ? {} : { familyDisplay: fam }), detail: !!det, reason: p.reason });
+      graphic: own ? 'family' : dr ? 'dark-road' : 'base', ...(own ? {} : { familyDisplay: fam }),
+      ...(dr ? { drConfidence: dr.confidence } : {}), detail: !!det, reason: p.reason });
   };
   for (const id of short) family(id);
   for (const id of pending) family(id);
@@ -200,8 +249,9 @@ function addRows(enemies, src) {
       + 'exact-clone = base a 5/4 cifre; family-clone(confidence) = nemico originale piu\' simile (Notices); uncovered = fuori',
     sources: res.sources, uncovered: res.uncovered }, null, 1));
     const g = Object.values(res.sources).filter((v) => v.kind === 'family-clone' && !v.via);
-    console.log(`enemy-oltre: grafica della famiglia ${g.filter((v) => v.graphic === 'family').length}, della base `
-      + `${g.filter((v) => v.graphic === 'base').length} (cloni di famiglia diretti; i lunghi «via» copiano la loro corta)`);
+    console.log(`enemy-oltre: grafica della famiglia ${g.filter((v) => v.graphic === 'family').length}, Dark Road `
+      + `${g.filter((v) => v.graphic === 'dark-road').length}, della base ${g.filter((v) => v.graphic === 'base').length} `
+      + '(cloni di famiglia diretti; i lunghi «via» copiano la loro corta)');
   }
   console.log(`enemy-oltre: +${res.rows.length} righe (${res.cloned} cloni esatti, ${res.family} cloni di famiglia, `
     + `${res.fromStats} da fonte); ${res.uncovered.length} senza base, fuori`);
@@ -223,5 +273,5 @@ if (require.main === module) {
   patch(process.argv[2] || path.join(__dirname, 'master_data'), { ...d, drawn: drawnDisplays(), sourcesOut: process.argv[3] || SOURCES_PATH });
 }
 
-module.exports = { MAX_ID, SOURCES_PATH, isClone, baseOf, familyOf, drawnDisplays, readDetails, enemyRowsFor, defaultSources, strip, addRows,
+module.exports = { MAX_ID, SOURCES_PATH, DR_LOOK, isClone, baseOf, familyOf, drawnDisplays, readDetails, enemyRowsFor, defaultSources, strip, addRows,
   patch };
