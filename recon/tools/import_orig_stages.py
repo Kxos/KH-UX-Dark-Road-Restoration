@@ -53,12 +53,27 @@ Missioni 526-979 (I-009, docs/notes/mappe_storia.md#oltre525):
     stageId della riga (18300) o quello della variante caricata (Review Focus 3); oggi le 5 varianti hanno le stesse
     uid (squadra 1, nemico 2, premio 11893) e cambia solo l'enemyId del maestro. Uid uguali con premi diversi:
     errore.
+  * Lv (correzione deterministica, nel rapporto `level_fix` per stage e summary.level_fixed con prima/dopo): 87 stage JP
+    (mondi di Ralph 876-965 e finale 966-979: 39056-39159) hanno la scheda [11] = 1 e TUTTI i nemici a Lv 1 in ogni
+    revisione JP (anche le .<entry id> piu' vecchie), salvo un nemico a 251 nelle 931/932 (squadra 0x20 non contata,
+    premio 1: non e' il segnaposto, resta). Lv 1 + nemici a 1 e' lo schema degli stage evento JP (1.438 STG su 1.462 con
+    [11] = 1: il Lv arrivava dal server), non quello della storia: la wiki da' 1200-5500 (oltre525.json missions[].lvl).
+    Relazione misurata sui 370 stage importati con Lv vero: [11] = Lv della wiki in 364 dei 366 con Lv in wiki
+    (31540/31550: 300 contro 400/500), [11] = Lv piu' alto dello stage in 365, tutti i nemici = [11] in 351, e 4.343
+    record nemici su 4.413 (98,4%) hanno livello = [11] (capi: 1.042 su 1.045); gli altri sono gregari piu' bassi
+    (-10..-500, in 17 stage) o, sopra [11], solo nemici di squadre 0x20 non contate (2011 a 5000 in 38050/39055,
+    1908002011 a 1700 in 39081-39083). Gli id a 10 cifre non portano il Lv: lo stesso id ha Lv diversi (1912100017: 1550 come capo nella
+    950 a [11] 1850) e manca qualunque tabella JP con Lv per stage. Negli 87 stage non c'e' nessuna traccia di quali
+    nemici fossero gregari, quindi la regola e' quella del 98,4%: se [11] = 1 e la wiki ha Lv > 1, [11] = Lv della
+    wiki e ogni nemico a Lv 1 -> Lv della wiki; gli altri valori (il 251) restano. Cambiano solo quei 4 byte (STG
+    +0x2c, record nemico +0x14): il resto dei file e' JP byte per byte (test_import_oltre.py lo verifica).
 """
 import argparse
 import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 
@@ -120,13 +135,14 @@ real_enemy = {r['enemyId'] for r in jload(os.path.join(REAL, 'enemy_dec.json'))}
 real_reward = {r['rewardId']: r for r in jload(os.path.join(REAL, 'reward_dec.json'))}
 rooms_ok = served_rooms()
 files = {'jp': mapfile.iter_stage_files(JP_STAGE), '2016': mapfile.iter_stage_files(B16_STAGE)}
-oltre, pending, rebuilt, q_of = None, set(), {}, {}
+oltre, pending, rebuilt, q_of, lvl_of = None, set(), {}, {}, {}
 if args.oltre:
     oltre = json.load(open(args.oltre, encoding='utf-8'))
     only = {int(x) for x in args.only.split(',')} if args.only else None
     for m in oltre['missions']:
         if only is None or m['q'] in only:
             q_of[m['stage']['stageId']] = m['q']
+            lvl_of[m['stage']['stageId']] = m['lvl']
     if only is None or 555 in only:
         for u in oltre['unmatched_stages']:
             if u['stageId'] in Q555 and u['parts']:
@@ -218,7 +234,31 @@ def checks(sid, stg, parts):
     return ens, chs, refs, notes
 
 
+def fix_levels(sid, stg, raw):
+    """Stage con scheda [11] = 1 e Lv della wiki > 1 (gli 87 JP 39056-39159, vedi in cima): [11] e i nemici a Lv 1
+    al Lv della wiki, solo quei 4 byte. Ritorna (raw nuovi, rapporto) o (raw, None) se non c'e' niente da fare."""
+    lv = lvl_of.get(sid)
+    if stg['card_level_bonus'] != 1 or not lv or lv <= 1:
+        return raw, None
+    out = [bytearray(raw[0])]
+    struct.pack_into('<i', out[0], 0x2c, lv)
+    n, kept = 0, set()
+    for b in raw[1:]:
+        p, nb = mapfile.parse_map(b), bytearray(b)
+        base = p['offsets']['enemies'] + 8 + 0x44 * p['counts']['teams']
+        for k, e in enumerate(p['enemies']):
+            if e['level'] == 1:
+                struct.pack_into('<i', nb, base + 0x20 * k + 0x14, lv)
+                n += 1
+            else:
+                kept.add(e['level'])
+        out.append(nb)
+    return [bytes(x) for x in out], {'q': q_of.get(sid), 'wiki_lvl': lv, 'card': [1, lv], 'enemies': n,
+                                     'enemy_levels': [1, lv], 'kept': sorted(kept)}
+
+
 report, miss_e, miss_e_real, miss_r, miss_r_real, enemy_cat = [], {}, {}, {}, {}, {}
+level_fixed, level_unfixed = {}, []
 reward_use = {}
 out_stage = os.path.join(args.out, 'stage')
 if not args.check:
@@ -276,6 +316,12 @@ for sid in story:
                    'missing_enemies': bad_e, 'missing_rewards': bad_r, 'checks': notes, 'stg_warnings': warn,
                    'note': '; '.join(why)})
     if oltre:
+        raw, fix = fix_levels(sid, stg, raw)
+        if fix:
+            level_fixed[sid] = fix
+            report[-1]['level_fix'] = fix
+        elif stg['card_level_bonus'] == 1:
+            level_unfixed.append(sid)
         report[-1].update(q=q_of[sid], rebuilt_parts=rebuilt.get(sid, []),
                           pending_rooms=sorted({p['room'] for p in parts} & pending),
                           enemy_categories={c: sorted(e for e in refs if category(e) == c)
@@ -305,6 +351,8 @@ summary = {
 if oltre:
     summary['parts_missing'] = sum(1 for r in report if not r['source'])
     summary['rebuilt'] = {str(k): v for k, v in rebuilt.items()}
+    summary['level_fixed'] = {str(k): v for k, v in sorted(level_fixed.items())}
+    summary['level_unfixed'] = sorted(level_unfixed)
     summary['pending_rooms'] = sorted({x for r in report for x in r.get('pending_rooms', [])})
     summary['enemy_categories'] = {
         c: {'count': len(enemy_cat.get(c, {})), 'stages': len({s for v in enemy_cat.get(c, {}).values() for s in v}),
@@ -317,6 +365,12 @@ lines = ['# Stage originali importati', '', '```', json.dumps(summary['by_source
              len(miss_e), ', '.join(map(str, sorted(miss_e))), ', '.join(map(str, sorted(miss_e_real))) or 'nessuno'),
          'Premi assenti dal master: %d id; anche dalla tabella vera: %d' % (len(miss_r), len(miss_r_real)),
          'Stage con avvisi di controllo: %d' % len(summary['checks'])]
+if oltre:
+    lines += ['', 'Lv corretti (scheda [11] e nemici a Lv 1 -> Lv della wiki): %d stage; [11] = 1 senza Lv della wiki: %s' % (
+        len(level_fixed), ', '.join(map(str, level_unfixed)) or 'nessuno'), '',
+        '| stage | Q | [11] prima -> dopo | nemici 1 -> Lv | altri Lv tenuti |', '|---:|---:|---|---:|---|']
+    lines += ['| %d | %s | 1 -> %d | %d | %s |' % (k, v['q'], v['wiki_lvl'], v['enemies'], v['kept'] or '')
+              for k, v in sorted(level_fixed.items())]
 open(os.path.join(args.out, 'report.md'), 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
 
 
@@ -350,7 +404,8 @@ if oltre and not args.check:
 if oltre:
     print('categorie dei nemici:', {c: v['count'] for c, v in summary['enemy_categories'].items()},
           '| stage senza fonte:', summary['parts_missing'], '| ricostruiti:', summary['rebuilt'],
-          '| stanze da servire (Task 4):', len(summary['pending_rooms']))
+          '| stanze da servire (Task 4):', len(summary['pending_rooms']),
+          '| Lv corretti:', len(level_fixed), '(senza Lv della wiki: %s)' % level_unfixed)
 print(json.dumps(summary['by_source']), '| nemici assenti:', len(miss_e), '(dalla tabella vera: %d)' % len(miss_e_real),
       '| premi assenti:', len(miss_r), '(dalla tabella vera: %d)' % len(miss_r_real),
       '| stage con avvisi:', len(summary['checks']))

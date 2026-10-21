@@ -11,7 +11,11 @@ Lancia l'import su 3 missioni (526, 555, 617) in una cartella temporanea sotto D
     STG originale intatto, bersaglio [6] primo nemico di una squadra capo nella parte 1;
   * POI (stage_poi_oltre.json): sotto ognuno degli stageId 18300-18304 le uid (e i premi) di tutte e 5 le varianti
     (Review Focus 3: il server puo' ricevere 18300 o la variante);
-  * report.json: nessuna parte mancante, ogni enemyId in una categoria nota (master, enemy_dec, clone, non coperto).
+  * report.json: nessuna parte mancante, ogni enemyId in una categoria nota (master, enemy_dec, clone, non coperto);
+  * Lv delle 87 missioni JP con STG [11] = 1 (Q951 39131, Q931 39111): scheda [11] e nemici a Lv 1 portati al Lv della
+    wiki (oltre525.json missions[].lvl), il 251 della squadra 0x20 della 931 resta; diff byte per byte contro il file
+    JP: cambiano SOLO [11] dell'STG e il campo livello dei record nemici; 18010 (Lv 138 vero) identico al JP;
+    report.json `level_fix` per stage e summary.level_fixed.
 """
 import json
 import os
@@ -42,12 +46,12 @@ t = tempfile.mkdtemp(prefix='t3_oltre_', dir=os.path.join(D, 'tmp'))
 try:
     out = os.path.join(t, 'out')
     r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'import_orig_stages.py'), '--oltre', OLTRE,
-                        '--only', '526,555,617', '--out', out], capture_output=True, text=True)
+                        '--only', '526,555,617,931,951', '--out', out], capture_output=True, text=True)
     print(r.stdout[-2000:], r.stderr[-3000:])
     check(r.returncode == 0, 'import_orig_stages.py --oltre esce con %d' % r.returncode)
     st = os.path.join(out, 'stage')
     files = mapfile.iter_stage_files(st) if os.path.isdir(st) else {}
-    want = {18010: 2, 18300: 1, 18301: 1, 18302: 1, 18303: 1, 18304: 1, 20320: 2}
+    want = {18010: 2, 18300: 1, 18301: 1, 18302: 1, 18303: 1, 18304: 1, 20320: 2, 39111: 1, 39131: 1}
     check(sorted({k[0] for k in files}) == sorted(want), 'stage scritti %s, attesi %s' % (
         sorted({k[0] for k in files}), sorted(want)))
     parsed = {}
@@ -124,7 +128,7 @@ try:
     rep_p = os.path.join(out, 'report.json')
     rep = json.load(open(rep_p, encoding='utf-8')) if os.path.exists(rep_p) else {'summary': {}, 'stages': []}
     sm = rep['summary']
-    check(sm.get('missions') == 7, 'report: stage %s, attesi 7' % sm.get('missions'))
+    check(sm.get('missions') == 9, 'report: stage %s, attesi 9' % sm.get('missions'))
     check(all(s.get('source') for s in rep['stages']), 'report: stage senza fonte %s' % [
         s['stageId'] for s in rep['stages'] if not s.get('source')])
     check(sm.get('parts_missing') == 0, 'report: parti mancanti %s' % sm.get('parts_missing'))
@@ -133,6 +137,48 @@ try:
     check(cat.get('other', {}).get('count', -1) == 0, 'report: enemyId fuori da ogni categoria %s' % cat.get('other'))
     rebuilt = [s for s in rep['stages'] if s['stageId'] == 20320]
     check(bool(rebuilt) and rebuilt[0].get('rebuilt_parts') == [1], 'report: 20320 senza rebuilt_parts [1]')
+
+    # Lv 1 delle 87 missioni JP (mondi di Ralph e finale): scheda e nemici al Lv della wiki
+    jp = mapfile.iter_stage_files(JP_STAGE)
+    wiki_lv = {m['stage']['stageId']: m['lvl'] for m in oltre['missions']}
+
+    def level_bytes(raw_parts):
+        """byte ammessi a cambiare: [11] dell'STG (+0x2c) e il livello (+0x14) di ogni record nemico."""
+        ok = [set(range(0x2c, 0x30))]
+        for b in raw_parts:
+            p = mapfile.parse_map(b)
+            base = p['offsets']['enemies'] + 8 + 0x44 * p['counts']['teams']
+            ok.append({base + 0x20 * k + 0x14 + j for k in range(p['counts']['enemies']) for j in range(4)})
+        return ok
+
+    fixed = {s['stageId']: s.get('level_fix') for s in rep['stages']}
+    for sid, n in ((39131, 1), (39111, 1), (18010, 2)):
+        if sid not in parsed:
+            continue
+        stg, parts = parsed[sid]
+        src = [open(jp[(sid, None)], 'rb').read()] + [open(jp[(sid, k)], 'rb').read() for k in range(n)]
+        new = [open(os.path.join(st, 'mappoi_stg%05d.bin' % sid), 'rb').read()] + [
+            open(os.path.join(st, 'mappoi_stg%05d_%02d.bin' % (sid, k)), 'rb').read() for k in range(n)]
+        allowed = level_bytes(src[1:])
+        for i, (a, b) in enumerate(zip(src, new)):
+            diff = {j for j in range(max(len(a), len(b))) if j >= len(a) or j >= len(b) or a[j] != b[j]}
+            check(len(a) == len(b) and diff <= allowed[i], '%d file %d: byte cambiati fuori dai livelli %s' % (
+                sid, i, sorted(diff - allowed[i])[:8]))
+        lv = wiki_lv[sid]
+        if sid == 18010:
+            check(src == new, '18010: diverso dal JP (Lv vero 138, non va toccato)')
+            check(not fixed.get(sid), '18010: level_fix %s' % fixed.get(sid))
+            continue
+        check(stg['card_level_bonus'] == lv, '%d: scheda [11] %d, wiki %d' % (sid, stg['card_level_bonus'], lv))
+        old = [e['level'] for e in mapfile.parse_map(src[1])['enemies']]
+        got = [e['level'] for e in parts[0]['enemies']]
+        check(got == [lv if x == 1 else x for x in old], '%d: livelli %s da %s' % (sid, got, old))
+        f = fixed.get(sid) or {}
+        check(f.get('wiki_lvl') == lv and f.get('card') == [1, lv] and f.get('enemies') == sum(x == 1 for x in old)
+              and f.get('kept') == sorted({x for x in old if x != 1}), '%d: level_fix %s' % (sid, f))
+    check(len(parsed.get(39111, (0, [{'enemies': []}]))[1][0]['enemies']) == 2
+          and 251 in [e['level'] for e in parsed[39111][1][0]['enemies']], '931: il 251 della squadra 0x20 non resta')
+    check(sorted(sm.get('level_fixed', {})) == ['39111', '39131'], 'summary.level_fixed %s' % sm.get('level_fixed'))
 finally:
     shutil.rmtree(t, ignore_errors=True)
 
