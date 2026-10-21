@@ -7,7 +7,9 @@ un'altra animazione dello stesso nemico (es. 1532: wait.lwf cita wait_<x>.png, i
 dei nemici delle missioni 526-979 (oltre_families: displayId = famiglia se la cartella JP c'e'), tabella dei doppioni
 (jp_dedup_donors.tsv: texture rimasta solo in un'altra cartella JP, es. lwf/drama/<id>/), controllo delle dimensioni
 dichiarate nella regola dello stesso nome (1577: fumo di dead 146x148 al posto degli ingranaggi 95x65 di wait), tabella
-delle texture ricostruite (jp_reconstructed.tsv, I-194: usata solo dopo le copie e i doppioni).
+delle texture ricostruite (jp_reconstructed.tsv, I-194: usata solo dopo le copie e i doppioni), copie da altri
+contenitori (extra_donors.tsv: exact501 categoria 1, copie 2, animazione intera dal gemello Dark Road) e ricolorate
+(jp_recoloured.tsv, categoria 4, anche la dead generica intera del gemello di colore).
 """
 import os
 import shutil
@@ -33,7 +35,26 @@ with open(REC, 'w', encoding='utf-8') as fh:
              'lwf/character/enemy/1800/wait/wait_s.png\tlwf/character/enemy/1800/atk1_o/atk1_o_s.png\tshadow-family\tnota\n'
              'lwf/character/enemy/1801/wait/wait_s.png\tlwf/character/enemy/1801/atk1_o/atk1_o_s.png\tshadow-family\tnota\n'
              'lwf/character/enemy/1802/wait/wait_s.png\tlwf/character/enemy/1802/atk1_o/assente.png\tshadow-common\tnota\n')
-sys.argv = [sys.argv[0], '--jp', JP, '--jp-root', ROOT, '--donors', DON, '--recon', REC, '--b2016', B16, '--out', os.path.join(TMP, 'out')]
+# copie da altri contenitori (extra_donors.tsv, I-194 del 21-10) e ricolorate (jp_recoloured.tsv): radici finte
+BOX = {k: os.path.join(TMP, k) for k in ('jp501', 'ww501', 'recolour')}
+XTR = os.path.join(TMP, 'extra.tsv')
+with open(XTR, 'w', encoding='utf-8') as fh:
+    fh.write('# prova\n'
+             'lwf/character/enemy/1900/wait/wait_a.png\tjp501:lwf/character/enemy/5900/wait/wait_a.png\texact501\tn\n'
+             'lwf/character/enemy/1901/wait/wait_a.png\tww501:lwf/character/enemy/5901/wait/wait_a.png\ttwinfam\tn\n'
+             'lwf/character/enemy/1902/wait/wait.lwf\tww501:lwf/character/enemy/5902/wait/wait.lwf\twhole-dr-twin\tn\n'
+             'lwf/character/enemy/1902/wait/wait_w.png\tww501:lwf/character/enemy/5902/wait/wait_w.png\twhole-dr-twin\tn\n'
+             'lwf/character/enemy/1903/wait/wait_1.png\tjp501:lwf/character/enemy/5903/wait/wait_1.png\ttwinfam\tn\n'
+             'lwf/character/enemy/1906/wait/wait_a.png\tww501:lwf/character/enemy/5901/wait/wait_a.png\ttwinfam\tn\n')
+COL = os.path.join(TMP, 'recol.tsv')
+with open(COL, 'w', encoding='utf-8') as fh:
+    fh.write('# prova\n'
+             'lwf/character/enemy/1904/wait/wait_a.png\trecolour:lwf/character/enemy/1904/wait/wait_a.png\trecolour\tn\n'
+             'lwf/character/enemy/1905/dead/dead.lwf\tww501:lwf/character/enemy/5902/dead/dead.lwf\trecolour-whole\tn\n'
+             'lwf/character/enemy/1905/dead/dead_d.png\tww501:lwf/character/enemy/5902/dead/dead_d.png\trecolour-whole\tn\n'
+             'lwf/character/enemy/1906/wait/wait_a.png\trecolour:lwf/character/enemy/1904/wait/wait_a.png\trecolour\tn\n')
+sys.argv = [sys.argv[0], '--jp', JP, '--jp-root', ROOT, '--donors', DON, '--recon', REC, '--b2016', B16, '--out', os.path.join(TMP, 'out'),
+            '--extra', XTR, '--recolour', COL] + ['--src-root=%s=%s' % kv for kv in BOX.items()]
 sys.path.insert(0, HERE)
 import make_jp_enemies as m  # noqa: E402
 
@@ -177,6 +198,65 @@ try:
     check(r['status'] == 'incompleto' and not todo, 'sorgente ricostruita assente: incompleto (%s)' % r)
     r, todo = m.plan_enemy(1803)
     check(r['status'] == 'incompleto' and not todo, 'senza riga: incompleto (mai una texture assente)')
+
+    # altri contenitori (I-194, 21-10): exact501 = categoria 1, twinfam = 2, animazione intera dal gemello DR, misure
+    def box(k, rel, data):
+        q = os.path.join(BOX[k], *rel.split('/'))
+        os.makedirs(os.path.dirname(q), exist_ok=True)
+        with open(q, 'wb') as fh:
+            fh.write(data)
+        return q
+
+    def body(fam, skip=()):
+        for an in ('atk1_o', 'knockback', 'dead'):
+            if an not in skip:
+                put('%s/%s/%s.lwf' % (fam, an, an), lwf(an + '_k.png'))
+                put('%s/%s/%s_k.png' % (fam, an, an), b'K' + fam.encode() + an.encode())
+    for fam in ('1900', '1901', '1904', '1906'):
+        put(fam + '/wait/wait.lwf', lwf('wait_a.png'))
+        body(fam)
+    q0 = box('jp501', 'lwf/character/enemy/5900/wait/wait_a.png', b'A0')
+    q1 = box('ww501', 'lwf/character/enemy/5901/wait/wait_a.png', b'A1')
+    r, todo = m.plan_enemy(1900)
+    check(r['status'] == 'completo' and todo.get('lwf/character/enemy/1900/wait/wait_a.png') == q0 and r['category'] == 1,
+          'exact501: diretto, categoria 1 (%s)' % r)
+    r, todo = m.plan_enemy(1901)
+    check(r['status'] == 'completo' and todo.get('lwf/character/enemy/1901/wait/wait_a.png') == q1 and r['category'] == 2,
+          'twinfam: copia, categoria 2 (%s)' % r)
+    check('1 da altri contenitori' in r['anims']['wait'].get('note', ''), 'nota degli altri contenitori: %s' % r['anims']['wait'])
+    # animazione intera dal gemello DR: la LWF JP di wait manca del tutto
+    body('1902')
+    box('ww501', 'lwf/character/enemy/5902/wait/wait.lwf', lwf('wait_w.png'))
+    qw = box('ww501', 'lwf/character/enemy/5902/wait/wait_w.png', b'W')
+    r, todo = m.plan_enemy(1902)
+    check(r['status'] == 'completo' and r['anims']['wait']['status'] == 'gemello DR' and r['category'] == 2
+          and todo.get('lwf/character/enemy/1902/wait/wait_w.png') == qw
+          and todo.get('lwf/character/enemy/1902/move/wait_w.png') == qw, 'animazione intera dal gemello: %s' % r)
+    # misure dichiarate anche per le copie degli altri contenitori: 40x40 contro 95x65 -> incompleto
+    put('1903/wait/wait.lwf', real_lwf(**{'wait_1.png': (95, 65)}))
+    body('1903')
+    box('jp501', 'lwf/character/enemy/5903/wait/wait_1.png', png(40, 40))
+    r, todo = m.plan_enemy(1903)
+    check(r['status'] == 'incompleto' and not todo, 'altro contenitore con misure diverse: incompleto (%s)' % r)
+    # ricolorata (categoria 4) solo senza fonti migliori; dead generica intera dal gemello di colore
+    qc = box('recolour', 'lwf/character/enemy/1904/wait/wait_a.png', b'RC')
+    r, todo = m.plan_enemy(1904)
+    check(r['status'] == 'completo' and todo.get('lwf/character/enemy/1904/wait/wait_a.png') == qc and r['category'] == 4,
+          'ricolorata: categoria 4 (%s)' % r)
+    check('1 ricolorate' in r['anims']['wait'].get('note', ''), 'nota delle ricolorate: %s' % r['anims']['wait'])
+    r, todo = m.plan_enemy(1906)
+    check(todo.get('lwf/character/enemy/1906/wait/wait_a.png') == q1 and r['category'] == 2, 'la copia vince sulla ricolorata')
+    put('1905/wait/wait.lwf', lwf('wait_k.png'))
+    put('1905/wait/wait_k.png', b'K')
+    body('1905', skip=('dead',))
+    box('ww501', 'lwf/character/enemy/5902/dead/dead.lwf', lwf('dead_d.png'))
+    qd = box('ww501', 'lwf/character/enemy/5902/dead/dead_d.png', b'D')
+    r, todo = m.plan_enemy(1905)
+    check(r['status'] == 'completo' and r['anims']['dead']['status'] == 'gemello ricolorato' and r['category'] == 4
+          and todo.get('lwf/character/enemy/1905/dead/dead_d.png') == qd, 'dead generica dal gemello di colore: %s' % r)
+    os.remove(qd)
+    r, todo = m.plan_enemy(1905)
+    check(r['status'] == 'incompleto' and not todo, 'dead intera con una texture assente: incompleto (%s)' % r)
 
     # famiglie delle missioni 526-979: id corti e lunghi -> famiglia, solo con la cartella JP (o 2016)
     fams = m.oltre_families([1532, 11532, 1906001532, 1600, 249, 10249, 17112004, 160911501, 99999], served={249})

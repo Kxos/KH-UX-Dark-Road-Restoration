@@ -446,3 +446,31 @@ dello Shadow riprendono il loro (show, showSwf, showFrame, hideFrame) se ora e' 
 Build: pacchetto statico `d0037` prima del generato (`build-resources.ps1`, `-NoEnemies`).
 Master e pacchetto vanno insieme: un master con i displayId originali su una versione senza
 `enemy_gen` va in crash all'avvio delle missioni.
+
+**Priorita' delle fonti e integrazione 5.0.1 / ricolorazione** (I-194, 21-10 sera; regola dell'utente vincolante: i file
+originali vincono sempre). Per texture/animazione, in ordine (`make_jp_enemies.py fill_tex`, categoria della famiglia =
+la peggiore delle animazioni, in `report.json complete_by_category`): (1) file diretti allo stesso percorso (JP 4.3.1,
+2016, OBB JP 5.0.1 `exact501`); (2) copie originali: stesso nemico, `jp_dedup_donors.tsv`, `recon/tools/extra_donors.tsv`
+(`extra_donors.py`: contenitori `jp501` = `tmp\jp501\x`, `ww501` = `tmp\enemy_src2\ww`+`wwtex`, `b2016`, `jp431`; regole
+`lwfmatch+anchors` (tabella texture identica a una LWF DR e superstiti uguali a vista), `unique`/`align&donor`/
+`donor&order` sull'insieme 4.3.1+5.0.1, `twinfam` (gemello di famiglia WW/2016, esclusi 14 con misure diverse e i 45
+conflitti dell'atkSp di 2011), `whole-dr-twin` = animazione intera di un gemello DR verificato a vista: solo 1543 Pot
+Spider wait e dead da 5048, foglio `tmp\integr\v1543.png`); (3) ricostruite `jp_reconstructed.tsv` (+26 ombre delle
+famiglie ricolorate, stessi metodi); (4) **ricolorate** `recon/tools/jp_recoloured.tsv` (PNG generati fuori dal repo in
+`D:\Progetto_Restauro_KH_UX\enemy_gen_src\recolour`, contenitore `recolour`); (5) `DR_LOOK` di make-enemy-oltre.js per le
+famiglie ancora incomplete. Copie e ricolorate con le misure dichiarate (+-2 px); le ricostruite no (ombre scalate).
+Ricolorazione (`tmp\integr\recolour.py`): famiglie con LWF della stessa tabella di un gemello DR ma superstiti diverse
+(`tmp\jp501\lwfmatch_rejected.json` «anchors differ»); trasformazione di colore affine RGB 3x4 (meglio della tabella
+3D a bin di 8 in tutte) stimata sulle coppie texture JP superstite / stessa texture del gemello (pixel con alpha >= 200),
+convalida lasciandone fuori una (LOO, errore medio assoluto per texture /255); soglia: media <= 2, massimo <= 5.
+Accettate (LOO media/max): 249 Eliminator da 5065 0,15/0,57; 1501 Gold Tricholoma da 5038 0,33/1,12; 1503 Emerald
+Sonata da 5039 0,48/0,73; 1508 Poison Archer da 5041 0,57/3,37; 1509 Paralysis Archer da 5042 0,66/4,51; 1523 Blitz
+Spear da 5044 0,55/2,92; 2505 Wight Knight da 5058 0,27/0,96 (senza trasformazione 0,1-0,6 di media: i gemelli sono quasi
+dello stesso colore). Slot del gemello tolti come doppioni anche nelle cartelle DR: stesso suffisso o nome in un'altra
+animazione del gemello. dead senza LWF: la dead **generica** del gemello (solo fumo; tabella condivisa da >= 3 nemici DR,
+64 la stessa; le dead JP 4.3.1 con la stessa tabella hanno le stesse texture: 340 confronti, differenza <= 1,6/255),
+regola `recolour-whole`. Escluse: 1510 (effetto 534x112 di atk1_o assente nel gemello), 1524/1525 (parti 22x25 e 14x32
+di atk1_o assenti in 5045/5046), 1539 (wait/knockback non gemelle), 2006 (niente knockback/dead). Fogli
+`tmp\integr\sheets\rc_<id>.png` (ricolorate col bordo magenta accanto al gemello). Risultato: 140 displayId completi
+su 245 (+12: categoria 2 1534, 1543, 1562, 1587, 1602; categoria 4 249, 1501, 1503, 1508, 1509, 1523, 2505; 15.163
+file, 66,5 MB). 1501 ha righe vere nel master (oggi 5038): passa a 1501 al prossimo make-game-tables completo.

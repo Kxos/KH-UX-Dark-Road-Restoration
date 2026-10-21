@@ -35,6 +35,13 @@ animazione della stessa famiglia, sempre un file JP reale); `--recon ''` la escl
 solo con le misure dichiarate dalla LWF (+-2 px, tex_dims/fits): lo stesso numero di bitmap in un'altra FLA non e'
 la stessa immagine (1577: fumo di dead al posto degli ingranaggi di wait).
 
+Fonti in piu' (I-194, 21-10 sera, regola dell'utente: i file originali vincono sempre; extra_donors.py): file diretti
+allo stesso percorso nell'OBB JP 5.0.1 (categoria 1) e copie da OBB JP/WW 5.0.1, 2016 e gemelli Dark Road verificati a
+vista, anche animazioni intere (recon/tools/extra_donors.tsv, categoria 2; `--extra ''` la esclude), poi le ricostruite
+(categoria 3) e per ultime le RICOLORATE dal gemello di colore (recon/tools/jp_recoloured.tsv, categoria 4, PNG generati
+in enemy_gen_src\\recolour; `--recolour ''` la esclude), con la dead generica intera del gemello. Radici dei contenitori:
+`--src-root jp501=<cartella>`. Ogni famiglia completa ha la sua categoria (la peggiore) in report.json.
+
 Effetti di comparsa: lwf/character/enemy/show_effect_fla/show_effect<N>/ per gli showSwf originali
 (external\\thethiny\\enemy_dec.json) non serviti, stesse regole (completi o niente).
 
@@ -68,6 +75,12 @@ ap.add_argument('--jp-root', default=JP_ROOT, help='radice JP delle sorgenti del
 ap.add_argument('--donors', default=None, help="tabella dei doppioni (default recon/tools/jp_dedup_donors.tsv; '' = nessuna)")
 ap.add_argument('--recon', default=None,
                 help="tabella delle texture ricostruite (default recon/tools/jp_reconstructed.tsv; '' = nessuna)")
+ap.add_argument('--extra', default=None,
+                help="copie originali da altri contenitori (default recon/tools/extra_donors.tsv; '' = nessuna)")
+ap.add_argument('--recolour', default=None,
+                help="texture ricolorate da un gemello (default recon/tools/jp_recoloured.tsv; '' = nessuna)")
+ap.add_argument('--src-root', action='append', default=[], metavar='CONTENITORE=CARTELLA',
+                help='radice di un contenitore di extra_donors.py (jp501, ww501, b2016, jp431, recolour); ripetibile')
 ap.add_argument('--b2016', default=os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files', 'lwf', 'character', 'enemy'))
 ap.add_argument('--index', action='append')
 ap.add_argument('--master', default=os.path.join(REPO, 'server', 'master_data'))
@@ -89,6 +102,13 @@ import jp_dedup_donors  # noqa: E402
 DONORS = jp_dedup_donors.load(jp_dedup_donors.TABLE if a.donors is None else a.donors)
 import jp_reconstructed  # noqa: E402
 RECON = jp_reconstructed.load(jp_reconstructed.TABLE if a.recon is None else a.recon)
+import extra_donors  # noqa: E402
+EXTRA = extra_donors.load(extra_donors.TABLE if a.extra is None else a.extra, rules=set(extra_donors.RULES) - {'recolour', 'recolour-whole'})
+RECOL = extra_donors.load(extra_donors.RECOLOUR_TABLE if a.recolour is None else a.recolour, rules={'recolour', 'recolour-whole'})
+ROOTS = dict(extra_donors.ROOTS, jp431=[a.jp_root])
+for _x in a.src_root:
+    _k, _v = _x.split('=', 1)
+    ROOTS[_k] = [_v]
 
 
 def donor(published):
@@ -100,6 +120,14 @@ def recon(published):
     """Texture persa ricostruita con un'altra texture JP reale (ombra standard, stessa parte da un'altra animazione):
     tabella jp_reconstructed.tsv, solo per le famiglie che cosi' diventano complete (I-194, 21-10)."""
     return jp_reconstructed.lookup(RECON, published, a.jp_root)
+
+
+def extra(published, table=None):
+    """Copia originale da un altro contenitore (extra_donors.tsv: OBB JP/WW 5.0.1, 2016, gemelli Dark Road) o texture
+    ricolorata (table=RECOL) -> (percorso assoluto, categoria della regola) o (None, None)."""
+    t = EXTRA if table is None else table
+    p = extra_donors.lookup(t, published, ROOTS)
+    return (p, extra_donors.category(t[published][2])) if p else (None, None)
 
 
 def listing(p):
@@ -176,9 +204,53 @@ def fits(p, wh):
     return s is not None and wh is not None and abs(s[0] - wh[0]) <= 2 and abs(s[1] - wh[1]) <= 2
 
 
+# tipo di fonte di una texture -> categoria della regola dell'utente (extra_donors.py)
+KIND_CAT = {'jp': 1, 'diretto': 1, 'stesso': 2, 'doppione': 2, 'copia': 2, 'ricostruita': 3, 'ricolorata': 4}
+
+
+def fill_tex(pre, anim, t, jp, jp_all, dims):
+    """Fonte della texture t citata dalla LWF JP di <pre> -> (percorso, tipo) o (None, None). Ordine (regola dell'utente
+    del 21-10, extra_donors.py): file JP; file diretto allo stesso percorso in un altro contenitore (exact501); copie
+    dello stesso nemico (texture scartate dall'estrazione JP perche' identiche: stesso nome originale dopo il prefisso
+    dell'animazione, o lo stesso nome esatto, in un'altra animazione), tabella dei doppioni, copie degli altri
+    contenitori (extra_donors.tsv); ricostruite (jp_reconstructed.tsv); ricolorate (jp_recoloured.tsv). Copie e
+    ricolorate con le misure dichiarate (+-2 px); le ricostruite no (ombre scalate)."""
+    def fit(q):
+        return dims is None or fits(q, dims.get(t))
+    if t in jp:
+        return jp[t], 'jp'
+    xp, xc = extra(pre + t)
+    if xp and xc == 1 and fit(xp):
+        return xp, 'diretto'
+    suf = t[len(anim) + 1:] if t.startswith(anim + '_') else None
+    cands = [] if suf is None else [fs[o + '_' + suf] for o, fs in jp_all.items()
+                                      if o != anim and (o + '_' + suf) in fs and fit(fs[o + '_' + suf])]
+    if not (cands and len({sha(c) for c in cands}) == 1):
+        # stesso nome esatto in un'altra animazione (21-10, I-009 Task 7): il LWF di wait cita wait_<x>.png e il file
+        # vero e' rimasto solo in atk1_o/ (che cita le stesse bitmap di wait), le altre copie erano stub di
+        # deduplicazione (es. 1532, 1550, 1561: 0 texture in wait/)
+        cands = [fs[t] for o, fs in jp_all.items() if o != anim and t in fs and fit(fs[t])]
+    if cands and len({sha(c) for c in cands}) == 1:
+        return cands[0], 'stesso'
+    dp = donor(pre + t)
+    if dp and fit(dp):
+        return dp, 'doppione'
+    if xp and fit(xp):
+        return xp, 'copia'
+    rp = recon(pre + t)
+    if rp:
+        return rp, 'ricostruita'
+    cp, _ = extra(pre + t, RECOL)
+    if cp and fit(cp):
+        return cp, 'ricolorata'
+    return None, None
+
+
 def plan_anim(root_rel, anim, jp_all):
-    """Animazione <root_rel>/<anim>/: -> (stato, {nome: fonte} o None, nota).
-    jp_all: {anim: listing JP} dello stesso nemico (per le texture scartate come doppioni)."""
+    """Animazione <root_rel>/<anim>/: -> (stato, {nome: fonte} o None, nota, categoria).
+    jp_all: {anim: listing JP} dello stesso nemico (per le texture scartate come doppioni).
+    categoria (regola dell'utente, extra_donors.py): 1 file diretti, 2 copie originali, 3 ricostruite, 4 ricolorate;
+    la peggiore fra le texture."""
     jp = jp_all.get(anim) or {}
     b = listing(os.path.join(a.b2016, *root_rel.split('/'), anim))
     lw = anim + '.lwf'
@@ -196,59 +268,57 @@ def plan_anim(root_rel, anim, jp_all):
             else:
                 miss.append(t)
         if not miss:
-            return 'jp', todo, 'texture dal 2016 (LWF identico)' if any(v in b.values() for v in todo.values()) else ''
+            return 'jp', todo, 'texture dal 2016 (LWF identico)' if any(v in b.values() for v in todo.values()) else '', 1
         notes.append('JP: %d texture assenti su %d' % (len(miss), len(refs)))
     if bl:
         refs = refs_of(bl)
         miss = [t for t in refs if t not in b]
         if not miss:
-            return '2016', {pre + lw: bl, **{pre + t: b[t] for t in refs}}, '; '.join(notes)
+            return '2016', {pre + lw: bl, **{pre + t: b[t] for t in refs}}, '; '.join(notes), 1
         notes.append('2016: %d texture assenti su %d' % (len(miss), len(refs)))
     if jl:
         # texture scartate dall'estrazione JP perche' identiche a un altro file: stesso nome originale
         # (dopo il prefisso dell'animazione) in un'altra animazione dello stesso nemico
-        todo, filled, dons = {pre + lw: jl}, [], []
-        ok = True
+        todo, cat, ok = {pre + lw: jl}, 1, True
         dims = tex_dims(jl)
-        recs = []
+        count = {}
         for t in refs_of(jl):
-            def fit(q, t=t):
-                return dims is None or fits(q, dims.get(t))
-            if t in jp:
-                todo[pre + t] = jp[t]
-                continue
-            # prima le copie dello stesso nemico (regole sotto), poi la tabella dei doppioni (21-10)
-            dp = donor(pre + t)
-            suf = t[len(anim) + 1:] if t.startswith(anim + '_') else None
-            cands = [] if suf is None else [fs[o + '_' + suf] for o, fs in jp_all.items()
-                                              if o != anim and (o + '_' + suf) in fs and fit(fs[o + '_' + suf])]
-            if not (cands and len({sha(c) for c in cands}) == 1):
-                # stesso nome esatto in un'altra animazione (21-10, I-009 Task 7): il LWF di wait cita
-                # wait_<x>.png e il file vero e' rimasto solo in atk1_o/ (che cita le stesse bitmap di wait),
-                # le altre copie erano stub di deduplicazione (es. 1532, 1550, 1561: 0 texture in wait/)
-                cands = [fs[t] for o, fs in jp_all.items() if o != anim and t in fs and fit(fs[t])]
-            if cands and len({sha(c) for c in cands}) == 1:
-                todo[pre + t] = cands[0]
-                filled.append(t)
-            elif dp:
-                todo[pre + t] = dp
-                dons.append(t)
-            elif recon(pre + t):
-                todo[pre + t] = recon(pre + t)
-                recs.append(t)
-            else:
+            q, kind = fill_tex(pre, anim, t, jp, jp_all, dims)
+            if not q:
                 ok = False
                 break
+            todo[pre + t] = q
+            count[kind] = count.get(kind, 0) + 1
+            cat = max(cat, KIND_CAT[kind])
         if ok:
-            notes.append('%d texture da altre animazioni dello stesso nemico' % len(filled))
-            if dons:
-                notes.append('%d dalla tabella dei doppioni' % len(dons))
-            if recs:
-                notes.append('%d ricostruite (jp_reconstructed.tsv)' % len(recs))
-            return 'jp+riempite', todo, '; '.join(notes)
+            notes.append('%d texture da altre animazioni dello stesso nemico' % count.get('stesso', 0))
+            for kind, what in (('doppione', 'dalla tabella dei doppioni'), ('diretto', 'dirette da altri contenitori (exact501)'),
+                               ('copia', 'da altri contenitori (extra_donors.tsv)'),
+                               ('ricostruita', 'ricostruite (jp_reconstructed.tsv)'), ('ricolorata', 'ricolorate (jp_recoloured.tsv)')):
+                if count.get(kind):
+                    notes.append('%d %s' % (count[kind], what))
+            return 'jp+riempite', todo, '; '.join(notes), cat
+    # animazione INTERA da un gemello Dark Road verificato a vista (extra_donors.tsv, regola whole-dr-twin): la LWF
+    # 4.3.1 manca del tutto (es. wait e dead di 1543 Pot Spider da 5048); LWF e tutte le sue texture dalla tabella
+    # Poi (categoria 4, jp_recoloured.tsv regola recolour-whole) la dead generica del gemello di colore: solo fumo, le
+    # stesse texture in tutte le LWF dead con quella tabella (JP 4.3.1 contro DR: 394 texture, differenza <= 1,6/255)
+    for table, rule, label in ((EXTRA, 'whole-dr-twin', 'animazione intera dal gemello Dark Road'),
+                               (RECOL, 'recolour-whole', 'animazione intera generica dal gemello di colore')):
+        wl, wc = extra(pre + lw, table)
+        if not (wl and table[pre + lw][2] == rule):
+            continue
+        todo, dims = {pre + lw: wl}, tex_dims(wl)
+        for t in refs_of(wl):
+            tp, _ = extra(pre + t, table)
+            if not (tp and table[pre + t][2] == rule and (dims is None or fits(tp, dims.get(t)))):
+                break
+            todo[pre + t] = tp
+        else:
+            notes.append('%s (%s)' % (label, table[pre + lw][3]))
+            return 'gemello DR' if table is EXTRA else 'gemello ricolorato', todo, '; '.join(notes), wc
     if not jl and not bl:
-        return 'assente', None, '; '.join(notes) or 'nessuna fonte'
-    return 'incompleta', None, '; '.join(notes)
+        return 'assente', None, '; '.join(notes) or 'nessuna fonte', None
+    return 'incompleta', None, '; '.join(notes), None
 
 
 def plan_enemy(d):
@@ -264,11 +334,14 @@ def plan_enemy(d):
     r = {'displayId': d, 'sources': [s for s, p in (('jp', jd), ('2016', bd)) if os.path.isdir(p)], 'anims': {}}
     todo = {}
     fatal = []
+    cat = 1
     for an in MANDATORY + ['move'] + sorted(x for x in anims if OPTIONAL.match(x)):
-        st, files, note = plan_anim(rel, an, jp_all)
+        st, files, note, c = plan_anim(rel, an, jp_all)
         r['anims'][an] = {'status': st, 'note': note} if note else {'status': st}
         if files:
+            r['anims'][an]['category'] = c
             todo.update(files)
+            cat = max(cat, c)
         elif an in MANDATORY:
             fatal.append(an)
     if 'wait' not in fatal and r['anims']['move']['status'] in ('assente', 'incompleta'):
@@ -282,7 +355,8 @@ def plan_enemy(d):
     if fatal:
         r.update(status='incompleto', why='animazioni obbligatorie mancanti o incomplete: ' + ', '.join(fatal))
         return r, {}
-    r.update(status='completo', files=len(todo))
+    # categoria della famiglia: la peggiore delle animazioni servite (1 diretti, 2 copie, 3 ricostruite, 4 ricolorate)
+    r.update(status='completo', files=len(todo), category=cat)
     return r, todo
 
 
@@ -311,7 +385,7 @@ def plan_show(n):
     rel = 'show_effect_fla'
     an = 'show_effect%d' % n
     jp_all = {an: listing(os.path.join(a.jp, rel, an))}
-    st, files, note = plan_anim(rel, an, jp_all)
+    st, files, note, _ = plan_anim(rel, an, jp_all)
     return {'showSwf': n, 'status': st, 'note': note}, files or {}
 
 
@@ -434,6 +508,7 @@ def main():
            'story_enemies_served': len(story_en_served), 'story_enemies_substituted': story_en_bad,
            'oltre_families': len(oltre), 'oltre_complete': [r['displayId'] for r in ok if r.get('oltre')],
            'oltre_incomplete': [r['displayId'] for r in bad if r.get('oltre')],
+           'complete_by_category': {c: [r['displayId'] for r in ok if r.get('category') == c] for c in (1, 2, 3, 4)},
            'move_from_wait': [r['displayId'] for r in ok if r['anims']['move']['status'].startswith('da wait')],
            'shows': show_res, 'results': results}
     os.makedirs(a.out, exist_ok=True)
