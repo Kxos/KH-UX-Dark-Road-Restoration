@@ -217,6 +217,10 @@ $instPacks = if ($Quick -and (Test-Path "$D\resource_data\$Version\packs.txt")) 
 foreach ($sp in @(@('rooms_gen', $NoRooms), @('enemy_gen', $NoEnemies), @('raisedraw_gen', $NoRaisedraw))) {
   if ($sp[1] -or ($Quick -and $instPacks -notcontains $sp[0])) { $seOpt += @('--no-static', $sp[0]) }
 }
+# segnaposto della wait.lwf per ogni NPC delle mappe senza LWF servita (I-197: il client fa addChild(NULL) e va in
+# crash); PRIMA di import_jp_coco, che li sostituisce col JP dove esistono tutte le texture
+python -I recon\tools\npc_placeholders.py "$sg\files" --served "$D\resource_data\names_v4.tsv" --served "$D\ipa431\names_addnl.tsv" --report "$sg\npc_placeholders.json"
+if ($LASTEXITCODE) { throw 'npc_placeholders fallito' }
 python recon\tools\import_jp_coco.py --out "$sg\files" --report "$sg\jp_import" @jpOpt @seOpt
 if ($LASTEXITCODE) { throw 'import_jp_coco fallito' }
 # originali (2016, JP 4.3.1, IPA 4.4.0) al posto delle nostre ricostruzioni, dopo tutti i generatori (I-170,

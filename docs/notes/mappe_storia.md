@@ -638,3 +638,7 @@ campi: non parlano.
 - Crash del passaggio di parte: erano le tendine `wipe_N` mancanti (vedi
   [risorse_layout.md](risorse_layout.md#wipe)).
 - `-Seek` non funziona sulle mappe scure (ISSUES I-008): la 1070 va giocata a mano.
+
+## NPC senza wait.lwf (I-197)
+
+Il client carica `lwf/character/npc/<id>/wait/wait.lwf` per ogni NPC della mappa (`[fn]`); se manca, `[fn]` torna NULL e `addChild(NULL)` manda in crash la stanza. Gli stage 526-979 usano 124 id NPC (solo 4001 e' servito dall'originale); `recon/tools/npc_placeholders.py` scrive `recon/tools/empty.lwf` (492 byte) per tutti quelli senza LWF, prima di `import_jp_coco.py`, che mette il JP 4.3.1 dove ha tutte le texture (13 NPC su 65 nuovi). I 52 restanti (e 1 vecchio) sono invisibili ma non crashano: per mostrarli servono le texture originali.
