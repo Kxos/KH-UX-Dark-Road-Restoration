@@ -656,3 +656,52 @@ display: per i tipi 3/4 basePower e' il divario, quindi i due passi vanno sempre
   resto identico; medal.json invariato. Una riga Roboloid tipo 4 (3000701) ha dalla khuxwiki 66500 a pallini pieni invece
   di LowMulti 6.64: tenuto il display della riga, sp1 da Low/High.
 - Notice IMPORTANT «Variable Special Attacks» (routes-info-album.js) dichiara le 174 ricostruite e le altre al valore basso.
+
+<a id="danno-variabile-tipi"></a>
+### Tipi di potenza variabile dal codice di battaglia (I-189b, analisi 21-10)
+
+Formula del danno: `switch(specialPowerType)` in **[fn]** (0x00e30f9c..0x00e31480, `tmp\i189b\b2.c`;
+[fn]/0075db5c/0075d408 sono filtri della Medal List, non danno). S1 = sp1 (o sp1PerEnforce[pallini-1]) / 1e4,
+S2 = sp2 / 1e4, B = basePower(PerEnforce) / 1e4 (damageType 2: B = S1); poi fattore d'attributo e (guilt + skill + 1e4)/1e4.
+Stato del giocatore +0x350; **f(x) = x² / (S2 + x²)**.
+
+| tipo | condizione | formula | prova |
+|---|---|---|---|
+| 3 | meno HP | B·S2·(S1 + 1 − hp/maxHP) | codice + 8 originali |
+| 4 | piu' HP | B·S2·(S1 + hp/maxHP) | codice + 30 originali |
+| 5 | paga HP | hp <= S1: HP a 1, bonus S2·hp/S1; altrimenti costa S1·maxHP; M = B + S2 | codice + 15 originali |
+| 6 | turni passati (+0x4308 globale) | B + S1·f(turni), dettaglio x 1→10, S2 5 | verificato |
+| 7 | speciali in successione (+0xbc8) | B + S1·f(x), x 1→10, S2 6 | verificato |
+| 8-15 | contatori dei tier dei buff | B + S1·x | solo codice, nessuna condizione |
+| 16 | paga DEF | B + S1·(tier di DEF persi), sp2 30000 | verificato sul divario |
+| 20/21/22 | bersaglio avvelenato/addormentato/paralizzato | B + S1 se vero | verificato |
+| 23 | gauge pieni prima dell'uso (+0xbdc) | B + S1·f(gauge), x 1→20, S2 10 | verificato (Final Boss Xion) |
+| 24 | meno gauge pieni | B − S1·f(gauge) | codice |
+| 25 | gauge usati nel turno (+0xbd4/0xbd8) | B + S1·f(x), x 0→20, S2 10 | verificato (HD Larxene) |
+| 26/27 | costo in gauge della medaglia precedente/successiva | B + S1·f(gauge) | codice |
+| 28 | nemici sconfitti nella missione (+0x4330) | B + S1·f(x), x 0→100, S2 50 | verificato |
+| 29 | meno nemici sconfitti | B − S1·f(x) | codice |
+| 30 | piu' Lux (+8, max 262143) | B + S1·f(x), sp2 1e8 | verificato |
+| 31 | meno Lux | B − S1·f(lux) | codice |
+| 32/33 | piu'/meno attacchi fatti (+0xbcc) | | codice, nessuna condizione |
+| 34 | slot corrente == deck+0x428 | B + S1 | significato ignoto |
+| 35 | bersaglio a HP pieni | B + S1 | codice |
+| 36 | un solo nemico vivo ([fn]) | B + S1 | codice |
+| 37 | skill scattate (+0xbd0, [fn]) | B + S1·f(x) | codice |
+| 38 | indice dello slot (da 0) == S2 | B + S1 | codice |
+| 39 | slot piu' basso, x = n−1−idx | B + S1·f(x) | codice |
+| 40 | slot piu' alto, x = idx | B + S1·f(x), x 1→10, S2 5 | verificato (Jafar) |
+| 41 | valore del deck +0x14 (probabile numero del party) | B + S1·f(x) | dedotto |
+| 42 | gauge prima dell'uso, poi tutti spesi | B + S1·f(x) | codice |
+
+Roboloid Low/High = displayPower/displayMaxPower ai pallini pieni (~80 righe abbinate per nome); max − display uguale a
+ogni pallino. Ricostruzione (lo, hi x 1e4): tipi a saturazione sp1 = (hi−lo)/(f(x_hi)−f(x_lo)), sp2 = S2·1e4,
+base_i = lo_i − sp1·f(x_lo), max_i = lo_i + (hi−lo) (riproduce 42 originali su 56; i 14 sbagliati sono copie guaste di
+thethiny: Dark End, Radiant Glory, Gale Assault); tipi a flag (20/21/22/35/36/38) base = display = lo, sp1 = hi−lo, sp2 0
+(38: sp2 = (slot−1)·1e4); tipo 5 base lo, sp2 hi−lo, sp1 9000; tipo 16 base lo, sp1 (hi−lo)/6 (o /3), sp2 30000; tipo 31
+base hi, sp1 hi−lo, sp2 1e8. Condizioni: MoreGaugesPrevMedal = 26 (6 righe «previous») e 27 (3 «next»), LessLUX = 31,
+MoreEnemiesDefeated = 28, OneEnemy = 36 (130), LowerSlot = 39 (69, convenzione del 40), Slot3/4/5/6 = 38 (sp2
+20000/30000/40000/50000), MoreSkillsStage = 37, MoreParty = 41 (dedotto). **Critical (18)**: nessun tipo, usa
+criticalPower (+0x2bc, moltiplicatore; +0x2b8 probabilita'): le nostre righe hanno 10000 = nessun effetto; proposta
+criticalPower = hi/lo·1e4. Curve (S2 e intervallo di x) di 26, 27, 31, 37, 39, 41 senza originale: forma ricostruita.
+Da verificare al banco: cosa contengono +0x4308/+0x4330/+8 e il campo del deck +0x14.
