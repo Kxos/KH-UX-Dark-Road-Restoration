@@ -97,7 +97,22 @@ function thumbForRoom(code) {
 
 // Obiettivo dalla wiki -> campi del master (submissionRequire/DataType/IdType/Id/Num + nome). Codici e nomi delle righe
 // originali 1-555 (5.0.1, 1.1.3, stage_dec): DataType 1 testo, 2 %d = num, 3 %s = nome di id (IdType 5 keyblade, 6 skill),
-// 4 nemico (IdType 1). Senza codice noto (tempo, battaglie, colpi, barili, danni subiti...) -> null.
+// 4 nemico (IdType 1). Senza codice noto -> null (tappabuchi).
+// Codici che nessuna riga originale 1-555 usa, ricavati dal valutatore del client [fn] (ricerca del 21-10,
+// D:\Progetto_Restauro_KH_UX\tmp\objectives\objectives_proposal.json): nome = testo della wiki tale e quale (nessun %).
+// - 37 tempo: case 0x25 [fn], (int)(trascorso*100) <= num*100, trascorso = float 0x43cc in secondi (+dt a ogni
+//   frame col flag 0x43d0, tetto 3600). «within N seconds» -> N; «mm'ss"cc» (visualizzazione in centesimi dello stesso
+//   contatore) -> mm*60+ss, un secondo in piu' se cc > 0 (num e' in secondi interi; tutti i testi wiki hanno cc 00);
+// - 8 battaglie: case 8, 0x4314 <= num (+1 a ogni inizio battaglia, [fn] stato 0);
+// - 33 colpi: case 0x21, 0x4334 >= num (colpi di ogni attacco/speciale, [fn]); 32 e' la variante <=;
+// - 9 colpi subiti: case 9, 0x431c <= num (+1 a ogni attacco nemico a segno, [fn]): «without taking damage» = 0;
+// - 36 danni subiti: case 0x24, totale 0x4338 (int64) <= num: «less than N» stretto -> N-1;
+// - 17 tutti i forzieri: case 0x11, aperti (lista 0x3ee4) == totale dell'intestazione mappoi +0x38: «Destroy all barrels»
+//   (731/732: ogni forziere dello stage e' un barile, POI di tipo 19) e «Open N treasure chests» con N = quel totale;
+// - 18 tutti i materiali: case 0x12, materiali distinti raccolti == totale mappoi +0x3c (862: 3);
+// - 24 medaglie equipaggiate: case 0x18, [fn] conta gli slot del deck con medalId != 1 (vuoto) <= num.
+// «N forzieri/materiali» sono «tutti» solo se N e' il totale dello stage: con ctx.header (intestazione mappoi) un N
+// diverso resta tappabuchi; senza intestazioni si accetta (le 10 righe vere sono state verificate una per una).
 function objectiveCodes(text, ctx) {
   const t = String(text).replace(/\s+/g, ' ').trim();
   let m;
@@ -136,6 +151,23 @@ function objectiveCodes(text, ctx) {
     const id = ctx.skillId(m[1]);
     return id ? { name: 'Trigger the skill %s', req: 14, dt: 3, it: 6, id, n: 0 } : null;
   }
+  if ((m = /^Complete within (\d+) seconds?$/i.exec(t))) return { name: t, req: 37, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if ((m = /^Complete within (\d+)'(\d+)"(\d+)$/.exec(t))) {
+    return { name: t, req: 37, dt: 2, it: 0, id: 0, n: num(m[1]) * 60 + num(m[2]) + (num(m[3]) > 0 ? 1 : 0) };
+  }
+  if ((m = /^Complete within (\d+) battles?$/i.exec(t))) return { name: t, req: 8, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if ((m = /^Deal (\d[\d,]*) or more hits$/i.exec(t))) return { name: t, req: 33, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  if (/^Complete without taking damage$/i.test(t)) return { name: t, req: 9, dt: 1, it: 0, id: 0, n: 0 };
+  if ((m = /^Take less than a total of (\d[\d,]*) damage$/i.exec(t))) return { name: t, req: 36, dt: 2, it: 0, id: 0, n: num(m[1]) - 1 };
+  if ((m = /^Equip (\d+) or fewer Medals$/i.exec(t))) return { name: t, req: 24, dt: 2, it: 0, id: 0, n: num(m[1]) };
+  const hdr = ctx.header || null;
+  if (/^Destroy all barrels$/i.test(t)) return { name: t, req: 17, dt: 1, it: 0, id: 0, n: 0 };
+  if ((m = /^Open (\d+) treasure chests?$/i.exec(t))) {
+    return !hdr || hdr.treasures === num(m[1]) ? { name: t, req: 17, dt: 1, it: 0, id: 0, n: 0 } : null;
+  }
+  if ((m = /^Collect (\d+) Keyblade materials?$/i.exec(t))) {
+    return !hdr || hdr.materials === num(m[1]) ? { name: t, req: 18, dt: 1, it: 0, id: 0, n: 0 } : null;
+  }
   const plain = { 'Complete without having to continue': 10, 'Complete without being afflicted with a status ailment': 11,
     'Open all treasure chests': 17, 'Collect all materials': 18, 'Complete without opening treasure chests': 20,
     'Equip only Power Medals': 21, 'Equip only Speed Medals': 22, 'Equip only Magic Medals': 23 };
@@ -144,10 +176,15 @@ function objectiveCodes(text, ctx) {
   return null;
 }
 
-// premio dell'obiettivo: tipo/id/numero come le righe 1-555 (14 Avatar Coin, 5:1 Mythril Shard, 7 titolo, 2 jewel, 3 medaglia)
-function objectiveReward(o, ctx, titleIdx) {
+// Trofei (materiali di Bad Guy Breaker, make-trophy-materials.js): l'icona della pagina wiki (naobjbonusNimg) dice quale
+const TROPHY_BY_IMG = { 'Trophy NI KHX': 61, 'Trophy CS KHX': 62, 'Trophy CK KHX': 63 };
+
+// premio dell'obiettivo: tipo/id/numero come le righe 1-555 (14 Avatar Coin, 5:1 Mythril Shard, 7 titolo, 2 jewel, 3 medaglia,
+// 5:61-63 Trophy)
+function objectiveReward(o, ctx, titleIdx, slot) {
   const q = num(o.qty);
   switch (o.reward) {
+    case 'Trophy': { const id = TROPHY_BY_IMG[ctx.raw.img[slot]]; return id ? [5, id, q || 1] : null; }
     case 'Avatar Coin': return [14, 0, q];
     case 'Mythril Shard': return [5, 1, q];
     case 'Jewel': return [2, 0, q];
@@ -158,7 +195,7 @@ function objectiveReward(o, ctx, titleIdx) {
 
 function buildRows(stageRows, sources) {
   const { stage113 = [], wiki = {}, wikiRaw = {}, oltre = { missions: [] }, theater = [], dramas = null,
-    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null } = sources;
+    enemies = null, titles = [], medals = [], keyblades = [], skills = [], thumbs = null, stagePoi = null, headers = null } = sources;
   const report = { stopgapObjectives: [], missingRewards: [], enemiesToShadow: 0, droppedDramas: [], overflow: [], wikiObjectives: [],
     branchObjectives: [] };
   const knownEnemies = enemies ? new Set(enemies.map((e) => e.enemyId)) : null;
@@ -223,7 +260,9 @@ function buildRows(stageRows, sources) {
   // obiettivi della wiki (al massimo 3) -> [[codici, premio]]; ctx col bersaglio dello stage JP (oltre525.json)
   const wikiSubs = (n, q, mis, raw) => {
     const ctx = { ...ctxBase, target: mis.stage.target_id || 0, targetName: mis.target || q.target || '',
-      raw: { titles: [...raw.matchAll(/\|naotitle\d?=([^\n|]*)/g)].map((m) => m[1].trim()) } };
+      raw: { titles: [...raw.matchAll(/\|naotitle\d?=([^\n|]*)/g)].map((m) => m[1].trim()),
+        img: [1, 2, 3].map((k) => rawField(raw, `naobjbonus${k}img`)) },
+      header: headers ? headers[mis.stage.stageId] || null : null };
     const subs = [];
     let titleIdx = 0;
     for (const [i, o] of (q.objectives || []).slice(0, 3).entries()) {
@@ -233,7 +272,7 @@ function buildRows(stageRows, sources) {
         report.stopgapObjectives.push([n, i + 1, o.text]);
         c = { name: o.text, req: 10, dt: 1, it: 0, id: 0, n: 0 };
       }
-      let rw = objectiveReward(o, ctx, o.reward === 'Title' ? titleIdx++ : 0);
+      let rw = objectiveReward(o, ctx, o.reward === 'Title' ? titleIdx++ : 0, i);
       if (!rw) { report.missingRewards.push([n, i + 1, o.reward]); rw = [0, 0, 0]; }
       subs.push([c, rw]);
     }
@@ -354,7 +393,7 @@ function buildRows(stageRows, sources) {
 }
 
 // obiettivi tappabuchi delle 526-979 in una tabella stage (codice del client non ricavato: valutati come 10 col testo
-// della wiki), per la notizia «Story Quests 526-979»
+// della wiki), per la notizia «Story Quests 526-979»: 0 dal 21-10 (codici originali sopra); la notizia ne parla solo se > 0
 function countStopgaps(stageRows) {
   let n = 0;
   for (const r of stageRows || []) {
@@ -432,7 +471,22 @@ function defaultSources() {
     stagePoi: readRequired(process.env.KHUX_STAGE_POI_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage_poi_oltre.json'),
     dramas: dramas || new Set(),
     thumbs,
+    headers: readHeaders(process.env.KHUX_STAGE_DIR_OLTRE || 'D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages_oltre\\stage'),
   };
+}
+
+// totali dell'intestazione degli stage JP (mappoi_stg<id>.bin: +0x38 forzieri, +0x3c materiali; letti dal client per
+// gli obiettivi 17/18) per stageId; cartella assente -> null (obiettivi «N forzieri/materiali» accettati senza verifica)
+function readHeaders(dir) {
+  if (!fs.existsSync(dir)) return null;
+  const out = {};
+  for (const f of fs.readdirSync(dir)) {
+    const m = /^mappoi_stg(\d+)\.bin$/.exec(f);
+    if (!m) continue;
+    const d = fs.readFileSync(path.join(dir, f));
+    if (d.length >= 0x40) out[m[1]] = { treasures: d.readInt32LE(0x38), materials: d.readInt32LE(0x3c) };
+  }
+  return out;
 }
 
 // righe world 11-14 (D-C) come la riga 1 (DB) col worldName del prefisso; sostituisce quelle di un giro precedente,
@@ -478,4 +532,4 @@ function patch(masterDir, src) {
 if (require.main === module) patch(process.argv[2] || path.join(__dirname, 'master_data'));
 
 module.exports = { ROOM_WORLD, WIKI_WORLD, WORLD_THUMB, WORLD_BGM, NEW_WORLDS, thumbForRoom, readThumbs, buildWorldRows, buildRows, objectiveCodes, wikiLv, readDramas, defaultSources, patch,
-  countStopgaps, Q555_VARIANTS };
+  countStopgaps, Q555_VARIANTS, TROPHY_BY_IMG, readHeaders };

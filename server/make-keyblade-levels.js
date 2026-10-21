@@ -40,6 +40,12 @@ const REF = 'D:\\Progetto_Restauro_KH_UX\\reference\\keyblades\\keyblade_levels.
 const ATTR = { Power: 1, Speed: 2, Magic: 3 };
 const DL = { Upright: 1, Reversed: 2 };
 const MAX_LV = 35;
+// Materiali senza id nella khuxwiki: i trofei di Bad Guy Breaker (righe material 61-63 di make-trophy-materials.js,
+// icone originali JP material_61/62/63). Passi: +4/+9 Trophy NI, +14/+19/+24/+29 Trophy CS, +30 Trophy CK, x1.
+const MATERIAL_BY_NAME = { 'Trophy NI': 61, 'Trophy CS': 62, 'Trophy CK': 63 };
+const TROPHY_STEPS = { 16040: 61, 16090: 61, 16140: 62, 16190: 62, 16240: 62, 16290: 62, 16300: 63 };
+// [id, num, nome] della tabella ridotta -> materialId (id esplicito, poi per nome), null se ignoto
+const materialIdOf = ([id, , name]) => id ?? MATERIAL_BY_NAME[name] ?? null;
 
 function load(f) { return JSON.parse(fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '')); }
 function save(f, data) { fs.writeFileSync(f, JSON.stringify(data, null, 1) + '\n', 'utf8'); }
@@ -124,8 +130,9 @@ function main() {
       }
       const slots = l.slots;
       const m = l.m.slice(0, slots);
-      const mats = l.mat.filter(([mid]) => mid && materials.has(mid));
-      for (const [mid, , nm] of l.mat) if (!mid || !materials.has(mid)) { warn++; console.log(`! ${base.name} +${lv}: materiale ${nm} (${mid}) assente da material.json, tolto`); }
+      const lmat = l.mat.map((x) => [materialIdOf(x), x[1], x[2]]);
+      const mats = lmat.filter(([mid]) => mid && materials.has(mid));
+      for (const [mid, , nm] of lmat) if (!mid || !materials.has(mid)) { warn++; console.log(`! ${base.name} +${lv}: materiale ${nm} (${mid}) assente da material.json, tolto`); }
       let partnerRate = Math.round(l.friend * 10000);
       if (!friendOk && prev && next) partnerRate = Math.round(prev.partnerRate + (next.partnerRate - prev.partnerRate) * (lv - prev.lv) / (next.lv - prev.lv));
       const gen = {
@@ -160,8 +167,9 @@ function main() {
       const last = i === ext.length - 1;
       const slots = l.slots;
       const m = l.m.slice(0, slots);
-      const mats = last ? [] : l.mat.filter(([mid]) => mid && materials.has(mid));
-      if (!last) for (const [mid, , nm] of l.mat) if (!mid || !materials.has(mid)) { warn++; console.log(`! ${base.name} +${l.lv}: materiale ${nm} (${mid}) assente da material.json, tolto`); }
+      const lmat = l.mat.map((x) => [materialIdOf(x), x[1], x[2]]);
+      const mats = last ? [] : lmat.filter(([mid]) => mid && materials.has(mid));
+      if (!last) for (const [mid, , nm] of lmat) if (!mid || !materials.has(mid)) { warn++; console.log(`! ${base.name} +${l.lv}: materiale ${nm} (${mid}) assente da material.json, tolto`); }
       const label = Number.isInteger(l.lv) ? String(l.lv) : l.lv.toFixed(1);
       rows.push({
         ...lv35,
@@ -187,4 +195,6 @@ function main() {
   console.log(`keyblade: ${rows.length} righe (${rows.filter((r) => r.generated).length} generate), keybladeSubslot: ${subslots.length}, avvisi ${warn}`);
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { MATERIAL_BY_NAME, TROPHY_STEPS, materialIdOf };

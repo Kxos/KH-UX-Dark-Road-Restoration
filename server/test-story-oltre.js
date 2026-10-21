@@ -4,7 +4,7 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const { buildRows, patch, wikiLv, ROOM_WORLD, defaultSources, thumbForRoom, readThumbs, buildWorldRows, countStopgaps,
-  Q555_VARIANTS } = require('./make-story-oltre');
+  Q555_VARIANTS, readHeaders } = require('./make-story-oltre');
 // cartelle temporanee sul disco D (regola del progetto), tolte alla fine
 const TMP = process.env.KHUX_TMP || 'D:\\Progetto_Restauro_KH_UX\\tmp';
 fs.mkdirSync(TMP, { recursive: true });
@@ -20,7 +20,14 @@ const stageIdOf = (n) => (n === 555 ? 18302 : n === 978 ? 39158 : n === 979 ? 39
 const wiki = {}, wikiRaw = {}, missions = [], stage113 = [];
 // obiettivi «Defeat the X»: nome nel master (senza articolo), bersaglio dello stage, nome solo JP, nome sconosciuto
 const SECOND = { 601: 'Defeat the Phantom Thing within 1 turn', 603: 'Defeat the Shadow within 2 turns',
-  605: 'Defeat the Nessuno within 1 turn', 607: 'Defeat Solo JP x 3', 609: 'Complete within 45 seconds' };
+  605: 'Defeat the Nessuno within 1 turn', 607: 'Defeat Solo JP x 3', 609: 'Complete within 45 seconds',
+  // obiettivi dei tappabuchi di prima coi codici del client ([fn], ricerca in tmp\objectives, 21-10)
+  611: 'Do a barrel roll', 613: 'Complete within 01\'20"00', 615: 'Complete within 2 battles', 619: 'Deal 50 or more hits',
+  621: 'Complete without taking damage', 623: 'Take less than a total of 20000 damage', 625: 'Destroy all barrels',
+  627: 'Open 3 treasure chests', 629: 'Collect 3 Keyblade materials', 631: 'Equip 4 or fewer Medals',
+  633: 'Complete within 00\'30"50' };
+// trofei (materiali 61/62/63) come premio del terzo obiettivo: naobjbonus3img della pagina wiki
+const TROPHY = { 880: 'Trophy NI KHX', 890: 'Trophy CS KHX', 915: 'Trophy CK KHX' };
 for (let n = 526; n <= 979; n++) {
   if (n === 978) continue;
   const title = `Quest ${n}: Finta ${n}`;
@@ -30,12 +37,15 @@ for (let n = 526; n <= 979; n++) {
     n === 600 ? { text: 'Defeat Phantom Thing x 2', reward: 'Title', qty: '1' }
       : SECOND[n] ? { text: SECOND[n], reward: 'Avatar Coin', qty: '4' }
         : { text: 'Defeat the target enemy within 2 turns', reward: 'Avatar Coin', qty: '4' },
-    { text: 'Complete without having to continue', reward: 'Mythril Shard', qty: '1' },
+    TROPHY[n] ? { text: 'Complete without having to continue', reward: 'Trophy', qty: '1' }
+      : { text: 'Complete without having to continue', reward: 'Mythril Shard', qty: '1' },
   ];
   wiki[title] = { title, number: String(n), name: `Finta ${n}`, world: n === 650 ? 'Castle of Dreams' : 'X', rooms: [room], ap: n % 2 ? 'zero' : '25',
     lvl: String(100 + n), target: 'Shadow', objectives, jewel: n === 600 ? '250' : null,
     rewards: n === 600 ? { namunny: 20000, jpmunny: 20000 } : {}, treasures: [], enemies: [] };
-  wikiRaw[title] = n === 600 ? '{{InfoQuestKHUX\n|naotitle=Presently\n|nakeyblade=Stroke of Midnight\n}}' : '{{InfoQuestKHUX\n}}';
+  wikiRaw[title] = n === 600 ? '{{InfoQuestKHUX\n|naotitle=Presently\n|nakeyblade=Stroke of Midnight\n}}'
+    : TROPHY[n] ? `{{InfoQuestKHUX\n|naobj3=Complete without having to continue\n|naobjbonus3=Trophy\n|naobjbonus3img=${TROPHY[n]}\n}}`
+      : '{{InfoQuestKHUX\n}}';
   const sid = stageIdOf(n);
   missions.push({ q: n, title, rooms: [room], stage: { stageId: sid, rooms: [n === 650 ? 'DG_0200_27_00' : `${prefixOf(n)}_0001_00_00`],
     target_id: n === 700 ? 77777 : 10001 } });
@@ -129,8 +139,49 @@ check(byId.get(601).submissionRequire[1] === 12 && byId.get(601).submissionId[1]
 check(byId.get(603).submissionId[1] === 10001, '«Defeat the <bersaglio>»: id pieno del bersaglio dello stage');
 check(byId.get(605).submissionId[1] === 1, 'nome sconosciuto: mai id 0, Shadow');
 check(byId.get(607).submissionRequire[1] === 4 && byId.get(607).submissionId[1] === 1, 'nome solo JP (1637, assente dal master) -> 1');
-check(byId.get(609).submissionRequire[1] === 10 && byId.get(609).submissionName[1] === 'Complete within 45 seconds'
-  && rows.report.stopgapObjectives.some(([n, i]) => n === 609 && i === 2), 'obiettivo senza codice: tappabuchi segnalato');
+check(byId.get(611).submissionRequire[1] === 10 && byId.get(611).submissionName[1] === 'Do a barrel roll'
+  && JSON.stringify(rows.report.stopgapObjectives) === '[[611,2,"Do a barrel roll"]]', 'obiettivo senza codice: tappabuchi segnalato');
+// codici del valutatore [fn]; testo della wiki tale e quale come submissionName
+const sub2 = (n) => { const r = byId.get(n); return [r.submissionRequire[1], r.submissionDataType[1], r.submissionIdType[1],
+  r.submissionId[1], r.submissionNum[1], r.submissionName[1]]; };
+const sameSub = (n, want) => JSON.stringify(sub2(n)) === JSON.stringify(want);
+check(sameSub(609, [37, 2, 0, 0, 45, 'Complete within 45 seconds']), `37 tempo <= N secondi: ${sub2(609)}`);
+check(sameSub(613, [37, 2, 0, 0, 80, 'Complete within 01\'20"00']), `37 mm'ss"cc -> mm*60+ss: ${sub2(613)}`);
+check(sameSub(633, [37, 2, 0, 0, 31, 'Complete within 00\'30"50']), `37 mm'ss"cc con centesimi -> secondo dopo: ${sub2(633)}`);
+check(sameSub(615, [8, 2, 0, 0, 2, 'Complete within 2 battles']), `8 battaglie <= N: ${sub2(615)}`);
+check(sameSub(619, [33, 2, 0, 0, 50, 'Deal 50 or more hits']), `33 colpi >= N: ${sub2(619)}`);
+check(sameSub(621, [9, 1, 0, 0, 0, 'Complete without taking damage']), `9 colpi subiti <= 0: ${sub2(621)}`);
+check(sameSub(623, [36, 2, 0, 0, 19999, 'Take less than a total of 20000 damage']), `36 «less than» N -> N-1: ${sub2(623)}`);
+check(sameSub(625, [17, 1, 0, 0, 0, 'Destroy all barrels']), `17 barili = tutti i forzieri: ${sub2(625)}`);
+check(sameSub(627, [17, 1, 0, 0, 0, 'Open 3 treasure chests']), `17 N forzieri (senza intestazioni): ${sub2(627)}`);
+check(sameSub(629, [18, 1, 0, 0, 0, 'Collect 3 Keyblade materials']), `18 N materiali (senza intestazioni): ${sub2(629)}`);
+check(sameSub(631, [24, 2, 0, 0, 4, 'Equip 4 or fewer Medals']), `24 medaglie <= N: ${sub2(631)}`);
+// con le intestazioni degli stage (mappoi +0x38 forzieri, +0x3c materiali): N diverso dal totale -> tappabuchi
+{
+  const sidOf = (n) => missions.find((m) => m.q === n).stage.stageId;
+  const headers = { [sidOf(625)]: { treasures: 4, materials: 0 }, [sidOf(627)]: { treasures: 3, materials: 0 },
+    [sidOf(629)]: { treasures: 0, materials: 2 } };
+  const rh = buildRows(stageRows, { ...sources, headers });
+  const bh = new Map(rh.map((r) => [r.id, r]));
+  check(bh.get(625).submissionRequire[1] === 17 && bh.get(627).submissionRequire[1] === 17, 'forzieri: N = totale dello stage -> 17');
+  check(bh.get(629).submissionRequire[1] === 10 && rh.report.stopgapObjectives.some(([n]) => n === 629),
+    'materiali: N != totale dello stage -> tappabuchi');
+}
+// readHeaders: totali dell'intestazione mappoi (+0x38 forzieri, +0x3c materiali) per stageId
+{
+  const d = mkTmp();
+  const buf = Buffer.alloc(0x40);
+  buf.writeInt32LE(3, 0x38); buf.writeInt32LE(2, 0x3c);
+  fs.writeFileSync(path.join(d, 'mappoi_stg38020.bin'), buf);
+  fs.writeFileSync(path.join(d, 'mappoi_stg1.bin'), Buffer.alloc(8));
+  const h = readHeaders(d);
+  check(JSON.stringify(h) === '{"38020":{"treasures":3,"materials":2}}', `readHeaders: ${JSON.stringify(h)}`);
+  check(readHeaders(path.join(d, 'manca')) === null, 'readHeaders senza cartella -> null');
+}
+// premio Trophy: materiale 61 NI / 62 CS / 63 CK x1 (tipo 5), dall'immagine naobjbonus3img
+const trophy = (n) => { const r = byId.get(n); return [r.submissionRewardType[2], r.submissionItemId[2], r.submissionItemNum[2]].join(); };
+check(trophy(880) === '5,61,1' && trophy(890) === '5,62,1' && trophy(915) === '5,63,1', `premi Trophy: ${trophy(880)} ${trophy(890)} ${trophy(915)}`);
+check(rows.report.missingRewards.length === 0, `premi non ricavati: ${JSON.stringify(rows.report.missingRewards)}`);
 check(byId.get(650).worldId === 7, 'stanza DG: mondo della wiki');
 // premi di fine missione: jewel, munny, keyblade
 check(JSON.stringify(r600.clearGetItemType) === '[2,4,13]' && JSON.stringify(r600.clearGetItemNum) === '[250,20000,1]'
@@ -245,14 +296,16 @@ check(/^img\/wipe\/wipe_1\[1-4\]\.png\tjp/m.test(tsv), 'originals.tsv: wipe_11..
   const nt = NOTICES.find((x) => x.title === 'Story Quests 526-979');
   const t = nt ? nt.body.join(' ') : '';
   check(nt && nt.tag === 'IMPORTANT' && NOTICES.indexOf(nt) === 0, 'notizia IMPORTANT in cima');
-  // numero dei tappabuchi dal master servito (81 dopo il Task 6: +552 «Complete within 2 battles»)
+  // obiettivi coi codici originali e trofei 61-63 (21-10): il paragrafo dei tappabuchi solo se il master servito ne ha
+  // ancora, niente paragrafo dei Trophy
   let master = [];
   try { master = JSON.parse(fs.readFileSync(path.join(__dirname, 'master_data', 'stage.json'), 'utf8')); } catch { /* assente */ }
-  const nStop = countStopgaps(master) || 81;
-  check(t.includes(`${nStop} mission objectives`), `notizia: ${nStop} tappabuchi (dal master)`);
+  const nStop = countStopgaps(master);
+  check(nStop ? t.includes(`${nStop} mission objectives`) : !/mission objectives/.test(t), `notizia: ${nStop} tappabuchi (dal master)`);
+  check(!/Trophy/.test(t), 'notizia: niente paragrafo dei Trophy');
   check(/Quest 555/.test(t) && /Complete within 2 turns/.test(t), 'notizia: obiettivi della 555');
-  for (const re of [/617/, /661/, /250/, /62/, /Trophy/, /Stroke of Midnight/, /Fairy Stars/, /Bad Guy Breaker/, /595/, /683/, /880/,
-    /978/, /What Comes After/, /reconstructed/]) check(re.test(t), `notizia: ${re}`);
+  for (const re of [/617/, /661/, /250/, /62/, /Stroke of Midnight/, /Fairy Stars/, /Bad Guy Breaker/, /595/, /683/, /880/,
+    /978/, /What Comes After/, /reconstructed/, /Quests 876-979/, /level of the quest/]) check(re.test(t), `notizia: ${re}`);
 }
 
 // --- patch: idempotente, dopo la 525, KHUX_STORY_OLTRE=0 lo spegne -------------------------------------------

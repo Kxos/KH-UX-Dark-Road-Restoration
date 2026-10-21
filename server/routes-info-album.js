@@ -30,11 +30,13 @@ const fs = require('fs');
 const path = require('path');
 const { countStopgaps } = require('./make-story-oltre');
 
-// obiettivi tappabuchi delle 526-979 contati nel master servito (81 dopo il Task 6, 21-10; 81 anche senza master)
+// obiettivi tappabuchi delle 526-979 contati nel master servito: 0 dal 21-10 (codici originali del client in
+// make-story-oltre.js); il paragrafo della notizia compare solo se un master ne ha ancora (0 anche senza master)
 function storyStopgaps() {
   const dir = process.env.KHUX_MASTER_DIR || path.join(__dirname, 'master_data');
-  try { return countStopgaps(JSON.parse(fs.readFileSync(path.join(dir, 'stage.json'), 'utf8'))) || 81; } catch { return 81; }
+  try { return countStopgaps(JSON.parse(fs.readFileSync(path.join(dir, 'stage.json'), 'utf8'))); } catch { return 0; }
 }
+const stopgapParagraph = (n) => (n ? [`${n} mission objectives show their original text, but they are checked as "Complete without having to continue", because the way the original game checked them is unknown.`] : []);
 
 // Finestre stagionali dello Shop: generate dalla tabella SEASONS, cosi' la notizia non puo' divergere
 const SEASON_LABEL = { newyear: 'New Year', lunar: 'Lunar New Year', valentine: "Valentine's Day", anniversary: 'Anniversary',
@@ -103,17 +105,18 @@ function updateNotice(realMs) {
 // elenchi di modifiche. In lista prima la notizia dinamica dei dati aggiornati (updateNotice), poi queste, dalla piu' recente.
 const NOTICES = [
   // missioni di storia 526-979 (I-009, piano docs/superpowers/plans/2026-10-21-missioni-526-979.md, make-story-oltre.js):
-  // parti ricostruite (617/661, nemici, obiettivi tappabuchi, trofei, keyblade, 978) e tappabuchi rimasti dei mondi nuovi
+  // parti ricostruite (617/661, nemici, livelli dei nemici 876-979, keyblade, 978) e tappabuchi rimasti dei mondi nuovi;
+  // obiettivi (codici del client) e trofei (materiali 61-63) originali dal 21-10
   { date: '10/21', tag: 'IMPORTANT', title: 'Story Quests 526-979',
     body: ['The Story now goes on after Quest 525, up to **Quest 979**, with the original maps, enemies, objectives and rewards wherever they survive. The parts that were lost are **reconstructed**, as explained below.',
       '## Quests and enemies',
       'Quests 617 and 661: the first part of each quest was lost. It is rebuilt in the original room (Quest 661 with the number of enemies of the original stage).',
       '250 enemies of the later quests have no surviving stats: they use the stats of the most similar original enemy (same family and role). 62 other enemies are exact copies of their base enemy, as in the original game data.',
+      'Quests 876-979: the original quest files do not say the level of each enemy (the original server gave it), so every enemy fights at the level of the quest: there are no weaker enemies mixed in.',
       'Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.',
       '## Objectives and rewards',
-      `${storyStopgaps()} mission objectives (for example time limits, barrels, treasure chests or the number of Medals equipped) show their original text, but they are checked as "Complete without having to continue", because the way the original game checked them is unknown.`,
+      ...stopgapParagraph(storyStopgaps()),
       'Quest 555 "Inside the Clock Tower Pt. 10": you face the Master of your own Union. The two objectives "Defeat the target enemy within 2 turns" can only name one Master, so they are shown as **"Complete within 2 turns"** (same reward), which every Union can complete.',
-      'The 7 "Trophy" rewards of Quests 880-915 are not given: the game data has no trophy items.',
       'The Keyblades **Stroke of Midnight**, **Fairy Stars** and **Bad Guy Breaker** are the rewards of Quests 595, 683 and 880, as in the original game, and are no longer given earlier. If you already have them, you keep them.',
       '## Worlds',
       'Castle of Dreams, Enchanted Dominion and the Wreck-It Ralph worlds play their own original music, but which track each quest used is not known (reconstructed); Game Central Station has only one track, which also plays in battle. Some quests show in the Story list the picture of another room of the same world.'] },

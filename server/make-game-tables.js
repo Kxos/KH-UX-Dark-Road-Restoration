@@ -837,6 +837,8 @@ require('./make-lux-levels').patch(OUT);
 require('./make-login-bonus').patch(OUT);
 // Cut-in dello speciale (I-187): righe alias id-1 per le medaglie che finiscono in 2/4 senza la riga 1★/3★ (make-cutin-alias.js)
 require('./make-cutin-alias').patch(OUT);
+// Trofei di Bad Guy Breaker (I-009): material 61-63 Trophy NI/CS/CK, premi delle 880-915 qui sotto (make-trophy-materials.js)
+require('./make-trophy-materials').patch(OUT);
 // Missioni di storia 526-979 (I-009): 1.1.3 per 526-555, wiki + stage JP per le altre, 978 solo filmato (onlyDrama);
 // dopo la tabella enemy (obiettivi «Defeat X») e stage.json scritti sopra. KHUX_STORY_OLTRE=0 lo spegne (make-story-oltre.js)
 require('./make-story-oltre').patch(OUT);

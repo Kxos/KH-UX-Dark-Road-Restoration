@@ -36,6 +36,8 @@ const L10 = (r) => r.lv10 ?? r.lv * 10;
 
 // tabella khuxwiki ridotta (make-keyblade-levels.js): materiali per il livello dopo
 const wiki = JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'keyblade_levels.json'), 'utf8'));
+// id dei materiali senza id nella khuxwiki (Trophy NI/CS/CK -> 61/62/63, make-trophy-materials.js)
+const { materialIdOf } = require('./make-keyblade-levels');
 
 // ---- 1. tabelle: catene +0..+60 per serie ---------------------------------------------------
 const chains = new Map();
@@ -71,9 +73,9 @@ for (const c of series) {
   for (const r of chain.slice(0, -1)) {
     const n = r.validNeedMaterial || 0;
     const wl = w?.levels.find((l) => Math.round(l.lv * 10) === L10(r));
-    // Bad Guy Breaker +4/+9/+14/+19/+24/+29/+30: solo Trophy NI/CS/CK, assenti da material
-    // (make-keyblade-levels.js li toglie): passo senza materiali, voluto
-    const onlyTrophy = wl && wl.mat.length > 0 && wl.mat.every(([id]) => !id || !materials.has(id));
+    // Bad Guy Breaker +4/+9/+14/+19/+24/+29/+30: Trophy NI/CS/CK (material 61-63 dal 21-10); un master senza quelle
+    // righe (make-keyblade-levels.js le toglie) lascia il passo senza materiali
+    const onlyTrophy = wl && wl.mat.length > 0 && wl.mat.every((x) => !materialIdOf(x) || !materials.has(materialIdOf(x)));
     if (onlyTrophy) freeSteps.push(r.name);
     check(n > 0 || onlyTrophy, `${r.name}: nessun materiale per il livello dopo`);
     check(n <= (r.needMaterialId || []).length && n <= (r.needMaterialNum || []).length, `${r.name}: validNeedMaterial ${n} oltre gli array`);
@@ -82,7 +84,7 @@ for (const c of series) {
       check(r.needMaterialNum[i] > 0, `${r.name}: quantita' ${r.needMaterialNum[i]}`);
     }
     if (wl) {
-      const want = wl.mat.filter(([id]) => id && materials.has(id)).map(([id, k]) => `${id}x${k}`).join(' ');
+      const want = wl.mat.map((x) => [materialIdOf(x), x[1]]).filter(([id]) => id && materials.has(id)).map(([id, k]) => `${id}x${k}`).join(' ');
       const got = r.needMaterialId.slice(0, n).map((id, i) => `${id}x${r.needMaterialNum[i]}`).join(' ');
       check(want === got, `${r.name}: materiali ${got} / khuxwiki ${want}`);
     }

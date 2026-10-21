@@ -903,3 +903,10 @@ audio/501000630.akb	b16
 #     (server/make-story-oltre.js) -> img/wipe/wipe_<worldId>.png ([fn], worldId dal prefisso della stanza):
 #     martello 11 Niceland, Cy-Bug 12 Hero's Duty, stella 13 Game Central Station, coppa 14 Sugar Rush. Solo nel JP
 img/wipe/wipe_1[1-4].png	jp
+
+# 41. Trofei di Bad Guy Breaker (I-009, 21-10: righe material 61-63 di server/make-trophy-materials.js, premi del terzo
+#     obiettivo di 880-915): material_61 coppa in pixel art Niceland, _62 Cy-Bug Sector, _63 Candy Kingdom. Solo nel JP
+#     (gia' coperte dal glob della sezione 3: righe esplicite perche' un originale che sparisce non passi in silenzio)
+img/material/material_61.png	jp
+img/material/material_62.png	jp
+img/material/material_63.png	jp
