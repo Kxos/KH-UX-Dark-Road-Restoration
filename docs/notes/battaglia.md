@@ -396,6 +396,10 @@ texture scartate come doppioni riprese da un'altra animazione dello stesso nemic
 PNG -> BTF premoltiplicato. Un nemico entra solo con tutte le obbligatorie complete. Piu' gli
 effetti di comparsa originali non serviti (5, 7, 8, 9, 12, 13, 15, 16, 19, 101, 103). Rapporto in
 `enemy_gen\report.md`. Formato LWF uguale nelle tre fonti (intestazioni `12101000`/`13121100`).
+In (3), senza copie dello stesso nemico, la texture viene dalla **tabella dei doppioni**
+`recon/tools/jp_dedup_donors.tsv` (`jp_dedup_donors.py`, 21-10): il file identico rimasto in un'altra cartella JP
+(spesso `lwf/drama/<id>/`, numerazione delle bitmap diversa), regole misurate sul pacchetto 2016 (stub_of noto,
+776/777 a vista); la usa anche l'import degli NPC di `import_jp_coco.py`. Nemici in piu': 1545, 1591; NPC 2021.
 
 Risultato (14-10): 121 displayId da coprire, **116 completi** (605 righe enemy su 670, 12.267 file,
 51,8 MB; pacchetto 53,2 MB), move da wait per 16 (36, 38, 39, 73, 75, 76, 154, 184, 198, 199, 211,

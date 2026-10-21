@@ -26,6 +26,9 @@ Per ogni animazione si sceglie, in ordine: (1) LWF JP con tutte le texture JP (l
 animazione dello stesso nemico con lo stesso nome originale (<anim>_<esadecimale>.png), se tutte le
 copie candidate sono identiche (come LWF_FILL di import_jp_coco.py). Altrimenti l'animazione e'
 incompleta; un nemico entra solo se tutte le obbligatorie sono complete (mai una texture assente).
+In (3), se nessuna copia dello stesso nemico va bene, la texture si prende dalla tabella dei doppioni
+(recon/tools/jp_dedup_donors.tsv, jp_dedup_donors.py: file identico rimasto in un'altra cartella JP, spesso
+lwf/drama/<id>/; regole misurate sul pacchetto 2016, precisione >= 99%); `--donors ''` la esclude.
 
 Effetti di comparsa: lwf/character/enemy/show_effect_fla/show_effect<N>/ per gli showSwf originali
 (external\\thethiny\\enemy_dec.json) non serviti, stesse regole (completi o niente).
@@ -56,6 +59,8 @@ ENEMY = 'lwf/character/enemy'
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--jp', default=os.path.join(JP_ROOT, 'lwf', 'character', 'enemy'))
+ap.add_argument('--jp-root', default=JP_ROOT, help='radice JP delle sorgenti della tabella dei doppioni')
+ap.add_argument('--donors', default=None, help="tabella dei doppioni (default recon/tools/jp_dedup_donors.tsv; '' = nessuna)")
 ap.add_argument('--b2016', default=os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files', 'lwf', 'character', 'enemy'))
 ap.add_argument('--index', action='append')
 ap.add_argument('--master', default=os.path.join(REPO, 'server', 'master_data'))
@@ -73,6 +78,13 @@ a.index = a.index or [os.path.join(D, 'resource_data', 'names_v4.tsv'), os.path.
 a.poi = a.poi or [os.path.join(D, 'stage_gen', 'orig_stages', 'stage_poi_orig.json'),
                   os.path.join(REPO, 'server', 'game_data', 'stage_poi.json')]
 OUT_FILES = os.path.join(a.out, 'files')
+import jp_dedup_donors  # noqa: E402
+DONORS = jp_dedup_donors.load(jp_dedup_donors.TABLE if a.donors is None else a.donors)
+
+
+def donor(published):
+    """Texture scartata come doppione dall'estrazione JP: il file identico rimasto altrove (tabella)."""
+    return jp_dedup_donors.lookup(DONORS, published, a.jp_root)
 
 
 def listing(p):
@@ -133,12 +145,14 @@ def plan_anim(root_rel, anim, jp_all):
     if jl:
         # texture scartate dall'estrazione JP perche' identiche a un altro file: stesso nome originale
         # (dopo il prefisso dell'animazione) in un'altra animazione dello stesso nemico
-        todo, filled = {pre + lw: jl}, []
+        todo, filled, dons = {pre + lw: jl}, [], []
         ok = True
         for t in refs_of(jl):
             if t in jp:
                 todo[pre + t] = jp[t]
                 continue
+            # prima le copie dello stesso nemico (regole sotto), poi la tabella dei doppioni (21-10)
+            dp = donor(pre + t)
             suf = t[len(anim) + 1:] if t.startswith(anim + '_') else None
             cands = [] if suf is None else [fs[o + '_' + suf] for o, fs in jp_all.items()
                                               if o != anim and (o + '_' + suf) in fs]
@@ -150,11 +164,16 @@ def plan_anim(root_rel, anim, jp_all):
             if cands and len({sha(c) for c in cands}) == 1:
                 todo[pre + t] = cands[0]
                 filled.append(t)
+            elif dp:
+                todo[pre + t] = dp
+                dons.append(t)
             else:
                 ok = False
                 break
         if ok:
             notes.append('%d texture da altre animazioni dello stesso nemico' % len(filled))
+            if dons:
+                notes.append('%d dalla tabella dei doppioni' % len(dons))
             return 'jp+riempite', todo, '; '.join(notes)
     if not jl and not bl:
         return 'assente', None, '; '.join(notes) or 'nessuna fonte'
