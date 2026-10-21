@@ -705,3 +705,27 @@ MoreEnemiesDefeated = 28, OneEnemy = 36 (130), LowerSlot = 39 (69, convenzione d
 criticalPower (+0x2bc, moltiplicatore; +0x2b8 probabilita'): le nostre righe hanno 10000 = nessun effetto; proposta
 criticalPower = hi/lo·1e4. Curve (S2 e intervallo di x) di 26, 27, 31, 37, 39, 41 senza originale: forma ricostruita.
 Da verificare al banco: cosa contengono +0x4308/+0x4330/+8 e il campo del deck +0x14.
+
+**Applicato (I-189b, 21-10)**: `server/variable-power.js` (stesso passo dopo `burstPowerFix` in make-game-tables.js e
+nella riga di comando di `medal-power-fix.js`) ricostruisce ora ogni condizione con un tipo; prova
+`node server/test-variable-power.js`. Master servito corretto sul posto con `node server/medal-power-fix.js` (uguale byte
+per byte alla prova su una copia; copia del prima in `D:\Progetto_Restauro_KH_UX\tmp\i189b\backup-master\`): **486** righe
+cambiate (468 nuove variabili + 18 Critical), displayPower e medal.json invariati; righe con tipo > 2: 239 -> **707**.
+- Righe Roboloid per tipo (642): 3: 11, 4: 146, 5: 7, 6: 12, 7: 39, 16: 8, 20: 2, 21: 2, 22: 7, 23: 52, 25: 14, 26: 6,
+  27: 3, 28: 7, 30: 13, 31: 3, 36: 130, 37: 6, 38: 19 (Slot3 4, Slot4 6, Slot5 7, Slot6 2), 39: 69, 40: 66, 41: 20.
+  Piu' 65 copiate da thethiny (precedenza), 18 Critical (criticalPower = round(hi/lo·1e4), tipo 1, `critical` = la
+  probabilita' non toccata), 1 senza condizione (3002089) tipo 1.
+- Saturazione (6, 7, 23, 25, 26, 27, 28, 37, 39, 40, 41): sp1 = (hi−lo)/(f(x_hi)−f(x_lo)) calcolato in razionali,
+  base_i = lo_i − sp1·f(x_lo), max_i = lo_i + (hi−lo). Convenzioni [S2, x_lo, x_hi]: 6 [5,1,10], 7 [6,1,10],
+  23 [10,1,20], 25 [10,0,20], 27 [7,0,14] (Zone of Ruin), 28 [50,0,100], 40 [5,1,10]; **curva ricostruita**: 26 come il
+  27, 37 come il 25, 39 e 41 come il 40, 31 come il 30 (sp2 1e8, base = massimo). Riproduce 42 originali su 56 entro 15
+  anche per pallino (i 14 no: Dark End, Radiant Glory, Gale Assault +4/+5). Final Boss Xion 6★ (3001131): 23, sp1 14016,
+  sp2 100000, base 28826, «x3.01 - 4.25»; HD Larxene 6★ (3001223): 25, sp1 19168, base = display 29900, max 48600.
+- Tipo 16: sp1 = (hi−lo)/6 se l'attacco e' Cyclone Sword (originali 10571-10576), /3 per gli altri (originali Blitz e Swift
+  Hero; Wheel Smash di KH III Go Go senza originale segue la maggioranza). Tipo 5: sp1 9000 (anche per Dark Arcanum, che
+  nell'originale +5 ha 9990), sp2 = hi−lo. Tipo 38: sp2 = (slot−1)·1e4.
+- MoreGaugesPrevMedal: 27 se il testo dice «next Medal» (Glacial Arrows, 3), altrimenti 26 (Wind Dash, 6). Attenzione:
+  in thethiny Wind Dash (originale) e' tipo 28 e Gale Assault tipo 27, contro la mappa del codice (28 nemici sconfitti,
+  27 medaglia successiva, 31 meno Lux): si segue il codice, da verificare al banco.
+- 9 righe col display a pallini pieni (khuxwiki) diverso da LowMulti (3000545, 3000701, 3001893, 3001981, 3002008-3002012):
+  display tenuto, divario hi − lo.
