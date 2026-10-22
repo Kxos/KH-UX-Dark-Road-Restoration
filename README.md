@@ -18,10 +18,10 @@ Union χ was removed from the app, which was reduced to a theater mode.
 | A | Ghidra on `libcocos2dcpp.so`, extraction of hosts and endpoints | ✅ done |
 | B | Minimal REST server → the client reaches the home screen | ✅ **unmodified original** APK 4.3.1 on LDPlayer 9 (Android 9): new player, Prologue, home |
 | C | Field schema of the 54 master tables | ✅ done — 106 tables, 1,739 fields |
-| D | Master data, quests and single-player combat | 🔄 from new player to home; story quests 1–525 (generated maps); Medal List, selling, Level Up (Special Attack dots and Bonus, Skills, traits, Trait Medals), Evolve, Moogle Shop, Shop with the original banners (807 deals with their guarantees, pity, weekly rotation, seasonal banners, a kept banner and a filterable catalog), Profile, Missions and Limited campaigns, Avatar Boards, pet, Lux levels up to 999. In progress: an exact schema of the game worlds (areas and links) before rebuilding the quest maps |
+| D | Master data, quests and single-player combat | 🔄 from new player to home; story quests **1–979** with the original maps and rooms (from the JP 4.3.1 data), cutscenes, per-quest music, original enemy stats and levels, objectives, chests and Trophies; Special Attacks with variable damage and enemy attacks; Medal List, selling, Level Up (Special Attack dots and Bonus, Skills, traits, Trait Medals), Evolve, Moogle Shop, Shop with the original banners (807 deals with their guarantees, pity, weekly rotation, seasonal banners, a kept banner and a filterable catalog), Profile, Missions and Limited campaigns, Avatar Boards, pet, Lux levels up to 999, in-game Notices explaining every deviation from the original. In progress: original graphics for about 90 enemy families of quests 526–979 (today shown with the look of a similar enemy) |
 | E | Self-hosted Photon for Union Cross / raids / PvP | ⬜ |
 
-Status as of 19 October 2026. Screens that the 4.3.1 client can no longer find in its
+Status as of 22 October 2026. Screens that the 4.3.1 client can no longer find in its
 resources (CocoStudio layouts, texts, animations) are **rebuilt**: from nearby originals,
 from widget names read in the code, and from reference images of the time.
 
@@ -34,11 +34,14 @@ from widget names read in the code, and from reference images of the time.
 
 ## What we are looking for
 
-Story-quest maps (`stage/mappoi_stg*.bin`) and many rooms of the worlds (e.g. Market,
-Avenue, Dwarf's Cottage, West Wing, Underworld) were downloaded from the CDN into
-`files/r/misc.mp4` and were never shipped inside the app packages: only the tutorial stages
-(1010–1040) and 86 rooms survive in public archives. If you still have a `files/r/` folder
-from a KHUx install (any version 1.x–4.x), please get in touch by opening an issue.
+Most of the game content was downloaded from the CDN into `files/r/misc.mp4` and was never shipped
+inside the app packages. The story maps and rooms now come from the JP 4.3.1 data shared by thethiny,
+but the textures of about **90 enemy families** of quests 526–979 (Gearbits, Flappy Bugs, Cy-Bugs,
+King Candy, Jafar, Dragon Maleficent, Darkness, Ephemer & Skuld...) are missing from every public
+archive. We are also looking for anything about **events, raids, Coliseum, Union Cross and PvP**
+(screenshots, videos, rules, rewards, network captures). If you still have a `files/r/` folder or a
+device backup from a KHUx install (Global or JP, any version), or any of the above, please get in
+touch by opening an issue.
 
 ## Technical summary
 

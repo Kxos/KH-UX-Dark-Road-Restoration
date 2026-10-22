@@ -15,10 +15,10 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 | A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint | ✅ completata |
 | B | Server REST minimo → il client raggiunge la home screen | ✅ APK 4.3.1 **originale** su LDPlayer 9 (Android 9): nuovo giocatore, Prologue, home |
 | C | Schema dei campi delle 54 tabelle master | ✅ completata — 106 tabelle, 1.739 campi |
-| D | Popolamento master data, quest e combattimento single-player | 🔄 dal nuovo giocatore alla home; missioni di storia 1–525 (mappe generate); Medal List, vendita, Level Up (pallini e guilt, skill, trait, Trait Medal), Evolve, Moogle Shop, Shop con i banner originali (807 deal con garanzie, pity, rotazione settimanale, stagionali, banner fissato e catalogo con filtri), Profilo, Missioni e campagne Limited, Avatar Boards, pet, livelli Lux fino a 999. In corso: schema esatto dei mondi (aree e collegamenti) prima di ricostruire le mappe delle missioni |
+| D | Popolamento master data, quest e combattimento single-player | 🔄 dal nuovo giocatore alla home; missioni di storia **1–979** con le mappe e le stanze originali (dai dati JP 4.3.1), filmati, musica per missione, statistiche e livelli originali dei nemici, obiettivi, forzieri e Trophy; Special Attack con danno variabile e attacchi dei nemici; Medal List, vendita, Level Up (pallini e guilt, skill, trait, Trait Medal), Evolve, Moogle Shop, Shop con i banner originali (807 deal con garanzie, pity, rotazione settimanale, stagionali, banner fissato e catalogo con filtri), Profilo, Missioni e campagne Limited, Avatar Boards, pet, livelli Lux fino a 999, Notices in gioco che spiegano ogni differenza dall'originale. In corso: grafiche originali di circa 90 famiglie di nemici delle missioni 526–979 (oggi con l'aspetto di un nemico simile) |
 | E | Photon self-hosted per Union Cross / raid / PvP | ⬜ |
 
-Stato aggiornato al 19 ottobre 2026. Le schermate che il client 4.3.1 non trova più nelle
+Stato aggiornato al 22 ottobre 2026. Le schermate che il client 4.3.1 non trova più nelle
 risorse (layout CocoStudio, testi, animazioni) vengono **ricostruite**: dagli originali
 vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'epoca.
 
@@ -31,11 +31,14 @@ vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'e
 
 ## Cosa cerchiamo
 
-Le mappe delle missioni di storia (`stage/mappoi_stg*.bin`) e molte stanze dei mondi (es. Market,
-Avenue, Dwarf's Cottage, West Wing, Underworld) venivano scaricate dal CDN in
-`files/r/misc.mp4` e non sono mai state nei pacchetti dell'app: negli archivi pubblici restano solo
-le missioni del tutorial (1010-1040) e 86 stanze. Chi ha ancora una cartella `files/r/` di KHUx
-(qualsiasi versione 1.x-4.x) puo' contattarci aprendo una issue.
+Gran parte dei contenuti del gioco veniva scaricata dal CDN in `files/r/misc.mp4` e non e' mai stata
+nei pacchetti dell'app. Le mappe e le stanze della storia ora vengono dai dati JP 4.3.1 condivisi da
+thethiny, ma le texture di circa **90 famiglie di nemici** delle missioni 526–979 (Gearbit, Flappy Bug,
+Cy-Bug, King Candy, Jafar, Dragon Maleficent, Darkness, Ephemer & Skuld...) mancano in tutti gli
+archivi pubblici. Cerchiamo anche tutto cio' che riguarda **eventi, raid, Coliseum, Union Cross e PvP**
+(screenshot, video, regole, premi, catture del traffico). Chi ha ancora una cartella `files/r/` o un
+backup del dispositivo con KHUx installato (Global o JP, qualsiasi versione), o uno di questi materiali,
+puo' contattarci aprendo una issue.
 
 ## Sintesi tecnica
 
