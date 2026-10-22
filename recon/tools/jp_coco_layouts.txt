@@ -238,3 +238,9 @@ RaidBattle_EnemyStatusField_L_Multi.json   rev=376985 graft=BaseBuff_Enm1,BaseBu
 RaidBattle_EnemyStatusField_S_Boss.json    rev=376981 graft=BaseBuff_Enm1,BaseBuff_Enm2
 # pannello del tempo delle missioni a tempo: il client lo carica nelle 699-704 (Hidden Staircase), assente -> crash in GUIReader (banco 22-10)
 ActMapTimeAttack_TimePanel.json
+# Proud Mode (I-200, docs/notes/mappe_storia.md#proud-mode): popup di partenza StartDeckProudScene_ver260 ([fn]),
+# servita dal WW senza i suoi sotto-layout StartDeckProud_Base/Button_Skip/Button_Start/Rules_ver131 e
+# AdventureTop2_Proud_RaidInfo_Start (anche [fn]), ne' le texture rosse Win01_pm, Panel03_pm (9-slice, anche
+# StartDeckProud_Panel_KB(_Ad)_ver230 di [fn]), Panel04_pm, Plate11_pm, Plate18_pm, Deck_Panel_StartDeck_pm (9-slice,
+# crash 0x2c), PMode_Rule_Logo, PMode_Rule_Panel_A, Charge_CloseBut_Off/On; cursore Cursor_Anim_Proud con JP_ARM
+StartDeckProudScene_ver260.json

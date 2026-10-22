@@ -108,8 +108,12 @@ Tools (20-10):
 - **New plists are not loaded**: the client reads only plists with names already present and uses the
   texture with the plist's name (`X0.plist` -> `X0.png`). A new armature with its own frames replaces
   the plist+png of an armature that the binary does not cite: free ones `EquipmentBGAction0` (used by
-  `Cursor_Anim_MedalSell`), `MyPageAnime0`, `AdventureTopAnima0`, `GlobalNaviAnimation0`,
-  `LuxUpPanelAnimation0`, `ActMapTreasureBox*0`, `Cursor_Anim_QuestPanel0`/`QuestArrow0`.
+  `Cursor_Anim_MedalSell`), `MyPageAnime0` (used by `Cursor_Anim_Ranking/Ranking2`), `AdventureTopAnima0`, `GlobalNaviAnimation0`,
+  `LuxUpPanelAnimation0`, `ActMapTreasureBox*0`, `Cursor_Anim_QuestPanel0`/`QuestArrow0`. Check of 22-10 (I-200):
+  `AdventureTopAnima`, `GlobalNaviAnimation`, `LuxUpPanelAnimation`, `Cursor_Anim_QuestPanel/QuestArrow` are cited by
+  served scenes (AvatarEdit, GlobalNavi, AdventureTop2), so taking them changes those screens; only
+  `ActMapTreasureBoxAnim0` and `ActMapTreasureBoxExAnim0` are cited by no served or generated layout and not by the binary.
+  `ActMapTreasureBoxExAnim0` now carries `Cursor_Anim_Proud` (JP_ARM of `import_jp_coco.py`); `ActMapTreasureBoxAnim0` is the last free one.
 - `ArmatureAnimation::play` (`[fn]`) with a missing movement = crash.
 - The buttons of `[fn]` load `img/ui/<nome>_On.png` on tap: without it, crash (46 copied).
 - The template's ImageViews have 9-slice (border 50): for icons at natural size `s9=False`.
@@ -209,6 +213,14 @@ armatures, textures) and writes it into `stage_gen\files\cocostudio\publish\` ov
   revision the content of another layout (`PresentBOX_Panel_ver131.00265720` is a panel of
   icons): if the chosen revision has fewer than half of the names of the first, the root stops.
 - Names already served (`names_v4.tsv`): never copied, WW wins (including the 11 localized textures).
+- Armatures of `JP_ARM` (new plists do not load, [rules](#regole)) found in a root's closure do not stop it: the
+  JP `ExportJson` is written by the JP_ARM block on its free plist slot. Proud Mode (I-200, 22-10): root
+  `StartDeckProudScene_ver260.json` (served WW scene without its sub-layouts) brings `StartDeckProud_Base/Button_Skip/
+  Button_Start/Rules_ver131`, `AdventureTop2_Proud_RaidInfo_Start` and the textures `Win01_pm`, `Panel03_pm`, `Panel04_pm`,
+  `Plate11_pm`, `Plate18_pm`, `Deck_Panel_StartDeck_pm` (9-slice), `PMode_Rule_Logo`, `PMode_Rule_Panel_A`,
+  `Charge_CloseBut_Off/On`; `Cursor_Anim_Proud` (frame `PMode_Rule_Panel_B`, yellow frame of the condition panel) on
+  `ActMapTreasureBoxExAnim0`. Open: the JP `PMode_Rule_Logo` reads «RULE», the global client showed «CONDITION» in the
+  same yellow style (reference\proud_moded_x94ey7mwud141.jpg); the WW texture is not in our resources (to redraw).
   Served WW root that make_layouts overwrote (`MedalInfo_ReleaseWindow`): the WW one comes back,
   copied only to translate its texts, with the missing textures from JP (Panel07, 9-slice of I-049).
   Exception `graft=W1,W2` (only served WW roots): grafts into the WW the widgets W1, W2 of the JP revision

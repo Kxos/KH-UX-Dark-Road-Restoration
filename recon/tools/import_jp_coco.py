@@ -447,6 +447,23 @@ for n in ours:
         except (ValueError, OSError):
             pass
 
+# ---- armature originali JP su un plist libero (scritte piu' avanti) ---------------------------
+# Armature che il client WW crea e che nessuna risorsa serve: senza ExportJson la creazione va in
+# crash ([fn]). Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle
+# classifiche ([fn] con Ranking_MainPanel_ver230; SIGSEGV a 0x8 dopo /ranking/lux/border,
+# banco 14-10). I plist con un nome nuovo non si caricano (docs/notes/risorse_layout.md#regole): il
+# plist e la texture vanno sul nome di un plist servito che il binario non cita mai; le due armature
+# hanno lo stesso fotogramma (Rank_Panel_User_Eff.png) e condividono il plist. La texture di
+# Ranking2 (Cursor_Anim_Ranking20.png) manca anche nel JP: si usa quella di Ranking.
+# Cursor_Anim_Proud (Proud Mode, I-200): cursore rosso del nodo «Cursor» di StartDeckProudScene_ver260
+# (servita, come StartDeckEdit2/3Scene): un fotogramma, PMode_Rule_Panel_B.png. Va su
+# ActMapTreasureBoxExAnim0: plist servito che nessun layout servito o generato e il binario citano
+# (verifica del 22-10, tmp/proud/res). Nella chiusura di una radice queste armature non bloccano
+# (il plist e' quello dello slot) e la loro scrittura resta a questo blocco.
+JP_ARM = {'Cursor_Anim_Ranking': ('MyPageAnime0', 'Cursor_Anim_Ranking0'),
+          'Cursor_Anim_Ranking2': ('MyPageAnime0', 'Cursor_Anim_Ranking0'),
+          'Cursor_Anim_Proud': ('ActMapTreasureBoxExAnim0', 'Cursor_Anim_Proud0')}
+
 results, writes = [], {}            # writes: nome publish -> ('jp', percorso, dati|None) | ('delete',)
 for root, opts in roots:
     r = dict(root=root, status='ok', block=[], warn=[], layouts=[], keep_served=[], keep_ours=[],
@@ -518,6 +535,11 @@ for root, opts in roots:
             if CUS.match(w):
                 r['block'].append('%s: widget %s (lo crea [fn])' % (name, w))
         for s in subs:
+            if s.endswith('.ExportJson') and s[:-len('.ExportJson')] in JP_ARM and s not in served:
+                _w = 'armatura %s sul plist %s (JP_ARM)' % (s, JP_ARM[s[:-len('.ExportJson')]][0])
+                if _w not in r['warn']:
+                    r['warn'].append(_w)
+                continue
             if s in served:
                 r['keep_served'].append(s)
                 s_path = served_path(s)
@@ -888,15 +910,7 @@ if os.path.isdir(os.path.join(JP_ROOT, 'lwf', 'pet', 'part')):
           % (len(_mot_ok), ' '.join(_mot_ok), ' '.join(_mot_keep)))
 
 # ---- armature originali JP su un plist libero -------------------------------------------------
-# Armature che il client WW crea e che nessuna risorsa serve: senza ExportJson la creazione va in
-# crash ([fn]). Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle
-# classifiche ([fn] con Ranking_MainPanel_ver230; SIGSEGV a 0x8 dopo /ranking/lux/border,
-# banco 14-10). I plist con un nome nuovo non si caricano (docs/notes/risorse_layout.md#regole): il
-# plist e la texture vanno sul nome di un plist servito che il binario non cita mai; le due armature
-# hanno lo stesso fotogramma (Rank_Panel_User_Eff.png) e condividono il plist. La texture di
-# Ranking2 (Cursor_Anim_Ranking20.png) manca anche nel JP: si usa quella di Ranking.
-JP_ARM = {'Cursor_Anim_Ranking': ('MyPageAnime0', 'Cursor_Anim_Ranking0'),
-          'Cursor_Anim_Ranking2': ('MyPageAnime0', 'Cursor_Anim_Ranking0')}
+# (JP_ARM e' definito prima delle radici: scritto qui sotto, dopo le radici)
 for _arm, (_slot, _src) in sorted(JP_ARM.items()):
     _ej = os.path.join(_jp_pub, _arm + '.ExportJson')
     if 'cocostudio/publish/%s.ExportJson' % _arm in _served_all or not os.path.exists(_ej):
