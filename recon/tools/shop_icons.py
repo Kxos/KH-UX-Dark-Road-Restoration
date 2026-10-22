@@ -11,7 +11,8 @@ import os
 import sys
 from PIL import Image
 
-DEFAULT_BASE = r'D:\Progetto_Restauro_KH_UX\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1'
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+DEFAULT_BASE = private_tools.local_path('jp_data')  # a local reference data folder, not provided by this project
 SIZE = 48
 # chiave -> percorso relativo nella base JP (stesse chiavi della whitelist in server.js)
 ICONS = {

@@ -1,4 +1,4 @@
-# Layout originali dai dati JP 4.3.1 (thethiny) al posto dei nostri generati: import_jp_coco.py
+# Layout originali dai dati JP 4.3.1 (cartella di riferimento locale) al posto dei nostri generati: import_jp_coco.py
 # (lanciato da build-resources.ps1 dopo make_layouts/make_textures). I-117,
 # docs/notes/risorse_layout.md#jp-originali.
 #
@@ -19,7 +19,7 @@
 # --- Presents (I-035, I-096) ---
 PresentBOXScene.json
 PresentBOX_Base_ver400.json
-# la revisione 00265720 di thethiny e' un pannello di icone (33 widget, nessuno di quelli cercati
+# la revisione 00265720 locale e' un pannello di icone (33 widget, nessuno di quelli cercati
 # da [fn]/[fn]): si usa la prima, con i nomi del codice
 PresentBOX_Panel_ver131.json            rev=0 need=Panel_Present,Txt_Gift_Name_Label,Txt_Storage_Date_Label,Button,Txt_Receive
 PresentBOX_IconPanel_ver131.json        need=LuxBoard,AVT,Incentive,Medal,KB,Stamp

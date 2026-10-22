@@ -46,7 +46,7 @@ It is also needed for 2c: the banners that promise «a powerful skill at max ski
 - Local wiki `D:\Progetto_Restauro_KH_UX\wiki\wiki_all.json`, page «Medal», section `===List of Skills===`:
   **163 skills** with EN name, JP/kana name, max LV, max activation probability (%) and description.
   No IDs or numeric fields. Linked pages: «Skill EXP», «Skill Quests», «Template:SkillIcon».
-- Skill icons: `D:\Progetto_Restauro_KH_UX\tmp\thethiny_x\bundle2016\files\img\skill`.
+- Skill icons: `<ref_work>\bundle2016\files\img\skill` (local reference data).
 - No other table in dumps, IPA 4.3.1/4.4.0, OBB, 4.3.1 assets, JP data (searched on 18-10).
 - The client downloads `skill` and `skillExp` from the server (`/system/master` -> `/master/<nome>`): adding rows to the
   master is enough for the client to know them.

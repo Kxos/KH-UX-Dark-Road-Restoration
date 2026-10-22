@@ -36,12 +36,12 @@ TABLE = os.path.join(HERE, 'extra_donors.tsv')
 RECOLOUR_TABLE = os.path.join(HERE, 'jp_recoloured.tsv')
 DEEP_TABLE = os.path.join(HERE, 'extra_donors_deep.tsv')
 D = r'D:\Progetto_Restauro_KH_UX'
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 ROOTS = {
-    'jp431': [os.path.join(D, '[local reference data]', '', '[local reference data]', 'data', '[local reference data]',
-                           'data', 'jp_final_4.3.1')],
+    'jp431': [private_tools.local_path('jp_data')],
     'jp501': [os.path.join(D, 'tmp', 'jp501', 'x')],
     'ww501': [os.path.join(D, 'tmp', 'enemy_src2', 'ww'), os.path.join(D, 'tmp', 'enemy_src2', 'wwtex')],
-    'b2016': [os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files')],
+    'b2016': [private_tools.local_path('ref_work', 'bundle2016', 'files')],
     'recolour': [os.path.join(D, 'enemy_gen_src', 'recolour')],
 }
 RULES = {'exact501': 1, 'lwfmatch+anchors': 2, 'unique': 2, 'align&donor': 2, 'donor&order': 2, 'twinfam': 2,

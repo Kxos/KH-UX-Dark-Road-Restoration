@@ -200,8 +200,8 @@ Tools (20-10):
 ## Original JP layouts in place of the generated ones (I-117)
 
 User's decision (13-10): where we have a generated layout and the original is in the JP 4.3.1 data,
-the original is used. Source `[local reference data]\\...\jp_final_4.3.1\cocostudio\` (leading
-space in the path; read-only; third-party data, never in the repository).
+the original is used. Source: `cocostudio\` of the local reference data folder (`KHUX_JP_DATA`; not provided by this project,
+read-only, never in the repository).
 
 **Tool** `recon/tools/import_jp_coco.py` (Pillow: without `-I`), launched by `build-resources.ps1`
 after `make_layouts`/`make_textures`/texts and before `btf_fix`. It reads the versioned list

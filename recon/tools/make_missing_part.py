@@ -41,8 +41,8 @@ import mapfile  # noqa: E402
 
 D = r'D:\Progetto_Restauro_KH_UX'
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-JP_STAGE = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                        '[local reference data]', 'data', 'jp_final_4.3.1', 'stage')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_STAGE = private_tools.local_path('jp_data', 'stage')
 OLTRE = os.path.join(D, 'reference', 'world_schema', 'oltre525', 'oltre525.json')
 WIKI = os.path.join(D, 'wiki', 'quests.json')
 STORY_MAX = 40000           # stage di storia (< 40000; eventi 6xxxx-7xxxxx solo se nella storia non basta)

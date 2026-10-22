@@ -24,12 +24,12 @@ SRC, OUT = sys.argv[1], sys.argv[2]
 PUB = 'cocostudio/publish/'
 
 
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 def jp_latest(name):
-    """Percorso assoluto della revisione piu' alta di cocostudio/publish/<name> nei dati JP 4.3.1 di thethiny
+    """Percorso assoluto della revisione piu' alta di cocostudio/publish/<name> nei dati JP 4.3.1 (cartella di riferimento locale)
     (nomi <stem>.<8 cifre>.<ext>, come latest() di import_jp_coco.py); <name> nella cartella WW se i dati JP mancano.
     Assoluto: os.path.join(SRC, PUB, assoluto) lo tiene cosi' com'e' nelle voci 'copy'."""
-    d = os.path.join(SRC, '..', '..', '[local reference data]', '', '[local reference data]', 'data',
-                     '[local reference data]', 'data', 'jp_final_4.3.1', 'cocostudio', 'publish')
+    d = private_tools.local_path('jp_data', 'cocostudio', 'publish')
     stem, ext = os.path.splitext(name)
     revs = sorted(f for f in os.listdir(d) if f.startswith(stem + '.') and f.endswith(ext)
                   and f[len(stem) + 1:-len(ext)].isdigit()) if os.path.isdir(d) else []
@@ -662,7 +662,7 @@ LAYOUTS = {
     # come popup completo appariva una seconda finestra spostata di Panel (banco v32_unlock4a).
     # Txt_Get_Label a y 45: sotto la scritta CONGRATULATIONS (LWF in Area_Point; a y 78 la
     # copriva, banco q9_get) e sopra l'icona (Panel y 250)
-    # Geometria dall'originale JP (thethiny, Sphere_Popup_Get_ver240: finestra LB_Reward_Win 750x513
+    # Geometria dall'originale JP (Sphere_Popup_Get_ver240: finestra LB_Reward_Win 750x513
     # al centro, Panel a +46, Txt_Get_Label a -146, Area_Point a y 514, nessun OK). LB_Reward_Win
     # e' la finestra arancione ad arco: qui Result_Reward_Win, servita, come Sphere_Popup_Comp.
     # Con l'icona del premio JP (150x150, centrata sull'origine di Panel) nella finestra Win04 di
@@ -1894,10 +1894,9 @@ def _lwf_copy(src_dir, dst_dir, old, new):
 
 
 _RR = 'lwf/battleresult/Result_Reward/'
-# con i dati JP di thethiny le due animazioni originali le scrive import_jp_coco.py (JP_LWF):
+# con i dati JP locali le due animazioni originali le scrive import_jp_coco.py (JP_LWF):
 # le copie restano solo come ripiego senza quei dati
-_JP_SPHERE = os.path.join(SRC, '..', '..', '[local reference data]', '', '[local reference data]', 'data',
-                          '[local reference data]', 'data', 'jp_final_4.3.1', 'lwf', 'sphere', 'SpIcon_Open')
+_JP_SPHERE = private_tools.local_path('jp_data', 'lwf', 'sphere', 'SpIcon_Open')
 if os.path.isdir(os.path.join(SRC, *_RR.split('/'))) and not os.path.isdir(_JP_SPHERE):
     for _n in ('SpIcon_Open', 'SphereMap_Complete'):
         _lwf_copy(_RR, 'lwf/sphere/%s/' % _n, 'Result_Reward', _n)

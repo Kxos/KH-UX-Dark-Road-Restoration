@@ -13,7 +13,7 @@ Cosa vuole il client 4.3.1 (CarouselDeck, [fn] -> [fn]: armatura
 - «PvPGuiltBonus*», «PvPMedalAttack_*» (PvP) e «MedalAttack_SBurst[_Dark]» (Super Burst =
   Supernova, [fn]) assenti dalla servita.
 
-La revisione JP corrente (thethiny, jp_final_4.3.1: ActMapCarouselAnim.<id piu' alto>.ExportJson,
+La revisione JP corrente (cartella di riferimento locale, jp_final_4.3.1: ActMapCarouselAnim.<id piu' alto>.ExportJson,
 18 movimenti) li ha tutti ma usa due atlanti, e un plist nuovo (ActMapCarouselAnim1.plist) non si
 carica (risorse_layout.md#regole). Quindi un solo atlante col nome servito:
 - i 52 frame WW restano dove sono (vince la WW: testo e grafica localizzati) nella meta' sinistra;
@@ -43,8 +43,8 @@ import btf                            # noqa: E402
 from PIL import Image                 # noqa: E402
 
 D = r'D:\Progetto_Restauro_KH_UX'
-JP_PUB = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                      '[local reference data]', 'data', 'jp_final_4.3.1', 'cocostudio', 'publish')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_PUB = private_tools.local_path('jp_data', 'cocostudio', 'publish')
 NAME = 'ActMapCarouselAnim'
 CANVAS = (2048, 1024)
 PAD = 2                               # spazio fra i frame aggiunti (niente sbavature del filtro)

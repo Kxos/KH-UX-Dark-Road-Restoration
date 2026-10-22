@@ -1,4 +1,4 @@
-"""Layout CocoStudio originali dai dati JP 4.3.1 (thethiny) al posto dei nostri generati.
+"""Layout CocoStudio originali dai dati JP 4.3.1 (cartella di riferimento locale) al posto dei nostri generati.
 
     python recon/tools/import_jp_coco.py [--check] [--list <file>] [--out <stage_gen\\files>]
                                          [--report <cartella>] [--jp <cocostudio JP>] ...
@@ -45,8 +45,8 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = r'D:\Progetto_Restauro_KH_UX'
-JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                       '[local reference data]', 'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_ROOT = private_tools.local_path('jp_data')
 PUB = 'cocostudio/publish/'
 # texture localizzate o ridisegnate nel WW (jp431_cocostudio.md §1): servite, vince sempre la WW
 WW_WINS = {'Ch_Logo.png', 'Deck_Title_MD.png', 'Av_Title3.png', 'World_Stage_Clear.png', 'Raid_ChanceLogo.png',
@@ -262,7 +262,7 @@ def widget_names(data):
 
 
 def suspicious_revision(name):
-    """L'estrattore di thethiny a volte da' a una revisione il contenuto di un altro layout
+    """L'estrazione locale a volte da' a una revisione il contenuto di un altro layout
     (PresentBOX_Panel_ver131.00265720 e' un pannello di icone): se la revisione scelta ha meno
     di meta' dei nomi di widget della prima, la si segnala."""
     rs = sorted(jp_revs.get(name, []))
@@ -275,7 +275,7 @@ def suspicious_revision(name):
     return None
 
 
-# Stub: l'estrazione di thethiny ha tolto i file uguali a un altro, quindi una texture di
+# Stub: l'estrazione locale ha tolto i file uguali a un altro, quindi una texture di
 # publish/ puo' esistere solo con lo stesso nome in un'altra cartella (cocostudio/Panel10.png,
 # img/ui/Complete_icon1.png...). Si cerca per nome, prima in cocostudio/, poi in img/.
 jp_any = {}
@@ -724,7 +724,7 @@ for _tsv in (os.path.join(D, 'resource_data', 'names_v4.tsv'), os.path.join(D, '
             _served_all.add(_line.split('\t')[0])
 # poi il pacchetto 2016 (stessi nomi; Circle_01/02 e Side_01 mancano anche nel JP: Circle_01 e' la
 # cornice a vita quasi piena, chiesta a inizio battaglia)
-B16_ROOT = os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files')
+B16_ROOT = private_tools.local_path('ref_work', 'bundle2016', 'files')
 for d in JP_IMG:
     for root in (JP_ROOT, B16_ROOT):
         src_dir = os.path.join(root, *d.split('/'))
@@ -775,7 +775,7 @@ for _name, _src in sorted(_rank_img.items()):
 # ---- NPC originali (lwf/character/npc/<id>/wait) ------------------------------------------------
 # make_layouts.py mette LWF vuoti per gli NPC non serviti (la home e gli stage li caricano senza
 # controllo): Chirithy della home (999, ISSUES I-016) era invisibile. Il JP 4.3.1 ha l'animazione
-# originale di 89 dei 93; nella copia di thethiny mancano alcune parti (file uguali scartati?). Si
+# originale di 89 dei 93; nella copia locale mancano alcune parti (file uguali scartati?). Si
 # importano gli NPC con tutte le parti, o a cui manca solo l'ombra 97x24: quella e' identica alla
 # wait_7 dell'NPC 4001 servito dal WW (BTF letto dalle risorse originali). Gli altri restano vuoti. Le parti
 # scartate come doppioni si prendono prima dalla tabella dei doppioni (jp_dedup_donors.tsv, 21-10); poi le texture
@@ -868,8 +868,8 @@ if os.path.isdir(_gen_npc) and os.path.isdir(_npc_root):
 
 # ---- parti dello Spirit (lwf/pet/part, img/petParts) -------------------------------------------
 # Le risorse WW servono solo la serie 001: le altre (specie, colori, accessori) e le icone
-# dell'editor degli outfit vengono dal JP; jp_pet_parts.py ricostruisce i file che la copia di
-# thethiny ha tenuto una volta sola. Gli accessori con texture assenti anche li' restano fuori
+# dell'editor degli outfit vengono dal JP; jp_pet_parts.py ricostruisce i file che la copia
+# locale ha tenuto una volta sola. Gli accessori con texture assenti anche li' restano fuori
 # (server/make-pet-parts.js non li mette nella tabella petParts).
 if os.path.isdir(os.path.join(JP_ROOT, 'lwf', 'pet', 'part')):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

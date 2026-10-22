@@ -182,7 +182,7 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
 
 - `recon/tools/make_jp_rooms.py` (Pillow: without `-I`; ~10 min the first time, then incremental)
   writes into `D:\Progetto_Restauro_KH_UX\rooms_gen\files\` all the files the client opens for the
-  rooms of `tmp\thethiny_x\rooms_merged\` not yet served (folder by folder; what is missing
+  rooms of `<ref_work>\rooms_merged\` not yet served (folder by folder; what is missing
   there from the JP 4.3.1 data, highest revision). Mandatory: the 4 `.bin`, the base1 tiles of the
   room written in the BMI at +0x10 (97 rooms are graphic aliases of another) and those of the tiled
   layers, from 001 to ceil(W/256)*ceil(H/256); a room gets in **only if none is missing**. Optional:
@@ -191,7 +191,7 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
 - Textures: JP PNG (non-premultiplied alpha) -> BTF type 8 with `btf.encode` (verified: decoding
   identical to the PNG on the opaque pixels); fully transparent tiles -> the 45-byte BTF type 1 placeholder
   of the originals (the served empty tiles are like that: 588 of 592 have the transparent JP PNG,
-  the other 4 alpha <= 3); 2016 BTFs copied. lwf textures discarded as stubs by thethiny: the
+  the other 4 alpha <= 3); 2016 BTFs copied. lwf textures missing as stubs in the local copy: the
   same original name (`<oggetto>_<esadecimale>.png`) is taken from another JP object only if
   all the candidates have identical content (79 textures).
 - **Outcome** (14-10): 413 rooms; **319 new complete**, 34 served completed (whole images, lwfs
@@ -378,11 +378,9 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
 - **thethiny** (`thethiny_repos.md`): his tools read enemies and chests, not the exits; keys
   equal to ours; the 1.x tutorial is different from 4.3.1 (1010: target 89001 and 7 enemies against
   81020 and 14) -> exits to be taken from the 4.4.0 WW / final JP data. Repos without a license: only technical
-  facts until he gives permission. Plan for his ~4 GB in §5: `[local reference data]\<versione>\` +
-  manifest, extraction with `bgad.py`, checks, all the exits -> `schema_mondi.json/.md`.
-- **thethiny's data arrived** (13-10, `D:\Progetto_Restauro_KH_UX\[local reference data]\`): builds, IDA decompilations
-  of 1.0.1 with symbols, data 1.0.1/1.1.3/1.2.3/4.4.0, **2016 global pack** (`misc.mp4`, 1.27 GB),
-  JOURNAL. Missing `data/jp_final_4.3.1` (4,793 stages, 394 rooms): asked again by the user.
+  facts until he gives permission.
+- **Local reference data** (13-10): from here on a local reference data folder (not provided by this project:
+  `KHUX_JP_DATA`, `KHUX_REF_WORK`, see [SETUP.md](../SETUP.md)) with a 2016 resource bundle and the JP 4.3.1 data.
 - **Format confirmed by the 1.0.1 symbols** (`decompile_101.md`): `StageManager::createMapTransferInfo`
   = exits (9 int: x, y, angle, remaining distance, [4], arrival x, arrival y, destination part,
   direction), radius 96, `MapGateMarker`, section B = materials, C = NPCs. Corrections to
@@ -394,12 +392,11 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   1010-1016, loose folders with revisions, BGAD packs). **2016 pack**: 923 stages, 1,300
   parts, 236 with several parts (up to 23), **697 exits, 241 links between 119 rooms** with original
   coordinates -> `stages_2016.json` (superseded, see below).
-- **2016 pack inventoried** (`bundle2016.md`, `[local reference data]\MANIFEST.md`): `misc.mp4` = 27
+- **2016 pack inventoried**: `misc.mp4` = 27
   BGAD packs in a row (base rev. 8 + updates 9-34), 161,651 mode-2 records; with a repeated name
   the last one counts. **Stubs**: int32 counted from the first real record of its *own* update block
-  (negative = previous block), not an absolute index as in thethiny's JOURNAL (82,736/82,736
-  consistent). `misc.png` opens with KEY_DOWNLOAD and is from a later revision. thethiny's OBB 4.4.0
-  identical to ours. **150 rooms (144 complete)**: recovered 93 rooms that were missing (DW 20,
+  (negative = previous block), not an absolute index (82,736/82,736
+  consistent). `misc.png` opens with KEY_DOWNLOAD and is from a later revision. **150 rooms (144 complete)**: recovered 93 rooms that were missing (DW 20,
   WL 17, BC 15, DB 14, AG 13, OC 9, DG 5) + 38 new codes; the 19 in common with ours have identical CLS/CHP/JMP;
   DB_0018_01_00 complete in 2016 (closes the gap of I-074); OC_0001_00_00 ours is newer.
   `base1` is loaded from the room name in the BMI at +0x10 (28 rooms use the graphics of another):
@@ -421,8 +418,8 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   stages 91000 and 16160: Boardwalk <-> Mine: Corridor <-> Dreadful Dunes, Path to the Mine <-> Scarab
   Sands, FS -> Corridor of Darkness): kept apart, not used for the story quests (user
   13-10).
-- **JP 4.3.1 data** (`jp431.md`, `stage_exits_jp431.json`, `[local reference data]\MANIFEST_jp.md`): 272,673 files,
-  4,793 stages, 7,701 parts, 5,763 exits, 392 rooms. thethiny's extraction **discarded the stubs**:
+- **JP 4.3.1 data** (`stage_exits_jp431.json`): 272,673 files,
+  4,793 stages, 7,701 parts, 5,763 exits, 392 rooms. The local copy **lacks the stubs**:
   missing `_jmp` of 265 rooms, CLS/CHP of ~70 variants, 8 STGs and parts of 272 stages, 3 rooms
   DG_0100_*; rebuildable (empty 16-byte jmp or that of the geometry room: 133/133; CLS/CHP from a room
   with the same dimensions chosen with the quest points: 15/15, 38 rooms still ambiguous). Our 86
@@ -434,7 +431,7 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   master). 507 pairs of linked rooms (113 in 2016).
 - **World schema v2** (`reference\world_schema\schema_v2\`, local `index.html`; scripts
   `rooms_merge_v2.py`, `exits_merge_v2.py`, `schema_mondi_v2.py`, `schema_report_v2.py`): rooms merged
-  in `tmp\thethiny_x\rooms_merged\` (413: our 86 + JP + 2016; 633 files rebuilt with the rule in
+  in `<ref_work>\rooms_merged\` (413: our 86 + JP + 2016; 633 files rebuilt with the rule in
   `_manifest.md`; 38 with uncertain geometry left without CLS/CHP). Merged exits: 5,849 stages, 8,516
   exits (2016 for 2060/3310/5300/7170/11220, JP for the rest, + multi_stage); types storia_master 525,
   storia_oltre 459, storia_variante 28, event 3,808, raid/trial 47, multi 982. 1,747 doors: **P =
@@ -532,7 +529,7 @@ controller). Master redone with
 They replace the tours 991001-991008 (guessed doors). `recon/tools/gen_tours_v2.py [config.json]
 [--available stanze.json] [--worlds DB,AG] [--out DIR]` (~4 min, numpy/scipy) reads the approved schema v2
 (`reference\world_schema\schema_v2\schema_mondi.json` + `_graphs.json`), the rooms of
-`tmp\thethiny_x\rooms_merged\` and the JP STG headers (original starts). Output in
+`<ref_work>\rooms_merged\` and the JP STG headers (original starts). Output in
 `D:\Progetto_Restauro_KH_UX\stage_gen\tours_v2\` (NOT in `stage_gen\files`): `mappoi_stg99xxxx*.bin`,
 `reports\<id>.json/.md` (rooms, doors used with door id, original and used coordinates, omitted doors
 with the reason, notes), `tours.json` (index and master rows), `stage_poi_tours_v2.json` (the Shadow of every

@@ -428,7 +428,7 @@ Recommended model: Sonnet (mechanical extension of an existing import).
 - Modify: `recon/tools/import_jp_raisedraw.py` (`JP` ~66, `WANTED` ~72, `main` ~206), `recon/tools/test_import_jp_raisedraw.py`, `recon/tools/jp_coco_layouts.txt`
 
 **Interfaces:**
-- Consumes: `btf.encode`; JP 4.3.1 in `[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\`.
+- Consumes: `btf.encode`; JP 4.3.1 in the local reference data folder (`KHUX_JP_DATA`).
 - Produces (Tasks 9, 10): in the package `raisedraw_gen\files`: `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup/`, `GuiltBonus_BurstLvup_num/`, `GuiltBonus_Wfix0..9/`, `lwf/raisedraw/demo/Draw_StatusBonus/`, `img/ui/Minfo_Def12_SB.png`, `img/ui/Deck_Panel_SB.png`; option `--replace <published path>=<png>` (used by the logo, Task 9); JSON report with one entry per folder.
 
 - [ ] **Step 1: Failing tests**

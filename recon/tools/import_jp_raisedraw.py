@@ -71,8 +71,8 @@ import btf  # noqa: E402
 
 sys.stdout.reconfigure(encoding='utf-8')
 D = r'D:\Progetto_Restauro_KH_UX'
-JP = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                  '[local reference data]', 'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP = private_tools.local_path('jp_data')
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 GENERIC = re.compile(r'^ビットマップ \d+\.png$')
 

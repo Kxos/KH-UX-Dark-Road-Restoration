@@ -12,8 +12,17 @@ here is where the resource key comes from: {"resource_key": {"lib": <path of the
 "offset": <hex string>, "length": <bytes>}}. KHUX_RESOURCE_KEY (hex) overrides it. No value is
 written in this repository.
 
+Local reference data folders (not provided by this project; each user points them at material of
+their own) are read with local_path(): an environment variable wins, then a key of khux_local.json:
+
+  jp_data   KHUX_JP_DATA   a local reference data folder with the JP 4.3.1 game data
+                           (the folder that contains cocostudio/, lwf/, stage/, text/ ...)
+  ref_work  KHUX_REF_WORK  a local work folder derived from that reference data
+                           (bundle2016/files, rooms_merged/, schema_v2_work/)
+
     python -I recon/tools/private_tools.py key      prints the resource key in hex
     python -I recon/tools/private_tools.py check    says whether the private tools are found
+    python -I recon/tools/private_tools.py path K   prints the local folder K (jp_data, ref_work)
 
 Modules: a public stub with the module's name (bgad.py, resource_index.py) calls replace(), so
 `import bgad` keeps working in every tool when the private folder is present, and fails with a
@@ -69,6 +78,19 @@ def config():
         return json.load(f)
 
 
+LOCAL_PATHS = {'jp_data': 'KHUX_JP_DATA', 'ref_work': 'KHUX_REF_WORK'}
+
+
+def local_path(key, *parts):
+    """Local reference folder `key` (see LOCAL_PATHS) joined with parts. When it is not configured the
+    result is a placeholder that does not exist (callers already skip missing folders)."""
+    env = os.environ.get(LOCAL_PATHS[key])
+    base = env if env else config().get('local_paths', {}).get(key)
+    if not base:
+        base = os.path.join(root(), '<not configured: %s>' % LOCAL_PATHS[key])
+    return os.path.join(base, *parts)
+
+
 def resource_key_hex():
     env = os.environ.get('KHUX_RESOURCE_KEY')
     if env:
@@ -91,6 +113,8 @@ if __name__ == '__main__':
     try:
         if cmd == 'key':
             print(resource_key_hex())
+        elif cmd == 'path':
+            print(local_path(sys.argv[2]))
         elif cmd == 'check':
             for n in ('bgad.py', 'resource_index.py', 'bgad_extract.py'):
                 path(n)

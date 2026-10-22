@@ -20,8 +20,8 @@ def check(cond, msg):
         errori.append(msg)
 
 
-JP_ROOT = os.path.join(r'D:\Progetto_Restauro_KH_UX\[local reference data]', '', '[local reference data]', 'data',
-                       '[local reference data]', 'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_ROOT = private_tools.local_path('jp_data')
 TMP = tempfile.mkdtemp(prefix='jprec-')
 try:
     tsv = os.path.join(TMP, 't.tsv')

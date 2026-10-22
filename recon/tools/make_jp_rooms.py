@@ -3,9 +3,9 @@
     python recon/tools/make_jp_rooms.py [--out D:\\Progetto_Restauro_KH_UX\\rooms_gen] [--story-only]
         [--rooms R1,R2] [--dry] [--jobs N]          (Pillow: senza -I)
 
-Fonti (solo lettura): stanze unite di rooms_merge_v2.py in tmp\\thethiny_x\\rooms_merged\\<stanza>\\
+Fonti (solo lettura): stanze unite di rooms_merge_v2.py in <ref_work>\\rooms_merged\\<stanza>\\
 (i 4 .bin, tessere e immagini intere gia' scelti e ricostruiti) e, per cio' che li' manca, i dati JP
-4.3.1 di thethiny (`map/`, `lwf/map/`; nomi con revisione `<nome>.<8 cifre>.<ext>`: vale la
+4.3.1 della cartella di riferimento locale (`map/`, `lwf/map/`; nomi con revisione `<nome>.<8 cifre>.<ext>`: vale la
 revisione piu' alta, come latest() di import_jp_coco.py).
 
 Per ogni stanza di rooms_merged la cui `map/<S>/<S>_info.bin` non e' gia' servita (indice
@@ -47,8 +47,8 @@ from multiprocessing import Pool
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 D = r'D:\Progetto_Restauro_KH_UX'
-JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                       '[local reference data]', 'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_ROOT = private_tools.local_path('jp_data')
 TILE = 256
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 # segnaposto delle tessere vuote originali (map/DB_0000_00_00/..._base1_001.png della 5.0.1)
@@ -62,7 +62,7 @@ BAD_PLACEHOLDER = bytes.fromhex('89425446000001000000000000000000000100000000000
 assert len(PLACEHOLDER) == 45
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--merged', default=os.path.join(D, 'tmp', 'thethiny_x', 'rooms_merged'))
+ap.add_argument('--merged', default=private_tools.local_path('ref_work', 'rooms_merged'))
 ap.add_argument('--jp', default=JP_ROOT)
 ap.add_argument('--index', action='append')
 ap.add_argument('--served-files', action='append', help='pacchetti generati gia\' serviti (cartelle files)')
@@ -331,7 +331,7 @@ def main():
             story.update((dr['room'], dr['dest']))
     # anche le stanze delle missioni di storia a una sola parte (nessuna porta: es. Beast's Castle),
     # come le usa import_orig_stages.py (stage_exits_v2.json: stanze di ogni stage)
-    ex = os.path.join(D, 'tmp', 'thethiny_x', 'schema_v2_work', 'stage_exits_v2.json')
+    ex = private_tools.local_path('ref_work', 'schema_v2_work', 'stage_exits_v2.json')
     if os.path.exists(ex):
         st = json.load(open(ex, encoding='utf-8'))['stages']
         for s in (st.values() if isinstance(st, dict) else st):

@@ -54,7 +54,7 @@ check(JSON.stringify(TROPHY_STEPS) === '{"16040":61,"16090":61,"16140":62,"16190
 
 // --- icone originali JP in originals.tsv (sezione 41) e file presenti nel JP 4.3.1 -----------------------------
 const tsv = fs.readFileSync(path.join(__dirname, '..', 'recon', 'tools', 'originals.tsv'), 'utf8');
-const JP = process.env.KHUX_JP_ROOT || 'D:\\Progetto_Restauro_KH_UX\\[local reference data]\\\\[local reference data]\\data\\[local reference data]\\data\\jp_final_4.3.1';
+const JP = process.env.KHUX_JP_ROOT || require('./local-paths').localPath('jp_data');
 for (const id of [61, 62, 63]) {
   check(new RegExp(`^img/material/material_${id}\\.png\\tjp`, 'm').test(tsv), `originals.tsv: material_${id} dal JP`);
   if (fs.existsSync(JP)) check(fs.existsSync(path.join(JP, 'img', 'material', `material_${id}.png`)), `JP: material_${id}.png presente`);

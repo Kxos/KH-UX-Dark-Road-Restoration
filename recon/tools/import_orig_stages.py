@@ -2,8 +2,8 @@
 
     python -I recon/tools/import_orig_stages.py [--out D:\\Progetto_Restauro_KH_UX\\stage_gen\\orig_stages] [--check]
 
-Fonti (sola lettura): stage JP 4.3.1 di thethiny (`stage/`, nomi `<nome>.<entry id 8 cifre>.bin`:
-vale la revisione piu' alta) e pacchetto 2016 (`tmp\\thethiny_x\\bundle2016\\files\\stage`). Per ogni
+Fonti (sola lettura): stage JP 4.3.1 (cartella di riferimento locale) (`stage/`, nomi `<nome>.<entry id 8 cifre>.bin`:
+vale la revisione piu' alta) e pacchetto 2016 (`<ref_work>\\bundle2016\\files\\stage`). Per ogni
 missione della master con stageKind 1 (le 525 di storia):
   * fonte 2016 per 2060, 3310, 5300, 7170, 11220 (stanze JP diverse da mapName/miniatura della master,
     reference\\world_schema\\jp431.md §3.2) e 2320 (JP dichiara 2 parti, la `_01` e' stata scartata);
@@ -82,9 +82,9 @@ import mapfile  # noqa: E402
 
 D = r'D:\Progetto_Restauro_KH_UX'
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-JP_STAGE = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                        '[local reference data]', 'data', 'jp_final_4.3.1', 'stage')
-B16_STAGE = os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files', 'stage')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_STAGE = private_tools.local_path('jp_data', 'stage')
+B16_STAGE = private_tools.local_path('ref_work', 'bundle2016', 'files', 'stage')
 REAL = os.path.join(D, 'external', 'thethiny')
 FORCE_2016 = {2060, 3310, 5300, 7170, 11220, 2320}
 KEEP_WW = {1010, 1013, 1016, 1019, 1020, 1030, 1040}

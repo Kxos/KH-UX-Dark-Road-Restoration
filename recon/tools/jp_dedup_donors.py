@@ -1,11 +1,11 @@
-"""Tabella dei donatori delle texture che l'estrazione JP 4.3.1 di thethiny ha scartato come doppioni.
+"""Tabella dei donatori delle texture che l'estrazione JP 4.3.1 locale ha scartato come doppioni.
 
     from jp_dedup_donors import load, lookup
     table = load()                                  # recon/tools/jp_dedup_donors.tsv
     src = lookup(table, 'lwf/character/enemy/1550/wait/wait_<hex>.png', JP_ROOT)   # percorso assoluto o None
 
 Il pacchetto JP tiene una sola copia di ogni file identico (come gli stub `stub_of` del pacchetto 2016,
-tmp\\thethiny_x\\bundle2016\\files.tsv): le altre LWF che usano la stessa immagine la citano col proprio nome
+<ref_work>\\bundle2016\\files.tsv): le altre LWF che usano la stessa immagine la citano col proprio nome
 (`<anim>_<esadecimale di «ビットマップ N.png»>.png`) ma il file non c'e'. Molte texture dei boss stanno solo nelle
 LWF dei filmati (lwf/drama/<id>/: 1550 <- 2323901, 1561 <- 2331101, 1646 <- 2552901), con un altro numero di bitmap
 (la 25 di atkSp di 1550 e' la 274 del filmato): la ricerca per nome non basta.

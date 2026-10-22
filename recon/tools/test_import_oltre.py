@@ -3,7 +3,7 @@
     python -I recon/tools/test_import_oltre.py
 
 Lancia l'import su 3 missioni (526, 555, 617) in una cartella temporanea sotto D:\\Progetto_Restauro_KH_UX\\tmp
-(dati veri: stage JP 4.3.1 di thethiny, reference\\world_schema\\oltre525\\oltre525.json) e controlla:
+(dati veri: stage JP 4.3.1 locali, reference\\world_schema\\oltre525\\oltre525.json) e controlla:
   * un file per ogni parte dichiarata dall'STG, tutti riletti da mapfile.parse_stg/parse_map senza problemi;
   * Q555 -> 5 stage 18300-18304 (il client carica 18300 + unionId - 1);
   * Q617 (20320) -> parte 1 ricostruita nella stanza CD_0003_00_00, arrivo dalla parte 0 vicino alla porta
@@ -30,8 +30,8 @@ import mapfile  # noqa: E402
 
 D = r'D:\Progetto_Restauro_KH_UX'
 OLTRE = os.path.join(D, 'reference', 'world_schema', 'oltre525', 'oltre525.json')
-JP_STAGE = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                        '[local reference data]', 'data', 'jp_final_4.3.1', 'stage')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_STAGE = private_tools.local_path('jp_data', 'stage')
 fails = []
 
 

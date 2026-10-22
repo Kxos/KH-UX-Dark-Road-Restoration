@@ -53,13 +53,13 @@ from scipy.sparse import csgraph
 
 D = r'D:\Progetto_Restauro_KH_UX'
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 CFG = {
     'schema': D + r'\reference\world_schema\schema_v2\schema_mondi.json',
     'graphs': D + r'\reference\world_schema\schema_v2\_graphs.json',
-    'stages': D + r'\tmp\thethiny_x\schema_v2_work\stage_exits_v2.json',
-    'stg_dir': D + r'\[local reference data]\\[local reference data]\data\[local reference data]\data'
-                   r'\jp_final_4.3.1\stage',
-    'rooms_dir': D + r'\tmp\thethiny_x\rooms_merged',
+    'stages': private_tools.local_path('ref_work', 'schema_v2_work', 'stage_exits_v2.json'),
+    'stg_dir': private_tools.local_path('jp_data', 'stage'),
+    'rooms_dir': private_tools.local_path('ref_work', 'rooms_merged'),
     'template': D + r'\stage_gen\files\stage\mappoi_stg01040_00.bin',
     'enemies': os.path.join(REPO, 'server', 'master_data', 'enemy.json'),
     'out': D + r'\stage_gen\tours_v2',

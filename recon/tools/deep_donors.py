@@ -46,15 +46,15 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 D = r'D:\Progetto_Restauro_KH_UX'
-JP431 = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data', '[local reference data]',
-                     'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP431 = private_tools.local_path('jp_data')
 X501 = os.path.join(D, 'tmp', 'jp501', 'x')
-B16 = os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files')
+B16 = private_tools.local_path('ref_work', 'bundle2016', 'files')
 WWTEX = os.path.join(D, 'tmp', 'enemy_src2', 'wwtex')
 ALIAS501 = os.path.join(D, 'tmp', 'jp501', 'aliases.tsv')
 # scanned containers (order = index order, breaks ties between donors)
 SCAN_ROOTS = [('jp431', JP431), ('jp501', X501), ('ww501', os.path.join(D, 'tmp', 'enemy_src2', 'ww')),
-              ('wwtex', WWTEX), ('b2016', os.path.join(D, 'tmp', 'thethiny_x')), ('jp441', os.path.join(D, 'tmp', 'jp441')),
+              ('wwtex', WWTEX), ('b2016', private_tools.local_path('ref_work')), ('jp441', os.path.join(D, 'tmp', 'jp441')),
               ('enemy_x', os.path.join(D, 'enemy_x')), ('resdata', os.path.join(D, 'resource_data')),
               ('apk501', os.path.join(D, 'apk501')), ('assets431', os.path.join(D, 'assets431'))]
 # extra_donors.py containers whose files may become table sources

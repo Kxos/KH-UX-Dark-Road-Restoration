@@ -461,7 +461,8 @@ function readThumbs(namesPath, jpRoot) {
   return found ? set : null;
 }
 
-const JP_ROOT = 'D:\\Progetto_Restauro_KH_UX\\[local reference data]\\\\[local reference data]\\data\\[local reference data]\\data\\jp_final_4.3.1';
+// a local reference data folder, not provided by this project (server/local-paths.js)
+const JP_ROOT = require('./local-paths').localPath('jp_data');
 
 // fonti esterne (dati Square Enix e wiki: fuori dal repo)
 function defaultSources() {

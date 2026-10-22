@@ -80,7 +80,7 @@ goes» column uses the folder layout the scripts expect today
 | `base.apk` of the offline client | **5.0.1** WW | extracted (it is a zip) to `<W>\apk501\ext\` | `assets\aliud.png` (index of the OBBs) and `lib\arm64-v8a\libcocos2dcpp.so`, which holds the **resource key** (read through a local, untracked configuration: `recon/tools/private_tools.py`); its `extra.mp4` holds the 55 offline master tables (`<W>\apk501\extra_files\`) |
 | iOS IPA | **WW 4.3.1** | `addnl.mp4` + `addnl.png` (and the name list `names_addnl.tsv`) in `<W>\ipa431\` | the KHUX layouts of 4.3.1 that the Android OBBs lack |
 | iOS IPA | **WW 4.4.0** | its `misc.mp4` data in `<W>\ipa440\miscdata`, name list `names440misc.tsv` | 2,403 original `text/ui` texts, a few layouts and images |
-| JP 4.3.1 data, 2016 resource bundle, 1.1.3 master dump | JP 4.3.1 final data (`[local reference data]\data\jp_final_4.3.1`) | `<W>\[local reference data]\\...` (the folder name **starts with a space**), the 2016 bundle extracted to `<W>\tmp\thethiny_x\bundle2016\files` | original story maps and rooms of quests 1-979, enemy graphics, JP CocoStudio layouts, NPC texts, many images; **not public** ([Current limitations](#current-limitations)) |
+| Local reference data folders (not provided by this project) | JP 4.3.1 game data (the folder with `cocostudio/`, `json/`, `lwf/`, `stage/`, `text/` ...) and a work folder derived from it (`bundle2016/files`, `rooms_merged/`, `schema_v2_work/`) | anywhere: environment variables `KHUX_JP_DATA` / `KHUX_REF_WORK`, or `local_paths.jp_data` / `local_paths.ref_work` in the untracked `khux_local.json` (read by `recon/tools/private_tools.py` and `server/local-paths.js`) | original story maps and rooms of quests 1-979, enemy graphics, JP CocoStudio layouts, NPC texts, many images; **not provided by this project** ([Current limitations](#current-limitations)) |
 | thethiny `KHUx-Server` data | `data/*.json` (`burst.json`, `enemyAttack.json`, `stage.json` ...) | `<W>\external\thethiny_2026-10-13\KHUx-Server\data\` and `<W>\external\thethiny\` | values used when generating the master tables; community project credited in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
 | Roboloid medal database and images | `medal_db.json`, medal PNGs | `<W>\external\roboloid\` | medal values and medal images (`fetch_medal_images.py`); community project credited in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
 | khuxwiki dumps | `medals.json`, `quests.json`, `wiki_all.json`, `enemy_stats_oltre.json` | `<W>\wiki\` | medal values, quest objectives, enemy stats; made with `recon/tools/wiki_dump.py` from [khuxwiki.com](https://www.khuxwiki.com/) |
@@ -97,7 +97,7 @@ D:\Progetto_Restauro_KH_UX\                    <W>, the work folder (NTFS)
 ├── Android\KH-UX-Dark-Road-Restoration\       this repository
 ├── LDPlayer\LDPlayer9\                        LDPlayer 9 install folder (ld.exe, ldconsole.exe)
 ├── apk\  apk501\  obb76\  ipa431\  ipa440\    the files of the table above
-├── [local reference data]\  external\  wiki\  reference\
+├── external\  wiki\  reference\
 ├── resource_data\<N>\{data,index}             built resource versions (served to the game)
 ├── stage_gen\  rooms_gen\  enemy_gen\  medal_gen\  raisedraw_gen\  compact\  catalog\  layouts\
 ├── logs\server.log                            server log written by run-server.ps1
@@ -231,7 +231,7 @@ textures, texts), merged into one index ([risorse_layout.md](notes/risorse_layou
   `apk501\ext\assets\aliud.png`; `obb76\main.76…obb`, `patch.87…obb`; `ipa431\addnl.{mp4,png}`,
   `names_addnl.tsv`; `ipa440\names440misc.tsv`, `miscdata`; `resource_data\7\data` (the base version,
   OBB + addnl in 64 MB pieces made with `recon/tools/resource_split.py`) and `resource_data\names_v4.tsv`
-  (name list); `[local reference data]\\...\jp_final_4.3.1`; `tmp\thethiny_x\bundle2016\files`;
+  (name list); the local reference data folders (`jp_data`; `ref_work\bundle2016\files`);
   `layouts\orig`, `layouts\ui_texts`; `catalog\files`, `catalog\enemy_wait`, `catalog\keyblade_lwf`,
   `catalog\raisedraw_ww`, `catalog\img_alias`, `catalog\ipa440_extract`; `external\roboloid\cache\map`;
   `reference\empty_slot\stock_medal_khuxwiki.png`; the static packs `medal_gen\files`
@@ -389,7 +389,8 @@ Template to copy, fill and paste:
 What is missing in the game is listed in the in-game Notices and in [ISSUES.md](ISSUES.md). This list is
 about **the setup**: steps that today are impossible or very hard for someone outside the project.
 
-1. **Some build inputs are not public** (the JP 4.3.1 data and the 2016 bundle). `build-resources.ps1`
+1. **Some build inputs are not provided by this project** (local reference data folders: JP 4.3.1 data and a work
+   folder derived from it, set with `KHUX_JP_DATA` / `KHUX_REF_WORK`). `build-resources.ps1`
    stops without them (`manca ...`), and they are the source of the story maps and rooms of quests 1-979,
    enemy graphics and many layouts. A simplified setup that works only from files a user can legally dump
    from their own installation is planned.
@@ -441,7 +442,7 @@ not listed except where noted. Tools used only for research (Ghidra) are in a se
 | `session/cycle.ps1:5`, `:7` | `-Revision 178`; log path | same | log: **yes** |
 | `session/update-resources.ps1:7`, `:9`, `:28` | `-Revision 178`; log path; `D:\…\resource_data` | same | **yes** |
 | `session/update-resources.ps1:32` | `/data/data/com.square_enix.android_googleplay.khuxww/files/r` | guest path | no |
-| `session/build-resources.ps1:37` | `$D = 'D:\Progetto_Restauro_KH_UX'` — **every input and output of the script derives from it** (~80 uses: `stage_gen`, `apk501`, `obb76`, `ipa431`, `ipa440`, `catalog`, `layouts`, `[local reference data]\\…`, `tmp\thethiny_x\bundle2016`, `reference\…`, `external\roboloid\cache\map`, `compact`, `resource_data`) | work folder | **yes** (one line, but the folder tree must match) |
+| `session/build-resources.ps1:37` | `$D = 'D:\Progetto_Restauro_KH_UX'` — **every input and output of the script derives from it** (~80 uses: `stage_gen`, `apk501`, `obb76`, `ipa431`, `ipa440`, `catalog`, `layouts`, `reference\…`, `external\roboloid\cache\map`, `compact`, `resource_data`; the local reference data folders come from `private_tools.py path jp_data` / `path ref_work`) | work folder | **yes** (one line, but the folder tree must match) |
 | `session/build-resources.ps1:528` | `-Out 'D:\Progetto_Restauro_KH_UX\logs\server.log'` | log path | **yes** |
 | `session/story.ps1:8`, `sweep.ps1:10-11`, `login-time.ps1:13` | log / report paths under `<W>\logs` | log path | yes (developer scripts) |
 | `smoke_quests.ps1:6`, `:10` | `<W>\stage_gen\smoke_results.json`, log path | paths | yes (developer) |
@@ -464,8 +465,8 @@ All overridable by an environment variable, but the defaults point to the author
 | File:line | Default path(s) | Change? |
 |---|---|---|
 | `make-game-tables.js:44`, `:87`, `:97`, `:246`, `:340`, `:347`, `:546`, `:615`, `:646`, `:733`, `:793` | `<W>\external\thethiny`, `<W>\medal_gen\medal_map.json`, `<W>\external\roboloid\medal_db.json`, `<W>\wiki\wiki_all.json` (×3), `<W>\enemy_gen\files`, `<W>\resource_data\names_v4.tsv` (×2), `<W>\external\thethiny_2026-10-13\KHUx-Server\data\burst.json`, `<W>\stage_gen\tours_v2\tours.json` | **yes** |
-| `make-story-oltre.js:464`, `:468-469`, `:475-476`, `:478`, `:480-481`, `:484` | `<W>\[local reference data]\\…\jp_final_4.3.1` (**no env override**), `wiki\wiki_all.json`, `names_v4.tsv`, thethiny `stage.json`, `wiki\quests.json`, `reference\world_schema\oltre525\oltre525.json`, `stage_gen\orig_stages_oltre\stage_poi_oltre.json`, `…\bgm_per_quest.json`, `stage_gen\orig_stages_oltre\stage` | **yes** |
-| `make-enemy-oltre.js:36`, `:39`, `:41`, `:43`, `:46` | `<W>\reference\world_schema\oltre525` (**no env override**), `wiki\enemy_stats_oltre.json`, `names_v4.tsv`, `enemy_gen\files`, thethiny JP enemy detail | **yes** |
+| `make-story-oltre.js:464`, `:468-469`, `:475-476`, `:478`, `:480-481`, `:484` | local reference data folder (`KHUX_JP_DATA`, `KHUX_JP_ROOT`), `wiki\wiki_all.json`, `names_v4.tsv`, thethiny `stage.json`, `wiki\quests.json`, `reference\world_schema\oltre525\oltre525.json`, `stage_gen\orig_stages_oltre\stage_poi_oltre.json`, `…\bgm_per_quest.json`, `stage_gen\orig_stages_oltre\stage` | **yes** |
+| `make-enemy-oltre.js:36`, `:39`, `:41`, `:43`, `:46` | `<W>\reference\world_schema\oltre525` (**no env override**), `wiki\enemy_stats_oltre.json`, `names_v4.tsv`, `enemy_gen\files`, JP enemy detail from the local reference data folder (`KHUX_JP_DATA`) | **yes** |
 | `make-skill-table.js:47-49` | thethiny `KHUx-Server\data`, `wiki\wiki_all.json`, report in `<W>\tmp\skill\report.md` | **yes** |
 | `make-passives.js:41-42` | `<W>\reference\keyblades\keyblade_levels.json`, `<W>\reference\passives\Passives_khuxwiki.wikitext` (**no env override**) | **yes** |
 | `make-keyblade-levels.js:39` | `<W>\reference\keyblades\keyblade_levels.json` (**no env override**) | **yes** |
@@ -491,7 +492,7 @@ All overridable by an environment variable, but the defaults point to the author
 | `import_orig_stages.py:83` | makes `stage_gen\orig_stages*` | **yes** |
 | `deep_donors.py:48`, `extra_donors.py:38` | enemy graphics (via `make_jp_enemies.py`) | **yes** |
 | `make_missing_part.py:42`, `gen_tours_v2.py:54`, `check_rooms.py:39` | maps / checks | yes |
-| `shop_icons.py:14` | `DEFAULT_BASE` = thethiny JP 4.3.1 folder | yes |
+| `shop_icons.py:14` | `DEFAULT_BASE` = local reference data folder (`KHUX_JP_DATA`) | no |
 
 ### Research-only tools (not needed to play)
 

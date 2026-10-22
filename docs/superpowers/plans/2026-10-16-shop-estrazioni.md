@@ -62,7 +62,7 @@ Recommended model: Opus (judgement on the missing textures).
 - Modify: `tools/ldplayer/session/build-resources.ps1` (after `import_jp_coco.py`, before `btf_fix.py`)
 
 **Interfaces:**
-- Consumes: JP data in `D:\Progetto_Restauro_KH_UX\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\lwf\raisedraw\` (read-only); served index `D:\Progetto_Restauro_KH_UX\resource_data\names_v4.tsv`; `recon/tools/btf.py` (`btf.encode(Image) -> bytes`).
+- Consumes: JP data in `lwf\raisedraw\` of the local reference data folder (`KHUX_JP_DATA`, read-only); served index `D:\Progetto_Restauro_KH_UX\resource_data\names_v4.tsv`; `recon/tools/btf.py` (`btf.encode(Image) -> bytes`).
 - Produces: `<stage_gen>\files\lwf\raisedraw\demo\raidgacha_result_display_NN\...` (NN 02-10), the missing `...\Medal\Medal_D_{Up,Rev,None}N\...`, `<stage_gen>\raisedraw_report.json`. The server (Task 5) allows `lotCount` only among the `raidgacha_result_display_NN` folders that are served or complete in the report.
 
 Facts (findings.md §4): the SceneDrawRaise scene opens `lwf/raisedraw/demo/raidgacha_result_display_%02d/` with %02d = number of medals (missing file = crash) and for each medal `lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare>` according to `darklight`. The WW resources only serve `raidgacha_result_display_01` and `Medal_D_Up3`. In the JP data folders 02-10 have the LWF but almost no textures (the JP extraction removes identical files): the textures are named `<base>_<UTF-8 hex of the original name>.png` and are the same «ビットマップ N.png» as in `raidgacha_result_display_01` (served WW). The folders with a `.res` list them; the others must be read from the LWF.
@@ -112,8 +112,7 @@ import btf  # noqa: E402
 
 sys.stdout.reconfigure(encoding='utf-8')
 D = r'D:\Progetto_Restauro_KH_UX'
-JP = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                  '[local reference data]', 'data', 'jp_final_4.3.1', 'lwf', 'raisedraw')
+JP = private_tools.local_path('jp_data', 'lwf', 'raisedraw')
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 TEX = re.compile(rb'([\x20-\x7e\x80-\xff]{1,80}?\.(?:png|PNG))')
 

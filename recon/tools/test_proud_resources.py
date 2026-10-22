@@ -3,7 +3,7 @@ liberi delle armature JP_ARM.
 
     python -I recon/tools/test_proud_resources.py     -> «OK: ...» oppure «ERRORI (n)», uscita 1
 
-Controlli (dati veri: catalog\\files servito, names_v4.tsv, JP 4.3.1 di thethiny):
+Controlli (dati veri: catalog\\files servito, names_v4.tsv, JP 4.3.1 locale):
 - StartDeckProudScene_ver260.json e' una radice attiva di jp_coco_layouts.txt;
 - ogni sotto-layout e texture della sua chiusura (scena servita, sotto-layout serviti e JP) e' servito o c'e' nel JP,
   le texture col 9-slice comprese (crash 0x2c, I-049); le armature non servite stanno in JP_ARM;
@@ -21,8 +21,8 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = r'D:\Progetto_Restauro_KH_UX'
-JP_PUB = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data', '[local reference data]',
-                      'data', 'jp_final_4.3.1', 'cocostudio', 'publish')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_PUB = private_tools.local_path('jp_data', 'cocostudio', 'publish')
 SERVED_PUB = os.path.join(D, 'catalog', 'files', 'cocostudio', 'publish')
 NAMES = os.path.join(D, 'resource_data', 'names_v4.tsv')
 ROOT = 'StartDeckProudScene_ver260.json'

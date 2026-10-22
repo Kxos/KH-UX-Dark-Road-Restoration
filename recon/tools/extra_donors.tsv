@@ -1,7 +1,7 @@
 # Copie ORIGINALI in piu' per le texture dei nemici JP 4.3.1 mancanti (I-194, 21-10-2026; extra_donors.py).
 # Colonne: percorso pubblicato, sorgente <contenitore>:<percorso>, regola, nota. Solo nomi e percorsi.
 # Contenitori: jp501 = OBB JP 5.0.1 (main.98+patch.114, BTF in tmp/jp501/x), ww501 = OBB WW 5.0.1 (BTF in
-# tmp/enemy_src2/ww e wwtex), b2016 = pacchetto 2016 ([local work folder]/bundle2016/files), jp431 = jp_final_4.3.1.
+# tmp/enemy_src2/ww e wwtex), b2016 = pacchetto 2016 (<ref_work>/bundle2016/files), jp431 = jp_final_4.3.1.
 # Regole: exact501 = stesso percorso nel 5.0.1 (categoria 1); lwfmatch+anchors, unique, align&donor, donor&order,
 # twinfam, whole-dr-twin = copie (categoria 2). Generata da D:/Progetto_Restauro_KH_UX/tmp/integr/mk_extra.py da
 # tmp/jp501/resolved_501.tsv e tmp/enemy_src2/resolved_extra.json (esclusi 14 con misure diverse); 1778 righe.

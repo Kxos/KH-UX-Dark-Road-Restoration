@@ -55,6 +55,10 @@ if (-not $Quick -and (Test-Path "$D\resource_data\$Version")) { throw "$D\resour
 # chiave delle risorse: dalla configurazione locale fuori dal repository (recon/tools/private_tools.py)
 $key = python -I recon\tools\private_tools.py key
 if ($LASTEXITCODE -or -not $key) { throw 'chiave delle risorse non disponibile: vedi recon/tools/private_tools.py' }
+# cartelle di riferimento locali, non fornite da questo progetto (KHUX_JP_DATA / KHUX_REF_WORK o khux_local.json)
+$jpData = python -I recon\tools\private_tools.py path jp_data
+$refWork = python -I recon\tools\private_tools.py path ref_work
+if ($LASTEXITCODE -or -not $jpData -or -not $refWork) { throw 'cartelle locali non configurate: vedi recon/tools/private_tools.py' }
 python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
 python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"
@@ -116,8 +120,8 @@ foreach ($t in Get-ChildItem "$D\layouts\ui_texts\text\ui" -File) {
 # testi di dialogo degli NPC (text/drama/2040xxxxx, I-154): citati dai record npc delle mappe gia' in
 # $sg\files\stage, scaricati dal CDN nell'originale (nelle risorse WW solo 204010301); dal pacchetto
 # 2016 (inglese), in mancanza dal JP 4.3.1 (segnalati); senza, toccare l'NPC con la nuvoletta non fa nulla
-python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$D\tmp\thethiny_x\bundle2016" `
-  "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\text\drama" `
+python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$refWork\bundle2016" `
+  "$jpData\text\drama" `
   "$sg\files\stage" "$sg\files" --report "$sg\npc_talk.json"
 if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
 # pulsante «Overwrite Skill» del Level Up acceso (I-157): [fn] carica skill_mix_button_On/_Disable e,
@@ -143,7 +147,7 @@ $img16 += @(1, 3, 4, 5, 6, 7) | ForEach-Object { "ui\Topinfo_BarBut${_}_Off"; "u
 $img16 += @(1, 2, 3) | ForEach-Object { "ui\Deck_Arrow_U$_"; "ui\Deck_Arrow_R$_" }
 $img16 += @(12, 13, 16, 17, 20, 21, 22, 23, 24, 25, 27, 29, 30, 32, 33, 34, 45, 46, 47) | ForEach-Object { "tutorial\tutorial_$_" }
 foreach ($n in $img16) {
-    $src = "$D\tmp\thethiny_x\bundle2016\files\img\$n.png"
+    $src = "$refWork\bundle2016\files\img\$n.png"
     if (-not (Test-Path $src)) { throw "manca $src" }
     New-Item -ItemType Directory -Force (Split-Path "$sg\files\img\$n.png") | Out-Null
     Copy-Item $src "$sg\files\img\$n.png" -Force
@@ -153,7 +157,7 @@ foreach ($n in $img16) {
 # - AvtInfo_CrownIcon1-3 / trophyIcon1-2 del Profilo ([fn]: corona = (mvpCount-1)/50+1, trofeo =
 #   (pvpMvpCount-1)/50+1 senza segno, fino a 4; col nostro 0 il client chiede CrownIcon1 e trophyIcon4)
 # - cifre del danno dmgGuardBreak/dmgReflection_num0-9 e _comma (tabella 0x1f2c2a0 di [fn], tipi 5 e 6)
-$jpImg = "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\img"
+$jpImg = "$jpData\img"
 $imgJp = @(30, 31, 32, 35, 36, 37, 38, 39, 40, 41) | ForEach-Object { 'incentive\IncentiveIcon_{0:D2}' -f $_ }
 $imgJp += @('ui\AvtInfo_CrownIcon1', 'ui\AvtInfo_CrownIcon2', 'ui\AvtInfo_CrownIcon3', 'ui\AvtInfo_trophyIcon1', 'ui\AvtInfo_trophyIcon2')
 foreach ($k in 'GuardBreak', 'Reflection') { $imgJp += @(0..9 | ForEach-Object { "damage\dmg${k}_num$_" }) + "damage\dmg${k}_comma" }
@@ -232,8 +236,8 @@ $i440Need = @('img/union/Union_01.png', 'img/union/Union_02.png', 'img/union/Uni
   'cocostudio/publish/MenuDialog_account_select_ver401.json', 'cocostudio/publish/appleid_button_2x.png',
   'cocostudio/publish/facebook_button_2x.png', 'cocostudio/publish/SQEXBridge_button_2x.png') | Where-Object { -not (Test-Path "$i440\$_") }
 if ($i440Need) { python -I recon\tools\res_get.py "$D\ipa440\names440misc.tsv" "$D\ipa440\miscdata" $i440 @i440Need; if ($LASTEXITCODE) { throw 'res_get ipa440 fallito' } }
-python -I recon\tools\import_originals.py recon\tools\originals.tsv "$D\tmp\thethiny_x\bundle2016\files" `
-  "$D\[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1" "$sg\files" `
+python -I recon\tools\import_originals.py recon\tools\originals.tsv "$refWork\bundle2016\files" `
+  "$jpData" "$sg\files" `
   --served "$D\resource_data\names_v4.tsv,$D\ipa431\names_addnl.tsv" --i440 $i440 --report "$sg\originals.json"
 if ($LASTEXITCODE) { throw 'import_originals fallito' }
 # suoni se_<nome> dei LWF originali appena importati (KeyBlade_Evolution/StepUp, training_SE dei pet): la

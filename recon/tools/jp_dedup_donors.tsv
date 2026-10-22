@@ -1,5 +1,5 @@
 # Tabella dei doppioni JP 4.3.1 (recon/tools/jp_dedup_donors.py): texture citate dalle LWF di
-# lwf/character/enemy e lwf/character/npc ma scartate dall'estrazione di thethiny perche' identiche a un altro file.
+# lwf/character/enemy e lwf/character/npc ma scartate dall'estrazione locale perche' identiche a un altro file.
 # Colonne: percorso pubblicato, sorgente relativa a jp_final_4.3.1, regola. Solo nomi e percorsi.
 # Generata il 21-10-2026 da D:\Progetto_Restauro_KH_UX	mp\jp_table2 (jpfinal.py + mktsv.py); 9417 righe.
 lwf/character/enemy/1005/knockback/knockback_e38393e38383e38388e3839ee38383e3839720312e706e67.png	lwf/character/enemy/1005/atk1_o/atk1_o_e38393e38383e38388e3839ee38383e383972031312e706e67.png	unique

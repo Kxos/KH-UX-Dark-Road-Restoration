@@ -120,8 +120,7 @@ the plate's `userWarrantDisplayOfTime`; there are also `warrantNumberOfTime`/`wa
 
 Off today: our client lacks `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` and `GuiltBonus_BurstLvup_num`
 (null LWF = crash; [battaglia.md](../../notes/battaglia.md)). **The two original LWFs exist in the JP 4.3.1 data**
-(check of 17-10): `[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\
-lwf\medal\guilt_bonus\GuiltBonus_BurstLvup\` (`.lwf` + Burst_Arrow, Burst_LV_Logo «LEVEL UP!», Burst_Logo, Burst_Plate,
+(check of 17-10): `<jp_data>\lwf\medal\guilt_bonus\GuiltBonus_BurstLvup\` (`.lwf` + Burst_Arrow, Burst_LV_Logo «LEVEL UP!», Burst_Logo, Burst_Plate,
 each also in a `_B` version) and `GuiltBonus_BurstLvup_num\` (Burst_LV_Mark); absent in the WW OBBs and in
 versions 1.0.1-4.4.0 of the same collection. Difference: the JP logo says **«BURST»**, the WW one **«NOVA»**
 (`reference\nova_lvup`, title «NOVA LEVEL UP!», «LV a » LV b», message «Maxed out X's Special Attack Bonus!»,

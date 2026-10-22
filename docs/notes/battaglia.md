@@ -549,7 +549,7 @@ the boss; in 28 of 51 cases also within 200 px of the player start. Level: the s
 | 923, 930-932, 935, 955, 965, 975 (39103-39155) | 2013-2020 | Ralph: 923 «Ralph ... together with Player fights the Heartless», 932 «Ralph joins Player to fight the Heartless» |
 | 977 (39157) | 2021-2024 | Union leaders: «The Union leaders fight Darkness with the help of Player» (2024 Lauriam) |
 
-**Client code.** 1.0.1 with symbols (thethiny `[local reference data]\decompile\1.0.1\libcocos2dcpp_decompile\libcocos2dcpp_0027.c`):
+**Client code.** 1.0.1 with symbols (local reference data, not provided by this project):
 `StageActorManager::setupEnemyActorPlatoon` (0x74ED80): `if (team.flags & 0x20) { actor+650 = 1; ally list
 (+64) } else enemy list (+52)`. `checkEncount` (0x74F1A4): the encountered team's members go to the battle list
 (+76) from the enemy list only; **if the team has bit 0 (boss)** every ally gets `setEncountAction(1)` and

@@ -28,8 +28,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = r'D:\Progetto_Restauro_KH_UX'
-JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                       '[local reference data]', 'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_ROOT = private_tools.local_path('jp_data')
 STATIC_PACKS = ('medal_gen', 'rooms_gen', 'enemy_gen', 'raisedraw_gen')
 RESERVE = 176 * 1024 * 1024        # riserva del pacchetto generato (build-resources.ps1 $dataSize, versioni complete)
 # playSE_<nome>: eventi delle LWF della ruota del trait (Kakusei_Get1/2: playSE_ui2_se_000075/76, AKB 509000750/760

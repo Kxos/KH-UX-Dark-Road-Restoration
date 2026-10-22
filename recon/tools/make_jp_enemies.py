@@ -7,9 +7,9 @@ Le risorse WW servono lwf/character/enemy/<displayId>/ solo per 6 nemici KHUX (1
 e per le serie di Dark Road: make-game-tables.js da' a tutti gli altri un sostituto (Shadow, Armored
 Knight...). Qui si ricostruiscono le cartelle dei displayId originali (master_data\\enemy_display_orig.json)
 che il master usa e che nessun indice serve (names_v4.tsv + ipa431\\names_addnl.tsv), dalle fonti in
-sola lettura: dati JP 4.3.1 di thethiny (`lwf/character/enemy/`, PNG veri, nomi con revisione
+sola lettura: dati JP 4.3.1 della cartella di riferimento locale (`lwf/character/enemy/`, PNG veri, nomi con revisione
 `<nome>.<8 cifre>.<ext>`: vale la piu' alta, come latest() di import_jp_coco.py) e pacchetto 2016
-(tmp\\thethiny_x\\bundle2016\\files\\lwf\\character\\enemy, gia' BTF).
+(<ref_work>\\bundle2016\\files\\lwf\\character\\enemy, gia' BTF).
 
 Animazioni (docs/notes/battaglia.md#nemici-jp): [fn] apre per stato la LWF della tabella
 0x1f1cc88 {wait, bwait, move, atk%d_o, atkSp, knockback, dead}; [fn] rende NULL se il file
@@ -63,8 +63,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 D = r'D:\Progetto_Restauro_KH_UX'
 REPO = os.path.dirname(os.path.dirname(HERE))
-JP_ROOT = os.path.join(D, '[local reference data]', '', '[local reference data]', 'data',
-                       '[local reference data]', 'data', 'jp_final_4.3.1')
+import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
+JP_ROOT = private_tools.local_path('jp_data')
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 PNGREF = re.compile(rb'[\w\-.]+\.png')
 MANDATORY = ['wait', 'atk1_o', 'knockback', 'dead']          # + move (eventualmente da wait)
@@ -94,7 +94,7 @@ ap.add_argument('--recolour', default=None,
                 help="texture ricolorate da un gemello (default recon/tools/jp_recoloured.tsv; '' = nessuna)")
 ap.add_argument('--src-root', action='append', default=[], metavar='CONTENITORE=CARTELLA',
                 help='radice di un contenitore di extra_donors.py (jp501, ww501, b2016, jp431, recolour); ripetibile')
-ap.add_argument('--b2016', default=os.path.join(D, 'tmp', 'thethiny_x', 'bundle2016', 'files', 'lwf', 'character', 'enemy'))
+ap.add_argument('--b2016', default=private_tools.local_path('ref_work', 'bundle2016', 'files', 'lwf', 'character', 'enemy'))
 ap.add_argument('--index', action='append')
 ap.add_argument('--master', default=os.path.join(REPO, 'server', 'master_data'))
 ap.add_argument('--real', default=os.path.join(D, 'external', 'thethiny', 'enemy_dec.json'))

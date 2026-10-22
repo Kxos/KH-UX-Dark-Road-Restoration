@@ -43,8 +43,8 @@ const ENEMY_GEN = process.env.KHUX_NO_ENEMY_GEN ? null
   : path.join(process.env.KHUX_ENEMY_GEN || 'D:\\Progetto_Restauro_KH_UX\\enemy_gen\\files', 'lwf', 'character', 'enemy');
 const SHADOW = 80001;
 // dati di comparsa JP 4.3.1 per displayId (json/enemy/detail<d>.json: 91 file, displayId 1-141 e 1001-1006)
-const JP_DETAIL_DIR = process.env.KHUX_JP_ENEMY_DETAIL || path.join('D:\\Progetto_Restauro_KH_UX\\[local reference data]', '',
-  '[local reference data]', 'data', '[local reference data]', 'data', 'jp_final_4.3.1', 'json', 'enemy');
+const JP_DETAIL_DIR = process.env.KHUX_JP_ENEMY_DETAIL
+  || require('./local-paths').localPath('jp_data', 'json', 'enemy');
 // campo JP -> campo della riga enemy (hit_effect sta in enemyAttack, non qui)
 const DETAIL_SIZE = { speed: 'moveSpeed', hit_radius: 'hitRadius', width: 'width', height: 'height' };
 const DETAIL_SHOW = { show: 'show', show_swf: 'showSwf', show_frame: 'showFrame', hide_frame: 'hideFrame' };
