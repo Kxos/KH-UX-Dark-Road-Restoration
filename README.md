@@ -1,8 +1,10 @@
-# KH-UX-Dark-Road-Restoration
+# Re-Union X
+
+*A fan restoration of Kingdom Hearts Union χ[Cross]* (repository: KH-UX-Dark-Road-Restoration)
 
 **English** | [Italiano](README.it.md)
 
-**How to play:** [docs/SETUP.md](docs/SETUP.md) · **Project site:** [Kingdom Hearts Re-Union X](https://kxos.github.io/KH-UX-Dark-Road-Restoration/) · **Help wanted:** [Reddit post](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [What we are looking for](#what-we-are-looking-for) · **Bugs:** [open a bug report](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)
+**How to play:** [docs/SETUP.md](docs/SETUP.md) · **Project site:** [Re-Union X](https://kxos.github.io/KH-UX-Dark-Road-Restoration/) · **Help wanted:** [Reddit post](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [What we are looking for](#what-we-are-looking-for) · **Bugs:** [open a bug report](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)
 
 > Setting the game up today is long and complex (it will become a single launcher when the work is finished),
 > and the game is a work in progress: expect bugs and crashes, and please report them.

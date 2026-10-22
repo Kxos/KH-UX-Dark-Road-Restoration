@@ -1,4 +1,4 @@
-# How to play — setting up the restored game on your own Windows PC
+# How to play Re-Union X — setting up the restored game on your own Windows PC
 
 > **Read this first.**
 >

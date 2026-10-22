@@ -1,4 +1,4 @@
-# Project portal (Kingdom Hearts Re-Union X)
+# Project portal (Re-Union X)
 
 The portal is `docs/index.html`, served by GitHub Pages at
 <https://kxos.github.io/KH-UX-Dark-Road-Restoration/>. It is static: edit, commit, push, and the page updates

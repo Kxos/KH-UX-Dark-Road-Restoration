@@ -1,4 +1,4 @@
-// Kingdom Hearts Re-Union X portal: tabs, status list (status.json), gallery (gallery.json) with a lightbox.
+// Re-Union X portal: tabs, status list (status.json), gallery (gallery.json) with a lightbox.
 (function () {
   'use strict';
   var doc = document;

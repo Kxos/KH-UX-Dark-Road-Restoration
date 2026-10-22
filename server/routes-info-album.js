@@ -243,7 +243,7 @@ const WEB_CSS = '<style>body{background:#000 linear-gradient(#06121c,#0a2233);mi
   + '*{box-sizing:border-box}.x{min-width:0}#list{background:#174a5c;border:2px solid #36a6e6}.det{min-height:60vh}.bar{position:sticky}'
   + '.foot{max-width:980px;margin:14px auto 0;color:#8fb3c0;font:13px sans-serif;text-align:center}.foot a{color:#5fe0f0}'
   + '@media(max-width:600px){body{padding:12px 6px}.frame{padding:8px 6px 10px}.row{padding:10px 6px}.d{width:44px;font-size:13px}.t{width:96px;font-size:11px;margin-right:8px}.x{font-size:15px}.ttl{font-size:24px}}</style>';
-const WEB_FOOT = '<div class="foot">Kingdom Hearts Union &chi; fan restoration &middot; the in-game Notices, exported from the server '
+const WEB_FOOT = '<div class="foot">Re-Union X &middot; a fan restoration of Kingdom Hearts Union &chi;[Cross], not affiliated with Square Enix or Disney &middot; the in-game Notices, exported from the server '
   + '&middot; <a href="https://github.com/Kxos/KH-UX-Dark-Road-Restoration">project on GitHub</a></div>';
 
 // Pagina /web/notices, come l'elenco originale (reference\other_menu\notices_list_yt_02.jpg: data,

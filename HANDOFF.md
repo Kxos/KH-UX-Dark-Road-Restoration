@@ -68,7 +68,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **Enemy/NPC graphics of quests 526-979 (I-194)**, priority: source order, status and next steps in
   [ISSUES](docs/ISSUES.md) and [journal 2026-10-22](docs/journal/2026-10-22.md); ~88 families still missing.
 - User's open items: I-191 (active banners on the home screen), I-192 (Beginner's Guide WebView), checks against
-  the Roboloid data and the wiki's Special Attack page; final web page «Kingdom Hearts Re-Union X» only as the LAST task.
+  the Roboloid data and the wiki's Special Attack page; final web page «Re-Union X» (public project name since 22-10) only as the LAST task.
 - Trait deals unlocked by the story 526-979 (e.g. B0259 at quest 725) not yet seen on the bench (I-084,
   [medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).
 - Open Shop items: I-139, I-140, I-141, I-142, I-143, I-145, I-146, I-151 ([shop.md](docs/notes/shop.md)).
