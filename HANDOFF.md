@@ -163,7 +163,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 ## Work rules (from the user)
 
 - **Commit + push at every verified step**, without asking; `git pull --rebase` before the push
-  (other agents commit in parallel). Messages in Italian, ending with
+  (other agents commit in parallel). Messages in English (since 22-10 all repository docs are in English too), ending with
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. `git -c safe.directory=*`,
   `git commit -F <file>`; UTF-8 without BOM.
 - **Style from the originals**: before building a screen, look for screenshots/videos/data
