@@ -1,205 +1,205 @@
-# Banco LDPlayer: avvio, script, cattura dei crash
+# LDPlayer bench: startup, scripts, crash capture
 
-Note tecniche del banco di prova. Storia completa in
+Technical notes of the test bench. Full history in
 [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
 
 <a id="posizioni"></a>
-## Dove sta tutto
+## Where everything is
 
-- Repository: `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration` (Claude Code va
-  aperto da qui). Tutto il lavoro sta su D: per lo spazio su C:.
-- LDPlayer 9.5.37: `D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9` (istanza 0, Android 9, ABI
-  arm64-v8a tradotta da houdini, root via `ld.exe`). APK 4.3.1 **originale** (il patchato si ferma
-  all'anti-repackaging di LIAPP, vedi [protector.md](protector.md)):
+- Repository: `D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration` (Claude Code must be
+  opened from here). All the work lives on D: because of the space on C:.
+- LDPlayer 9.5.37: `D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9` (instance 0, Android 9, ABI
+  arm64-v8a translated by houdini, root via `ld.exe`). **Original** APK 4.3.1 (the patched one stops
+  at LIAPP's anti-repackaging, see [protector.md](protector.md)):
   `D:\Progetto_Restauro_KH_UX\apk\khux-4.3.1-original.apk`.
-- Ghidra 12.1.4: `D:\Progetto_Restauro_KH_UX\Android\ghidra_12.1.4_PUBLIC_20260921` (junction dal
-  vecchio `C:\work\Android\ghidra_…`), progetto in `recon/ghidra/project` (non versionato).
-- Screenshot e tombstone: `D:\Progetto_Restauro_KH_UX\screenshots` (passano dalla cartella
-  condivisa `Documents\XuanZhi9\Pictures` e vengono spostati). Log del server:
+- Ghidra 12.1.4: `D:\Progetto_Restauro_KH_UX\Android\ghidra_12.1.4_PUBLIC_20260921` (junction from the
+  old `C:\work\Android\ghidra_…`), project in `recon/ghidra/project` (not versioned).
+- Screenshots and tombstones: `D:\Progetto_Restauro_KH_UX\screenshots` (they go through the shared
+  folder `Documents\XuanZhi9\Pictures` and are moved). Server log:
   `D:\Progetto_Restauro_KH_UX\logs\server.log`.
-- Salvataggio del giocatore: `server/save/player.json` (escluso da git; `KHUX_SAVE` lo cambia).
-- Risorse servite: `D:\Progetto_Restauro_KH_UX\resource_data\<N>\{data,index}`; pacchetto generato
-  in `D:\Progetto_Restauro_KH_UX\stage_gen\files\` (vedi [risorse_layout.md](risorse_layout.md)).
-- Catalogo delle risorse: `D:\Progetto_Restauro_KH_UX\catalog\` (`index.html`, `textures.tsv`,
+- Player save: `server/save/player.json` (excluded from git; `KHUX_SAVE` changes it).
+- Served resources: `D:\Progetto_Restauro_KH_UX\resource_data\<N>\{data,index}`; generated pack
+  in `D:\Progetto_Restauro_KH_UX\stage_gen\files\` (see [risorse_layout.md](risorse_layout.md)).
+- Resource catalog: `D:\Progetto_Restauro_KH_UX\catalog\` (`index.html`, `textures.tsv`,
   `layouts.tsv`, `missing_layouts.txt`).
-- Riferimenti visivi degli originali: `D:\Progetto_Restauro_KH_UX\reference\<schermata>\` (fonti in
-  `SOURCES.md`); yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt` (con `PYTHONPATH` e
+- Visual references of the originals: `D:\Progetto_Restauro_KH_UX\reference\<schermata>\` (sources in
+  `SOURCES.md`); yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt` (with `PYTHONPATH` and
   `--js-runtimes node:<node.exe>`).
 
 <a id="avvio"></a>
-## Avvio da spento e ripresa
+## Cold start and resume
 
 ```powershell
-# 1. emulatore (se spento)
+# 1. emulator (if off)
 D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ldconsole.exe launch --index 0
-# 2. server + rientro del giocatore salvato fino alla home
+# 2. server + re-entry of the saved player up to the home
 .\tools\ldplayer\session\relogin.ps1 -Tag x            # default -Revision 81
-# 3. OBBLIGATORIO dopo ogni avvio dell'emulatore (CA di sistema, orologio 15/5/2021,
-#    DNS verso il PC, DNS privato spento, dirottamento TCP 80/443 del gioco)
+# 3. MANDATORY after every emulator start (system CA, clock 15/5/2021,
+#    DNS towards the PC, private DNS off, TCP 80/443 redirection of the game)
 D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"
 ```
 
-- Senza `phaseb-guest.sh` il client non raggiunge il server e resta sul popup «End of Service»
-  (scadenza a data dentro il client: l'orologio del guest va tenuto prima del 29/6/2021).
-- Lo script sta in `tools/ldplayer/phaseb-guest.sh` e va copiato in `Documents\XuanZhi9\Misc`.
-- Dopo un riavvio dell'emulatore il client puo' riscaricare tutta l'ultima versione (~3 GB, minuti).
-- Altri script di sessione (`tools/ldplayer/session/`):
-  - `cycle.ps1 -Tag x`: da NUOVO giocatore (cancella il salvataggio);
-  - `run-server.ps1 -Revision 81 [-TutorialFinished]`: solo il server (parte staccato con
-    `Win32_Process.Create`: con `Start-Process` moriva con lo script); `-GachaShow B0306,B0456` (anche in `relogin.ps1`):
-    banner del catalogo aggiunti alla lista dello Shop (`KHUX_GACHA_SHOW`, [shop.md](shop.md#sp2));
-  - `update-resources.ps1`: fa scaricare l'ultima versione completa (~5 min) e attende la fine
-    dell'installazione (interromperla lascia `files/r` a meta': crash su `MyPageScene_ver340`);
-  - `build-resources.ps1 -Version N` / `-Quick`: vedi [-Quick](#quick);
-  - `story.ps1`, `sweep.ps1` (mappatura dei pulsanti, rapporto in `logs\sweep.txt`).
-- **Revisione master**: alzarla di 1 nei 4 script (`cycle`, `relogin`, `run-server`,
-  `update-resources`) dopo ogni modifica di `server/master_data`, poi `relogin.ps1` (due volte se
-  il primo va in crash dopo il download dei master).
-- **Non riavviare il SOLO server a sessione aperta**: senza rifare il login non decifra piu' i
-  corpi (stageId perso). Usare sempre `relogin.ps1`.
-- Il DNS IPv4 della scheda Ethernet di Windows deve essere **192.168.1.185** (il PC) durante le
-  prove e tornare **automatico** a fine sessione.
+- Without `phaseb-guest.sh` the client does not reach the server and stays on the «End of Service» popup
+  (date deadline inside the client: the guest clock must be kept before 29/6/2021).
+- The script is in `tools/ldplayer/phaseb-guest.sh` and must be copied into `Documents\XuanZhi9\Misc`.
+- After an emulator restart the client may download the whole latest version again (~3 GB, minutes).
+- Other session scripts (`tools/ldplayer/session/`):
+  - `cycle.ps1 -Tag x`: as a NEW player (deletes the save);
+  - `run-server.ps1 -Revision 81 [-TutorialFinished]`: only the server (it starts detached with
+    `Win32_Process.Create`: with `Start-Process` it died with the script); `-GachaShow B0306,B0456` (also in `relogin.ps1`):
+    catalog banners added to the Shop list (`KHUX_GACHA_SHOW`, [shop.md](shop.md#sp2));
+  - `update-resources.ps1`: makes the client download the latest complete version (~5 min) and waits for the end
+    of the installation (interrupting it leaves `files/r` half-done: crash on `MyPageScene_ver340`);
+  - `build-resources.ps1 -Version N` / `-Quick`: see [-Quick](#quick);
+  - `story.ps1`, `sweep.ps1` (mapping of the buttons, report in `logs\sweep.txt`).
+- **Master revision**: raise it by 1 in the 4 scripts (`cycle`, `relogin`, `run-server`,
+  `update-resources`) after every change to `server/master_data`, then `relogin.ps1` (twice if
+  the first crashes after the master download).
+- **Do not restart ONLY the server with a session open**: without logging in again it can no longer decrypt the
+  bodies (stageId lost). Always use `relogin.ps1`.
+- The IPv4 DNS of the Windows Ethernet adapter must be **192.168.1.185** (the PC) during the
+  tests and go back to **automatic** at the end of the session.
 
 <a id="quick"></a>
-## Ciclo rapido `-Quick` e versioni delle risorse
+## `-Quick` fast cycle and resource versions
 
-- `tools\ldplayer\session\build-resources.ps1 -Quick` (~40 s): rigenera il pacchetto generato
-  dentro l'ultima versione e lo scrive direttamente nei file del guest (coda dei dati nel pezzo
-  `files/r/misc.mp4.N` dove cade, N = offset >> 31, anche a cavallo di due pezzi con
-  `resource_parts.py`; piu' `misc.png`), poi riavvia solo l'app. Niente download **a patto che le
-  dimensioni non cambino**: se cambiano il client butta le risorse (`resourceRevision 0`) e
-  riscarica tutto. Le versioni complete (dalla 26) riservano 4 MiB al pacchetto generato (16 MiB
-  dalla 29) e un nome di riempimento nell'indice (riserva indice 64 KB); `-Quick` torna alle
-  dimensioni installate (`resource_merge.py --index-size`). Se il pacchetto supera la riserva serve
-  una versione completa.
-- `-Quick` riscrive solo l'ultimo pezzo: le immagini delle medaglie (`medal_gen`, penultimo pezzo)
-  entrano solo con una versione completa. Si ferma se i pacchetti prima del generato (anche quelli
-  compattati in `D:\Progetto_Restauro_KH_UX\compact`, elenco in `resource_data\<N>\compact.txt`) non sono
-  lunghi quanto i pezzi installati: [risorse_layout.md#pezzi](risorse_layout.md#pezzi). Prima di toccare
-  versione e guest legge le dimensioni nel guest (`resource_parts.py --check-installed`): se la somma dei
-  pezzi o `misc.png` non sono quelli della versione (versione piu' nuova non ancora scaricata, download a
-  meta') si ferma: «esegui update-resources.ps1, non usare -Quick».
-- Una versione completa si costruisce in `resource_data\_build_<N>` (cartella non numerica: il server non
-  la vede) e si rinomina in `<N>` solo dopo i controlli finali (pezzi sotto i 2 GiB, 20 GiB); `-Version N`
-  di una cartella esistente si ferma prima di ogni generatore e della compattazione.
-- **Mai `-Quick` se esiste una cartella di versione piu' nuova di quella installata**: scrive la
-  piu' nuova nel guest (dati corrotti).
-- Una versione completa (`build-resources.ps1 -Version N`) viene annunciata subito dal server e
-  scaricata dal client: farla solo a banco fermo, poi `update-resources.ps1`.
-- `resource_merge` tiene in cache indici decifrati e keystream in `%TEMP%\khux_bgi_cache` (1 s
-  invece di 60).
-- Stato all'11 ottobre: **risorse 32, revisione master 81**.
+- `tools\ldplayer\session\build-resources.ps1 -Quick` (~40 s): regenerates the generated pack
+  inside the latest version and writes it directly into the guest files (tail of the data in the part
+  `files/r/misc.mp4.N` where it falls, N = offset >> 31, also straddling two parts with
+  `resource_parts.py`; plus `misc.png`), then restarts only the app. No download **provided that the
+  sizes do not change**: if they change the client throws the resources away (`resourceRevision 0`) and
+  downloads everything again. The complete versions (from 26) reserve 4 MiB for the generated pack (16 MiB
+  from 29) and a padding name in the index (index reserve 64 KB); `-Quick` goes back to the
+  installed sizes (`resource_merge.py --index-size`). If the pack exceeds the reserve a
+  complete version is needed.
+- `-Quick` rewrites only the last part: the medal images (`medal_gen`, second-to-last part)
+  get in only with a complete version. It stops if the packs before the generated one (including those
+  compacted in `D:\Progetto_Restauro_KH_UX\compact`, list in `resource_data\<N>\compact.txt`) are not
+  as long as the installed parts: [risorse_layout.md#pezzi](risorse_layout.md#pezzi). Before touching
+  version and guest it reads the sizes in the guest (`resource_parts.py --check-installed`): if the sum of the
+  parts or `misc.png` are not those of the version (newer version not yet downloaded, download
+  half-done) it stops: «esegui update-resources.ps1, non usare -Quick».
+- A complete version is built in `resource_data\_build_<N>` (non-numeric folder: the server does not
+  see it) and renamed to `<N>` only after the final checks (parts under 2 GiB, 20 GiB); `-Version N`
+  of an existing folder stops before every generator and before the compaction.
+- **Never `-Quick` if there is a version folder newer than the installed one**: it writes the
+  newer one into the guest (corrupted data).
+- A complete version (`build-resources.ps1 -Version N`) is announced immediately by the server and
+  downloaded by the client: do it only with the bench stopped, then `update-resources.ps1`.
+- `resource_merge` caches decrypted indexes and keystreams in `%TEMP%\khux_bgi_cache` (1 s
+  instead of 60).
+- Status at 11 October: **resources 32, master revision 81**.
 
 <a id="script"></a>
-## Script del banco (`tools/ldplayer/`)
+## Bench scripts (`tools/ldplayer/`)
 
-- `bench_lib.ps1`: funzioni comuni senza attese fisse. Lo schermo si legge nel guest
-  (`screencap` grezzo, 16 byte di intestazione, `dd` dei soli pixel utili, ~0,2 s). `Step` tocca e
-  attende la schermata successiva riconosciuta dai pixel; `WaitLog` attende una richiesta nel log;
-  `Swipe`; `SkipDialog` (SKIP chiaro a (155,50), riquadro (247,190,99) a (500,1000));
-  `DismissTutorial`, `GameWait`, `FindTarget` (indicatore rosa TARGET), `FindSpotlight`.
-- `bench_flow.ps1 -Out <log> [-Until name|editor|union|battle]`: nuovo giocatore fino alla prima
-  battaglia (~42 s). `bench_prologue.ps1 -Out <log> [-Seek] [-Shot x]`: Prologue e risultati;
-  `-Seek` segue lo schermo (vale per ogni stage). `bench_start.ps1`: giocatore esistente.
-- `smoke_quests.ps1 -Stages ...` + `server\save\smoke.json` {stageId}: il server propone solo
-  quella missione, lo script la avvia e controlla l'app (~75 s a missione).
-  `recon/tools/smoke_pick.py` sceglie le 76 missioni che coprono stanze e nemici.
-- `route_1060.ps1`: tocchi della 1060 (scala ~1,7 px per unita' di mappa, personaggio a
+- `bench_lib.ps1`: common functions without fixed waits. The screen is read in the guest
+  (raw `screencap`, 16-byte header, `dd` of only the useful pixels, ~0.2 s). `Step` taps and
+  waits for the next screen recognized by its pixels; `WaitLog` waits for a request in the log;
+  `Swipe`; `SkipDialog` (light SKIP at (155,50), box (247,190,99) at (500,1000));
+  `DismissTutorial`, `GameWait`, `FindTarget` (pink TARGET marker), `FindSpotlight`.
+- `bench_flow.ps1 -Out <log> [-Until name|editor|union|battle]`: new player up to the first
+  battle (~42 s). `bench_prologue.ps1 -Out <log> [-Seek] [-Shot x]`: Prologue and results;
+  `-Seek` follows the screen (works for every stage). `bench_start.ps1`: existing player.
+- `smoke_quests.ps1 -Stages ...` + `server\save\smoke.json` {stageId}: the server offers only
+  that quest, the script starts it and checks the app (~75 s per quest).
+  `recon/tools/smoke_pick.py` picks the 76 quests that cover rooms and enemies.
+- `route_1060.ps1`: taps of 1060 (scale ~1.7 px per map unit, character at
   ~(770,600)).
-- **Limite noto di `-Seek`/`FindSpotlight`**: sulle mappe scure (nebbia) scambia lo sfondo per il
-  cerchio del tutorial e non fa passi; la 1070 (bosco) si blocca sull'albero; nella 1030 non ha
-  visto un `/stage/clear` arrivato (vedi ISSUES I-008).
-- Regola dell'utente: **i dialoghi con SKIP si saltano sempre**; i risultati si scorrono con OK
+- **Known limit of `-Seek`/`FindSpotlight`**: on dark maps (fog) it mistakes the background for the
+  tutorial circle and takes no steps; 1070 (forest) gets stuck on the tree; in 1030 it did not
+  see a `/stage/clear` that had arrived (see ISSUES I-008).
+- User's rule: **dialogues with SKIP are always skipped**; results are scrolled with OK
   (960,965).
-- **Rientro fermo al titolo** (18-10, tre volte di fila dopo `relogin.ps1`/`build-resources.ps1 -Quick`): il
-  dialogo Android «L'app Launcher3 non risponde» copre il gioco e prende i tocchi su KHUX START. Toccare
-  «Attendi» (640,649) e rilanciare `bench_start.ps1`.
-- **Nemici piu' forti** (18-10, per provare Second Chance e le skill che servono a terra):
-  `relogin.ps1 -EnemyAtk 10` (o `run-server.ps1 -EnemyAtk 10`) moltiplica l'attacco della tabella `enemy`
-  nel master servito (`KHUX_BENCH_ENEMY_ATK`; il client prende le statistiche dei nemici dal master). La
-  revisione servita sale di 90000 + N, quindi il client riscarica il master; un `relogin.ps1` senza
-  l'opzione lo riporta al normale. Strumento di prova, non una funzione del gioco: nessuna notice.
-- **Skill sempre o mai** (18-10): `relogin.ps1 -SkillProb 100` (o `0`) fissa la probabilita' di tutte le skill
-  delle medaglie nel master servito (`KHUX_BENCH_SKILL_PROB`, revisione +80000 + P + 1). Per misurare un effetto:
-  stessa missione due volte, solo attacchi normali (in AUTO parte anche la Supernova), e confronto di
-  `maximumDamage` nel corpo di `/stage/clear` (`server/logs/requests.ndjson`). Comando manuale: toccare il
-  nemico, poi trascinare la medaglia verso l'alto.
-- Prove delle uscite multi-parte: spostare temporaneamente la partenza STG vicino all'uscita,
-  poi ripristinare e rifare `-Quick`.
+- **Re-entry stuck at the title** (18-10, three times in a row after `relogin.ps1`/`build-resources.ps1 -Quick`): the
+  Android dialog «L'app Launcher3 non risponde» («Launcher3 isn't responding») covers the game and takes the taps on KHUX START. Tap
+  «Attendi» («Wait», 640,649) and launch `bench_start.ps1` again.
+- **Stronger enemies** (18-10, to try Second Chance and the skills that are needed on the ground):
+  `relogin.ps1 -EnemyAtk 10` (or `run-server.ps1 -EnemyAtk 10`) multiplies the attack of the `enemy` table
+  in the served master (`KHUX_BENCH_ENEMY_ATK`; the client takes the enemy stats from the master). The
+  served revision goes up by 90000 + N, so the client downloads the master again; a `relogin.ps1` without
+  the option brings it back to normal. Test tool, not a game feature: no notice.
+- **Skills always or never** (18-10): `relogin.ps1 -SkillProb 100` (or `0`) fixes the probability of all the medal
+  skills in the served master (`KHUX_BENCH_SKILL_PROB`, revision +80000 + P + 1). To measure an effect:
+  same quest twice, only normal attacks (in AUTO the Supernova also fires), and comparison of
+  `maximumDamage` in the body of `/stage/clear` (`server/logs/requests.ndjson`). Manual command: tap the
+  enemy, then drag the medal upwards.
+- Tests of multi-part exits: temporarily move the STG start near the exit,
+  then restore and redo `-Quick`.
 
 <a id="tocchi"></a>
-## Tocchi noti (schermo 1920x1080)
+## Known taps (screen 1920x1080)
 
-- Home: MENU `1790,45` (menu a tendina), Moogle Shop `288,1000`, Profilo (avatar) `260,95`,
-  rotolo Missioni `425,130`, Other `1740,963`; frecce ‹ › delle pagine della home: non toccarle (la
-  seconda pagina e' Dark Road).
-- Medal List: MENU `1790,45` poi `1745,697`; Sell Medals `335,262`, medaglia `637,600`, Sell
-  `350,1005`, conferma `1220,715`, OK `960,712`.
-- Profilo: Titles `330,1030`, Name/Message `808,1030`, Play Style `1155,1030`, Outfits `1590,1030`.
-- Moogle Shop: Traits `340,250`, Items `700,250`, Exchange prima riga `1213,512`, OK `1220,712`;
-  trait: riga STR +1000 `600,400`, «Select Medal» `788,1012`, poi trascinare la medaglia sullo slot
-  (`Swipe 1640 290 630 330 900`), «Set Trait» `840,1010`. Sell Materials `1205,250`, materiale
-  `1200,430`, Sell `1183,930`, conferma `1220,715`.
-- Battaglia: speciale = swipe **rapido** in diagonale sulla medaglia, `Swipe 130 790 400 520 150`
-  (gesti da 300-400 ms o verticali non funzionano).
+- Home: MENU `1790,45` (drop-down menu), Moogle Shop `288,1000`, Profile (avatar) `260,95`,
+  Missions scroll `425,130`, Other `1740,963`; ‹ › arrows of the home pages: do not tap them (the
+  second page is Dark Road).
+- Medal List: MENU `1790,45` then `1745,697`; Sell Medals `335,262`, medal `637,600`, Sell
+  `350,1005`, confirm `1220,715`, OK `960,712`.
+- Profile: Titles `330,1030`, Name/Message `808,1030`, Play Style `1155,1030`, Outfits `1590,1030`.
+- Moogle Shop: Traits `340,250`, Items `700,250`, Exchange first row `1213,512`, OK `1220,712`;
+  trait: row STR +1000 `600,400`, «Select Medal» `788,1012`, then drag the medal onto the slot
+  (`Swipe 1640 290 630 330 900`), «Set Trait» `840,1010`. Sell Materials `1205,250`, material
+  `1200,430`, Sell `1183,930`, confirm `1220,715`.
+- Battle: special = **fast** diagonal swipe on the medal, `Swipe 130 790 400 520 150`
+  (300-400 ms or vertical gestures do not work).
 
 <a id="crash"></a>
-## Ricetta per un crash del client
+## Recipe for a client crash
 
-1. `tools/ldplayer/tombstone.ps1`: dall'ultimo tombstone gli indirizzi ARM (Ghidra) sospetti. Sotto
-   houdini il backtrace e' tutto in `libhoudini`, ma: i registri x86 contengono l'istruzione ARM
-   corrente (es. `rbx = 0xf9400808` = `ldr x8,[x0,#0x10]`), e lo stack di houdini conserva PC e
-   ritorni del codice tradotto (valori nella mappatura `r--` di `libcocos2dcpp.so`; Ghidra = valore
-   - base + `0x100000`). Le coppie fp/lr sotto rsp sono la catena ARM vera.
-2. Se non basta, **armtrace** (`tools/ldplayer/armtrace/`, vedi il suo README): `capture.ps1 -Arm`,
-   provocare il crash, `capture.ps1 -Collect`, **sempre `-Release`** (altrimenti i tombstone
-   restano spenti). Ferma il processo sospendendo `[crash service]`, legge la memoria con
-   `[memory read]` (LIAPP uccide il gioco se si apre `/proc/<pid>/mem`: codice [code]) e i
-   registri ARM emulati dallo stato di houdini. `vmread` si ricostruisce con `build_vmread.py`.
-   `freeze_on_crash.sh` scatta solo se il `crash_dump64` e' per un thread del gioco: il renderer della WebView
-   delle Notices crasha da solo e prima dava catture vuote (20-10).
-3. `armtrace\stackcap.ps1 -Tag x [-MenuY 697] [-NoMenu] -Taps 'x,y'` cattura lo stack ARM al crash;
-   `-NoStart -WaitSec N` arma la cattura mentre un altro script provoca il crash. **Non troncare
-   l'output con `Select-Object -First`**: interrompe lo script prima del `-Release`.
-4. `findregs.py` (cerca nelle sottocartelle, accetta pc fuori dalla libreria; `--lib-pc` per il
-   vincolo vecchio), `backtrace.py`, e le stringhe corte di libc++ rimaste nello stack (byte =
-   lunghezza*2, poi il nome).
-5. **Base della libreria**: cambia a ogni avvio dell'emulatore (0x31c0000 il 9 ottobre, 0x31d4000 il
-   10, 0x320c000 e 0x3314000 l'11). stackcap la stampa: passarla con `$env:KHUX_BASE` a
-   `findregs.py`/`backtrace.py`. Con una base sbagliata si ottengono piste false (la «PetInfoDialog»
-   dell'11 ottobre). `capture.ps1` presume 0x3308000: sottrarre la differenza.
-6. **pc/lr fra 0x11ad000 e 0x11b2000 = GUIReader = layout cocostudio mancante**: il percorso del
-   layout e' in un registro (x24 o simili). Elenco in `catalog\missing_layouts.txt`.
-7. Poi `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi>` e
-   `recon/tools/widget_lookup.py` per i nomi dei widget che il codice cerca. Vedi
+1. `tools/ldplayer/tombstone.ps1`: the suspicious ARM (Ghidra) addresses from the latest tombstone. Under
+   houdini the backtrace is all in `libhoudini`, but: the x86 registers contain the current ARM
+   instruction (e.g. `rbx = 0xf9400808` = `ldr x8,[x0,#0x10]`), and the houdini stack keeps the PC and
+   returns of the translated code (values in the `r--` mapping of `libcocos2dcpp.so`; Ghidra = value
+   - base + `0x100000`). The fp/lr pairs below rsp are the real ARM chain.
+2. If that is not enough, **armtrace** (`tools/ldplayer/armtrace/`, see its README): `capture.ps1 -Arm`,
+   trigger the crash, `capture.ps1 -Collect`, **always `-Release`** (otherwise the tombstones
+   stay off). It stops the process by suspending `[crash service]`, reads the memory with
+   `[memory read]` (LIAPP kills the game if `/proc/<pid>/mem` is opened: code [code]) and the
+   emulated ARM registers from the houdini state. `vmread` is rebuilt with `build_vmread.py`.
+   `freeze_on_crash.sh` fires only if the `crash_dump64` is for a game thread: the WebView renderer
+   of the Notices crashes on its own and before gave empty captures (20-10).
+3. `armtrace\stackcap.ps1 -Tag x [-MenuY 697] [-NoMenu] -Taps 'x,y'` captures the ARM stack at the crash;
+   `-NoStart -WaitSec N` arms the capture while another script triggers the crash. **Do not truncate
+   the output with `Select-Object -First`**: it interrupts the script before the `-Release`.
+4. `findregs.py` (searches the subfolders, accepts pc outside the library; `--lib-pc` for the
+   old constraint), `backtrace.py`, and the short libc++ strings left on the stack (byte =
+   length*2, then the name).
+5. **Library base**: it changes at every emulator start (0x31c0000 on 9 October, 0x31d4000 on the
+   10th, 0x320c000 and 0x3314000 on the 11th). stackcap prints it: pass it with `$env:KHUX_BASE` to
+   `findregs.py`/`backtrace.py`. With a wrong base you get false leads (the «PetInfoDialog»
+   of 11 October). `capture.ps1` assumes 0x3308000: subtract the difference.
+6. **pc/lr between 0x11ad000 and 0x11b2000 = GUIReader = missing cocostudio layout**: the path of the
+   layout is in a register (x24 or similar). List in `catalog\missing_layouts.txt`.
+7. Then `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi>` and
+   `recon/tools/widget_lookup.py` for the names of the widgets the code looks for. See
    [analisi.md](analisi.md).
 
 <a id="ldplayer"></a>
-## LDPlayer: inciampi
-- **Errore «g_pPipeMemHead->arBufHead[i].usingPipeId != nPipeId» e crash di LDPlayer** (11 ottobre, due volte): piu' ld.exe insieme (missione in background + cattura o screenshot ogni secondo) o un ld.exe ucciso a meta' corrompono la memoria condivisa delle pipe. Ora Sh di bench_lib.ps1 (e tombstone.ps1) passa da un mutex di sistema Global\khux_ld_exe: un ld.exe alla volta anche fra script diversi. Mai Stop-Process su ld.exe: se resta appeso, ldconsole quit e launch.
+## LDPlayer: pitfalls
+- **Error «g_pPipeMemHead->arBufHead[i].usingPipeId != nPipeId» and LDPlayer crash** (11 October, twice): several ld.exe at once (quest in the background + capture or screenshot every second) or an ld.exe killed halfway corrupt the shared memory of the pipes. Now Sh of bench_lib.ps1 (and tombstone.ps1) goes through a system mutex Global\khux_ld_exe: one ld.exe at a time even across different scripts. Never Stop-Process on ld.exe: if it stays hung, ldconsole quit and launch.
 
-- adb non si apre su questa versione: si usa `ld.exe -s 0 "<comando>"` (shell root nel guest) e
-  `ldconsole installapp --index 0 --filename <apk>`. `ldconsole quit` puo' non bastare:
-  `quitall`. La config (`vms\config\leidian0.config`) si modifica solo a istanza spenta.
-- Screenshot dall'interno del guest: `ld.exe -s 0 "screencap -p /sdcard/Pictures/x.png"`.
-- Rete: NAT Network VirtualBox `LdNatNetwork0` (172.16.1.0/24). Se un riavvio rapido lascia orfano
-  `VBoxNetDHCP`, `VBoxNetNAT` non parte e il guest non ha rete: `ldconsole quitall`, attendere che
-  `Ld9BoxHeadless` sparisca, terminare `VBoxNetDHCP`/`VBoxNetNAT`, rilanciare. Con l'istanza accesa
-  devono esserci entrambi.
-- DNS: VirtualBox scarta i DNS di loopback (mettere l'IP LAN del PC) e passa il DNS al guest solo
-  all'avvio dell'istanza; nel guest il DNS privato opportunistico va spento (fatto da
-  `phaseb-guest.sh`: `private_dns_mode off`, REJECT sulla 853, DNAT della 53 verso il PC).
-- LDPlayer si e' bloccato (ld.exe appesi): `ldconsole quit/launch` + `phaseb-guest.sh`.
-- Memoria: dopo vari download da 2,3 GB `Ld9BoxHeadless` arriva a 30 GB impegnati e Windows rifiuta
-  `ld.exe` («file di paging troppo piccolo»): `ldconsole quit --index 0`, `launch`,
-  `phaseb-guest.sh`. Non proporre all'utente di pulire C:.
-- Il link «LDPlayer 9» del sito installa LDPlayer 14; il pacchetto vero:
+- adb does not open on this version: use `ld.exe -s 0 "<comando>"` (root shell in the guest) and
+  `ldconsole installapp --index 0 --filename <apk>`. `ldconsole quit` may not be enough:
+  `quitall`. The config (`vms\config\leidian0.config`) can be changed only with the instance off.
+- Screenshot from inside the guest: `ld.exe -s 0 "screencap -p /sdcard/Pictures/x.png"`.
+- Network: VirtualBox NAT Network `LdNatNetwork0` (172.16.1.0/24). If a quick restart leaves
+  `VBoxNetDHCP` orphaned, `VBoxNetNAT` does not start and the guest has no network: `ldconsole quitall`, wait until
+  `Ld9BoxHeadless` disappears, kill `VBoxNetDHCP`/`VBoxNetNAT`, relaunch. With the instance on
+  both must be there.
+- DNS: VirtualBox discards loopback DNS servers (set the PC's LAN IP) and passes the DNS to the guest only
+  at instance start; in the guest the opportunistic private DNS must be turned off (done by
+  `phaseb-guest.sh`: `private_dns_mode off`, REJECT on 853, DNAT of 53 towards the PC).
+- LDPlayer froze (hung ld.exe): `ldconsole quit/launch` + `phaseb-guest.sh`.
+- Memory: after several 2.3 GB downloads `Ld9BoxHeadless` reaches 30 GB committed and Windows refuses
+  `ld.exe` («file di paging troppo piccolo», "paging file too small"): `ldconsole quit --index 0`, `launch`,
+  `phaseb-guest.sh`. Do not suggest to the user to clean up C:.
+- The site's «LDPlayer 9» link installs LDPlayer 14; the real package:
   `https://res.ldrescdn.com/download/package/LDPlayer9.0.exe`.
 
 <a id="git"></a>
-## Regole pratiche dell'ambiente
+## Practical rules of the environment
 
-- PowerShell (Git Bash si blocca su D:); file UTF-8 senza BOM; `git -c safe.directory=*`,
-  `git commit -F <file>`, `git pull --rebase` prima del push (altri agenti committano insieme).
-- Non chiamare `R` una funzione PowerShell (alias di Invoke-History).
-- Python degli strumenti sempre con `-I`.
+- PowerShell (Git Bash hangs on D:); UTF-8 files without BOM; `git -c safe.directory=*`,
+  `git commit -F <file>`, `git pull --rebase` before the push (other agents commit at the same time).
+- Do not name a PowerShell function `R` (alias of Invoke-History).
+- Python of the tools always with `-I`.
