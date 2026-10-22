@@ -510,3 +510,102 @@ category 4 `recolour-whole` (`recon/tools/jp_recoloured.tsv` +10 rows), declared
 (defeat animation reconstructed; the Notice also names Guard Armor Ω as recovered); master revision 177. Complete
 families **142** (category 1: 120, 2: 8, 3: 6, 4: 8); family-clone rows 526-979 by graphic: family 46, Dark Road 28,
 base 148.
+
+<a id="alleati-20xx"></a>
+## Families 2001-2024: characters in story quests (I-199, 22-10)
+
+**Finding: they are battle allies (guests), not enemies.** The guest who «joins forces» with the player in a boss
+quest is stored in the stage file as an enemy record in a team with flag bit 5 (0x20); the client puts it in a
+separate **ally list**, draws it on the field, makes it join the boss battle and has it **attack the enemies**
+with its own `enemyAttack` rows after the player's turn. It **cannot be tapped/targeted**, has **no HP gauge**,
+is **never attacked** and is not counted. Confidence: high for list/touch/HP bar/ally attack (code read in 1.0.1
+with symbols and confirmed in 4.3.1); medium for "never attacked" (deduced: enemy target lists are built only from
+the engaged-enemy list and the avatar). Work files: `D:\Progetto_Restauro_KH_UX\tmp\npc20xx\` (`scan.py`,
+`scan.json`, `near.py`, Ghidra outputs in `gh\d1-d5.c`).
+
+**Stage files** (JP 4.3.1, `stage_gen\files\stage`, `mapfile.py`; 2,588 files): the 20xx families appear **only**
+in teams with flag 0x20 (51 teams, 46 stages; one with 0xA0), and every 0x20 team contains one of them (no other
+enemy id is ever in a 0x20 team). Shape of these teams: always 1 member, `f2` 128, `f6`/`f7` 1/1, polygon all zero
+(no encounter area of their own), enemy `f3`/`f4` 1/1 (0/1 in the three oldest), reward 1 (placeholder). Not
+counted in STG `[8]`/`[9]` (`check_stage` already excluded them), `[13]` stays 0, never `target_enemy` nor
+`card_enemy`. Each one is in the **same part as the boss team** (flag bit 0, exactly one per part), 66-584 px from
+the boss; in 28 of 51 cases also within 200 px of the player start. Level: the stage Lv, above it only in
+38050/39055 (2011 at 5000) and 39081-39083 (1700).
+
+| quests (stageId) | enemyId -> family | who (wiki/khwiki evidence) |
+|---|---|---|
+| 350 (11500) | 2001 | Hercules: jpdesc «Join forces with Hercules to defeat Hades!» |
+| 525 (17250) | 2002 | jpdesc «Defeat the giant Heartless **with the Keyblade wielder**» (the texture survey said Hercules: open) |
+| 540 (18150) | 2003 | keyblade wielder (Clock Tower) |
+| 585, 753, 757, 760, 789, 790 (19300, 31180, 31220, 31250, 31540, 31550) | 2004, 17112004 | Aladdin: jpdesc 753/757 «...Magical Cave with Aladdin» |
+| 645 (21150) | 2005 | keyblade wielder: «Together with the other Keyblade Wielders, Player defeats the shark Heartless» |
+| 715 (28100) | 2006 | Mog: «Player and Mog defeat the Gummi Hound» |
+| 778 (31430) | 2008 | Aladdin as Prince Ali (blue robe): «Aladdin and Player arrive and confront Jafar» |
+| 815 (32250) | 2010 | Prince Phillip: «Player and Phillip turn to face Maleficent's dragon form» |
+| 825 (33100) | 18072001 -> 2001 | Hercules: jpdesc «Let's Go See Hercules» |
+| 856-869, 873, 875 (37010-39055) | 2011 | **Ephemer**: jpdesc «...with Ephemer», 873 «Ephemer and Player travel...» (2011 is not an effect: only its smoke textures survived) |
+| 898, 900-905 (39078-39085) | 1908002011 -> 2011 | Ephemer: 905 «Player and Ephemer arrive and strike the Cy-Bug» |
+| 905 (39085), 965 (39145) | 1909002012, 2010002012 -> 2012 | probably Calhoun (gun flash/bullet survivors; 965 «Player, Ralph, and Calhoun») |
+| 923, 930-932, 935, 955, 965, 975 (39103-39155) | 2013-2020 | Ralph: 923 «Ralph ... together with Player fights the Heartless», 932 «Ralph joins Player to fight the Heartless» |
+| 977 (39157) | 2021-2024 | Union leaders: «The Union leaders fight Darkness with the help of Player» (2024 Lauriam) |
+
+**Client code.** 1.0.1 with symbols (thethiny `[local reference data]\decompile\1.0.1\libcocos2dcpp_decompile\libcocos2dcpp_0027.c`):
+`StageActorManager::setupEnemyActorPlatoon` (0x74ED80): `if (team.flags & 0x20) { actor+650 = 1; ally list
+(+64) } else enemy list (+52)`. `checkEncount` (0x74F1A4): the encountered team's members go to the battle list
+(+76) from the enemy list only; **if the team has bit 0 (boss)** every ally gets `setEncountAction(1)` and
+`lookAt(boss)`. `showWanderingSymbolEnemy` deploys allies on the field too. `deploy`/`setEncountAction`: no
+`RaidBossHPIndicator` when +650. Touch lambda `sub_74E134`: ignores actors with +650 (not targetable). Named
+functions `hasActiveAlly` (0x74F8C4), `startAllyAttack` (0x7527F8), `isEndAllyAttack` (0x752904),
+`doAttackAllyActor` (0x75296C: first engaged living enemy, then `EnemyActor::select_enemy_attack(ally)`).
+4.3.1 (Ghidra = file + 0x100000; RTTI string `ZN17StageActorManager15startAllyAttackEvE3$_9` at 0x188b400):
+`[fn]` = setupEnemyActorPlatoon (`flags >> 5 & 1` -> `+0x352` = 1, ally vector `+0x40`, else `+0x28`);
+`[fn]` touch handler skips `+0x352`; `[fn]`/`[fn]` no HP indicator for `+0x352`;
+`[fn]` = hasActiveAlly (`+0x354` encountered); `[fn]` = startAllyAttack (each ally after a random
+2-18 frame delay); `[fn]` = isEndAllyAttack; `[fn]` = doAttackAllyActor: if an engaged enemy
+(`+0x58` list, `+0x353`) is alive, `[fn]` picks the ally's skill (skillId/skillOdds/skillRequire like an
+enemy), `[fn]` builds the target list from the attack's target code (4 = all living engaged enemies,
+3 = itself, 5 = one picked by `[fn]`), `[fn]` resolves it (with code 2 it also adds the avatar:
+probably the heal/buff rows, e.g. 200201 heal 3500 + attack up), `[fn]` plays the motion: `attackMotion`
+2 -> `atkSp`, else `atk%d_o`. Battle loop `[fn]`: state 10 (after the player's attack) -> if
+`hasActiveAlly` state 0x2b (ally attack) -> 0x2c (wait) -> 0x2d -> enemy phase (0xb) or victory (9) if no engaged
+enemy is alive (`[fn]`): **an ally can land the finishing blow**.
+
+**Animations it needs.** Motions requested for an ally: `wait` (field, and battle `bwait` falls back to it),
+`atk1_o` (attackMotion 1) and `atkSp` (attackMotion 2, falls back to `wait` if absent), probably `move` (the attack
+waits for `updateMapPosition`, i.e. an approach); `knockback`/`dead` are never requested (not a target, never
+dies). This explains the sources: 2001-2024 have only wait/atk1_o/atkSp. `[fn]` crashes on a missing LWF
+when a state is entered, so `wait` + `atk1_o` (+ `move`) are the real minimum; 2014, 2015, 2019, 2020 have no
+`wait` in any source.
+
+**Original master data.** thethiny `enemy.json` has rows only for 2001, 2002, 2003, 12001, 22001: name/flavor
+are placeholders `sEnm_2001`/`sEnf_2001` (never shown: no HP bar, no target UI), displayId = family, width
+210 x height 283, battlePattern 3, skillId 2001: [200100, 200101, 200100, 75000], 2002: [200200, 200201, 200202,
+75000], 2003: [200300, 200301, 37500, 75000] (`enemyAttack` 200100 atk1_o power 10000 + attack up; 200101 atkSp
+18000; 200201 atkSp target 2 heal 3500 + attack up; 200202 atkSp target 3; 200300 atk1_o 2 hits; 200301 atkSp 4
+hits, magic defence down). No stage field links stages to helpers: `noPartner` is 0 in all 989 stage rows (it is
+the friend/support medal slot, not the guest). No JP master for 2004-2024 (no `json/enemy/detail20xx.json` either).
+
+**What we serve today.** Master rows exist for every id used: 2001/2002/2003/12001/22001 = `sEnm_2001`/`sEnm_2003`
+with displayId 17 (Armored Knight substitute); the 526-979 ones cloned by `make-enemy-oltre.js` from the
+`enemy_clone_proposal.json` archetype: **Wyvern** (137, skills 13700/13701, HP 15000-766260) for all, except
+**17112004 = Cerberus** (10112, displayId 112, hitRadius 450) in 760 and 790. The stage files are served as is, so
+the client already treats them as allies: a Wyvern (or Cerberus, or Armored Knight) stands near the boss, joins
+the boss fight and attacks the enemies with Wyvern attacks; it cannot be tapped and is never knocked back. No
+crash expected (the stand-ins have every motion): the user completed 955 (ally 2009002019) on 21-10 (I-197);
+350, 525 and the others were cleared only through the test saves, never watched on the bench. Damage dealt by
+the ally comes from the cloned Wyvern stats (attack up to 18886) at the stage level (e.g. 5500 in 977).
+
+**Proposal (not applied).** (1) Rename the rows to the character (Hercules, Aladdin, Prince Ali?, Mog, Phillip,
+Ephemer, Calhoun?, Ralph, Lauriam, «Keyblade Wielder» for the unnamed ones); the name is not displayed in battle
+but helps our tools. (2) Keep them as enemy rows (that is the original mechanism: no new row type), stop cloning
+boss archetypes: base them on the thethiny 2001-2003 rows (stats, size 210x283, battlePattern 3) with
+player-friendly attacks (200100/200101 for melee, 200201/200202 for a healer), never Cerberus. (3) Graphics: a
+family's own LWF only if `wait` + `atk1_o` (+ `move`) are complete; `atkSp` optional, knockback/dead not needed
+(the I-194 completeness rule «mandatory wait, move, atk1_o, knockback, dead» is too strict for these). Otherwise a
+look-alike stand-in with all motions (an avatar-like or NPC graphic, not a Heartless), declared in the Notice
+«Story Quests 526-979». 2014/2015/2019/2020 (Ralph, no `wait`): reuse another Ralph family (2016/2017/2018). (4)
+Bench check of one per kind (350, 753, 905, 977) before/after.
+
+Open questions: 2002 = Hercules or a keyblade wielder (525 jpdesc)? Identities of 2003, 2005, 2021-2023; exact
+meaning of `enemyAttack.target` 1/2/3 for an ally (who receives the heal/buff rows); whether an ally enters `move`
+(approach) or attacks in place; what happens to allies at the victory pose.
