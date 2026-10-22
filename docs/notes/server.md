@@ -1,82 +1,82 @@
-# Server: protocollo, master, salvataggio
+# Server: protocol, master, save
 
-Il server e' `server/server.js` (Node, nessuna dipendenza), con `server/README.md`. Indirizzi =
-Ghidra (file + 0x100000). Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
+The server is `server/server.js` (Node, no dependencies), with `server/README.md`. Addresses =
+Ghidra (file + 0x100000). History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
 
 <a id="avvio"></a>
-## Avvio e variabili
+## Startup and variables
 
-Di solito si usa `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` ([banco.md](banco.md)). A mano:
+Usually `tools\ldplayer\session\run-server.ps1` / `relogin.ps1` are used ([banco.md](banco.md)). By hand:
 
 ```powershell
 $env:KHUX_PUBLIC_URL    = "https://192.168.1.185"
-$env:KHUX_REVISION      = "122"                    # BASE della revisione dei master: alzarla a ogni modifica
-# KHUX_GACHA_SIZES = "1,2,...,10" (medaglie per estrazione con animazione), KHUX_GACHA_SHOW = "B0306,B0456" rowId del
-# catalogo aggiunti alla lista dello Shop anche se bloccati o fuori data (prove; shop.md#sp2)
-# KHUX_GUILT_BURST_POPUP=0 spegne il popup «NOVA LEVEL UP!» (acceso per default dal 2b, LWF JP nelle risorse 41;
+$env:KHUX_REVISION      = "122"                    # BASE of the master revision: raise it at every change
+# KHUX_GACHA_SIZES = "1,2,...,10" (medals per draw with animation), KHUX_GACHA_SHOW = "B0306,B0456" rowIds of the
+# catalog added to the Shop list even if locked or out of date (tests; shop.md#sp2)
+# KHUX_GUILT_BURST_POPUP=0 turns off the «NOVA LEVEL UP!» popup (on by default since 2b, JP LWF in resources 41;
 # guilt.md, battaglia.md#burst)
-# KHUX_REAL_NOW = istante ISO (prove): l'ora reale del server parte da li' (orologio finto, #orologio)
+# KHUX_REAL_NOW = ISO instant (tests): the server's real time starts from there (fake clock, #orologio)
 $env:KHUX_RESOURCE_DIR  = "D:\Progetto_Restauro_KH_UX\resource_data"
-$env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # vedi sotto
-# KHUX_NEWCOMER=0/1 forza giocatore esistente/nuovo; KHUX_SAVE = file del salvataggio (run-server/relogin -Save <nome> = server\save\<nome>.json;
-# server/make-test-save.js crea prove.json per Level Up/Evolve/keyblade)
+$env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # see below
+# KHUX_NEWCOMER=0/1 forces existing/new player; KHUX_SAVE = save file (run-server/relogin -Save <nome> = server\save\<nome>.json;
+# server/make-test-save.js creates prove.json for Level Up/Evolve/keyblade)
 node server\server.js
 ```
 
-- Chiave 5.0.1 (non versionata): `python -I -c "import sys; d=open(sys.argv[1],'rb').read();
+- 5.0.1 key (not versioned): `python -I -c "import sys; d=open(sys.argv[1],'rb').read();
   print(d[[offset]:[offset]+32].hex())" D:\Progetto_Restauro_KH_UX\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so`.
-- Altre variabili: `KHUX_HIJACK` (suffissi DNS dirottati, include `kingdomhearts.com`),
-  `KHUX_PLAYER_HP` (segnaposto), `KHUX_TUTORIAL_LAST_PHASE`, `KHUX_MASTER_SERVE_INVALID=1` (serve
-  anche le tabelle che non passano lo schema).
-- Porte 80/443/53 senza privilegi di amministratore. Certificati: `server/make-cert.sh <ip>`
-  (retrodatati: notBefore 1/1/2020, perche' il guest e' nel 2021); la CA va installata come CA di
-  **sistema** nel guest (lo fa `phaseb-guest.sh`).
-- Console: `[dns:dirottata]`, `[dns]`, `[tls:sni]`, `[ok]`, `[?]` (endpoint sconosciuto, corpo
-  decifrato).
+- Other variables: `KHUX_HIJACK` (hijacked DNS suffixes, includes `kingdomhearts.com`),
+  `KHUX_PLAYER_HP` (placeholder), `KHUX_TUTORIAL_LAST_PHASE`, `KHUX_MASTER_SERVE_INVALID=1` (serves
+  also the tables that do not pass the schema).
+- Ports 80/443/53 without administrator privileges. Certificates: `server/make-cert.sh <ip>`
+  (backdated: notBefore 1/1/2020, because the guest is in 2021); the CA must be installed as a
+  **system** CA in the guest (`phaseb-guest.sh` does it).
+- Console: `[dns:dirottata]`, `[dns]`, `[tls:sni]`, `[ok]`, `[?]` (unknown endpoint, decrypted
+  body).
 
 <a id="bootstrap"></a>
-## Bootstrap e canale cifrato
+## Bootstrap and encrypted channel
 
-Host: **`api-s.sp.kingdomhearts.com`** (`json/server_config.json` dell'APK). `[fn]` fa la
-catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tutta la catena.
+Host: **`api-s.sp.kingdomhearts.com`** (`json/server_config.json` of the APK). `[fn]` runs the
+chain before action 251 or without a session; the errors stay `:251` for the whole chain.
 
-| # | Richiesta | Risposta accettata |
+| # | Request | Accepted response |
 |---|---|---|
-| 1 | `PUT /system/status` `{appSignature}` in chiaro (`[fn]`) | `{"appStatus":{"mode":"","current":"","server":""}}` |
-| 2 | `GET /login/token?m=0` (`[fn]`) | `{url (completo), nativeToken}` |
-| 3 | `POST <url>?m=0` `{UUID, deviceType:2, nativeToken}` (`[fn]`) | `{nativeSessionId, sharedSecurityKey}`: **la chiave AES la sceglie il server** |
-| 4 | `POST /system/login` cifrata, azione 251 | `ret` + `systemLogin {newcomerKhux, newcomerDark}` + `data` (>= 4 stringhe Base64 da 8/32/32/32 byte; **`data[3]` = chiave degli indici delle risorse**) + 21 link (stringhe vuote vanno bene) |
-| 5 | `GET /system/coppa` (26) | `ret` + `misc` {"116","804","900".."907": uint}; **116 = 1** (con 0 crash dopo l'aggiornamento dei master, `[fn]`) |
+| 1 | `PUT /system/status` `{appSignature}` in clear (`[fn]`) | `{"appStatus":{"mode":"","current":"","server":""}}` |
+| 2 | `GET /login/token?m=0` (`[fn]`) | `{url (complete), nativeToken}` |
+| 3 | `POST <url>?m=0` `{UUID, deviceType:2, nativeToken}` (`[fn]`) | `{nativeSessionId, sharedSecurityKey}`: **the AES key is chosen by the server** |
+| 4 | `POST /system/login` encrypted, action 251 | `ret` + `systemLogin {newcomerKhux, newcomerDark}` + `data` (>= 4 Base64 strings of 8/32/32/32 bytes; **`data[3]` = key of the resource indexes**) + 21 links (empty strings are fine) |
+| 5 | `GET /system/coppa` (26) | `ret` + `misc` {"116","804","900".."907": uint}; **116 = 1** (with 0 crash after the master update, `[fn]`) |
 
-- Corpo delle richieste dal passo 4: form `v=<base64>` = AES-256-CBC del JSON, IV zero, senza
-  Base64 interno; le GET lo portano nella query. `/system/login` manda `length`/`digest` della
-  libreria (controllo d'integrita' lato server: basta accettarlo).
-- Risposte in chiaro: `RESTClient::onRespond` (`[fn]`) con `application/json` fa parse
-  diretto; `encoded-json`/`octet-stream` decifra (`[fn]`).
-- **`maintenance` va omesso** in tutte le risposte (anche 0 = manutenzione).
-- Involucro `ret` (`[fn]`), ordine e tipi: `isMaintenance`, `isPhotonMaintenance`,
+- Request body from step 4: form `v=<base64>` = AES-256-CBC of the JSON, zero IV, without
+  inner Base64; GETs carry it in the query. `/system/login` sends `length`/`digest` of the
+  library (server-side integrity check: accepting it is enough).
+- Responses in clear: `RESTClient::onRespond` (`[fn]`) with `application/json` parses
+  directly; `encoded-json`/`octet-stream` decrypts (`[fn]`).
+- **`maintenance` must be omitted** in all responses (even 0 = maintenance).
+- `ret` envelope (`[fn]`), order and types: `isMaintenance`, `isPhotonMaintenance`,
   `isKhuxMaintenance`, `isDarkMaintenance`, `sessionTO` bool; `isNewDayPeriod` int; `isRetry` bool;
-  `versionApp` stringa; `versionRes`, `versionResLow`, `versionDat`, `commonVersionDat`,
-  `darkVersionRes`, `darkVersionDat`, `functionFlags` int; `serverTime` "YYYY-MM-DD HH:MM:SS". Un tipo
-  sbagliato = errore 2 = «200 ERROR :<azione>». «N ERROR :x» = codice curl N (6 host, 28 timeout).
-- `json/server_api.json` (nel `misc.mp4` dell'APK): le **321 azioni** (indice = id, `path`,
+  `versionApp` string; `versionRes`, `versionResLow`, `versionDat`, `commonVersionDat`,
+  `darkVersionRes`, `darkVersionDat`, `functionFlags` int; `serverTime` "YYYY-MM-DD HH:MM:SS". A wrong
+  type = error 2 = «200 ERROR :<azione>». «N ERROR :x» = curl code N (6 host, 28 timeout).
+- `json/server_api.json` (in the APK's `misc.mp4`): the **321 actions** (index = id, `path`,
   `method` 0 GET/1 POST/2 PUT).
 
 <a id="dispatcher"></a>
-## Dispatcher delle risposte e schemi
+## Response dispatcher and schemas
 
-- `[fn]`: switch su 320 azioni (tabella di salto a `0x177e414`, indice id-1). Un parser che
-  torna null = errore 2. Disassemblato lineare: `khux_linear.py <out> 007c3204 007d1080` (copia in
+- `[fn]`: switch on 320 actions (jump table at `0x177e414`, index id-1). A parser that
+  returns null = error 2. Linear disassembly: `khux_linear.py <out> 007c3204 007d1080` (copy in
   `logs\dispatcher_linear.txt`).
-- Metodo per una nuova azione: `recon/tools/action_case.py` -> decompilare i parser ->
-  `recon/tools/response_schema.py` -> schema in `recon/out/api_responses_ww431.json` -> risposta in
-  `server.js` -> prova sul banco. `batch_schema.py` (plan/merge) ha generato
-  `api_responses_auto_ww431.json` (168 rotte): il server lo usa dove manca uno schema verificato.
-- **Id a 0 nelle risposte generate = crash** (il client cerca una riga master inesistente, es.
-  `medalId: 0` in `/user/support`): quelle rotte vanno a mano.
+- Method for a new action: `recon/tools/action_case.py` -> decompile the parsers ->
+  `recon/tools/response_schema.py` -> schema in `recon/out/api_responses_ww431.json` -> response in
+  `server.js` -> test on the bench. `batch_schema.py` (plan/merge) generated
+  `api_responses_auto_ww431.json` (168 routes): the server uses it where a verified schema is missing.
+- **Ids at 0 in the generated responses = crash** (the client looks for a nonexistent master row, e.g.
+  `medalId: 0` in `/user/support`): those routes must be done by hand.
 
 <a id="catena"></a>
-## Catena di avvio del giocatore esistente
+## Startup chain of the existing player
 
 ```
 /khux/login (252: gameLogin.acquirableLoginBonus) -> /tutorial/status -> PUT /user/awakening
@@ -88,598 +88,598 @@ catena prima dell'azione 251 o senza sessione; gli errori restano `:251` per tut
 -> /pvp/keyblade -> /stage/160310 (108) -> ...
 ```
 
-- `GET /user`: parser obbligatori `userData.user` (`[fn]`), `userPoint` (`[fn]`),
-  `userDetail` (`[fn]`), `stageResumption` (`[fn]`; `resumptionStatus` 0 = niente),
-  `medalResumption` (`[fn]`), poi `userPopUp.isPopBenefitStone`.
+- `GET /user`: mandatory parsers `userData.user` (`[fn]`), `userPoint` (`[fn]`),
+  `userDetail` (`[fn]`), `stageResumption` (`[fn]`; `resumptionStatus` 0 = nothing),
+  `medalResumption` (`[fn]`), then `userPopUp.isPopBenefitStone`.
 - `/user/create` (253): `systemLogin.newcomerKhux` false + `gameLogin.acquirableLoginBonus`.
-- `/tutorial/status` (69/70): `phase`, `popupFlag` (uint64: il server salva i bit e a tutorial
-  finito li da' tutti per visti, 2^53-1), `isFinished` (1 dalla fase 995: con 0 il menu a tendina
-  resta inerte; con 1 la home crea pet e NPC, i cui LWF mancanti sono LWF vuoti nel pacchetto),
+- `/tutorial/status` (69/70): `phase`, `popupFlag` (uint64: the server saves the bits and once the tutorial
+  is finished reports them all as seen, 2^53-1), `isFinished` (1 from phase 995: with 0 the drop-down menu
+  stays inert; with 1 the home creates pet and NPCs, whose missing LWFs are empty LWFs in the pack),
   `acquireTutorialJewel`.
 - `GET /keyblade/subslot` (191, `[fn]`): `subslotMaxNum`, `userKeybladeSubslots[]`
-  (`keybladeSubslotId`, `subslotRate`, `subslots[]`): senza, Equipment va in crash
+  (`keybladeSubslotId`, `subslotRate`, `subslots[]`): without it, Equipment crashes
   (`std::out_of_range` in `[fn]`).
-- Dopo il Prologue: 86 `/party/member/list`, 62 `/user/sphere/reset`, 61 `/user/sphere/check`,
+- After the Prologue: 86 `/party/member/list`, 62 `/user/sphere/reset`, 61 `/user/sphere/check`,
   120 `/raid/reward`, 241 `/user/notice`, 105 `/party/lux_up_time`, 169 `/stage/achievements`, 250
   `/stage/pickup` (`pisckupStages`, sic), 185 `/user/theater/available`, 81 `PUT /party/notice`, 59
   `/mypage` (`backgroundId` 150911), 177 `/pet/coordinate/members`, 143 `/campaign`, 240
   `/raid/list` (`selfRaid`, `raids[]`), 2 `/user/point`.
-- `/stage/achievements` risponde con numeratori/denominatori a 0: la schermata Quests mostra
-  «COMPLETE» su tutte le categorie (ISSUES I-037).
+- `/stage/achievements` replies with numerators/denominators at 0: the Quests screen shows
+  «COMPLETE» on all categories (ISSUES I-037).
 
 <a id="master"></a>
-## Tabelle master
+## Master tables
 
-- Download: azione 27 `GET /system/master/20200423` -> `master {revision, commonRevision, count}` +
-  per tabella `{revision, url, key (32 caratteri), md5}`. File: corpo -> `curl_easy_unescape` ->
-  Base64 -> AES-256-CBC (key = i 32 byte della stringa, IV zero, PKCS#7) -> JSON; `md5` = MD5
-  esadecimale del corpo HTTP. Il client le salva come `m/m%03d.jpg` (BGAD).
-- **Revisione per tabella ignorata** (prova del 16-10): con la revisione globale da 115 a 116, la sola
-  `mission` a 116 e le altre 105 a 115 (md5 invariati) il client ha riscaricato tutte le 106 tabelle
-  (18 MB). Il download pesa poco: login di 18,7 s con il master riscaricato (rev 117), 25-77 s in
-  altre prove a seconda dell'emulatore.
-- **Download interrotto** (prova del 16-10, app chiusa dopo 30, 96 e 52 tabelle su 106): il client salva
-  le tabelle una alla volta, ma azzera la sua revisione prima di scaricare (al rilancio manda
-  `masterRevision` 0) e la riscrive solo dopo l'ultima tabella. Al login dopo riscarica tutte le 106
-  tabelle e arriva alla home: un insieme a meta' non viene mai preso per buono. Vale anche se nel
-  frattempo il server e' passato alla settimana dopo. Il master servito dipende solo dalla revisione
-  della sessione, quindi corpi e md5 restano uguali per tutta la settimana. Prove in
-  `D:\Progetto_Restauro_KH_UX\tmp\interrupt\`. Notice «About game data updates» aggiornata.
-- **Orologio del dispositivo e ora del server** (prova del 16-10): con il guest al 10/1/2021 17:30 CET e
-  il server al 15/5/2021 12:00 UTC il login va e le Daily mostrano «19 hours left», cioe' il tempo fino
-  alle 08:00 UTC dell'**ora del server** (col dispositivo sarebbero state ~15 ore). Il dispositivo
-  conta solo per il popup «End of Service» (deve restare prima del 29/6/2021, protector.md); i conti
-  alla rovescia seguono l'ora che manda il server, che puo' quindi essere una data finta diversa.
+- Download: action 27 `GET /system/master/20200423` -> `master {revision, commonRevision, count}` +
+  per table `{revision, url, key (32 characters), md5}`. File: body -> `curl_easy_unescape` ->
+  Base64 -> AES-256-CBC (key = the 32 bytes of the string, zero IV, PKCS#7) -> JSON; `md5` = hexadecimal
+  MD5 of the HTTP body. The client saves them as `m/m%03d.jpg` (BGAD).
+- **Per-table revision ignored** (test of 16-10): with the global revision from 115 to 116, only
+  `mission` at 116 and the other 105 at 115 (md5 unchanged), the client downloaded all 106 tables again
+  (18 MB). The download weighs little: login of 18.7 s with the master downloaded again (rev 117), 25-77 s in
+  other tests depending on the emulator.
+- **Interrupted download** (test of 16-10, app closed after 30, 96 and 52 tables out of 106): the client saves
+  the tables one at a time, but resets its revision before downloading (on relaunch it sends
+  `masterRevision` 0) and rewrites it only after the last table. At the next login it downloads all 106
+  tables again and reaches the home: a half-done set is never taken as good. This holds even if in the
+  meantime the server has moved to the following week. The served master depends only on the revision
+  of the session, so bodies and md5 stay the same for the whole week. Tests in
+  `D:\Progetto_Restauro_KH_UX\tmp\interrupt\`. Notice «About game data updates» updated.
+- **Device clock and server time** (test of 16-10): with the guest at 10/1/2021 17:30 CET and
+  the server at 15/5/2021 12:00 UTC the login works and the Daily show «19 hours left», that is the time until
+  08:00 UTC of the **server time** (with the device it would have been ~15 hours). The device
+  matters only for the «End of Service» popup (it must stay before 29/6/2021, protector.md); the
+  countdowns follow the time the server sends, which can therefore be a different fake date.
 <a id="orologio"></a>
-- **Orologio finto (16-10, `server/clock.js`, spec `docs/superpowers/specs/2026-10-16-orologio-finto-design.md`)**:
-  ora del server = data reale nel mese gemello 2016-2021 (stesso giorno della settimana e lunghezza),
-  scostamento fissato a `/khux/login` (`player.clockOffset`); periodi, scadenze e consegne nei Presents
-  sull'ora reale (giorno 08:00 UTC, lunedi' 08:00, giorno 1 08:00). Revisione del master calcolata:
-  `KHUX_REVISION*100000 + scadenze (lunedi'/inizio mese 08:00) passate dal 1/1/2026` (con BASE 118, 16-10: 11800051; BASE 119 dal 17-10, catalogo dei banner: 11900051; BASE 120 dal 17-10, limiti delle gratuite e totalLimit nel commento: 12000051)
-  solo nei campi del master; `darkVersionRes` resta `KHUX_REVISION`. Il master e' servito come JSON
-  compatto, in cache per revisione e data dei file (`mission` con `endDate` di Weekly A/B e Limited
-  riscritti al volo). `KHUX_REAL_NOW` (`-RealNow` di `run-server.ps1`/`relogin.ps1`) sposta l'ora reale
-  per le prove; `KHUX_SERVER_TIME` resta (data finta fissa). Migrazione del salvataggio: `clockVersion` 1
-  (stringhe finte -> ms reali) e 2 (numeri prima del 2022 = ms dell'ora finta vecchia, spostati in blocco
-  con il piu' recente = adesso; `server/test-clock-migration.js`).
-- **Banco 16-10**: master compatto accettato (106 tabelle, nessun errore); Daily «22 hours left» alle 09:58
-  UTC, Weekly «2 days», Limited mensile «15 days»; riavvio -> stessi valori, 0 tabelle; `-RealNow
-  2026-10-19T09:00:00Z` -> 106 tabelle, **0 `GET /resource/`**, Daily azzerate, 3 premi Daily non
-  riscossi nei Presents, nuova campagna breve, Weekly «6 days»; ritorno all'ora vera -> 106 tabelle
-  (revisione di nuovo 11800051).
-- **Revisione del master fissa per sessione (revisione finale 16-10)**: il client confronta `versionDat` del
-  `ret` di ogni risposta con la sua revisione. Prova sul banco con la revisione del momento (`-RealNow
-  2026-10-19T07:55:00Z`, home alle 07:56): dopo le 08:00 elenco missioni, riscossione, `/user/point`,
-  `/user/stone` normali (Limited nuova «6 days», Weekly «6 days», Daily «23 hours»), poi tornando alla home
-  `PUT /playtime/bp` e popup «Game data has been updated. You will be returned to the title screen.»
-  (`screenshots\mid_post_presents.png`), OK -> titolo. Correzione: `player.sessionRevision`/`sessionRealMs`
-  fissati a `POST /system/login` (prima risposta con `ret` di ogni login; il master si scarica dopo
-  `/khux/login`); `ret()`, `/system/resourcesize`, `respondMaster` e il contenuto servito usano quelli, quindi
-  il master cambia solo al login dopo e md5/corpo restano coerenti anche se il download scavalca una
-  scadenza. Prova (`-RealNow 2026-10-26T07:55:00Z`, master riscaricato al login): 10 minuti oltre le 08:00,
-  missioni, riscossione, Presents, nessun `PUT /playtime/bp` e nessun ritorno al titolo
-  (`screenshots\mid2_*`). Righe riscritte: anche `rewardEndTime` = `endDate` (le COMPLETE contavano fino
-  al 2099: «28920 days left», `mid2_post_limited.png`; dopo: «6 days left», `rw_limited.png`).
-- Aperti dell'orologio: I-129 (gemello maggio 2021, `clock.fake` fermo al 28/6/2021), I-130 (Co-op con
-  gemello prima del 2020), I-131 (`term()` delle classifiche sul lunedi' 00:00 finto), I-132 (`endDate` con
-  `KHUX_SERVER_TIME`). `KHUX_REAL_NOW` illeggibile ferma l'avvio del server con un errore.
-- **Misura del login** (`tools\ldplayer\session\login-time.ps1 -N 5`, tempi dal lancio dell'app):
+- **Fake clock (16-10, `server/clock.js`, spec `docs/superpowers/specs/2026-10-16-orologio-finto-design.md`)**:
+  server time = real date in the twin month 2016-2021 (same weekday and length),
+  offset fixed at `/khux/login` (`player.clockOffset`); periods, deadlines and deliveries in the Presents
+  on real time (day 08:00 UTC, Monday 08:00, day 1 08:00). Computed master revision:
+  `KHUX_REVISION*100000 + scadenze (lunedi'/inizio mese 08:00) passate dal 1/1/2026` (deadlines (Monday/start of month 08:00) passed since 1/1/2026; with BASE 118, 16-10: 11800051; BASE 119 from 17-10, banner catalog: 11900051; BASE 120 from 17-10, limits of the free ones and totalLimit in the comment: 12000051)
+  only in the master fields; `darkVersionRes` stays `KHUX_REVISION`. The master is served as compact
+  JSON, cached per revision and file date (`mission` with `endDate` of Weekly A/B and Limited
+  rewritten on the fly). `KHUX_REAL_NOW` (`-RealNow` of `run-server.ps1`/`relogin.ps1`) shifts the real time
+  for tests; `KHUX_SERVER_TIME` remains (fixed fake date). Save migration: `clockVersion` 1
+  (fake strings -> real ms) and 2 (numbers before 2022 = ms of the old fake time, shifted as a block
+  with the most recent = now; `server/test-clock-migration.js`).
+- **Bench 16-10**: compact master accepted (106 tables, no errors); Daily «22 hours left» at 09:58
+  UTC, Weekly «2 days», monthly Limited «15 days»; restart -> same values, 0 tables; `-RealNow
+  2026-10-19T09:00:00Z` -> 106 tables, **0 `GET /resource/`**, Daily reset, 3 unclaimed Daily rewards
+  in the Presents, new short campaign, Weekly «6 days»; back to the real time -> 106 tables
+  (revision again 11800051).
+- **Master revision fixed per session (final review 16-10)**: the client compares `versionDat` of the
+  `ret` of every response with its revision. Test on the bench with the revision of the moment (`-RealNow
+  2026-10-19T07:55:00Z`, home at 07:56): after 08:00 quest list, claiming, `/user/point`,
+  `/user/stone` normal (new Limited «6 days», Weekly «6 days», Daily «23 hours»), then going back to the home
+  `PUT /playtime/bp` and popup «Game data has been updated. You will be returned to the title screen.»
+  (`screenshots\mid_post_presents.png`), OK -> title. Fix: `player.sessionRevision`/`sessionRealMs`
+  fixed at `POST /system/login` (first response with `ret` of every login; the master is downloaded after
+  `/khux/login`); `ret()`, `/system/resourcesize`, `respondMaster` and the served content use those, so
+  the master changes only at the next login and md5/body stay consistent even if the download straddles a
+  deadline. Test (`-RealNow 2026-10-26T07:55:00Z`, master downloaded again at login): 10 minutes past 08:00,
+  quests, claiming, Presents, no `PUT /playtime/bp` and no return to the title
+  (`screenshots\mid2_*`). Rewritten rows: also `rewardEndTime` = `endDate` (the COMPLETE ones counted until
+  2099: «28920 days left», `mid2_post_limited.png`; after: «6 days left», `rw_limited.png`).
+- Open issues of the clock: I-129 (May 2021 twin, `clock.fake` stuck at 28/6/2021), I-130 (Co-op with
+  twin before 2020), I-131 (`term()` of the rankings on the fake Monday 00:00), I-132 (`endDate` with
+  `KHUX_SERVER_TIME`). An unreadable `KHUX_REAL_NOW` stops the server startup with an error.
+- **Login measurement** (`tools\ldplayer\session\login-time.ps1 -N 5`, times from the app launch):
 
-  | | /khux/login | totale (home ferma) | tabelle |
+  | | /khux/login | total (home settled) | tables |
   |---|---|---|---|
-  | prima (valori gia' annotati, 16-10) | 14-26 s senza master nuovo; 18,7-77 s con master | - | 0 / 106 |
-  | dopo (16-10 12:53-13:00, senza master nuovo) | 52,5 / 86,6 / 83,4 / 60,7 / 55,6 (media 67,8 s) | 64 / 99 / 114 / 92 / 87 (media 91,2 s) | 0 |
+  | before (values already noted, 16-10) | 14-26 s without new master; 18.7-77 s with master | - | 0 / 106 |
+  | after (16-10 12:53-13:00, without new master) | 52.5 / 86.6 / 83.4 / 60.7 / 55.6 (average 67.8 s) | 64 / 99 / 114 / 92 / 87 (average 91.2 s) | 0 |
 
-  Il tempo dal lancio e' dominato dall'avvio dell'app nell'emulatore (la prima richiesta arriva 45-80 s
-  dopo il lancio). Dal log `server/logs/requests.ndjson`, dalla prima richiesta (`PUT /system/status`)
-  a `/khux/login`: 4,5-5,2 s prima e dopo (invariato); il server risponde in ~50 ms a richiesta; con il
-  master nuovo la home arriva in 31-33 s dalla prima richiesta (21-56 s prima). Lavoro del server per il
-  master con la cache < 50 ms (`server/test-master-clock.js`).
-- **Criterio «login non piu' lento di oggi, +1 s al massimo»: NON verificato.** La misura dal lancio
-  dell'app e' dominata dall'emulatore. Il riferimento 14-26 s veniva dalle stesse righe di
-  `relogin.ps1`/`bench_start.ps1` (tempo dal lancio), ma con l'emulatore che quel giorno avviava l'app
-  molto piu' in fretta: i due numeri non sono confrontabili. Confrontabile e' solo la parte del server
-  (prima richiesta -> `/khux/login`, invariata).
-- **Attesa del client di ~10 s prima della home (aperto)**: dal 16-10 09:57 UTC il client aspetta 8-12 s fra
-  `/ranking/parade` e `/web/notices` (prima di solito 1,5-2 s, a volte 7-42 s). Prova A/B del 16-10: con
-  il server alla data finta vecchia (`KHUX_SERVER_TIME=2021-05-15T12:00:00Z`, Daily «19 hours left») 10,0 /
-  9,8 / 11,6 s; con l'orologio finto 11,0 / 10,0 s. **Non dipende dalla data finta**: e' tempo del client
-  (stato dell'emulatore o del salvataggio), da capire.
-- `KHUX_REAL_NOW` insieme a `KHUX_SERVER_TIME`: anche la data finta fissa scorre dall'istante spostato
-  (lo scostamento e' calcolato su `STARTED_AT`, `realNow` include `REAL_SHIFT`), quindi la data finta
-  risulta spostata di `KHUX_REAL_NOW - avvio`. Usarne una sola alla volta.
-- 106 tabelle (nomi nel loader a `0x20a0b80`, passo 0x80). Ogni tabella = **array di righe**; ogni
-  campo dello schema e' obbligatorio, chiavi in piu' ignorate; riga nulla = «Master data error».
-  Schema: `recon/out/master_types_ww431.json` (1.739 campi, `recon/tools/master_types.py`); il
-  server non serve le tabelle che non passano.
-- Getter per id senza controllo del null: una riga mancante = crash (es. `misc` 804 lunghezza del
-  nome; `player` livello 0; `mypageBackground`; `reward` dei nemici). Id di `misc` letti dal codice:
+  The time from the launch is dominated by the app startup in the emulator (the first request arrives 45-80 s
+  after the launch). From the log `server/logs/requests.ndjson`, from the first request (`PUT /system/status`)
+  to `/khux/login`: 4.5-5.2 s before and after (unchanged); the server replies in ~50 ms per request; with the
+  new master the home arrives in 31-33 s from the first request (21-56 s before). Server work for the
+  master with the cache < 50 ms (`server/test-master-clock.js`).
+- **Criterion «login no slower than today, +1 s at most»: NOT verified.** The measurement from the app
+  launch is dominated by the emulator. The 14-26 s reference came from the same lines of
+  `relogin.ps1`/`bench_start.ps1` (time from the launch), but with the emulator that day starting the app
+  much faster: the two numbers are not comparable. Only the server part is comparable
+  (first request -> `/khux/login`, unchanged).
+- **Client wait of ~10 s before the home (open)**: since 16-10 09:57 UTC the client waits 8-12 s between
+  `/ranking/parade` and `/web/notices` (before usually 1.5-2 s, sometimes 7-42 s). A/B test of 16-10: with
+  the server at the old fake date (`KHUX_SERVER_TIME=2021-05-15T12:00:00Z`, Daily «19 hours left») 10.0 /
+  9.8 / 11.6 s; with the fake clock 11.0 / 10.0 s. **It does not depend on the fake date**: it is client time
+  (state of the emulator or of the save), to be understood.
+- `KHUX_REAL_NOW` together with `KHUX_SERVER_TIME`: the fixed fake date also runs from the shifted instant
+  (the offset is computed on `STARTED_AT`, `realNow` includes `REAL_SHIFT`), so the fake date
+  turns out shifted by `KHUX_REAL_NOW - avvio` (startup). Use only one at a time.
+- 106 tables (names in the loader at `0x20a0b80`, stride 0x80). Every table = **array of rows**; every
+  schema field is mandatory, extra keys ignored; null row = «Master data error».
+  Schema: `recon/out/master_types_ww431.json` (1,739 fields, `recon/tools/master_types.py`); the
+  server does not serve the tables that do not pass.
+- Getters by id without a null check: a missing row = crash (e.g. `misc` 804 name
+  length; `player` level 0; `mypageBackground`; `reward` of the enemies). `misc` ids read by the code:
   `recon/out/misc_ids_ww431.txt` (98).
-- Rigenerare `server/master_data/` (fuori dal repo):
+- Regenerate `server/master_data/` (outside the repo):
 
 ```powershell
-node server\make-master-stub.js --force          # 106 tabelle minime + misc
+node server\make-master-stub.js --force          # 106 minimal tables + misc
 node server\import-master.js D:\Progetto_Restauro_KH_UX\apk501\extra_files `
   avatarParts initItem misc stage world stageDrama enemy enemyAttack keyblade skill buff `
   burst battleMisc badstatus tutorialMisc medalMisc material title theater raidEnemy raidEnemyAttack
 node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json
 node server\make-moogleshop.js
 node server\make-multi-tables.js                # Union Cross: multi, multiStage
-node server\make-keyblade-levels.js             # keyblade +0..+35 e keybladeSubslot (dopo import-master)
-node server\make-passives.js                    # passive e passiveSetting (dopo make-keyblade-levels)
+node server\make-keyblade-levels.js             # keyblade +0..+35 and keybladeSubslot (after import-master)
+node server\make-passives.js                    # passive and passiveSetting (after make-keyblade-levels)
 ```
 
-POI degli stage (forzieri e nemici, `server/game_data/stage_poi.json`, letto dal server e da `check-stage-data.js`):
-`make-game-tables.js` usa i file di `KHUX_STAGE_POI_EXTRA` solo per le righe reward; il server legge **solo**
-`game_data/stage_poi.json`. Se lo si rigenera (`recon/tools/stage_poi.py`), riunirvi gli stage importati, altrimenti
-le missioni 1-525 originali e le 526-979 (457 stage, Task 6 del 21-10) restano senza drop ne' forzieri:
+Stage POIs (chests and enemies, `server/game_data/stage_poi.json`, read by the server and by `check-stage-data.js`):
+`make-game-tables.js` uses the files of `KHUX_STAGE_POI_EXTRA` only for the reward rows; the server reads **only**
+`game_data/stage_poi.json`. If it is regenerated (`recon/tools/stage_poi.py`), merge the imported stages back into it, otherwise
+the original quests 1-525 and 526-979 (457 stages, Task 6 of 21-10) are left without drops or chests:
 
 ```powershell
 node -e "const fs=require('fs'),f='server/game_data/stage_poi.json',p=JSON.parse(fs.readFileSync(f,'utf8'));for(const x of ['D:/Progetto_Restauro_KH_UX/stage_gen/orig_stages/stage_poi_orig.json','D:/Progetto_Restauro_KH_UX/stage_gen/orig_stages_oltre/stage_poi_oltre.json'])Object.assign(p,JSON.parse(fs.readFileSync(x,'utf8')));fs.writeFileSync(f,JSON.stringify(p))"
 $env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'
 $env:KHUX_STAGE_POI_EXTRA='D:\Progetto_Restauro_KH_UX\stage_gen\orig_stages\stage_poi_orig.json;D:\Progetto_Restauro_KH_UX\stage_gen\orig_stages_oltre\stage_poi_oltre.json'
-node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # poi check-stage-data.js: 0 errori
+node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # then check-stage-data.js: 0 errors
 ```
 
-- `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (da
-  thethiny), burst generati, enemyAttack generati per tutti gli skillId (i nemici con `validSkill` 3
-  andavano in crash), mission (`server/tables/mission.json`), sphere/sphereArray/sphereMasu
-  (`server/tables/`). Opzioni: `KHUX_MEDALS_ALL=1` (2.094 medaglie), `KHUX_ZOO=1`
-  (`KHUX_ZOO_COUNT`) per le missioni zoo 990001...
-- `import-master.js` collega ogni keyblade alla successiva presente (la 5.0.1 ha tolto livelli a cui
-  `evolveId` punta).
-- Fonti: 55 tabelle dall'`extra.mp4` dell'APK 5.0.1 (chiave 5.0.1), righe binarie di thethiny
-  decodificate (`raw_master.py`, `raw_master_old.py`), khuxwiki. Vedi
+- `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (from
+  thethiny), generated bursts, enemyAttack generated for all skillIds (the enemies with `validSkill` 3
+  crashed), mission (`server/tables/mission.json`), sphere/sphereArray/sphereMasu
+  (`server/tables/`). Options: `KHUX_MEDALS_ALL=1` (2,094 medals), `KHUX_ZOO=1`
+  (`KHUX_ZOO_COUNT`) for the zoo quests 990001...
+- `import-master.js` links every keyblade to the next one present (5.0.1 removed levels that
+  `evolveId` points to).
+- Sources: 55 tables from the `extra.mp4` of the APK 5.0.1 (5.0.1 key), thethiny's decoded binary rows
+  (`raw_master.py`, `raw_master_old.py`), khuxwiki. See
   [ricerca_esterna.md](ricerca_esterna.md).
-- `initItem`: categoria 100 = parti avatar; 3 = deck iniziale (13021 Donald A, 11021 Goofy A, 13031
-  Yuna); 13 = keyblade 1000 Starlight. Significato delle altre categorie non ricavato.
+- `initItem`: category 100 = avatar parts; 3 = starting deck (13021 Donald A, 11021 Goofy A, 13031
+  Yuna); 13 = keyblade 1000 Starlight. Meaning of the other categories not worked out.
 
 <a id="risorse"></a>
-## Protocollo delle risorse
+## Resource protocol
 
-- `[fn]`: master (27) se la revisione differisce; risorse (28 `GET /system/resource`) solo
-  se il giocatore non e' nuovo e ha finito il tutorial.
-- Risposta: `{resource: {mode (0/1 completo/2 incrementale), minVersion, versions: [{data: [{url,
-  md5, size}], index: [...]}]}}`. Il server annuncia **solo l'ultima versione** (`ret.versionRes`
-  = ultima in `resource_data`).
-- Download accettato se lunghezza = `size`, MD5 = `md5` e Content-Type contiene
-  `application/octet-stream`. Installazione: `files/r/misc.mp4` (+ `.1` oltre 2 GB) e `r/misc.png`;
-  l'indice deve avere i record `/`, `md5` (32 caratteri, cifrato con `data[3]`) e `size`
-  (= somma dei data), altrimenti «Save error». `recon/tools/resource_index.py` lo costruisce.
-- Crash una tantum subito dopo un'installazione (`0x12c1ee0`): al riavvio passa.
+- `[fn]`: master (27) if the revision differs; resources (28 `GET /system/resource`) only
+  if the player is not new and has finished the tutorial.
+- Response: `{resource: {mode (0/1 completo/2 incrementale), minVersion, versions: [{data: [{url,
+  md5, size}], index: [...]}]}}` (mode 0/1 complete, 2 incremental). The server announces **only the latest version** (`ret.versionRes`
+  = latest in `resource_data`).
+- Download accepted if length = `size`, MD5 = `md5` and Content-Type contains
+  `application/octet-stream`. Installation: `files/r/misc.mp4` (+ `.1` beyond 2 GB) and `r/misc.png`;
+  the index must have the records `/`, `md5` (32 characters, encrypted with `data[3]`) and `size`
+  (= sum of the data), otherwise «Save error». `recon/tools/resource_index.py` builds it.
+- One-off crash right after an installation (`0x12c1ee0`): on restart it goes through.
 
 <a id="salvataggio"></a>
-## Salvataggio del giocatore (`server/save/player.json`)
+## Player save (`server/save/player.json`)
 
-- Si salva a ogni modifica: nome, avatar, Union, Lux (`luxRank` = livello, soglie `needExp` di
-  `player`), `money`, `freeStone`, `materials`, `medals` (`userMedalId` da 101), `medalLocks`,
-  `medalTraits`, `deck` (tiene gli zeri di posizione), `stageScores`, `missions`, `titles`,
-  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `ap`/`apTime` ([AP](#ap)), `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId`, `starlightKeybladeId`, `keybladeSubslots`, `keybladeEnhanceCount` ([keyblade](#keyblade)), fase e `popupFlag` del tutorial.
-- «Nuovo» finche' non ha fatto `/user/create`. Per ricominciare: cancellare il file (o `cycle.ps1`).
-- **Stato provvisorio all'11 ottobre**: `sphereBonus.hp = -2950` (HP 50) per provocare la sconfitta
-  (ISSUES I-028): rimettere **40** a prova finita. `deck` [1,0,3] di prova.
-- `userDetail.lastClearStageId` = numero di missione (campo `id` di `stage`), non lo stageId;
-  `maxMedal` 300 (segnaposto: con 0 popup mancante), `maxDeckCost` dal campo `cost` di `player`.
-- `sentDeckMedalIds()` toglie gli zeri da `userDecks`/`userKeyblades` (vedi
+- It is saved at every change: name, avatar, Union, Lux (`luxRank` = level, thresholds `needExp` of
+  `player`), `money`, `freeStone`, `materials`, `medals` (`userMedalId` from 101), `medalLocks`,
+  `medalTraits`, `deck` (keeps the position zeros), `stageScores`, `missions`, `titles`,
+  `sphereNotified`, `sphereBonus` {hp, ap, cost}, `ap`/`apTime` ([AP](#ap)), `keybladeBurst`, `keyblades`, `keybladeDecks`, `favoriteKeybladeId`, `starlightKeybladeId`, `keybladeSubslots`, `keybladeEnhanceCount` ([keyblade](#keyblade)), tutorial phase and `popupFlag`.
+- «New» until it has done `/user/create`. To start over: delete the file (or `cycle.ps1`).
+- **Temporary state at 11 October**: `sphereBonus.hp = -2950` (HP 50) to provoke the defeat
+  (ISSUES I-028): put back **40** when the test is over. Test `deck` [1,0,3].
+- `userDetail.lastClearStageId` = quest number (field `id` of `stage`), not the stageId;
+  `maxMedal` 300 (placeholder: with 0 missing popup), `maxDeckCost` from the `cost` field of `player`.
+- `sentDeckMedalIds()` removes the zeros from `userDecks`/`userKeyblades` (see
   [battaglia.md](battaglia.md#slot-vuoto)).
 
 <a id="ap"></a>
-## AP (consumo e ricarica)
+## AP (consumption and recharge)
 
 - `userData.userPoint` (`[fn]`): `ap` -> +0x34, `maxAp` -> +0x3c, `lastApDatetime` -> +0x40
-  dell'oggetto cifrato (lettore `[fn]`), singleton a +0x118 del gestore (`[fn]`).
-- **AP mostrato** `[fn]` (secondi al prossimo punto in `*param_2`): se `ap < maxAp` e
-  `lastApDatetime` e' passato (`[fn]` <= 0), AP = `ap + trascorsi / (misc 101 x 60)`, al
-  massimo `maxAp`; con `ap >= maxAp` mostra `ap` (anche oltre il massimo) e non ricarica.
-  `[fn]` = secondi al pieno; `[fn]` = AP pieno (`maxAp <= AP`).
-  **misc 101 = 3: 1 AP ogni 3 minuti** (dal codice, non da fonti online).
-- `maxAp` = colonna `ap` della tabella `player` al rango Lux (16 al livello 1, 160 dal 200), come
-  `maxDeckCost` da `cost`, + `sphereBonus.ap` (prima: 10 fisso + bonus).
-- Server: `player.ap` + `player.apTime` (ms reali da cui conta la ricarica; `lastApDatetime` =
-  `serverTimeAt(apTime)`, coerente anche dopo un riavvio). `apState()` fa lo stesso conto del client,
-  `changeAp()` spende (se era pieno la ricarica parte da adesso, altrimenti tiene il punto parziale).
-  Salvataggi senza `ap`: AP pieno.
-- `POST /stage/start` (corpo `stageId`, ...): scala `useAp` della riga di `stage` (Quest 130 = 10).
-  `/stage/retire` e `/stage/continue` non rimborsano.
-- Level up (rango Lux che sale in `/stage/clear`): AP = AP di prima + nuovo `maxAp` (oltre il massimo).
-- `POST /shop/ap/recover` (azione 72, costruttore `[fn]`, corpo vuoto; popup
-  `PopupNormal_AP_Recovery` in `[fn]`, prezzo nel testo = **misc 112 = 100 jewel**): -100
-  `freeStone`, AP + `maxAp`; risposta `userData.userPoint` + `userKeyblades`.
-- Da verificare sul banco: HUD dopo lo start (es. 18 -> 8), il timer del fumetto
-  `BalloonNomal_AP_Recovery` (`[fn]`), il recupero con jewel (pieno aggiunto o portato al
-  massimo? ipotesi: aggiunto) e l'AP del level up (ipotesi, non confermata da fonti).
+  of the encrypted object (reader `[fn]`), singleton at +0x118 of the manager (`[fn]`).
+- **Displayed AP** `[fn]` (seconds to the next point in `*param_2`): if `ap < maxAp` and
+  `lastApDatetime` is past (`[fn]` <= 0), AP = `ap + trascorsi / (misc 101 x 60)` (elapsed), at
+  most `maxAp`; with `ap >= maxAp` it shows `ap` (even beyond the maximum) and does not recharge.
+  `[fn]` = seconds to full; `[fn]` = AP full (`maxAp <= AP`).
+  **misc 101 = 3: 1 AP every 3 minutes** (from the code, not from online sources).
+- `maxAp` = column `ap` of the `player` table at the Lux rank (16 at level 1, 160 from 200), like
+  `maxDeckCost` from `cost`, + `sphereBonus.ap` (before: fixed 10 + bonus).
+- Server: `player.ap` + `player.apTime` (real ms from which the recharge counts; `lastApDatetime` =
+  `serverTimeAt(apTime)`, consistent even after a restart). `apState()` does the same computation as the client,
+  `changeAp()` spends (if it was full the recharge starts from now, otherwise it keeps the partial point).
+  Saves without `ap`: AP full.
+- `POST /stage/start` (body `stageId`, ...): deducts `useAp` of the `stage` row (Quest 130 = 10).
+  `/stage/retire` and `/stage/continue` do not refund.
+- Level up (Lux rank going up in `/stage/clear`): AP = previous AP + new `maxAp` (beyond the maximum).
+- `POST /shop/ap/recover` (action 72, constructor `[fn]`, empty body; popup
+  `PopupNormal_AP_Recovery` in `[fn]`, price in the text = **misc 112 = 100 jewels**): -100
+  `freeStone`, AP + `maxAp`; response `userData.userPoint` + `userKeyblades`.
+- To be verified on the bench: HUD after the start (e.g. 18 -> 8), the timer of the balloon
+  `BalloonNomal_AP_Recovery` (`[fn]`), the recovery with jewels (full amount added or brought to the
+  maximum? hypothesis: added) and the AP of the level up (hypothesis, not confirmed by sources).
 
 <a id="api-funzioni"></a>
-## API di funzione (oltre l'avvio)
+## Feature APIs (beyond startup)
 
-Le schermate hanno le loro API, descritte nei file d'area: medaglie
-([medaglie.md](medaglie.md)), Moogle Shop ([moogle_shop.md](moogle_shop.md)), bacheche
-([bacheche.md](bacheche.md)), profilo e missioni ([home_profilo.md](home_profilo.md)), stage
+The screens have their own APIs, described in the area files: medals
+([medaglie.md](medaglie.md)), Moogle Shop ([moogle_shop.md](moogle_shop.md)), boards
+([bacheche.md](bacheche.md)), profile and missions ([home_profilo.md](home_profilo.md)), stages
 ([battaglia.md](battaglia.md)), Union Cross ([union_cross.md](union_cross.md)).
 
 <a id="eventi"></a>
-## Eventi (`GET /stage/event`, azione 109)
+## Events (`GET /stage/event`, action 109)
 
-- Tasto «Events» dell'elenco Story (sbloccato dopo la Quest 14). Ramo del dispatcher a `0x7c5e98`:
-  parser `[fn]` (risultato a +0x278 del gestore, letto da `[fn]`), poi
-  `eventCategory` (int, **facoltativo**, alla radice -> +0x71).
-- Radice: `events[]` (array, obbligatorio) e `highScoreRank` (uint, obbligatorio). Senza eventi:
-  `{"events": [], "highScoreRank": 0}` -> il client mostra «No available events.» (Txt_NoEvent).
-- Elemento (`[fn]` -> `[fn]`), tutti obbligatori:
-  `stages[]` (come `stories[]` di `/stage/160310`: `stageId` int, `useAp` int, `score` uint64,
+- «Events» button of the Story list (unlocked after Quest 14). Dispatcher branch at `0x7c5e98`:
+  parser `[fn]` (result at +0x278 of the manager, read by `[fn]`), then
+  `eventCategory` (int, **optional**, at the root -> +0x71).
+- Root: `events[]` (array, mandatory) and `highScoreRank` (uint, mandatory). Without events:
+  `{"events": [], "highScoreRank": 0}` -> the client shows «No available events.» (Txt_NoEvent).
+- Element (`[fn]` -> `[fn]`), all mandatory:
+  `stages[]` (like `stories[]` of `/stage/160310`: `stageId` int, `useAp` int, `score` uint64,
   `playStatus` int, `clearMissionIds` int[]), `eventStageId` int, `showIcon` int, `bannerUrl` string,
-  `eventType` int, `status` int (2 = mostra Txt_Description invece del tempo), `endTime`
-  "YYYY-MM-DD HH:MM:SS", poi `newStageId` int, `isLock` uint (1 = lucchetto e maschera),
-  `complete` int (icona di completamento).
-- Esempio di un evento (in `server/save/event.json`, letto da `respondStageEvent`):
+  `eventType` int, `status` int (2 = shows Txt_Description instead of the time), `endTime`
+  "YYYY-MM-DD HH:MM:SS", then `newStageId` int, `isLock` uint (1 = padlock and mask),
+  `complete` int (completion icon).
+- Example of an event (in `server/save/event.json`, read by `respondStageEvent`):
   `[{"stages":[{"stageId":<id>,"useAp":0,"score":0,"playStatus":0,"clearMissionIds":[]}],
   "eventStageId":<id evento>,"showIcon":1,"bannerUrl":"","eventType":1,"status":1,
   "endTime":"2026-12-31 23:59:59","newStageId":<id>,"isLock":0,"complete":0}]`.
-  `eventStageId` e gli stage devono esistere nelle tabelle master (id a 0 = crash): da verificare.
+  `eventStageId` and the stages must exist in the master tables (id at 0 = crash): to be verified.
 
 <a id="keyblade"></a>
-## Keyblade posseduti (I-050)
+## Owned keyblades (I-050)
 
-- Starlight (initItem categoria 13) = `userKeybladeId` 1, deck `player.deck`. Gli altri: premio di
-  tipo 13 (`grantItem` -> `grantKeyblade`, uno per serie = `category` della tabella keyblade), in
+- Starlight (initItem category 13) = `userKeybladeId` 1, deck `player.deck`. The others: reward of
+  type 13 (`grantItem` -> `grantKeyblade`, one per series = `category` of the keyblade table), in
   `player.keyblades` [{userKeybladeId 2.., keybladeId, getDatetime, burst}], deck in
-  `player.keybladeDecks[id]` (0 = slot vuoto). `userDeckId` = `userKeybladeSubslotId` =
-  `userKeybladeId`. Preferito: `player.favoriteKeybladeId` (default 1; il Profilo manda quello).
-- Premi di tipo 13 nelle tabelle: primo completamento (`clearGetItemType`: stage 1110 Quest 14 ->
-  Treasure Trove 2000, poi 1210, 1310, ...) e obiettivi (`submissionRewardType`). I salvataggi di
-  prima li ricevono una volta all'avvio del server (blocco in fondo a `server.js`).
-- Elenchi completi a ogni risposta: `userKeyblades` (`[fn]`/`[fn]`; `category`
-  dalla tabella: Starlight 1, Treasure Trove 201), `userDecks` (uno per keyblade),
-  `userKeybladeSubslots` (uno per keyblade: senza, Equipment va in crash).
-- `POST /user/keyblade/update/170516` (azione 45, corpo da `[fn]`): `userKeyblades`
+  `player.keybladeDecks[id]` (0 = empty slot). `userDeckId` = `userKeybladeSubslotId` =
+  `userKeybladeId`. Favorite: `player.favoriteKeybladeId` (default 1; the Profile sends that one).
+- Type 13 rewards in the tables: first clear (`clearGetItemType`: stage 1110 Quest 14 ->
+  Treasure Trove 2000, then 1210, 1310, ...) and objectives (`submissionRewardType`). Earlier saves
+  receive them once at server startup (block at the end of `server.js`).
+- Complete lists in every response: `userKeyblades` (`[fn]`/`[fn]`; `category`
+  from the table: Starlight 1, Treasure Trove 201), `userDecks` (one per keyblade),
+  `userKeybladeSubslots` (one per keyblade: without it, Equipment crashes).
+- `POST /user/keyblade/update/170516` (action 45, body from `[fn]`): `userKeyblades`
   [{userKeybladeId, userDeckId, isFavorite}] + `userDecks` [{userDeckId, medals[], petBaseSlotMedal}]:
-  il server salva i deck e il preferito e risponde `userKeyblades` + `userDecks`. Prima finiva nello
-  schema automatico (elenchi vuoti). Da vedere sul banco il corpo vero (log `[keyblade] deck`).
-- **3 deck per keyblade** (20-10; update 1.1.2 del 01/09/2016 «Save 3 decks per Keyblade», sbloccati da un keyblade a
-  +20; immagine dell'utente e fonti in `reference\keyblade_decks\`, ricerca in `D:\Progetto_Restauro_KH_UX	mp\deckset\RESEARCH.md`):
-  il client conta i deck di un keyblade dagli `userDecks` con il suo `userKeybladeId` (ordine dell'array, [fn]) e
-  mostra i pulsanti 1/2/3 solo con piu' di un deck; deck attivo = `userKeyblades[].userDeckId`, cambiato e salvato con
-  l'azione 45. Server: deck 1 = `userKeybladeId` (player.deck / keybladeDecks come prima), deck 2/3 = n x 1.000.000 + id in
-  `player.keybladeDeckSets[kb] = {active, 2, 3}`; 6° slot del pet per userDeckId; Unequip anche da 2/3. Test
-  `test-deck-sets.js`. Banco 20-10: pulsanti in Equipment, deck 2 vuoto, ritorno al deck 1 intatto. Da provare: riempire il
-  deck 2 e combattere con quello; `userPoint` (STR/DEF della home) resta quello del deck 1 di Starlight come prima.
-  Popup di Optimize in «Select a Keyblade» ([fn] -> [fn]): il numero del deck e' la texture
-  `img/ui/Deck_But%02d_On.png`, assente da tutte le risorse (WW, JP, 2016): restava `Deck_But01_On` del layout, sempre
-  «1» (banco 20-10, deck 2). Servite come copie dei pulsanti (`originals.tsv` sezione 35); Optimize stesso usava gia' il
-  deck acceso (deck 3 riempito al banco).
-- `/stage/start` salva `userKeybladeId` (`player.currentUserKeybladeId`): la gauge di `/stage/clear`
-  va in quel keyblade. Unequip (`/user/medal/remove`) toglie la medaglia da tutti i deck.
-- Immagini: il popup del keyblade ottenuto (`BattleResult_KB`, `[fn]`) e le icone dei premi
-  (`[fn]`, tipo 13) caricano `img/keyBlade/KeyBlade_%06d.png` con il `displayId` della
-  tabella keyblade (campo +0xcc): assenti da tutte le risorse (restava `Deck_KeyBlade_0701_05` =
-  Olympia). `recon/tools/make_keyblade_images.py` le genera (64) dalla bitmap del LWF
-  `lwf/avatar/keyblade/keyblade_%04d_%02d` (displayId/100, displayId%100), nella posa di
-  Deck_KeyBlade_0701_05, BTF a palette; `build-resources.ps1` (anche `-Quick`). Equipment e la
-  scelta del keyblade usano i LWF, che ci sono tutti. Riferimenti: `reference\keyblades\`.
-- Optimize (I-051, banco 11 ottobre): `POST /user/keyblade/update/170516` con `userDecks` vuoto e
-  `isFavorite` 1 sul keyblade scelto. Il corpo lo costruisce `[fn]`: manda tutti i keyblade
-  (`isFavorite` = il keyblade selezionato, `+0x8cc`) e solo i deck cambiati (maschera `+0x4d8`):
-  vuoto perche' Optimize non aveva ancora salvato nulla. Il crash dopo (pc `0x8cb92c`, ARM `kbopt`) e'
-  nella cella della medaglia `[fn]` (DeckEdit_RevolverMedal_ver330, via `[fn]`): se
-  l'attributo della medaglia (riga medal `+0x494`) e' quello dello slot (`attribute[]` del keyblade,
-  4 = qualsiasi) crea `lwf/medal/medaltype/MedalType%d` (nei modi di cella 2/4/5/6/7
-  `MedalType01`); servito solo MedalType3 (Magic), quindi nodo LWF nullo. Starlight ha slot 3/4/4
-  (mai visto), Treasure Trove 4/4/1 (Power). `recon/tools/make_medaltype_lwf.py` scrive MedalType1
-  (rosso), MedalType2 (verde), MedalType01 come copie ricolorate di MedalType3, con le texture sia
-  col nome originale sia `<nome LWF>_<hex>.png`.
-- Optimize, seconda parte (I-051): niente crash ma deck vuoto. Il client usa la lunghezza di
-  `deckMedals` come numero di slot: Optimize (`[fn]` -> `[fn]`) riempie solo quelli
-  e `[fn]` segna il deck cambiato (maschera `+0x4d8`, quindi mandato in `userDecks`)
-  confrontando solo quelle voci. Con `[]` nulla cambiava. Un deck tutto vuoto ora si manda come
-  `[0, 0, 0]` (`validConsist` della riga keyblade); gli 0 di un deck in parte pieno restano tolti
-  (battaglia, [battaglia.md](battaglia.md#slot-vuoto)): su quei deck Optimize considera solo gli
-  slot pieni.
-- Optimize come l'originale (I-075, banco 12 ottobre): il pulsante e' nella schermata «Select a
-  Keyblade.» prima della quest (`Button_Auto` di `StartDeckEdit2_Button_ToDeck_ver260`, popup
-  «Optimize Medals for <keyblade>?»). L'algoritmo e' del client: `[fn]` da' un valore a ogni
-  medaglia (forza + trait, moltiplicatore dello slot secondo l'attributo accord +0x114 / dlaccord
-  +0x128, guilt, bonus della quest), `[fn]` riempie gli slot dal moltiplicatore piu' alto,
-  entro il costo; lo slot del pet solo col pet. Il numero di slot = lunghezza di `deckMedals`: con i
-  deck compatti riempiva solo gli slot gia' pieni (2/5). Ora `sentKeybladeDeck` manda uno 0 per
-  slot vuoto fino agli slot sbloccati (Stock Medal, [battaglia.md](battaglia.md#slot-vuoto)); il
-  client stesso manda 0 negli slot che restano vuoti (`[318,0,317,0,456]`, costo 62/62).
-  Fonti dei giocatori in `reference\optimize`.
-- Optimize, terza parte (I-051): con gli slot `[0,0,0]` Optimize valuta ogni medaglia posseduta
-  (`[fn]` -> `[fn]`): legge la riga burst del `burstId` della medaglia (riga medal
-  `+0x4fc`, tabella burst = id 0x26 di `[fn]`) senza guardare `validBurst`. Le 42 medaglie di
-  supporto (Dewey, Fata Smemorina, ...) hanno `burstId` 0 e nessuna riga: crash a 0x10.
-  `make-game-tables.js` aggiunge una riga burst 0 vuota (tutti i campi a 0; aggiunta anche a mano a
-  `master_data/burst.json`, revisione dei master +1). Effetto collaterale da tenere d'occhio: con
-  il deck `[0,0,0]` il riquadro mostra STR/DEF 150/150 (gli 0 contano come la medaglia finta) e una
-  quest avviata con quel deck vuoto avrebbe tre medaglie finte.- Grafica per keyblade e per attributo (I-057): «Select a Keyblade» carica
-  `lwf/medal/medaldeck/MedalDeck_Type%d` (e `_Type%d1`, `_Type01`) per l'attributo della medaglia
-  nello slot e `img/carouselDeck/Deck%03d.png`, `DeckButton_%03d.png`, `DeckMedalNumUI_%03d.png`
-  (`_pvp_`) con displayId/100 del keyblade. Servite solo Type3 e 001: con le medaglie di Optimize
-  (Power) nel deck di Treasure Trove crash a 0x8d00e0 (fault 0x0). `make_keyblade_decks.py`
-  scrive le copie (deck ricolorati sulla tinta dell'arte del keyblade, palette; bagliori Power
-  rosso, Speed verde). Pacchetto generato a ~15,6 MB su 16 MiB di riserva: la prossima aggiunta
-  grande richiede una versione completa con riserva piu' alta.- Posa del keyblade nei riquadri dei menu (I-052): `[fn]` (chiamato da `[fn]`,
-  «Select a Keyblade», modo 3, e da `[fn]`) carica il LWF `keyblade_%04d_%02d` (se manca,
-  `img/keyBlade/KeyBlade_%06d.png`) e prende rotazione, scala e posizione da
-  `rule/keyblade_rule.bin` (`[fn]`: record di 0x44 byte, keybladeId + 4 modi x (rot x10000,
-  scala x10000, x, y); prima il keybladeId, poi la serie id/1000*1000, poi 1000). ofsX/ofsY della
-  tabella keyblade non c'entrano (provato sul banco, rev. 83/84). Il file servito ha solo 1000..11000
-  e con i LWF della 5.0.1 Treasure Trove cade 17 unita' a destra. `recon/tools/keyblade_rule.py`
-  calcola il centro dell'arte di ogni LWF (frammento -> traslazione -> matrici) e scrive una riga per
-  keyblade (64) con la posizione che lo porta sul centro di Starlight, rotazione e scala originali
-  della serie. Il modello torna con i valori di Square Enix per quasi tutte le serie (Lady Luck,
-  Three Wishes, Divine Rose, Olympia entro 2 unita'). L'avatar non e' toccato (stesse LWF).
-- Livelli (I-067): il livello e' la riga della tabella keyblade (un keybladeId per livello:
-  serie*1000 + lv*10 fino a +20, poi serie*1000 + 200 + lv-20; Bad Guy Breaker lv*10). La riga dice
-  i materiali per il livello dopo (`validNeedMaterial`, `needMaterialId/Num`: la finestra KEYBLADE
-  li mostra come Needed/Held) e `evolveId` = riga dopo (0 = massimo). La 5.0.1 ha solo i livelli col
-  cambio di design (64 righe): `server/make-keyblade-levels.js` rigenera +0..+35 di ogni serie (576
-  righe, quelle nuove con `"generated": true`) dalla khuxwiki (`reference\keyblades\keyblade_levels.json`,
-  copia ridotta in `server/tables/keyblade_levels.json`): slot, attributi, Upright/Reversed
-  (`darklight` 1/2, 3 = nessuno), `accord`/`dlaccord`, gauge, `partnerRate`, materiali post 2.6.0;
-  design, passiva e posa dalla riga 5.0.1 precedente. Confronto con le 64 righe 5.0.1: tutto uguale
-  tranne 3 campi (accord di Stroke of Midnight +0, dlaccord di Missing Ache, partnerRate di Bad Guy
-  Breaker +35: tenute quelle 5.0.1). Tolti i Trophy NI/CS/CK di Bad Guy Breaker (assenti da
-  `material`). Oltre +35 (+35.1..+60 dell'ultima versione, con le passive) no: `lv` intero, la 5.0.1
-  chiude a +35.
-- `POST /keyblade/enhance` (azione 54, «Strengthen»; corpo `[fn]` = `{userKeybladeId}`;
-  chiamato da `[fn]`/`[fn]`): `server/keyblade-evo.js` toglie i materiali della riga,
-  passa a `evolveId` (Starlight in `player.starlightKeybladeId`, gli altri in `player.keyblades`),
-  niente munny. Risposta (ramo 54): `userKeyblades`, `userDecks`, `userMaterials`, `userTitles`.
-  Materiali mancanti o livello massimo: nessuna modifica (log `[keyblade] enhance`);
-  `KHUX_KB_FREE=1` = senza materiali. Dopo, il client manda `PUT /passive/list` (249, `isList` 0 ->
+  the server saves the decks and the favorite and replies `userKeyblades` + `userDecks`. Before, it ended up in the
+  automatic schema (empty lists). To see on the bench the real body (log `[keyblade] deck`).
+- **3 decks per keyblade** (20-10; update 1.1.2 of 01/09/2016 «Save 3 decks per Keyblade», unlocked by a keyblade at
+  +20; user's image and sources in `reference\keyblade_decks\`, research in `D:\Progetto_Restauro_KH_UX	mp\deckset\RESEARCH.md`):
+  the client counts the decks of a keyblade from the `userDecks` with its `userKeybladeId` (array order, [fn]) and
+  shows the buttons 1/2/3 only with more than one deck; active deck = `userKeyblades[].userDeckId`, changed and saved with
+  action 45. Server: deck 1 = `userKeybladeId` (player.deck / keybladeDecks as before), deck 2/3 = n x 1,000,000 + id in
+  `player.keybladeDeckSets[kb] = {active, 2, 3}`; 6th pet slot per userDeckId; Unequip also from 2/3. Test
+  `test-deck-sets.js`. Bench 20-10: buttons in Equipment, deck 2 empty, return to deck 1 intact. To be tried: fill
+  deck 2 and fight with it; `userPoint` (STR/DEF of the home) stays that of Starlight's deck 1 as before.
+  Optimize popup in «Select a Keyblade» ([fn] -> [fn]): the deck number is the texture
+  `img/ui/Deck_But%02d_On.png`, missing from all resources (WW, JP, 2016): the layout's `Deck_But01_On` remained, always
+  «1» (bench 20-10, deck 2). Served as copies of the buttons (`originals.tsv` section 35); Optimize itself already used the
+  active deck (deck 3 filled on the bench).
+- `/stage/start` saves `userKeybladeId` (`player.currentUserKeybladeId`): the gauge of `/stage/clear`
+  goes into that keyblade. Unequip (`/user/medal/remove`) removes the medal from all decks.
+- Images: the popup of the obtained keyblade (`BattleResult_KB`, `[fn]`) and the reward icons
+  (`[fn]`, type 13) load `img/keyBlade/KeyBlade_%06d.png` with the `displayId` of the
+  keyblade table (field +0xcc): missing from all resources (`Deck_KeyBlade_0701_05` =
+  Olympia remained). `recon/tools/make_keyblade_images.py` generates them (64) from the bitmap of the LWF
+  `lwf/avatar/keyblade/keyblade_%04d_%02d` (displayId/100, displayId%100), in the pose of
+  Deck_KeyBlade_0701_05, palette BTF; `build-resources.ps1` (also `-Quick`). Equipment and the
+  keyblade choice use the LWFs, which are all there. References: `reference\keyblades\`.
+- Optimize (I-051, bench 11 October): `POST /user/keyblade/update/170516` with empty `userDecks` and
+  `isFavorite` 1 on the chosen keyblade. The body is built by `[fn]`: it sends all the keyblades
+  (`isFavorite` = the selected keyblade, `+0x8cc`) and only the changed decks (mask `+0x4d8`):
+  empty because Optimize had not saved anything yet. The crash afterwards (pc `0x8cb92c`, ARM `kbopt`) is
+  in the medal cell `[fn]` (DeckEdit_RevolverMedal_ver330, via `[fn]`): if
+  the medal attribute (medal row `+0x494`) is that of the slot (`attribute[]` of the keyblade,
+  4 = any) it creates `lwf/medal/medaltype/MedalType%d` (in cell modes 2/4/5/6/7
+  `MedalType01`); only MedalType3 (Magic) served, hence null LWF node. Starlight has slots 3/4/4
+  (never seen), Treasure Trove 4/4/1 (Power). `recon/tools/make_medaltype_lwf.py` writes MedalType1
+  (red), MedalType2 (green), MedalType01 as recolored copies of MedalType3, with the textures both
+  under the original name and as `<nome LWF>_<hex>.png`.
+- Optimize, second part (I-051): no crash but empty deck. The client uses the length of
+  `deckMedals` as the number of slots: Optimize (`[fn]` -> `[fn]`) fills only those
+  and `[fn]` marks the deck as changed (mask `+0x4d8`, hence sent in `userDecks`)
+  comparing only those entries. With `[]` nothing changed. An all-empty deck is now sent as
+  `[0, 0, 0]` (`validConsist` of the keyblade row); the 0s of a partly full deck stay removed
+  (battle, [battaglia.md](battaglia.md#slot-vuoto)): on those decks Optimize considers only the
+  full slots.
+- Optimize like the original (I-075, bench 12 October): the button is in the «Select a
+  Keyblade.» screen before the quest (`Button_Auto` of `StartDeckEdit2_Button_ToDeck_ver260`, popup
+  «Optimize Medals for <keyblade>?»). The algorithm is the client's: `[fn]` gives a value to every
+  medal (strength + trait, slot multiplier according to the attribute accord +0x114 / dlaccord
+  +0x128, guilt, quest bonus), `[fn]` fills the slots from the highest multiplier,
+  within the cost; the pet slot only with the pet. The number of slots = length of `deckMedals`: with the
+  compact decks it filled only the slots already full (2/5). Now `sentKeybladeDeck` sends a 0 per
+  empty slot up to the unlocked slots (Stock Medal, [battaglia.md](battaglia.md#slot-vuoto)); the
+  client itself sends 0 in the slots that stay empty (`[318,0,317,0,456]`, cost 62/62).
+  Player sources in `reference\optimize`.
+- Optimize, third part (I-051): with the slots `[0,0,0]` Optimize evaluates every owned medal
+  (`[fn]` -> `[fn]`): it reads the burst row of the medal's `burstId` (medal row
+  `+0x4fc`, burst table = id 0x26 of `[fn]`) without looking at `validBurst`. The 42
+  support medals (Dewey, Fairy Godmother, ...) have `burstId` 0 and no row: crash at 0x10.
+  `make-game-tables.js` adds an empty burst row 0 (all fields at 0; also added by hand to
+  `master_data/burst.json`, master revision +1). Side effect to keep an eye on: with
+  the deck `[0,0,0]` the box shows STR/DEF 150/150 (the 0s count as the fake medal) and a
+  quest started with that empty deck would have three fake medals.- Graphics per keyblade and per attribute (I-057): «Select a Keyblade» loads
+  `lwf/medal/medaldeck/MedalDeck_Type%d` (and `_Type%d1`, `_Type01`) for the attribute of the medal
+  in the slot and `img/carouselDeck/Deck%03d.png`, `DeckButton_%03d.png`, `DeckMedalNumUI_%03d.png`
+  (`_pvp_`) with displayId/100 of the keyblade. Only Type3 and 001 served: with the Optimize medals
+  (Power) in the Treasure Trove deck crash at 0x8d00e0 (fault 0x0). `make_keyblade_decks.py`
+  writes the copies (decks recolored on the hue of the keyblade art, palette; Power glows
+  red, Speed green). Generated pack at ~15.6 MB out of 16 MiB of reserve: the next big
+  addition requires a complete version with a higher reserve.- Pose of the keyblade in the menu boxes (I-052): `[fn]` (called by `[fn]`,
+  «Select a Keyblade», mode 3, and by `[fn]`) loads the LWF `keyblade_%04d_%02d` (if missing,
+  `img/keyBlade/KeyBlade_%06d.png`) and takes rotation, scale and position from
+  `rule/keyblade_rule.bin` (`[fn]`: records of 0x44 bytes, keybladeId + 4 modes x (rot x10000,
+  scale x10000, x, y); first the keybladeId, then the series id/1000*1000, then 1000). ofsX/ofsY of the
+  keyblade table have nothing to do with it (tried on the bench, rev. 83/84). The served file has only 1000..11000
+  and with the 5.0.1 LWFs Treasure Trove falls 17 units to the right. `recon/tools/keyblade_rule.py`
+  computes the center of the art of every LWF (fragment -> translation -> matrices) and writes one row per
+  keyblade (64) with the position that brings it onto Starlight's center, original rotation and scale
+  of the series. The model matches Square Enix's values for almost all series (Lady Luck,
+  Three Wishes, Divine Rose, Olympia within 2 units). The avatar is not touched (same LWFs).
+- Levels (I-067): the level is the row of the keyblade table (one keybladeId per level:
+  series*1000 + lv*10 up to +20, then series*1000 + 200 + lv-20; Bad Guy Breaker lv*10). The row gives
+  the materials for the next level (`validNeedMaterial`, `needMaterialId/Num`: the KEYBLADE window
+  shows them as Needed/Held) and `evolveId` = next row (0 = maximum). 5.0.1 has only the levels with
+  a design change (64 rows): `server/make-keyblade-levels.js` regenerates +0..+35 of every series (576
+  rows, the new ones with `"generated": true`) from the khuxwiki (`reference\keyblades\keyblade_levels.json`,
+  reduced copy in `server/tables/keyblade_levels.json`): slots, attributes, Upright/Reversed
+  (`darklight` 1/2, 3 = none), `accord`/`dlaccord`, gauge, `partnerRate`, materials post 2.6.0;
+  design, passive and pose from the previous 5.0.1 row. Comparison with the 64 rows of 5.0.1: all equal
+  except 3 fields (accord of Stroke of Midnight +0, dlaccord of Missing Ache, partnerRate of Bad Guy
+  Breaker +35: the 5.0.1 ones kept). Removed the Trophy NI/CS/CK of Bad Guy Breaker (missing from
+  `material`). Beyond +35 (+35.1..+60 of the last version, with the passives) no: `lv` is an integer, 5.0.1
+  ends at +35.
+- `POST /keyblade/enhance` (action 54, «Strengthen»; body `[fn]` = `{userKeybladeId}`;
+  called by `[fn]`/`[fn]`): `server/keyblade-evo.js` removes the materials of the row,
+  moves to `evolveId` (Starlight in `player.starlightKeybladeId`, the others in `player.keyblades`),
+  no munny. Response (branch 54): `userKeyblades`, `userDecks`, `userMaterials`, `userTitles`.
+  Missing materials or maximum level: no change (log `[keyblade] enhance`);
+  `KHUX_KB_FREE=1` = without materials. Afterwards, the client sends `PUT /passive/list` (249, `isList` 0 ->
   `newPassiveSettingIds`).
-- Dopo la risposta `[fn]` confronta il `displayId` (+0xcc) di prima e dopo: uguale ->
-  risultato `[fn]` (`DeckEdit_KBStrength_Result_ver210`, `lwf/result/KeyEvo_LevelUp`, frecce
-  slot per slot su accord +0x114 / dlaccord +0x128); diverso -> `lwf/memudemo/KeyBlade_Evolution`
-  (`[fn]`: movie `keyblade_previous`/`keyblade` caricano i LWF del keyblade, va avanti quando
-  `_root` arriva all'ultimo fotogramma) e poi il risultato. Slot nuovo: `KeyEvo_Medal_01B`,
-  `KeyEvo_eff`, `medal_blank_slot1-3` (attributo 3/1/2) in `lwf/keyblade/KeyEvo/`. Nessuno di questi
-  LWF esiste nelle risorse (nullo = crash): `make_layouts.py` mette LWF vuoti (si salta l'animazione).
-- Sub-slot: `GET /keyblade/subslot` (191) e `POST /keyblade/subslot` (192, corpo `[fn]`:
-  `{updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: {"<n>": userMedalId}}]}`; risposta
-  `subslotMaxNum`, `userKeybladeSubslots`, `userKeyblades`). Master `keybladeSubslot` (vuota nella
-  5.0.1) rigenerata: 120 sub-slot per serie `{subslotId, category, slotNumber, attribute,
-  darklight}` dall'albero della khuxwiki; `subslots[]` di ogni keyblade = 120 voci (0 = vuoto),
-  Equipment (`[fn]`) scrive «Subslot n/120» (come lo screenshot giapponese).
-  `subslotRate` = somma dei bonus per tier (`guiltValue`) delle medaglie: 1..10 = 1, 2, 5, 8, 12, 16,
-  20, 25, 30, 35 millesimi (guida dell'utente pag. 11, khuxwiki per 9-10); `userKeyblades[].subslotRate`
-  = `subslotRate` della riga (16000/12000/10000 = x1.6/1.2/1.0 per 1/2/3 attributi). Testi:
-  `Txt_SubSlot_Rate` «+%01.3f» = (k * subslotRate / 100) / 1000 (`[fn]`, k da verificare),
-  `Txt_KeyBlade_Lv_Rate_Label` = subslotRate della riga /10000. `KHUX_SUBSLOT_MAX=0` spegne i
-  sub-slot, `KHUX_SUBSLOT_SCALE` cambia l'unita'.
-- Schermata dei sub-slot (I-066, crash al tocco di «Subslot»): `[fn]` -> `[fn]`
-  (SceneDeckEdit::openSubslotPanel) carica `DeckEditSubSlotScene_ver340` (assente; servite solo
-  `_ver260`/`_ver310`). Cerca dalla radice (ricorsivo): `DeckEdit_SubSlot_Select_Medal` (nodo) >
-  `Win_under` > `Scroll_Area` (vi crea MiniMedalScrollView), `DeckEdit_SubSlot_Set_Medal` (nodo) >
-  `Win_under` > `Scroll_Area` (vi crea KeybladeSubslotMedalView), `SubSlot_UpArrowEff` (nodo
-  armatura), `BestButton` > `Txt_Best` (106180100 «Optimize»), `Txt_NotExist` (106140376),
-  `Close_Button`, `Panel_34` > `Txt_Subslot_Caution_Label` (106140377); nel Set_Medal
+- After the response `[fn]` compares the `displayId` (+0xcc) before and after: equal ->
+  result `[fn]` (`DeckEdit_KBStrength_Result_ver210`, `lwf/result/KeyEvo_LevelUp`, arrows
+  slot by slot on accord +0x114 / dlaccord +0x128); different -> `lwf/memudemo/KeyBlade_Evolution`
+  (`[fn]`: movies `keyblade_previous`/`keyblade` load the keyblade's LWFs, it advances when
+  `_root` reaches the last frame) and then the result. New slot: `KeyEvo_Medal_01B`,
+  `KeyEvo_eff`, `medal_blank_slot1-3` (attribute 3/1/2) in `lwf/keyblade/KeyEvo/`. None of these
+  LWFs exists in the resources (null = crash): `make_layouts.py` puts empty LWFs (the animation is skipped).
+- Sub-slots: `GET /keyblade/subslot` (191) and `POST /keyblade/subslot` (192, body `[fn]`:
+  `{updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: {"<n>": userMedalId}}]}`; response
+  `subslotMaxNum`, `userKeybladeSubslots`, `userKeyblades`). Master `keybladeSubslot` (empty in
+  5.0.1) regenerated: 120 sub-slots per series `{subslotId, category, slotNumber, attribute,
+  darklight}` from the khuxwiki tree; `subslots[]` of every keyblade = 120 entries (0 = empty),
+  Equipment (`[fn]`) writes «Subslot n/120» (like the Japanese screenshot).
+  `subslotRate` = sum of the per-tier bonuses (`guiltValue`) of the medals: 1..10 = 1, 2, 5, 8, 12, 16,
+  20, 25, 30, 35 thousandths (user's guide p. 11, khuxwiki for 9-10); `userKeyblades[].subslotRate`
+  = `subslotRate` of the row (16000/12000/10000 = x1.6/1.2/1.0 for 1/2/3 attributes). Texts:
+  `Txt_SubSlot_Rate` «+%01.3f» = (k * subslotRate / 100) / 1000 (`[fn]`, k to be verified),
+  `Txt_KeyBlade_Lv_Rate_Label` = subslotRate of the row /10000. `KHUX_SUBSLOT_MAX=0` turns off the
+  sub-slots, `KHUX_SUBSLOT_SCALE` changes the unit.
+- Sub-slot screen (I-066, crash on tapping «Subslot»): `[fn]` -> `[fn]`
+  (SceneDeckEdit::openSubslotPanel) loads `DeckEditSubSlotScene_ver340` (missing; only
+  `_ver260`/`_ver310` served). It searches from the root (recursive): `DeckEdit_SubSlot_Select_Medal` (node) >
+  `Win_under` > `Scroll_Area` (creates MiniMedalScrollView there), `DeckEdit_SubSlot_Set_Medal` (node) >
+  `Win_under` > `Scroll_Area` (creates KeybladeSubslotMedalView there), `SubSlot_UpArrowEff` (armature
+  node), `BestButton` > `Txt_Best` (106180100 «Optimize»), `Txt_NotExist` (106140376),
+  `Close_Button`, `Panel_34` > `Txt_Subslot_Caution_Label` (106140377); in the Set_Medal
   `Txt_KeyBlade_Label`, `Txt_SubSlot_Rate` (106140371), `Txt_SubSlot_Num` (106140374),
-  `Txt_KeyBlade_Lv_Rate_Label` («x%01.1f»). Ad ogni cambio `[fn]` scrive
-  `Txt_SubSlot_Rate_Label` («+%01.3f») e `Txt_SubSlot_Num_Label` (106140352) nel Set_Medal, crea
-  l'armatura `EFFECT` in Win_under > `panel` quando il moltiplicatore sale, fa lampeggiare
-  `Panel_34` se gli slot non sono in ordine. Cella `DeckEdit_SubSlotMedal_ver260` 164x154
+  `Txt_KeyBlade_Lv_Rate_Label` («x%01.1f»). At every change `[fn]` writes
+  `Txt_SubSlot_Rate_Label` («+%01.3f») and `Txt_SubSlot_Num_Label` (106140352) in the Set_Medal, creates
+  the armature `EFFECT` in Win_under > `panel` when the multiplier goes up, makes
+  `Panel_34` blink if the slots are not in order. Cell `DeckEdit_SubSlotMedal_ver260` 164x154
   (`[fn]`/`[fn]`/`[fn]`): `Medale`, `SubSlot_Route_LR/LR1/LR2/UD/UD1/UD2`,
-  `MedalBase` (ImageView, `img/ui/Subslot_MedalSlot%03d.png` con la category del keyblade = 1,
-  201 ... 1901, offset 0xd0 del master), `Slot`, `SlotNum` (TextAtlas), `InfoPanel`, `TYpe`
+  `MedalBase` (ImageView, `img/ui/Subslot_MedalSlot%03d.png` with the keyblade's category = 1,
+  201 ... 1901, offset 0xd0 of the master), `Slot`, `SlotNum` (TextAtlas), `InfoPanel`, `TYpe`
   (`img/ui/Deck_Medal%d`), `Icon_Type`, `Icon_Type_1` (`img/ui/Deck_Mark_*`), `Medal_S`,
-  `Txt_Mag_Label`, `Guilt_Icon`, `Cursor` (vi crea l'armatura `Z_SpCursor`); `MatchSlotLWF`
-  facoltativo. Il revolver in modalita' sub-slot (DeckRevolverView, 0x8c9f0c) clona
-  `DeckEdit_SubSlot_MedalInfo_ver260` in `Area_MedalInfo` col nome `SubslotInfoPanel` (`Icon_Type`,
-  `Txt_Mag_Label`). Layout generati in `make_layouts.py` (11 ottobre, aspetto da
-  `reference\subslot`): scena ver340 = ver310 originale con `DeckEdit_SubSlot_Set_Medal_ver340`
-  nuovo, `DeckEdit_SubSlot_Select_Medal_ver310` (la ver260 servita ha un 9-slice su Panel20,
-  assente), `DeckEdit_Subslot_Caution_ver260`, `DeckEdit_SubSlotMedal_ver260`,
-  `DeckEdit_SubSlot_MedalInfo_ver260`; texture in `make_textures.py`: `Subslot_MedalSlot%03d` (16
-  category), `Subslot_Route`, copie in img/ui di `Deck_Mark_Uplight/Reverse`, `Deck_Medal1` e
-  `Deck_Medal2` (verde, dalla 1). Da provare sul banco.
-- Sub-slot, aspetto e trascinamento (banco sb_2..sb_5, 11 ottobre). Lista «SUBSLOT MEDALS»:
-  MiniMedalScrollView = MedalScrollView (`[fn]`, vtable come Swap Medals) con celle fisse
-  120x164 (`[fn]`), colonne = larghezza di `Scroll_Area` / 120 (400 -> 3, come la 380 della
-  ver260); `+0xb26` = 1 (sub-slot) e modo 10 (`[fn]`). Ogni cella = DeckRevolverView piccolo
-  (`[fn](1)` -> `[fn]`: `DeckEdit_SmallMedal_ver330` originale, `Medal` = Medal_S
-  190x190 naturale, piu' `DeckEdit_Deck_MedalInfo_ver260` in `Area_MedalInfo`); il modo 10 di
-  `[fn]` mette `img/ui/Minfo_Pet01.png` (assente) in `Icon_1` e «×%01.3f» (106140350) in
-  `Txt_1`, poi aggiunge `SubslotInfoPanel` («+%01.3f», 106140372, tier in `Guilt_Icon`, attributo in
-  `Icon_Type`): il pannello deve coprire tutto `Area_MedalInfo`, da qui la targhetta opaca
-  `Subslot_InfoPlate` (sb_2 «×+0.030», tier tagliato a x -8). Grandezza delle medaglie e
-  sovrapposizione delle ali come in subslot_JP_1 (stessa cella, non si cambia senza codice). Slot:
-  `[fn]` carica in `Medal_S` la Medal_S (`[fn]`) senza toccarne la misura (layout:
-  190x190 ignoreSize, prima 89x109 stirata). Trascinamento slot -> lista (`[fn]`): copia
-  della cella con `[fn](0)` (nasconde Route, MedalBase, Slot, SlotNum, InfoPanel, TYpe),
-  medaglia in `Medal_S`, scala 1.5, aggiunta al livello di `[fn]`, ma `Medal_S` non viene
-  reso visibile: era nascosto nel layout (sb_4). Lista -> slot (`[fn]`): copia
-  `[fn](0)` = `DeckEdit_RevolverMedal_ver330` originale, opacita' 200; parte solo con un
-  primo spostamento orizzontale (>= 30) su una medaglia non velata, uno verticale (>= 20) fa
-  scorrere la lista. `Panel_34` (avviso): `[fn]` lo fa solo comparire/svanire, posizione
-  dal layout, ora sulla barra «Equipped Slots». Regole del client (`[fn]`,
-  `[fn]`): «Equipped Slots» = slot pieni consecutivi dal primo, il moltiplicatore somma i
-  bonus solo fino al primo slot vuoto: con lo slot 1 vuoto 0/120 e +0.000 sono corretti.
+  `Txt_Mag_Label`, `Guilt_Icon`, `Cursor` (creates the armature `Z_SpCursor` there); `MatchSlotLWF`
+  optional. The revolver in sub-slot mode (DeckRevolverView, 0x8c9f0c) clones
+  `DeckEdit_SubSlot_MedalInfo_ver260` into `Area_MedalInfo` with the name `SubslotInfoPanel` (`Icon_Type`,
+  `Txt_Mag_Label`). Layouts generated in `make_layouts.py` (11 October, look from
+  `reference\subslot`): scene ver340 = original ver310 with a new `DeckEdit_SubSlot_Set_Medal_ver340`,
+  `DeckEdit_SubSlot_Select_Medal_ver310` (the served ver260 has a 9-slice on Panel20,
+  missing), `DeckEdit_Subslot_Caution_ver260`, `DeckEdit_SubSlotMedal_ver260`,
+  `DeckEdit_SubSlot_MedalInfo_ver260`; textures in `make_textures.py`: `Subslot_MedalSlot%03d` (16
+  categories), `Subslot_Route`, copies in img/ui of `Deck_Mark_Uplight/Reverse`, `Deck_Medal1` and
+  `Deck_Medal2` (green, from 1). To be tried on the bench.
+- Sub-slots, look and dragging (bench sb_2..sb_5, 11 October). «SUBSLOT MEDALS» list:
+  MiniMedalScrollView = MedalScrollView (`[fn]`, vtable like Swap Medals) with fixed cells
+  120x164 (`[fn]`), columns = width of `Scroll_Area` / 120 (400 -> 3, like the 380 of
+  ver260); `+0xb26` = 1 (sub-slot) and mode 10 (`[fn]`). Every cell = small DeckRevolverView
+  (`[fn](1)` -> `[fn]`: original `DeckEdit_SmallMedal_ver330`, `Medal` = Medal_S
+  190x190 natural, plus `DeckEdit_Deck_MedalInfo_ver260` in `Area_MedalInfo`); mode 10 of
+  `[fn]` puts `img/ui/Minfo_Pet01.png` (missing) in `Icon_1` and «×%01.3f» (106140350) in
+  `Txt_1`, then adds `SubslotInfoPanel` («+%01.3f», 106140372, tier in `Guilt_Icon`, attribute in
+  `Icon_Type`): the panel must cover all of `Area_MedalInfo`, hence the opaque plate
+  `Subslot_InfoPlate` (sb_2 «×+0.030», tier cut at x -8). Size of the medals and
+  overlap of the wings as in subslot_JP_1 (same cell, cannot be changed without code). Slots:
+  `[fn]` loads the Medal_S (`[fn]`) into `Medal_S` without touching its size (layout:
+  190x190 ignoreSize, before 89x109 stretched). Dragging slot -> list (`[fn]`): copy
+  of the cell with `[fn](0)` (hides Route, MedalBase, Slot, SlotNum, InfoPanel, TYpe),
+  medal in `Medal_S`, scale 1.5, added to the layer of `[fn]`, but `Medal_S` is not
+  made visible: it was hidden in the layout (sb_4). List -> slot (`[fn]`): copy
+  `[fn](0)` = original `DeckEdit_RevolverMedal_ver330`, opacity 200; it starts only with a
+  first horizontal movement (>= 30) on a non-veiled medal, a vertical one (>= 20) scrolls
+  the list. `Panel_34` (warning): `[fn]` only makes it appear/fade, position
+  from the layout, now on the «Equipped Slots» bar. Client rules (`[fn]`,
+  `[fn]`): «Equipped Slots» = consecutive full slots from the first, the multiplier adds the
+  bonuses only up to the first empty slot: with slot 1 empty 0/120 and +0.000 are correct.
 <a id="passive"></a>
-- Passive Effects di **Equipment** (I-065, banco 12 ottobre): non e' il PassiveDialog ma il popup web `Information2_Base` (`[fn]`/`[fn]`, titolo 106220508) sull'URL `passiveSettingList` del login (`[fn]` -> singleton +0x390 +0x228; `[fn]` aggiunge una query). Il server ora manda `http://api-s.sp.kingdomhearts.com/web/passive` (pagina HTML di `respondPassivePage`): in https la WebView (Chromium) rifiuta il certificato che il client nativo accetta (`tls:errore CERTIFICATE_UNKNOWN`), con lo sfondo trasparente non si vede nulla. Il PassiveDialog (`Passive_Base_ver341` originale, `Txt_None` 106220507 visibile se `passiveSettingIds` e' vuoto) lo apre `[fn]`, callback del pulsante `Button_Passive` del **Profilo** (lambda `[fn]`, creata da `[fn]`; I-086, [home_profilo](home_profilo.md#profilo)); la parte qui sotto su `PUT /passive/list` riguarda quello (dove dice Equipment leggere Profilo).
-- Passive Effects (I-065). Il pulsante di Equipment manda `PUT /passive/list` (249, corpo
-  `[fn]`, sul banco solo `{isList}`), e la callback `[fn]` apre
-  `PassiveDialog::open` (`[fn]`) solo se la risposta è valida. Il ramo 249 (0x7c670c) legge
-  `isList` e poi `[fn]`: con `isList` 1 legge `passiveSettingIds`, con 0 legge
-  `newPassiveSettingIds` (uint[]). Se l'array manca il parser rende nullo, il ramo fallisce e
-  non si apre niente: era il difetto (prima il server rispondeva solo `ret`). Con `isList` 1 si
-  legge anche `userId`: se manca la lista è la propria (singleton +0xab8), se c'è è di un altro
-  giocatore (+0xad8). `isList` 0 mette le nuove in +0xac8 e le aggiunge a +0xab8 (`[fn]`).
-  Il popup `PassiveResult` (`[fn]`) mostra nome e `description`.
-  - Schermata: `Passive_Base_ver341` con `Scroll_Area`, `Txt_None`, `Total_Area`, `Total_Score_01..15`,
-    `Panel_TotalSwitch`, `Button_PassiveInfo` (apre l'URL `passiveSettingList` di /system/url);
-    celle `Passive_Panel` (`Txt_Passive_Label` = `name` della riga passive, `Icon_New`), ordinate per
-    `sortId`. Con la lista vuota compare «There are no passive effects.» (106220507), come
-    nell'originale. Il riquadro Total (`[fn]`) mostra HP, SP ATK Gauge, STR e DEF
-    (`[fn]`) e la STR per tipo di medaglia (categorie di `[fn]`: U, R, P/S/M,
-    Upright P/S/M, Reversed P/S/M; testi 106230203..217). Tutti i layout ci sono già nelle
-    risorse servite: niente da aggiungere a `make_layouts.py`.
-  - Master (vuote nella 5.0.1), generate da `server/make-passives.js` (dopo
-    `make-keyblade-levels.js`; copia ridotta in `server/tables/passives.json`).
+- Passive Effects of **Equipment** (I-065, bench 12 October): it is not the PassiveDialog but the web popup `Information2_Base` (`[fn]`/`[fn]`, title 106220508) on the `passiveSettingList` URL of the login (`[fn]` -> singleton +0x390 +0x228; `[fn]` adds a query). The server now sends `http://api-s.sp.kingdomhearts.com/web/passive` (HTML page of `respondPassivePage`): over https the WebView (Chromium) rejects the certificate that the native client accepts (`tls:errore CERTIFICATE_UNKNOWN`), with the transparent background nothing is visible. The PassiveDialog (original `Passive_Base_ver341`, `Txt_None` 106220507 visible if `passiveSettingIds` is empty) is opened by `[fn]`, callback of the `Button_Passive` button of the **Profile** (lambda `[fn]`, created by `[fn]`; I-086, [home_profilo](home_profilo.md#profilo)); the part below on `PUT /passive/list` concerns that one (where it says Equipment read Profile).
+- Passive Effects (I-065). The Equipment button sends `PUT /passive/list` (249, body
+  `[fn]`, on the bench only `{isList}`), and the callback `[fn]` opens
+  `PassiveDialog::open` (`[fn]`) only if the response is valid. Branch 249 (0x7c670c) reads
+  `isList` and then `[fn]`: with `isList` 1 it reads `passiveSettingIds`, with 0 it reads
+  `newPassiveSettingIds` (uint[]). If the array is missing the parser returns null, the branch fails and
+  nothing opens: that was the defect (before, the server replied only `ret`). With `isList` 1 it
+  also reads `userId`: if missing the list is one's own (singleton +0xab8), if present it belongs to another
+  player (+0xad8). `isList` 0 puts the new ones in +0xac8 and adds them to +0xab8 (`[fn]`).
+  The `PassiveResult` popup (`[fn]`) shows name and `description`.
+  - Screen: `Passive_Base_ver341` with `Scroll_Area`, `Txt_None`, `Total_Area`, `Total_Score_01..15`,
+    `Panel_TotalSwitch`, `Button_PassiveInfo` (opens the `passiveSettingList` URL of /system/url);
+    cells `Passive_Panel` (`Txt_Passive_Label` = `name` of the passive row, `Icon_New`), sorted by
+    `sortId`. With the empty list «There are no passive effects.» (106220507) appears, as
+    in the original. The Total box (`[fn]`) shows HP, SP ATK Gauge, STR and DEF
+    (`[fn]`) and the STR per medal type (categories of `[fn]`: U, R, P/S/M,
+    Upright P/S/M, Reversed P/S/M; texts 106230203..217). All the layouts are already in the
+    served resources: nothing to add to `make_layouts.py`.
+  - Masters (empty in 5.0.1), generated by `server/make-passives.js` (after
+    `make-keyblade-levels.js`; reduced copy in `server/tables/passives.json`).
     - `passive` (`[fn]`): `passiveId, name, validPassive, type[], value[], hp,
-      abilitygauge, attack, defense, attribute`. type 3 = filtro medaglie, value = maschera
-      1 P, 2 S, 4 M, 8 Upright, 16 Reversed. Senza type la passiva vale per tutto.
+      abilitygauge, attack, defense, attribute`. type 3 = medal filter, value = mask
+      1 P, 2 S, 4 M, 8 Upright, 16 Reversed. Without type the passive applies to everything.
     - `passiveSetting` (`[fn]`): `passiveSettingId, sortId, passiveConditions,
       passiveValue1/2, description, passiveId`.
-    - Dati della khuxwiki «Passives» (`reference\passives\`): Lux LV 350..999 (520 righe) e
-      keyblade +35..+60 (791 righe, 23 passive distinte).
-    - Il client non valuta le condizioni. Le nostre: 1 = livello Lux >= value1; 2 = serie value1
-      con livello*10 >= value2.
-    - Id: Lux 10000+LV; keyblade 100000 + category*1000 + lv*10.
-  - Server (`keyblade-evo.js`, `respondPassiveList`): calcola le passive dal livello Lux
-    (`luxRankFor`) e dal livello più alto di ogni serie posseduta. Con `isList` 1 risponde con tutte,
-    con 0 solo quelle non ancora comunicate (`player.passiveSettingIds`), così il client non le
-    aggiunge due volte. Si raggiungono solo le passive di +35 (una per keyblade, per esempio
-    Starlight +35 «Upright S Medal STR +50») e quelle Lux da LV 350: oltre +35 la tabella keyblade
-    non va. Le passive valgono in battaglia lato client (`[fn]` per medaglia). Da provare
-    sul banco.
+    - Data from the khuxwiki «Passives» (`reference\passives\`): Lux LV 350..999 (520 rows) and
+      keyblade +35..+60 (791 rows, 23 distinct passives).
+    - The client does not evaluate the conditions. Ours: 1 = Lux level >= value1; 2 = series value1
+      with level*10 >= value2.
+    - Ids: Lux 10000+LV; keyblade 100000 + category*1000 + lv*10.
+  - Server (`keyblade-evo.js`, `respondPassiveList`): computes the passives from the Lux level
+    (`luxRankFor`) and from the highest level of every owned series. With `isList` 1 it replies with all of them,
+    with 0 only those not yet communicated (`player.passiveSettingIds`), so the client does not
+    add them twice. Only the +35 passives can be reached (one per keyblade, for example
+    Starlight +35 «Upright S Medal STR +50») and the Lux ones from LV 350: beyond +35 the keyblade table
+    does not go. The passives apply in battle on the client side (`[fn]` per medal). To be tried
+    on the bench.
 <a id="colosseo"></a>
-## Colosseo
+## Colosseum
 
-- Il menu Quests (`[fn]`) dopo la Quest 130 scrive il testo ui 102850008 in `Txt_Title4`:
-  mancava ovunque, crash a 0x8 (ora in `make_layouts.py` TEXTS).
-- Il tocco su una tessera chiama `[fn](scena, 0x10)` -> `GET /multi/status` (azione 158,
-  `[fn]`, parser `[fn]`; endpoint di un altro agente) -> `[fn](scena, 10)`.
-  Da verificare quale tessera (Union Cross o Colosseo) apre quale modo.
-- `GET /colosseum` (azione 124, parser `[fn]`): `colosseumInfo {colosseumStageId int,
-  status int}`, `colosseumStages[]` (elemento `[fn]`: `stageId`, `useAp`, `rank`,
-  `stageCount`, tutti int), `colosseumRank` uint, `userColosseum {userRank, userStageCount,
-  userStageTotalCount}` int. Altre azioni: 125 `/colosseum/reward/list`, 126 start, 127 retire,
-  128 clear, 139/140/180 classifiche.
-- Layout mancanti: `AdventureTop2_Colosseum_Button` (`[fn]`: ColosseumInfo, Button_Start/
+- The Quests menu (`[fn]`) after Quest 130 writes the ui text 102850008 into `Txt_Title4`:
+  it was missing everywhere, crash at 0x8 (now in `make_layouts.py` TEXTS).
+- The tap on a tile calls `[fn](scena, 0x10)` -> `GET /multi/status` (action 158,
+  `[fn]`, parser `[fn]`; endpoint of another agent) -> `[fn](scena, 10)`.
+  To be verified which tile (Union Cross or Colosseum) opens which mode.
+- `GET /colosseum` (action 124, parser `[fn]`): `colosseumInfo {colosseumStageId int,
+  status int}`, `colosseumStages[]` (element `[fn]`: `stageId`, `useAp`, `rank`,
+  `stageCount`, all int), `colosseumRank` uint, `userColosseum {userRank, userStageCount,
+  userStageTotalCount}` int. Other actions: 125 `/colosseum/reward/list`, 126 start, 127 retire,
+  128 clear, 139/140/180 rankings.
+- Missing layouts: `AdventureTop2_Colosseum_Button` (`[fn]`: ColosseumInfo, Button_Start/
   Txt_Start, ImageButton_QuestStart, Button_Ranking/Txt, Button_Reward, Button_Colosseum_Board/
-  Txt_Description; testi 0x6222151-153, 0x6283bb5-7), `AdventureTop2_Colosseum_Panel`
+  Txt_Description; texts 0x6222151-153, 0x6283bb5-7), `AdventureTop2_Colosseum_Panel`
   (`[fn]`), `_Target` (`[fn]`), `Colosseum_MainPanel` (`[fn]`),
   `BattleResultColosseumScene`, `RankingColosseumScene_ver1301`.
-- Percorso verificato nel codice: tessera del menu Quests (`[fn]`) -> popup
+- Path verified in the code: tile of the Quests menu (`[fn]`) -> popup
   `PvP_SelectWindow` (`[fn]`) -> «Coliseum» (+0x440 = 6) -> `[fn](0x11)` ->
-  `GET /user/notice` (241, `raidNotice {isSelfRaid, isOthersRaid}` uint obbligatori) -> modo 6 ->
-  `GET /colosseum` (124, builder `[fn]`) -> `[fn]` -> `[fn](6)` (mappa,
-  `[fn]`: stage solo con status 1) + `[fn]` (`AdventureTop2_Colosseum_Button`;
-  status 2 = «This event is unavailable.»). Il «PVP» (+0x440 = 0xb) va a `[fn](0x17)`.
-- **Tabelle master `colosseum` e `colosseumStage` vuote** (5.0.1 offline): il client non ha righe per
-  gli stage del Colosseo, quindi il server risponde status 2 e nessuno stage (`respondColosseum`).
-  Per giocarlo servono le righe master (da ricostruire) e `stage/cl_stg%05d_%02d.bin` (nessuno
-  servito) per la mappa `AdventureTop2_Colosseum_Target`, poi 126 start / 128 clear.
+  `GET /user/notice` (241, `raidNotice {isSelfRaid, isOthersRaid}` uint mandatory) -> mode 6 ->
+  `GET /colosseum` (124, builder `[fn]`) -> `[fn]` -> `[fn](6)` (map,
+  `[fn]`: stages only with status 1) + `[fn]` (`AdventureTop2_Colosseum_Button`;
+  status 2 = «This event is unavailable.»). The «PVP» (+0x440 = 0xb) goes to `[fn](0x17)`.
+- **Master tables `colosseum` and `colosseumStage` empty** (offline 5.0.1): the client has no rows for
+  the Colosseum stages, so the server replies status 2 and no stages (`respondColosseum`).
+  To play it the master rows are needed (to be rebuilt) and `stage/cl_stg%05d_%02d.bin` (none
+  served) for the map `AdventureTop2_Colosseum_Target`, then 126 start / 128 clear.
 
 <a id="pvp"></a>
-## Coliseum PvP (azioni 194-205)
+## Coliseum PvP (actions 194-205)
 
-Stato «vuoto» ma valido in `respondPvp` (server.js, rotta `pvp`). Rami di `[fn]` (Ghidra),
-un parser che restituisce null = «200 ERROR :<id>». Tipi: +0x11 bit 2 int, 3 uint, 5 uint64; +0x12
-bit 4 stringa (`recon/tools/response_schema.py`).
+«Empty» but valid state in `respondPvp` (server.js, route `pvp`). Branches of `[fn]` (Ghidra),
+a parser that returns null = «200 ERROR :<id>». Types: +0x11 bit 2 int, 3 uint, 5 uint64; +0x12
+bit 4 string (`recon/tools/response_schema.py`).
 
-| Azione | Richiesta | Ramo / parser | Chiavi obbligatorie | Risposta del server |
+| Action | Request | Branch / parser | Mandatory keys | Server response |
 |---|---|---|---|---|
-| 195 | GET `/pvp` | 0x7ca204 / `[fn]` | `pvp {pvpId, playNumber, pvpPoint, pvpClass, pvpRank` uint, `openRankingId` uint64, `numParticipant` uint`}` | pvpId `KHUX_PVP_ID` (1), pvpClass 1, resto 0 |
-| 196/197 | GET/POST `/pvp/keyblade` | 0x7c3b9c / `[fn]` | `pvp.keybladeIds` [uint64], `pvp.userDecks` (`[fn]`, elemento `[fn]`) | keybladeIds salvati (`player.pvpKeybladeIds`, vuoto), userDecks = `/user/deck` |
-| 198 | GET `/pvp/vs_list` | 0x7c559c / `[fn]` | `vsUsers` [] (elemento `[fn]`, 0x278 byte) | `[]` |
-| 199 | GET `/ranking/pvpParade` | 0x7c9a24 / `[fn]` | `pvpParade {pvpClass uint, rankingPvpTopRanker []}` (elemento `[fn]`) | classe 1, nessuno |
-| 200/201/202 | GET `/ranking/pvp`, `/own`, `/border` | 0x7c6ec8 / 0x7c5d20 / 0x7c6db0, `[fn](chiave)` | `pvpRanking` / `pvpRankingOwn` / `pvpRankingBorder` = `{rankingDatas [], rankingStatus int, rankingTermStart, rankingTermEnd}` (date "YYYY-MM-DD HH:MM:SS") | status 2, nessun dato, stagione = mese corrente |
+| 195 | GET `/pvp` | 0x7ca204 / `[fn]` | `pvp {pvpId, playNumber, pvpPoint, pvpClass, pvpRank` uint, `openRankingId` uint64, `numParticipant` uint`}` | pvpId `KHUX_PVP_ID` (1), pvpClass 1, rest 0 |
+| 196/197 | GET/POST `/pvp/keyblade` | 0x7c3b9c / `[fn]` | `pvp.keybladeIds` [uint64], `pvp.userDecks` (`[fn]`, element `[fn]`) | saved keybladeIds (`player.pvpKeybladeIds`, empty), userDecks = `/user/deck` |
+| 198 | GET `/pvp/vs_list` | 0x7c559c / `[fn]` | `vsUsers` [] (element `[fn]`, 0x278 bytes) | `[]` |
+| 199 | GET `/ranking/pvpParade` | 0x7c9a24 / `[fn]` | `pvpParade {pvpClass uint, rankingPvpTopRanker []}` (element `[fn]`) | class 1, nobody |
+| 200/201/202 | GET `/ranking/pvp`, `/own`, `/border` | 0x7c6ec8 / 0x7c5d20 / 0x7c6db0, `[fn](chiave)` | `pvpRanking` / `pvpRankingOwn` / `pvpRankingBorder` = `{rankingDatas [], rankingStatus int, rankingTermStart, rankingTermEnd}` (dates "YYYY-MM-DD HH:MM:SS") | status 2, no data, season = current month |
 | 203 | GET `/pvp/rewardlist` | 0x7ca344 / `[fn]` | `pvpPoint` uint64, `scoreRewardId` [uint] | 0, `[]` |
-| 204/205 | POST `/pvp/entry`, DELETE `/pvp/lock` | 0x7d0f0c (nessun parser, esito 1) | — | solo `ret` |
+| 204/205 | POST `/pvp/entry`, DELETE `/pvp/lock` | 0x7d0f0c (no parser, outcome 1) | — | only `ret` |
 
-- Elemento di `rankingDatas` (`[fn]`): un giocatore completo (`userData` `[fn]`,
-  `userDetail`, `userKeyblades`, `userDecks`, medaglie, skill, avatar, `pvp/keyblade`,
-  `userPvpRanking` `[fn]`). `rankingStatus` (`[fn]`): 2 = elenco, 1 e 3 = testi
-  (0x652f715 / 0x63163a2 / 0x6316388). `[fn]` mostra `rankingTermEnd` (+0xc).
-- Sequenza della scheda PvP di AdventureTop (lambda): DELETE `/pvp/lock` (`[fn]`) ->
-  `/pvp` (`[fn]`; salta se sessione +0x790 -> +0x14 == 5) -> `/pvp/keyblade` (`[fn]`)
-  -> `/pvp/vs_list` (`[fn]`, se scena +0x43b) -> `[fn]` -> `[fn](modo)` +
+- Element of `rankingDatas` (`[fn]`): a complete player (`userData` `[fn]`,
+  `userDetail`, `userKeyblades`, `userDecks`, medals, skills, avatar, `pvp/keyblade`,
+  `userPvpRanking` `[fn]`). `rankingStatus` (`[fn]`): 2 = list, 1 and 3 = texts
+  (0x652f715 / 0x63163a2 / 0x6316388). `[fn]` shows `rankingTermEnd` (+0xc).
+- Sequence of the PvP tab of AdventureTop (lambdas): DELETE `/pvp/lock` (`[fn]`) ->
+  `/pvp` (`[fn]`; skipped if session +0x790 -> +0x14 == 5) -> `/pvp/keyblade` (`[fn]`)
+  -> `/pvp/vs_list` (`[fn]`, if scene +0x43b) -> `[fn]` -> `[fn](modo)` +
   `[fn]` (`cocostudio/publish/AdventureTop2_PvP_Button.json`: Button_PvPStart/Txt_PvPStart,
   Button_Ranking, Button_Reward, PvP_DetailButton(_Panel/_Draw), PvP_Point_DetailBut, Txt_PvP_Detail).
-  Le classifiche (200-202) le chiede la scena Ranking (lambda `[fn]`/`d63060`/`d634c0`),
-  `/ranking/reward/check` (142) parte anche da `[fn]`.
-- **Bloccante: riga master `pvp`** (tabella 0x47, getter `[fn]`, null se manca).
-  `[fn]` (detailUrl a +0x94), `[fn]` (rankingId +0x90), `[fn]`,
-  `[fn]` (+0x29e), `[fn]` (scoreStartReward/EndReward +0x88/+0x8c) la dereferenziano
-  senza controllo: con `master_data/pvp.json` vuoto la scheda PvP va in crash appena costruita.
+  The rankings (200-202) are requested by the Ranking scene (lambdas `[fn]`/`d63060`/`d634c0`),
+  `/ranking/reward/check` (142) also starts from `[fn]`.
+- **Blocking: master row `pvp`** (table 0x47, getter `[fn]`, null if missing).
+  `[fn]` (detailUrl at +0x94), `[fn]` (rankingId +0x90), `[fn]`,
+  `[fn]` (+0x29e), `[fn]` (scoreStartReward/EndReward +0x88/+0x8c) dereference it
+  without a check: with an empty `master_data/pvp.json` the PvP tab crashes as soon as it is built.
   Schema (`master_types_ww431.json`): pvpId, stageId, stageBinId, dayCount, benefitDayCount,
   battleTimeout, validHoldKeyblade, holdKeyblade int[9], validRank, rankUpPer int[8], rankDownPer
   int[8], groupId, scoreStartReward, scoreEndReward, rankingId, detailUrl string(512), startTime,
-  endTime. Una riga segnaposto (pvpId 1, rankingId 0 = nessuna riga `rankingPvp`, cosi'
-  `[fn]` nasconde il widget; scoreStartReward 1 > scoreEndReward 0 = nessun premio) richiede
-  un nuovo `KHUX_REVISION`. Anche `pvpScoreReward` e `rankingPvp` sono vuote.
-- Layout mancanti (catalogo `missing_layouts.txt`): `AdventureTop2_PvP_Button`, `PvP_PlayerInfo`,
+  endTime. A placeholder row (pvpId 1, rankingId 0 = no `rankingPvp` row, so
+  `[fn]` hides the widget; scoreStartReward 1 > scoreEndReward 0 = no reward) requires
+  a new `KHUX_REVISION`. `pvpScoreReward` and `rankingPvp` are empty too.
+- Missing layouts (catalog `missing_layouts.txt`): `AdventureTop2_PvP_Button`, `PvP_PlayerInfo`,
   `PvP_KeyBladeButton`, `PvP_KeyBladeBut_Base`, `DeckEdit_KeyBladeButton_PvP`, `StartDeckPvPScene`,
   `RankingPvPScene`, `Ranking_Result_PvP`, `BattleResultPvPWinScene`/`LoseScene`, Ranking_* .
-- Resta: battaglia vera (`/pvp/entry` 204 con avversario da `vsUsers`, `/pvp/clear` 194 non
-  analizzata), classifiche con giocatori, premi (`pvpScoreReward`, `rankingPvp`).
+- Remaining: real battle (`/pvp/entry` 204 with an opponent from `vsUsers`, `/pvp/clear` 194 not
+  analyzed), rankings with players, rewards (`pvpScoreReward`, `rankingPvp`).
 
 <a id="party-ranking"></a>
-## Party e classifiche (Rankings della home)
+## Party and rankings (home Rankings)
 
-Banco 14-10 (I-106, I-113, I-114). Modulo `server/routes-party-ranking.js`.
+Bench 14-10 (I-106, I-113, I-114). Module `server/routes-party-ranking.js`.
 
-- **Party / Party Search** (Other > Party, banner della home): `GET /payment/info` (24), `GET /party` (83),
-  `GET /party/member/list` (86), `PUT /party/notice` (81), `POST /party/login` (82), poi SIGSEGV a
-  0x170. Le risposte non c'entrano: con `userParty.partyId` 0 la 82 legge solo `userParty`
-  (`[fn]`, salto a 0x7c4ab0 prima di `party`/`partyLeader`). La scena `[fn]` carica
-  `cocostudio/publish/PartyTopScene_ver131.json`, assente da ogni risorsa WW, come tutti i 31 layout
-  Party che il client cita (`PartyTop_*`, `PopupNormal_Party*`, `PopupNormal_PartySearch_*`; servite
-  solo `PartyTop_JoinManagement_Scene_ver150` e `PartyTop_MultiMemberList_Scene_ver150`): GUIReader
-  torna null. Originali JP 4.3.1 in `recon/tools/jp_coco_layouts.txt` (tutti ok a `--check`).
-  Senza party si apre `PartyTop_Initial.json` (`[fn]`: Txt_PREdit/Button_PREdit,
-  Txt/Button_InitialRequest = cerca, Txt/Button_InitialManagement = crea).
+- **Party / Party Search** (Other > Party, home banner): `GET /payment/info` (24), `GET /party` (83),
+  `GET /party/member/list` (86), `PUT /party/notice` (81), `POST /party/login` (82), then SIGSEGV at
+  0x170. The responses are not the cause: with `userParty.partyId` 0 the 82 reads only `userParty`
+  (`[fn]`, jump to 0x7c4ab0 before `party`/`partyLeader`). The scene `[fn]` loads
+  `cocostudio/publish/PartyTopScene_ver131.json`, missing from every WW resource, like all the 31 Party
+  layouts the client cites (`PartyTop_*`, `PopupNormal_Party*`, `PopupNormal_PartySearch_*`; only
+  `PartyTop_JoinManagement_Scene_ver150` and `PartyTop_MultiMemberList_Scene_ver150` served): GUIReader
+  returns null. JP 4.3.1 originals in `recon/tools/jp_coco_layouts.txt` (all ok at `--check`).
+  Without a party `PartyTop_Initial.json` opens (`[fn]`: Txt_PREdit/Button_PREdit,
+  Txt/Button_InitialRequest = search, Txt/Button_InitialManagement = create).
 - `POST /party/login` (82): `userParty` + `isAbsenceLeader`. `GET /party/search/active` (87):
-  `partyList[]` (`[fn]`), vuoto.
-- **Party di un solo giocatore** (15-10, provato): schemi ricavati offline (agente, `D:\Progetto_Restauro_KH_UX\tmp\party_re\`
-  REPORT.md e decompilati). Create Party = `POST /party/create` (79, ramo 0x7c494c) `{name, message, playStyle,
-  agreeType}` -> `{userParty, party, firstReward int}`; `player.party` nel salvataggio. Con `partyId` != 0 la catena
-  diventa 83 -> 86 -> 81 -> **84 `GET /party/detail`** (`{rank uint}`) -> 82, e servono: `party` (`[fn]`:
-  ... `chatId` uint, `chatEndpointUrl`), in 82 `partyLeader` = elemento giocatore `[fn]` **con `userMedal` e
-  `userSkills`** (come `/stage/support/list`, `selfPlayerElement` in server.js), in 86 `partyUserList` con lo stesso
-  elemento piu' i dettagli `[fn]` (`userKeyblade`, `userRanking`, `lastStageId`, `comment`, `linkPlatformId`,
-  `userColosseumRanking`/`userPvpRanking` int, `raidHelpNumber`). Il pannello destro (`[fn]`) cerca il leader
-  (`supportUserId` == `party.leaderUserId`) in `partyUserList`: senza, indice -1. Leader non assente -> PartyTop_right1.
-  Chat: servizio HTTP a parte (non Photon), con `chatId` 0 e url vuoti non parte; ChatScene non ha layout (crash
-  probabile toccando Chat). Banco 15-10: «Kxos's Party» con Leader, Members 1/30, Play Style, Approval, messaggio e
-  pulsanti Edit/Recruit/Manage/Rankings/Search.
-- Pulsanti del party (15-10, tutti provati sul banco, nessun crash):
-  - Edit = `POST /party/update` (80) col corpo di create; Leave (in Manage) = `POST /party/leave` (85); stesso ramo
-    0x7c3f88, solo `userParty`. Leave -> «You have left the party.» e ritorno a «Create or join a party».
-  - Recruit = `GET /party/invite/search` (98): `[fn]` con la chiave **`partyUserList`** (stringa 0x1775281),
-    non `supportUsers`: con la chiave sbagliata «200 ERROR :98».
-  - Manage = scena servita `PartyTop_JoinManagement_Scene_ver150`, che cita `PartyTop_JoinManagement_Right.json` assente
-    nel WW (SIGSEGV in strlen da GUIReader): importato dal JP (`jp_coco_layouts.txt`). Schede: 91 `/party/applicant/list`
+  `partyList[]` (`[fn]`), empty.
+- **Single-player party** (15-10, tried): schemas worked out offline (agent, `D:\Progetto_Restauro_KH_UX\tmp\party_re\`
+  REPORT.md and decompiled code). Create Party = `POST /party/create` (79, branch 0x7c494c) `{name, message, playStyle,
+  agreeType}` -> `{userParty, party, firstReward int}`; `player.party` in the save. With `partyId` != 0 the chain
+  becomes 83 -> 86 -> 81 -> **84 `GET /party/detail`** (`{rank uint}`) -> 82, and these are needed: `party` (`[fn]`:
+  ... `chatId` uint, `chatEndpointUrl`), in 82 `partyLeader` = player element `[fn]` **with `userMedal` and
+  `userSkills`** (like `/stage/support/list`, `selfPlayerElement` in server.js), in 86 `partyUserList` with the same
+  element plus the details `[fn]` (`userKeyblade`, `userRanking`, `lastStageId`, `comment`, `linkPlatformId`,
+  `userColosseumRanking`/`userPvpRanking` int, `raidHelpNumber`). The right panel (`[fn]`) looks for the leader
+  (`supportUserId` == `party.leaderUserId`) in `partyUserList`: without it, index -1. Leader not absent -> PartyTop_right1.
+  Chat: separate HTTP service (not Photon), with `chatId` 0 and empty urls it does not start; ChatScene has no layout (crash
+  likely when tapping Chat). Bench 15-10: «Kxos's Party» with Leader, Members 1/30, Play Style, Approval, message and
+  buttons Edit/Recruit/Manage/Rankings/Search.
+- Party buttons (15-10, all tried on the bench, no crash):
+  - Edit = `POST /party/update` (80) with the body of create; Leave (in Manage) = `POST /party/leave` (85); same branch
+    0x7c3f88, only `userParty`. Leave -> «You have left the party.» and return to «Create or join a party».
+  - Recruit = `GET /party/invite/search` (98): `[fn]` with the key **`partyUserList`** (string 0x1775281),
+    not `supportUsers`: with the wrong key «200 ERROR :98».
+  - Manage = served scene `PartyTop_JoinManagement_Scene_ver150`, which cites `PartyTop_JoinManagement_Right.json` missing
+    in WW (SIGSEGV in strlen from GUIReader): imported from JP (`jp_coco_layouts.txt`). Tabs: 91 `/party/applicant/list`
     {partyApplicants, partyUserList}, 100 `/party/invite/list` {partyOffers, partyUserList}, 102 `/party/offer/list`
-    {partyOffers, partyList}; 89 `/party/application/list` {partyApplicants, partyList}: tutte vuote.
-  - Rankings = classifiche party 137/138/184 (vuote); Search = 87 `/party/search/active` (vuota).
-  - «Receive 100 Jewels for joining your first party!» (testo di PartyTop_Initial): alla prima create `firstReward` 1,
-    `flagFirstReward` 1 da allora (`player.partyFirstRewardDone`) e regalo «First Party Bonus» Jewel x100 nei Presents
-    (`addPresent`): il client non mostra nulla dopo la 79 e non rilegge i jewel. Banco 15-10: Collect -> «Received
-    Jewel x 100!». Effetto vero di firstReward nel client non verificato.
-  - Da fare: medaglia
-    della scheda del membro (oggi la prima della lista), Chat (ChatScene senza layout).
-  - Icone `img/partyRank/Party_RankIcon1-5` (corone arcobaleno/argento luccicante/oro/argento/bronzo) importate dal JP
-    4.3.1 (`import_jp_coco.py`). Prova con `party.rank` 5 (15-10): la corona resta quella arcobaleno del layout; da
-    verificare quale campo sceglie l'icona (forse il `rank` della 84 o la classifica).
-- «7 ERROR :249» al riavvio dopo il crash del Party = `PUT /passive/list` (249) con codice curl 7
-  (connessione rifiutata): la rete del guest era caduta, non e' un errore del server.
-- **Classifiche** (`[fn]` disegna l'elenco; scheda Lux = tipo 4, `+0x360` 1 = propria
-  posizione / 2 = prime / altro = confine; `rankingStatus` 2 = elenco, 1/3 = messaggio):
-  - Lux, parser `[fn]` con chiave per azione: 129 `/ranking/weekly/user`
+    {partyOffers, partyList}; 89 `/party/application/list` {partyApplicants, partyList}: all empty.
+  - Rankings = party rankings 137/138/184 (empty); Search = 87 `/party/search/active` (empty).
+  - «Receive 100 Jewels for joining your first party!» (text of PartyTop_Initial): at the first create `firstReward` 1,
+    `flagFirstReward` 1 from then on (`player.partyFirstRewardDone`) and gift «First Party Bonus» Jewel x100 in the Presents
+    (`addPresent`): the client shows nothing after the 79 and does not re-read the jewels. Bench 15-10: Collect -> «Received
+    Jewel x 100!». Real effect of firstReward in the client not verified.
+  - To do: medal
+    of the member's card (today the first of the list), Chat (ChatScene without layout).
+  - Icons `img/partyRank/Party_RankIcon1-5` (rainbow/sparkling silver/gold/silver/bronze crowns) imported from JP
+    4.3.1 (`import_jp_coco.py`). Test with `party.rank` 5 (15-10): the crown stays the rainbow one of the layout; to be
+    verified which field chooses the icon (maybe the `rank` of 84 or the ranking).
+- «7 ERROR :249» on restart after the Party crash = `PUT /passive/list` (249) with curl code 7
+  (connection refused): the guest network had dropped, it is not a server error.
+- **Rankings** (`[fn]` draws the list; Lux tab = type 4, `+0x360` 1 = own
+  position / 2 = top / other = border; `rankingStatus` 2 = list, 1/3 = message):
+  - Lux, parser `[fn]` with a key per action: 129 `/ranking/weekly/user`
     (`luxRankingWeekly`), 130 monthly (`luxRankingMonthly`), 131/132 `.../own`
-    (`luxRankingWeeklyOwn`/`MonthlyOwn`), 133 `/ranking/lux` e 134 `/ranking/lux/own` (`luxRanking`),
-    178 `/ranking/lux/border` (`luxRankingBorder`). Campi `rankingDatas[]`, `rankingStatus` int,
-    `rankingTermStart`/`rankingTermEnd` data, `lastRank` int. Elemento `[fn]`: **`userData.user`** e **`userData.userDetail` annidati** come in `GET /user` (`[fn]` modo 0 cerca `user` dentro `userData`, `[fn]` cerca `userData` -> `userDetail`; piatti = «200 ERROR :133», banco 14-10): `userData`
-    (campi di `userData.user`, `[fn]`), `userDetail` (`[fn]`), `userAvatar`
-    (`[fn]`), `lux` uint64, `rank` int. Senza 133: «200 ERROR :133».
-  - High score `[fn]` (135/136/179) e Colosseo `[fn]` (139/140/180): stessi campi;
+    (`luxRankingWeeklyOwn`/`MonthlyOwn`), 133 `/ranking/lux` and 134 `/ranking/lux/own` (`luxRanking`),
+    178 `/ranking/lux/border` (`luxRankingBorder`). Fields `rankingDatas[]`, `rankingStatus` int,
+    `rankingTermStart`/`rankingTermEnd` date, `lastRank` int. Element `[fn]`: **`userData.user`** and **`userData.userDetail` nested** as in `GET /user` (`[fn]` mode 0 looks for `user` inside `userData`, `[fn]` looks for `userData` -> `userDetail`; flat = «200 ERROR :133», bench 14-10): `userData`
+    (fields of `userData.user`, `[fn]`), `userDetail` (`[fn]`), `userAvatar`
+    (`[fn]`), `lux` uint64, `rank` int. Without 133: «200 ERROR :133».
+  - High score `[fn]` (135/136/179) and Colosseum `[fn]` (139/140/180): same fields;
     Party `[fn]` (137/138/184): `rankingDatas`, `rankingStatus`, `lastRank`, `updateTime`,
-    `nextUpdateTime`. Server: il giocatore 1° nelle Lux, le altre vuote.
-  - Layout: `Ranking_MainPanel_ver230` (`[fn]`), `RankingPartyScene_ver1301` (`[fn]`)
-    e gli altri 17 `Ranking*` citati, tutti assenti dalle risorse WW: originali JP nell'elenco; 4
-    (`Ranking_Result*`, `Ranking_Reward_ver1301`, `RankingRewardScene_ver1301`) da decidere per
-    `Rank_Title_3.png`/`Rank_Result_Deco.png` assenti ovunque.
-  - Crash dopo `/ranking/lux/border` (SIGSEGV a 0x8, banco 14-10): `[fn]` riempie l'elenco Lux
-    (legge +0x5f0/+0x600/+0x7f0) e sulla riga del giocatore crea l'armatura `Cursor_Anim_Ranking2`
-    (`[fn]`, poi `getAnimation()->playWithIndex(0)`), registrata da `[fn]` con
-    `Cursor_Anim_Ranking2.ExportJson`: assente dalle risorse WW (come `Cursor_Anim_Ranking`). Import in
-    `import_jp_coco.py` (`JP_ARM`): ExportJson JP con plist e texture sul nome libero `MyPageAnime0`
-    (i plist nuovi non si caricano, [risorse_layout](risorse_layout.md#regole)); le due armature hanno lo
-    stesso fotogramma `Rank_Panel_User_Eff.png` (`Cursor_Anim_Ranking20.png` manca anche nel JP).
-    Stessa riga: numero di posizione `img/colosseum/Colosseum_Rank_Num1..10.png` e i fumetti
-    `img/ranking/Rank_Balloon*` (`Ranking_IconPanel_ver131`, `[fn]`), assenti dalle risorse WW:
-    dal JP (`Rank_Balloon1_01` = copia di `1_02`, manca anche nel JP).
+    `nextUpdateTime`. Server: the player 1st in the Lux ones, the others empty.
+  - Layouts: `Ranking_MainPanel_ver230` (`[fn]`), `RankingPartyScene_ver1301` (`[fn]`)
+    and the other 17 `Ranking*` cited, all missing from the WW resources: JP originals in the list; 4
+    (`Ranking_Result*`, `Ranking_Reward_ver1301`, `RankingRewardScene_ver1301`) to be decided because of
+    `Rank_Title_3.png`/`Rank_Result_Deco.png` missing everywhere.
+  - Crash after `/ranking/lux/border` (SIGSEGV at 0x8, bench 14-10): `[fn]` fills the Lux list
+    (reads +0x5f0/+0x600/+0x7f0) and on the player's row creates the armature `Cursor_Anim_Ranking2`
+    (`[fn]`, then `getAnimation()->playWithIndex(0)`), registered by `[fn]` with
+    `Cursor_Anim_Ranking2.ExportJson`: missing from the WW resources (like `Cursor_Anim_Ranking`). Import in
+    `import_jp_coco.py` (`JP_ARM`): JP ExportJson with plist and texture on the free name `MyPageAnime0`
+    (new plists are not loaded, [risorse_layout](risorse_layout.md#regole)); the two armatures have the
+    same frame `Rank_Panel_User_Eff.png` (`Cursor_Anim_Ranking20.png` is missing in JP too).
+    Same row: position number `img/colosseum/Colosseum_Rank_Num1..10.png` and the balloons
+    `img/ranking/Rank_Balloon*` (`Ranking_IconPanel_ver131`, `[fn]`), missing from the WW resources:
+    from JP (`Rank_Balloon1_01` = copy of `1_02`, missing in JP too).
