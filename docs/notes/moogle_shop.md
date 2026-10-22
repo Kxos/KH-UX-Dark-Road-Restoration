@@ -1,100 +1,99 @@
-# Moogle Shop (Items e Traits)
+# Moogle Shop (Items and Traits)
 
-Riferimenti: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Tocchi in
+References: `reference\moogle_shop\` (moogle_shop_01.png, jp410_136.png). Taps in
 [banco.md](banco.md#tocchi).
 
 <a id="dati"></a>
-## Dati e API
+## Data and API
 
-- `server/make-moogleshop.js` genera `moogleshop` e `shuffleskill` (dalla khuxwiki; nessun dump
-  pubblico). Campi: `type` 1 Traits / 2 Items; `payType` 1 jewel (2 munny: ipotesi); `itemType` come i
-  premi (5 materiale, 3 medaglia); `frameType` 1 = riga blu (Panel), altrimenti dorata
-  (Panel_Rare/SkillPanel_Rare/Count_Rare); `display` 1 = mostra «N days left» fino a `endDate`;
-  `count` = scambi possibili. `shuffleskill.category` = icona `img/kakusei/Kakusei_Icon%04d` (10
-  gauge, 20 HP, 30-50 resistenze, 60/61 terra/aria, 70 raid, 80 attacco extra, 90 STR, 100 DEF);
-  `shuffleskill.type` deve essere 1, altrimenti la riga non compare.
-- `GET /moogleshop/list` -> righe attive `{moogleshopId, limitCount}` (vuoto = «No items available.»).
-- `POST /moogleshop/buy` (248) `{moogleshopId, userMedalId, userShuffleSkillId (0 = slot libero)}` ->
-  `shuffleskillUserMedals`, `userMedals` (ogni elemento con `userShuffleSkills`, `[fn]`:
+- `server/make-moogleshop.js` generates `moogleshop` and `shuffleskill` (from the khuxwiki; no public
+  dump). Fields: `type` 1 Traits / 2 Items; `payType` 1 jewel (2 munny: hypothesis); `itemType` as in the
+  rewards (5 material, 3 medal); `frameType` 1 = blue row (Panel), otherwise gold
+  (Panel_Rare/SkillPanel_Rare/Count_Rare); `display` 1 = shows «N days left» until `endDate`;
+  `count` = possible exchanges. `shuffleskill.category` = icon `img/kakusei/Kakusei_Icon%04d` (10
+  gauge, 20 HP, 30-50 resistances, 60/61 ground/aerial, 70 raid, 80 extra attack, 90 STR, 100 DEF);
+  `shuffleskill.type` must be 1, otherwise the row does not appear.
+- `GET /moogleshop/list` -> active rows `{moogleshopId, limitCount}` (empty = «No items available.»).
+- `POST /moogleshop/buy` (248) `{moogleshopId, userMedalId, userShuffleSkillId (0 = free slot)}` ->
+  `shuffleskillUserMedals`, `userMedals` (each element with `userShuffleSkills`, `[fn]`:
   userShuffleSkillId, shuffleSkillId, userMedalId, getDatetime, type 0), `userSkills`,
-  `userMaterials`, `emblemIds`, `guiltBurstFirst/MaxUserMedalIds`, `userData.userPoint`. Il server
-  salva in `player.medalTraits[userMedalId]`; costo e conteggio scalati solo se riesce, altrimenti
-  solo `ret` («200 ERROR :248»).
+  `userMaterials`, `emblemIds`, `guiltBurstFirst/MaxUserMedalIds`, `userData.userPoint`. The server
+  saves into `player.medalTraits[userMedalId]`; cost and count are deducted only on success, otherwise
+  only `ret` («200 ERROR :248»).
 
 <a id="schermata"></a>
-## Schermata
+## Screen
 
-- Scena `MoogleShopScene_ver410` generata; moogle a destra = `Moogle_Fla`, `lwf/mogshop/mog_wait`
-  (LWF vuoto: il moogle non si vede). Targa `LB_Munnies` (con `Txt_MunniesPossessed_Label`/
-  `Txt_Munnies`) nel layout ma non compare sul banco.
-- Righe: `changeRowItem` `[fn]`, `changeRowKakusei` `[fn]`, icona generica
-  `[fn]` (LuxBoard, AVT, Incentive, Medal, KB, Stamp, Icon_Skill nel `Panel_Item`). Texture
-  generate `Mogshop_plate1`, `But29`/`But31` (righe dei trait), copie `But30` (= But01).
-- Niente Label `Txt_Count_Cus` nei layout: il codice la crea da `Txt_Count` (`[fn]`). Nei nomi
-  dei trait «%» va raddoppiato (passano da printf).
-- Conferma `MoogleShop_Traits_AddCheck.json` (`openItemBuyPopup` `[fn]`, anche con
-  `LB_Jewel`), esito «Received ...».
-- Valuta degli Items (I-122): **sempre jewel**, senza guardare `payType`. `changeRowItem` scrive solo
-  il prezzo (`+0x238`) in `Jewel` > `Txt_Jewel` e non carica icone: l'icona e' quella del layout.
-  `openItemBuyPopup` usa il testo 106220414 «Spend N Jewels in exchange for X?», mette in
-  `Txt_CrownPossessed_Label` i jewel posseduti (gratis + acquistati) e nasconde sempre `LB_Munnies`,
-  `Txt_MunniesPossessed_Label`, `Txt_Munnies`. Originale: WW `moogle_shop_01.png` (Rainbow Gem x10 =
-  100 jewel, «Exchange Jewels for materials and traits!»); riga JP `MoogleShop_Item_Panel` con
-  `Ico_jewel.png`. Il munny nelle righe veniva dalle texture: in `cocostudio/publish` la numerazione
-  non e' quella di `img/incentive` (publish `IncentiveIcon_01` = jewel, servito WW; JP publish
-  `IncentiveIcon_02` = munny, `img/incentive/IncentiveIcon_02` = jewel). Il nostro `Jewel_Icon`
-  puntava a `IncentiveIcon_02.png` (copia del jewel di `img/incentive` in `COPIES`), ma
-  `import_jp_coco.py` la sovrascrive con la `IncentiveIcon_02` JP (munny) per i layout JP che la
-  usano. Ora i layout generati usano `IncentiveIcon_01.png` e la copia 02 non c'e' piu'.
+- Scene `MoogleShopScene_ver410` generated; the moogle on the right = `Moogle_Fla`, `lwf/mogshop/mog_wait`
+  (empty LWF: the moogle is not visible). Plate `LB_Munnies` (with `Txt_MunniesPossessed_Label`/
+  `Txt_Munnies`) is in the layout but does not appear on the bench.
+- Rows: `changeRowItem` `[fn]`, `changeRowKakusei` `[fn]`, generic icon
+  `[fn]` (LuxBoard, AVT, Incentive, Medal, KB, Stamp, Icon_Skill in the `Panel_Item`). Generated
+  textures `Mogshop_plate1`, `But29`/`But31` (trait rows), copies `But30` (= But01).
+- No `Txt_Count_Cus` Label in the layouts: the code creates it from `Txt_Count` (`[fn]`). In trait
+  names «%» must be doubled (they go through printf).
+- Confirmation `MoogleShop_Traits_AddCheck.json` (`openItemBuyPopup` `[fn]`, also with
+  `LB_Jewel`), result «Received ...».
+- Currency of the Items (I-122): **always jewels**, without looking at `payType`. `changeRowItem` only writes
+  the price (`+0x238`) into `Jewel` > `Txt_Jewel` and loads no icons: the icon is the layout's one.
+  `openItemBuyPopup` uses text 106220414 «Spend N Jewels in exchange for X?», puts the owned jewels
+  (free + purchased) into `Txt_CrownPossessed_Label` and always hides `LB_Munnies`,
+  `Txt_MunniesPossessed_Label`, `Txt_Munnies`. Original: WW `moogle_shop_01.png` (Rainbow Gem x10 =
+  100 jewels, «Exchange Jewels for materials and traits!»); JP row `MoogleShop_Item_Panel` with
+  `Ico_jewel.png`. The munny in the rows came from the textures: in `cocostudio/publish` the numbering
+  is not the same as in `img/incentive` (publish `IncentiveIcon_01` = jewel, served WW; JP publish
+  `IncentiveIcon_02` = munny, `img/incentive/IncentiveIcon_02` = jewel). Our `Jewel_Icon`
+  pointed to `IncentiveIcon_02.png` (copy of the `img/incentive` jewel in `COPIES`), but
+  `import_jp_coco.py` overwrites it with the JP `IncentiveIcon_02` (munny) for the JP layouts that
+  use it. Now the generated layouts use `IncentiveIcon_01.png` and the 02 copy is gone.
 
 <a id="trait"></a>
-## Scambio dei trait
+## Trait exchange
 
-- Tocco della riga (controlla gia' il prezzo: «You don't have enough Jewels»), «Select Medal» (grigio
-  senza riga scelta) apre `MoogleShop_Traits_MedalSelect_Pop_ver410` (`[fn]`, generato da
+- Tapping the row (already checks the price: «You don't have enough Jewels»), «Select Medal» (grey
+  with no row chosen) opens `MoogleShop_Traits_MedalSelect_Pop_ver410` (`[fn]`, generated by
   `trait_medal_select_popup` in `make_layouts.py`).
-- Griglia `MiniMedalScrollView` (`[fn]`): il **tocco** apre il dettaglio (callback +0x930,
-  `[fn]`); la **scelta si fa trascinando** la medaglia sullo slot a sinistra (+0x990
-  `[fn]` controlla il rilascio dentro `MedalArea` > `Medal1`, misura 176x176; +0x960
-  `[fn]` la imposta e riempie `KakuseiSkill_Window` con `[fn]`).
-- Medaglie velate (grigio 100,100,100): `[fn]` con flag +0xb29 = tipo 9/10 (supporto) oppure
+- Grid `MiniMedalScrollView` (`[fn]`): a **tap** opens the detail (callback +0x930,
+  `[fn]`); the **choice is made by dragging** the medal onto the slot on the left (+0x990
+  `[fn]` checks the drop inside `MedalArea` > `Medal1`, size 176x176; +0x960
+  `[fn]` sets it and fills `KakuseiSkill_Window` with `[fn]`).
+- Veiled medals (grey 100,100,100): `[fn]` with flag +0xb29 = type 9/10 (support) or
   `spShuffleskillSlot` 0.
-- **Crash su «Select Medal» (I-121, 14-10): non era il layout.** Prima di aprire l'elenco il client
-  chiede `GET /user/skill` (azione 13), che il server non gestiva: la lista delle skill della sessione
-  (+0x1c8) restava vuota e la cella di una medaglia con skill (Scrooge con skill calcolata dal 12-10,
-  Overwrite) chiedeva la riga skill 0: crash in `[fn]` (pc 0xeb78a4, chiamata da `[fn]`;
-  stackcap `i121`). Il server ora risponde `userSkills` completa; il popup originale JP resta.
-- Slot pieni: `MoogleShop_Traits_OverwriteCheck_ver410` (OK = `Button_Draw`/`Txt_Draw`,
-  `Txt_Wording2` «Replace X with Y?»; lo slot si sceglie toccando la riga del trait).
+- **Crash on «Select Medal» (I-121, 14-10): it was not the layout.** Before opening the list the client
+  requests `GET /user/skill` (action 13), which the server did not handle: the session skill list
+  (+0x1c8) stayed empty and the cell of a medal with a skill (Scrooge with a computed skill since 12-10,
+  Overwrite) asked for skill row 0: crash in `[fn]` (pc 0xeb78a4, called by `[fn]`;
+  stackcap `i121`). The server now answers with the full `userSkills`; the original JP popup stays.
+- Full slots: `MoogleShop_Traits_OverwriteCheck_ver410` (OK = `Button_Draw`/`Txt_Draw`,
+  `Txt_Wording2` «Replace X with Y?»; the slot is chosen by tapping the trait row).
 
-- Attesa dopo «Set Trait» (banco 14-10): la risposta di `POST /moogleshop/buy` (248) conteneva le liste intere
-  di medaglie/skill/materiali; il client le applica voce per voce (upsert, O(n^2) con ~2076 medaglie) e restava
-  fermo **5,8 s** dal tocco su OK al risultato. Ora `inventorySnapshot`/`inventoryBlocks` mandano solo le voci cambiate:
-  **0,9 s**, e la lista delle medaglie resta intera (2076/2243 dopo lo scambio: anche per la 248 e' un upsert).
-  Con un inventario normale (centinaia di medaglie) l'attesa originale sarebbe stata una frazione di secondo:
-  il ritardo veniva dall'inventario di prova con tutte le medaglie (KHUX_MEDALS_ALL).
+- Wait after «Set Trait» (bench 14-10): the response of `POST /moogleshop/buy` (248) contained the whole lists
+  of medals/skills/materials; the client applies them entry by entry (upsert, O(n^2) with ~2076 medals) and stayed
+  stuck for **5.8 s** from the tap on OK to the result. Now `inventorySnapshot`/`inventoryBlocks` send only the changed entries:
+  **0.9 s**, and the medal list stays whole (2076/2243 after the exchange: for 248 too it is an upsert).
+  With a normal inventory (hundreds of medals) the original wait would have been a fraction of a second:
+  the delay came from the test inventory with all medals (KHUX_MEDALS_ALL).
 
 <a id="aperti"></a>
-## Aperti
+## Open
 
-Nomi lunghi dei trait che toccano l'icona; moogle invisibile; targa `LB_Munnies` assente; «N days
-left» mostra 1980 giorni (orologio del guest al 2021, `endDate` sul 2026) (ISSUES I-021). Cursore rosso
-dello slot da sostituire (armatura `MedalInfo_Anim`, `animeCursor`) piu' largo della finestra; trait
-speciali (Spirit Training) non gestiti (ISSUES I-043).
+Long trait names touching the icon; invisible moogle; plate `LB_Munnies` missing; «N days
+left» shows 1980 days (guest clock at 2021, `endDate` in 2026) (ISSUES I-021). Red cursor
+of the slot to replace (armature `MedalInfo_Anim`, `animeCursor`) wider than the window; special
+traits (Spirit Training) not handled (ISSUES I-043).
 
 <a id="trait-medal"></a>
-## Trait Medal nel Moogle Shop (ricerca 20-10, rimandata a I-164)
+## Trait Medals in the Moogle Shop (research 20-10, postponed to I-164)
 
-Decisione dell'utente (20-10): si fa insieme al bilanciamento delle risorse (I-164). Offerte originali trovate
-(notice in `referenceanners
-otices.json`, khuxwiki in `reference	rait_medals\`; elenco completo in
-`D:\Progetto_Restauro_KH_UX	mp	m\MOOGLE_TRAIT.md` e `moogle_trait_offers.json`):
-- 25-10-2019 (notice 59270): Trait Medal #155 x30 a 300 jewel, una volta, durante il deal della stessa medaglia.
-- 22-11-2019 (60076, Black Friday): «99 Trait Medal per 1.000 jewel», lineup giornaliera; numeri non scritti.
-- 17 e 24-02-2020 (63137/63138): 12 Trait Medal di deal passati, x15 a 800 jewel, senza limite, una settimana l'una.
-- 7-12-2020 / 7-3-2021 (khuxwiki, scheda Limited-Time): 35 righe x10 a 1.000 jewel, senza limite (#282-#313 e
-  alcune vecchie).
-- #189-#313 (khuxwiki): 102 periodi «Moogle Shop from X to Y» (30-3-2020 / 1-3-2021), quasi sempre quelli del deal;
-  prezzo e quantita' ignoti per mar-nov 2020.
-- Le vendite WJE «Moogle Shop Sale» (500/100/1.000 jewel) sono di Trait, non di Trait Medal. Nessuna condizione VIP
-  scritta per le Trait Medal.
+User's decision (20-10): it will be done together with the resource balancing (I-164). Original offers found
+(notices in `reference\banners\notices.json`, khuxwiki in `reference\trait_medals\`; full list in
+`D:\Progetto_Restauro_KH_UX\tmp\tm\MOOGLE_TRAIT.md` and `moogle_trait_offers.json`):
+- 25-10-2019 (notice 59270): Trait Medal #155 x30 for 300 jewels, once, during the deal of the same medal.
+- 22-11-2019 (60076, Black Friday): «99 Trait Medal per 1.000 jewel», daily lineup; numbers not written.
+- 17 and 24-02-2020 (63137/63138): 12 Trait Medals from past deals, x15 for 800 jewels, no limit, one week each.
+- 7-12-2020 / 7-3-2021 (khuxwiki, Limited-Time tab): 35 rows x10 for 1,000 jewels, no limit (#282-#313 and
+  some old ones).
+- #189-#313 (khuxwiki): 102 periods «Moogle Shop from X to Y» (30-3-2020 / 1-3-2021), almost always those of the deal;
+  price and quantity unknown for Mar-Nov 2020.
+- The WJE «Moogle Shop Sale» sales (500/100/1,000 jewels) are of Traits, not of Trait Medals. No VIP condition
+  written for Trait Medals.
