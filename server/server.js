@@ -186,6 +186,7 @@ function route(url) {
   if (p === '/union/change') return 'unionchange';
   if (p === '/moogleshop/list') return 'moogleshoplist';
   if (/^\/stage\/\d+$/.test(p)) return 'stagelist';
+  if (p === '/stage/hard') return 'stagehard'; // Proud Mode (I-200)
   if (p === '/stage/start') return 'stagestart';
   if (p === '/stage/continue' || p === '/stage/retire') return 'stagecontinue';
   if (p === '/stage/clear') return 'stageclear';
@@ -1089,8 +1090,17 @@ function chestDropTypes(rewardId) {
   return row.type.slice(0, 4).map((t) => (t === ENEMY_DROP_TYPE ? 0 : t));
 }
 
+// Mappa (POI) dello stage giocato: una riga Proud (stageKind 4, I-200) usa quella della storia (stageBinId, come il
+// client che carica mappoi_stg<stageBinId>); le varianti della Q555 Proud (1018300 + unionId - 1) -> 18300 + unionId - 1
+function poiStageId(stageId) {
+  const id = Number(stageId);
+  const row = stageRowOf(id);
+  return row && row.stageKind === PROUD_KIND && row.stageBinId ? row.stageBinId + (id - row.stageId) : id;
+}
+const poiOf = (stageId) => STAGE_POI[poiStageId(stageId)];
+
 function stageTreasures(stageId) {
-  return (STAGE_POI[stageId]?.chests || [])
+  return (poiOf(stageId)?.chests || [])
     .map((c) => ({ uniqueTreasureId: c.uid, dropItemTypeIds: chestDropTypes(c.reward) }))
     .filter((t) => t.dropItemTypeIds.some(Boolean));
 }
@@ -1104,7 +1114,7 @@ function stageTreasures(stageId) {
 // come record nella mappa (es. 1 nel Prologue): si mandano tutti quelli da 1 al
 // massimo, tolti i forzieri (stesso spazio di id).
 function stageEnemyDrops(stageId) {
-  const poi = STAGE_POI[stageId];
+  const poi = poiOf(stageId);
   if (!poi) return [];
   const chests = new Set(poi.chests.map((c) => c.uid));
   const max = Math.max(0, ...poi.enemies.map((e) => e.uid));
@@ -1127,7 +1137,7 @@ function stealMultiplier() {
 function applySteal(stageId, drops, rng = Math.random, mult = stealMultiplier()) {
   player.steal = null;
   if (mult < 2) return drops;
-  const rows = new Map((STAGE_POI[stageId]?.enemies || []).map((e) => [e.uid, e.reward]));
+  const rows = new Map((poiOf(stageId)?.enemies || []).map((e) => [e.uid, e.reward]));
   // solo i nemici con un record nella mappa: gli altri uid (mandati per sicurezza, es. 1) non compaiono mai (banco 20-10)
   const withDrop = drops.filter((d) => rows.has(d.uniqueEnemyId) && rewardRowById(rows.get(d.uniqueEnemyId))?.type.includes(ENEMY_DROP_TYPE));
   // solo banco: KHUX_BENCH_STEAL_UID forza il nemico rubato (prova del crash di I-137)
@@ -2044,7 +2054,8 @@ function respondStageClear(res, req) {
   const pending = player.stageInProgress;
   player.stageInProgress = false;
   if (req?.stageId === undefined && !pending && playedId in (player.stageScores || {})) {
-    const next = nextStoryRow();
+    // la 978 Proud (1039158, onlyDrama) segue la Proud 977 allo stesso modo
+    const next = stageRowOf(playedId)?.stageKind === PROUD_KIND ? nextProudRow() : nextStoryRow();
     if (next?.onlyDrama) {
       console.log(`[stage] /stage/clear senza /stage/start: ${next.stageId} (missione ${next.id}, solo filmato) al posto di ${playedId}`);
       playedId = next.stageId;
@@ -2056,7 +2067,8 @@ function respondStageClear(res, req) {
   player.stageScores = player.stageScores || {};
   const first = !(stageId in player.stageScores); // mai completato prima
   // l'ultimo stage completato avanza solo (rigiocare il Prologue non lo riporta indietro)
-  if (stageNumber(stageId) >= stageNumber(player.lastClearStageId)) player.lastClearStageId = stageId;
+  // (non le Proud: id 1 000 000 + numero, la schermata Quests confronta lastClearStageId con misc 106)
+  if (stage?.stageKind !== PROUD_KIND && stageNumber(stageId) >= stageNumber(player.lastClearStageId)) player.lastClearStageId = stageId;
   // munny e materiali raccolti (sacchetti dei nemici, forzieri) come li riporta il client
   player.money = (player.money || 0) + (Number(req?.getPoint?.money) || 0);
   // gauge degli attacchi speciali: resta salvata nel keyblade (userKeyblades[].burst), non
@@ -2070,7 +2082,7 @@ function respondStageClear(res, req) {
   // sacchetti dei nemici: il client riporta solo gli uid (getEnemyDropItems), il
   // contenuto e' la riga di reward del nemico nella mappa (1 se l'uid non ha record),
   // come in CONGRATULATIONS (es. Spring Water x12 in Combat 102)
-  const enemyRows = new Map((STAGE_POI[playedId]?.enemies || []).map((e) => [e.uid, e.reward]));
+  const enemyRows = new Map((poiOf(playedId)?.enemies || []).map((e) => [e.uid, e.reward]));
   const steal = player.steal?.stageId === playedId ? player.steal : null;
   for (const uid of req?.getEnemyDropItems || []) {
     const row = rewardRowById(enemyRows.get(uid) ?? 1);
@@ -2107,6 +2119,13 @@ function respondStageClear(res, req) {
     if (kind === 29 && lux >= (stage.submissionNum?.[i] ?? Infinity) && !cleared.includes(i + 1)) cleared.push(i + 1);
   });
   cleared.sort((a, b) => a - b).splice(3);
+  // «Must clear all together» (combinedSubmissionFlag 1, Proud 801+, I-200): il client riporta ogni obiettivo da solo
+  // (/stage/clear non legge il flag, ricerca Ghidra del 22-10): valgono solo se nella stessa partita ci sono tutti
+  const all = Array.from({ length: Math.min(3, stage?.validSubmission || 0) }, (_, i) => i + 1);
+  if (stage?.combinedSubmissionFlag && all.length && !all.every((n) => cleared.includes(n))) {
+    if (cleared.length) console.log(`[stage] ${stageId}: obiettivi ${cleared} senza gli altri (tutti insieme): non contano`);
+    cleared.length = 0;
+  }
   // premio di ogni obiettivo compiuto per la prima volta («Objective Complete!»)
   const before = stageClearMissions(stageId);
   for (const n of cleared.filter((n) => !before.includes(n))) {
@@ -2398,7 +2417,8 @@ function limitedUnlocked(g) {
 // 32 livello +N della serie di keyblade targetId (category), 33 Lux totali, 34 medaglie con lo Special
 // Attack Bonus al massimo del tier, 39 livello del Nova (= Guilt Burst, userPoint.guiltBurstLv: +1 alla prima guilt di
 // ogni medaglia, +5 alla prima guilt massima), 40 rango dello Spirit (rango della Gear di pet.js, 17 gradini da petRank).
-// 35 (Draw Medal) e' un contatore ('draw'). 36-38 e 41-44 (quest speciali, Proud, eventi, Colosseo, Union Cross) non
+// 41 Proud Mode: Proud superate fino alla 3 (I-200).
+// 35 (Draw Medal) e' un contatore ('draw'). 36-38 e 42-44 (quest speciali, eventi, Colosseo, Union Cross) non
 // hanno ancora la funzione nel server (nessuno stage di quel tipo, tabelle evStage/colosseum vuote, Union Cross senza
 // Photon) e restano a 0, come il 3 (Raid Boss: nessun contatore 'raid' chiamato).
 const MISSION_DERIVED = {
@@ -2422,6 +2442,8 @@ const MISSION_DERIVED = {
     }).length;
   },
   39: () => guiltBurst().level(),
+  // 41 «Complete up to story quest 3 in Proud Mode» (targetId 0 nella riga: la quest 3 della frase): Proud superate (I-200)
+  41: (r) => (lastProudNumber() >= (r.targetId?.[0] || 3) ? 1 : 0),
   40: () => petSubslotNow().rank || 0,
 };
 const missionProgress = (row, s) => (MISSION_DERIVED[row.conditionId] ? MISSION_DERIVED[row.conditionId](row) : s.count);
@@ -3794,6 +3816,65 @@ function respondStageList(res) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Proud Mode (I-200, docs/notes/mappe_storia.md#proud-mode): righe stage kind 4 di make-proud.js, stageId =
+// 1 000 000 + stageId della storia, id = 1 000 000 + numero della missione.
+// GET /stage/hard (azione 110, toProudSelect [fn] -> parser [fn]): stessa forma di /stage/160310.
+// Il pulsante «Proud Mode» del client e' solo un flag (misc 125 != 0, [fn]): lo sblocco e' del server.
+// Decisione dell'utente (22-10): la Proud Mode si apre col completamento della storia Quest 500 (PROUD_UNLOCK_QUEST);
+// poi Proud N dopo Proud N-1, come la storia (la lista originale = le Proud superate + la prossima, con «NEW»).
+// ---------------------------------------------------------------------------
+const PROUD_KIND = 4;
+const PROUD_OFFSET = 1000000;
+const PROUD_UNLOCK_QUEST = Number(process.env.KHUX_PROUD_UNLOCK_QUEST || 500);
+const proudRowsSorted = () => masterRows('stage').filter((r) => r.stageKind === PROUD_KIND && r.stageId > PROUD_OFFSET).sort((a, b) => a.id - b.id);
+// storia superata fino alla missione n (stage di storia completati, come la Beginner 30)
+const storyClearedUpTo = (n) => stageNumber(lastStoryStageId()) >= n;
+function proudUnlocked() { return storyClearedUpTo(PROUD_UNLOCK_QUEST); }
+function nextProudRow() {
+  const scores = player.stageScores || {};
+  return proudRowsSorted().find((r) => !(r.stageId in scores));
+}
+// numero della Proud piu' avanzata superata (0 = nessuna): Beginner 41 «Complete up to story quest 3 in Proud Mode»
+function lastProudNumber() {
+  const scores = player.stageScores || {};
+  let best = 0;
+  for (const r of proudRowsSorted()) if (r.stageId in scores) best = Math.max(best, r.id - PROUD_OFFSET);
+  return best;
+}
+
+// elenco di /stage/160310 e /stage/hard: le missioni superate e la prima non ancora superata, nell'ordine del numero
+function questListOf(rows) {
+  const scores = player.stageScores || {};
+  const stories = [];
+  let next = null;
+  for (const r of rows) {
+    if (r.stageId in scores) {
+      stories.push({ stageId: r.stageId, useAp: r.useAp, score: scores[r.stageId], playStatus: STAGE_CLEARED,
+        clearMissionIds: stageClearMissions(r.stageId) });
+    } else {
+      next = r;
+      stories.push({ stageId: r.stageId, useAp: r.useAp, score: 0, playStatus: 0, clearMissionIds: [] });
+      break;
+    }
+  }
+  return { stories, next };
+}
+
+function respondProudList(res) {
+  const rows = proudRowsSorted();
+  const open = proudUnlocked() && rows.length > 0;
+  const { stories, next } = open ? questListOf(rows) : { stories: [], next: null };
+  if (!open) console.log(`[proud] /stage/hard: Proud Mode chiusa (storia fino alla ${stageNumber(lastStoryStageId())}, serve la ${PROUD_UNLOCK_QUEST})`);
+  send(res, 200, {
+    ret: ret(),
+    stories,
+    newStageId: next ? next.stageId : stories.length ? stories[stories.length - 1].stageId : 0,
+    luxRank: 0,
+    openRankingId: 0,
+  });
+}
+
 // In tutte le risposte di avvio "maintenance" va OMESSO: il client controlla che
 // il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
 
@@ -3963,6 +4044,7 @@ function handler(scheme) {
           moogleshopId: r.moogleshopId, limitCount: r.count ? Math.max(0, r.count - (bought[r.moogleshopId] || 0)) : 0 })) });
       }
       if (kind === 'stagelist') return respondStageList(res);
+      if (kind === 'stagehard') return respondProudList(res);
       if (kind === 'stagestart') return respondStageStart(res, entry.bodyDecoded);
       if (kind === 'stagecontinue') return respondStageContinue(res, req.url.split('?')[0], entry.bodyDecoded);
       if (kind === 'stageclear') return respondStageClear(res, entry.bodyDecoded);
@@ -4302,6 +4384,8 @@ module.exports._test = {
   masterRevisionNow, servedMasterRows, sessionRevision, respondLogin, respondMasterFile, masterBody, respondMaster, respondResourceSize, respondStatus,
   // server/test-story-oltre.js (missioni 526-979)
   respondStageList, lastStoryStageId, stageNumber, stageRowOf, userDetailData, ensureUnion,
+  // server/test-proud.js (Proud Mode, I-200)
+  respondProudList, proudUnlocked, lastProudNumber, poiStageId, stageTreasures, stageEnemyDrops,
   // server/test-gacha-server.js
   sessionRealMs, handler, sanitizeBanners, gachaCatalog, gachaShopList, respondGachaList, respondGachaDraw, respondGachaWeb, respondGachaPost, reloadGachaBanners, grantItem, maxMedal, inventoryBlocks,
 };

@@ -31,7 +31,7 @@ try {
 
 const ENEMY_TYPE = 5;
 const CHEST_OK = new Set([4, 8, 9]);
-const GRANT_OK = new Set([2, 3, 4, 5, 14]);
+const GRANT_OK = new Set([2, 3, 4, 5, 13, 14]); // 13 keyblade (grantKeyblade)
 const medals = new Set(table('medal').map((m) => m.medalId));
 // premio di tipo 3 (medaglia): la riga deve esistere nella tabella medal
 function checkMedal(s, where, t, id) {
@@ -54,7 +54,8 @@ function checkMaterial(where, id) {
 let withMap = 0;
 for (const st of stages) {
   const s = `${st.stageId} ${st.name}`;
-  const p = poi[st.stageId];
+  // Proud (stageKind 4, I-200): la mappa della storia (stageBinId), come il client e server.js poiStageId
+  const p = poi[st.stageKind === 4 && st.stageBinId ? st.stageBinId : st.stageId];
   if (!p) {
     if (!st.onlyDrama) warn(s, 'nessuna mappa (mappoi): niente forzieri ne\' drop');
   } else {
@@ -101,7 +102,7 @@ if (wiki) {
   for (const st of stages) {
     const q = byNumber.get(st.id);
     const s = `${st.stageId} ${st.name}`;
-    if (!q || st.stageId > 1000000) continue; // 1001010: un'altra copia del Prologue
+    if (!q || st.stageId > 1000000) continue; // Proud (1001010...): obiettivi e premi propri
     if (q.name && q.name !== st.name) warn(s, `la wiki ha «${q.name}» come missione ${st.id}`);
     const jewel = st.validClearGetItem ? st.clearGetItemType.reduce((a, t, i) => a + (t === 2 ? st.clearGetItemNum[i] : 0), 0) : 0;
     const wikiJewel = parseInt(q.jewel || '0', 10) || 0;

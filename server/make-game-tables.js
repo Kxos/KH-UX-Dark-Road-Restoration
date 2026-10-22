@@ -842,6 +842,9 @@ require('./make-trophy-materials').patch(OUT);
 // Missioni di storia 526-979 (I-009): 1.1.3 per 526-555, wiki + stage JP per le altre, 978 solo filmato (onlyDrama);
 // dopo la tabella enemy (obiettivi «Defeat X») e stage.json scritti sopra. KHUX_STORY_OLTRE=0 lo spegne (make-story-oltre.js)
 require('./make-story-oltre').patch(OUT);
+// Proud Mode (I-200): righe stageKind 4 1 000 000 + stageId della storia 1-979, dopo la storia completa (make-proud.js);
+// la 1001010 del 5.0.1 resta. KHUX_PROUD=0 lo spegne
+require('./make-proud').patch(OUT);
 // tabelle ricostruite da noi (server/tables: mission = missioni giornaliere/settimanali dalla
 // khuxwiki, vedi le note in testa a ciascun generatore): copiate cosi' come sono
 const TABLES = path.join(__dirname, 'tables');

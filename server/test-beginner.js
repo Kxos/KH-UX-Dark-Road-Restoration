@@ -108,7 +108,8 @@ const story = t.masterRows('stage').find((s) => s.id === 6);
 p.stageScores[story.stageId] = 0;
 check(st(q6.id).numUpper === 1, 'storia 6: completata dallo stage 6');
 
-// senza funzione: restano a 0 (3 Raid Boss, 36-38 quest speciali/Proud Quest, 41 Proud, 42 eventi, 43 Colosseo, 44 Union Cross)
+// senza funzione: restano a 0 (3 Raid Boss, 36-38 quest speciali/Proud Quest, 42 eventi, 43 Colosseo, 44 Union Cross;
+// 41 Proud Mode ha la sua prova in test-proud.js e resta a 0 senza Proud superate)
 for (const c of [3, 36, 37, 38, 41, 42, 43, 44]) {
   for (const x of t.masterRows('mission').filter((m) => m.missionType === 1 && m.conditionId === c)) check(st(x.id).numUpper === 0, `condizione ${c} deve restare a 0`);
 }

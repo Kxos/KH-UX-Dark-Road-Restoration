@@ -12,9 +12,9 @@ const path = require('path');
 // conditionId: 30 storia superata fino alla quest targetId, 31 potenza dell'equipaggiamento (STR del keyblade
 // preferito), 32 keyblade della serie targetId (category) a +N, 33 Lux totali, 34 medaglie con lo Special Attack
 // Bonus al massimo, 35 Draw Medal (contatore 'draw': una per estrazione riuscita, non retroattivo), 39 Nova (livello
-// del Guilt Burst, derivato), 40 rango dello Spirit (rango della Gear, derivato). Restano a 0 finche' non c'e' la
-// funzione: 3 Raid Boss (contatore 'raid' mai chiamato, niente Raid), 36-38 quest speciali e Proud Quest, 41 Proud
-// Mode, 42 eventi, 43 Colosseo, 44 Union Cross (nessuno stage/tabella/partita di quel tipo nel server).
+// del Guilt Burst, derivato), 40 rango dello Spirit (rango della Gear, derivato), 41 Proud superate fino alla 3 (derivato, I-200). Restano a 0 finche' non c'e' la
+// funzione: 3 Raid Boss (contatore 'raid' mai chiamato, niente Raid), 36-38 quest speciali e Proud Quest (eventi),
+// 42 eventi, 43 Colosseo, 44 Union Cross (nessuno stage/tabella/partita di quel tipo nel server).
 // rewardType 2 Jewel; 26 Skip Ticket (setItemImageData della 1.0.1; per lo «Skip Ticket+» da verificare).
 const J = 2, SKIP = 26;
 const ROWS = [

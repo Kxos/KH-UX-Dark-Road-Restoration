@@ -104,6 +104,21 @@ function updateNotice(realMs) {
 // Solo informazioni utili per capire come funziona il gioco (decisione dell'utente del 16-10): niente
 // elenchi di modifiche. In lista prima la notizia dinamica dei dati aggiornati (updateNotice), poi queste, dalla piu' recente.
 const NOTICES = [
+  // Proud Mode (I-200, make-proud.js, docs/notes/mappe_storia.md#proud-mode): sblocco alla Quest 500 (decisione
+  // dell'utente del 22-10), AP 0 (valore finale), jewel e keyblade della wiki, condizioni coi codici del client
+  { date: '10/22', tag: 'IMPORTANT', title: 'Proud Mode',
+    body: ['**Proud Mode** is open: the hard version of the Story Quests, from Quest 1 to Quest 979. Tap **Proud Mode** in the Story Quests list.',
+      'It opens when you complete **Story Quest 500**. Then the Proud Quests open one at a time, in order, like the Story.',
+      'Each Proud Quest has stronger enemies, a **fixed Keyblade** (your own Keyblade of that kind, at its level) and a **condition** on which Medals may use their Special Attack. Continues are not available and Friend Medals cannot be used.',
+      'If you do not have the Keyblade of a quest yet, the quest cannot be started: for example Proud Quest 216 needs Stroke of Midnight (Story Quest 595) and Proud Quest 444 needs Fairy Stars (Story Quest 683).',
+      'From Proud Quest 801 all three objectives must be completed **together** in the same run.',
+      '## Rewards',
+      'Every 5 Proud Quests: 150 Jewels (300 from Quest 805, 600 from Quest 885). Objectives give Electrum Ore, Dark Matter, Magic Mirror, Gems, Avatar Coins and Huey, Dewey and Louie Medals.',
+      'The Keyblades **Sleeping Lion**, **Counterpoint**, **Fenrir**, **Darkgnaw**, **Missing Ache** and **Diamond Dust** are the rewards of Proud Quests 3, 103, 203, 328, 378 and 428, as in the original game, and are no longer given at the start. If you already have them, you keep them.',
+      '## What is reconstructed',
+      'Only Quest 1 survives as an original Proud quest file. The other quests are rebuilt from the original game code (how conditions and objectives work) and from the community wiki (levels, Keyblades, conditions, objectives and rewards of each quest).',
+      'Proud Quests cost **0 AP**, as at the end of the original game (at launch they cost 10).',
+      'Proud Quests 891, 892 and 913 have no special attack condition: none is recorded for them.'] },
   // missioni di storia 526-979 (I-009, piano docs/superpowers/plans/2026-10-21-missioni-526-979.md, make-story-oltre.js):
   // parti ricostruite (617/661, nemici, livelli dei nemici 876-979, keyblade, 978) e tappabuchi rimasti dei mondi nuovi;
   // obiettivi (codici del client) e trofei (materiali 61-63) originali dal 21-10; aspetto Dark Road della stessa specie

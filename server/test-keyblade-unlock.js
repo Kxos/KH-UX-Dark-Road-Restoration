@@ -10,8 +10,9 @@
 //   propria tabella stage (clearGetItemType 13 della riga, [fn] -> [fn]), non da un
 //   campo della risposta;
 // - rigiocare, compiere gli obiettivi o riavviare il server non lo duplichi;
-// - le missioni Proud (Proud Mode assente dal master) date in normale non diano niente: quei
-//   keyblade e quelli delle quest oltre la 525 e di Moogle O' Glory li da' grantMissingKeyblades.
+// - le missioni Proud date in normale non diano niente; i 6 keyblade Proud sono il premio del primo completamento
+//   della missione Proud (righe stageKind 4 di make-proud.js, I-200; senza quelle righe nel master li da'
+//   grantMissingKeyblades all'avvio, come Moogle O' Glory).
 // Non tocca server/save: KHUX_SAVE punta a un file temporaneo nuovo.
 'use strict';
 const fs = require('fs');
@@ -75,18 +76,24 @@ for (const o of ORIGINAL) {
   const base = baseByName.get(o.name);
   check(base, `${o.name}: assente dalla tabella keyblade`);
   if (!base) continue;
-  const st = o.quest ? stages.find((s) => s.id === o.quest) : null;
+  const normal = o.quest ? stages.find((s) => s.id === o.quest && s.stageKind === 1) : null;
+  // Proud: la riga stageKind 4 (id 1 000 000 + numero, make-proud.js) se il master ce l'ha
+  const proud = o.mode === 'proud' ? stages.find((s) => s.stageKind === 4 && s.id === 1000000 + o.quest) : null;
+  const st = o.mode === 'proud' ? proud || normal : normal;
   const kbReward = st ? (st.clearGetItemType || []).map((ty, i) => (ty === 13 ? st.clearGetItemId[i] : 0)).filter(Boolean) : [];
   const missionKb = st ? (st.submissionRewardType || []).filter((ty) => ty === 13).length : 0;
-  // nel master: solo le quest della storia (la Proud Mode non c'e')
-  const inMaster = !!(st && o.mode === 'story');
+  const inMaster = !!(st && (o.mode === 'story' || proud));
   if (inMaster) {
     check(st.validClearGetItem > 0 && kbReward.length === 1 && cat(kbReward[0]) === base.category && kbById.get(kbReward[0]).lv === 0,
       `${o.name}: lo stage ${st.stageId} (Quest ${o.quest}) premia ${JSON.stringify(kbReward)}, atteso ${base.keybladeId}`);
   } else if (st) {
     check(kbReward.length === 0 && missionKb === 0, `${o.name}: lo stage ${st.stageId} (Quest ${o.quest} normale) premia un keyblade ${kbReward}`);
   }
-  rows.push({ ...o, base, st, inMaster });
+  if (proud && normal) {
+    const nk = (normal.clearGetItemType || []).includes(13) || (normal.submissionRewardType || []).includes(13);
+    check(!nk, `${o.name}: la Quest ${o.quest} normale (stage ${normal.stageId}) premia un keyblade`);
+  }
+  rows.push({ ...o, base, st, inMaster, normal });
 }
 check(rows.length === baseByName.size, `${baseByName.size} serie nel master, ${rows.length} con fonte`);
 // nessun altro stage premia un keyblade
@@ -163,11 +170,11 @@ log('primo completamento:');
 lines.forEach((l) => log(l));
 
 // ---- 4. missioni Proud giocate in normale: niente --------------------------------------------
-for (const r of rows.filter((x) => x.mode === 'proud' && x.st)) {
+for (const r of rows.filter((x) => x.mode === 'proud' && x.normal)) {
   const n = t.ownedKeyblades().length;
-  const { added, popups } = clear(r.st, [1, 2, 3]);
+  const { added, popups } = clear(r.normal, [1, 2, 3]);
   check(added.length === 0 && popups.length === 0 && t.ownedKeyblades().length === n,
-    `Quest ${r.quest} normale (stage ${r.st.stageId}): ${added.length} keyblade, popup ${popups}`);
+    `Quest ${r.quest} normale (stage ${r.normal.stageId}): ${added.length} keyblade, popup ${popups}`);
 }
 log(`Proud in normale (Quest ${rows.filter((x) => x.mode === 'proud').map((x) => x.quest).join('/')}): nessun keyblade`);
 

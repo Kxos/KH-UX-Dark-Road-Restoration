@@ -222,7 +222,8 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # 
 ```
 
 - `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (from
-  thethiny; 526-979 from `make-story-oltre.js` and enemies from `make-enemy-oltre.js`, called by the same run since 21-10,
+  thethiny; 526-979 from `make-story-oltre.js` and enemies from `make-enemy-oltre.js`, called by the same run since 21-10;
+  Proud Mode rows from `make-proud.js` at the end of the same run since 22-10, also applicable alone in place: `node server/make-proud.js`,
   [mappe_storia](mappe_storia.md#oltre525)), generated bursts, enemyAttack generated for all skillIds (the enemies with `validSkill` 3
   crashed), mission (`server/tables/mission.json`), sphere/sphereArray/sphereMasu
   (`server/tables/`). Options: `KHUX_MEDALS_ALL=1` (2,094 medals), `KHUX_ZOO=1`
