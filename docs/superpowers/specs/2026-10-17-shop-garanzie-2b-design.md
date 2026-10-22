@@ -1,190 +1,190 @@
-# Shop, sotto-progetto 2b: garanzie e medaglie come le dava il banner — design
+# Shop, sub-project 2b: guarantees and medals as the banner gave them — design
 
-Stato: approvata dall'utente il 17-10-2026 (con il numero dorato nella striscia, 4.4, e la verifica dei LWF del
-popup del Nova, 4.6). Segue il sotto-progetto 2 (catalogo dei banner originali,
-[shop-banner-design](2026-10-16-shop-banner-design.md) sezione 9) e chiude I-144. Fonti: audit delle garanzie del
-17-10 (`D:\Progetto_Restauro_KH_UX\tmp\sp2\audit-guarantees.md`, riassunto in
-[shop.md#garanzie](../../notes/shop.md#garanzie)), decisioni dell'utente
-(`D:\Progetto_Restauro_KH_UX\tmp\sp2b\decisioni.md`), video del gioco originale
-(`D:\Progetto_Restauro_KH_UX\tmp\sp2b\video-LFJ5.md`, fotogrammi in `reference\shop_boosted` e `reference\nova_lvup`).
+Status: approved by the user on 17-10-2026 (with the golden number in the strip, 4.4, and the check of the LWFs of the
+Nova popup, 4.6). It follows sub-project 2 (catalog of the original banners,
+[shop-banner-design](2026-10-16-shop-banner-design.md) section 9) and closes I-144. Sources: audit of the guarantees of
+17-10 (`D:\Progetto_Restauro_KH_UX\tmp\sp2\audit-guarantees.md`, summarized in
+[shop.md#garanzie](../../notes/shop.md#garanzie)), user decisions
+(`D:\Progetto_Restauro_KH_UX\tmp\sp2b\decisioni.md`), video of the original game
+(`D:\Progetto_Restauro_KH_UX\tmp\sp2b\video-LFJ5.md`, frames in `reference\shop_boosted` and `reference\nova_lvup`).
 
-## 1. Obiettivo
+## 1. Goal
 
-Ogni estrazione da' le medaglie **come le dava il banner originale**: lo slot giusto per ogni garanzia, il Tier
-promesso, la pity sul bersaglio scritto, il contatore «within N draws» che scende nella striscia, e le medaglie
-**gia' potenziate** quando il banner lo diceva (guilt al massimo, boosted, abilita' al livello massimo), con il
-popup «NOVA LEVEL UP!» che ne segue.
+Every draw gives the medals **as the original banner gave them**: the right slot for each guarantee, the promised
+Tier, the pity on the written target, the «within N draws» counter going down in the strip, and the medals
+**already strengthened** when the banner said so (guilt maxed, boosted, abilities at max level), with the
+«NOVA LEVEL UP!» popup that follows.
 
-## 2. Vincoli
+## 2. Constraints
 
-- Client originale non modificato: si cambiano risposte del server, master, risorse scaricabili, pagine WebView.
-- Repo: solo codice e documentazione nostri (i dati derivati restano in `server/game_data/`, `server/master_data/`).
-- Nessuna medaglia prima della sua data (spec 9.3) ne' sopra il Tier promesso.
-- Ogni differenza dall'originale nelle Notices, in inglese.
-- Compatibilita': `guarantee.list/count/slot` del sotto-progetto 2 restano validi (prima riserva a lista).
+- Original client not modified: server responses, master, downloadable resources, WebView pages are changed.
+- Repo: only our own code and documentation (derived data stay in `server/game_data/`, `server/master_data/`).
+- No medal before its date (spec 9.3) nor above the promised Tier.
+- Every difference from the original in the Notices, in English.
+- Compatibility: `guarantee.list/count/slot` of sub-project 2 remain valid (first list reservation).
 
-## 3. Decisioni dell'utente (17-10)
+## 3. User decisions (17-10)
 
-1. Slot 6★ con liste che contengono Supernova solo 7★ (~100 banner 2019-20): lo slot 6★ sceglie **solo fra i nomi
-   con variante 6★**; le Supernova 7★ restano negli slot 7★.
-2. B0733: **due liste** come nell'immagine (3 SN+/SN++ e 7 KH III).
-3. I 31 banner con «every Nth draw» nei notice: **restano pity** come nella wiki (si azzera quando la vetrina esce).
-4. B0419/B0421 (scambio Gula/Aced dichiarato dal notice): **versione corretta**, l'errore citato nei Details.
-5. B0319, B0402, B0403, B0412 (pity «one 6★ X» con lo slot 0 a 7★): la garantita 6★ sostituisce **il primo slot
-   6★, altrimenti un 5★**; lo slot 7★ resta.
-6. La pity si azzera quando la vetrina esce da sola (confermato: comportamento di oggi; ricordo dell'utente sulla
-   striscia).
-7. Contatore nella striscia come l'originale (punto 4.4).
-8. Medaglie boosted, guilt preimpostata e abilita' al livello massimo: riprodotte (punto 4.5).
-9. B0199-B0203 (deal delle HD [EX], novembre 2017): data d'inizio **24/11/2017** dal notice, al posto della regola
-   allargata di `align_debut_dates`.
+1. 6★ slot with lists that contain 7★-only Supernovas (~100 banners 2019-20): the 6★ slot chooses **only among the names
+   with a 6★ variant**; the 7★ Supernovas stay in the 7★ slots.
+2. B0733: **two lists** as in the image (3 SN+/SN++ and 7 KH III).
+3. The 31 banners with «every Nth draw» in the notices: **stay pity** as in the wiki (it resets when the featured medal comes out).
+4. B0419/B0421 (Gula/Aced swap declared by the notice): **corrected version**, the error cited in the Details.
+5. B0319, B0402, B0403, B0412 (pity «one 6★ X» with slot 0 at 7★): the guaranteed 6★ replaces **the first 6★
+   slot, otherwise a 5★**; the 7★ slot stays.
+6. The pity resets when the featured medal comes out by itself (confirmed: today's behaviour; the user's memory of the
+   strip).
+7. Counter in the strip as in the original (point 4.4).
+8. Boosted medals, preset guilt and abilities at max level: reproduced (point 4.5).
+9. B0199-B0203 (HD [EX] deals, November 2017): start date **24/11/2017** from the notice, instead of the
+   widened rule of `align_debut_dates`.
 
-## 4. Componenti
+## 4. Components
 
-### 4.1 Riserve degli slot (catalogo)
+### 4.1 Slot reservations (catalog)
 
-Nuovo campo `guarantee.slots[]`: le riserve nell'ordine delle frasi delle note, `{kind, slot, count, star, names,
+New field `guarantee.slots[]`: the reservations in the order of the sentences of the notes, `{kind, slot, count, star, names,
 tierMin, tierMax}`.
 
-- `kind`: `list` (lista o medaglia nominata, `names`), `tier` (`tierMin`/`tierMax`, `names` alternativi
-  facoltativi), `trait` (slot riservato a una Trait Medal: generico per il server, ma non va alla lista).
-- Frasi riconosciute (tabella delle regex nell'audit, sezione 4): lista («Guarantees N of the following [N★]
-  Medals [at N★]»), medaglia nominata («Guarantees one [N★] X»), Tier («one [N★] Tier N [or higher|or lower|,
+- `kind`: `list` (list or named medal, `names`), `tier` (`tierMin`/`tierMax`, optional alternative `names`),
+  `trait` (slot reserved for a Trait Medal: generic for the server, but it does not go to the list).
+- Recognized sentences (regex table in the audit, section 4): list («Guarantees N of the following [N★]
+  Medals [at N★]»), named medal («Guarantees one [N★] X»), Tier («one [N★] Tier N [or higher|or lower|,
   N...]»), Trait, «SN+ or SN++», pity («If bought N times ... one [N★] X», «X is guaranteed within N draws»).
-- Assegnazione deterministica degli slot: le riserve con stella prendono i primi slot liberi di quella stella,
-  poi le altre i primi liberi dall'alto. Decisione 1: in una riserva `list` su uno slot di stella S entrano solo
-  i nomi con variante S. Override scritti a mano (tabella nel generatore, con la fonte) per i casi visti solo
-  nelle immagini: B0678 (`count 1`), B0733 e B0740 (due liste), le liste non codificate (D5: B0049, B0055, B0372,
+- Deterministic slot assignment: the reservations with a star take the first free slots of that star,
+  then the others the first free ones from the top. Decision 1: in a `list` reservation on a slot of star S only
+  the names with an S variant go in. Hand-written overrides (table in the generator, with the source) for the cases seen only
+  in the images: B0678 (`count 1`), B0733 and B0740 (two lists), the uncoded lists (D5: B0049, B0055, B0372,
   B0695, B0721, B0725, B0726, B0734, B0739).
-- Pity: `pityNames` (dalla frase; default `pool.featured`), `pityStar` (stella scritta), `pitySlot` (slot della
-  riserva che contiene `pityNames`, altrimenti il primo slot di `pityStar`, altrimenti decisione 5, altrimenti 0).
-  La pity da' la medaglia a stella **fissa** (`pityStar`, niente salita).
-- Pity con bersaglio non d'attacco (Moogle, Blue Fairy, Dual Meow Wow SAB 9, Trait): se la medaglia esiste nel
-  master (Dual Meow Wow) va nel Present Box come i bonus; altrimenti pity dichiarata «not reproduced».
-- Decisione 4 (B0419/B0421) e 9 (B0199-B0203): override nel generatore con la fonte.
-- Esiti attesi (dall'audit): B0306 slot 0 7★ Tier <= 4, slot 1 una delle 8 a 6★, pity HD Axel 7★ sullo slot 0;
-  B0355 7★ Tier 3-4 + lista a 6★; B0629 1 New Enemy 7★ + 3 KH III 6★; B0397 Prime - KH Cloud 6★ (7★ alla pity) +
-  slot Trait generico; B0321 7★ Tier 4 + Prime Axel 6★ (7★ alla 5a).
+- Pity: `pityNames` (from the sentence; default `pool.featured`), `pityStar` (written star), `pitySlot` (slot of the
+  reservation that contains `pityNames`, otherwise the first slot of `pityStar`, otherwise decision 5, otherwise 0).
+  The pity gives the medal at a **fixed** star (`pityStar`, no star-up).
+- Pity with a non-attack target (Moogle, Blue Fairy, Dual Meow Wow SAB 9, Trait): if the medal exists in the
+  master (Dual Meow Wow) it goes to the Present Box like the bonuses; otherwise the pity is declared «not reproduced».
+- Decision 4 (B0419/B0421) and 9 (B0199-B0203): overrides in the generator with the source.
+- Expected outcomes (from the audit): B0306 slot 0 7★ Tier <= 4, slot 1 one of the 8 at 6★, pity HD Axel 7★ on slot 0;
+  B0355 7★ Tier 3-4 + list at 6★; B0629 1 New Enemy 7★ + 3 KH III 6★; B0397 Prime - KH Cloud 6★ (7★ at the pity) +
+  generic Trait slot; B0321 7★ Tier 4 + Prime Axel 6★ (7★ at the 5th).
 
 ### 4.2 Tier
 
-- `medals[n].ids` -> `[id, rarita', data, tier]`, tier = `medal.json.guiltValue` (verificato: le 24 medaglie
-  «Tier 4 or lower» di B0306 hanno tutte 4).
-- Gli slot `tier` filtrano il pool della loro stella per `tierMin <= tier <= tierMax`; pool vuoto -> senza filtro e
-  log. 178 banner con un limite di Tier.
+- `medals[n].ids` -> `[id, rarity, date, tier]`, tier = `medal.json.guiltValue` (verified: the 24 medals
+  «Tier 4 or lower» of B0306 all have 4).
+- The `tier` slots filter the pool of their star by `tierMin <= tier <= tierMax`; empty pool -> no filter and
+  log. 178 banners with a Tier limit.
 
-### 4.3 Estrazione (server)
+### 4.3 Draw (server)
 
-- `rollDraw` riempie gli slot da `guarantee.slots[]` (fallback a `list/count/slot` per i cataloghi vecchi), poi
-  la pity su `pitySlot`; uno slot a lista sostituito dalla pity resta garantito solo se la vetrina e' nella lista.
-- `slotOdds`, Details e Draw Odds mostrano ogni riserva sul suo slot (lista, Tier, Trait), la pity con stella e
-  bersaglio.
+- `rollDraw` fills the slots from `guarantee.slots[]` (fallback to `list/count/slot` for the old catalogs), then
+  the pity on `pitySlot`; a list slot replaced by the pity stays guaranteed only if the featured medal is in the list.
+- `slotOdds`, Details and Draw Odds show each reservation on its slot (list, Tier, Trait), the pity with star and
+  target.
 
-### 4.4 Contatore della garanzia nella striscia (originale)
+### 4.4 Guarantee counter in the strip (original)
 
-Il client compone la striscia sotto il banner da `comment` del master come formato printf con
-`userWarrantDisplayOfTime` della piastra; ci sono anche `warrantNumberOfTime`/`warrantDisplayOfTime` nel master e
-`warrantMedalIds` nella piastra ([shop.md](../../notes/shop.md), GET /gacha/list).
+The client composes the strip under the banner from the master's `comment` as a printf format with
+the plate's `userWarrantDisplayOfTime`; there are also `warrantNumberOfTime`/`warrantDisplayOfTime` in the master and
+`warrantMedalIds` in the plate ([shop.md](../../notes/shop.md), GET /gacha/list).
 
-- Banner con pity: `comment` con `%d` (es. «Featured Medal guaranteed within %d draws»; testo da allineare a quello
-  dell'originale se trovato), `warrantNumberOfTime` = pity, `userWarrantDisplayOfTime` = `pity - sinceFeatured`
-  (5, 4, ... e di nuovo 5 quando la vetrina esce), `warrantMedalIds` = id della vetrina.
-- **Il numero delle estrazioni mancanti in colore dorato** (richiesta dell'utente del 17-10, approvazione della spec),
-  per distinguerlo dal resto del testo. Ricerca nel decompilato: se la striscia accetta un markup di colore (tag di
-  rich text, codici colore nel formato), il numero si scrive dorato col markup; se no, si valuta una risorsa (font o
-  layout della striscia) che lo permetta senza toccare il client; se nessuna delle due e' possibile, lo si dice
-  all'utente prima di scegliere un ripiego. Differenza dall'originale da dichiarare nelle Notices se il colore non era
-  gia' dorato nell'originale.
-- Da verificare al banco come il client usa `warrantDisplayOfTime`/`warrantMedalIds` (ricerca nel decompilato
-  prima del codice). Nuova revisione del master.
+- Banners with pity: `comment` with `%d` (e.g. «Featured Medal guaranteed within %d draws»; text to be aligned with that
+  of the original if found), `warrantNumberOfTime` = pity, `userWarrantDisplayOfTime` = `pity - sinceFeatured`
+  (5, 4, ... and 5 again when the featured medal comes out), `warrantMedalIds` = id of the featured medal.
+- **The number of remaining draws in golden colour** (user request of 17-10, approval of the spec),
+  to distinguish it from the rest of the text. Search in the decompiled code: if the strip accepts a colour markup (rich
+  text tags, colour codes in the format), the number is written in gold with the markup; if not, a resource (font or
+  layout of the strip) that allows it without touching the client is evaluated; if neither is possible, the user is told
+  before choosing a fallback. Difference from the original to be declared in the Notices if the colour was not
+  already golden in the original.
+- To be verified on the bench how the client uses `warrantDisplayOfTime`/`warrantMedalIds` (search in the decompiled code
+  before the code). New master revision.
 
-### 4.5 Medaglie potenziate all'estrazione
+### 4.5 Medals strengthened at the draw
 
-- **Guilt preimpostata** («with ... Special Attack Bonus maxed», «SAB of N», «pre-strengthened», 104 banner): la
-  medaglia nasce con `guiltFactor` al valore scritto (massimo del suo tier se «max»). Mappatura frase -> campo
-  (`guiltFactor` per la guilt/SAB, `burstUpperNumber` per il livello del Special Attack «strengthened N times»)
-  da confermare nella fase di ricerca con [guilt.md](../../notes/guilt.md) e [medaglie.md](../../notes/medaglie.md).
-  Il Nova sale con la regola gia' in `server/guilt-burst.js` (+1 prima copia con guilt, +5 prima al massimo),
-  come nel video (3306 -> 3307 -> 3312).
-- **Boosted** (~40 banner, «boosted version ... with 1000 more base strength and defense»): STR +1000, DEF +1000,
-  Cost -10 rispetto alla normale (video: SN++ Master Eraqus 43802/14474/36 contro 42802/13474/46), valori in
-  giallo, fascia «BOOSTED» nel risultato, targhetta LV rossa nella lista; Chip/Dale restano liberi (utente). La
-  fascia la disegna il client: **ricerca nel decompilato** del campo che la accende (medaglia del giocatore o
-  medalId distinto del master) prima di scegliere come rappresentarla. Probabilita' «small chance»: ricostruita
-  (proposta: 5% per slot idoneo, dichiarata «reconstructed»).
-- **Abilita' al livello massimo** («with one of the following skills at max level», 62 banner): abilita' della
-  lista a `level = maxLv` di `skill.json`, solo per le abilita' presenti (oggi 12; le altre I-146). Conteggio dei
-  banner coperti del tutto nel report.
+- **Preset guilt** («with ... Special Attack Bonus maxed», «SAB of N», «pre-strengthened», 104 banners): the
+  medal is born with `guiltFactor` at the written value (maximum of its tier if «max»). Mapping sentence -> field
+  (`guiltFactor` for the guilt/SAB, `burstUpperNumber` for the Special Attack level «strengthened N times»)
+  to be confirmed in the research phase with [guilt.md](../../notes/guilt.md) and [medaglie.md](../../notes/medaglie.md).
+  The Nova goes up with the rule already in `server/guilt-burst.js` (+1 first copy with guilt, +5 first one at max),
+  as in the video (3306 -> 3307 -> 3312).
+- **Boosted** (~40 banners, «boosted version ... with 1000 more base strength and defense»): STR +1000, DEF +1000,
+  Cost -10 compared with the normal one (video: SN++ Master Eraqus 43802/14474/36 versus 42802/13474/46), values in
+  yellow, «BOOSTED» band in the result, red LV tag in the list; Chip/Dale stay free (user). The
+  band is drawn by the client: **search in the decompiled code** for the field that turns it on (player's medal or
+  distinct medalId of the master) before choosing how to represent it. «Small chance» odds: reconstructed
+  (proposal: 5% per eligible slot, declared «reconstructed»).
+- **Abilities at max level** («with one of the following skills at max level», 62 banners): abilities of the
+  list at `level = maxLv` of `skill.json`, only for the abilities present (12 today; the others I-146). Count of the
+  fully covered banners in the report.
 
-### 4.6 Popup «NOVA LEVEL UP!»
+### 4.6 «NOVA LEVEL UP!» popup
 
-Oggi spento: nel nostro client mancano `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` e `GuiltBonus_BurstLvup_num`
-(LWF nullo = crash; [battaglia.md](../../notes/battaglia.md)). **I due LWF originali esistono nei dati JP 4.3.1**
-(verifica del 17-10): `[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\
+Off today: our client lacks `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` and `GuiltBonus_BurstLvup_num`
+(null LWF = crash; [battaglia.md](../../notes/battaglia.md)). **The two original LWFs exist in the JP 4.3.1 data**
+(check of 17-10): `[local reference data]\\[local reference data]\data\[local reference data]\data\jp_final_4.3.1\
 lwf\medal\guilt_bonus\GuiltBonus_BurstLvup\` (`.lwf` + Burst_Arrow, Burst_LV_Logo «LEVEL UP!», Burst_Logo, Burst_Plate,
-ciascuna anche in versione `_B`) e `GuiltBonus_BurstLvup_num\` (Burst_LV_Mark); assenti negli OBB WW e nelle
-versioni 1.0.1-4.4.0 della stessa raccolta. Differenza: il logo JP dice **«BURST»**, il WW **«NOVA»**
-(`reference\nova_lvup`, titolo «NOVA LEVEL UP!», «LV a » LV b», messaggio «Maxed out X's Special Attack Bonus!»,
+each also in a `_B` version) and `GuiltBonus_BurstLvup_num\` (Burst_LV_Mark); absent in the WW OBBs and in
+versions 1.0.1-4.4.0 of the same collection. Difference: the JP logo says **«BURST»**, the WW one **«NOVA»**
+(`reference\nova_lvup`, title «NOVA LEVEL UP!», «LV a » LV b», message «Maxed out X's Special Attack Bonus!»,
 «TAP SCREEN»).
 
-Piano: importare i due LWF JP nel pacchetto generato (come gli altri layout JP, `import_jp_coco.py`/pacchetti
-statici), sostituire `Burst_Logo`/`Burst_Logo_B` con un logo «NOVA» rifatto sui fotogrammi del video (stesso formato e
-misura, encode come gli originali con `btf.py`), verificare che le clip attese dal client (`FromLv`/`ToLv`, evento
-`enterFrame` su `_root`) ci siano, poi accendere le liste `guiltBurstFirst/MaxUserMedalIds` (oggi solo con
-`KHUX_GUILT_BURST_POPUP=1`). Il messaggio «Maxed out ...» viene dai testi del client (verificare che l'id esista in
-WW). Nuova versione delle risorse.
+Plan: import the two JP LWFs into the generated package (like the other JP layouts, `import_jp_coco.py`/static
+packages), replace `Burst_Logo`/`Burst_Logo_B` with a «NOVA» logo redone from the video frames (same format and
+size, encoded like the originals with `btf.py`), verify that the clips expected by the client (`FromLv`/`ToLv`, event
+`enterFrame` on `_root`) are there, then turn on the lists `guiltBurstFirst/MaxUserMedalIds` (today only with
+`KHUX_GUILT_BURST_POPUP=1`). The «Maxed out ...» message comes from the client texts (verify that the id exists in
+WW). New resources version.
 
-## 5. Fuori dal 2b
+## 5. Outside 2b
 
-- Filtri del catalogo, rotazione, stagionali: sotto-progetto 3.
-- Abilita' mancanti nel master: I-146.
-- Trait Medal, Imitation, Epic e set del 2016: restano dichiarati nelle Notices.
+- Catalog filters, rotation, seasonal banners: sub-project 3.
+- Abilities missing in the master: I-146.
+- Trait Medal, Imitation, Epic and 2016 sets: stay declared in the Notices.
 
-## 6. Ordine
+## 6. Order
 
-1. Ricerca (sola lettura): campo delle boosted, uso di `warrantDisplayOfTime`/`warrantMedalIds`, mappatura delle
-   frasi di guilt/SAB, formato dei LWF del popup.
-2. Catalogo: `slots[]`, pity, Tier, override, potenziamenti per banner; test sui banner dell'audit.
-3. Server: estrazione, medaglie potenziate, striscia con il contatore; test.
-4. Pagine e Notices.
-5. LWF del popup e risorse.
-6. Banco: B0306 (Tier, lista, pity con il contatore che scende), B0629 (due liste), un banner con guilt al massimo
-   (Nova +1/+5 e popup), un boosted (fascia e statistiche), un banner con abilita' al massimo; prova dell'utente
-   con il salvataggio ridotto per il Nova.
+1. Research (read-only): boosted field, use of `warrantDisplayOfTime`/`warrantMedalIds`, mapping of the
+   guilt/SAB sentences, format of the popup LWFs.
+2. Catalog: `slots[]`, pity, Tier, overrides, strengthening per banner; tests on the audit banners.
+3. Server: draw, strengthened medals, strip with the counter; tests.
+4. Pages and Notices.
+5. Popup LWFs and resources.
+6. Bench: B0306 (Tier, list, pity with the counter going down), B0629 (two lists), a banner with maxed guilt
+   (Nova +1/+5 and popup), a boosted one (band and stats), a banner with maxed abilities; user test
+   with the reduced save for the Nova.
 
-## 7. Prove
+## 7. Tests
 
-Test offline per ogni regola (frasi dell'audit come casi), integrazione sul catalogo vero (i 171 banner delle
-discrepanze tornano coerenti, 0 banner con slot riservati in conflitto), prove al banco del punto 6 con
-screenshot confrontati con i fotogrammi del video.
+Offline tests for each rule (audit sentences as cases), integration on the real catalog (the 171 banners with
+discrepancies become consistent again, 0 banners with conflicting reserved slots), bench tests of point 6 with
+screenshots compared with the video frames.
 
-## 8. Esiti della ricerca (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\research.md`) e decisioni che ne seguono
+## 8. Research outcomes (17-10, `D:\Progetto_Restauro_KH_UX\tmp\sp2b\research.md`) and the decisions that follow
 
-Sostituiscono le ipotesi dei punti 4.4-4.6 dove differiscono.
+They replace the hypotheses of points 4.4-4.6 where they differ.
 
-- **Boosted = riga distinta del master medal** (non uno stato della medaglia del giocatore): il client la riconosce da
-  `displayId` = quello della normale + 1 (`[fn]`); `groupId` (+0x510) punta alla normale e il dettaglio colora di
-  giallo STR/DEF/Cost migliori (`[fn]`); il Cost stampato e' quello della riga. Quindi: nuove righe boosted nel
-  master (`attack`/`maxAttack` +1000, `defense`/`maxDefense` +1000, `cost` -10, `displayId` +1, `groupId` della
-  normale), Chip/Dale indipendenti. Fascia «BOOSTED» (`[fn]`): `Bonus_Plate` + `Bonus_TextStatus.png` (gia'
-  servite) + LWF `Draw_StatusBonus` (da importare dal JP). Targhetta LV rossa (`[fn]`): `Minfo_Def12_SB.png`,
-  `Deck_Panel_SB.png` (da importare dal JP). Da verificare: `minCost` della riga boosted, effetto di `groupId` sui
-  pallini.
-- **Striscia della garanzia (sostituisce il «numero dorato»)**: testo ricco XML (`[fn]`, tag `<important>` =
-  giallo 255,255,0, `<big>`, `<middle>`, `<br>`). Testo originale gia' nei testi WW: «`<important>`Nome`</important>`
-  guaranteed in `<important>`N tries`</important>`!» (106180307/308, liste 106180302-306). **Decisione dell'utente
-  (17-10): giallo originale**, nessuna differenza da dichiarare. La striscia compare solo con `warrantDisplayOfTime` (la
-  soglia = pity) != 0 e `userWarrantDisplayOfTime` fra 1 e la soglia; con `validComment` 0 il client usa i nomi di
-  `warrantMedalIds` (lista vuota = crash), con 1 `sprintf(comment, userWarrantDisplayOfTime)`. `warrantNumberOfTime`
-  non e' letto. Proposta: `validComment` 0 + `warrantMedalIds` = vetrina per i banner con pity; da provare un nome
-  con «&».
-- **Guilt e SAB**: «maximum Special Attack Bonus»/«maxed» -> `guiltFactor` al massimo del tier (Tier 10 = 32000 =
-  +320%) con i pallini pieni; «strengthened N times»/«pre-strengthened N dots» -> `burstUpperNumber` = N (massimo
-  `maxEnhanceCount`: 3★ 1, 4★ 2, 5★ 3, 6-7★ 5); «SAB of N»/«Level N SAB»/«SAB Tier N» = filtro del Tier (`guiltValue`),
-  non uno stato; «Dual Meow Wow [SAB LV 9]» = medalId 301684.
-- **Popup del Nova**: i LWF JP hanno cio' che serve (`FromLv`, `ToLv`, `_root`; `_num` con `num1`..`num4`, etichette
-  `Lv0`..`Lv0000`). Logo `Burst_Logo.png` 422x142 RGBA e `Burst_Logo_B.png` (sagoma bianca del bagliore): rifatti
-  «NOVA». Da importare anche `GuiltBonus_Wfix0..9` (cifre, assenti da noi) e il layout `MedalInfo_Burst_Info.json`
-  (usa `Panel03.png`, gia' servita). Testi 101302059 «Maxed out %s's Special Attack Bonus!» e 101302058 gia' presenti.
-  Import: estendere `import_jp_raisedraw.py` a `lwf/medal/guilt_bonus` e `Draw_StatusBonus` (codifica `btf.encode`),
-  layout in `jp_coco_layouts.txt` per `import_jp_coco.py`, texture `_SB` copiate dal JP.
+- **Boosted = distinct row of the medal master** (not a state of the player's medal): the client recognizes it from
+  `displayId` = that of the normal one + 1 (`[fn]`); `groupId` (+0x510) points to the normal one and the detail colours
+  the better STR/DEF/Cost in yellow (`[fn]`); the printed Cost is that of the row. Therefore: new boosted rows in the
+  master (`attack`/`maxAttack` +1000, `defense`/`maxDefense` +1000, `cost` -10, `displayId` +1, `groupId` of the
+  normal one), Chip/Dale independent. «BOOSTED» band (`[fn]`): `Bonus_Plate` + `Bonus_TextStatus.png` (already
+  served) + LWF `Draw_StatusBonus` (to be imported from JP). Red LV tag (`[fn]`): `Minfo_Def12_SB.png`,
+  `Deck_Panel_SB.png` (to be imported from JP). To be verified: `minCost` of the boosted row, effect of `groupId` on the
+  dots.
+- **Guarantee strip (replaces the «golden number»)**: XML rich text (`[fn]`, tag `<important>` =
+  yellow 255,255,0, `<big>`, `<middle>`, `<br>`). Original text already in the WW texts: «`<important>`Nome`</important>`
+  guaranteed in `<important>`N tries`</important>`!» (106180307/308, lists 106180302-306). **User decision
+  (17-10): original yellow**, no difference to declare. The strip appears only with `warrantDisplayOfTime` (the
+  threshold = pity) != 0 and `userWarrantDisplayOfTime` between 1 and the threshold; with `validComment` 0 the client uses the names of
+  `warrantMedalIds` (empty list = crash), with 1 `sprintf(comment, userWarrantDisplayOfTime)`. `warrantNumberOfTime`
+  is not read. Proposal: `validComment` 0 + `warrantMedalIds` = featured medal for the banners with pity; a name
+  with «&» to be tested.
+- **Guilt and SAB**: «maximum Special Attack Bonus»/«maxed» -> `guiltFactor` at the maximum of the tier (Tier 10 = 32000 =
+  +320%) with the dots full; «strengthened N times»/«pre-strengthened N dots» -> `burstUpperNumber` = N (maximum
+  `maxEnhanceCount`: 3★ 1, 4★ 2, 5★ 3, 6-7★ 5); «SAB of N»/«Level N SAB»/«SAB Tier N» = Tier filter (`guiltValue`),
+  not a state; «Dual Meow Wow [SAB LV 9]» = medalId 301684.
+- **Nova popup**: the JP LWFs have what is needed (`FromLv`, `ToLv`, `_root`; `_num` with `num1`..`num4`, labels
+  `Lv0`..`Lv0000`). Logo `Burst_Logo.png` 422x142 RGBA and `Burst_Logo_B.png` (white silhouette of the glow): redone
+  «NOVA». Also to be imported: `GuiltBonus_Wfix0..9` (digits, missing on our side) and the layout `MedalInfo_Burst_Info.json`
+  (uses `Panel03.png`, already served). Texts 101302059 «Maxed out %s's Special Attack Bonus!» and 101302058 already present.
+  Import: extend `import_jp_raisedraw.py` to `lwf/medal/guilt_bonus` and `Draw_StatusBonus` (encoding `btf.encode`),
+  layout in `jp_coco_layouts.txt` for `import_jp_coco.py`, `_SB` textures copied from JP.

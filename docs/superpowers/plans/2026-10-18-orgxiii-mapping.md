@@ -1,32 +1,32 @@
-# Organizzazione XIII: correzione del mapping delle medaglie (Implementation Plan)
+# Organization XIII: fix of the medal mapping (Implementation Plan)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** i 13 id 6★ originali dell'Organizzazione XIII (e le 10 copie potenziate 1xxxxx) tornano Tier 3 come nel gioco; le 13 6★ «X [+]» (Tier 8) esistono come medaglie proprie dalla loro data; spariscono i doppioni «X A» 3004xx; catalogo e salvataggi coerenti.
+**Goal:** the 13 original 6★ ids of Organization XIII (and the 10 strengthened copies 1xxxxx) go back to Tier 3 as in the game; the 13 6★ «X [+]» (Tier 8) exist as medals of their own from their date; the duplicates «X A» 3004xx disappear; catalog and saves consistent.
 
-**Architecture:** l'errore sta in `D:\Progetto_Restauro_KH_UX\medal_gen\medal_map.json` (fuori repo): 23 id SE puntano alle righe Roboloid «X [+]» invece che a «X A». Lo correggiamo con una tabella di correzione nel repo, applicata da `make-game-tables.js` sopra `medal_map.json` (riproducibile senza toccare il file esterno). Dal mapping giusto la pipeline crea da sola le 6★ [+] (300000 + id Roboloid) e non crea piu' i doppioni. Poi catalogo (`make_banner_catalog.py`), migrazione del salvataggio, banco.
+**Architecture:** the error is in `D:\Progetto_Restauro_KH_UX\medal_gen\medal_map.json` (outside the repo): 23 SE ids point to the Roboloid rows «X [+]» instead of «X A». We fix it with a correction table in the repo, applied by `make-game-tables.js` on top of `medal_map.json` (reproducible without touching the external file). From the right mapping the pipeline creates the 6★ [+] by itself (300000 + Roboloid id) and no longer creates the duplicates. Then catalog (`make_banner_catalog.py`), save migration, bench.
 
-**Tech Stack:** Node (server, generatori, test `node server/test-*.js`), Python (`recon/tools/make_banner_catalog.py`, test `python recon/tools/test_make_banner_catalog.py`).
+**Tech Stack:** Node (server, generators, tests `node server/test-*.js`), Python (`recon/tools/make_banner_catalog.py`, test `python recon/tools/test_make_banner_catalog.py`).
 
-**Spec:** nessuna spec separata: le prove e la tabella completa sono in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\g4\medal_mapping_audit.md`, `medal_mapping_audit.tsv` e `orgxiii_migration.md` (letti dall'implementatore, fuori repo). Decisione dell'utente del 18-10: correggere i punti 1-6 prima di G4 del 2c.
+**Spec:** no separate spec: the evidence and the full table are in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\g4\medal_mapping_audit.md`, `medal_mapping_audit.tsv` and `orgxiii_migration.md` (read by the implementer, outside the repo). User decision of 18-10: fix points 1-6 before G4 of 2c.
 
 ## Global Constraints
 
-- Il repo contiene solo codice e documenti nostri: mai dati Square Enix, APK, master o codice decompilato. Gli id Roboloid e gli id medaglia nelle tabelle di correzione sono ammessi (come in `medal_map.json`/generatori gia' nel repo).
-- Mai lanciare `make-game-tables.js` senza le variabili: comando completo `$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json` (senza, il master scende a 522 medaglie). Prima su una copia del master (`KHUX_MASTER_OUT` o cartella di lavoro in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\`), diff, poi sul master vero.
-- Ogni rigenerazione del master alza la revisione BASE (126 -> 127) nei 4 script di sessione (`run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1`).
-- Commit in italiano con `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`, `git -c safe.directory=*`, `-F file` UTF-8 senza BOM, `pull --rebase --autostash`, push a ogni passo verificato. Non committare `bash.exe.stackdump`.
-- Commenti nel codice in italiano, densita' e stile dei file circostanti.
-- File pesanti temporanei in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\`.
+- The repo contains only our own code and documents: never Square Enix data, APKs, masters or decompiled code. The Roboloid ids and the medal ids in the correction tables are allowed (as in `medal_map.json`/generators already in the repo).
+- Never run `make-game-tables.js` without the variables: full command `$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json` (without them, the master drops to 522 medals). First on a copy of the master (`KHUX_MASTER_OUT` or a working folder in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\`), diff, then on the real master.
+- Every master regeneration raises the BASE revision (126 -> 127) in the 4 session scripts (`run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1`).
+- Commits in Italian with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`, `git -c safe.directory=*`, `-F file` UTF-8 without BOM, `pull --rebase --autostash`, push at every verified step. Do not commit `bash.exe.stackdump`.
+- Code comments in Italian, density and style of the surrounding files.
+- Heavy temporary files in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\`.
 
-## Tabella di correzione (valori esatti)
+## Correction table (exact values)
 
-SE 6★ -> Roboloid «X A» 6★ (ora -> giusto), 7★ «X A» per l'evoluzione, 6★ [+] che nasce, data EN della [+]:
+SE 6★ -> Roboloid «X A» 6★ (now -> right), 7★ «X A» for the evolution, 6★ [+] that is created, EN date of the [+]:
 
-| SE id (+ boosted) | membro | ora | giusto | 7★ «X A» | 6★ [+] nuova (evolve in) | data EN [+] |
+| SE id (+ boosted) | member | now | right | 7★ «X A» | new 6★ [+] (evolves into) | EN date [+] |
 |---|---|---|---|---|---|---|
 | 31176 (131176) | Lexaeus | 1491 | 443 | 300444 | 301491 (301492) | 2018-05-13 |
-| 31196 (131196) | Xaldin | 1601 | 483 | 300484 | 301601 (301602) | 2018-09-24 (solo evento) |
+| 31196 (131196) | Xaldin | 1601 | 483 | 300484 | 301601 (301602) | 2018-09-24 (event only) |
 | 31206 (131206) | Saïx | 1531 | 486 | 300487 | 301531 (301532) | 2018-07-13 |
 | 31226 | Xemnas | 1680 | 638 | 300639 | 301680 (301681) | 2019-01-13 |
 | 32186 (132186) | Marluxia | 1634 | 446 | 300447 | 301634 (301635) | 2018-11-13 |
@@ -39,92 +39,92 @@ SE 6★ -> Roboloid «X A» 6★ (ora -> giusto), 7★ «X A» per l'evoluzione,
 | 33216 (133216) | Luxord | 1616 | 495 | 300496 | 301616 (301617) | 2018-10-13 |
 | 33236 | Roxas | 1782 | 644 | 300645 | 301782 (301783) | 2019-03-13 |
 
-Doppioni che spariscono (6★ «X A» = 300000 + id giusto): 300443, 300483, 300486, 300638, 300446, 300449, 300489, 300641, 300452, 300455, 300492, 300495, 300644 -> stesso medalId SE della riga.
+Duplicates that disappear (6★ «X A» = 300000 + right id): 300443, 300483, 300486, 300638, 300446, 300449, 300489, 300641, 300452, 300455, 300492, 300495, 300644 -> same SE medalId of the row.
 
 ## Review Focus
 
-1. Un salvataggio con copie dei doppioni 3004xx (banco: 33) deve riaprirsi senza medaglie «vuote» (riga assente nel master = crash o icona grigia): tutte migrate all'id SE, deck/blocchi/skill invariati.
-2. Le 6★ [+] nuove devono avere immagine e cutin (imageId = medalId): senza risorsa il client mostra il ripiego o va in errore.
-3. Le copie potenziate (2031176..., 2131176...) non devono restare Tier 8: vengono rigenerate dalla base.
-4. Nessun banner 2016-2017 deve dare Tier 8 dell'Organizzazione; i deal [+] di aprile-novembre 2018 devono dare la 6★ [+].
-5. L'evoluzione 6★ «X A» -> 7★ «X A» deve chiedere 5 Blue Fairy [3] e funzionare (Evolve al banco).
+1. A save with copies of the 3004xx duplicates (bench: 33) must reopen without «empty» medals (row absent from the master = crash or grey icon): all migrated to the SE id, deck/locks/skills unchanged.
+2. The new 6★ [+] must have image and cutin (imageId = medalId): without the resource the client shows the fallback or errors out.
+3. The strengthened copies (2031176..., 2131176...) must not stay Tier 8: they are regenerated from the base.
+4. No 2016-2017 banner must give an Organization Tier 8; the [+] deals of April-November 2018 must give the 6★ [+].
+5. The evolution 6★ «X A» -> 7★ «X A» must require 5 Blue Fairy [3] and work (Evolve on the bench).
 
 ---
 
-### Task 1: mapping corretto nel generatore del master
+### Task 1: correct mapping in the master generator
 
 **Files:**
-- Modify: `server/make-game-tables.js` (vicino a `MEDAL_MAP`, riga ~100; blocco `KHUX_MEDALS_ALL` riga ~148-180)
+- Modify: `server/make-game-tables.js` (near `MEDAL_MAP`, line ~100; `KHUX_MEDALS_ALL` block lines ~148-180)
 - Create: `server/test-orgxiii-map.js`
 
 **Interfaces:**
-- Produces: `MEDAL_MAP_FIX` (oggetto `{ [seId]: robolid }`, i 23 id della tabella) e `EVOLVE_FIX` (`{ [seId 6★]: medalId 7★ «X A» }`, i 13 id non potenziati e i 10 potenziati verso lo stesso 7★), esportati o leggibili dal test; master rigenerato.
+- Produces: `MEDAL_MAP_FIX` (object `{ [seId]: robolid }`, the 23 ids of the table) and `EVOLVE_FIX` (`{ [seId 6★]: medalId 7★ «X A» }`, the 13 non-strengthened ids and the 10 strengthened ones towards the same 7★), exported or readable by the test; master regenerated.
 
-- [ ] **Step 1: test che fallisce** `server/test-orgxiii-map.js`, sul master `server/master_data/medal.json` (o `KHUX_MASTER_DIR`):
-  - per ogni id SE della tabella e le copie 1xxxxx: `guiltValue === 3`, `evolveId` = 7★ «X A» della tabella, `validEvolve === 1`, `validEvolveNeed === 5` (Blue Fairy, da `blue-fairy.js`);
-  - le 13 righe 6★ [+] esistono, `rare === 6`, `guiltValue === 8`, `evolveId` = 7★ [+] della tabella;
-  - nessuna delle 13 righe doppione 3004xx 6★ esiste; le 7★ «X A» (300444...) esistono;
-  - le copie potenziate `2000000 + id` della tabella (se presenti nel master) hanno `guiltValue === 3`.
+- [ ] **Step 1: failing test** `server/test-orgxiii-map.js`, on the master `server/master_data/medal.json` (or `KHUX_MASTER_DIR`):
+  - for every SE id of the table and the 1xxxxx copies: `guiltValue === 3`, `evolveId` = 7★ «X A» of the table, `validEvolve === 1`, `validEvolveNeed === 5` (Blue Fairy, from `blue-fairy.js`);
+  - the 13 6★ [+] rows exist, `rare === 6`, `guiltValue === 8`, `evolveId` = 7★ [+] of the table;
+  - none of the 13 duplicate rows 3004xx 6★ exists; the 7★ «X A» (300444...) exist;
+  - the strengthened copies `2000000 + id` of the table (if present in the master) have `guiltValue === 3`.
 - [ ] **Step 2:** `node server/test-orgxiii-map.js` -> FAIL (31176 guiltValue 8).
-- [ ] **Step 3:** in `make-game-tables.js` applicare `MEDAL_MAP_FIX` sopra `MEDAL_MAP` subito dopo il caricamento (commento: perche', fonte `tmp\sp2b\g4\medal_mapping_audit.md`), cosi' Tier e set `mapped` del blocco `KHUX_MEDALS_ALL` usano gli id giusti; dopo le righe vere impostare `validEvolve 1, evolveId` da `EVOLVE_FIX` sulle 6★ SE (prima di `blue-fairy.js`, che aggiunge il costo). Verificare dove nascono le copie potenziate 2xxxxxx (make-boosted-medals.js) e che copino il Tier dalla base rigenerata.
-- [ ] **Step 4:** rigenerare su copia in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\` con il comando completo, diff con il master attuale: atteso solo +13 righe [+] 6★, -13 doppioni, 23 righe SE (Tier/evolve), copie potenziate, `burst` delle [+] nuove (3000000 + id). Qualsiasi altra differenza = fermarsi e capire.
-- [ ] **Step 5:** rigenerare il master vero, `node server/test-orgxiii-map.js` -> PASS; anche `node server/test-skill-table.js`, `node server/test-base-buff.js`, `node server/test-medal-enhance.js` -> PASS. Revisione 126 -> 127 nei 4 script.
-- [ ] **Step 6:** commit «Medaglie: Organizzazione XIII Tier 3 (mapping corretto), 6★ [+] proprie, master rev 127».
+- [ ] **Step 3:** in `make-game-tables.js` apply `MEDAL_MAP_FIX` on top of `MEDAL_MAP` right after loading (comment: why, source `tmp\sp2b\g4\medal_mapping_audit.md`), so that Tier and the `mapped` set of the `KHUX_MEDALS_ALL` block use the right ids; after the real rows set `validEvolve 1, evolveId` from `EVOLVE_FIX` on the SE 6★ (before `blue-fairy.js`, which adds the cost). Verify where the strengthened copies 2xxxxxx are created (make-boosted-medals.js) and that they copy the Tier from the regenerated base.
+- [ ] **Step 4:** regenerate on a copy in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\` with the full command, diff with the current master: expected only +13 rows [+] 6★, -13 duplicates, 23 SE rows (Tier/evolve), strengthened copies, `burst` of the new [+] (3000000 + id). Any other difference = stop and understand.
+- [ ] **Step 5:** regenerate the real master, `node server/test-orgxiii-map.js` -> PASS; also `node server/test-skill-table.js`, `node server/test-base-buff.js`, `node server/test-medal-enhance.js` -> PASS. Revision 126 -> 127 in the 4 scripts.
+- [ ] **Step 6:** commit «Medals: Organization XIII Tier 3 (corrected mapping), own 6★ [+], master rev 127».
 
-### Task 2: immagini delle 6★ [+]
-
-**Files:**
-- Modify (se servono): `tools/ldplayer/session/build-resources.ps1` o lo script di `fetch_medal_images.py --all` usato per le 300000+
-- Test: controllo nel resource index servito
-
-- [ ] **Step 1:** per i 13 id 301446...301782 controllare che `img/medal/<id>` (icona, cutin, art: come per le altre 300000+) siano nelle risorse servite (`resource_data`, indice dei nomi). Le 7★ [+] (301447...) le hanno: se l'immagine 6★ manca, usare la stessa grafica della 7★ [+] (stessa medaglia, stessa arte su khuxwiki) oppure scaricarla con il flusso esistente.
-- [ ] **Step 2:** se servono file nuovi: `build-resources.ps1 -Quick` (risorse 41 -> 42), altrimenti niente. Verifica: le 13 voci compaiono nell'indice.
-- [ ] **Step 3:** commit (solo script/codice nostro, mai le immagini nel repo).
-
-### Task 3: catalogo dei banner
+### Task 2: images of the 6★ [+]
 
 **Files:**
-- Modify: `recon/tools/make_banner_catalog.py` (`extend_medals` riga ~655, `FAMILIES` riga ~599), eventuale `recon/tools/banner_overrides.tsv`
+- Modify (if needed): `tools/ldplayer/session/build-resources.ps1` or the `fetch_medal_images.py --all` script used for the 300000+
+- Test: check in the served resource index
+
+- [ ] **Step 1:** for the 13 ids 301446...301782 check that `img/medal/<id>` (icon, cutin, art: as for the other 300000+) are in the served resources (`resource_data`, name index). The 7★ [+] (301447...) have them: if the 6★ image is missing, use the same graphics as the 7★ [+] (same medal, same art on khuxwiki) or download it with the existing flow.
+- [ ] **Step 2:** if new files are needed: `build-resources.ps1 -Quick` (resources 41 -> 42), otherwise nothing. Check: the 13 entries appear in the index.
+- [ ] **Step 3:** commit (only our own scripts/code, never the images in the repo).
+
+### Task 3: banner catalog
+
+**Files:**
+- Modify: `recon/tools/make_banner_catalog.py` (`extend_medals` line ~655, `FAMILIES` line ~599), possibly `recon/tools/banner_overrides.tsv`
 - Test: `recon/tools/test_make_banner_catalog.py`
 
-- [ ] **Step 1: test che falliscono** in `test_make_banner_catalog.py`:
-  - `axel` e `roxas` non sono alias di `sn++ - axel`/`sn++ - roxas`; il subset 6.2 risolve a `axel a`/`roxas a` (ids 32236/33236 con data 2016-09-16);
-  - le voci `x [+]` dei 13 membri contengono l'id 6★ [+] con la data EN della tabella, e la 7★ [+] di Vexen/Lexaeus non prima del 2018-05-25 (`firstRarity[7]`);
-  - nessun id 3004xx 6★ doppione nel catalogo; il Tier per id dei 23 id SE e' 3 (dal master);
-  - SN++ Axel B e Roxas (302074, 302075) datate 2021-01-01.
-  - Banner: B0280 e B0303 hanno la 6★ [+] nel pool; nessun id dell'Organizzazione con Tier 8 nei pool dei banner prima della data della sua [+] (`expandPool` di `server/gacha-data.js`).
+- [ ] **Step 1: failing tests** in `test_make_banner_catalog.py`:
+  - `axel` and `roxas` are not aliases of `sn++ - axel`/`sn++ - roxas`; subset 6.2 resolves to `axel a`/`roxas a` (ids 32236/33236 with date 2016-09-16);
+  - the `x [+]` entries of the 13 members contain the 6★ [+] id with the EN date of the table, and the 7★ [+] of Vexen/Lexaeus not before 2018-05-25 (`firstRarity[7]`);
+  - no duplicate 3004xx 6★ id in the catalog; the per-id Tier of the 23 SE ids is 3 (from the master);
+  - SN++ Axel B and Roxas (302074, 302075) dated 2021-01-01.
+  - Banners: B0280 and B0303 have the 6★ [+] in the pool; no Organization id with Tier 8 in the banner pools before the date of its [+] (`expandPool` of `server/gacha-data.js`).
 - [ ] **Step 2:** run -> FAIL.
-- [ ] **Step 3:** correggere `extend_medals` (nessun alias verso una famiglia diversa quando esiste la voce «x a»), date e id [+], date SN++; rigenerare `server/game_data/gacha_catalog.json`.
-- [ ] **Step 4:** run -> PASS; `node server/test-gacha-data.js` e gli altri test del gacha -> PASS. Ricalcolare i pool dei banner G4 con lo script dell'agente (`tmp\sp2b\g4\analyze.js`) e annotare i nuovi conteggi.
-- [ ] **Step 5:** commit «Catalogo: Organizzazione XIII A/[+] e alias SN++ corretti».
+- [ ] **Step 3:** fix `extend_medals` (no alias towards a different family when the «x a» entry exists), [+] dates and ids, SN++ dates; regenerate `server/game_data/gacha_catalog.json`.
+- [ ] **Step 4:** run -> PASS; `node server/test-gacha-data.js` and the other gacha tests -> PASS. Recalculate the pools of the G4 banners with the agent's script (`tmp\sp2b\g4\analyze.js`) and note the new counts.
+- [ ] **Step 5:** commit «Catalog: Organization XIII A/[+] and SN++ aliases corrected».
 
-### Task 4: migrazione del salvataggio
+### Task 4: save migration
 
 **Files:**
-- Modify: `server/server.js` (accanto a `migrateSkills`, riga ~2528; chiamata vicino alla riga ~3773)
+- Modify: `server/server.js` (next to `migrateSkills`, line ~2528; call near line ~3773)
 - Create: `server/test-orgxiii-migration.js`
 
 **Interfaces:**
-- Consumes: la tabella doppione -> id SE (Task 1).
+- Consumes: the table duplicate -> SE id (Task 1).
 - Produces: `player.medalMapVersion = 1`.
 
-- [ ] **Step 1: test che fallisce** (processo figlio come `test-bench-enemy.js`, salvataggio finto): un giocatore con medaglie 300443 e 300644 e una 300444 (7★, resta) -> dopo il login 300443 -> 31176, 300644 -> 33236, 300444 invariata; `userMedalId`, livello, skill (`medalSkills`), blocchi, deck e guilt invariati; `medalMapVersion === 1`; un secondo login non cambia nulla; nuovo giocatore: `medalMapVersion` 1 senza migrazione.
+- [ ] **Step 1: failing test** (child process like `test-bench-enemy.js`, fake save): a player with medals 300443 and 300644 and one 300444 (7★, stays) -> after the login 300443 -> 31176, 300644 -> 33236, 300444 unchanged; `userMedalId`, level, skills (`medalSkills`), locks, deck and guilt unchanged; `medalMapVersion === 1`; a second login changes nothing; new player: `medalMapVersion` 1 without migration.
 - [ ] **Step 2:** run -> FAIL.
-- [ ] **Step 3:** `migrateMedalMap()`: sostituisce `medalId` nelle strutture che lo contengono (cercare in `server.js` tutti i campi del salvataggio con medalId: `medals`, album/medaglie viste, premi in sospeso, supporto, ecc.), log di quante copie.
-- [ ] **Step 4:** run -> PASS; tutti i test del server -> PASS.
-- [ ] **Step 5:** commit «Salvataggi: doppioni Organizzazione XIII sugli id originali (medalMapVersion 1)».
+- [ ] **Step 3:** `migrateMedalMap()`: replaces `medalId` in the structures that contain it (search `server.js` for all the save fields with a medalId: `medals`, album/medals seen, pending rewards, support, etc.), log of how many copies.
+- [ ] **Step 4:** run -> PASS; all server tests -> PASS.
+- [ ] **Step 5:** commit «Saves: Organization XIII duplicates on the original ids (medalMapVersion 1)».
 
-### Task 5: documenti
+### Task 5: documents
 
 **Files:** `docs/notes/medaglie.md`, `docs/ISSUES.md`, `HANDOFF.md`
 
-- [ ] **Step 1:** `medaglie.md`: sezione sul mapping (tabella, prove, perche' `MEDAL_MAP_FIX` sta nel repo). `ISSUES.md`: I-160 Organizzazione XIII (CHIUSO); I-161 SN++ «adjusted» 302008-302012 date al 2020-09-07 e solo con Fantasia Mickey B (aperto); I-162 167 6★ originali senza evoluzione verso la 7★ (aperto). HANDOFF: rev 127, stato, poi G4.
+- [ ] **Step 1:** `medaglie.md`: section on the mapping (table, evidence, why `MEDAL_MAP_FIX` lives in the repo). `ISSUES.md`: I-160 Organization XIII (CLOSED); I-161 SN++ «adjusted» 302008-302012 dated to 2020-09-07 and only with Fantasia Mickey B (open); I-162 167 original 6★ without evolution to the 7★ (open). HANDOFF: rev 127, status, then G4.
 - [ ] **Step 2:** commit.
 
-### Task 6: banco (seriale, l'utente guarda)
+### Task 6: bench (serial, the user watches)
 
-- [ ] **Step 1:** `relogin.ps1 -Tag ox` (rev 127). Login senza crash, log della migrazione (33 copie).
-- [ ] **Step 2:** lista medaglie: una Lexaeus/Xemnas A 6★ migrata mostra Tier 3 (dettaglio medaglia), skill e livello invariati; Evolve mostra 5 Blue Fairy [3] verso la 7★ «X A».
-- [ ] **Step 3:** Album: una 6★ [+] (es. Vexen [+]) con immagine.
-- [ ] **Step 4:** Shop con `-GachaShow B0280` e orologio al 13-04-2018 se serve: dettagli del banner con la 6★ [+]. Screenshot in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\`.
-- [ ] **Step 5:** HANDOFF aggiornato, commit e push.
+- [ ] **Step 1:** `relogin.ps1 -Tag ox` (rev 127). Login without crash, migration log (33 copies).
+- [ ] **Step 2:** medal list: a migrated Lexaeus/Xemnas A 6★ shows Tier 3 (medal detail), skill and level unchanged; Evolve shows 5 Blue Fairy [3] towards the 7★ «X A».
+- [ ] **Step 3:** Album: a 6★ [+] (e.g. Vexen [+]) with image.
+- [ ] **Step 4:** Shop with `-GachaShow B0280` and the clock at 13-04-2018 if needed: banner details with the 6★ [+]. Screenshots in `D:\Progetto_Restauro_KH_UX\tmp\orgxiii\`.
+- [ ] **Step 5:** HANDOFF updated, commit and push.

@@ -1,61 +1,61 @@
-# Shop, sotto-progetto 3: stagionali, Limited coi biglietti, filtri del Catalog, banner fissato — design
+# Shop, sub-project 3: seasonal banners, Limited with tickets, Catalog filters, pinned banner — design
 
-Stato: bozza del 20-10-2026, da approvare. Segue i sotto-progetti 1, 2, 2b, 2c e la rotazione settimanale (I-165,
-[shop.md#rotazione](../../notes/shop.md#rotazione)). Sostituisce le sezioni 4.2, 4.3, 4.5, 4.6, 4.7 e 4.9 della
-[spec del 16-10](2026-10-16-shop-banner-design.md), rese in parte superate dalla rotazione. Fonti: audit del 20-10
-(`D:\Progetto_Restauro_KH_UX\tmp\sp3_audit\report.md`), decisioni dell'utente del 20-10 (questa conversazione),
-bozze approvate del Catalog (`D:\Progetto_Restauro_KH_UX\.superpowers\brainstorm\469-1792477598\content\`:
-`catalog-filters-v3.html` per il flusso, `catalog-years-v4.html` opzione A per le schede).
+Status: draft of 20-10-2026, to be approved. It follows sub-projects 1, 2, 2b, 2c and the weekly rotation (I-165,
+[shop.md#rotazione](../../notes/shop.md#rotazione)). It replaces sections 4.2, 4.3, 4.5, 4.6, 4.7 and 4.9 of the
+[spec of 16-10](2026-10-16-shop-banner-design.md), partly superseded by the rotation. Sources: audit of 20-10
+(`D:\Progetto_Restauro_KH_UX\tmp\sp3_audit\report.md`), user decisions of 20-10 (this conversation),
+approved drafts of the Catalog (`D:\Progetto_Restauro_KH_UX\.superpowers\brainstorm\469-1792477598\content\`:
+`catalog-filters-v3.html` for the flow, `catalog-years-v4.html` option A for the tabs).
 
-## 1. Perche'
+## 1. Why
 
-La rotazione per periodo di storia (I-165) porta nello Shop ogni banner nella sua epoca, ma:
-- le feste del calendario vero non si sentono (Halloween a ottobre non succede niente);
-- un banner il cui periodo e' passato non torna piu' nello Shop: resta solo nel Catalog;
-- con 807 banner il Catalog senza filtri non si consulta;
-- le missioni Limited danno Platinum Ticket e Draw Ticket centinaia di quest prima che esista un banner dove
-  spenderli.
+The rotation by story period (I-165) brings every banner into the Shop in its era, but:
+- the holidays of the real calendar are not felt (Halloween in October, nothing happens);
+- a banner whose period has passed never comes back to the Shop: it stays only in the Catalog;
+- with 807 banners the Catalog without filters cannot be browsed;
+- the Limited quests give Platinum Tickets and Draw Tickets hundreds of quests before a banner exists where
+  they can be spent.
 
-## 2. Obiettivi
+## 2. Goals
 
-1. **Stagionali sul calendario vero**: nella finestra di una stagione, in cima allo Shop, l'edizione piu' recente
-   sbloccata dei banner di quella stagione.
-2. **Limited coi biglietti** nascoste finche' non e' sbloccato un banner che spende quel biglietto.
-3. **Catalog con schede per anno di gioco e pannello Filters** (medaglia, moneta, stato).
-4. **Un banner vecchio fissato nello Shop**, scelto dal giocatore, cambiabile quando vuole.
-5. Notices aggiornate per ogni differenza dall'originale.
+1. **Seasonal banners on the real calendar**: in the window of a season, at the top of the Shop, the most recent
+   unlocked edition of the banners of that season.
+2. **Limited with tickets** hidden until a banner that spends that ticket is unlocked.
+3. **Catalog with tabs by game year and a Filters panel** (medal, currency, state).
+4. **One old banner pinned in the Shop**, chosen by the player, changeable whenever they want.
+5. Notices updated for every difference from the original.
 
-Non obiettivi (decisioni dell'utente del 20-10):
-- B0079-B0085 (sbloccati alla 525 ma fuori dalla finestra della tranche 501-525): **restano cosi'**; si risolvono
-  quando la storia arriva alla 979 (obiettivo del progetto). Nessun cambio della regola di sblocco ne' del testo.
-- Valute stagionali distinte (Spooky Cookie, Holiday Draw Ticket, Moogle Point): **piu' avanti**, con le campagne che
-  le danno (Union Cross, Proud). Oggi tutto il tipo 41 resta Draw Ticket.
-- `SHOP_MAX` resta 20.
-- Debutto di 7 giorni, posti «2 recenti + 1 archivio», scelta del gruppo dal Catalog e «Novita'» della spec del 16-10:
-  **tolti** (la rotazione fa gia' da debutto; il banner fissato sostituisce l'archivio; il Catalog non cambia lo Shop).
+Non-goals (user decisions of 20-10):
+- B0079-B0085 (unlocked at 525 but outside the window of the 501-525 tranche): **stay as they are**; they are resolved
+  when the story reaches 979 (project goal). No change to the unlock rule nor to the text.
+- Distinct seasonal currencies (Spooky Cookie, Holiday Draw Ticket, Moogle Point): **later**, with the campaigns that
+  give them (Union Cross, Proud). Today all of type 41 stays Draw Ticket.
+- `SHOP_MAX` stays 20.
+- 7-day debut, «2 recent + 1 archive» slots, group choice from the Catalog and «Novita'» (New) of the spec of 16-10:
+  **removed** (the rotation already acts as a debut; the pinned banner replaces the archive; the Catalog does not change the Shop).
 
-Anti-obiettivi: crash del client (piastre con lucchetto I-134, due valute payType 8 insieme); medaglie prima della loro
-data (9.3); banner gratuiti o quasi gratuiti disponibili per sempre.
+Anti-goals: client crashes (plates with padlock I-134, two payType 8 currencies together); medals before their
+date (9.3); free or almost free banners available forever.
 
-## 3. Vincoli
+## 3. Constraints
 
-- Client originale non modificato: si cambiano risposte del server, master servito, pagine WebView.
-- La chiusura della WebView del Catalog **non ricarica** `/gacha/list` (provato al banco, shop.md#prove): ogni azione
-  del Catalog che cambia lo Shop deve dire «esci e rientra nello Shop».
-- Il master resta fisso per la sessione (revisione fissata al login): i campi serviti in `drawMedalType` (conto alla
-  rovescia) cambiano solo al login successivo.
-- Repo: solo codice e documentazione nostri; dati derivati in `server/game_data/`.
-- Testi del gioco in inglese, come le pagine attuali.
+- Original client not modified: server responses, served master, WebView pages are changed.
+- Closing the Catalog WebView **does not reload** `/gacha/list` (tested on the bench, shop.md#prove): every Catalog action
+  that changes the Shop must say «exit and re-enter the Shop».
+- The master stays fixed for the session (revision fixed at login): the fields served in `drawMedalType` (count-
+  down) change only at the next login.
+- Repo: only our own code and documentation; derived data in `server/game_data/`.
+- Game texts in English, like the current pages.
 
-## 4. Stagionali sul calendario vero
+## 4. Seasonal banners on the real calendar
 
-### 4.1 Tabella delle stagioni (nuova, nel catalogo generato)
+### 4.1 Season table (new, in the generated catalog)
 
-Ogni banner stagionale riceve un campo `season`. Le finestre sono **fisse per stagione** (decisione dell'utente):
-dalla prima data di inizio all'ultima di fine fra tutte le edizioni, riportate a mese/giorno. Ricavate dai dati il
+Each seasonal banner receives a `season` field. The windows are **fixed per season** (user decision):
+from the first start date to the last end date among all the editions, brought to month/day. Derived from the data on
 20-10:
 
-| season | banner | finestra (mese/giorno) |
+| season | banner | window (month/day) |
 |---|---|---|
 | `newyear` | B0072-B0076 (2017), B0219 (2017-18), B0774 (2021) | 22/12 - 17/01 |
 | `lunar` | B0084 (2017) | 28/01 - 03/02 |
@@ -66,157 +66,157 @@ dalla prima data di inizio all'ultima di fine fra tutte le edizioni, riportate a
 | `blackfriday` | B0066, B0067 (2016), B0621 (2019), B0752, B0754 (2020) | 22/11 - 09/12 |
 | `holiday` | B0068 (2016), B0758, B0759 (2020, payType 8) | 07/12 - 06/01 |
 
-- Le finestre che attraversano il capodanno valgono a cavallo dell'anno.
-- Gli altri banner col flag `SEASONAL` nel catalogo (Thank You Draw, Prime 7★ Deal, Free Jewels Draw, EX+ di novembre
-  2018, Free Celebratory Draw, Ticket Draw, SN Falling Price Deal, Daily Free Deal 2020, SN+ Falling Price Deal, Epic
-  Medal Carnival B0089) **non hanno stagione**: restano banner normali della rotazione.
-- La tabella sta nel generatore del catalogo (`recon/tools/make_banner_catalog.py` o un file di regole accanto), non
-  scritta a mano nel JSON generato.
+- The windows that cross New Year apply across the turn of the year.
+- The other banners with the `SEASONAL` flag in the catalog (Thank You Draw, Prime 7★ Deal, Free Jewels Draw, November 2018
+  EX+, Free Celebratory Draw, Ticket Draw, SN Falling Price Deal, Daily Free Deal 2020, SN+ Falling Price Deal, Epic
+  Medal Carnival B0089) **have no season**: they stay normal rotation banners.
+- The table lives in the catalog generator (`recon/tools/make_banner_catalog.py` or a rules file next to it), not
+  written by hand in the generated JSON.
 
-### 4.2 Regola
+### 4.2 Rule
 
-- Data di riferimento: l'**ora reale** del server (`realNow()`, la stessa su cui avanzano rotazione e settimane;
-  `-RealNow <ISO>` per le prove), non la data finta del gemello.
-- Se la data reale cade nella finestra di una stagione: si prende l'**edizione piu' recente sbloccata** di quella
-  stagione fra i banner con `unlockQuest` <= ultima quest superata, estraibili (`drawable`). Si mostrano **tutti** i
-  banner di quell'edizione (es. i cinque New Year's Deal 2017).
-- **Edizione** (scelta di Claude, revisione del 20-10) = l'occorrenza della finestra in cui cade la data di inizio del
-  banner, non l'anno solare: per `newyear` B0072-B0076 (inizio 01/01/2017) sono l'edizione 2016-17, B0219 (inizio
-  22/12/2017) l'edizione 2017-18, B0774 la 2020-21. Lo stesso per `holiday` (B0068 2016-17, B0758/B0759 2020-21).
-- Nessuna edizione sbloccata: nessun banner di quella stagione.
-- Piu' stagioni insieme (dicembre: Black Friday, holiday, newyear): tutte, nell'ordine della tabella 4.1.
-- Posizione nello Shop: dopo la piastra Catalog e il banner fissato (6), prima della rotazione. **Decisione dell'utente
-  (20-10, dal banco):** ordine di visualizzazione Catalog, fissato, stagionali, rotazione (prima: Catalog, stagionali,
-  fissato, rotazione). La precedenza sotto resta quella di prima: si decide quali banner sopravvivono (stagione >
-  fissato > rotazione) e poi si ordinano i superstiti col fissato in cima.
-- Un banner stagionale gia' presente nella settimana della rotazione non si duplica (resta al posto della stagione).
-- payType 8 (Spooky Cookies, Holiday Draw Tickets): mai due valute payType 8 insieme. In caso di conflitto (dalla
-  quest 940: banner a Draw Ticket fissato o in rotazione durante Halloween o le feste) **vince la stagione**, poi il
-  banner fissato, poi la rotazione: il banner a payType 8 che perde resta fuori dallo Shop per la durata della
-  finestra e torna dopo (scelta di Claude, revisione del 20-10; da dire nelle Notices, sezione «Keep one banner in
+- Reference date: the server's **real time** (`realNow()`, the same on which rotation and weeks advance;
+  `-RealNow <ISO>` for tests), not the twin's fake date.
+- If the real date falls in the window of a season: the **most recent unlocked edition** of that
+  season is taken among the banners with `unlockQuest` <= last quest cleared, drawable (`drawable`). **All** the
+  banners of that edition are shown (e.g. the five New Year's Deals 2017).
+- **Edition** (Claude's choice, review of 20-10) = the occurrence of the window in which the banner's start date falls,
+  not the calendar year: for `newyear` B0072-B0076 (start 01/01/2017) are the 2016-17 edition, B0219 (start
+  22/12/2017) the 2017-18 edition, B0774 the 2020-21 one. The same for `holiday` (B0068 2016-17, B0758/B0759 2020-21).
+- No unlocked edition: no banner of that season.
+- Several seasons together (December: Black Friday, holiday, newyear): all of them, in the order of table 4.1.
+- Position in the Shop: after the Catalog plate and the pinned banner (6), before the rotation. **User decision
+  (20-10, from the bench):** display order Catalog, pinned, seasonal, rotation (before: Catalog, seasonal,
+  pinned, rotation). The precedence below stays as before: it is decided which banners survive (season >
+  pinned > rotation) and then the survivors are ordered with the pinned one at the top.
+- A seasonal banner already present in the rotation week is not duplicated (it stays in the season's place).
+- payType 8 (Spooky Cookies, Holiday Draw Tickets): never two payType 8 currencies together. In case of conflict (from
+  quest 940: Draw Ticket banner pinned or in rotation during Halloween or the holidays) **the season wins**, then the
+  pinned banner, then the rotation: the payType 8 banner that loses stays out of the Shop for the duration of the
+  window and comes back afterwards (Claude's choice, review of 20-10; to be stated in the Notices, section «Keep one banner in
   the Shop»).
-- Conto alla rovescia (`displayTimeLeft`/`endDate` di `drawMedalType`, come la rotazione): fine della finestra della
-  stagione, in ora finta come le missioni (`clock.fakeString` con lo scostamento della revisione).
-- I limiti del banner (`dayLimit`, `totalLimit`, Free Deal VIP) restano quelli del banner: un banner «once» gia' usato
-  resta esaurito anche nelle stagioni successive.
+- Countdown (`displayTimeLeft`/`endDate` of `drawMedalType`, like the rotation): end of the season's
+  window, in fake time like the quests (`clock.fakeString` with the revision's offset).
+- The banner limits (`dayLimit`, `totalLimit`, Free Deal VIP) stay those of the banner: a «once» banner already used
+  stays exhausted in the following seasons too.
 
-## 5. Limited coi biglietti nascoste fino allo sblocco
+## 5. Limited with tickets hidden until the unlock
 
-- Una campagna Limited che **da'** Platinum Ticket (premio 40) o Draw Ticket (premio 41) e' attiva solo se e'
-  sbloccato (`unlockQuest` <= ultima quest superata) almeno un banner estraibile che **spende** quella valuta
-  (payType 7 per il Platinum, payType 8 con `currency` draw per il Draw Ticket).
-- Oggi: W01 (righe 4059/4060, Platinum) dalla quest 815 (B0456), W02 (riga 4091, Draw Ticket x100) dalla 840 (B0478).
-  Le soglie si calcolano dal catalogo, non si scrivono a mano.
-- Meccanismo: lo stesso di `weeklyMedalFrom` (`server.js limitedUnlocked`), esteso ai gruppi che danno biglietti;
-  vale anche per le mensili se una di loro da' biglietti. Prima dello sblocco la settimana resta senza quella campagna.
-- I biglietti gia' accumulati nei salvataggi restano.
+- A Limited campaign that **gives** Platinum Tickets (reward 40) or Draw Tickets (reward 41) is active only if
+  at least one drawable banner that **spends** that currency is unlocked (`unlockQuest` <= last quest cleared)
+  (payType 7 for the Platinum, payType 8 with `currency` draw for the Draw Ticket).
+- Today: W01 (rows 4059/4060, Platinum) from quest 815 (B0456), W02 (row 4091, Draw Ticket x100) from 840 (B0478).
+  The thresholds are calculated from the catalog, not written by hand.
+- Mechanism: the same as `weeklyMedalFrom` (`server.js limitedUnlocked`), extended to the groups that give tickets;
+  it also applies to the monthly ones if one of them gives tickets. Before the unlock the week stays without that campaign.
+- The tickets already accumulated in the saves stay.
 
-## 6. Banner fissato nello Shop
+## 6. Banner pinned in the Shop
 
-### 6.1 Cosa si puo' fissare
+### 6.1 What can be pinned
 
-Un banner e' **fissabile** se:
-- e' sbloccato e estraibile (`drawable`, dimensioni in `KHUX_GACHA_SIZES`, non `catalogOnly`);
-- il suo periodo e' **passato**: finisce prima dell'inizio del periodo della tranche attuale (non tornera' mai nella
-  rotazione);
-- **non** e' un Free Deal, **non** costa 1 Jewel, **non** ha stagione (4.1) (decisione dell'utente: le stagionali
-  tornano col calendario; Free Deal e 1 Jewel per l'equilibrio delle risorse, I-164).
-- Precisazione (scelta di Claude, revisione del 20-10): «Free Deal / 1 Jewel» = banner con **tutti** i prezzi <= 1
-  (`prices` [0], [1], ...) oppure `vipFree`, oppure nome che comincia con «Free» (Free Deal, Free Jewels Draw, Free
-  10-Medal Draw, Free Celebratory Draw). I banner con la **sola prima estrazione gratuita** e poi a pagamento
-  (FIRST_FREE, Falling Price: `[0,3000]`, `[0,2500,2200,...]`) **si possono fissare**: la gratuita vale una volta per
-  giocatore (contatore `player.gacha.count`), quindi non da' estrazioni gratis per sempre.
+A banner is **pinnable** if:
+- it is unlocked and drawable (`drawable`, sizes in `KHUX_GACHA_SIZES`, not `catalogOnly`);
+- its period is **past**: it ends before the start of the period of the current tranche (it will never come back into the
+  rotation);
+- it is **not** a Free Deal, it does **not** cost 1 Jewel, it has **no** season (4.1) (user decision: the seasonal ones
+  come back with the calendar; Free Deal and 1 Jewel for the balance of resources, I-164).
+- Clarification (Claude's choice, review of 20-10): «Free Deal / 1 Jewel» = banner with **all** prices <= 1
+  (`prices` [0], [1], ...) or `vipFree`, or a name starting with «Free» (Free Deal, Free Jewels Draw, Free
+  10-Medal Draw, Free Celebratory Draw). The banners with **only the first draw free** and then paid
+  (FIRST_FREE, Falling Price: `[0,3000]`, `[0,2500,2200,...]`) **can be pinned**: the free one applies once per
+  player (counter `player.gacha.count`), so it does not give free draws forever.
 
-### 6.2 Comportamento
+### 6.2 Behaviour
 
-- Al massimo **un** banner fissato per giocatore (`player.gacha.pinned` = rowId o assente).
-- Nei Details di un banner fissabile, aperti dal Catalog: pulsante **«📌 Keep in the Shop»**. Se un altro e' gia'
-  fissato, il testo dice quale verra' sostituito. Nei Details del banner fissato: **«Remove from the Shop»**.
-- Dopo il tocco la pagina conferma con un riquadro ben visibile (bordo e testo grande, verde per «Pinned!», arancio per
-  «Removed.») al posto del pulsante, portato in vista: **«Pinned! Leave and re-enter the Shop to see it.»** (vincolo 3).
-  **Decisione dell'utente (20-10):** lo stesso pulsante («📌 Keep in the Shop» / «Remove from the Shop») sta anche su
-  ogni riga fissabile del Catalog, senza lasciare la lista: la riga del banner fissato prima perde lo stato, quella
-  nuova diventa «📌 Kept in the Shop», con lo stesso riquadro di conferma. Il codice della richiesta e' condiviso con i
+- At most **one** pinned banner per player (`player.gacha.pinned` = rowId or absent).
+- In the Details of a pinnable banner, opened from the Catalog: button **«📌 Keep in the Shop»**. If another one is already
+  pinned, the text says which one will be replaced. In the Details of the pinned banner: **«Remove from the Shop»**.
+- After the tap the page confirms with a clearly visible box (border and large text, green for «Pinned!», orange for
+  «Removed.») in place of the button, scrolled into view: **«Pinned! Leave and re-enter the Shop to see it.»** (constraint 3).
+  **User decision (20-10):** the same button («📌 Keep in the Shop» / «Remove from the Shop») is also on
+  every pinnable row of the Catalog, without leaving the list: the row of the previously pinned banner loses the state, the
+  new one becomes «📌 Kept in the Shop», with the same confirmation box. The request code is shared with the
   Details.
-- Nello Shop: **subito dopo la piastra Catalog, sopra le stagionali** (decisione dell'utente, 20-10; vedi 4.2), prima
-  della rotazione; nessun conto alla rovescia. La piastra mostra solo l'immagine del banner, quindi per il fissato il
-  `bannerUrl` e' `/web/gacha/img/<id>-kept.png`: lo stesso banner (stessa dimensione) con il bollino «📌 KEPT IN SHOP»
-  in alto a destra (puntina disegnata come forma), generato una volta da `recon/tools/kept_banner_badge.py` (Pillow)
-  e tenuto in `game_data/gacha_img_kept/`; se la generazione fallisce si serve l'immagine normale.
-- Se il banner fissato smette di essere fissabile (non dovrebbe succedere: i periodi passati restano passati), sparisce
-  dallo Shop e il Catalog lo mostra di nuovo come fissabile o no.
-- Conta nel tetto `SHOP_MAX`.
+- In the Shop: **right after the Catalog plate, above the seasonal ones** (user decision, 20-10; see 4.2), before
+  the rotation; no countdown. The plate shows only the banner image, so for the pinned one the
+  `bannerUrl` is `/web/gacha/img/<id>-kept.png`: the same banner (same size) with the «📌 KEPT IN SHOP» badge
+  at the top right (pin drawn as a shape), generated once by `recon/tools/kept_banner_badge.py` (Pillow)
+  and kept in `game_data/gacha_img_kept/`; if the generation fails, the normal image is served.
+- If the pinned banner stops being pinnable (it should not happen: past periods stay past), it disappears
+  from the Shop and the Catalog shows it again as pinnable or not.
+- It counts towards the `SHOP_MAX` cap.
 
-### 6.3 Comunicazione WebView -> server
+### 6.3 WebView -> server communication
 
-La WebView del Catalog e' servita dal nostro server su http (vedi note su WebView e TLS). Il pulsante fa una richiesta
-al server (es. `POST /web/gacha/pin` con il rowId, o un link GET con risposta che ridisegna la pagina) che aggiorna
-`player.gacha.pinned` e salva. Il dettaglio tecnico e' lasciato al builder; requisito: funzionare nella WebView del
-client senza JavaScript esterno.
+The Catalog WebView is served by our server over http (see the notes on WebView and TLS). The button makes a request
+to the server (e.g. `POST /web/gacha/pin` with the rowId, or a GET link with a response that redraws the page) that updates
+`player.gacha.pinned` and saves. The technical detail is left to the builder; requirement: work in the client's
+WebView without external JavaScript.
 
-## 7. Catalog: schede per anno di gioco e pannello Filters
+## 7. Catalog: tabs by game year and Filters panel
 
-Riferimento visivo: `catalog-filters-v3.html` (flusso in tre passi) e `catalog-years-v4.html` opzione A.
+Visual reference: `catalog-filters-v3.html` (three-step flow) and `catalog-years-v4.html` option A.
 
-### 7.1 Schede per anno di gioco
+### 7.1 Tabs by game year
 
-- Titolo sopra le schede: **«GAME YEAR — each year runs from one anniversary (April 7) to the next»**.
-- Schede: **All years** (2016-2021), **Launch year** (Apr 7, 2016 → 1st 🎂), **Year 2** (1st 🎂 → 2nd 🎂),
-  **Year 3**, **Year 4**, **Year 5**, **Final months** (5th 🎂 → end). Anno di un banner = data di inizio.
-  **Decisione dell'utente (20-10):** una scheda anno senza alcun banner nell'intero catalogo (indipendente dai filtri) non
-  si mostra (oggi «Final months»: l'ultimo inizio e' 2021-02-25); ricompare da sola se arrivano dati.
-- Ogni scheda mostra quanti banner corrispondono ai filtri attivi.
-- La frase sopra la lista ripete le date esatte: «12 banners from the launch year (Apr 7, 2016 – Apr 6, 2017) match
+- Title above the tabs: **«GAME YEAR — each year runs from one anniversary (April 7) to the next»**.
+- Tabs: **All years** (2016-2021), **Launch year** (Apr 7, 2016 → 1st 🎂), **Year 2** (1st 🎂 → 2nd 🎂),
+  **Year 3**, **Year 4**, **Year 5**, **Final months** (5th 🎂 → end). Year of a banner = start date.
+  **User decision (20-10):** a year tab without any banner in the whole catalog (independent of the filters) is not
+  shown (today «Final months»: the last start is 2021-02-25); it reappears by itself if data arrive.
+- Each tab shows how many banners match the active filters.
+- The sentence above the list repeats the exact dates: «12 banners from the launch year (Apr 7, 2016 – Apr 6, 2017) match
   your filters».
 
-### 7.2 Pannello Filters
+### 7.2 Filters panel
 
-- Pulsante **«⚙ Filters»** in alto a destra, con il numero dei filtri accesi.
-- Si apre **sopra** la lista oscurata; si chiude con la X o con il pulsante in fondo.
-- Tre sezioni:
-  - **FIND A MEDAL**: campo di ricerca per nome di medaglia, con la riga «Shows the banners where this Medal can be
-    drawn.» Corrisponde se la medaglia e' nel pool o nelle garanzie del banner (nomi del catalogo, senza
-    maiuscole/minuscole, ricerca per parte del nome).
+- **«⚙ Filters»** button at the top right, with the number of filters turned on.
+- It opens **over** the darkened list; it closes with the X or with the button at the bottom.
+- Three sections:
+  - **FIND A MEDAL**: search field by medal name, with the line «Shows the banners where this Medal can be
+    drawn.» It matches if the medal is in the pool or in the guarantees of the banner (catalog names, case-
+    insensitive, search by part of the name).
   - **PAID WITH**: All, 💎 Jewels, 🎫 Platinum Ticket, 🎟 Draw Ticket, 🎃 Seasonal tickets, 👑 VIP, Other.
-    Definizioni (scelta di Claude, revisione del 20-10): Jewels = payType 1; Platinum = payType 7; Draw Ticket =
-    payType 8 con `currency` draw; Seasonal tickets = payType 8 con spooky, holiday o moogle; VIP = banner col flag
-    `VIP` (qualunque moneta: e' un filtro sul tipo di banner, quindi un banner VIP a Jewel compare sia in Jewels sia in
-    VIP); Other = payType 4/5/6/9 (Bronze/Silver/Gold Ticket, Draw Points, solo catalogo).
-  - **SHOW**: All banners, ▶ In the Shop now, Unlocked, not in the Shop now, 🔒 Still locked (stessi colori degli
-    stati della lista).
-- In fondo: «Reset filters» e il pulsante **«Show N banners»** con il numero gia' calcolato.
-- Lista filtrata: frase con il conteggio e i filtri accesi come etichette con la × per toglierli, piu' «Clear all».
-- Ogni banner: immagine a sinistra; a destra nome, date, prezzo e stato.
-- Il filtro vive **solo** nel Catalog: non cambia lo Shop. Puo' essere tutto lato pagina (JavaScript inline nella
-  pagina servita); ricordare i filtri fra un'apertura e l'altra e' facoltativo.
-- Stato in lista: aggiungere lo stato «📌 Pinned» e, per i fissabili, un'indicazione che si possono fissare.
+    Definitions (Claude's choice, review of 20-10): Jewels = payType 1; Platinum = payType 7; Draw Ticket =
+    payType 8 with `currency` draw; Seasonal tickets = payType 8 with spooky, holiday or moogle; VIP = banners with the
+    `VIP` flag (any currency: it is a filter on the banner type, so a VIP banner paid in Jewels appears both in Jewels and in
+    VIP); Other = payType 4/5/6/9 (Bronze/Silver/Gold Ticket, Draw Points, catalog only).
+  - **SHOW**: All banners, ▶ In the Shop now, Unlocked, not in the Shop now, 🔒 Still locked (same colours as the
+    states in the list).
+- At the bottom: «Reset filters» and the **«Show N banners»** button with the number already calculated.
+- Filtered list: sentence with the count and the active filters as labels with the × to remove them, plus «Clear all».
+- Each banner: image on the left; on the right name, dates, price and state.
+- The filter lives **only** in the Catalog: it does not change the Shop. It can be entirely page-side (inline JavaScript in the
+  served page); remembering the filters between one opening and the next is optional.
+- State in the list: add the «📌 Pinned» state and, for the pinnable ones, an indication that they can be pinned.
 
-### 7.3 Nomi guasti del catalogo (I-150)
+### 7.3 Broken catalog names (I-150)
 
-Da correggere nel generatore prima della ricerca per medaglia: 5 nomi boosted senza medaglia («launchpad mcquakc»,
-«webby vanderquakc», «axel [ex]», «kairi [ex+]», nome SN++ fuso), note con U+FFFD («SN+ - KH III Namin<U+FFFD>»),
-`pool.featured` di B0637/B0646 con «of the following». Chiude I-150.
+To be fixed in the generator before the medal search: 5 boosted names without a medal («launchpad mcquakc»,
+«webby vanderquakc», «axel [ex]», «kairi [ex+]», merged SN++ name), notes with U+FFFD («SN+ - KH III Namin<U+FFFD>»),
+`pool.featured` of B0637/B0646 with «of the following». Closes I-150.
 
 ## 8. Notices
 
-- Notizia «Shop» (INFORMATION): sezioni nuove «Seasonal banners» (finestre della 4.1), «Keep one banner in the Shop»
-  (regole 6.1-6.2, esci e rientra), «Catalog filters».
-- «Differences from the original game»: stagionali a finestre fisse sul calendario reale con l'edizione piu' recente
-  sbloccata; banner fissato (non esisteva); Limited coi biglietti solo dopo lo sblocco di un banner che li spende.
+- «Shop» notice (INFORMATION): new sections «Seasonal banners» (windows of 4.1), «Keep one banner in the Shop»
+  (rules 6.1-6.2, exit and re-enter), «Catalog filters».
+- «Differences from the original game»: seasonal banners in fixed windows on the real calendar with the most recent
+  unlocked edition; pinned banner (it did not exist); Limited with tickets only after the unlock of a banner that spends them.
 
-## 9. Prove
+## 9. Tests
 
-- Test offline (`server/test-gacha.js` o nuovi): stagione attiva/non attiva sulle finestre a cavallo d'anno, edizione
-  piu' recente sbloccata, nessuna sbloccata, piu' stagioni insieme, niente doppioni con la rotazione; Limited coi
-  biglietti prima/dopo la soglia; fissabile/non fissabile per ogni esclusione; un solo fissato, sostituzione,
-  rimozione; filtri del Catalog (conteggi per anno, medaglia, moneta, stato).
-- Banco (salvataggio di prova o `player.json`, quest 525): `-RealNow` in una finestra (es. dicembre: Black Friday 2016
-  + Winter Holiday + New Year's Deal) e fuori; fissare un banner dal Catalog, uscire e rientrare, estrarre; Catalog con
-  schede e filtri; Notices. Screenshot a ogni passo, stile confrontato con le bozze.
+- Offline tests (`server/test-gacha.js` or new ones): season active/not active on the windows across the year, most recent
+  unlocked edition, none unlocked, several seasons together, no duplicates with the rotation; Limited with
+  tickets before/after the threshold; pinnable/not pinnable for each exclusion; only one pinned, replacement,
+  removal; Catalog filters (counts per year, medal, currency, state).
+- Bench (test save or `player.json`, quest 525): `-RealNow` in a window (e.g. December: Black Friday 2016
+  + Winter Holiday + New Year's Deal) and outside; pin a banner from the Catalog, exit and re-enter, draw; Catalog with
+  tabs and filters; Notices. Screenshot at every step, style compared with the drafts.
 
-## 10. Lasciato al builder
+## 10. Left to the builder
 
-- Forma esatta del campo `season` e dove vive la tabella 4.1 (generatore o file di regole).
-- Meccanismo della richiesta di 6.3.
-- Ordine interno fra banner della stessa edizione stagionale (es. per `drawMedalTypeId`).
-- Se la ricerca per medaglia usa un indice precalcolato o filtra al volo.
+- Exact form of the `season` field and where table 4.1 lives (generator or rules file).
+- Mechanism of the request of 6.3.
+- Internal order among banners of the same seasonal edition (e.g. by `drawMedalTypeId`).
+- Whether the medal search uses a precomputed index or filters on the fly.
