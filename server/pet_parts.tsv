@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# Spirit part names derived from KH Wiki (khwiki.com, CC BY-SA 4.0) and KHUX Wiki (khuxwiki.com) pages;
+# attribution: the KH Wiki and KHUX Wiki contributors. Not covered by the MIT licence (THIRD_PARTY_NOTICES.md).
 # Parti dello Spirit: id della grafica JP 4.3.1, nome inglese (khuxwiki; metodo e confidenza in
 # reference/pet/spirit_parts_names.md fuori dal repo). Generata da make-pet-parts.js -> tables/petParts.json
 petPartsId	name

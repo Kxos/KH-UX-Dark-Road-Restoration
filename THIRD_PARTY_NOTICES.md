@@ -12,9 +12,24 @@ character, image, sound, text and piece of game data are the property of **Squar
 by or sponsored by** Square Enix, Disney or any of their partners. Names of games, characters, Medals,
 quests and places appear in this repository only to identify what the code works with.
 
-This repository does not contain or distribute the game client, its packages, assets, audio or master
-data. Users must dump the files the scripts expect from their own device or installation; the project
-does not provide, host or link them.
+This repository does not contain or distribute the game client, its packages, assets or audio, nor the
+original master data files. It does contain a limited set of **factual tables, partly reconstructed**, that
+the server needs where the original tables are lost; their content is facts and short names (ids, numbers,
+item and mission names) gathered from the community sources below and from screenshots and videos of the
+game:
+
+- Avatar Board grids (`server/tables/sphere.json`, `sphereArray.json`, `sphereMasu.json`): reconstructed
+  from KHUX Wiki pages and screenshots of the boards;
+- mission names and conditions (`server/tables/mission.json`, `server/limited_missions.tsv`): KHUX Wiki;
+- passives (`server/tables/passives.json`): KHUX Wiki «Passives»;
+- Spirit tables (`server/tables/petRank.json`, `petSkill.json`, `petParts.json`, `server/pet_parts.tsv`,
+  `server/pet_points.json`): KHUX Wiki and KH Wiki (see below for the CC BY-SA files);
+- Trait Medals (`server/trait_medals.json`): KHUX Wiki «Trait Medal» and the original in-game notices;
+- small lookup files of the build tools (`recon/tools/*.tsv`, `*.json`: resource names, ids and our own
+  mappings).
+
+Users must dump the files the scripts expect from their own device or installation; the project does not
+provide, host or link them.
 
 ## Community sources
 
@@ -30,14 +45,20 @@ notes, enemy pages) is shared under the same licence, with attribution to the KH
 
 - `server/pet_parts.tsv`, `server/tables/petParts.json` (Spirit part names, together with the KHUX Wiki);
 - `server/make-pet-tables.js` (Special Trait list: names and unlock rates; Spirit Trick values);
+
+These three files carry an `SPDX-License-Identifier: CC-BY-SA-4.0` note with the attribution (at the top of
+`pet_parts.tsv` and `make-pet-tables.js`; in `server/tables/petParts.json.license` for the JSON file, which
+cannot hold comments). Also using KH Wiki facts (short references, no copied text):
+
 - `server/make-story-oltre.js` (music of quests 526-979, read at build time from a local dump);
 - the wiki references in `docs/notes/` and `docs/ISSUES.md`.
 
 ### KHUX Wiki (khuxwiki.com)
 
 Quest objectives, mission names, Medal values, keyblade levels, Spirit Tricks, area descriptions and many
-other facts come from the KHUX Wiki and its contributors. No licence is stated for that wiki; data taken
-from it is kept to facts and short names, credited here:
+other facts come from the KHUX Wiki and its contributors. No licence is stated for that wiki (checked on
+22 October 2026: the page footer states none; the local dump only has per-image CC BY-SA 3.0 templates);
+data taken from it is kept to facts and short names, credited here:
 
 - mission names and conditions: `server/tables/mission.json`, `server/limited_missions.tsv`,
   `server/make-beginner-missions.js`, `server/make-limited-missions.js`;

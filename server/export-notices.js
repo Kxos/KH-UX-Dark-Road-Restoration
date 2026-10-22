@@ -26,6 +26,9 @@ const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g
 function render() {
   const all = byDate([update, ...NOTICES]);
   const out = ['# In-game Notices', '',
+    '> **Disclaimer.** Re-Union X is an unofficial, non-commercial fan project. It is not affiliated with, endorsed or',
+    '> sponsored by Square Enix or Disney. Kingdom Hearts and all related names and trademarks belong to their',
+    '> respective owners. No game files are distributed here.', '',
     'The notices shown in the game under **Other > Notices** (and at login), in the same order. They explain how the',
     'restored game works and every place where it differs from the original: **reconstructed** marks what was rebuilt',
     'because the original data is lost.', '',

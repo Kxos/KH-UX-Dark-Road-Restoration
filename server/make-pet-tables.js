@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// The Special Trait list (names, unlock rates) and the Spirit Trick values below are derived from KH Wiki
+// (khwiki.com, CC BY-SA 4.0) and KHUX Wiki (khuxwiki.com) pages; attribution: the KH Wiki and KHUX Wiki
+// contributors. This file is therefore shared under CC BY-SA 4.0, not MIT (THIRD_PARTY_NOTICES.md).
 // Tabelle master del pet («Spirit»), ricostruite: vedi server/pet.js e docs/notes/home_profilo.md#pet.
 // Nessun dump delle tabelle originali (petRank e petSkill sono state tolte nella 5.0.1, le
 // cartelle master_data_bak_r53 e apk501\extra_files le hanno vuote): valori NOSTRI, ricavati
