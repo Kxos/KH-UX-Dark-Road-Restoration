@@ -37,8 +37,7 @@ rebuilt. History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
 - Tools: `res_get.py <nomi.tsv> <resource_data\N\data> <uscita> <nome>...` (extracts by name into
   `D:\Progetto_Restauro_KH_UX\layouts\orig\`), `res_bulk.py` (bulk extraction, 16 s for 4000
   files), `catalog.py` (catalog, 2 min), `asset_coverage.py` (assets cited by the binary against an
-  index), `resource_split.py` (64 MB parts), `remote_zip.py` (one file from a remote zip with
-  Range).
+  index), `resource_split.py` (64 MB parts), `remote_zip.py` (generic: listing of a zip over HTTP Range).
 
 <a id="pezzi"></a>
 ## Parts and 4 GiB (I-171)

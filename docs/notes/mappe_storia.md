@@ -349,8 +349,8 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   the area name. The exits are per quest (1013 and 1016: same door, different coordinates). The
   tips of the walkable zone are a necessary condition (6/6 real exits at 12-86 from a tip) but
   not sufficient (~5 tips per room, 1-2 used): hence the imprecision of the tours.
-- **Archives** (`fonti_risorse.md`): no public pack (IPA WW/JP 1.0.1-5.0.1, APK JP/TW, web
-  Arena7664, api.sp, Wayback) has additional quests or rooms: they came from the CDN in `files/r/misc.mp4`.
+- **Archives** (`fonti_risorse.md`): no known client build (IPA WW/JP 1.0.1-5.0.1, APK JP/TW, 5.0.1 web
+  edition) has additional quests or rooms: they came from the CDN in `files/r/misc.mp4`.
   Only known source: **thethiny** (misc.mp4 from the CDN, ~898 STG, ~124 rooms against 86, same key
   KEY_DOWNLOAD); public only `stage_maps.json` (enemies/chests per stage, without exits). Contact to
   be made (user, I-029).

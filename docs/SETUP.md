@@ -9,8 +9,8 @@
 > - **The game is a work in progress.** Expect bugs and crashes. You are very welcome to report them
 >   ([Reporting bugs](#reporting-bugs)) and we will try to fix them as soon as possible.
 > - **This repository never distributes Square Enix files** (APK, OBB, IPA, assets, audio, master
->   data). You must obtain them yourself; this guide only tells you which files are needed and where
->   the project's own notes say they were found.
+>   data). You must dump them yourself from your own device or your own installation of the game; this
+>   project does not provide, host or link them. This guide only lists which files the scripts expect.
 
 Everything here is derived from the scripts in [`tools/ldplayer/`](../tools/ldplayer/) and from
 [HANDOFF.md](../HANDOFF.md#restarting), [banco.md](notes/banco.md), [server.md](notes/server.md),
@@ -21,7 +21,7 @@ Everything here is derived from the scripts in [`tools/ldplayer/`](../tools/ldpl
 
 1. [What you get](#what-you-get)
 2. [Requirements](#requirements)
-3. [Files you must obtain yourself](#files-you-must-obtain-yourself)
+3. [Files you must dump yourself](#files-you-must-dump-yourself)
 4. [First-time setup](#first-time-setup)
 5. [Building the game data and resources](#building-the-game-data-and-resources)
 6. [Starting a session](#starting-a-session)
@@ -61,24 +61,26 @@ No Union Cross, raids, Coliseum PvP or events yet.
 **Not needed for playing:** Java/JDK, Ghidra, Android Studio / `adb`, apktool, MuMu, a phone. Those are
 only for the reverse-engineering work (phase A/C) and crash analysis.
 
-## Files you must obtain yourself
+## Files you must dump yourself
 
-None of these are in the repository (`.gitignore` excludes them). The «Where it goes» column uses the
-folder layout the scripts expect today ([Known machine-specific settings](#known-machine-specific-settings)):
-`<W>` = the work folder, `D:\Progetto_Restauro_KH_UX` on the author's PC.
+None of these are in the repository (`.gitignore` excludes them), and this project does not provide,
+host or link them: dump them from your own device or your own installation of the game. The «Where it
+goes» column uses the folder layout the scripts expect today
+([Known machine-specific settings](#known-machine-specific-settings)): `<W>` = the work folder,
+`D:\Progetto_Restauro_KH_UX` on the author's PC.
 
-| File | Version | Where it goes | What for | Where it is generally found (from the project notes) |
-|---|---|---|---|---|
-| Android APK `com.square_enix.android_googleplay.khuxww`, **arm64-v8a** variant | **WW 4.3.1** (April 2021), SHA-256 `3be176ab…985b`, Square Enix v3 signature | `<W>\apk\khux-4.3.1-original.apk`, and its `lib/arm64-v8a/libcocos2dcpp.so` extracted to `<repo>\recon\ext\ww431\` | the game itself (installed unmodified in LDPlayer); the library is read by the resource index builder | [store], release page cited in [the old journal](journal/fino-al-2026-10-11.md#3-preparing-the-new-machine). **Avoid 4.4.0** (post-shutdown transition build) |
-| `main.76.com.square_enix.android_googleplay.khuxww.obb` | 5.0.1 WW, 1,652,397,828 bytes, MD5 `[md5]` | `<W>\obb76\` | base game graphics served as KHUX resources | Internet Archive item `[archive item]` ([ricerca_esterna.md](notes/ricerca_esterna.md#file)); [store] has no OBBs |
-| `patch.87.com.square_enix.android_googleplay.khuxww.obb` | 5.0.1 WW, 533,504,978 bytes, MD5 `[md5]` | `<W>\obb76\` | same | same item |
-| `base.apk` of the offline client | **5.0.1** WW, MD5 `[md5]` | extracted (it is a zip) to `<W>\apk501\ext\` | `assets\aliud.png` (index of the OBBs) and `lib\arm64-v8a\libcocos2dcpp.so`, from which the scripts read the **resource key** at offset `[offset]`; its `extra.mp4` holds the 55 offline master tables (`<W>\apk501\extra_files\`) | Internet Archive item `[archive item]` |
-| iOS IPA | **WW 4.3.1** | `addnl.mp4` + `addnl.png` (and the name list `names_addnl.tsv`) in `<W>\ipa431\` | the KHUX layouts of 4.3.1 that the Android OBBs lack | Internet Archive item `[archive item]` (WW IPAs 1.0.1-4.4.0) |
-| iOS IPA | **WW 4.4.0** | its `misc.mp4` data in `<W>\ipa440\miscdata`, name list `names440misc.tsv` | 2,403 original `text/ui` texts, a few layouts and images | Internet Archive item `[archive item]` |
+| File | Version | Where it goes | What for |
+|---|---|---|---|
+| Android APK `com.square_enix.android_googleplay.khuxww`, **arm64-v8a** variant | **WW 4.3.1** (April 2021; not 4.4.0, a post-shutdown transition build) | `<W>\apk\khux-4.3.1-original.apk`, and its `lib/arm64-v8a/libcocos2dcpp.so` extracted to `<repo>\recon\ext\ww431\` | the game itself (installed unmodified in LDPlayer); the library is read by the resource index builder |
+| `main.76.com.square_enix.android_googleplay.khuxww.obb` | 5.0.1 WW | `<W>\obb76\` | base game graphics served as KHUX resources |
+| `patch.87.com.square_enix.android_googleplay.khuxww.obb` | 5.0.1 WW | `<W>\obb76\` | same |
+| `base.apk` of the offline client | **5.0.1** WW | extracted (it is a zip) to `<W>\apk501\ext\` | `assets\aliud.png` (index of the OBBs) and `lib\arm64-v8a\libcocos2dcpp.so`, from which the scripts read the **resource key** at offset `[offset]`; its `extra.mp4` holds the 55 offline master tables (`<W>\apk501\extra_files\`) |
+| iOS IPA | **WW 4.3.1** | `addnl.mp4` + `addnl.png` (and the name list `names_addnl.tsv`) in `<W>\ipa431\` | the KHUX layouts of 4.3.1 that the Android OBBs lack |
+| iOS IPA | **WW 4.4.0** | its `misc.mp4` data in `<W>\ipa440\miscdata`, name list `names440misc.tsv` | 2,403 original `text/ui` texts, a few layouts and images |
 | thethiny's shared KHUx data | JP 4.3.1 final data (`[local reference data]\data\jp_final_4.3.1`), 2016 resource bundle, 1.1.3 master dump | `<W>\[local reference data]\\...` (the folder name **starts with a space**), the 2016 bundle extracted to `<W>\tmp\thethiny_x\bundle2016\files` | original story maps and rooms of quests 1-979, enemy graphics, JP CocoStudio layouts, NPC texts, many images | **not public**: shared privately with the project by thethiny on 13 October 2026 ([ricerca_esterna.md](notes/ricerca_esterna.md#contatti)); see [thethiny's GitHub](https://github.com/thethiny) (`KHUxTools`, `KHUx-Server`) and the preservation Discord «Traverse Town» cited in the notes |
-| thethiny `KHUx-Server` data | `data/*.json` (`burst.json`, `enemyAttack.json`, `stage.json` ...) | `<W>\external\thethiny_2026-10-13\KHUx-Server\data\` and `<W>\external\thethiny\` | original values used when generating the master tables | [thethiny/KHUx-Server](https://github.com/thethiny/KHUx-Server) on GitHub |
-| Roboloid medal database and images | `medal_db.json`, medal PNGs | `<W>\external\roboloid\` | medal values and medal images (`fetch_medal_images.py`) | [Roboloid/khux](https://roboloid.github.io/khux/) |
-| khuxwiki dumps | `medals.json`, `quests.json`, `wiki_all.json`, `enemy_stats_oltre.json` | `<W>\wiki\` | medal values, quest objectives, enemy stats | made with `recon/tools/wiki_dump.py` from [khuxwiki.com](https://www.khuxwiki.com/) (a dump also exists on the Internet Archive: `[archive item]`) |
+| thethiny `KHUx-Server` data | `data/*.json` (`burst.json`, `enemyAttack.json`, `stage.json` ...) | `<W>\external\thethiny_2026-10-13\KHUx-Server\data\` and `<W>\external\thethiny\` | values used when generating the master tables; community project credited in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
+| Roboloid medal database and images | `medal_db.json`, medal PNGs | `<W>\external\roboloid\` | medal values and medal images (`fetch_medal_images.py`); community project credited in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
+| khuxwiki dumps | `medals.json`, `quests.json`, `wiki_all.json`, `enemy_stats_oltre.json` | `<W>\wiki\` | medal values, quest objectives, enemy stats; made with `recon/tools/wiki_dump.py` from [khuxwiki.com](https://www.khuxwiki.com/) |
 
 ## First-time setup
 
@@ -409,8 +411,7 @@ about **the setup**: steps that today are impossible or very hard for someone ou
 Inventory of every hard-coded value that ties the play path to the author's PC (22 October 2026), as
 `file:line`. **Change?** = a player on another PC would have to change it (or reproduce it exactly).
 `<W>` = `D:\Progetto_Restauro_KH_UX`. Comment-only mentions (documentation of where an analysis lives) are
-not listed except where noted. Tools used only for research (Ghidra, MuMu memory dump, Spriters download)
-are in a separate group.
+not listed except where noted. Tools used only for research (Ghidra) are in a separate group.
 
 ### Session scripts (`tools/ldplayer/`)
 
@@ -494,7 +495,6 @@ All overridable by an environment variable, but the defaults point to the author
 |---|---|
 | `recon/ghidra/decomp.ps1:8`, `recon/ghidra/run-ww.bat:26` | `JAVA_HOME = D:\Programmi\Android\Android Studio\jbr` |
 | `recon/tools/memdump/capture.ps1:5`, `:7` | `<W>\MuMuPlayer\nx_main\adb.exe`, `<W>\dumps` |
-| `recon/tools/spriters/sr_big.py:18`, `sr_probe.py:8` | Microsoft Edge (`channel='msedge'`) with a persistent profile folder passed as argument |
 | `tools/patch-apk.sh:4` | example IP `192.168.1.198` (argument); the patched APK is refused by LIAPP anyway |
 
 ### Not in files, but machine state
