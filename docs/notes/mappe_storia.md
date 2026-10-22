@@ -487,8 +487,7 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
 <a id="oltre525"></a>
 ## Quests 526-979: original JP stages and user's decisions (20-10)
 
-Report: `D:\Progetto_Restauro_KH_UX
-eference\world_schema\oltre525\RAPPORTO.md` (tables in `_tables.md`,
+Report: `D:\Progetto_Restauro_KH_UXeference\world_schema\oltre525\RAPPORTO.md` (tables in `_tables.md`,
 matches in `oltre525.json`, script `match_oltre525.py`). All the 453 battle quests 526-979 have the
 original stage in the JP 4.3.1 data (330 exact, 39 good, 83 probable in Ralph's worlds, 979 <-> 39159 by hand;
 978 cutscene only); 526-555 identical in 2016. 253 rooms (203 new, 225 served, 27 to be added to the
