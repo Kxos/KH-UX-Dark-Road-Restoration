@@ -1,64 +1,64 @@
-# Orologio finto (mesi gemelli) — piano di implementazione
+# Fake clock (twin months) — implementation plan
 
-> **Per chi esegue:** SUB-SKILL OBBLIGATORIA: superpowers:subagent-driven-development (consigliata) o
-> superpowers:executing-plans, un task alla volta. I passi usano le caselle (`- [ ]`).
+> **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans, one task at a time. Steps use checkboxes (`- [ ]`).
 
-**Obiettivo:** l'ora del server scorre come quella reale dentro date sicure (mesi gemelli 5/2016-5/2021),
-cosi' Daily, Weekly e Limited mostrano i tempi veri e si azzerano davvero anche dopo un riavvio.
+**Goal:** the server time flows like the real time within safe dates (twin months 5/2016-5/2021),
+so Daily, Weekly and Limited show the true times and really reset, even after a restart.
 
-**Architettura:** un modulo puro `server/clock.js` (gemelli, indici di periodo, scadenze, revisione).
-Il server calcola periodi e scadenze sull'ora reale e converte in ora finta solo cio' che manda al
-client (scostamento del gemello fissato al login). Il master servito riceve al volo le scadenze di
-Weekly/Limited e una revisione calcolata; i premi non riscossi a fine periodo vanno nei Presents.
+**Architecture:** a pure module `server/clock.js` (twins, period indices, deadlines, revision).
+The server computes periods and deadlines on the real time and converts to fake time only what it sends to the
+client (twin offset fixed at login). The served master receives on the fly the deadlines of
+Weekly/Limited and a computed revision; rewards not claimed at the end of the period go into the Presents.
 
-**Tecnologie:** Node 24 (nessuna dipendenza nuova), prove `node server/test-*.js`, banco LDPlayer
-con gli script di `tools/ldplayer/session/`.
+**Technologies:** Node 24 (no new dependency), tests `node server/test-*.js`, LDPlayer bench
+with the scripts in `tools/ldplayer/session/`.
 
-**Spec:** `docs/superpowers/specs/2026-10-16-orologio-finto-design.md` (approvato il 16-10).
+**Spec:** `docs/superpowers/specs/2026-10-16-orologio-finto-design.md` (approved on 16-10).
 
-## Vincoli globali
+## Global constraints
 
-- Data finta sempre fra 1/5/2016 e 28/6/2021 23:59:59 UTC; mai oltre il 28/6/2021.
-- Confini: giorno da 08:00 UTC reali, settimana da lunedi' 08:00 UTC reali, mese dal giorno 1 08:00 UTC reale.
-- Lo scostamento del gemello dipende solo dal mese reale di «adesso - 8 ore»; si fissa a `/khux/login`.
-- Revisione del master = `BASE * 100000 + settimane + mesi passati dal 1/1/2026` (BASE = `KHUX_REVISION`, oggi 117).
-- La revisione calcolata solo nei campi del master; quelli delle risorse (`versionRes`, `versionResLow`, `darkVersionRes`) restano fissi.
-- Il server salva solo istanti reali (ms); l'ora finta solo nelle risposte.
-- Premi completati e non riscossi a fine periodo (Daily, Weekly, Limited) -> Presents, una sola volta.
-- Login: senza master nuovo non piu' lento di oggi (+1 s, media di 5); lavoro del server per `/system/master` < 50 ms con la cache.
-- Regole del progetto: commit + push a ogni passo verificato (`git -c safe.directory=*`, `git commit -F <file>`,
-  `git pull --rebase` prima del push, messaggi in italiano con `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`);
-  file in UTF-8 senza BOM; mai tocchi al banco con il gioco chiuso (`AppAlive`); premere SKIP sui dialoghi.
+- Fake date always between 1/5/2016 and 28/6/2021 23:59:59 UTC; never beyond 28/6/2021.
+- Boundaries: day from 08:00 real UTC, week from Monday 08:00 real UTC, month from day 1 08:00 real UTC.
+- The twin offset depends only on the real month of «now - 8 hours»; it is fixed at `/khux/login`.
+- Master revision = `BASE * 100000 + weeks + months elapsed since 1/1/2026` (BASE = `KHUX_REVISION`, 117 today).
+- The computed revision only in the master fields; the resource ones (`versionRes`, `versionResLow`, `darkVersionRes`) stay fixed.
+- The server saves only real instants (ms); the fake time only in the responses.
+- Rewards completed and not claimed at the end of the period (Daily, Weekly, Limited) -> Presents, only once.
+- Login: without a new master no slower than today (+1 s, average of 5); server work for `/system/master` < 50 ms with the cache.
+- Project rules: commit + push at every verified step (`git -c safe.directory=*`, `git commit -F <file>`,
+  `git pull --rebase` before the push, messages in Italian with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`);
+  files in UTF-8 without BOM; never taps on the bench with the game closed (`AppAlive`); press SKIP on dialogues.
 
-## Punti da sorvegliare in revisione
+## Points to watch in review
 
-1. Riavvio del server a gioco aperto: deve riprendere lo stesso scostamento (`player.clockOffset`) e non consegnare due volte nei Presents (Task 2, Task 3).
-2. Login fra le 00:00 e le 08:00 del giorno 1: scostamento e revisione del mese precedente, insieme (Task 1, Task 5).
-3. Febbraio reale senza gemello (es. 2028, bisestile da martedi'): conti alla rovescia esatti, nessun azzeramento spostato (Task 1).
-4. Salvataggio vecchio (stringhe finte del 2021): la migrazione non deve perdere regali validi ne' mettere date «nel futuro» (Task 6).
-5. Cambio di settimana a gioco aperto: la riscossione della campagna vecchia non paga, il premio arriva nei Presents (Task 3).
+1. Server restart with the game open: it must resume the same offset (`player.clockOffset`) and not deliver twice into the Presents (Task 2, Task 3).
+2. Login between 00:00 and 08:00 of day 1: offset and revision of the previous month, together (Task 1, Task 5).
+3. Real February without a twin (e.g. 2028, leap year starting on a Tuesday): exact countdowns, no shifted reset (Task 1).
+4. Old save (fake 2021 strings): the migration must not lose valid gifts nor put dates «in the future» (Task 6).
+5. Week change with the game open: claiming the old campaign does not pay, the reward arrives in the Presents (Task 3).
 
 ---
 
-### Task 1: modulo `server/clock.js`
+### Task 1: module `server/clock.js`
 
-**File:**
-- Crea: `server/clock.js`
-- Crea: `server/test-clock.js`
+**Files:**
+- Create: `server/clock.js`
+- Create: `server/test-clock.js`
 
-**Interfacce prodotte** (tutte in ms UTC reali, nessuno stato):
-- `twinOffset(realMs) -> number` (ms da sommare all'ora reale)
+**Interfaces produced** (all in real UTC ms, no state):
+- `twinOffset(realMs) -> number` (ms to add to the real time)
 - `fake(realMs, offset) -> number`, `fakeString(realMs, offset) -> 'AAAA-MM-GG hh:mm:ss'`
-- `dayIndex(realMs)`, `weekIndex(realMs)`, `monthIndex(realMs) -> intero`
-- `dayEnd(realMs)`, `weekEnd(realMs)`, `monthEnd(realMs) -> ms reali della prossima scadenza`
-- `weekStartOf(weekIndex)`, `monthEndOf(monthIndex) -> ms reali`
-- `masterRevision(base, realMs) -> intero`
-- costanti `SAFE_FROM`, `SAFE_TO`, `DAY`
+- `dayIndex(realMs)`, `weekIndex(realMs)`, `monthIndex(realMs) -> integer`
+- `dayEnd(realMs)`, `weekEnd(realMs)`, `monthEnd(realMs) -> real ms of the next deadline`
+- `weekStartOf(weekIndex)`, `monthEndOf(monthIndex) -> real ms`
+- `masterRevision(base, realMs) -> integer`
+- constants `SAFE_FROM`, `SAFE_TO`, `DAY`
 
-- [ ] **Passo 1: scrivere la prova** `server/test-clock.js`
+- [ ] **Step 1: write the test** `server/test-clock.js`
 
 ```js
-// Prova di server/clock.js (orologio finto, mesi gemelli): node server/test-clock.js
+// Test of server/clock.js (fake clock, twin months): node server/test-clock.js
 'use strict';
 const c = require('./clock');
 const errors = [];
@@ -66,7 +66,7 @@ const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const U = (y, m, d, h = 0, mi = 0) => Date.UTC(y, m - 1, d, h, mi);
 const len = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
 
-// gemelli: tutti i mesi 2026-2035, a meta' mese alle 15:00
+// twins: all the months 2026-2035, mid-month at 15:00
 for (let y = 2026; y <= 2035; y++) {
   for (let m = 1; m <= 12; m++) {
     const r = U(y, m, 15, 15);
@@ -80,14 +80,14 @@ for (let y = 2026; y <= 2035; y++) {
     }
   }
 }
-// esempio della spec: venerdi' 16/10/2026 15:00 -> 16/10/2020 15:00
+// example from the spec: Friday 16/10/2026 15:00 -> 16/10/2020 15:00
 const ex = U(2026, 10, 16, 15);
 check(c.fakeString(ex, c.twinOffset(ex)) === '2020-10-16 15:00:00', `esempio: ${c.fakeString(ex, c.twinOffset(ex))}`);
-// confine del mese alle 08:00: fra 00:00 e 08:00 del giorno 1 vale ancora il mese prima
+// month boundary at 08:00: between 00:00 and 08:00 of day 1 the previous month still applies
 check(c.twinOffset(U(2026, 11, 1, 7, 59)) === c.twinOffset(U(2026, 10, 20)), 'giorno 1 07:59: scostamento del mese prima');
 check(c.twinOffset(U(2026, 11, 1, 8, 0)) === c.twinOffset(U(2026, 11, 20)), 'giorno 1 08:00: scostamento nuovo');
 check(c.monthIndex(U(2026, 11, 1, 7, 59)) === c.monthIndex(U(2026, 10, 31)), 'monthIndex al confine');
-// scadenze
+// deadlines
 check(c.dayEnd(U(2026, 10, 16, 15)) === U(2026, 10, 17, 8), 'dayEnd');
 check(c.dayEnd(U(2026, 10, 16, 7)) === U(2026, 10, 16, 8), 'dayEnd prima delle 8');
 check(c.weekEnd(U(2026, 10, 16, 15)) === U(2026, 10, 19, 8), 'weekEnd (lunedi 19/10 08:00)');
@@ -96,18 +96,18 @@ check(c.monthEnd(U(2026, 10, 16, 15)) === U(2026, 11, 1, 8), 'monthEnd');
 check(c.monthEnd(U(2026, 11, 1, 7)) === U(2026, 11, 1, 8), 'monthEnd prima delle 8 del giorno 1');
 check(c.weekStartOf(c.weekIndex(U(2026, 10, 16))) === U(2026, 10, 12, 8), 'weekStartOf');
 check(c.monthEndOf(c.monthIndex(U(2026, 10, 16))) === U(2026, 11, 1, 8), 'monthEndOf');
-// conti alla rovescia esatti anche nel febbraio di ripiego (2028: bisestile, inizia di martedi')
+// exact countdowns even in the fallback February (2028: leap year, starts on a Tuesday)
 for (const r of [U(2028, 2, 10, 12), U(2028, 2, 29, 12)]) {
   const o = c.twinOffset(r);
   check(c.fake(c.weekEnd(r), o) - c.fake(r, o) === c.weekEnd(r) - r, `febbraio 2028: conto settimanale ${new Date(r).toISOString()}`);
   check(c.fake(c.monthEnd(r), o) - c.fake(r, o) === c.monthEnd(r) - r, `febbraio 2028: conto mensile`);
 }
-// monotona dentro un mese
+// monotonic within a month
 const o10 = c.twinOffset(U(2026, 10, 2));
 check(c.fake(U(2026, 10, 31, 23), o10) > c.fake(U(2026, 10, 2), o10), 'monotona');
-// limite di sicurezza
+// safety limit
 check(c.fake(U(2026, 10, 1), Date.UTC(2021, 5, 30) - U(2026, 10, 1)) === c.SAFE_TO, 'tetto al 28/6/2021');
-// revisione: cambia solo alle scadenze, e insieme allo scostamento al confine mensile
+// revision: changes only at the deadlines, and together with the offset at the monthly boundary
 const rv = (r) => c.masterRevision(117, r);
 check(rv(U(2026, 10, 13, 9)) === rv(U(2026, 10, 19, 7, 59)), 'revisione stabile nella settimana');
 check(rv(U(2026, 10, 19, 8)) === rv(U(2026, 10, 19, 7, 59)) + 1, 'revisione +1 al lunedi');
@@ -119,25 +119,25 @@ if (errors.length) { console.log(`ERRORI (${errors.length}):\n  ` + errors.join(
 console.log('OK: clock.js');
 ```
 
-- [ ] **Passo 2: eseguirla e vederla fallire**
+- [ ] **Step 2: run it and watch it fail**
 
 Run: `node server/test-clock.js`
-Atteso: errore `Cannot find module './clock'`.
+Expected: error `Cannot find module './clock'`.
 
-- [ ] **Passo 3: scrivere `server/clock.js`**
+- [ ] **Step 3: write `server/clock.js`**
 
 ```js
-// Orologio finto del server (docs/superpowers/specs/2026-10-16-orologio-finto-design.md).
-// Funzioni pure sull'ora reale (ms UTC). La data finta e' la data reale nel suo «mese gemello»
-// fra 5/2016 e 5/2021 (stesso giorno della settimana del giorno 1, stessa lunghezza; ripiego per
-// i febbraio senza gemello: il febbraio di 28 giorni piu' recente). Lo scostamento si sceglie dal
-// mese di «adesso - 8 ore», cioe' con lo stesso confine della scadenza mensile (giorno 1 08:00 UTC).
+// Server fake clock (docs/superpowers/specs/2026-10-16-orologio-finto-design.md).
+// Pure functions on the real time (UTC ms). The fake date is the real date in its «twin month»
+// between 5/2016 and 5/2021 (same weekday of day 1, same length; fallback for
+// Februaries without a twin: the most recent 28-day February). The offset is chosen from the
+// month of «now - 8 hours», i.e. with the same boundary as the monthly deadline (day 1 08:00 UTC).
 'use strict';
 const DAY = 86400000;
 const H8 = 8 * 3600000;
 const SAFE_FROM = Date.UTC(2016, 4, 1);
 const SAFE_TO = Date.UTC(2021, 5, 28, 23, 59, 59);
-const DAY0 = Date.UTC(2018, 0, 1, 8); // lunedi' 1/1/2018 08:00 UTC: origine di giorni e settimane
+const DAY0 = Date.UTC(2018, 0, 1, 8); // Monday 1/1/2018 08:00 UTC: origin of days and weeks
 const REV0 = Date.UTC(2026, 0, 1, 8);
 
 const info = (y, m) => ({ y, m, first: Date.UTC(y, m, 1), len: new Date(Date.UTC(y, m + 1, 0)).getUTCDate(),
@@ -175,8 +175,8 @@ const weekEnd = (r) => DAY0 + (weekIndex(r) + 1) * 7 * DAY;
 const weekStartOf = (w) => DAY0 + w * 7 * DAY;
 const monthEndOf = (mi) => Date.UTC(Math.floor(mi / 12), (mi % 12) + 1, 1) + H8;
 const monthEnd = (r) => monthEndOf(monthIndex(r));
-// revisione del master: BASE (la nostra, alzata a ogni cambio dei master) per un passo grande, piu'
-// le scadenze settimanali e mensili passate dal 1/1/2026
+// master revision: BASE (ours, bumped at every change of the masters) for a large step, plus
+// the weekly and monthly deadlines elapsed since 1/1/2026
 function masterRevision(base, realMs) {
   return base * 100000 + (weekIndex(realMs) - weekIndex(REV0)) + (monthIndex(realMs) - monthIndex(REV0));
 }
@@ -185,41 +185,41 @@ module.exports = { DAY, SAFE_FROM, SAFE_TO, twinOffset, fake, fakeString, dayInd
   dayEnd, weekEnd, monthEnd, weekStartOf, monthEndOf, masterRevision };
 ```
 
-- [ ] **Passo 4: eseguire la prova**
+- [ ] **Step 4: run the test**
 
 Run: `node server/test-clock.js`
-Atteso: `OK: clock.js`. Se un mese 2026-2035 non ha gemello esatto e non e' un febbraio, la prova lo nomina: va corretta la tabella (non la prova).
+Expected: `OK: clock.js`. If a month in 2026-2035 has no exact twin and is not a February, the test names it: the table must be fixed (not the test).
 
-- [ ] **Passo 5: commit**
+- [ ] **Step 5: commit**
 
 ```bash
 git -c safe.directory=* add server/clock.js server/test-clock.js
-# messaggio in un file UTF-8: "Orologio finto: modulo clock.js (mesi gemelli) e prova" + Co-Authored-By
+# message in a UTF-8 file: "Orologio finto: modulo clock.js (mesi gemelli) e prova" + Co-Authored-By
 git -c safe.directory=* commit -F ../../tmp/msg_clock1.txt
 git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 ```
 
 ---
 
-### Task 2: ora del server dal nuovo orologio, scostamento fissato al login
+### Task 2: server time from the new clock, offset fixed at login
 
-**File:**
-- Modifica: `server/server.js` (righe ~240-256 `SERVER_TIME_START`/`serverTime`/`serverTimeAt`; `respondKhuxLogin` ~647; ogni `Date.now()` che misura il tempo di gioco: `apState` ~908, `player.apTime = Date.now()` ~1349 e ~1418)
-- Crea: `server/test-clock-server.js`
+**Files:**
+- Modify: `server/server.js` (lines ~240-256 `SERVER_TIME_START`/`serverTime`/`serverTimeAt`; `respondKhuxLogin` ~647; every `Date.now()` that measures game time: `apState` ~908, `player.apTime = Date.now()` ~1349 and ~1418)
+- Create: `server/test-clock-server.js`
 
-**Interfacce:**
-- Consuma: `clock.twinOffset`, `clock.fakeString`, `clock.fake`.
-- Produce (in `server.js`, esportate in `module.exports._test`): `realNow() -> ms`, `clockOffset() -> ms`,
-  `outTime(v, fallback) -> stringa` (numero = istante reale -> data finta; stringa = lasciata com'e'; assente = `fallback`).
+**Interfaces:**
+- Consumes: `clock.twinOffset`, `clock.fakeString`, `clock.fake`.
+- Produces (in `server.js`, exported in `module.exports._test`): `realNow() -> ms`, `clockOffset() -> ms`,
+  `outTime(v, fallback) -> string` (number = real instant -> fake date; string = left as it is; missing = `fallback`).
 
-- [ ] **Passo 1: prova** `server/test-clock-server.js`
+- [ ] **Step 1: test** `server/test-clock-server.js`
 
 ```js
-// Ora del server dall'orologio finto (server.js + clock.js): node server/test-clock-server.js
+// Server time from the fake clock (server.js + clock.js): node server/test-clock-server.js
 'use strict';
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const SAVE = path.join(os.tmpdir(), `khux-test-clocksrv-${process.pid}.json`);
-try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
+try { fs.unlinkSync(SAVE); } catch { /* new */ }
 process.env.KHUX_SAVE = SAVE;
 delete process.env.KHUX_SERVER_TIME;
 const realNow = Date.now;
@@ -233,12 +233,12 @@ const call = (fn, ...a) => { let b = null; quiet(() => fn({ writeHead() {}, end(
 call(t.respondUserCreate, { name: 'Prova', unionId: 1 });
 call(t.respondKhuxLogin);
 check(t.serverTime() === '2020-10-16 15:00:00', `serverTime ${t.serverTime()}`);
-// la sessione attraversa il mese: lo scostamento resta quello del login
+// the session crosses the month: the offset stays the one from the login
 at('2026-11-02T10:00:00Z');
 check(t.serverTime() === '2020-11-02 10:00:00', `dopo il cambio mese senza login: ${t.serverTime()}`);
-// riavvio a gioco aperto: lo scostamento salvato si riprende
+// restart with the game open: the saved offset is resumed
 check(JSON.parse(fs.readFileSync(SAVE, 'utf8')).clockOffset === t.clockOffset(), 'clockOffset salvato');
-// nuovo login a novembre: gemello di novembre 2026 (inizia di domenica, 30 giorni -> novembre 2020)
+// new login in November: twin of November 2026 (starts on a Sunday, 30 days -> November 2020)
 call(t.respondKhuxLogin);
 check(t.serverTime().startsWith('2020-11-02'), `login di novembre: ${t.serverTime()}`);
 check(t.outTime(Date.parse('2026-11-02T10:00:00Z')) === '2020-11-02 10:00:00', 'outTime numero');
@@ -246,25 +246,25 @@ check(t.outTime('2021-05-15 12:00:00') === '2021-05-15 12:00:00', 'outTime strin
 check(t.outTime(undefined, 'x') === 'x', 'outTime assente');
 
 Date.now = realNow;
-try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
+try { fs.unlinkSync(SAVE); } catch { /* removed */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 log('OK: ora del server');
 ```
 
-- [ ] **Passo 2: eseguirla**: `node server/test-clock-server.js` -> fallisce (`t.respondKhuxLogin` o `t.serverTime` non esportate, oppure serverTime `2021-05-15 ...`).
+- [ ] **Step 2: run it**: `node server/test-clock-server.js` -> fails (`t.respondKhuxLogin` or `t.serverTime` not exported, or serverTime `2021-05-15 ...`).
 
-- [ ] **Passo 3: implementare in `server/server.js`**
+- [ ] **Step 3: implement in `server/server.js`**
 
-Sostituire il blocco `SERVER_TIME_START` ... `serverTimeAt` con:
+Replace the block `SERVER_TIME_START` ... `serverTimeAt` with:
 
 ```js
-// Ora del server (docs/superpowers/specs/2026-10-16-orologio-finto-design.md): data reale nel suo
-// mese gemello (clock.js), con lo scostamento fissato a /khux/login (player.clockOffset) perche' il
-// client fa scorrere da solo l'ora ricevuta al login. KHUX_SERVER_TIME (prove): data finta fissa
-// all'avvio del server, come prima.
+// Server time (docs/superpowers/specs/2026-10-16-orologio-finto-design.md): real date in its
+// twin month (clock.js), with the offset fixed at /khux/login (player.clockOffset) because the
+// client advances on its own the time received at login. KHUX_SERVER_TIME (tests): fixed fake date
+// at server start, as before.
 const clock = require('./clock');
 const STARTED_AT = Date.now();
-const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE della revisione del master
+const REVISION = Number(process.env.KHUX_REVISION || 0); // BASE of the master revision
 const realNow = () => Date.now();
 function clockOffset() {
   if (process.env.KHUX_SERVER_TIME) return Date.parse(process.env.KHUX_SERVER_TIME) - STARTED_AT;
@@ -273,57 +273,57 @@ function clockOffset() {
 function serverTime() {
   return serverTimeAt(realNow());
 }
-// L'ora del server corrispondente a un istante reale (ms). Formato letto da [fn].
+// The server time corresponding to a real instant (ms). Format read by [fn].
 function serverTimeAt(realMs) {
   return clock.fakeString(realMs, clockOffset());
 }
-// istante reale salvato (numero) -> data finta; stringhe dei salvataggi vecchi lasciate com'erano
+// saved real instant (number) -> fake date; strings of old saves left as they were
 const outTime = (v, fallback) => (typeof v === 'number' ? serverTimeAt(v) : v || fallback);
 ```
 
-(`player` e' dichiarato piu' sotto con `const`: `clockOffset()` lo legge solo quando viene chiamata, dopo il caricamento.)
+(`player` is declared further down with `const`: `clockOffset()` reads it only when it is called, after loading.)
 
-In `respondKhuxLogin`, prima di `send`:
+In `respondKhuxLogin`, before `send`:
 
 ```js
-  // nuovo login: il client riprende l'ora da qui, il gemello del mese corrente vale fino al prossimo
+  // new login: the client takes the time from here, the twin of the current month applies until the next one
   player.clockOffset = clock.twinOffset(realNow());
   savePlayer();
 ```
 
-Sostituire in `server.js` i `Date.now()` che misurano il tempo di gioco con `realNow()`
-(`grep -n "Date.now()" server/server.js`: tenere `Date.now()` solo in `STARTED_AT` e nei tempi di log).
-Aggiungere a `module.exports._test`: `serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin`.
+Replace in `server.js` the `Date.now()` calls that measure game time with `realNow()`
+(`grep -n "Date.now()" server/server.js`: keep `Date.now()` only in `STARTED_AT` and in the log timings).
+Add to `module.exports._test`: `serverTime, serverTimeAt, realNow, clockOffset, outTime, respondKhuxLogin`.
 
-- [ ] **Passo 4: prove**: `node server/test-clock-server.js` -> `OK: ora del server`; poi
+- [ ] **Step 4: tests**: `node server/test-clock-server.js` -> `OK: ora del server`; then
 `node server/test-limited.js`, `node server/test-keyblade-unlock.js`, `node server/test-keyblades.js`,
-`node server/test-medal-enhance.js`, `node server/test-medal-guilt.js` -> tutte OK.
+`node server/test-medal-enhance.js`, `node server/test-medal-guilt.js` -> all OK.
 
-- [ ] **Passo 5: commit** («Orologio finto: ora del server dai mesi gemelli, scostamento al login»).
+- [ ] **Step 5: commit** («Orologio finto: ora del server dai mesi gemelli, scostamento al login» = "Fake clock: server time from the twin months, offset at login").
 
 ---
 
-### Task 3: periodi delle missioni in ora reale e chiusura dei periodi nei Presents
+### Task 3: quest periods in real time and closing of the periods into the Presents
 
-**File:**
-- Modifica: `server/server.js` (blocco missioni ~1650-1800: `missionPeriod`, `missionActive`, `missionState`,
+**Files:**
+- Modify: `server/server.js` (quest block ~1650-1800: `missionPeriod`, `missionActive`, `missionState`,
   `weeklyLux`, `missionCount`, `missionsData`, `respondMissionReceive`, `limitedPeriod`, `limitedActive`,
   `beginnerLimitTime`; handler ~2860)
-- Modifica: `server/test-limited.js` (usa `realNow` invece di `Date.now` se serve)
-- Crea: `server/test-mission-settle.js`
+- Modify: `server/test-limited.js` (uses `realNow` instead of `Date.now` if needed)
+- Create: `server/test-mission-settle.js`
 
-**Interfacce:**
-- Consuma: `clock.dayIndex/weekIndex/monthIndex`, `realNow()`, `addPresent(type, id, num, comment)` (esistente).
-- Produce: `settleClock(realMs = realNow())` (esportata in `_test`), `missionPeriod(row, realMs)` con indici reali.
+**Interfaces:**
+- Consumes: `clock.dayIndex/weekIndex/monthIndex`, `realNow()`, `addPresent(type, id, num, comment)` (existing).
+- Produces: `settleClock(realMs = realNow())` (exported in `_test`), `missionPeriod(row, realMs)` with real indices.
 
-- [ ] **Passo 1: prova** `server/test-mission-settle.js`
+- [ ] **Step 1: test** `server/test-mission-settle.js`
 
 ```js
-// Chiusura dei periodi delle missioni (server.js settleClock): node server/test-mission-settle.js
+// Closing of the quest periods (server.js settleClock): node server/test-mission-settle.js
 'use strict';
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const SAVE = path.join(os.tmpdir(), `khux-test-settle-${process.pid}.json`);
-try { fs.unlinkSync(SAVE); } catch { /* nuovo */ }
+try { fs.unlinkSync(SAVE); } catch { /* new */ }
 process.env.KHUX_SAVE = SAVE; process.env.KHUX_PET = '1';
 delete process.env.KHUX_SERVER_TIME;
 const realNowFn = Date.now; const at = (iso) => { const ms = Date.parse(iso); Date.now = () => ms; };
@@ -342,43 +342,43 @@ check(list1.some((m) => m.id === daily.id), 'Daily attiva');
 quiet(() => t.missionCount('quest', daily.targetNum[0]));
 check(quiet(() => t.missionsData()).find((m) => m.id === daily.id).status === 1, 'Daily completata');
 const presentsBefore = (t.player.presents || []).length;
-// il giorno dopo alle 09:00: periodo chiuso, premio nei Presents una volta
+// the next day at 09:00: period closed, reward in the Presents once
 at('2026-10-17T09:00:00Z');
 quiet(() => t.settleClock());
 quiet(() => t.settleClock());
 const added = (t.player.presents || []).slice(presentsBefore);
 check(added.length >= 1 && added.some((p) => p.comment === 'Daily Mission reward'), `Presents: ${JSON.stringify(added)}`);
 check(quiet(() => t.missionsData()).find((m) => m.id === daily.id).status === 0, 'Daily ripartita');
-// riscossione della campagna vecchia: niente premio
+// claiming the old campaign: no reward
 const stone = t.player.freeStone || 0;
 call(t.respondMissionReceive, { receiveMissionIds: [daily.id] });
 check((t.player.freeStone || 0) === stone, 'riscossione dopo la scadenza pagata');
-// riavvio: nessuna seconda consegna
+// restart: no second delivery
 const n = (t.player.presents || []).length;
 quiet(() => t.settleClock());
 check((t.player.presents || []).length === n, 'consegna doppia');
-// confine delle 08:00: alle 07:59 del 18 il giorno e' ancora il 17
+// 08:00 boundary: at 07:59 on the 18th the day is still the 17th
 at('2026-10-18T07:59:00Z');
 quiet(() => t.missionCount('quest', 1));
 at('2026-10-18T08:00:00Z');
 check(quiet(() => t.missionsData()).find((m) => m.id === daily.id).numUpper === 0, 'azzeramento alle 08:00');
 
 Date.now = realNowFn;
-try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
+try { fs.unlinkSync(SAVE); } catch { /* removed */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 log('OK: chiusura dei periodi');
 ```
 
-- [ ] **Passo 2: eseguirla**: `node server/test-mission-settle.js` -> fallisce (`settleClock` non esiste).
+- [ ] **Step 2: run it**: `node server/test-mission-settle.js` -> fails (`settleClock` does not exist).
 
-- [ ] **Passo 3: implementare**
+- [ ] **Step 3: implement**
 
 In `missionPeriod`, `missionActive`, `missionState`, `missionCount`, `missionsData`, `respondMissionReceive`,
-`weeklyLux`: il parametro diventa l'ora reale (`const nowMs = realNow();` al posto di
-`Date.parse(serverTime().replace(' ', 'T') + 'Z')`). Nuovo `missionPeriod`:
+`weeklyLux`: the parameter becomes the real time (`const nowMs = realNow();` instead of
+`Date.parse(serverTime().replace(' ', 'T') + 'Z')`). New `missionPeriod`:
 
 ```js
-// indici di periodo sull'ORA REALE (clock.js): giorno e settimana da 08:00 UTC, mese dal giorno 1 08:00
+// period indices on the REAL TIME (clock.js): day and week from 08:00 UTC, month from day 1 08:00
 function missionPeriod(row, realMs) {
   if (row.missionType === 4 && LIMITED_GROUP.has(row.id)) {
     return LIMITED_GROUP.get(row.id).kind === 'monthly' ? clock.monthIndex(realMs) : clock.weekIndex(realMs);
@@ -389,19 +389,19 @@ function missionPeriod(row, realMs) {
 }
 ```
 
-In `missionActive(row, realMs)`: le date del master sono finte, si confrontano con l'ora finta:
-`const fakeMs = clock.fake(realMs, clockOffset());` al posto di `nowMs` nei confronti con `startDate`/`endDate`;
-Beginner: `realMs < player.beginnerSince + BEGINNER_DAYS * 86400000` (vedi Task 6 per `beginnerSince` in ms).
+In `missionActive(row, realMs)`: the master dates are fake, they are compared with the fake time:
+`const fakeMs = clock.fake(realMs, clockOffset());` instead of `nowMs` in the comparisons with `startDate`/`endDate`;
+Beginner: `realMs < player.beginnerSince + BEGINNER_DAYS * 86400000` (see Task 6 for `beginnerSince` in ms).
 
-`limitedPeriod(kind, realMs = realNow())` usa `clock.monthIndex`/`clock.weekIndex` (stessi confini delle
-missioni; `LIMITED_WEEK0` si toglie). `weeklyLux(n)`: `period = clock.weekIndex(realNow())`.
+`limitedPeriod(kind, realMs = realNow())` uses `clock.monthIndex`/`clock.weekIndex` (same boundaries as the
+quests; `LIMITED_WEEK0` is removed). `weeklyLux(n)`: `period = clock.weekIndex(realNow())`.
 
-Nuova funzione, dopo `respondMissionReceive`:
+New function, after `respondMissionReceive`:
 
 ```js
-// Chiusura dei periodi (spec 3.6): a ogni richiesta, se il giorno/settimana/mese reale e' avanzato
-// dall'ultima chiusura, i premi delle missioni completate e non riscosse del periodo finito vanno nei
-// Presents, una volta (s.received). Prima volta: si registra solo l'istante, nessuna consegna.
+// Closing of the periods (spec 3.6): at every request, if the real day/week/month has advanced
+// since the last closing, the rewards of the completed and unclaimed quests of the finished period go into the
+// Presents, once (s.received). First time: only the instant is recorded, no delivery.
 const SETTLE_COMMENT = { 2: 'Daily Mission reward', 3: 'Weekly Mission reward', 4: 'Limited Mission reward' };
 function settleClock(realMs = realNow()) {
   const cur = { day: clock.dayIndex(realMs), week: clock.weekIndex(realMs), month: clock.monthIndex(realMs) };
@@ -423,38 +423,38 @@ function settleClock(realMs = realNow()) {
 }
 ```
 
-Nell'handler, subito dopo `logRequest(entry);`:
+In the handler, right after `logRequest(entry);`:
 
 ```js
-      // chiusura dei periodi delle missioni prima di ogni altra elaborazione (spec 3.6)
+      // closing of the quest periods before any other processing (spec 3.6)
       if (player.created) settleClock();
 ```
 
-Esportare in `_test`: `settleClock, MISSION_COUNTER`.
+Export in `_test`: `settleClock, MISSION_COUNTER`.
 
-- [ ] **Passo 4: prove**: `node server/test-mission-settle.js` -> OK; `node server/test-limited.js` -> OK
-(la prova sposta `Date.now`, che ora e' anche l'ora reale del server: nessuna modifica attesa; se fallisce
-sul «ritorno della campagna», controllare che `missionPeriod` usi `realMs`).
+- [ ] **Step 4: tests**: `node server/test-mission-settle.js` -> OK; `node server/test-limited.js` -> OK
+(the test moves `Date.now`, which is now also the server's real time: no change expected; if it fails
+on the «return of the campaign», check that `missionPeriod` uses `realMs`).
 
-- [ ] **Passo 5: commit** («Missioni: periodi in ora reale e premi non riscossi nei Presents»).
+- [ ] **Step 5: commit** («Missioni: periodi in ora reale e premi non riscossi nei Presents» = "Quests: periods in real time and unclaimed rewards in the Presents").
 
 ---
 
-### Task 4: Weekly in due serie alternate A/B
+### Task 4: Weekly in two alternating series A/B
 
-**File:**
-- Crea: `server/make-weekly-series.js`
-- Modifica: `server/tables/mission.json`, `server/master_data/mission.json` (generati)
-- Modifica: `server/server.js` (`missionActive`)
-- Modifica: `server/test-mission-settle.js` (caso Weekly)
+**Files:**
+- Create: `server/make-weekly-series.js`
+- Modify: `server/tables/mission.json`, `server/master_data/mission.json` (generated)
+- Modify: `server/server.js` (`missionActive`)
+- Modify: `server/test-mission-settle.js` (Weekly case)
 
-**Interfacce:**
-- Produce: righe 3011-3020 copie di 3001-3010; `weeklySeries(row) -> 0 | 1` (0 per 3001-3010, 1 per 3011-3020).
+**Interfaces:**
+- Produces: rows 3011-3020 copies of 3001-3010; `weeklySeries(row) -> 0 | 1` (0 for 3001-3010, 1 for 3011-3020).
 
-- [ ] **Passo 1: prova** — aggiungere in fondo a `server/test-mission-settle.js`, prima del riepilogo:
+- [ ] **Step 1: test** — add at the bottom of `server/test-mission-settle.js`, before the summary:
 
 ```js
-// Weekly A/B: una sola serie attiva per settimana, alternata
+// Weekly A/B: only one series active per week, alternating
 at('2026-10-14T12:00:00Z');
 const wk = quiet(() => t.missionsData()).map((m) => m.id).filter((id) => id >= 3001 && id <= 3020);
 at('2026-10-21T12:00:00Z');
@@ -463,16 +463,16 @@ check(wk.length === 10 && wk2.length === 10, `Weekly attive ${wk.length}/${wk2.l
 check(!wk.some((id) => wk2.includes(id)), 'serie A/B non alternate');
 ```
 
-- [ ] **Passo 2: eseguire**: fallisce (20 Weekly attive o nessuna riga 3011).
+- [ ] **Step 2: run**: fails (20 Weekly active or no row 3011).
 
-- [ ] **Passo 3: generatore** `server/make-weekly-series.js`
+- [ ] **Step 3: generator** `server/make-weekly-series.js`
 
 ```js
 #!/usr/bin/env node
-// Weekly in due serie alternate (spec orologio finto 3.3): 3001-3010 settimane pari, 3011-3020
-// dispari. Ognuna riceve nel master servito la scadenza della SUA prossima settimana, cosi' al cambio
-// di settimana a gioco aperto le missioni nuove hanno gia' il conto alla rovescia giusto.
-//   node server/make-weekly-series.js   (poi alzare KHUX_REVISION)
+// Weekly in two alternating series (fake clock spec 3.3): 3001-3010 even weeks, 3011-3020
+// odd. Each one receives in the served master the deadline of ITS next week, so that at the week
+// change with the game open the new quests already have the right countdown.
+//   node server/make-weekly-series.js   (then bump KHUX_REVISION)
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -485,37 +485,37 @@ for (const file of [path.join(__dirname, 'tables', 'mission.json'), path.join(__
 }
 ```
 
-In `server.js`, `missionActive`, prima di `return true`:
+In `server.js`, `missionActive`, before `return true`:
 
 ```js
-  // Weekly A/B (make-weekly-series.js): 3001-3010 settimane pari, 3011-3020 dispari (ora reale)
+  // Weekly A/B (make-weekly-series.js): 3001-3010 even weeks, 3011-3020 odd (real time)
   if (row.missionType === 3) return clock.weekIndex(realMs) % 2 === (row.id >= 3011 ? 1 : 0);
 ```
 
-- [ ] **Passo 4**: `node server/make-weekly-series.js`, poi `node server/test-mission-settle.js` e
+- [ ] **Step 4**: `node server/make-weekly-series.js`, then `node server/test-mission-settle.js` and
 `node server/test-limited.js` -> OK.
 
-- [ ] **Passo 5: commit** («Weekly in due serie alternate A/B»).
+- [ ] **Step 5: commit** («Weekly in due serie alternate A/B» = "Weekly in two alternating series A/B").
 
 ---
 
-### Task 5: master con revisione calcolata, scadenze al volo e cache
+### Task 5: master with computed revision, on-the-fly deadlines and cache
 
-**File:**
-- Modifica: `server/server.js` (`respondStatus` ~280: `versionDat`...; `respondResourceSize` ~372;
+**Files:**
+- Modify: `server/server.js` (`respondStatus` ~280: `versionDat`...; `respondResourceSize` ~372;
   `masterBody` ~397; `masterTables`/`respondMaster`/`respondMasterFile` ~455-500)
-- Crea: `server/test-master-clock.js`
+- Create: `server/test-master-clock.js`
 
-**Interfacce:**
-- Consuma: `clock.masterRevision`, `clock.weekEnd`, `clock.weekStartOf`, `clock.monthEndOf`, `clock.weekIndex`,
+**Interfaces:**
+- Consumes: `clock.masterRevision`, `clock.weekEnd`, `clock.weekStartOf`, `clock.monthEndOf`, `clock.weekIndex`,
   `clock.monthIndex`, `clock.twinOffset`, `clock.fakeString`, `LIMITED_ROTATION`, `LIMITED_GROUP`.
-- Produce: `masterRevisionNow() -> intero`, `servedMasterRows(name, realMs) -> righe` (esportate in `_test` con
+- Produces: `masterRevisionNow() -> integer`, `servedMasterRows(name, realMs) -> rows` (exported in `_test` with
   `masterBody`, `respondMaster`, `respondResourceSize`).
 
-- [ ] **Passo 1: prova** `server/test-master-clock.js`
+- [ ] **Step 1: test** `server/test-master-clock.js`
 
 ```js
-// Master servito con l'orologio finto: node server/test-master-clock.js
+// Master served with the fake clock: node server/test-master-clock.js
 'use strict';
 process.env.KHUX_REVISION = '117';
 delete process.env.KHUX_SERVER_TIME;
@@ -532,22 +532,22 @@ const m = call(t.respondMaster);
 check(m.master.revision === rev && m.mission.revision === rev, 'revisione nel master');
 const rows = t.servedMasterRows('mission', Date.now());
 const end = (id) => rows.find((r) => r.id === id).endDate;
-// settimana del 12/10/2026 (indice pari o dispari): una serie Weekly scade lunedi' 19/10, l'altra il 26/10
+// week of 12/10/2026 (even or odd index): one Weekly series expires Monday 19/10, the other on 26/10
 const a = end(3001), b = end(3011);
 check(new Set([a, b]).size === 2 && [a, b].includes('2020-10-19 08:00:00') && [a, b].includes('2020-10-26 08:00:00'), `Weekly ${a} / ${b}`);
-// Limited: la mensile attiva scade il 1/11 08:00 finto
+// Limited: the active monthly one expires on 1/11 08:00 fake
 const activeMonthly = t.LIMITED_ROTATION.monthly.find((ids) => ids.every((id) => t.limitedActive(id)));
 check(end(activeMonthly[0]) === '2020-11-01 08:00:00', `Limited mensile ${end(activeMonthly[0])}`);
-// stesso contenuto per la stessa revisione, e servito in meno di 50 ms dalla cache
+// same content for the same revision, and served in less than 50 ms from the cache
 const b1 = t.masterBody('mission'); const t0 = process.hrtime.bigint();
 call(t.respondMaster);
 const ms = Number(process.hrtime.bigint() - t0) / 1e6;
 check(t.masterBody('mission').equals(b1), 'contenuto cambiato senza cambio di revisione');
 check(ms < 50, `respondMaster ${ms.toFixed(1)} ms con la cache`);
-// risorse: versionRes/darkVersionRes non seguono la revisione del master
+// resources: versionRes/darkVersionRes do not follow the master revision
 const st = call(t.respondStatus);
 check(st.darkVersionRes === 117 && st.versionDat === rev, `status ${st.versionDat} ${st.darkVersionRes}`);
-// la settimana dopo: nuova revisione, nuove scadenze
+// the week after: new revision, new deadlines
 at('2026-10-19T09:00:00Z');
 check(t.masterRevisionNow() === rev + 1, 'revisione +1 al lunedi');
 
@@ -556,16 +556,16 @@ if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  '))
 log('OK: master con l\'orologio');
 ```
 
-- [ ] **Passo 2: eseguire**: fallisce (`masterRevisionNow` non esiste).
+- [ ] **Step 2: run**: fails (`masterRevisionNow` does not exist).
 
-- [ ] **Passo 3: implementare**
+- [ ] **Step 3: implement**
 
 ```js
-// revisione del master calcolata (spec 3.3): BASE = KHUX_REVISION, piu' le scadenze passate
+// computed master revision (spec 3.3): BASE = KHUX_REVISION, plus the elapsed deadlines
 const masterRevisionNow = () => clock.masterRevision(REVISION, realNow());
 
-// righe servite: per «mission» le scadenze delle Weekly A/B e dei gruppi Limited (prossima
-// occorrenza), in ora finta con lo scostamento del mese della revisione
+// served rows: for «mission» the deadlines of the Weekly A/B and of the Limited groups (next
+// occurrence), in fake time with the offset of the revision's month
 function servedMasterRows(name, realMs) {
   const rows = masterRows(name);
   if (name !== 'mission') return rows;
@@ -585,10 +585,10 @@ function servedMasterRows(name, realMs) {
 }
 ```
 
-`masterBody(name)` con cache per revisione e data del file:
+`masterBody(name)` with a cache per revision and file date:
 
 ```js
-const masterBodyCache = new Map(); // nome -> {key, body, md5}
+const masterBodyCache = new Map(); // name -> {key, body, md5}
 function masterBody(name) {
   const file = path.join(MASTER_DIR, name + '.json');
   if (!/^[A-Za-z0-9]+$/.test(name) || !fs.existsSync(file)) return null;
@@ -604,41 +604,41 @@ function masterBody(name) {
 }
 ```
 
-(Nota: oggi `masterBody` cifra il file cosi' com'e'; `JSON.stringify(masterRows(name))` produce lo stesso
-contenuto JSON senza spazi: prima di procedere verificare al banco che il client accetti tabelle compatte —
-`server/tables/*.json` le scrive gia' indentate e il client legge JSON, quindi atteso OK.)
+(Note: today `masterBody` encrypts the file as it is; `JSON.stringify(masterRows(name))` produces the same
+JSON content without spaces: before proceeding verify on the bench that the client accepts compact tables —
+`server/tables/*.json` already writes them indented and the client reads JSON, so expected OK.)
 
-`masterTables()`: memorizzare l'esito della convalida per nome e `mtimeMs`/`size` (stessa idea, mappa
-`masterValidCache`). `respondMaster`: `revision: masterRevisionNow()` in `master` e in ogni tabella; md5 da
-`masterBodyCache.get(name).md5` dopo `masterBody(name)`. `respondResourceSize`:
+`masterTables()`: memoize the validation result per name and `mtimeMs`/`size` (same idea, map
+`masterValidCache`). `respondMaster`: `revision: masterRevisionNow()` in `master` and in every table; md5 from
+`masterBodyCache.get(name).md5` after `masterBody(name)`. `respondResourceSize`:
 `Number(req?.masterRevision) >= masterRevisionNow()`. `respondStatus`: `versionDat`, `commonVersionDat`,
-`darkVersionDat` = `masterRevisionNow()`; `darkVersionRes` = `REVISION` (fisso).
+`darkVersionDat` = `masterRevisionNow()`; `darkVersionRes` = `REVISION` (fixed).
 
-Esportare in `_test`: `masterRevisionNow, servedMasterRows, masterBody, respondMaster, respondResourceSize, respondStatus, LIMITED_ROTATION, limitedActive`.
+Export in `_test`: `masterRevisionNow, servedMasterRows, masterBody, respondMaster, respondResourceSize, respondStatus, LIMITED_ROTATION, limitedActive`.
 
-- [ ] **Passo 4: prove**: `node server/test-master-clock.js` -> OK; tutte le altre prove `server/test-*.js` -> OK.
+- [ ] **Step 4: tests**: `node server/test-master-clock.js` -> OK; all the other tests `server/test-*.js` -> OK.
 
-- [ ] **Passo 5: commit** («Master: revisione calcolata, scadenze di Weekly e Limited al volo, cache»).
+- [ ] **Step 5: commit** («Master: revisione calcolata, scadenze di Weekly e Limited al volo, cache» = "Master: computed revision, Weekly and Limited deadlines on the fly, cache").
 
 ---
 
-### Task 6: orari salvati in ms reali e migrazione dei salvataggi
+### Task 6: saved times in real ms and migration of the saves
 
-**File:**
-- Modifica: `server/server.js` (presents ~1880-1935: `seedTestPresents`, `addPresent`, `livePresents`,
-  `userPresentData`; `beginnerLimitTime` ~1740; scritture di `getDatetime` ~1226, ~1522, ~2203, ~2360, ~2594;
-  letture ~1532, ~2043, ~2078, ~2623; caricamento del salvataggio ~729)
-- Modifica: `server/pet.js` (training ~196-330, parti ~139-160, trait ~293), `server/grant-all-medals.js` (~34)
-- Crea: `server/test-clock-migration.js`
+**Files:**
+- Modify: `server/server.js` (presents ~1880-1935: `seedTestPresents`, `addPresent`, `livePresents`,
+  `userPresentData`; `beginnerLimitTime` ~1740; writes of `getDatetime` ~1226, ~1522, ~2203, ~2360, ~2594;
+  reads ~1532, ~2043, ~2078, ~2623; save loading ~729)
+- Modify: `server/pet.js` (training ~196-330, parts ~139-160, trait ~293), `server/grant-all-medals.js` (~34)
+- Create: `server/test-clock-migration.js`
 
-**Interfacce:**
-- Consuma: `realNow()`, `outTime(v, fallback)`, `clock.monthIndex`.
-- Produce: `migrateClock()` (in `_test`), `ctx.realNow`, `ctx.outTime`, `ctx.monthIndex` per `pet.js`.
+**Interfaces:**
+- Consumes: `realNow()`, `outTime(v, fallback)`, `clock.monthIndex`.
+- Produces: `migrateClock()` (in `_test`), `ctx.realNow`, `ctx.outTime`, `ctx.monthIndex` for `pet.js`.
 
-- [ ] **Passo 1: prova** `server/test-clock-migration.js`
+- [ ] **Step 1: test** `server/test-clock-migration.js`
 
 ```js
-// Migrazione dei salvataggi all'orologio finto: node server/test-clock-migration.js
+// Migration of the saves to the fake clock: node server/test-clock-migration.js
 'use strict';
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const SAVE = path.join(os.tmpdir(), `khux-test-clockmig-${process.pid}.json`);
@@ -664,26 +664,26 @@ check(p.beginnerSince === now, 'beginnerSince');
 check(Object.keys(p.missions || {}).length === 0, 'contatori dei periodi non azzerati');
 check(p.pet.training.readyAt === 0 && p.pet.training.month === t.clockMonthIndex(now), 'training');
 check(t.outTime(p.medals[1].getDatetime) === t.serverTime(), 'uscita in ora finta');
-// seconda volta: nessun cambiamento
+// second time: no change
 const before = JSON.stringify(p); quiet(() => t.migrateClock());
 check(JSON.stringify(p) === before, 'migrazione ripetuta');
 Date.now = realNowFn;
-try { fs.unlinkSync(SAVE); } catch { /* tolto */ }
+try { fs.unlinkSync(SAVE); } catch { /* removed */ }
 if (errors.length) { log(`ERRORI (${errors.length}):\n  ` + errors.join('\n  ')); process.exit(1); }
 log('OK: migrazione');
 ```
 
-- [ ] **Passo 2: eseguire**: fallisce (`clockVersion` assente).
+- [ ] **Step 2: run**: fails (`clockVersion` missing).
 
-- [ ] **Passo 3: implementare**
+- [ ] **Step 3: implement**
 
-Migrazione (chiamata subito dopo il caricamento del salvataggio, prima di `grantMissingKeyblades`):
+Migration (called right after loading the save, before `grantMissingKeyblades`):
 
 ```js
-// Migrazione all'orologio finto (spec 3.7): orari salvati in ms reali. Le stringhe finte vecchie
-// (ora che ripartiva dal 15/5/2021) non hanno un istante reale: getDatetime spostati in blocco con la
-// piu' recente = adesso (l'ordine resta), regali +29 giorni, Beginner da adesso, training pronto,
-// contatori dei periodi azzerati (cambiano scala).
+// Migration to the fake clock (spec 3.7): saved times in real ms. The old fake strings
+// (time that restarted from 15/5/2021) have no real instant: getDatetime shifted as a block with the
+// most recent = now (the order is kept), gifts +29 days, Beginner from now, training ready,
+// period counters reset (they change scale).
 function migrateClock() {
   if (player.clockVersion === 1) return;
   const now = realNow();
@@ -706,59 +706,59 @@ function migrateClock() {
 }
 ```
 
-Scritture: ogni `getDatetime: serverTime()` / `getDatetime: now` che SALVA in `player` diventa
-`getDatetime: realNow()` (righe ~1226, ~1522, ~2203, ~2360, ~2594; `pet.js` ~159 e ~293 con `ctx.realNow()`;
-`grant-all-medals.js` ~34 con `Date.now()`). Letture verso il client: `getDatetime: outTime(m.getDatetime, now)`
+Writes: every `getDatetime: serverTime()` / `getDatetime: now` that SAVES into `player` becomes
+`getDatetime: realNow()` (lines ~1226, ~1522, ~2203, ~2360, ~2594; `pet.js` ~159 and ~293 with `ctx.realNow()`;
+`grant-all-medals.js` ~34 with `Date.now()`). Reads towards the client: `getDatetime: outTime(m.getDatetime, now)`
 (~2043), `outTime(s.getDatetime || m.getDatetime, now)` (~2078), `outTime(s.getDatetime, serverTime())` (~1532),
 `outTime(k.getDatetime, serverTime())` (~2623), `pet.js` ~149 `getDatetime: ctx.outTime(t)`.
-Controllo finale: `grep -n "getDatetime" server/*.js` — nessuna scrittura in `player` con una stringa.
+Final check: `grep -n "getDatetime" server/*.js` — no write into `player` with a string.
 
-Presents: `addPresent` e `seedTestPresents` salvano `limitDatetime: realNow() + 30 * 86400000` (29 per le
-prove) e `created: realNow()`; `livePresents` filtra con `(typeof p.limitDatetime === 'number' ? p.limitDatetime : Infinity) > realNow()`;
-`userPresentData` manda `limitDatetime: outTime(p.limitDatetime)`, `created: outTime(p.created)`.
+Presents: `addPresent` and `seedTestPresents` save `limitDatetime: realNow() + 30 * 86400000` (29 for the
+tests) and `created: realNow()`; `livePresents` filters with `(typeof p.limitDatetime === 'number' ? p.limitDatetime : Infinity) > realNow()`;
+`userPresentData` sends `limitDatetime: outTime(p.limitDatetime)`, `created: outTime(p.created)`.
 
-Beginner: `player.beginnerSince = realNow()` alla prima lettura; `beginnerLimitTime()` restituisce
-`serverTimeAt(player.beginnerSince + BEGINNER_DAYS * 86400000)`; in `missionActive` il controllo Beginner
-diventa `realMs < player.beginnerSince + BEGINNER_DAYS * 86400000`.
+Beginner: `player.beginnerSince = realNow()` at the first read; `beginnerLimitTime()` returns
+`serverTimeAt(player.beginnerSince + BEGINNER_DAYS * 86400000)`; in `missionActive` the Beginner check
+becomes `realMs < player.beginnerSince + BEGINNER_DAYS * 86400000`.
 
-`pet.js`: `ctx` riceve `realNow`, `outTime`, `monthIndex: clock.monthIndex` (aggiungerli dove `server.js`
-costruisce il contesto di `makePet`); `serverMs()` -> `ctx.realNow()`; `fmt(t.readyAt)` -> `ctx.outTime(t.readyAt)`;
-`training()`: `const month = ctx.monthIndex(ctx.realNow());`; le scadenze `weekEnd`/`monthEnd` del GET di
-`respondExpedition` si calcolano con `clock`-equivalenti passati in `ctx` e si mandano con `ctx.outTime`.
+`pet.js`: `ctx` receives `realNow`, `outTime`, `monthIndex: clock.monthIndex` (add them where `server.js`
+builds the context of `makePet`); `serverMs()` -> `ctx.realNow()`; `fmt(t.readyAt)` -> `ctx.outTime(t.readyAt)`;
+`training()`: `const month = ctx.monthIndex(ctx.realNow());`; the `weekEnd`/`monthEnd` deadlines of the GET of
+`respondExpedition` are computed with `clock` equivalents passed in `ctx` and sent with `ctx.outTime`.
 
-Esportare in `_test`: `migrateClock`, `clockMonthIndex: clock.monthIndex`.
+Export in `_test`: `migrateClock`, `clockMonthIndex: clock.monthIndex`.
 
-- [ ] **Passo 4: prove**: `node server/test-clock-migration.js` -> OK; tutte le `server/test-*.js` -> OK.
+- [ ] **Step 4: tests**: `node server/test-clock-migration.js` -> OK; all the `server/test-*.js` -> OK.
 
-- [ ] **Passo 5: commit** («Orari salvati in ora reale e migrazione dei salvataggi»).
+- [ ] **Step 5: commit** («Orari salvati in ora reale e migrazione dei salvataggi» = "Saved times in real time and migration of the saves").
 
 ---
 
-### Task 7: script di sessione, misura del login e prova al banco
+### Task 7: session scripts, login measurement and bench test
 
-**File:**
-- Modifica: `tools/ldplayer/session/run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1`
-  (commento: `-Revision` = BASE della revisione del master; nuovo `-RealNow <ISO>` in `run-server`/`relogin`
-  che imposta `KHUX_REAL_NOW`)
-- Modifica: `server/server.js` (`realNow`: con `KHUX_REAL_NOW` = istante reale finto all'avvio + tempo trascorso)
-- Crea: `tools/ldplayer/session/login-time.ps1`
-- Modifica: `docs/notes/server.md`, `docs/notes/home_profilo.md#limited`, `HANDOFF.md`
+**Files:**
+- Modify: `tools/ldplayer/session/run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1`
+  (comment: `-Revision` = BASE of the master revision; new `-RealNow <ISO>` in `run-server`/`relogin`
+  that sets `KHUX_REAL_NOW`)
+- Modify: `server/server.js` (`realNow`: with `KHUX_REAL_NOW` = fake real instant at start + elapsed time)
+- Create: `tools/ldplayer/session/login-time.ps1`
+- Modify: `docs/notes/server.md`, `docs/notes/home_profilo.md#limited`, `HANDOFF.md`
 
-- [ ] **Passo 1: `realNow` per le prove al banco**
+- [ ] **Step 1: `realNow` for the bench tests**
 
 ```js
-// KHUX_REAL_NOW (prove al banco): l'ora reale parte da quell'istante all'avvio del server
+// KHUX_REAL_NOW (bench tests): the real time starts from that instant at server start
 const REAL_SHIFT = process.env.KHUX_REAL_NOW ? Date.parse(process.env.KHUX_REAL_NOW) - STARTED_AT : 0;
 const realNow = () => Date.now() + REAL_SHIFT;
 ```
 
-`run-server.ps1`: `param(..., [string]$RealNow)` e `if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow }`;
-`relogin.ps1`: `[string]$RealNow` passato come `-RealNow $RealNow` nella riga di comando di `run-server`.
+`run-server.ps1`: `param(..., [string]$RealNow)` and `if ($RealNow) { $env:KHUX_REAL_NOW = $RealNow }`;
+`relogin.ps1`: `[string]$RealNow` passed as `-RealNow $RealNow` in the `run-server` command line.
 
-- [ ] **Passo 2: `login-time.ps1`**
+- [ ] **Step 2: `login-time.ps1`**
 
 ```powershell
-# Misura del login: N relogin, tempo fino a /khux/login e totale (righe di relogin.ps1).
+# Login measurement: N relogins, time until /khux/login and total (lines of relogin.ps1).
 #   .\login-time.ps1 -N 5 [-RealNow 2026-10-19T09:00:00Z]
 param([int]$N = 5, [string]$RealNow)
 $repo = Split-Path (Split-Path (Split-Path $PSScriptRoot))
@@ -775,24 +775,24 @@ $rows | Format-Table | Out-String
 "media login: {0:N1} s, media totale: {1:N1} s" -f ($rows | Measure-Object login -Average).Average, ($rows | Measure-Object totale -Average).Average
 ```
 
-- [ ] **Passo 3: misura prima** (con il codice di `main` prima dei Task 1-6, oppure annotare i valori di oggi):
-`.\tools\ldplayer\session\login-time.ps1 -N 5` -> salvare la tabella in `docs/notes/server.md#master`.
+- [ ] **Step 3: measurement before** (with the code of `main` before Tasks 1-6, or note today's values):
+`.\tools\ldplayer\session\login-time.ps1 -N 5` -> save the table in `docs/notes/server.md#master`.
 
-- [ ] **Passo 4: banco, settimana corrente.** `relogin.ps1 -Tag ck` (riscarica il master una volta: nuova
-revisione). Screenshot delle schede Daily, Weekly e Limited: Daily «N hours left» = ore fino alle 08:00 UTC
-reali; Weekly «N days left» = giorni fino a lunedi' 08:00 UTC; Limited mensile = giorni fino al 1° del mese
-08:00. Confrontare con l'ora reale del PC (`Get-Date -AsUTC`).
+- [ ] **Step 4: bench, current week.** `relogin.ps1 -Tag ck` (re-downloads the master once: new
+revision). Screenshots of the Daily, Weekly and Limited tabs: Daily «N hours left» = hours until 08:00 real
+UTC; Weekly «N days left» = days until Monday 08:00 UTC; monthly Limited = days until the 1st of the month
+08:00. Compare with the PC's real time (`Get-Date -AsUTC`).
 
-- [ ] **Passo 5: banco, riavvio.** `relogin.ps1 -Tag ck2`: stessi valori, `tabelle` = 0 in `login-time` (nessun
-download del master).
+- [ ] **Step 5: bench, restart.** `relogin.ps1 -Tag ck2`: same values, `tabelle` = 0 in `login-time` (no
+master download).
 
-- [ ] **Passo 6: banco, cambio di settimana simulato.** `relogin.ps1 -Tag ck3 -RealNow <prossimo lunedi' 09:00Z>`:
-master riscaricato (106 tabelle), **nessun** `GET /resource/` nel log, nuova campagna Limited breve e serie Weekly
-opposta; un premio di una missione completata e non riscossa nella settimana prima compare nei Presents.
-Poi `relogin.ps1 -Tag ck4` senza `-RealNow` per tornare all'ora vera.
+- [ ] **Step 6: bench, simulated week change.** `relogin.ps1 -Tag ck3 -RealNow <next Monday 09:00Z>`:
+master re-downloaded (106 tables), **no** `GET /resource/` in the log, new short Limited campaign and opposite Weekly
+series; a reward of a quest completed and not claimed in the previous week appears in the Presents.
+Then `relogin.ps1 -Tag ck4` without `-RealNow` to go back to the true time.
 
-- [ ] **Passo 7: misura dopo**: `login-time.ps1 -N 5` -> criteri dei Vincoli globali; risultati in `docs/notes/server.md`.
+- [ ] **Step 7: measurement after**: `login-time.ps1 -N 5` -> criteria of the Global constraints; results in `docs/notes/server.md`.
 
-- [ ] **Passo 8: documentazione e commit.** `docs/notes/server.md` (orologio, revisione calcolata, misure),
-`docs/notes/home_profilo.md#limited` (scadenze vere, Presents), `HANDOFF.md` (stato del banco: revisione =
-BASE 117 + scadenze; nuovi parametri `-RealNow`). Commit «Orologio finto: script, misura del login, banco».
+- [ ] **Step 8: documentation and commit.** `docs/notes/server.md` (clock, computed revision, measurements),
+`docs/notes/home_profilo.md#limited` (true deadlines, Presents), `HANDOFF.md` (bench state: revision =
+BASE 117 + deadlines; new `-RealNow` parameters). Commit «Orologio finto: script, misura del login, banco» (= "Fake clock: scripts, login measurement, bench").
