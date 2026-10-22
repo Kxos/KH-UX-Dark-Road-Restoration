@@ -9,7 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { NOTICES, updateBody, noticesPage } = require('./routes-info-album');
+const { NOTICES, byDate, updateBody, noticesPage } = require('./routes-info-album');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const OUT = path.join(DOCS, 'NOTICES.md');
@@ -24,7 +24,7 @@ const update = { date: '10/16', tag: 'IMPORTANT', title: 'About game data update
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 function render() {
-  const all = [update, ...NOTICES];
+  const all = byDate([update, ...NOTICES]);
   const out = ['# In-game Notices', '',
     'The notices shown in the game under **Other > Notices** (and at login), in the same order. They explain how the',
     'restored game works and every place where it differs from the original: **reconstructed** marks what was rebuilt',

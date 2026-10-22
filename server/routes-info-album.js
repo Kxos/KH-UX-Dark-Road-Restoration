@@ -232,10 +232,13 @@ const WEB_FOOT = '<div class="foot">Kingdom Hearts Union &chi; fan restoration &
 // etichetta colorata, titolo, freccia rossa) e il dettaglio (notices_detail_yt_03.jpg e notices_dialog_01.jpg:
 // fondo blu notte, testo spaziato, titoletti col quadratino, parole chiave in arancione, BACK blu in basso).
 // Testo delle notizie: «## Titolo» = sezione (le righe sotto diventano un elenco puntato), «**parola**» = evidenziata.
+// newest first, like the original list (dates are «MM/DD» of the same year); same date: the order of NOTICES
+const byDate = (list) => list.map((n, i) => [n, i]).sort(([a, i], [b, j]) => b.date.localeCompare(a.date) || i - j).map(([n]) => n);
+
 // opts.web: static copy for the project site (docs/notices/, export-notices.js): opts.notices instead of the live list,
 // no timing beacon, a «Notices» frame like the in-game popup, centered, and #nN in the address opens notice N
 function noticesPage(realMs = Date.now(), opts = {}) {
-  const notices = opts.notices || [updateNotice(realMs), ...NOTICES];
+  const notices = byDate(opts.notices || [updateNotice(realMs), ...NOTICES]);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="k">$1</b>');
   const bodyHtml = (body) => {
@@ -315,4 +318,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData };
+module.exports = { NOTICES, byDate, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData };
