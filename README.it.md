@@ -2,6 +2,11 @@
 
 [English](README.md) | **Italiano**
 
+**Come giocare:** [docs/SETUP.md](docs/SETUP.md) (in inglese) · **Notices del gioco:** <https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/> · **Cerchiamo aiuto:** [post su Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [Cosa cerchiamo](#cosa-cerchiamo) · **Bug:** [segnala un bug](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)
+
+> Oggi installare il gioco è lungo e complesso (a lavoro finito diventerà un unico launcher), e il gioco è
+> in lavorazione: aspettatevi bug e crash, e segnalateli per favore.
+
 > La documentazione di lavoro (HANDOFF, ISSUES, note tecniche, diario) è in inglese dal 22 ottobre 2026;
 > questa pagina riassume il progetto in italiano.
 
