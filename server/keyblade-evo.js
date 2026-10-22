@@ -6,21 +6,21 @@
 // del livello dopo (evolveId, 0 = massimo). La 5.0.1 ha tenuto solo i livelli col cambio di slot
 // o di design: le righe in mezzo le rigenera make-keyblade-levels.js.
 //
-// POST /keyblade/enhance (azione 54, corpo [fn]: {userKeybladeId}), dal pulsante
-// «Strengthen» della finestra KEYBLADE ([fn] / [fn]). Ramo 54 del dispatcher:
-// userKeyblades ([fn]), userDecks ([fn]), userMaterials ([fn]),
-// userTitles ([fn]). Niente munny (nessun userPoint nella risposta). Dopo la risposta
-// [fn] confronta il displayId (riga keyblade +0xcc) del keyblade di prima e di quello
-// nuovo: uguali -> risultato ([fn], DeckEdit_KBStrength_Result_ver210 +
-// lwf/result/KeyEvo_LevelUp); diversi -> animazione lwf/memudemo/KeyBlade_Evolution ([fn],
-// movie «keyblade_previous» e «keyblade») e poi il risultato. Il risultato confronta slot per
+// POST /keyblade/enhance (azione 54, corpo {userKeybladeId}), dal pulsante
+// «Strengthen» della finestra KEYBLADE. Il client legge dalla risposta:
+// userKeyblades, userDecks, userMaterials,
+// userTitles. Niente munny (nessun userPoint nella risposta). Dopo la risposta il client
+// confronta il displayId (riga keyblade) del keyblade di prima e di quello
+// nuovo: uguali -> risultato (DeckEdit_KBStrength_Result_ver210 +
+// lwf/result/KeyEvo_LevelUp); diversi -> animazione lwf/memudemo/KeyBlade_Evolution
+// (movie «keyblade_previous» e «keyblade») e poi il risultato. Il risultato confronta slot per
 // slot accord/dlaccord vecchi e nuovi (frecce) e per uno slot nuovo carica
 // lwf/keyblade/KeyEvo/KeyEvo_Medal_01B, KeyEvo_eff e medal_blank_slot%d.
 //
-// GET /keyblade/subslot (191) e POST /keyblade/subslot (192, corpo [fn]:
+// GET /keyblade/subslot (191) e POST /keyblade/subslot (192, corpo
 // {updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: [{"<slotNumber>": userMedalId}, ...]}]}).
-// Risposta 192: subslotMaxNum + userKeybladeSubslots ([fn]), userKeyblades.
-// Equipment ([fn]) scrive «Subslot n/m»: m = lunghezza di subslots[] del keyblade,
+// Risposta 192: subslotMaxNum + userKeybladeSubslots, userKeyblades.
+// Il riquadro Equipment scrive «Subslot n/m»: m = lunghezza di subslots[] del keyblade,
 // n = voci con userMedalId != 0; il pulsante si abilita se misc 780 (= 7, stelle minime) >= 7.
 //
 // PUT /passive/list (249, corpo {isList}; I-065): «Passive Effects» di Equipment. Vedi
@@ -30,7 +30,7 @@
 // Bonus dei sub-slot per tier della medaglia (guiltValue), in millesimi di moltiplicatore:
 // guida dell'utente (pag. 11) tier 1-8 = +0.001 .. +0.025; 9-10 non documentati (stima).
 const TIER_SUBSLOT = [0, 1, 2, 5, 8, 12, 16, 20, 25, 30, 35];
-// unita' di subslotRate: millesimi * SUBSLOT_SCALE. Txt_SubSlot_Rate ([fn]) scrive
+// unita' di subslotRate: millesimi * SUBSLOT_SCALE. Txt_SubSlot_Rate scrive
 // «+%01.3f» con (k * subslotRate / 100) / 1000: con k = subslotRate della riga keyblade / 100
 // (160 per Treasure Trove) una tier 8 da' +0.040 = 0.025 x 1.6. k non e' ancora verificato:
 // se il numero sul banco e' 100 volte troppo grande o piccolo, cambiare KHUX_SUBSLOT_SCALE.
@@ -114,8 +114,8 @@ function makeKeybladeEvo(ctx) {
   }
 
   // POST /keyblade/burst/max (azione 53) {userKeybladeId, kind}: «Max Out Gauge» dal riquadro
-  // del keyblade prima della quest (popup PopupNormal_Ability_MAX, [fn]: costo = misc
-  // 120, 30 jewel). Il ramo del dispatcher legge solo userKeyblade ([fn]).
+  // del keyblade prima della quest (popup PopupNormal_Ability_MAX, costo = misc
+  // 120, 30 jewel). Il client legge solo userKeyblade.
   function respondBurstMax(res, body) {
     const id = Number(body?.userKeybladeId);
     const k = ctx.ownedKeyblades().find((x) => x.userKeybladeId === id);
@@ -165,7 +165,7 @@ function makeKeybladeEvo(ctx) {
     });
   }
 
-  // somma dei bonus per tier delle medaglie nei sub-slot. Tier come il badge del client ([fn]): con
+  // somma dei bonus per tier delle medaglie nei sub-slot. Tier come il badge del client: con
   // guiltValue 0 si risale la catena dell'Evolve fino alla forma che ce l'ha (le 1-5★ hanno 0, la 6★ il tier)
   function medalTier(byId, row) {
     for (let r = row, n = 0; r && n < 10; r = r.validEvolve ? byId.get(r.evolveId) : null, n++) {
@@ -237,17 +237,17 @@ function makeKeybladeEvo(ctx) {
   // ---- passive (I-065) ---------------------------------------------------------------------
   // PUT /passive/list (azione 249), corpo {isList}: isList 1 al login (dopo /user/medal...) e
   // al tocco di «Passive Effects» nel Profilo (I-086; quello di Equipment apre la pagina web);
-  // isList 0 dopo «Strengthen» (e dove il client cerca passive nuove). Ramo 249 del dispatcher (0x7c670c): legge isList, poi [fn]:
+  // isList 0 dopo «Strengthen» (e dove il client cerca passive nuove). Il client legge, oltre a isList:
   //   isList 1 -> passiveSettingIds[] (uint), isList 0 -> newPassiveSettingIds[] (uint).
-  // Senza l'array il parser rende nullo, il ramo fallisce e la callback del pulsante
-  // ([fn]) non apre PassiveDialog: era il «non succede niente» di I-065.
-  // Con isList 1 il ramo legge anche userId: nullo/assente -> lista propria (singleton +0xab8,
-  // quella di PassiveDialog::open [fn]); presente -> lista di un altro giocatore
-  // (+0xad8, profilo altrui). isList 0: le nuove in +0xac8, aggiunte a +0xab8 ([fn]);
-  // le mostra il popup PassiveResult ([fn]: nome + description).
-  // PassiveDialog (Passive_Base_ver341 + celle Passive_Panel, [fn]/[fn]): una
+  // Senza l'array la risposta e' rifiutata e il pulsante
+  // non apre la lista delle passive: era il «non succede niente» di I-065.
+  // Con isList 1 il client legge anche userId: nullo/assente -> lista propria;
+  // presente -> lista di un altro giocatore
+  // (profilo altrui). isList 0: le nuove si aggiungono alla lista propria e
+  // le mostra il popup PassiveResult (nome + description).
+  // Lista delle passive (layout Passive_Base_ver341 + celle Passive_Panel): una
   // cella per passiveSetting (nome della riga passive), «There are no passive effects.»
-  // (testo 106220507, Txt_None) se la lista e' vuota; riquadro Total ([fn]): HP,
+  // (testo 106220507, Txt_None) se la lista e' vuota; riquadro Total: HP,
   // SP ATK Gauge, STR, DEF e STR per tipo di medaglia (testi 106230203..217).
   // Quali passive ha il giocatore lo decide il server dalle condizioni di make-passives.js:
   // 1 = livello Lux >= passiveValue1, 2 = keyblade della serie passiveValue1 a livello*10 >=
@@ -282,9 +282,9 @@ function makeKeybladeEvo(ctx) {
       console.log(`  [passive] nuove: ${fresh.length ? fresh.join(' ') : 'nessuna'} (totale ${ids.length})`);
       return ctx.send(res, 200, { ret: ctx.ret(), newPassiveSettingIds: fresh });
     }
-    // Profilo di un altro giocatore (I-086): il pulsante Button_Passive del Profilo (lambda
-    // [fn]) manda userId solo se il profilo non e' il proprio (+0x3a8); la callback
-    // [fn] apre allora PassiveDialog sulla lista +0xad8, che il ramo 249 riempie solo
+    // Profilo di un altro giocatore (I-086): il pulsante Button_Passive del Profilo
+    // manda userId solo se il profilo non e' il proprio; il client
+    // apre allora la lista di quel giocatore, riempita solo
     // se la risposta ha userId. Si rimanda l'userId: lista propria se e' il nostro (1), vuota
     // per gli altri (non ne abbiamo i dati).
     const otherId = Number(body?.userId) || 0;
@@ -297,11 +297,11 @@ function makeKeybladeEvo(ctx) {
     return ctx.send(res, 200, { ret: ctx.ret(), passiveSettingIds: ids });
   }
 
-  // Pagina web di «Passive Effects» (I-065): il pulsante di Equipment (DeckEdit_PassiveBut_ver340,
-  // lambda [fn]) e Button_PassiveInfo del PassiveDialog ([fn]) aprono il popup web
+  // Pagina web di «Passive Effects» (I-065): il pulsante di Equipment (DeckEdit_PassiveBut_ver340)
+  // e Button_PassiveInfo della lista delle passive aprono il popup web
   // Information2_Base (titolo 106220508) sull'URL passiveSettingList del login: con '' restava
   // bianco. Le passive possedute (nome della riga passive + description di passiveSetting) o il
-  // testo 106220507. La query aggiunta dal client ([fn]) si ignora.
+  // testo 106220507. La query aggiunta dal client si ignora.
   function respondPassivePage(res) {
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const set = new Map(ctx.masterRows('passiveSetting').map((s) => [s.passiveSettingId, s]));

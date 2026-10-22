@@ -1,8 +1,7 @@
-// Other > Legal Information (I-109): popup Legal.json (OtherMenuDialog::openLegalPopup [fn])
-// con due pulsanti che aprono la WebView ([fn]) su un link di /system/login:
-// - UserAgreementButton (lambda $_23, [fn]): titolo testo 104040001, URL = stringa a +0x78
-//   dei link (LOGIN_LINKS[5] = "agreement", 0x18 byte per stringa);
-// - LicenseButton (lambda $_24, [fn]): titolo testo 104040003, URL a +0x90 ("license").
+// Other > Legal Information (I-109): popup Legal.json
+// con due pulsanti che aprono la WebView su un link di /system/login:
+// - UserAgreementButton: titolo testo 104040001, URL = link "agreement" (LOGIN_LINKS[5]);
+// - LicenseButton: titolo testo 104040003, URL = link "license".
 // Con i link vuoti la WebView restava bianca (banco 14-10). Pagine nostre, stile di /web/notices:
 // condizioni del server di restauro e licenze dei componenti di terze parti citati dal client.
 

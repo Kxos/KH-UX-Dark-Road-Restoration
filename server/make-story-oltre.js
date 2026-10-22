@@ -9,18 +9,15 @@
 // - 556-979: khuxwiki (wiki\quests.json + testo della pagina in wiki_all.json) per nome, AP ("zero" = 0), mapName
 //   (room1), obiettivi e premi; stageId e stanze da reference\world_schema\oltre525\oltre525.json (stage JP 4.3.1).
 // - Q978 «What Comes After» (D-B, 21-10): missione di solo filmato come nell'originale (wiki InfoQuestKHUX/Cutscene, nessuno
-//   stage 39158 nei dati JP). Il client 4.3.1 la regge col campo onlyDrama della riga stage (offset 0x120 del record,
-//   parser [fn]): finiti i filmati [fn] -> [fn] legge onlyDrama della missione corrente
-//   ([fn] = riga stage per stageId) e, se != 0, apre la scena StageSkipActionMap ([fn], RTTI
-//   18StageSkipActionMap) invece di SceneActionMap ([fn], la mappa); StageSkipActionMap::update ([fn])
-//   con onlyDrama != 0 salta la simulazione dei nemici e manda subito la richiesta di fine stage ([fn],
-//   corpo di /stage/clear). Filmati dal theater (stageId 39158: 2560701-2561201), premi dalla pagina wiki.
+//   stage 39158 nei dati JP). Il client 4.3.1 la regge col campo onlyDrama della riga stage:
+//   finiti i filmati legge onlyDrama della missione corrente (riga stage per stageId) e, se != 0,
+//   non apre la mappa, salta i nemici e manda subito /stage/clear. Filmati dal theater (stageId 39158: 2560701-2561201), premi dalla pagina wiki.
 // worldId dal prefisso della stanza; mondi di Ralph coi worldId originali (D-C): world_select_ico_11 «Niceland»,
 // _12 «Cy-Bug Sector», _14 «Candy Kingdom» (JP 4.3.1 img/adventure) e theater (NL 11, HD 12, SR 14); CS = 13 per
 // esclusione (stage_select_ico_13_100 = stanza CS_0000_01_00 con la regola delle miniature qui sotto, wipe_13, sfondo
 // raid bg_CS1 nel JP; il theater raggruppa i filmati delle 871-886 nel mondo 9 «?», che non e' una riga world).
 // Righe world 11-14 (Task 5, buildWorldRows): worldName = prefisso delle stanze NL/HD/CS/SR, perche' il client cerca la
-// riga world dal prefisso della stanza ([fn]) per la tendina img/wipe/wipe_<worldId>.png (originali JP 11-14 in
+// riga world dal prefisso della stanza per la tendina img/wipe/wipe_<worldId>.png (originali JP 11-14 in
 // recon/tools/originals.tsv, sezione 40); resto come la riga 1 (DB): gli sfondi raid bg_NL1/HD1/CS1/SR1 del JP sono LWF
 // senza texture e non sono serviti (come bg_CD1/ED1 delle righe 7-8 WW), quindi bg_DB1 servito.
 // Miniature delle 556-979: stage_select_ico_<worldId>_<thumbId> con thumbId = area*10000 + zona*100 + variante della
@@ -61,7 +58,7 @@ const WIKI_WORLD = { 'Daybreak Town': 1, 'Dwarf Woodlands': 2, Wonderland: 3, Ag
   'Game Central Station': 13, 'Candy Kingdom': 14 };
 // prima icona stage_select_ico_<worldId>_<thumbId> del mondo nei dati JP 4.3.1 (img/adventure/stage)
 const WORLD_THUMB = { 7: 10000, 8: 0, 11: 0, 12: 20000, 13: 100, 14: 0 };
-// musica dei mondi senza righe 1-525 [campo, battaglia, capo]: id dei testi JP 4.3.1 text/audio/<nome> ([fn]),
+// musica dei mondi senza righe 1-525 [campo, battaglia, capo]: id dei testi JP 4.3.1 text/audio/<nome>,
 // AKB serviti (names_v4.tsv). Campo/battaglia = tracce _000001/_000002 del mondo come nelle 1-525 (dw 110/120, ...);
 // capo = dw_bgm_000003 (501000130) come tutti i mondi salvo BC (ed_bgm_000003 501000730 non c'e' in nessuna risorsa).
 // CD: bbs_cd_F/bbs_cd_B (Castle of Dreams di BBS, nessun cd_bgm); CS: central_station, unica traccia del mondo, anche
@@ -104,19 +101,18 @@ function thumbForRoom(code) {
 // Obiettivo dalla wiki -> campi del master (submissionRequire/DataType/IdType/Id/Num + nome). Codici e nomi delle righe
 // originali 1-555 (5.0.1, 1.1.3, stage_dec): DataType 1 testo, 2 %d = num, 3 %s = nome di id (IdType 5 keyblade, 6 skill),
 // 4 nemico (IdType 1). Senza codice noto -> null (tappabuchi).
-// Codici che nessuna riga originale 1-555 usa, ricavati dal valutatore del client [fn] (ricerca del 21-10,
-// D:\Progetto_Restauro_KH_UX\tmp\objectives\objectives_proposal.json): nome = testo della wiki tale e quale (nessun %).
-// - 37 tempo: case 0x25 [fn], (int)(trascorso*100) <= num*100, trascorso = float 0x43cc in secondi (+dt a ogni
-//   frame col flag 0x43d0, tetto 3600). «within N seconds» -> N; «mm'ss"cc» (visualizzazione in centesimi dello stesso
+// Codici che nessuna riga originale 1-555 usa, ricavati dal comportamento del client (ricerca del 21-10,
+// note private): nome = testo della wiki tale e quale (nessun %).
+// - 37 tempo: tempo trascorso (in secondi, tetto 3600) <= num. «within N seconds» -> N; «mm'ss"cc» (visualizzazione in centesimi dello stesso
 //   contatore) -> mm*60+ss, un secondo in piu' se cc > 0 (num e' in secondi interi; tutti i testi wiki hanno cc 00);
-// - 8 battaglie: case 8, 0x4314 <= num (+1 a ogni inizio battaglia, [fn] stato 0);
-// - 33 colpi: case 0x21, 0x4334 >= num (colpi di ogni attacco/speciale, [fn]); 32 e' la variante <=;
-// - 9 colpi subiti: case 9, 0x431c <= num (+1 a ogni attacco nemico a segno, [fn]): «without taking damage» = 0;
-// - 36 danni subiti: case 0x24, totale 0x4338 (int64) <= num: «less than N» stretto -> N-1;
-// - 17 tutti i forzieri: case 0x11, aperti (lista 0x3ee4) == totale dell'intestazione mappoi +0x38: «Destroy all barrels»
+// - 8 battaglie: battaglie iniziate <= num;
+// - 33 colpi: colpi di ogni attacco/speciale >= num; 32 e' la variante <=;
+// - 9 colpi subiti: attacchi nemici a segno <= num: «without taking damage» = 0;
+// - 36 danni subiti: danno totale subito <= num: «less than N» stretto -> N-1;
+// - 17 tutti i forzieri: forzieri aperti == totale dell'intestazione mappoi «Destroy all barrels»
 //   (731/732: ogni forziere dello stage e' un barile, POI di tipo 19) e «Open N treasure chests» con N = quel totale;
-// - 18 tutti i materiali: case 0x12, materiali distinti raccolti == totale mappoi +0x3c (862: 3);
-// - 24 medaglie equipaggiate: case 0x18, [fn] conta gli slot del deck con medalId != 1 (vuoto) <= num.
+// - 18 tutti i materiali: materiali distinti raccolti == totale mappoi (862: 3);
+// - 24 medaglie equipaggiate: slot del deck con medalId != 1 (vuoto) <= num.
 // «N forzieri/materiali» sono «tutti» solo se N e' il totale dello stage: con ctx.header (intestazione mappoi) un N
 // diverso resta tappabuchi; senza intestazioni si accetta (le 10 righe vere sono state verificate una per una).
 function objectiveCodes(text, ctx) {
@@ -246,7 +242,7 @@ function buildRows(stageRows, sources) {
     const dropped = [...before, ...after].filter(([id]) => !present(id)).map(([id]) => id);
     if (dropped.length) report.droppedDramas.push([row.id, dropped]);
     const all = [...b, ...a];
-    // il client legge al massimo 5 filmati per lato (parser [fn]: conteggio < 6)
+    // il client legge al massimo 5 filmati per lato
     const pre = b.length ? b.slice(0, 5) : [], post = (b.length ? b.slice(5).concat(a) : a).slice(0, 5);
     if (all.length > pre.length + post.length) report.overflow.push([row.id, all.slice(pre.length + post.length).map((d) => d[0])]);
     Object.assign(row, { validBeforeDrama: pre.length, beforeDramaId: pre.map((d) => d[0]), beforeDramaType: pre.map((d) => d[1]),
@@ -338,13 +334,12 @@ function buildRows(stageRows, sources) {
           report.wikiObjectives.push(n);
         }
       }
-      // Q555 (fix round 1 del Task 6, 21-10): il client valuta gli obiettivi per id. [fn] (inizio battaglia)
-      // per ogni obiettivo 12 mette submissionId nello slot i di 0x4358 ([fn]); [fn](enemyId) conta
-      // solo lo slot con quell'id; il valutatore [fn] (case 0xc, [fn]) compie l'obiettivo se il
-      // conto e' fra 1 e submissionNum, poi [fn] lo mette in clearMissionIds (0x4254, letto da /stage/clear
-      // [fn]). Nessuna forma «bersaglio dello stage» senza id. Le 5 varianti hanno bersagli diversi (10230
+      // Q555 (fix round 1 del Task 6, 21-10): il client valuta gli obiettivi 12 per id: conta
+      // solo i nemici con submissionId e compie l'obiettivo se il
+      // conto e' fra 1 e submissionNum (poi lo manda in clearMissionIds di /stage/clear).
+      // Nessuna forma «bersaglio dello stage» senza id. Le 5 varianti hanno bersagli diversi (10230
       // Aced, 10231 Invi, 10228 Ira x2, 10232 Gula): un obiettivo per id che una variante non ha diventa 7 «Complete
-      // within N turns» (case 7: turni 0x430c <= N), stesso N e stesso premio; dichiarato nelle Notices.
+      // within N turns» (7: turni <= N), stesso N e stesso premio; dichiarato nelle Notices.
       if (stagePoi && row.branchType === 1) {
         const sets = Q555_VARIANTS.map((v) => new Set(((stagePoi[v] || {}).enemies || []).map((e) => e.enemyId)));
         for (let i = 0; i < Math.min(3, row.validSubmission || 0); i++) {
@@ -486,7 +481,7 @@ function defaultSources() {
   };
 }
 
-// totali dell'intestazione degli stage JP (mappoi_stg<id>.bin: +0x38 forzieri, +0x3c materiali; letti dal client per
+// totali dell'intestazione degli stage JP (mappoi_stg<id>.bin: forzieri materiali; letti dal client per
 // gli obiettivi 17/18) per stageId; cartella assente -> null (obiettivi «N forzieri/materiali» accettati senza verifica)
 function readHeaders(dir) {
   if (!fs.existsSync(dir)) return null;

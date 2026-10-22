@@ -8,10 +8,10 @@
 //   enemies», le due speciali sui Lux totali). Proud/Raid/Union Cross entreranno quando ci saranno.
 // Il master contiene tutte le righe (id 4001...); il server manda in missions[] solo quelle della
 // rotazione attiva (server/limited_rotation.json, letto da server.js), e il client fa la scheda
-// Limited solo con gli id ricevuti ([fn]).
+// Limited solo con gli id ricevuti.
 //
 // Premi: Jewel (2), materiali per nome (5), medaglie per nome (3), parti dello Spirit per nome
-// (33, itemId = petPartsId; icona/nome dal client [fn]/[fn], caso 0x21). Le 4 parti
+// (33, itemId = petPartsId; icona/nome dal client caso 0x21). Le 4 parti
 // senza grafica (jp_pet_parts.py) prendono un sostituto dello stesso slot (SUBST). Gli altri premi
 // passano da REWARDS (tipo e id fissati a mano).
 //   node server/make-limited-missions.js     (riscrive le righe 4xxx, alzare la revisione)

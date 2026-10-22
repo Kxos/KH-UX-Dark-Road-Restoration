@@ -7,7 +7,7 @@
 // reference\burst_anim\mapping_final.json (ricerca in reference\burst_anim\RESEARCH.md).
 //
 // hitCount va con la motion: il danno arriva solo dagli eventi «knockback_N» del LWF e ogni colpo vale
-// attacco x potenza / hitCount (BattleMisc::normalizeAttack), quindi hitCount = knockback della motion
+// attacco x potenza / hitCount, quindi hitCount = knockback della motion
 // (750/750 righe originali). Cambiandoli insieme il danno totale resta quello di prima; per il danno
 // fisso (damageType 2, sp1 = danno per colpo) sp1 si riscala sul numero di colpi nuovo.
 //

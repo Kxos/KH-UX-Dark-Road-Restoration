@@ -60,9 +60,9 @@ function applyEvolveRules(medalRows, rules, robo) {
   return stats;
 }
 
-// Attacchi Supernova. Il client ([fn]) usa la riga burst di superBurstId al posto di
+// Attacchi Supernova. Il client usa la riga burst di superBurstId al posto di
 // burstId quando la medaglia lancia la Supernova; il pulsante sotto il Burst compare per ogni
-// medaglia del deck con validSuperBurst e superBurstId ([fn]), una volta per missione.
+// medaglia del deck con validSuperBurst e superBurstId, una volta per missione.
 // Fonte: blocco Supernova di Roboloid (nome, testo, Multi, Timing, bersaglio, buff), uguale alla
 // tabella «List of Supernovas» della khuxwiki. Una riga per medaglia, burstId 4000000 + id
 // Roboloid (SN e SN+ hanno moltiplicatori diversi). superburstTiming = slot prima del quale scatta
@@ -133,7 +133,7 @@ function supernovaBursts(medalRows, burstRows, robo, buffFields) {
     }, buffFields(s, target).out);
     rows.push(row);
     Object.assign(m, { validSuperBurst: 1, superBurstId: id });
-    // Badge sulla medaglia ([fn], displayId): 100/200/300 -> img/ui/SBurst_Icon1/2/3
+    // Badge sulla medaglia (displayId): 100/200/300 -> img/ui/SBurst_Icon1/2/3
     // (SN, SN+, SN++), +1000 -> variante ...R (Supernova che rinnova le altre).
     const plus = /^(?:SN|Supernova)(\+*)\s*-/.exec(m.name);
     if (plus) m.displayId = 100 * Math.min(plus[1].length + 1, 3) + (row.recurringAttribute ? 1000 : 0);

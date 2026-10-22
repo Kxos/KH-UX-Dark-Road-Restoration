@@ -9,9 +9,9 @@
 //
 // Colonne (master_types: petPartsId, name string(128), partsType, combinationType,
 // combinationFlag, offsetNumber):
-// - partsType = cifre TT di 3TTNNN/4TTNNN, la scheda dell'editor ([fn]): 4 Head, 3 Ears,
+// - partsType = cifre TT di 3TTNNN/4TTNNN, la scheda dell'editor: 4 Head, 3 Ears,
 //   8 Body, 6 Legs, 9 Tail; 1/2/5/7/10/11 Accessories;
-// - combinationFlag 1 = la parte non va in nessuna scheda ([fn] la salta): 0;
+// - combinationFlag 1 = la parte non va in nessuna scheda (l'editor la salta): 0;
 // - combinationType e offsetNumber (riga di petPartsOffset, posizioni di attacco delle parti per
 //   specie) ignoti: 0, e petPartsOffset resta vuota (il client usa i valori di riposo, home_profilo.md).
 //

@@ -36,7 +36,7 @@ const fixed = { ...clone(cloud), burstId: 3000502, damageType: 2 };
 const fixRobo = { ID: 502, LowMulti: 1, HighMulti: 2, Ability: { Condition: 'HigherHP' } };
 
 check(TYPE_OF_CONDITION.HigherHP === 4 && TYPE_OF_CONDITION.LowerHP === 3 && !('Mystery' in TYPE_OF_CONDITION), 'mappa delle condizioni');
-// I-189b: mappa completa dal codice di battaglia ([fn], medaglie.md#danno-variabile-tipi)
+// I-189b: mappa completa dal codice di battaglia (medaglie.md#danno-variabile-tipi)
 const MAP = { DrainsHP: 5, MoreTurns: 6, SPSuccession: 7, DrainsDEF: 16, Paralysis: 22, GaugesFull: 23, GaugesUsed: 25,
   MoreGaugesPrevMedal: 26, MoreEnemiesDefeated: 28, LessLUX: 31, OneEnemy: 36, MoreSkillsStage: 37, Slot3: 38, Slot4: 38,
   Slot5: 38, Slot6: 38, LowerSlot: 39, HigherSlot: 40, MoreParty: 41 };

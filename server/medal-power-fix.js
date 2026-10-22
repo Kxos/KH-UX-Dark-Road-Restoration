@@ -2,8 +2,8 @@
 //
 // 1. Tier (guiltValue) a 0 sulle 1-5★ che si evolvono in una rarita' maggiore. Lo «Special Attack Bonus» e' un tratto delle 6★
 //    (khuxwiki, reference\guilt\khuxwiki_raw.md: «a trait found on 6★ Medals»); Roboloid da' il Tier
-//    della famiglia anche alle 1-5★. Il client ([fn]) accende Evolve, se la medaglia ha un tier
-//    (+0x4c0) e l'evoluta ha rarita' (+0x4ac) maggiore, solo con la guilt al massimo del tier: con il
+// della famiglia anche alle 1-5★. Il client accende Evolve, se la medaglia ha un tier
+// e l'evoluta ha rarita' maggiore, solo con la guilt al massimo del tier: con il
 //    tier sulle 1-5★ nessuna 1-5★ si poteva evolvere (guilt impossibile sotto le 6★, 5 pallini).
 // 2. Potenza degli speciali delle medaglie di Roboloid (burst 3000000 + id): il campo Multi e' il
 //    valore a pallini pieni (6★ Lexaeus A: 3.24 = khuxwiki a 5 pallini), mentre la riga lo usava come

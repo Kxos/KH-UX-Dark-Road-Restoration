@@ -1,4 +1,4 @@
-// Prova della curva skillExp (I-146): formula del client 4.3.1 ([fn], docs/notes/medaglie.md#skill)
+// Prova della curva skillExp (I-146): formula del client 4.3.1 (docs/notes/medaglie.md#skill)
 //   EXP totale per il livello L = trunc(value[1] * powf((L - 1) / (value[0] - 1), value[2] / 10000))
 // Usa le righe vere di skillExp (dati Square Enix, fuori dal repo):
 //

@@ -4,10 +4,10 @@
 // e guilt-burst.js (guilt massima): docs/notes/guilt.md.
 //
 // Regole (reference\guilt\NOTE.md: khuxwiki Medal/Chip/Dale/Cid/Magic Mirror/Fantasia Mickey B,
-// guida dell'utente p. 16, 20, 21) e comportamento del client 4.3.1 (anteprima [fn]):
+// guida dell'utente p. 16, 20, 21) e comportamento del client 4.3.1 (anteprima):
 // - pallini (userMedal.burstUpperNumber): materiale «da pallino» = stessa groupId (o medalId se 0),
 //   oppure groupId del materiale in burstEnhanceCategory della base, oppure type 8 (Mickey &
-//   Brooms) ([fn]). Aggiunge 1 + i pallini del materiale, fino a burst.maxEnhanceCount.
+// Brooms). Aggiunge 1 + i pallini del materiale, fino a burst.maxEnhanceCount.
 // - guilt (userMedal.guiltFactor, centesimi di %: 10000 = +100%): un materiale da pallino fuso
 //   quando i pallini sono gia' pieni sblocca (guilt 0) o rilancia la guilt: valore casuale dalle
 //   righe guiltProb del tier (value = guiltValue), si tiene il piu' alto. Serve userDetail.isGuilt
@@ -16,7 +16,7 @@
 // - Chip/Dale (enhanceAttack/enhanceDefense): attackUpperNumber/defenseUpperNumber fino a
 //   addMaxAttack/addMaxDefense della base.
 // - Cid (enhanceCost 1/5/10): upperCost fino a cost - minCost della base. Qui upperCost e' la
-//   riduzione (positiva); al client va negato (userMedalElement di server.js, [fn]).
+// riduzione (positiva); al client va negato (userMedalElement di server.js).
 'use strict';
 
 // Intervalli della khuxwiki (Medal, «Special Attack Bonus»), in centesimi di %.
@@ -34,10 +34,10 @@ const GUILT_RANGES = {
   10: { min: 24000, max: 32000, campaignMin: 28000 },
 };
 
-// Tabella guiltProb {id, value, factor, weight, isCampaign} (parser [fn]). Un valore ogni
+// Tabella guiltProb {id, value, factor, weight, isCampaign}. Un valore ogni
 // 1% fra minimo e massimo. I pesi originali non si conoscono: ipotesi = peso uniforme.
-// isCampaign: il client moltiplica il peso di queste righe per il tasso della campagna
-// ([fn]); senza campagne attive tutte 0.
+// isCampaign: il client moltiplica il peso di queste righe per il tasso della campagna;
+// senza campagne attive tutte 0.
 function guiltProbRows(step = 100) {
   const rows = [];
   let id = 1;
@@ -93,7 +93,7 @@ function applyEnhance(baseRow, base, comps, opts) {
   const range = guiltRange(opts.guiltProb || [], tier);
   const guiltOpen = !!opts.isGuilt && tier > 0 && range.max > 0;
   const before = s.guiltFactor;
-  // pallini come l'anteprima del client ([fn], [fn]): ogni copia vale 1 + i suoi pallini;
+  // pallini come l'anteprima del client: ogni copia vale 1 + i suoi pallini;
   // se il totale supera il massimo (strettamente) la fusione sblocca o rilancia la guilt con un solo tiro,
   // anche quando e' la stessa copia a riempire i pallini (banco 18-10: 2 + 2 + 2 su 5 -> guilt). La guilt
   // della copia non conta. Prima l'eccedenza si perdeva e tirava solo una copia aggiunta a pallini pieni.

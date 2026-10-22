@@ -110,7 +110,7 @@ r = enhance(b, [chips[0], dale[0], cids[0]], [10, 1, 3]);
 const a = r.afterEnhanceUserMedal;
 assert.equal(a.attackUpperNumber, Math.min(base.addMaxAttack, 1500));
 assert.equal(a.defenseUpperNumber, Math.min(base.addMaxDefense, 150));
-assert.equal(a.upperCost, -20, 'upperCost al client: negativo ([fn])');
+assert.equal(a.upperCost, -20, 'upperCost al client: negativo');
 assert.equal(state(b).upperCost, 20, 'medalState: riduzione positiva');
 assert.equal(a.burstUpperNumber, 5, 'pallini conservati');
 log('5. Chip x10, Dale, Cid 10 x3: STR +', a.attackUpperNumber, 'DEF +', a.defenseUpperNumber, 'upperCost', a.upperCost);
@@ -182,7 +182,7 @@ const ow = r.overwriteSkills[0];
 assert.deepEqual([ow.skillId, ow.level, ow.userMedalId], [scSkill.skillId, scSkill.level, x]);
 assert.deepEqual(r.afterEnhanceUserMedal.userSkills, [ow.userSkillId]);
 assert.deepEqual(r.beforeEnhanceUserMedal.userSkills, []);
-// ramo 55: userSkills = skill da cancellare nel client ([fn]): solo quella della Scrooge
+// azione 55: userSkills = skill da cancellare nel client: solo quella della Scrooge
 // consumata, mai la lista intera (svuotava la tabella: crash dell'ordinamento «Skill», banco 18-10)
 assert.deepEqual(r.userSkills.map((s) => s.userSkillId), [scSkill.userSkillId], 'userSkills = solo la skill consumata');
 log('9b. Overwrite su', atk.name, ':', skById.get(ow.skillId).name, 'LV', ow.level, 'id', ow.userSkillId);

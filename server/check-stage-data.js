@@ -5,7 +5,7 @@
 //  - forzieri: riga di reward presente e almeno un premio che il server manda
 //    (dropItemTypeIds, come chestDropTypes di server.js) di un tipo che nel forziere
 //    funziona (4 munny, 8 CP, 9 HP); senza riga il client va in crash all'apertura;
-//  - nemici: la riga di reward del record della mappa ([fn]: senza, crash
+// - nemici: la riga di reward del record della mappa (senza, crash
 //    appena parte lo stage) e premio materiale esistente;
 //  - premi di fine stage e degli obiettivi: tipo gestito da grantItem di server.js
 //    (2 jewel, 4 munny, 5 materiale, 14 Avatar Coin) e materiale presente nella tabella material.

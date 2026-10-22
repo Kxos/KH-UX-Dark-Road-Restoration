@@ -21,7 +21,7 @@ const wiki = {}, wikiRaw = {}, missions = [], stage113 = [];
 // obiettivi «Defeat the X»: nome nel master (senza articolo), bersaglio dello stage, nome solo JP, nome sconosciuto
 const SECOND = { 601: 'Defeat the Phantom Thing within 1 turn', 603: 'Defeat the Shadow within 2 turns',
   605: 'Defeat the Nessuno within 1 turn', 607: 'Defeat Solo JP x 3', 609: 'Complete within 45 seconds',
-  // obiettivi dei tappabuchi di prima coi codici del client ([fn], ricerca in tmp\objectives, 21-10)
+  // obiettivi dei tappabuchi di prima coi codici del client (ricerca in tmp\objectives, 21-10)
   611: 'Do a barrel roll', 613: 'Complete within 01\'20"00', 615: 'Complete within 2 battles', 619: 'Deal 50 or more hits',
   621: 'Complete without taking damage', 623: 'Take less than a total of 20000 damage', 625: 'Destroy all barrels',
   627: 'Open 3 treasure chests', 629: 'Collect 3 Keyblade materials', 631: 'Equip 4 or fewer Medals',
@@ -141,7 +141,7 @@ check(byId.get(605).submissionId[1] === 1, 'nome sconosciuto: mai id 0, Shadow')
 check(byId.get(607).submissionRequire[1] === 4 && byId.get(607).submissionId[1] === 1, 'nome solo JP (1637, assente dal master) -> 1');
 check(byId.get(611).submissionRequire[1] === 10 && byId.get(611).submissionName[1] === 'Do a barrel roll'
   && JSON.stringify(rows.report.stopgapObjectives) === '[[611,2,"Do a barrel roll"]]', 'obiettivo senza codice: tappabuchi segnalato');
-// codici del valutatore [fn]; testo della wiki tale e quale come submissionName
+// codici delle condizioni; testo della wiki tale e quale come submissionName
 const sub2 = (n) => { const r = byId.get(n); return [r.submissionRequire[1], r.submissionDataType[1], r.submissionIdType[1],
   r.submissionId[1], r.submissionNum[1], r.submissionName[1]]; };
 const sameSub = (n, want) => JSON.stringify(sub2(n)) === JSON.stringify(want);
@@ -156,7 +156,7 @@ check(sameSub(625, [17, 1, 0, 0, 0, 'Destroy all barrels']), `17 barili = tutti 
 check(sameSub(627, [17, 1, 0, 0, 0, 'Open 3 treasure chests']), `17 N forzieri (senza intestazioni): ${sub2(627)}`);
 check(sameSub(629, [18, 1, 0, 0, 0, 'Collect 3 Keyblade materials']), `18 N materiali (senza intestazioni): ${sub2(629)}`);
 check(sameSub(631, [24, 2, 0, 0, 4, 'Equip 4 or fewer Medals']), `24 medaglie <= N: ${sub2(631)}`);
-// con le intestazioni degli stage (mappoi +0x38 forzieri, +0x3c materiali): N diverso dal totale -> tappabuchi
+// con le intestazioni degli stage (mappoi forzieri materiali): N diverso dal totale -> tappabuchi
 {
   const sidOf = (n) => missions.find((m) => m.q === n).stage.stageId;
   const headers = { [sidOf(625)]: { treasures: 4, materials: 0 }, [sidOf(627)]: { treasures: 3, materials: 0 },
@@ -167,7 +167,7 @@ check(sameSub(631, [24, 2, 0, 0, 4, 'Equip 4 or fewer Medals']), `24 medaglie <=
   check(bh.get(629).submissionRequire[1] === 10 && rh.report.stopgapObjectives.some(([n]) => n === 629),
     'materiali: N != totale dello stage -> tappabuchi');
 }
-// readHeaders: totali dell'intestazione mappoi (+0x38 forzieri, +0x3c materiali) per stageId
+// readHeaders: totali dell'intestazione mappoi (forzieri, materiali) per stageId
 {
   const d = mkTmp();
   const buf = Buffer.alloc(0x40);
@@ -214,7 +214,7 @@ check(rows.filter((r) => r.onlyDrama).length === 1, 'solo la 978 senza mappa');
   check(JSON.stringify(r544.submissionRequire) === '[28,12,10]' && r544.submissionId[1] === 10001
     && JSON.stringify(r544.submissionRewardType) === '[14,14,5]' && r544.submissionName[2] === 'Complete without having to continue',
     `544: obiettivi della wiki (${r544.submissionRequire})`);
-  // fix round 1: il client valuta il 12 per id ([fn] mette submissionId nello slot, [fn] conta solo
+  // fix round 1: il client valuta il 12 per id (con submissionId nello slot conta solo
   // quell'id): un id solo non va per 5 varianti -> 7 «Complete within N turns», stesso N e stesso premio
   check(JSON.stringify(r555.submissionRequire) === '[28,7,10]' && JSON.stringify(r555.submissionNum) === '[0,2,0]'
     && r555.submissionName[1] === 'Complete within ${1:%d :#turn:#turns}' && r555.submissionIdType[1] === 0
@@ -288,7 +288,7 @@ check(thumbForRoom('NL_0001_03_00') === 10300 && thumbForRoom('HD_0012_01_02') =
   check(t && [...t].sort().join() === '12_20100,13_100,1_40100', `readThumbs: ${t && [...t]}`);
   check(readThumbs(path.join(d, 'manca.tsv'), path.join(d, 'manca')) === null, 'readThumbs senza fonti -> null');
 }
-// righe world 11-14 (D-C): worldName = prefisso delle stanze ([fn] -> wipe_<worldId>), sfondo servito
+// righe world 11-14 (D-C): worldName = prefisso delle stanze (-> wipe_<worldId>), sfondo servito
 const worldRows = [
   { worldId: 1, worldName: 'DB', raidBackground: 'bg_DB1', instanceLwf: 'sDummy', instance: 'sDummy', xPos: 0, yPos: 0, rate: 10000,
     validParts: 2, partsId: ['RB_0003_00_00_eff_back', 'RB_0003_00_00_eff_front'], xPostion: [0, 0], yPostion: [0, 0] },

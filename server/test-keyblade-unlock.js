@@ -7,7 +7,7 @@
 // - prima del completamento il keyblade NON sia posseduto (grantMissingKeyblades non lo anticipa);
 // - il primo completamento lo dia una volta sola (userKeyblades, userDecks, userKeybladeSubslots
 //   della risposta), con firstClearFlag 1: il client costruisce il popup BattleResult_KB dalla
-//   propria tabella stage (clearGetItemType 13 della riga, [fn] -> [fn]), non da un
+// propria tabella stage (clearGetItemType 13 della riga), non da un
 //   campo della risposta;
 // - rigiocare, compiere gli obiettivi o riavviare il server non lo duplichi;
 // - le missioni Proud date in normale non diano niente; i 6 keyblade Proud sono il premio del primo completamento
@@ -115,7 +115,7 @@ for (const r of rows) {
 check(new Set(atCreate).size === atCreate.length, `serie doppie alla creazione: ${atCreate}`);
 log(`nuovo giocatore: ${atCreate.length} serie (${t.ownedKeyblades().map((k) => kbById.get(k.keybladeId).name).join(', ')})`);
 
-// popup del client ([fn], stage normale): con firstClearFlag 1 una voce per ogni
+// popup del client (stage normale): con firstClearFlag 1 una voce per ogni
 // clearGetItemType 13 della riga di stage, e una per ogni obiettivo nuovo (clearMissionIds non
 // gia' compiuti) con submissionRewardType 13
 function clientPopups(st, resp, prevMissions) {

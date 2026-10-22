@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Tabella loginBonus (I-176): tolta dal master 5.0.1, il client 4.3.1 la legge ancora (SceneLoginBonus,
-// [fn]/[fn]). Fonte: master loginBonus di un'installazione 1.1.3 (cartella di riferimento locale),
+// Tabella loginBonus (I-176): tolta dal master 5.0.1, il client 4.3.1 la legge ancora
+// (schermata del login bonus). Fonte: master loginBonus di un'installazione 1.1.3 (cartella di riferimento locale),
 // decodificato in reference\login_bonus\loginBonus_1.1.3_decoded.json (fuori dal repo: dati Square Enix).
 // - Daily (bonusType 1, id 100-104): le 5 righe, una per pannello (il layout ha 5 Area_Cont: ne servono 5 esatte);
 //   jewel 100/100/200/200/300 come dalla v2.3.1 (notice 32990, screenshot 2020-21), la 1.1.3 aveva 50/50/100/100/200

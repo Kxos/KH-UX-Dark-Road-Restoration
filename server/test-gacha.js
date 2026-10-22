@@ -95,7 +95,7 @@ check(e.price === 1 && e.userLimitedCount === 0 && e.isDayLimited === 0, 'piastr
 check(['validAdd', 'drawMedalTypeId', 'drawType', 'sortId', 'payType', 'price', 'lotCount', 'isDayLimited', 'userLimitedCount',
   'userWarrantDisplayOfTime', 'name', 'description', 'bannerUrl', 'warrantMedalIds', 'drawTicketlimitDate'].every((k) => k in e), 'campi obbligatori');
 check(e.bannerUrl === `http://h/web/gacha/img/${first.drawMedalTypeId}.png`, 'bannerUrl');
-// I-138: [fn] rifiuta la lista se un campo manca o ha il tipo sbagliato (JSON.stringify toglie gli undefined).
+// I-138: rifiuta la lista se un campo manca o ha il tipo sbagliato (JSON.stringify toglie gli undefined).
 // Tipi della piastra Catalog e di quelle del sotto-progetto 1 che funzionavano al banco.
 const PLATE_TYPES = {
   validAdd: 'int', drawMedalTypeId: 'int', drawType: 'int', sortId: 'int', payType: 'int', price: 'int', lotCount: 'int',
@@ -108,7 +108,7 @@ const lo = JSON.parse(JSON.stringify(g.gachaListData(ord, { freeStone: 0 }, { re
 const badPlates = lo.gachaList.flatMap((x) => Object.entries(PLATE_TYPES).filter(([k, t]) => typeOf(x[k]) !== t)
   .map(([k, t]) => `${x.drawMedalTypeId}.${k}=${JSON.stringify(x[k])} (atteso ${t})`));
 check(badPlates.length === 0, `campi e tipi delle piastre: ${badPlates.join(', ')}`);
-// Il client ordina le piastre per sortId crescente (mappa di [fn]): Catalog prima, poi l'ordine di shopBanners.
+// Il client ordina le piastre per sortId crescente: Catalog prima, poi l'ordine di shopBanners.
 const wantIds = [9001, ...g.shopBanners(ord, opt).map((b) => b.drawMedalTypeId)];
 const bySort = [...lo.gachaList].sort((a, b) => a.sortId - b.sortId);
 check(JSON.stringify(bySort.map((x) => x.drawMedalTypeId)) === JSON.stringify(wantIds), `ordine per sortId: ${bySort.map((x) => x.drawMedalTypeId)}`);

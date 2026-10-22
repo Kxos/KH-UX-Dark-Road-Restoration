@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Livelli del Nova nelle righe medal (addGuiltBurstLv +0x4c4 = 1, addGuiltBurstLvMax +0x4c8 = 5) solo per le
+// Livelli del Nova nelle righe medal (addGuiltBurstLv = 1, addGuiltBurstLvMax = 5) solo per le
 // medaglie che un preset «guilt: 'max'» del catalogo dei banner puo' consegnare (I-149, sotto-progetto 2b).
 //
 // Perche': dopo un'estrazione con guiltBurstFirst/MaxUserMedalIds il client calcola da solo i livelli del popup
-// «NOVA LEVEL UP!» dalle righe delle copie elencate ([fn]: partenza = userPoint.guiltBurstLv - somma
-// delle righe; [fn]/[fn]: + addGuiltBurstLv / + addGuiltBurstLvMax a ogni passo). Con 0 il popup
+// «NOVA LEVEL UP!» dalle righe delle copie elencate (partenza = userPoint.guiltBurstLv - somma
+// delle righe; + addGuiltBurstLv / + addGuiltBurstLvMax a ogni passo). Con 0 il popup
 // mostrerebbe «LV n » LV n». Il popup parte solo se il server manda le liste (guilt-burst.js), quindi i valori
 // non fanno comparire popup nelle estrazioni normali; il Level Up usa i campi della risposta (guilt-burst.gained).
-// Righe toccate solo dove servono (altri lettori del campo nel client, [fn]/[fn]/[fn],
+// Righe toccate solo dove servono (altri lettori del campo nel client, 
 // non ancora capiti): righe d'attacco (type 1) con guiltValue > 0 alla stella degli slot (on.slots), alla stella
 // (on.star) o col nome (on.names) del preset, piu' le loro boosted (groupId). guilt-burst.js usa gli stessi
 // valori (1 e 5 di default), quindi il livello del server e quello del client coincidono.

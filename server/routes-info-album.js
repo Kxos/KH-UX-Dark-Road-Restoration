@@ -1,25 +1,24 @@
 // Notices (Other > Notices, popup al login) e Album (Other > Album): docs/notes/home_profilo.md#notices-album.
 //
-// POST /system/information/list/151203 (azione 31, parser [fn]): popUpViewUrl = array di
-// stringhe (URL), obbligatorio. Il dispatcher (0x7c3c78) mette il vettore nella sessione +0x3c0.
-// - Pulsante Notices ([fn] -> [fn] -> callback [fn]): apre la WebView
-//   ([fn], titolo testo 0x5ff08d2 «Notices») sul PRIMO elemento, con i parametri di
-//   sessione aggiunti da [fn]. Con la risposta generica il vettore e' nullo e il primo
-//   elemento si legge da un puntatore nullo: SIGSEGV a 0x9f9010 (banco 14-10). Serve almeno 1 URL.
-// - Login ([fn] -> [fn], callback [fn], poi [fn]): mostra in
+// POST /system/information/list/151203 (azione 31): popUpViewUrl = array di
+// stringhe (URL), obbligatorio.
+// - Pulsante Notices: apre la WebView
+// (titolo testo «Notices») sul PRIMO elemento, con i parametri di
+// sessione aggiunti dal client. Senza elementi il client va in crash (banco 14-10). Serve almeno 1 URL.
+// - Login: mostra in
 //   sequenza le WebView di tutti gli elementi (il primo con i parametri di sessione): e' il popup
 //   delle notizie dell'originale all'ingresso nella home.
-// La WebView usa cocostudio/publish/Information2_Base.json (o dark_Information2_Base.json se il
-// flag +0x1a9 di [fn] e' acceso; [fn]): l'originale JP (uguale al WW 4.4.0) e'
+// La WebView usa cocostudio/publish/Information2_Base.json (o, in alcuni casi, dark_Information2_Base.json):
+// l'originale JP (uguale al WW 4.4.0) e'
 // in recon/tools/jp_coco_layouts.txt.
-// GET /system/information/list (azione 30, parser [fn]): viewUrl stringa (non vista sul
+// GET /system/information/list (azione 30): viewUrl stringa (non vista sul
 // banco; stessa pagina).
 //
-// GET /user/album/161102 (azione 17, parser [fn]): userAlbum {albumMedals[] {medalId uint,
+// GET /user/album/161102 (azione 17): userAlbum {albumMedals[] {medalId uint,
 // guiltStatus uint (letto come byte)}, allMedalCount int}, tutto obbligatorio (altrimenti
-// risultato nullo, SIGSEGV a 0x170 nel banco 14-10). La cella ([fn]) mostra la medaglia se
+// crash del client, banco 14-10). La cella mostra la medaglia se
 // medalId e' in albumMedals, altrimenti Medal_S_0 e «?» (Txt_Medal_Label); l'icona AlbumGuilt_1/2/3
-// = guiltStatus 0/1/2, solo se userDetail.isGuilt e il tier della medaglia (+0x4c0) != 0.
+// = guiltStatus 0/1/2, solo se userDetail.isGuilt e il tier della medaglia != 0.
 // guiltStatus qui: 0 = nessuna copia con Special Attack Bonus, 1 = almeno una, 2 = una copia al
 // bonus massimo del tier (ricostruzione: i valori originali non sono noti).
 

@@ -215,14 +215,14 @@ const FALLBACK = {
 const EXTRA4 = ['value1', 'burstLock', 'pvpConditionTurn', 'pvpConditionCount'];
 const LAST_501_ID = 1113;   // righe vere dell'APK 5.0.1 nel master (1100-1113); le altre del master sono generate
 
-// value1 (client 4.3.1, [fn]): riuscita di uno stato = rate del nemico * clamp(1 - X * value1 / 1e6, 0,
+// value1 (client 4.3.1): riuscita di uno stato = rate del nemico * clamp(1 - X * value1 / 1e6, 0,
 // 1), X = livello del nemico (deduzione: 5.0.1 Poison 1000 = fino al LV 999; il wiki «Effective on enemies up
 // to LV 1999» = 500). Conta solo per le skill con stati: le altre tengono il neutro 10000 delle righe 5.0.1.
 function value1For(f) {
   if (!f.status.size) return 10000;
   return f.maxEnemyLv ? Math.round(1e6 / (f.maxEnemyLv + 1)) : 1000;
 }
-// burstLock (client 4.3.1, [fn]): costo fisso dello speciale quando la skill scatta, in gauge * 10000
+// burstLock (client 4.3.1): costo fisso dello speciale quando la skill scatta, in gauge * 10000
 // («uses only 1 special attack gauge» = 10000); 0 con burstCancel 0 = speciale gratis come No Cost.
 const burstLockFor = (f) => (f.gauge ? f.gauge * 10000 : 0);
 
@@ -365,7 +365,7 @@ function skillRows(realRows, wikiSkills, schema) {
     row.value1 = value1For(f);
     row.dokonjo = f.chance ? 1 : 0;
     if (fam === 'ATK & SP Gauge') {
-      // il costo dello speciale si legge al timing 5 ([fn] -> invoke(..., 5, 3)), il danno al timing 1:
+      // il costo dello speciale si legge al timing 5, il danno al timing 1:
       // invokeShowTiming 6 = timing 1 o 5 (un tiro per battaglia, poi sempre), invokeType 1 = nessun filtro.
       // Deduzione (nessuna riga vera con showTiming 6): da provare al banco.
       row.invokeType = 1;

@@ -32,7 +32,7 @@ function commentOf(b) {
 // I-153 («Testo di categoria», decisione dell'utente): se la lista dei nomi distinti della pity supera
 // gacha.WARRANT_LIST_MAX byte (stripBytes, stessa formula del server: gacha.warrantStripBytes) validComment 1 e
 // un comment con la categoria del notice (guarantee.pityLabel, da recon/tools/banner_overrides.tsv campo pity_label).
-// Il comment e' un sprintf con il solo %d = userWarrantDisplayOfTime ([fn]) e senza plurale: il numero in fondo.
+// Il comment e' un sprintf con il solo %d = userWarrantDisplayOfTime e senza plurale: il numero in fondo.
 const WARRANT_XML_SAFE = false;
 const PITY_LABEL_FALLBACK = 'featured Medal'; // banner oltre il limite senza pity_label (log in masterRows)
 const xmlEsc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

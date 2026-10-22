@@ -21,8 +21,8 @@ function blank(table) {
   return row;
 }
 
-// Campi della riga multi (lettore a 0xf0e3c8, tabella 0x3e): bannerUrl a +0x88 e detailUrl a
-// +0x289 (stringhe da 0x201). detailUrl vuoto = tasto «Detail» nascosto.
+// Campi della riga multi: bannerUrl e detailUrl
+// (stringhe fino a 512 caratteri). detailUrl vuoto = tasto «Detail» nascosto.
 const multi = [Object.assign(blank('multi'), {
   multiId: 1,
   coinId: 0,                                   // significato non ricavato

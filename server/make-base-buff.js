@@ -3,16 +3,15 @@
 // docs/notes/battaglia.md#basebuff). Nessuna fonte originale li ha (thethiny: tutti 0, 5.0.1 senza
 // tabella burst completa, JP 4.3.1 senza master): si ricostruiscono dalla descrizione della riga.
 //
-// Semantica dal client 4.3.1 ([fn] -> [fn] se' stesso / [fn] ogni bersaglio
-// -> [fn] -> [fn] una voce nella lista STR e una nella lista DEF):
-// - addBaseCountType: 1 = turni (scala a fine turno con i buff a turni, [fn] -> [fn](.,1)),
-//   2 = attacchi (scala dopo ogni attacco, [fn] -> [fn](.,2)); addBaseCountValue = durata.
+// Semantica dal client 4.3.1 (se' stesso / ogni bersaglio: una voce nella lista STR e una
+// nella lista DEF):
+// - addBaseCountType: 1 = turni (scala a fine turno con i buff a turni),
+// 2 = attacchi (scala dopo ogni attacco); addBaseCountValue = durata.
 //   La voce entra solo con tipo != 0, durata >= 1 e valore != 0.
 // - addBaseAtkSelf/DefSelf/AtkOpponent/DefOpponent: valore assoluto sommato alla STR/DEF della medaglia
-//   ([fn]: STR riga + somma, minimo 0, poi moltiplicatori); voci uguali si sommano (2000+2000).
-// - addBaseAttribute: maschera delle medaglie a cui vale ([fn], maschera della medaglia da
-//   [fn]): bit 0/1/2 = Power/Speed/Magic, bit 3/4 = Upright/Reversed; 0 = tutte le medaglie.
-// - resetBase (non usato qui): bit 0/1 azzera STR/DEF propri, bit 2/3 dei bersagli ([fn]/fdcc).
+// (STR riga + somma, minimo 0, poi moltiplicatori); voci uguali si sommano (2000+2000).
+// - addBaseAttribute: maschera delle medaglie a cui vale: bit 0/1/2 = Power/Speed/Magic, bit 3/4 = Upright/Reversed; 0 = tutte le medaglie.
+// - resetBase (non usato qui): bit 0/1 azzera STR/DEF propri, bit 2/3 dei bersagli.
 //
 // Descrizioni lette: «N turn(s): [P-|S-|M-|U-|R-|P- & S-]Medal STR ±N[, DEF ±N]», «N attack(s): ...»,
 // sull'avversario «targets' X-Medal STR -N» o «targets [Medal STR -N]». La durata e' l'ultima

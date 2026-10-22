@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Trait dalla fusione (I-084 parte A, docs/superpowers/specs/2026-10-19-trait-design.md): due ritocchi del master.
 //
-// 1. medal.shuffleSkillGroupId (+0x53c): il client ([fn], anteprima [fn]) conta un materiale come
+// 1. medal.shuffleSkillGroupId: il client (anteprima) conta un materiale come
 //    «da trait» se il suo shuffleSkillGroupId e' uguale a quello della base (e diverso da 0) e la base ha
 //    shuffleskillSlot > 0. Era 0 ovunque. Stessa medaglia = stesso nome (tutte le rarita', boosted, varianti
 //    >= 1.000.000; dalla 2.6.0 vale fra rarita' diverse, notice 40729) oppure stesso numero di Album (sortId > 0):
@@ -12,7 +12,7 @@
 // 2. shuffleskill: la ruota della fusione estrae fra gli 11 trait originali (notice 27491, guida p. 21-23):
 //    mancavano come trait normali (type 1) Max HP +800 e Poison/Sleep/Paralysis Resist 20%, che esistevano solo
 //    come Special Trait del pet (type 2): righe 14-17 copiate dalle 1024/1029/1032/1035 col type 1. La roulette del
-//    client ([fn], anche nell'acquisto del Moogle Shop) mostra le righe type 1 con rate != 0: rate 100 su tutte
+// client (anche nell'acquisto del Moogle Shop) mostra le righe type 1 con rate != 0: rate 100 su tutte
 //    (anche i trait solo da Moogle Shop, Max HP +300 e i 5 della 4.1.0), l'estrazione la fa il server sugli 11.
 // Idempotente; chiamato in fondo a make-game-tables.js (dopo make-pet-tables, che ha i Special Trait). Dopo:
 // alzare la revisione del master.

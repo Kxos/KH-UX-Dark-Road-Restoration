@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Livelli Lux 302-999 (richiesta dell'utente 19-10): la tabella player originale che abbiamo (thethiny) ha 301 righe,
 // del periodo col livello massimo 300; il massimo e' salito a 500 (29-03-2018, notice 38914), 800, 850 (20-09-2019,
-// 58013), 900 (05-03-2020, 63810) e 999 (14-01-2021, 73077). Il client ([fn]) legge le righe lv e lv+1 e misc
+// 58013), 900 (05-03-2020, 63810) e 999 (14-01-2021, 73077). Il client legge le righe lv e lv+1 e misc
 // 100 (livello massimo): senza la riga lv+1 va in crash, quindi servono tutte le righe fino a 999.
 // Lux per livello (needExp[L] - needExp[L-1]):
 // - 302-304 esatti dal wiki giapponese (wikiwiki.jp/khux/ステータス; il 301 coincide al Lux con thethiny);

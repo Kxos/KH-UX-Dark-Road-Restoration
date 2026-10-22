@@ -2,11 +2,11 @@
 // medaglie.md#danno-variabile-tipi):
 //
 // Il client mostra nel dettaglio della medaglia «x a - b» quando la riga burst ha specialPowerType diverso da 1 e 2
-// ([fn]; [fn](dots, row, wantMax) chiede il massimo con la stessa regola): a = displayPower(PerEnforce)
-// /1e4, b = displayMaxPower(PerEnforce) +0x2f0/+0x2f4 /1e4, entrambi per il fattore guilt. Le nostre 2276 righe erano tutte
+// (il massimo con la stessa regola): a = displayPower(PerEnforce)
+// /1e4, b = displayMaxPower(PerEnforce) /1e4, entrambi per il fattore guilt. Le nostre 2276 righe erano tutte
 // tipo 1/2 con displayMaxPower 0 (copie dei modelli di burst_base.json): Cloud II EX 7★ (burst 3000999) mostrava x7.12
 // invece di «x7.12 - 8.64» (video https://www.youtube.com/watch?v=eLmkNDzwuPE 2:02).
-// Danno in battaglia (I-189b): switch(specialPowerType) di [fn] (0x00e30f9c..0x00e31480, tmp\i189b\b2.c), con
+// Danno in battaglia (I-189b) per specialPowerType (note private del 21-10), con
 // S1 = sp1(PerEnforce)/1e4, S2 = sp2/1e4, B = basePower(PerEnforce)/1e4 e f(x) = x²/(S2 + x²).
 //
 // Tre casi (dopo medal-power-fix.js burstPowerFix, che ha gia' messo base/display di ogni riga):
@@ -32,8 +32,8 @@
 //      /3 per tutti gli altri (originali Blitz e Swift Hero; Wheel Smash senza originale segue la maggioranza, 8 su 14).
 //    Curve senza originale dello stesso tipo, ricostruite (resoconto curveReconstructed): 26/27 (S2 e x dal 27 di
 //    Zone of Ruin), 31 (come il 30), 37 (come 23/25), 39 e 41 (come il 40).
-//    **Critical** (18 righe): nessun tipo nello switch; il colpo critico usa criticalPower (+0x2bc, moltiplicatore del
-//    critico; +0x2b8 = critical, la probabilita', non si tocca): criticalPower = round(hi/lo·1e4), il tipo resta 1.
+// **Critical** (18 righe): nessun specialPowerType dedicato; il colpo critico usa criticalPower (moltiplicatore del
+// critico = critical, la probabilita', non si tocca): criticalPower = round(hi/lo·1e4), il tipo resta 1.
 // c. condizioni senza tipo noto: tipo 1, contate nel resoconto (unmapped).
 //
 // make-game-tables.js lo chiama dopo burstPowerFix; da solo corregge il master sul posto (idempotente):
@@ -43,7 +43,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROBO_BURST = 3000000;
-// condizione di Roboloid (Ability.Condition) -> specialPowerType (case di [fn], medaglie.md#danno-variabile-tipi).
+// condizione di Roboloid (Ability.Condition) -> specialPowerType (vedi medaglie.md#danno-variabile-tipi).
 // MoreGaugesPrevMedal e' 26 («previous Medal») o 27 («next Medal», dal testo dell'abilita'): vedi typeOf()
 const TYPE_OF_CONDITION = { LowerHP: 3, HigherHP: 4, DrainsHP: 5, MoreTurns: 6, SPSuccession: 7, DrainsDEF: 16, Poison: 20,
   Sleep: 21, Paralysis: 22, GaugesFull: 23, GaugesUsed: 25, MoreGaugesPrevMedal: 26, MoreEnemiesDefeated: 28, MoreLUX: 30,

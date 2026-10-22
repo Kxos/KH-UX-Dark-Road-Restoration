@@ -1,7 +1,7 @@
 // Shop > Draw: lista, estrazione e pagine WebView (docs/notes/shop.md; spec 2026-10-16-shop-banner-design.md 9.4-9.7).
-// GET /gacha/list (azione 75): gachaList[] ([fn], campi tutti obbligatori) e petGachaList[]
+// GET /gacha/list (azione 75): gachaList[] (campi tutti obbligatori) e petGachaList[]
 // (obbligatorio anche vuoto: senza, «200 ERROR :75»). Il client la richiede a ogni apertura dello Shop
-// e dopo ogni estrazione; la chiusura della WebView di Details NON la richiede ([fn]).
+// e dopo ogni estrazione; la chiusura della WebView di Details NON la richiede.
 // POST /gacha/draw (azione 76): corpo {drawMedalTypeId, count = lotCount}; il client controlla prima
 // jewel/biglietti e 1 posto nel box, poi apre la scena e rilegge GET /user/stone: i jewel li scala il
 // server qui. Risposta in server.js (respondGachaDraw).
@@ -102,7 +102,7 @@ function shopBanners(banners, { storyQuest, storyDay, shopFrom, shopTo, sizes, s
 }
 
 // Conto alla rovescia sotto il pulsante (richiesta dell'utente 19-10; etichetta originale Plate_Limit del client,
-// [fn]: displayTimeLeft != 0 della riga drawMedalType -> tempo fino a endDate). Per ogni banner dello Shop
+// displayTimeLeft != 0 della riga drawMedalType -> tempo fino a endDate). Per ogni banner dello Shop
 // della settimana `week`: la prima settimana reale in cui la rotazione (gd.shopWindow) lo toglie dallo Shop, entro il
 // periodo della tranche (n settimane); null se resta in tutte (nessun conto alla rovescia).
 // -> Map drawMedalTypeId -> indice della settimana reale in cui esce (clock.weekStartOf = lunedi' 08:00 UTC).
@@ -129,15 +129,15 @@ function shopLeaveWeeks(catalog, { storyQuest, week, rot: rot0, sizes, show, sea
 }
 
 // Piastra «Banner Catalog» (spec 4.1): Gold Ticket (payType 6, drawTicket3 sempre 0) prezzo 1: pulsante
-// grigio, il tocco non manda richieste ([fn]); Details apre il catalogo (detailUrl del master).
+// grigio, il tocco non manda richieste; Details apre il catalogo (detailUrl del master).
 function catalogRow() {
   return gd.drawMedalTypeRow({ drawMedalTypeId: gd.CATALOG_ID, name: 'Banner Catalog', payType: 6, price: 1, sortId: 1,
     bannerUrl: `/web/gacha/img/${gd.CATALOG_ID}.png`, detailUrl: '/web/gacha/catalog', comment: 'Open Details to browse all banners' });
 }
 
-// sortId: il client ([fn]) raggruppa le piastre in una mappa per sortId della lista (non quello del master,
+// sortId: il client raggruppa le piastre in una mappa per sortId della lista (non quello del master,
 // che non legge) e le mostra per sortId crescente, poi drawMedalTypeId: un numero intero diverso per ogni piastra
-// (senza, JSON.stringify lo toglie e [fn] rifiuta la lista: «200 ERROR :75», I-138).
+// (senza, JSON.stringify lo toglie e il client rifiuta la lista: «200 ERROR:75», I-138).
 function plate(b, webBase, userLimitedCount, price, sortId, warrant = warrantFields({}), kept = false) {
   return {
     validAdd: 0, drawMedalTypeId: b.drawMedalTypeId, drawType: 1, sortId, payType: b.payType, price,
@@ -159,8 +159,8 @@ function plate(b, webBase, userLimitedCount, price, sortId, warrant = warrantFie
 // server.js) o con il pool vuoto (log qui, una riga per banner) gli id vengono dal catalogo: prima le varianti dei
 // pityNames, poi una medaglia qualsiasi del banner (vetrina, nomi, liste, sotto-set), infine la prima del catalogo.
 // I-153 (analisi in docs/notes/shop.md#i153): con piu' nomi il client unisce «<important>nome</important>» con «, »
-// e «, or » prima dell'ultimo (testi 106180302/305/306) e formatta tutto in buffer da 0x400 byte ([fn],
-// [fn] con «<xml>%s</xml>»): oltre J = 963 byte la striscia esce «A  guaranteed in !». Un id per nome
+// e «, or » prima dell'ultimo (testi 106180302/305/306) e il testo ha un limite di 1024 byte
+// (con «<xml>%s</xml>»): oltre J = 963 byte la striscia esce «A guaranteed in !». Un id per nome
 // (nameOf = nome della riga medal del master servito; il client toglie gia' i doppioni, si tiene il primo, come lui);
 // J <= WARRANT_LIST_MAX: lista dei nomi (validComment 0); oltre, make-banners.warrantOf scrive validComment 1 e un
 // testo di categoria; guardWarrant nasconde la striscia se un master vecchio ha ancora validComment 0 oltre il limite.
@@ -225,8 +225,8 @@ function warrantFields(b, ex, state = {}, catalog = null, nameOf = null) {
 // (userWarrantDisplayOfTime 0) e una medaglia per la lista: la vetrina alla data (ex.featuredIds), poi gli id del
 // catalogo (bannerMedalIds), il primo id del pool, infine safeMedalId del master; una riga di log per banner.
 // I-153: con validComment 0 e J > WARRANT_HARD_MAX (master non rigenerato dopo I-153) striscia nascosta e un solo id,
-// una riga di log per banner; con validComment 1 e pity il client non legge warrantMedalIds ([fn]: sprintf del
-// comment con userWarrantDisplayOfTime): basta il primo id.
+// una riga di log per banner; con validComment 1 e pity il client non legge warrantMedalIds (il
+// comment mostra solo userWarrantDisplayOfTime): basta il primo id.
 const commentWarned = new Set();
 const stripWarned = new Set();
 function guardWarrant(w, b, ex, catalog, validComment, safeMedalId, nameOf = null) {

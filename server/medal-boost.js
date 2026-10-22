@@ -1,9 +1,9 @@
 // Medaglie «boosted» (sotto-progetto 2b, docs/notes/medaglie.md#boosted): nell'originale una boosted e'
 // una riga a parte del master medal, non un campo di userMedal. Il client la riconosce dal displayId
-// (+0x18 della riga, [fn]): 1, 101, 201, 301, 1101, 1201, 1301 = displayId della normale + 1
-// (0 senza badge, 100/200/300 SN/SN+/SN++, +1000 varianti R); [fn] e [fn]/61ac/6298
-// trattano n e n+1 allo stesso modo (badge invariato). groupId (+0x510) punta alla normale: il
-// dettaglio ([fn]) ne mostra il No. e colora di giallo STR/DEF/Cost migliori.
+// della riga: 1, 101, 201, 301, 1101, 1201, 1301 = displayId della normale + 1
+// (0 senza badge, 100/200/300 SN/SN+/SN++, +1000 varianti R)
+// trattano n e n+1 allo stesso modo (badge invariato). groupId punta alla normale: il
+// dettaglio ne mostra il No. e colora di giallo STR/DEF/Cost migliori.
 // Statistiche dalle frasi dei banner (1000 STR; 1000 STR e DEF; 2000 STR e DEF, B0514) e dal video
 // LFJ5 (SN++ - Master Eraqus: Cost 46 -> 36). minCost - 10 e' una proposta (tetto di Cid invariato).
 'use strict';

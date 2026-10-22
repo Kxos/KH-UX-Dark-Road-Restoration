@@ -5,15 +5,15 @@
 // client 101300020-032, medalMisc 121/122) e comportamento del client 4.3.1:
 // - una medaglia ha al massimo una skill (il client ne accetta 2: userMedal.userSkills = id).
 //   L'oggetto della skill {userSkillId, skillId, level, exp, userMedalId, getDatetime}
-//   ([fn]) arriva nella lista userSkills della risposta ([fn]) e il client lo cerca
-//   per userSkillId ([fn], tabella della sessione +0x1c8): un id senza oggetto = riga
+// arriva nella lista userSkills della risposta e il client lo cerca
+// per userSkillId (tabella della sessione): un id senza oggetto = riga
 //   skill 0 = crash, quindi la lista va mandata intera.
-// - richiesta: isOverwriteSkill 0/1 ([fn]), nessuna skill scelta: vale la skill del
+// - richiesta: isOverwriteSkill 0/1, nessuna skill scelta: vale la skill del
 //   materiale piu' a sinistra (componentUserMedalIds[0]).
-// - probabilita' ([fn], «Success Rate %d%%»): per ogni skill dei materiali con la stessa
+// - probabilita' («Success Rate %d%%»): per ogni skill dei materiali con la stessa
 //   categoryEvolve della skill del primo materiale si somma
 //   min + (max - min) * (lv - 1) / (maxLv - 1)   (medalMisc 121 = 2000, 122 = 10000)
-//   per il moltiplicatore della campagna (scena +0x5e0, 10000 senza campagne) / 10000; limite 100%.
+// per il moltiplicatore della campagna (scena 10000 senza campagne) / 10000; limite 100%.
 //   Skill al livello 1 = 20%, al massimo = 100% (Scrooge, sempre al massimo: 100%).
 // - riuscita: la base prende la skill del primo materiale con livello ed EXP (la sostituisce se ne
 //   aveva una); fallita o Overwrite spento: la base tiene la sua, le skill dei materiali si perdono
@@ -54,7 +54,7 @@ function scroogeSkill(row, userMedalId, skills, expRows) {
     exp: expRows?.get(s.expType) ? expToReach(expRows.get(s.expType), s.maxLv || 1) : 0 };
 }
 
-// probabilita' (0..1) di una skill, come [fn]
+// probabilita' (0..1) di una skill, come la calcola il client
 function skillChance(skillRow, level, min, max, campaign = 10000) {
   if (!skillRow) return 0;
   const den = (skillRow.maxLv || 1) - 1;
@@ -77,12 +77,12 @@ function overwriteChance(comps, skillRows, min, max) {
   return { skill: first, chance: Math.min(1, p) };
 }
 
-// Curva skillExp (I-146), come il client 4.3.1 ([fn], oggetto della skill nella sessione):
-// riga skillExp value = [a, b, c] (expType della skill, +0x10c), EXP TOTALE per il livello L
-//   trunc(b * powf((L - 1) / (a - 1), c / 10000))   (in float; costante 10000.0f a 0x01763f00)
+// Curva skillExp (I-146), come il client 4.3.1 (oggetto della skill nella sessione):
+// riga skillExp value = [a, b, c] (expType della skill), EXP TOTALE per il livello L
+// trunc(b * powf((L - 1) / (a - 1), c / 10000)) (in float)
 // cioe' 0 al LV 1 e b al LV a (es. [30,12132,13500]: 12132 al LV 30, esponente 1.35). Il client la usa per
-// la soglia del livello attuale (+0x18) e del successivo (+0x14, con L al posto di L - 1); il livello e'
-// limitato a maxLv (+0x108). Aritmetica in float32 come il client (Math.fround).
+// la soglia del livello attuale e del successivo (con L al posto di L - 1); il livello e'
+// limitato a maxLv. Aritmetica in float32 come il client (Math.fround).
 function expToReach(expRow, level) {
   const f = Math.fround;
   const [a, b, c] = expRow;

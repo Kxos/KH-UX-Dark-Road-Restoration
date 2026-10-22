@@ -11,16 +11,16 @@
 // quelle Lux dal wikitext della pagina Passives; copia ridotta in server/tables/passives.json.
 //
 // Campi letti dal client 4.3.1:
-//   passive ([fn]): passiveId, name (testo della riga in «Passive Effects», Txt_Passive_Label),
+// passive: passiveId, name (testo della riga in «Passive Effects», Txt_Passive_Label),
 //     validPassive (quante voci di type/value), type[<=5], value[<=5], hp, abilitygauge, attack,
-//     defense, attribute (sommati nei totali, [fn]). type 3 = filtro sulle medaglie,
-//     value = maschera: 1 Power, 2 Speed, 4 Magic, 8 Upright, 16 Reversed ([fn] la
+// defense, attribute (sommati nei totali). type 3 = filtro sulle medaglie,
+// value = maschera: 1 Power, 2 Speed, 4 Magic, 8 Upright, 16 Reversed (il client la
 //     trasforma nelle categorie 1..11 del riquadro Total: P/S/M, Upright P/S/M, Reversed P/S/M,
-//     U, R; [fn] le applica alla medaglia per attributo +0x494 e darklight +0x498).
+// U, R le applica alla medaglia per attributo e darklight).
 //     Senza type (validPassive 0) la passiva vale per tutto: HP, SP ATK Gauge, STR, DEF.
-//   passiveSetting ([fn]): passiveSettingId, sortId (ordine della lista, [fn]),
+// passiveSetting: passiveSettingId, sortId (ordine della lista),
 //     passiveConditions, passiveValue1, passiveValue2, description (Txt_Rule_Label del popup
-//     PassiveResult, [fn]), passiveId.
+// PassiveResult), passiveId.
 // Il client non valuta passiveConditions (nessun lettore trovato): chi ha quali passive lo
 // decide il server (PUT /passive/list, server/keyblade-evo.js). Condizioni nostre:
 //   1 = livello Lux >= passiveValue1; 2 = keyblade della serie passiveValue1 (category) a

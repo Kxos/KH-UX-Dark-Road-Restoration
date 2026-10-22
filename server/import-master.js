@@ -27,8 +27,8 @@ if (!src || tables.length === 0) {
 const FIXES = {
   // keyblade: la 5.0.1 offline conserva solo alcuni livelli di ogni keyblade (per la
   // Starlight 1000, 1040, 1110, 1215), ma evolveId punta al livello successivo
-  // originale (1000 -> 1010), che non c'e'. Il client segue la catena ([fn],
-  // tabella interna 0x44) e va in crash a «Begin» di una missione. Ogni riga punta
+  // originale (1000 -> 1010), che non c'e'. Il client segue la catena
+  // e va in crash a «Begin» di una missione. Ogni riga punta
   // alla successiva presente della stessa famiglia (stesse migliaia); l'ultima a 0.
   keyblade(rows) {
     const ids = rows.map((r) => r.keybladeId).sort((a, b) => a - b);

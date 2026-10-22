@@ -88,9 +88,9 @@ const MEDAL_MAP_PATH = process.env.KHUX_MEDAL_MAP || 'D:\\Progetto_Restauro_KH_U
 if (fs.existsSync(MEDAL_MAP_PATH)) {
   for (const id of Object.keys(JSON.parse(fs.readFileSync(MEDAL_MAP_PATH, 'utf8')))) MEDAL_IMAGES.add(Number(id));
 }
-// Tier (SP Attack Bonus, «SAB Tier» della khuxwiki) = guiltValue (+0x4c0): il dettaglio carica
-// img/ui/guilt/MedalInfo_Guilt<guiltValue>.png ([fn]/[fn]; 0 = icona nascosta),
-// le icone delle schermate keyblade Guilt<n>_On/_Off/_Err ([fn]), il filtro
+// Tier (SP Attack Bonus, «SAB Tier» della khuxwiki) = guiltValue: il dettaglio carica
+// img/ui/guilt/MedalInfo_Guilt<guiltValue>.png (0 = icona nascosta),
+// le icone delle schermate keyblade Guilt<n>_On/_Off/_Err, il filtro
 // Filter_Guilt1..10. Fonte: campo Guilt di Roboloid (1-10, uguale alla khuxwiki: SN++ - MoM
 // Kairi = 10); le medaglie di supporto non ne hanno (0). Le righe di thethiny (formato vecchio)
 // hanno guiltValue 0: si prende quello della medaglia di Roboloid associata (medal_map.json).
@@ -149,7 +149,7 @@ if (realMedals) {
       // slot dei trait (Moogle Shop, fusione): il formato vecchio non li ha; dal tier (sopra)
       shuffleskillSlot: traitSlots(tier, r.rare, r.name, r.unk_1116),
       // slot del trait speciale (khwiki: «Each Medal also has one Special Trait Slot»). La
-      // griglia del popup «Select Medal» ([fn] con il flag +0xb29) vela e disattiva
+      // griglia del popup «Select Medal» vela e disattiva
       // le medaglie con spShuffleskillSlot 0 e quelle di supporto (tipo 9/10)
       spShuffleskillSlot: r.unk_1116 ? 0 : 1,
     }));
@@ -256,8 +256,8 @@ if (process.env.KHUX_MEDALS_ALL === '1') {
   fairyAdded = fairies.length;
   fairyEvolve = blueFairy.applyBlueFairyEvolve(medals);
 }
-// BGM Medals (medal_bgm.json): bgm = id del suono audio/<id>.akb ([fn] +0x56c), suonato nel dettaglio
-// della medaglia ([fn]); stesso nome = righe 6★ e 7★. Nomi della wiki «(EX)» = «[EX]» del master.
+// BGM Medals (medal_bgm.json): bgm = id del suono audio/<id>.akb, suonato nel dettaglio
+// della medaglia; stesso nome = righe 6★ e 7★. Nomi della wiki «(EX)» = «[EX]» del master.
 const MEDAL_BGM = JSON.parse(fs.readFileSync(path.join(__dirname, 'medal_bgm.json'), 'utf8')).medals;
 const bgmKey = (s) => String(s).toLowerCase().replace(/\(ex(\+?)\)/, '[ex$1]').replace(/[^a-z0-9[\]+&]/g, '');
 const bgmByName = new Map(Object.entries(MEDAL_BGM).map(([n, id]) => [bgmKey(n), id]));
@@ -273,7 +273,7 @@ for (const m of medals) {
 // scendono di 20 (Cid 10 x2); upperCost di userMedal arriva fino a cost - minCost
 for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost === 10) m.minCost = m.cost - 20;
 // Optimize del Level Up (I-090): il client sceglie i materiali solo tra le medaglie con
-// autoEnhance != 0 e type 2/4/5 ([fn]: +0x488, maschera 0x34 su +0x490), poi le filtra per
+// autoEnhance != 0 e type 2/4/5 (maschera 0x34), poi le filtra per
 // i parametri spuntati (materialExp, enhanceAttack/Defense/Cost/Guilt). Il formato vecchio non ha
 // autoEnhance (tutte 0 = «No Medals» ovunque): vale 1 sulle medaglie di supporto impilabili
 // (unk_1116 -> validPack) di quei tipi, cioe' Huey/Dewey/Louie e HDL (2), Chip/Dale/Magic Mirror
@@ -281,8 +281,8 @@ for (const m of medals) if (m.type === 1 && m.rare >= 6 && m.cost - m.minCost ==
 // (Reddit: Optimize non usa le Scrooge). Valori originali non disponibili: regola ricostruita.
 for (const m of medals) m.autoEnhance = m.validPack && [2, 4, 5].includes(m.type) ? 1 : 0;
 
-// Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1
-// ([fn]); senza riga va in crash (es. «Begin» su una missione). Segnaposto:
+// Medaglia 1: il client, se non trova una medaglia, ripiega sulla medaglia 1;
+// senza riga va in crash (es. «Begin» su una missione). Segnaposto:
 // copia della prima medaglia del file dei valori, con medalId 1.
 if (medals.length && !medals.some((m) => m.medalId === 1)) {
   medals.push(Object.assign({}, medals[0], { medalId: 1 }));
@@ -297,7 +297,7 @@ for (const m of medals) {
 }
 
 // 3000: oltre, l'HUD allunga l'arco dell'HP e carica texture (Avatar_Circle_01/06,
-// Avatar_Side_0N) che non sono in nessun pacchetto: crash ([fn]).
+// Avatar_Side_0N) che non sono in nessun pacchetto: crash.
 const hp = Number(process.env.KHUX_PLAYER_HP || 3000);
 
 // enemy: alle righe della 5.0.1 (import-master.js, 12 nemici) si aggiungono i nemici veri
@@ -433,7 +433,7 @@ if (realPlayers) {
   // anche il livello 0 (vedi sotto)
   players.unshift(Object.assign(blank('player'), players[0], { lv: 0, needExp: 0 }));
 } else {
-  // anche il livello 0: la barra dell'EXP dopo /stage/clear ([fn]) legge le righe
+  // anche il livello 0: la barra dell'EXP dopo /stage/clear legge le righe
   // lv e lv+1 della tabella e va in crash se una manca.
   for (let lv = 0; lv <= 99; lv++) {
     players.push(Object.assign(blank('player'), {
@@ -444,13 +444,13 @@ if (realPlayers) {
 
 // reward: premi dei forzieri e dei nemici. Una riga ha fino a 4 premi (type/id/num/
 // odds); il client tiene quelli il cui tipo compare, nella stessa posizione, in
-// dropItemTypeIds di /stage/start (server.js). Tipi ricavati da [fn]: 4 monete,
+// dropItemTypeIds di /stage/start (server.js). Tipi: 4 monete,
 // 8 CP (Attack Prize: barra degli speciali), 9 HP; 5 = materiale (id della tabella
 // material: nel forziere non funziona, resta vuoto; dal nemico e' il sacchetto argento).
 // Le righe usate vengono dalle mappe (server/game_data/stage_poi.json, generato da
 // recon/tools/stage_poi.py): per i forzieri la terza colonna del record, per i nemici
 // la settima (di solito 1; il primo nemico di ogni mappa ne ha una sua, es. 80002, e
-// senza riga il client va in crash in [fn]). Contenuti e quantita' sono nostri, per riga del forziere:
+// senza riga il client va in crash). Contenuti e quantita' sono nostri, per riga del forziere:
 // CHEST_PRIZES (KHUX_CHEST_TYPE/KHUX_CHEST_CP cambiano il premio predefinito).
 const rewardRow = (rewardId, prizes) => Object.assign(blank('reward'), {
   rewardId, validReward: 1,
@@ -509,8 +509,8 @@ for (const id of [...new Set([...chestRewards, ...enemyRewards])].sort((a, b) =>
   rewards.push(rewardRow(id, prizes));
 }
 
-// mypageBackground: sfondo della schermata principale ([fn]). Il client cerca
-// la riga del backgroundId di /mypage, o 150911 (0x24d7f) di default, e senza riga va
+// mypageBackground: sfondo della schermata principale. Il client cerca
+// la riga del backgroundId di /mypage, o 150911 di default, e senza riga va
 // in crash. La tabella non c'e' nella 5.0.1: una riga per ogni sfondo che ha grafica
 // nelle risorse. La grafica si disegna SOLO dalle parti (validParts = quante, poi
 // partsId/dataType/xPostion/yPostion/zSort): dataType 1 = lwf/home/<id>/<id>.png,
@@ -626,8 +626,8 @@ bursts.push(...snBursts);
 for (const b of snBursts) burstById.set(b.burstId, b);
 
 // burst 0: le medaglie senza attacco speciale (supporto: Dewey, Fata Smemorina, validBurst 0)
-// hanno burstId 0, e Optimize ([fn], valore di ogni medaglia posseduta per gli slot del
-// keyblade) cerca la riga burst del burstId senza guardare validBurst: riga nulla, crash a 0x10
+// hanno burstId 0, e Optimize (valore di ogni medaglia posseduta per gli slot del
+// keyblade) cerca la riga burst del burstId senza guardare validBurst: riga nulla, crash
 // (banco 11 ottobre, Optimize su Treasure Trove). Riga vuota, tutti i campi a 0.
 if (!burstById.has(0)) {
   const zero = (v) => (Array.isArray(v) ? v.map(zero) : typeof v === 'string' ? '' : 0);
@@ -638,7 +638,7 @@ if (!burstById.has(0)) {
 
 // stage: i filmati prima/dopo la missione (beforeDramaId/afterDramaId) sono script
 // img/light/SEQ/<id>.l o animazioni lwf/drama/<id>/. Se mancano dalle risorse il client va
-// in crash avviando la missione ([fn] -> [fn]: missione 8, filmati
+// in crash avviando la missione (missione 8, filmati
 // 1010201/1010301): si disattivano. Base intatta in stage_base.json (copiata al primo giro).
 const stagePath = path.join(OUT, 'stage.json');
 const stageBasePath = path.join(OUT, 'stage_base.json');
@@ -675,7 +675,7 @@ if (fs.existsSync(stagePath) && fs.existsSync(namesPath)) {
     for (const a of ['clearGetItemType', 'clearGetItemId', 'clearGetAssignSkillType', 'clearGetAssignSkillId',
       'clearGetAssignSkillLv', 'clearGetItemNum']) row[a] = (r[a] || []).slice(0, r.validClearGetItem);
     // obiettivi «Defeat <nemico>» (submissionIdType 1) su nemici assenti dalla tabella enemy
-    // (es. 99 nella 2170, 138 nella 2090): il client cerca la riga e va in crash ([fn]).
+    // (es. 99 nella 2170, 138 nella 2090): il client cerca la riga e va in crash.
     // Si ripuntano sullo Shadow (id 1) finche' quei nemici non si ricostruiscono
     if (enemies) {
       const known = new Set(enemies.map((e) => e.enemyId));

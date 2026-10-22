@@ -14,7 +14,7 @@
 //   guida dell'utente, scritta prima delle 800+, dice 150 e coincide fino alla 800).
 // - Keyblade Proud (Sleeping Lion Q3, Counterpoint Q103, Fenrir Q203, Darkgnaw Q328, Missing Ache Q378, Diamond Dust
 //   Q428): proudnakeyblade -> clearGetItem tipo 13 (come la 1001016 di thethiny: 13/8000).
-// - Condizioni: CONDITION_FORMS (frasi della wiki) -> CODES (codici del client, ricerca Ghidra del 22-10, vedi la nota).
+// - Condizioni: CONDITION_FORMS (frasi della wiki) -> CODES (codici delle condizioni, ricerca del 22-10, vedi la nota).
 //
 //   node server/make-proud.js [cartella master]
 // Idempotente; in fondo a make-game-tables.js (dopo make-story-oltre.js). KHUX_PROUD=0 lo spegne.
@@ -73,7 +73,7 @@ function parseWiki(wikiAll) {
 }
 
 // ---- condizioni sugli attacchi speciali -> hardmodeRequire/Comparison/Num/Name ----------------------------------
-// kind = forma della frase della wiki; i codici sono in CODES (client, ricerca Ghidra del 22-10)
+// kind = forma della frase della wiki; i codici sono in CODES (ricerca del 22-10)
 const CONDITION_FORMS = [
   [/^Special attacks (?:allowed only|only allowed) for (Power|Speed|Magic) Medals\.?$/i, (m) => ({ kind: m[1].toLowerCase() })],
   [/^Special attacks (?:allowed only|only allowed) for (Upright|Reversed) Medals\.?$/i, (m) => ({ kind: m[1].toLowerCase() })],
@@ -97,10 +97,10 @@ const CONDITION_FORMS = [
   [/^Only special attacks with a (?:bonus|bonue) value of (\d+)% or higher allowed\.?$/i, (m) => ({ kind: 'bonuspct_ge', n: num(m[1]) })],
 ];
 
-// Codici del client per forma (ricerca Ghidra del 22-10, D:\Progetto_Restauro_KH_UX	mp\proud\ghidra\): valutatore
-// [fn](stageId, userMedal); hardmodeRequire 0/1 = nessun limite, >= 15 = sempre falso; hardmodeComparison
-// 1 valore == Num, 2 valore <= Num, 3 valore >= Num. Una medaglia che non passa non puo' usare lo speciale
-// ([fn]). Il popup formatta hardmodeName con Num (Num/100 per il 13): un solo %d, %% per il simbolo.
+// Codici delle condizioni per forma (ricerca del 22-10, note private): per ogni medaglia della missione
+// hardmodeRequire 0/1 = nessun limite, >= 15 = sempre falso; hardmodeComparison
+// 1 valore == Num, 2 valore <= Num, 3 valore >= Num. Una medaglia che non passa non puo' usare lo speciale.
+// Il popup formatta hardmodeName con Num (Num/100 per il 13): un solo %d, %% per il simbolo.
 // req = hardmodeRequire, cmp = hardmodeComparison, num = Num fisso, scale = Num / N della frase.
 //  2 attributo (1 Power, 2 Speed, 3 Magic)   3 darklight (1 Upright, 2 Reversed)   5 rarita'   6 tier della guilt
 //  7 livello   8 STR (con la fusione, senza keyblade)   9 DEF   10 gauge dello speciale   11 colpi dello speciale
@@ -158,9 +158,9 @@ function conditionCodes(text, codes = CODES) {
 }
 
 // ---- obiettivi ------------------------------------------------------------------------------------------------
-// forme della wiki Proud che make-story-oltre.js non conosce, ricondotte alle sue (stessi codici del valutatore)
-// e codici nuovi (EXTRA_OBJECTIVES, ricerca Ghidra del 22-10)
-// 34/35 ([fn]): medaglie proprie equipaggiate Upright/Reversed >= num (le prestate non contano mai: la
+// forme della wiki Proud che make-story-oltre.js non conosce, ricondotte alle sue (stessi codici)
+// e codici nuovi (EXTRA_OBJECTIVES, ricerca del 22-10)
+// 34/35: medaglie proprie equipaggiate Upright/Reversed >= num (le prestate non contano mai: la
 // «(No borrowed Medals)» della 935 e' la stessa 35); dataType 2 col %d
 const EXTRA_OBJECTIVES = [
   [/^Equip (\d+) or more (Upright|Reversed) Medals$/i, (m) => ({ name: `Equip %d or more ${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()} Medals`,

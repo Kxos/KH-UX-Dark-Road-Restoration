@@ -8,9 +8,9 @@ const { albumData } = require('./routes-info-album');
 const errors = [];
 const check = (ok, msg) => { if (!ok) errors.push(msg); };
 
-// [fn]: gli id che finiscono in 2 o 4 cercano la riga id-1
+// gli id che finiscono in 2 o 4 cercano la riga id-1
 check(cutinRowId(300444) === 300443 && cutinRowId(300442) === 300441 && cutinRowId(300443) === 300443 && cutinRowId(10) === 10,
-  'cutinRowId come [fn]');
+  'cutinRowId come il client');
 
 const lex = { medalId: 300444, name: 'Lexaeus A', cutinId: 300444, darklight: 2, rare: 7, type: 1, validBurst: 1, burstId: 3000444,
   groupId: 0, sortId: 1111, listSortId: 1111, validPack: 0 };

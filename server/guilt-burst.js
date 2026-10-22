@@ -2,19 +2,19 @@
 // missione, attacco a tutti i nemici con potenza dal livello Burst. Note in
 // docs/notes/battaglia.md#burst.
 //
-// Il client crea il pulsante ([fn] -> [fn]) solo se:
-// - userData.userDetail.isGuilt != 0 ([fn]: riga userDetail +0x44, singleton +0x128);
-// - userData.userPoint.guiltBurstLv != 0 ([fn]: riga userPoint +100, singleton +0x118);
-// - la battaglia non e' PvP (CarouselDeck +0x300).
-// Poi [fn] costruisce l'attacco dalla riga medal 2 (STR +0x4e0, DEF +0x4ec) con potenza
+// Il client crea il pulsante solo se:
+// - userData.userDetail.isGuilt != 0;
+// - userData.userPoint.guiltBurstLv != 0;
+// - la battaglia non e' PvP.
+// Poi costruisce l'attacco dalla riga medal 2 (STR e DEF) con potenza
 // guiltBurstLv / 100 x battleMisc 134 / 10000 x 10000 (= Lv x 400 con battleMisc 134 = 40000), e
-// [fn] legge le righe shuffleskill 901 e 902 (enemyKind/enemyKindRate) SENZA controllo
+// legge le righe shuffleskill 901 e 902 (enemyKind/enemyKindRate) SENZA controllo
 // del null: senza quelle righe il client va in crash all'avvio della battaglia. Righe: vedi
 // make-guilt-burst.js.
 //
 // Livello (khux-guides.tumblr.com/post/152649620061): +1 alla prima guilt di ogni medaglia,
 // +5 alla prima guilt massima; i valori stanno nella riga medal (addGuiltBurstLv,
-// addGuiltBurstLvMax, +0x4c4/+0x4c8: nelle nostre tabelle 0, si usano 1 e 5). La guilt di una
+// addGuiltBurstLvMax; nelle nostre tabelle 0, si usano 1 e 5). La guilt di una
 // copia e' userMedal.guiltFactor (Level Up, server/medal-guilt.js, docs/notes/guilt.md):
 // - prima guilt = la prima volta che una copia di una medaglia (medalId) con guiltValue > 0 ha
 //   guiltFactor > 0;
@@ -25,7 +25,7 @@
 // vendere o fondere la medaglia non toglie il livello, come nell'originale. I medalId registrati
 // con le regole di prima (possesso, livello massimo) restano: il livello non scende.
 //
-// guiltBurstFirstUserMedalIds / guiltBurstMaxUserMedalIds ([fn]: /stage/clear, draw,
+// guiltBurstFirstUserMedalIds / guiltBurstMaxUserMedalIds (/stage/clear, draw,
 // moogle shop, raid reward) = le copie che hanno appena dato la prima guilt / guilt massima: il
 // client mostra il popup lwf/medal/guilt_bonus/GuiltBonus_BurstLvup(_num) «NOVA LEVEL UP!»: LWF JP
 // importati dalle risorse 41 (import_jp_raisedraw.py, logo «NOVA» di make_nova_logo.py; senza LWF = crash).
@@ -81,7 +81,7 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     return lv;
   }
 
-  // campi per le risposte di [fn]
+  // campi guiltBurst* delle risposte (/stage/clear, estrazioni, Level Up)
   function lists() {
     refresh();
     const out = { guiltBurstFirstUserMedalIds: [], guiltBurstMaxUserMedalIds: [] };
@@ -94,7 +94,7 @@ function makeGuiltBurst({ getPlayer, userMedalList, masterRows }) {
     return out;
   }
 
-  // guiltBurstFirstLv/MaxLv della risposta del Level Up (ramo 55): livello d'ARRIVO del popup, 0 = nessun
+  // guiltBurstFirstLv/MaxLv della risposta del Level Up (azione 55): livello d'ARRIVO del popup, 0 = nessun
   // popup. Il client mostra «LV <suo livello> » LV <campo>» (banco 17-10: con l'aumento al posto del livello
   // usciva «LV 6 » LV 1»): prima guilt = livello dopo i +1, guilt massima = livello dopo anche i +5. Con il
   // popup spento (KHUX_GUILT_BURST_POPUP=0) 0 (le copie in attesa si scartano alla prossima lists()).

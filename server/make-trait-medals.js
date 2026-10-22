@@ -4,11 +4,11 @@
 // Una riga per voce di server/trait_medals.json (make-trait-medal-list.js), medalId = 9.000.000 + N, come le
 // descrive la khuxwiki («Trait Medal») e il notice 38128: 6★, STR/DEF 1, costo 999 (non va sul keyblade), attacco
 // «Lesser Attack» (1 nemico, 1 gauge, x1,00), 15 Pet Point, stesso numero di Album (sortId) della medaglia, type 9
-// (filtro «Trait Medals» della Medal List, escluso dagli Special Trait: [fn], [fn]).
+// (filtro «Trait Medals» della Medal List, escluso dagli Special Trait:).
 // Il legame con la medaglia lo fa il master, come lo legge il client:
-//  - trait: shuffleSkillGroupId della Trait Medal = quello della linea ([fn]; make-trait-groups.js);
+// - trait: shuffleSkillGroupId della Trait Medal = quello della linea (make-trait-groups.js);
 //  - pallino, sblocco e rilancio della guilt: burstEnhanceCategory[0] delle righe della linea (normali, boosted,
-//    varianti) = medalId della Trait Medal ([fn]: groupId del materiale, 0 -> medalId, in uno dei due
+// varianti) = medalId della Trait Medal (groupId del materiale, 0 -> medalId, in uno dei due
 //    valori della base; stessa regola in medal-guilt.js isDotMaterial).
 // Su altre medaglie resta solo l'EXP da materiale. Idempotente; chiamato da make-game-tables.js dopo
 // make-trait-groups. Dopo: alzare la revisione del master.

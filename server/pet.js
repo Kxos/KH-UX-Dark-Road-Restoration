@@ -2,55 +2,50 @@
 // coordinato. Note in docs/notes/home_profilo.md#pet; tabelle in make-pet-tables.js.
 //
 // Si accende con KHUX_PET=1 (default spento: userDetail.isPet 0 e nessuna rotta, come prima).
-// Il client accende tutto da userData.userDetail.isPet ([fn], byte +0x45 della riga
-// userDetail, singleton +0x128 / scena +0x440):
-// - catena di avvio ([fn], dopo GET /user/option = azione 149): con isPet chiede
-//   GET /pet/profile (170, [fn] senza userId), poi GET /pet/coordinate/parts (171) e
-//   GET /pet/coordinate/all (172), e solo dopo prosegue ([fn]);
-// - Equipment / scelta del deck ([fn], DeckRevolverView [fn]): carica
+// Il client accende tutto da userData.userDetail.isPet:
+// - catena di avvio (dopo GET /user/option = azione 149): con isPet chiede
+// GET /pet/profile (170 senza userId), poi GET /pet/coordinate/parts (171) e
+// GET /pet/coordinate/all (172), e solo dopo prosegue;
+// - Equipment / scelta del deck: carica
 //   DeckEdit_PetMedal_ver230 (cornice a testa di gatto DeckEdit_Pet1, pulsante Button_PowerUp
-//   «スピリット強化» = Spirit Strengthen -> PetInfoDialog) in Area_PetMedal/Area_RevolverPet, e
-//   legge SENZA controllo del null pet(+0x7c0)->petSubslot(+0x38)->magnification(+0x74):
-//   [fn] la somma al partnerRate del keyblade (riga +0x50) per la cella del 6° slot
-//   ([fn] -> [fn], campo +0x498). Il revolver crea 6 celle «Medal1..6»
-//   ([fn]): la sesta e' lo slot del pet.
-// Quindi il pet della sessione (+0x7c0) DEVE esistere prima di Equipment: lo crea solo
-// l'azione 170, il cui parser ([fn]) pretende tutto:
-//   pet.petSubslot ([fn] modo 0 -> [fn]: subslotUserMedalIds uint64 <= 6,
-//   openSkillIds uint <= 15, rank, pt, magnification uint), pet.userPetCoordinate ([fn],
-//   12 int), pet.petName (stringa, 32), pet.userSkills ([fn]) e pet.userMedals
-//   ([fn]) sul nodo pet, pet.initCoordinate (byte +0x68: 0 = la scena PetEdit,
-//   [fn], carica Tutorial_Pet01.json, assente -> crash; si manda 1), poi sulla radice
-//   ([fn]) recoverDatetime (data), recoverStoneNum, expeditionTotalNum,
-//   expeditionMonthlyNum (uint). Se il parser fallisce il pet resta nullo.
-// Il crash 0x7c8d40 di I-005: il ramo 237 (POST /user/medal/remove) copia petSubslots[0] in
-// pet(+0x7c0)+0x38 senza controllare il pet; lo stesso fanno 175 (POST /pet/subslot, 0x7c66dc) e
-// 174 (POST /pet/name, 0x7cd630). I rami 55/56 (Level Up / Evolve) invece controllano (0x7ce17c,
-// 0x7ceeac). Con KHUX_PET=1 il pet esiste dall'avvio, quindi petSubslots puo' avere l'elemento.
+//   «スピリット強化» = Spirit Strengthen) e legge SENZA controllo pet.petSubslot.magnification,
+//   che somma al partnerRate del keyblade per la cella del 6° slot (la sesta cella e' lo slot del pet).
+// Quindi il pet DEVE esistere prima di Equipment: lo crea solo la risposta 170, in cui
+// tutto e' obbligatorio:
+// pet.petSubslot (subslotUserMedalIds uint64 <= 6,
+// openSkillIds uint <= 15, rank, pt, magnification uint), pet.userPetCoordinate
+// (12 int), pet.petName (stringa, 32), pet.userSkills e pet.userMedals
+// sul nodo pet, pet.initCoordinate (0 = il client apre l'editor del pet e
+// carica Tutorial_Pet01.json, assente -> crash; si manda 1), poi sulla radice
+// recoverDatetime (data), recoverStoneNum, expeditionTotalNum,
+//   expeditionMonthlyNum (uint). Se un campo manca il pet resta nullo.
+// Il crash di I-005: dopo POST /user/medal/remove (237), POST /pet/subslot (175) e
+// POST /pet/name (174) il client usa il pet senza controllarlo (Level Up / Evolve, 55/56,
+// invece no). Con KHUX_PET=1 il pet esiste dall'avvio, quindi petSubslots puo' avere l'elemento.
 //
-// Il 6° slot (petBaseSlotMedal): elemento di userDecks ([fn]: 5 deckMedals a +0x18,
-// petBaseSlotMedal uint64 a +0x40, obbligatorio) e corpo di POST /user/keyblade/update/170516
-// ([fn]: userDecks[].petBaseSlotMedal). Qui player.petBaseSlots[userKeybladeId].
+// Il 6° slot (petBaseSlotMedal): elemento di userDecks (5 deckMedals e
+// petBaseSlotMedal uint64, obbligatorio) e corpo di POST /user/keyblade/update/170516
+// (userDecks[].petBaseSlotMedal). Qui player.petBaseSlots[userKeybladeId].
 //
-// In battaglia (solo da isPet, nessun campo del server lo spegne: [fn]/[fn] ->
-// [fn]) il PetActor aspetta la fine dei LWF lwf/pet/motion/* (evento «end»): li genera
+// In battaglia (solo da isPet, nessun campo del server lo spegne) il pet aspetta la fine dei LWF
+// lwf/pet/motion/* (evento «end»): li genera
 // recon/tools/make_pet_motions.py (da make_layouts.py). Con i LWF vuoti la battaglia si bloccava
 // dopo il primo attacco (I-005). I trick restano spenti: SKILLS_ENABLED qui sotto.
 // La medaglia di petBaseSlotMedal non chiede altro al server: il client la mette dopo quelle del
-// deck ([fn] -> [fn], x pet.petSubslot.magnification) e al suo turno attacca il
+// deck (x pet.petSubslot.magnification) e al suo turno attacca il
 // pet; il colpo parte dagli eventi «knockback_2»/«effectStart_1» di battle_normal/all/skill e
 // dagli effetti lwf/ability/hit_effect/pet_eff_000N, generati anch'essi da make_pet_motions.py.
 //
-// Il dialog del pet (PetInfoDialog, PetInfoScene_ver320.json) e le sue sotto-schermate mancano da
+// Il dialog del pet (layout PetInfoScene_ver320.json) e le sue sotto-schermate mancano da
 // ogni risorsa (catalog\missing_layouts.txt): Button_PowerUp e l'icona pet della home lo aprono
-// -> crash in GUIReader finche' non ci sono (ISSUES I-005).
+// -> crash finche' non ci sono (ISSUES I-005).
 'use strict';
 
 const ENABLED = process.env.KHUX_PET === '1';
 const PET_NAME = process.env.KHUX_PET_NAME || 'Spirit';
 // Tricks in battaglia (petSubslot.openSkillIds, accesi; KHUX_PET_SKILLS=0 li spegne). A inizio battaglia
-// [fn] -> [fn] mette ogni id aperto (riga petSkill, [fn]) nel posto del PetActor (+0x388 +
-// 0x48*i) scelto da invokeType (riga +0x2dc; 4 = per skillValue3 1..5 -> posti 11..15, tabella 0x188a950); se il posto
+// il client mette ogni id aperto (riga petSkill) nel posto del pet scelto da invokeType
+// (invokeType 4: per skillValue3 1..5 -> posti 11..15); se il posto
 // e' occupato l'id si scarta (vince il primo). Posti: 1 Steal (il server sceglie il drop rubato, server.js), 3 Blast,
 // 5 Esuna, 6 HP Recovery, 7/8/9 Poison/Sleep/Paralysis Boost, 10 Combo, 11/12/13 P/S/M Attack Boost. Valori e posti
 // in make-pet-tables.js (ricerca del 20-10). Il server manda un id per posto (il primo della lista del rango).
@@ -60,9 +55,9 @@ const SKILLS_ENABLED = process.env.KHUX_PET_SKILLS !== '0';
 const DEFAULT_PART = process.env.KHUX_PET_PARTS === '0' ? 0 : 1;
 // Parti dello Spirit (master petParts, make-pet-parts.js). petPartsId = 3TTNNN (specie/colore NNN,
 // grafica lwf/pet/part/NNN) o 4TTNNN (accessorio, cartella lwf/pet/part/<id>); TT = partsType,
-// cioe' la scheda dell'editor ([fn]): 4 Head, 3 Ears, 8 Body, 6 Legs, 9 Tail, accessori
+// cioe' la scheda dell'editor: 4 Head, 3 Ears, 8 Body, 6 Legs, 9 Tail, accessori
 // 1 mask, 2 hat, 5 necklace, 7 backpack, 10 special, 11 mouth.
-// campo del coordinato -> partsType ([fn])
+// campo del coordinato -> partsType
 const COORD_TYPE = {
   accessoryMask: 1, accessoryHat: 2, earPartsId: 3, facePartsId: 4, accessoryNecklace: 5, legPartsId: 6,
   accessoryBackpack: 7, bodyPartsId: 8, tailPartsId: 9, accessorySpecial: 10, accessoryMouth: 11,
@@ -74,7 +69,7 @@ const ALL_PARTS = process.env.KHUX_PET_ALL_PARTS === '1';
 // Spirit Training (I-082). Valori NOSTRI: nessun dump delle risposte originali.
 // - attesa tra due allenamenti (khwiki: un trait ogni 20 ore), in ore
 const TRAIN_HOURS = Number(process.env.KHUX_PET_TRAIN_HOURS || 20);
-// - slot aperti oltre al primo (sempre aperto, [fn]): 2-4 si sbloccavano con acquisti
+// - slot aperti oltre al primo (sempre aperto): 2-4 si sbloccavano con acquisti
 //   (Weekly Jewels, 10 draw, Jewel Box E) che il nostro server non vende; 1 = solo il primo
 const TRAIN_SLOTS = Math.min(4, Math.max(1, Number(process.env.KHUX_PET_TRAIN_SLOTS || 1)));
 // - jewel chiesti da «Train Now» per riavviare subito (recoverStoneNum, testo 106200405); non
@@ -108,8 +103,8 @@ function makePet(ctx) {
     return player.pet;
   }
 
-  // coordinato: 12 int ([fn]). Il pet si disegna attaccando lwf/pet/part/%03d/<parte>
-  // (id % 1000, [fn]/[fn]) ai movie omonimi dei nostri lwf/pet/motion
+  // coordinato: 12 int. Il pet si disegna attaccando lwf/pet/part/%03d/<parte>
+  // (id % 1000) ai movie omonimi dei nostri lwf/pet/motion
   // (make_pet_motions.py): le risorse hanno solo la serie 001 (orecchie, muso, zampe, corpo,
   // coda), quindi quelle parti valgono 1 se il giocatore non ne ha scelte altre; accessori 0
   // (nessun movie per loro, nessun file cercato). Con 0 ovunque il pet restava invisibile.
@@ -133,7 +128,7 @@ function makePet(ctx) {
   }
 
   // Parti possedute: player.pet.parts {petPartsId: getDatetime}, sempre con la serie 001; solo
-  // quelle della tabella petParts (senza riga l'editor dereferenzia NULL, [fn]).
+  // quelle della tabella petParts (senza riga l'editor dereferenzia NULL).
   function ownedParts() {
     const rows = new Map(ctx.masterRows('petParts').map((r) => [r.petPartsId, r]));
     const st = state();
@@ -181,7 +176,7 @@ function makePet(ctx) {
     return row;
   }
 
-  // un id per posto del PetActor (invokeType, o 10 + skillValue3 per invokeType 4), il primo; id senza riga scartati
+  // un id per posto del pet (invokeType, o 10 + skillValue3 per invokeType 4), il primo; id senza riga scartati
   function onePerSlot(ids) {
     const rows = new Map(ctx.masterRows('petSkill').map((r) => [r.skillId, r]));
     const seen = new Set();
@@ -233,7 +228,7 @@ function makePet(ctx) {
         userMedals: medals.map((m) => ctx.userMedalElement(m, now)),
         initCoordinate: 1, // 0 = Tutorial_Pet01 (assente) nella scena PetEdit
       },
-      // recoverDatetime = quando il prossimo allenamento e' pronto ([fn]: passato =
+      // recoverDatetime = quando il prossimo allenamento e' pronto (passato =
       // «Train», futuro = «Train Now» + «Training Ready in»), contatori del dialog SPIRIT
       recoverDatetime: t.readyAt > ctx.realNow() ? ctx.outTime(t.readyAt) : now, recoverStoneNum: TRAIN_STONES,
       expeditionTotalNum: t.total, expeditionMonthlyNum: t.monthly,
@@ -241,36 +236,35 @@ function makePet(ctx) {
   }
 
   // Spirit Training (I-082), stesso percorso per tre azioni:
-  // - 243 GET /pet/expedition (corpo vuoto, [fn]; parser [fn] -> sessione +0xa80,
-  //   tutto obbligatorio): openMedalSlotDatas[] {openMedalSlotNumber uint 1-4 (fuori = abort in
-  //   [fn]), openMedalSlotLimitDatetime data}, limitDateimeWeekEnd e limitDateimeMonthEnd
-  //   (date, scritte cosi' nel binario; scadenze degli slot 2 e 4 bloccati), remainingDrawCount
+  // - 243 GET /pet/expedition (corpo vuoto; risposta tutta obbligatoria):
+  //   openMedalSlotDatas[] {openMedalSlotNumber uint 1-4 (altri valori: il client si chiude),
+  //   openMedalSlotLimitDatetime data}, limitDateimeWeekEnd e limitDateimeMonthEnd
+  //   (date, scritte cosi' nel client; scadenze degli slot 2 e 4 bloccati), remainingDrawCount
   //   (uint, draw da 10 che mancano per lo slot 3). Prima la rotta generica mandava lo schema di
-  //   244 e il parser falliva: «Train»/«Training Slots» non si aprivano;
-  // - 244 POST /pet/expedition (corpo {userMedalIds}, [fn] da «Train» [fn]): il
-  //   ramo legge userMedals ([fn], obbligatorio) e medalResumption {userShuffleSkills[]
-  //   (elemento [fn]), resumptionStatus uint} ([fn]); poi il client richiede
-  //   GET /pet/profile e aggiorna il dialog ([fn] -> [fn]), poi chiude il pannello
-  //   e per ogni medaglia allenata gioca l'animazione ([fn]: PetInfo_TrainingProduction e
-  //   lwf/pet/demo/training_SE, make_layouts.py; mancavano -> crash in GUIReader, I-082) e mostra
+  //   244 e il client la rifiutava: «Train»/«Training Slots» non si aprivano;
+  // - 244 POST /pet/expedition (corpo {userMedalIds} da «Train»): il
+  //   client legge userMedals (obbligatorio) e medalResumption {userShuffleSkills[],
+  //   resumptionStatus uint}; poi richiede
+  //   GET /pet/profile e aggiorna il dialog, poi chiude il pannello
+  //   e per ogni medaglia allenata gioca l'animazione (PetInfo_TrainingProduction e
+  //   lwf/pet/demo/training_SE, make_layouts.py; mancavano -> crash, I-082) e mostra
   //   il trait ottenuto (Kakusei_Get1/2). Ogni medaglia riceve quindi un trait (spiritTrait) in
-  //   userMedals; medalResumption resta {[] , 0}: con resumptionStatus 1 e la medaglia fra i
-  //   userShuffleSkills (sessione +0x148) il client aprirebbe la scelta del trait da tenere
-  //   ([fn], MedalInfo_SkillChangeWindow.json assente);
-  // - 245 PUT /pet/expedition/recover (corpo {stoneNum}, [fn], «Train Now»): il ramo non
+  //   userMedals; medalResumption resta {[] , 0}: con resumptionStatus 1 e la medaglia fra gli
+  //   userShuffleSkills il client aprirebbe la scelta del trait da tenere
+  //   (MedalInfo_SkillChangeWindow.json assente);
+  // - 245 PUT /pet/expedition/recover (corpo {stoneNum}, «Train Now»): il client non
   //   legge nulla oltre a ret; qui l'attesa si azzera (jewel non scalati).
   // Quali medaglie entrano negli slot lo decide solo il client (nessun campo di queste risposte):
-  // la lista (MiniMedalScrollView, +0xb29 = 1 in [fn]) vela con [fn] le medaglie
-  // di type 9/10 o con spShuffleskillSlot 0 (riga medal +0x490 / +0x4b8: Moogle, Chip, Dale, Huey...
-  // nei nostri master), e una medaglia velata non si trascina ([fn]). Il tocco apre solo il
-  // dettaglio ([fn], callback vuota [fn]); il rilascio sullo slot ([fn] ->
-  // [fn] -> [fn] sulla cella DeckEdit_RevolverMedal_ver330 175x175) la mette
-  // ([fn] -> [fn]) solo se lo slot e' aperto (bit di [fn]: slot 1 sempre).
+  // la lista vela le medaglie
+  // di type 9/10 o con spShuffleskillSlot 0 (riga medal Moogle, Chip, Dale, Huey...
+  // nei nostri master), e una medaglia velata non si trascina. Il tocco apre solo il
+  // dettaglio; il rilascio sullo slot (cella DeckEdit_RevolverMedal_ver330 175x175) la mette
+  // solo se lo slot e' aperto (slot 1 sempre).
   // Trait dell'allenamento (Spirit Trait) sulla medaglia userMedalId, in player.medalTraits come
   // quelli del Moogle Shop (server.js medalTraits -> userMedals[].userShuffleSkills). Dopo
-  // l'animazione il client mostra il trait ottenuto ([fn], ramo con +0x598 = 0): legge
-  // dalla medaglia ricostruita ([fn]) il trait all'indice +0x148 = primo trait la cui riga
-  // shuffleskill ha type 2, altrimenti 0, e ne cerca la riga ([fn]) SENZA controllo del
+  // l'animazione il client mostra il trait ottenuto: legge
+  // dalla medaglia ricostruita il trait all'indice = primo trait la cui riga
+  // shuffleskill ha type 2, altrimenti 0, e ne cerca la riga SENZA controllo del
   // null: una medaglia senza trait = crash.
   // Il trait: uno Special Trait (righe shuffleskill type 2, make-pet-tables.js: le 36 della tabella
   // ufficiale v3.2.0 / khwiki «Special Traits») estratto col peso rate (= «Unlock Rate» in
@@ -278,8 +272,8 @@ function makePet(ctx) {
   // medaglia («one Special Trait slot», separato dai 5 trait normali). Se la medaglia ne ha gia' uno il nuovo resta in
   // sospeso e il giocatore sceglie se tenerlo o no, come nell'originale (notice NA 52202 v3.2.0: «you can choose whether
   // to keep or overwrite the current Special Trait»; video kTJoSgXii1E): player.traitPending come la fusione,
-  // medalResumption status 1 nella risposta 244 -> [fn] trova il pending per userMedalId, «TAP SCREEN» apre
-  // [fn] (MedalInfo_SkillChangeWindow, sezione «Special Trait»), OK/Skip -> azione 57 (server.js).
+  // medalResumption status 1 nella risposta 244 -> trova il pending per userMedalId, «TAP SCREEN» apre
+  // (MedalInfo_SkillChangeWindow, sezione «Special Trait»), OK/Skip -> azione 57 (server.js).
   // Senza righe type 2 (master non rigenerati) ripiego di prima: un trait normale a caso.
   // Restituisce lo shuffleSkillId.
   function pickWeighted(rows) {
@@ -334,7 +328,7 @@ function makePet(ctx) {
       return ctx.send(res, 200, {
         ret: ctx.ret(),
         userMedals: ids.map((id) => ctx.userMedalElement(owned.get(id), now)),
-        // i Special Trait in sospeso delle medaglie allenate (il client li cerca per userMedalId, [fn]), poi il
+        // i Special Trait in sospeso delle medaglie allenate (il client li cerca per userMedalId), poi il
         // resto della coda: il valore della sessione lo sostituisce, un trait in sospeso della fusione non va cancellato
         medalResumption: ctx.medalResumption
           ? ctx.medalResumption([...(player.traitPending || []).filter((x) => ids.includes(x.userMedalId)),
@@ -356,17 +350,17 @@ function makePet(ctx) {
     });
   }
 
-  // GET /pet/coordinate/parts (171, [fn]): pet.userPetParts[], elemento [fn]
+  // GET /pet/coordinate/parts (171): pet.userPetParts[], elemento
   // (24 byte: petPartsId, partsType, getDatetime). L'editor degli outfit mette nelle schede le
   // parti con combinationFlag != 1 della riga master.
   function respondParts(res) {
     ctx.send(res, 200, { ret: ctx.ret(), pet: { userPetParts: ownedParts() } });
   }
 
-  // GET /pet/coordinate/all (172, [fn]): pet.userPetCoordinates[] (12 int ciascuno),
-  // copiati nella mappa della sessione (+0x7b0). Sempre i 6 outfit: la scena Outfits
-  // (ScenePetPartsEdit, [fn]) mette in una lista quelli con myCoordinateNo 1..6 e
-  // «Button_Switch» passa al successivo fino al sesto ([fn] -> [fn]): un indice
+  // GET /pet/coordinate/all (172): pet.userPetCoordinates[] (12 int ciascuno),
+  // tenuti dal client. Sempre i 6 outfit: la scena Outfits
+  // mette in una lista quelli con myCoordinateNo 1..6 e
+  // «Button_Switch» passa al successivo fino al sesto: un indice
   // oltre la lista = out_of_range, crash (I-082)
   function coordinatesList() {
     const nos = new Set([1, 2, 3, 4, 5, 6, ...Object.keys(state().coordinates).map(Number)]);
@@ -376,9 +370,9 @@ function makePet(ctx) {
     ctx.send(res, 200, { ret: ctx.ret(), pet: { userPetCoordinates: coordinatesList() } });
   }
 
-  // POST /pet/coordinate/update (173, corpo [fn]: myCoordinateNo, defaultFlag, parti):
-  // il ramo legge pet.equipCoordinateNo (uint) e pet.userPetCoordinates ([fn])
-  // I campi stanno in updatePetCoordinateData[] ([fn] ne scrive uno per coordinato:
+  // POST /pet/coordinate/update (173, corpo myCoordinateNo, defaultFlag, parti):
+  // il client legge pet.equipCoordinateNo (uint) e pet.userPetCoordinates
+  // I campi stanno in updatePetCoordinateData[] (il client ne scrive uno per coordinato:
   // myCoordinateNo, defaultFlag, le 11 parti); prima si leggevano dalla radice e il Save non
   // cambiava nulla (banco 16-10). Indossato: quello con defaultFlag 1, se no l'ultimo.
   function respondCoordinateUpdate(res, body) {
@@ -399,15 +393,15 @@ function makePet(ctx) {
     ctx.send(res, 200, { ret: ctx.ret(), pet: { equipCoordinateNo: no, userPetCoordinates: coordinatesList() } });
   }
 
-  // POST /pet/name (174, corpo {petName}): il ramo copia pet.petName (32 caratteri) nel pet
+  // POST /pet/name (174, corpo {petName}): il client copia pet.petName (32 caratteri) nel pet
   function respondName(res, body) {
     if (typeof body?.petName === 'string' && body.petName) state().name = body.petName.slice(0, 32);
     ctx.savePlayer();
     ctx.send(res, 200, { ret: ctx.ret(), pet: { petName: state().name } });
   }
 
-  // POST /pet/subslot (175, corpo [fn]: {subslotUserMedalIds}): Gear del pet; il ramo
-  // copia pet.petSubslot nel pet della sessione (+0x38)
+  // POST /pet/subslot (175, corpo {subslotUserMedalIds}): Gear del pet; il client
+  // copia pet.petSubslot nel suo pet
   function respondSubslot(res, body) {
     const ids = (body?.subslotUserMedalIds || []).map(Number).filter((id) => id > 0).slice(0, 6);
     state().subslot = ids;
@@ -417,7 +411,7 @@ function makePet(ctx) {
     ctx.send(res, 200, { ret: ctx.ret(), pet: { petSubslot: sub } });
   }
 
-  // GET /user/medal/preremove (236, [fn]): removeDecks/removeSubslots/removePvpDecks
+  // GET /user/medal/preremove (236): removeDecks/removeSubslots/removePvpDecks
   // (vuoti: la risposta generica di prima) + isPetSlot, petRank, updatePetRank = la medaglia e'
   // nella Gear del pet e il rango prima/dopo averla tolta
   function respondPreremove(res, apiPath, query) {

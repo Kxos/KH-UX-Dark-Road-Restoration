@@ -4,7 +4,7 @@
 // tabelle 2020-2021) e dagli screenshot in reference\moogle_shop\ (Rainbow Gem x10 = 100
 // jewel, x100 = 1.000; Attack Boost XV Max x1 = 100).
 //
-// Campi (parser del client 0xf1e5d8, recon/out/master_types_ww431.json): moogleshopId,
+// Campi (recon/out/master_types_ww431.json): moogleshopId,
 // type, sortId, shuffleSkillId, itemType, itemId, skillType, skillId, skillLv,
 // burstUpperNumber, itemNum, flavor, benefitId, payType, price, count, cpTitle, frameType,
 // display, startDate, endDate. Ipotesi da verificare sul banco: type = scheda (1 Traits,
@@ -64,8 +64,8 @@ function trait(type, name, fields) {
   // il client passa il nome per un formato printf: «%» va raddoppiato (senza, «DEF -60»)
   name = name.replace(/%/g, '%%');
   traits.push(Object.assign(blank('shuffleskill'), {
-    // category = numero dell'icona (changeRowKakusei formatta il campo +4 in
-    // img/kakusei/Kakusei_Icon%04d.png; un'icona inesistente manda in crash loadTexture)
+    // category = numero dell'icona (il client carica
+    // img/kakusei/Kakusei_Icon%04d.png; un'icona inesistente lo manda in crash)
     // type 1 per tutti: con altri valori il client non mostra la riga (dei 13 compariva
     // solo quello con type 1); l'effetto lo danno category e i campi del valore
     shuffleSkillId: traits.length + 1, category: type * 10, type: 1, name, sortId: traits.length + 1,
@@ -108,6 +108,6 @@ for (const k of ['ground60', 'aerial60', 'extra40', 'raid40']) {
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'moogleshop.json'), JSON.stringify(rows));
 fs.writeFileSync(path.join(OUT, 'shuffleskill.json'), JSON.stringify(traits));
-// righe 901/902 del Burst ([fn] le legge senza controllo del null)
+// righe 901/902 del Burst (il client le legge senza controllo del null)
 require('./make-guilt-burst').patch(OUT);
 console.log(`moogleshop: ${rows.length} righe (Traits ${rows.filter((r) => r.type === TAB_TRAITS).length})`);

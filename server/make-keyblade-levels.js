@@ -18,7 +18,7 @@
 // lo script si rifanno da capo.
 // Oltre +35 (15-10, analisi del client 4.3.1 in docs/notes/home_profilo.md#keyblade-oltre-35): passi da 0.1 fino
 // a +60 (Bad Guy Breaker interi +36..+60). Il client non formatta il livello: il titolo e' il campo name
-// («Starlight +52.2»), il massimo e' solo evolveId 0 ([fn]: «Keyblade level max.»). Righe:
+// («Starlight +52.2»), il massimo e' solo evolveId 0 («Keyblade level max.»). Righe:
 //   - keybladeId: serie*1000 + 215 + passi da 0.1 (216..465), Bad Guy Breaker serie*1000 + lv*10;
 //   - lv intero (floor: il client lo usa solo per «Unlock +%d» e un controllo a 30), lv10 = livello*10
 //     per il server (passive di keyblade-evo.js; chiave in piu', ignorata dal client);

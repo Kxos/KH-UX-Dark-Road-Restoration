@@ -425,7 +425,7 @@ function rollSkill(spec, slotIndex, skillRows, rng) {
   return null;
 }
 
-// Riga del master drawMedalType (47 campi, recon/out/master_types_ww431.json; parser [fn]).
+// Riga del master drawMedalType (47 campi, recon/out/master_types_ww431.json).
 // bannerUrl/detailUrl sono percorsi: server.js (servedMasterRows) ci mette davanti l'indirizzo http.
 // drawType 1; benefitId 0 (il lucchetto apre l'acquisto in-app: crash, I-134); comment = striscia
 // scorrevole sotto il banner, stringa printf (niente % sciolti), visibile con warrantDisplayOfTime 1

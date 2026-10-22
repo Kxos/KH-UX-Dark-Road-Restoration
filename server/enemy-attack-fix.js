@@ -8,7 +8,7 @@
 //  - hitEffect: lwf/character/enemy/hit_effect_fla/eff_N/ solo se servita (names_v4 o originals.tsv), altrimenti
 //    resta quello di oggi;
 //  - attackMotion: 1 (atk1_o) o 2 (atkSp, che senza file ricade su wait); atk3_o e oltre senza file = crash
-//    ([fn], docs/notes/battaglia.md#nemici-jp), quindi resta 1.
+// (docs/notes/battaglia.md#nemici-jp), quindi resta 1.
 // I campi che i dati di thethiny non hanno (riflessi, upright/reverse, spEffect...) restano quelli del master.
 //
 // make-game-tables.js la applica prima di scrivere; da sola corregge server/master_data sul posto

@@ -1,42 +1,41 @@
 // Party (giocatore senza party, Union Cross/Photon offline: I-056) e classifiche della home
-// (Rankings). Azioni di json/server_api.json, rami di [fn] (docs/notes/server.md#party-ranking).
+// (Rankings). Azioni di json/server_api.json (docs/notes/server.md#party-ranking).
 //
-// Classifiche (parser con la chiave di radice indicata, rankingStatus 2 = elenco, 1/3 = messaggio;
-// [fn] sceglie il dato per scheda: tipo 4 Lux, 0x360 = 1 propria posizione / 2 prime /
-// altro confine):
-// - Lux, [fn]: 129 /ranking/weekly/user (luxRankingWeekly), 130 /ranking/monthly/user
+// Classifiche (risposta con la chiave di radice indicata, rankingStatus 2 = elenco, 1/3 = messaggio;
+// il client sceglie la richiesta per scheda: propria posizione, prime posizioni o confine):
+// - Lux, 129 /ranking/weekly/user (luxRankingWeekly), 130 /ranking/monthly/user
 //   (luxRankingMonthly), 131/132 .../own (luxRankingWeeklyOwn/MonthlyOwn), 133 /ranking/lux e
 //   134 /ranking/lux/own (luxRanking), 178 /ranking/lux/border (luxRankingBorder):
 //   {rankingDatas[], rankingStatus int, rankingTermStart, rankingTermEnd "YYYY-MM-DD HH:MM:SS",
-//   lastRank int}; elemento [fn] = {userData: {user ([fn] modo 0, senza
-//   nativeTagName), userDetail ([fn])}, userAvatar ([fn] -> [fn]), lux uint64,
+// lastRank int}; elemento = {userData: {user (senza
+// nativeTagName), userDetail}, userAvatar, lux uint64,
 //   rank int}.
 //   Senza la 133: «200 ERROR :133» toccando Rankings (banco 14-10).
-// - High score, [fn]: 135/136/179 (highscoreRanking, ...Own, ...Border), stessi campi.
-// - Party, [fn]: 137/138/184 (partyRanking, ...Own, ...Border): rankingDatas, rankingStatus,
+// - High score, 135/136/179 (highscoreRanking,...Own,...Border), stessi campi.
+// - Party, 137/138/184 (partyRanking,...Own,...Border): rankingDatas, rankingStatus,
 //   lastRank, updateTime, nextUpdateTime.
-// - Colosseo, [fn]: 139/140/180 (colosseumRanking, ...Own, ...Border), come Lux.
+// - Colosseo, 139/140/180 (colosseumRanking,...Own,...Border), come Lux.
 // Un solo giocatore sul server: le classifiche Lux hanno lui al 1° posto, le altre sono vuote.
 //
 // Party: 83 /party, 86 /party/member/list, 81 PUT /party/notice e 24 /payment/info hanno gia' uno
 // schema verificato (api_responses_ww431.json). Qui:
-// - 82 POST /party/login: userParty ([fn]); party/partyLeader ([fn]) si leggono solo
-//   se userParty.partyId != 0 (0x7c4ab0), isAbsenceLeader int.
-// - 87 GET /party/search/active: partyList[] ([fn]); vuoto = nessun party da proporre.
-// Il crash di Party/Party Search (SIGSEGV a 0x170 dopo /party/login) non e' nelle risposte: la
-// scena [fn] carica PartyTopScene_ver131.json, assente da ogni risorsa WW (GUIReader -> null):
+// - 82 POST /party/login: userParty; party/partyLeader si leggono solo
+// se userParty.partyId != 0, isAbsenceLeader int.
+// - 87 GET /party/search/active: partyList[]; vuoto = nessun party da proporre.
+// Il crash di Party/Party Search (dopo /party/login) non e' nelle risposte: il client
+// carica il layout PartyTopScene_ver131.json, assente da ogni risorsa WW:
 // layout originali JP in recon/tools/jp_coco_layouts.txt.
 //
 // Party di un solo giocatore (15-10, schemi in docs/notes/server.md#party-ranking): Create Party salva
 // player.party; il giocatore e' leader e unico membro (userId, leaderUserId e supportUserId 1: il pannello
-// destro [fn] cerca il leader in partyUserList, senza di lui legge fuori dall'array). Catena:
+// destro cerca il leader in partyUserList, senza di lui legge fuori dall'array). Catena:
 // 83 /party, 86 /party/member/list, 81 /party/notice, 84 /party/detail (solo con partyId), 82 /party/login.
 // - 79 POST /party/create {name, message, playStyle, agreeType}: userParty, party, firstReward int.
-// - party ([fn]): chatId 0 e chatEndpointUrl vuoto (chat HTTP non servita).
-// - 86 con getDetail: ogni elemento = elemento giocatore ([fn]) + [fn] (userKeyblade,
+// - party: chatId 0 e chatEndpointUrl vuoto (chat HTTP non servita).
+// - 86 con getDetail: ogni elemento = elemento giocatore + (userKeyblade,
 //   userRanking, lastStageId, comment, linkPlatformId, userColosseumRanking/userPvpRanking int, raidHelpNumber).
 // - 84 GET /party/detail: {rank uint}.
-// - 80 POST /party/update e 85 POST /party/leave (ramo 0x7c3f88): solo userParty.
+// - 80 POST /party/update e 85 POST /party/leave: solo userParty.
 
 const LUX_KEYS = {
   '/ranking/weekly/user': 'luxRankingWeekly', '/ranking/monthly/user': 'luxRankingMonthly',
@@ -80,8 +79,8 @@ function term(now, monthly) {
 
 const PARTY_ID = 1;
 const FIRST_PARTY_JEWELS = 100;
-// Elenchi del party sempre vuoti (un solo giocatore sul server; parser dai rami di [fn], 15-10):
-// 89 [fn], 91 [fn], 98 [fn] con la chiave partyUserList (stringa 0x1775281), 100 [fn], 102 [fn]
+// Elenchi del party sempre vuoti (un solo giocatore sul server; schemi del 15-10):
+// 89 91 98 con la chiave partyUserList (stringa), 100 102
 const PARTY_EMPTY_LISTS = {
   '/party/application/list': { partyApplicants: [], partyList: [] },
   '/party/applicant/list': { partyApplicants: [], partyUserList: [] },
@@ -110,7 +109,7 @@ function respondPartyRanking(deps, res, kind, p, body) {
     console.log(`  [party] creato «${player.party.name}» (playStyle ${player.party.playStyle}, agreeType ${player.party.agreeType})` +
       (firstReward ? `, primo party: ${FIRST_PARTY_JEWELS} jewel nei Presents` : ''));
   }
-  // 80 POST /party/update (stesso corpo di create) e 85 POST /party/leave: ramo 0x7c3f88, solo userParty
+  // 80 POST /party/update (stesso corpo di create) e 85 POST /party/leave: solo userParty
   if (kind === 'partyupdate' && player.party) {
     for (const k of ['name', 'message']) if (typeof body?.[k] === 'string') player.party[k] = body[k];
     for (const k of ['playStyle', 'agreeType']) if (body && k in body) player.party[k] = Number(body[k]) || 0;
@@ -153,8 +152,8 @@ function respondPartyRanking(deps, res, kind, p, body) {
   const base = { rankingStatus: 2, rankingTermStart: t.start, rankingTermEnd: t.end, lastRank: 0,
     updateTime: now, nextUpdateTime: t.end };
   if (LUX_KEYS[p]) {
-    // userData.user ([fn] cerca "user" dentro "userData") e userData.userDetail
-    // ([fn]), come in GET /user; con user e userDetail piatti: «200 ERROR :133» (banco 14-10)
+    // userData.user (il client cerca "user" dentro "userData") e userData.userDetail,
+    // come in GET /user; con user e userDetail piatti: «200 ERROR:133» (banco 14-10)
     const me = { userData: { user: deps.userObject(now), userDetail: deps.userDetailData() },
       userAvatar: deps.userAvatarData(), lux: player.lux || 0, rank: 1 };
     return send(res, 200, { ret: ret(), [LUX_KEYS[p]]: { ...base, rankingDatas: [me], lastRank: 1 } });

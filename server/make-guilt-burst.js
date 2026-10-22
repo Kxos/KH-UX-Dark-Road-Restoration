@@ -3,16 +3,15 @@
 // Si applica da sola (idempotente) a server/master_data, ed e' chiamata in fondo a
 // make-game-tables.js, che riscrive medal.json e burst.json.
 //
-// - medal 2: la «medaglia» del Burst. [fn] ne legge la riga (tabella 0x55 = medal,
-//   [fn]): STR +0x4e0 (slot +0 e +4), DEF +0x4ec (+8), +0x4d4 (+0x14); senza riga
+// - medal 2: la «medaglia» del Burst. Il client ne legge la riga (STR e DEF); senza riga
 //   l'attacco non si prepara. Le nostre tabelle hanno solo la 1 (slot vuoto). burstId 11 =
 //   la riga burst «11:ギルトボム» (Guilt Bomb, tutti i nemici, attributo 5) della 5.0.1.
 //   STR/DEF segnaposto (KHUX_GUILT_BURST_STR, default 5000).
 // - burst 11: animazioni lwf/burst/motion/abl_00011 ed effetto eff_00011 assenti dalle risorse:
 //   se mancano si usano quelle di Thundaga (10145 / 110145, tutti i nemici). Base intatta in
 //   burst_base.json.
-// - shuffleskill 901 e 902: [fn] le legge senza controllo del null (crash all'avvio
-//   della battaglia se mancano) e ne usa enemyKind/enemyKindRate (+0xac/+0xb0) come bonus contro
+// - shuffleskill 901 e 902: le legge senza controllo del null (crash all'avvio
+// della battaglia se mancano) e ne usa enemyKind/enemyKindRate come bonus contro
 //   un tipo di nemico: valori originali ignoti, 0 = nessun bonus.
 //
 //   node server/make-guilt-burst.js [cartella master]

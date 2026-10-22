@@ -32,17 +32,17 @@ function routeMulti(p) {
 function makeMulti(ctx) {
   // Eventi Union Cross attivi = righe valide della master `multi` con la data del server
   // dentro [startTime, endTime]. Senza eventi il client va in crash: il pannello Union Cross
-  // della schermata Quest ([fn]) legge multiEvents[0] senza controllare che ci sia
-  // e poi la riga master `multi` di quel multiId ([fn], tabella 0x3e).
+  // della schermata Quest legge multiEvents[0] senza controllare che ci sia
+  // e poi la riga master `multi` di quel multiId (tabella 0x3e).
   function activeMultis() {
     const now = ctx.serverTime();
     return ctx.masterRows('multi').filter((r) => r.valid && (!r.startTime || r.startTime <= now)
       && (!r.endTime || now <= r.endTime));
   }
 
-  // GET /multi/status (158, [fn]): serverAddress (stringa, obbligatoria), multiEvents[]
-  // (obbligatorio; elemento [fn]: multiId int, useAp int, endTime data, bannerUrl
-  // stringa), multiUsers[] (facoltativo, elementi come supportUsers, [fn]).
+  // GET /multi/status (158): serverAddress (stringa, obbligatoria), multiEvents[]
+  // (obbligatorio; elemento multiId int, useAp int, endTime data, bannerUrl
+  // stringa), multiUsers[] (facoltativo, elementi come supportUsers).
   function status() {
     return {
       ret: ctx.ret(),
@@ -55,15 +55,15 @@ function makeMulti(ctx) {
   }
 
   // GET /multi/matching/member/list (166): matchingMemberList[] = membri del Party che cercano
-  // compagni (stesso parser di /stage/support/list, [fn] con la chiave
+  // compagni (stesso formato di /stage/support/list con la chiave
   // «matchingMemberList»). Vuoto: il tasto Button_Last_Member resta nascosto. Lo stesso
-  // elenco riempie SceneMultiJoinList (PartyTop_MultiMemberList_Scene_ver150).
+  // elenco riempie la lista Multi (layout PartyTop_MultiMemberList_Scene_ver150).
   function members() {
     return { ret: ctx.ret(), matchingMemberList: [] };
   }
 
   // POST /multi/create (160, corpo {multiId}) e /multi/recreate (161, {multiId,
-  // prevMultiRoomId}), [fn]: i cinque array come /stage/start, poi multiStageId (uint)
+  // prevMultiRoomId}), i cinque array come /stage/start, poi multiStageId (uint)
   // e multiRoomId (uint64). Lo stage: il primo di stageStartId..stageEndId della riga multi.
   function create(body) {
     const multiId = Number(body?.multiId) || activeMultis()[0]?.multiId || 0;
@@ -83,8 +83,8 @@ function makeMulti(ctx) {
   }
 
   // POST /multi/start (162; corpo multiId, multiStageId, userKeybladeId, roomCreateUserId,
-  // multiRoomId, isSteal), dispatcher a 0x7c6be4: userData.userPoint ([fn]) e
-  // [fn] (userKeybladeId uint64, campaigns[]). Il client la manda solo dopo essere
+  // multiRoomId, isSteal); risposta: userData.userPoint e
+  // (userKeybladeId uint64, campaigns[]). Il client la manda solo dopo essere
   // entrato nella stanza Photon: offline non ci arriva.
   function start(body) {
     return {
@@ -100,14 +100,14 @@ function makeMulti(ctx) {
     respond(kind, res, body) {
       switch (kind) {
         case 'multistatus': return ctx.send(res, 200, status());
-        // GET /multi/talk (159, [fn]): multiTalkIds[] (frasi rapide della stanza)
+        // GET /multi/talk (159): multiTalkIds[] (frasi rapide della stanza)
         case 'multitalk': return ctx.send(res, 200, { ret: ctx.ret(), multiTalkIds: [] });
         case 'multimembers': return ctx.send(res, 200, members());
         case 'multicreate': return ctx.send(res, 200, create(body));
         case 'multistart': return ctx.send(res, 200, start(body));
-        // POST /multi/retire (164): il ramo del dispatcher non legge campi oltre a ret
+        // POST /multi/retire (164): il client non legge campi oltre a ret
         case 'multiretire': return ctx.send(res, 200, { ret: ctx.ret() });
-        // POST /multi/continue (165, [fn]): userKeyblades[]
+        // POST /multi/continue (165): userKeyblades[]
         case 'multicontinue': return ctx.send(res, 200, { ret: ctx.ret(), userKeyblades: ctx.userKeybladesData() });
         // POST /multi/clear (163): schema automatico (api_responses_auto_ww431.json), mai
         // visto sul banco: serve una partita Photon finita

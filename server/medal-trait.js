@@ -6,9 +6,9 @@
 //   percentuali originali non sono mai state pubblicate). Doppioni ammessi, come nell'originale.
 // - Slot pieni: il trait resta in sospeso finche' il giocatore sceglie quale sostituire (prende la sua posizione)
 //   o lo scarta (Skip). Lo Special Trait del pet (shuffleskill type 2) ha uno slot a parte.
-// - medalResumption ([fn]): con trait in sospeso {[tutta la coda], 1}, altrimenti {[], 0}; con status 1 la
+// - medalResumption: con trait in sospeso {[tutta la coda], 1}, altrimenti {[], 0}; con status 1 la
 //   lista non deve mai essere vuota (il client legge [0] senza controllo). Tutta la coda: lo Spirit Training cerca il
-//   pending di ogni medaglia allenata per userMedalId ([fn]), e la risposta della scelta (azione 57) riscrive
+// pending di ogni medaglia allenata per userMedalId, e la risposta della scelta (azione 57) riscrive
 //   la sessione prima della medaglia successiva.
 'use strict';
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Righe alias del cut-in dello speciale (I-187, utente 21-10: Lexaeus A 7★ senza cut-in ne' suono, nel deck e come friend).
-// Allo speciale [fn] cerca la riga medal [fn](medalId), che porta gli id che finiscono in 2 o 4 a id-1
+// Allo speciale cerca la riga medal(medalId), che porta gli id che finiscono in 2 o 4 a id-1
 // (convenzione SE: le 2★/4★ usano il cut-in della 1★/3★, sempre presente nei dati originali); se la riga manca salta
 // immagine (cutinId), animazione (darklight) e suono. I nostri id (300000+ di Roboloid, boosted 1/2/3xxxxxx, 900xx)
 // non seguono la convenzione: per ogni medaglia con speciale che finisce in 2/4 senza riga id-1 si aggiunge una copia

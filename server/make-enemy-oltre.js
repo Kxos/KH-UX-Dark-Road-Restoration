@@ -88,11 +88,11 @@ const DR_LOOK = {
   1537: { displayId: 197, confidence: 'medium', note: 'Martial Monkey: Cheery Ape (UX), large upright ape, closest served shape (22-10, user; atkSp falls back to wait)' },
   1629: { displayId: 147, confidence: 'high', note: 'Cherry Kaboom: Minute Bomb (UX), same round bomb with curled fuse, other colour (22-10, user)' },
   // 2508 Warlock Step -> 5061 (Tornado Step DR) tolto il 22-10: crash all'avvio della battaglia in 703/704 (684 con
-  // 5040 ok; tombstone in GUIReader/0x11af9d8, causa nel client non trovata); resta la base 14 Tornado Step UX
+  // 5040 ok; causa non trovata); resta la base 14 Tornado Step UX
 };
 
 // Alleati ospiti (I-199, docs/notes/battaglia.md#alleati-20xx): famiglie 2001-2024 che gli stage JP usano SOLO come
-// unico membro di una squadra col flag 0x20; il client le tiene nella lista degli alleati (4.3.1 [fn]):
+// unico membro di una squadra col flag 0x20; il client le tiene nella lista degli alleati (4.3.1):
 // combattono accanto al giocatore, mai toccabili ne' attaccate. Restano righe enemy (meccanismo originale) ma non
 // sono cloni di nemici: nome del personaggio, curve e mosse della riga originale `template` (2001-2003, WW 5.0.1 =
 // thethiny: 210x283, battlePattern 3), grafica della famiglia se servita (regola degli alleati di make_jp_enemies.py:

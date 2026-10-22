@@ -12,31 +12,31 @@
 //   17 ranghi. needPt (punti cumulativi) e magnification dalla khuxwiki (Pet_System, «Slot Multiplier»):
 //   magnification in decimillesimi come accord/partnerRate dei keyblade (10000 = x1.0): rango 1 x1.00, poi
 //   22000 + 1000 x rango (Rank 5 = x2.700, Rank 16 = x3.800 come i dialog SPIRIT della build finale). Il client la legge dal
-//   petSubslot che manda il server ([fn], +0x74) e la somma al partnerRate del keyblade
-//   per la cella del 6° slot ([fn] -> [fn]): l'unita' va confermata sul banco.
+// petSubslot che manda il server e la somma al partnerRate del keyblade
+// per la cella del 6° slot: l'unita' va confermata sul banco.
 // - petSkill (skillId, thumbId, name, description, invokeDescription, invokeType, skillValue1-5):
 //   i 22 «Tricks» della khuxwiki (Pet_System, sezione Tricks; wiki JP ペットシステム) con il rango che li apre,
 //   name = nome EN, description = «Details», invokeDescription = «Conditions». Campi letti dal client 4.3.1 (ricerca
-//   del 20-10, D:\Progetto_Restauro_KH_UX	mp\pettricks\RESEARCH.md): invokeType = posto del PetActor ([fn];
-//   un solo trick per posto, vince il primo), skillValue1 = cariche per battaglia (<= 0 infinite). Posti: 1 Steal
+//   del 20-10, note private): invokeType = posto del pet in battaglia
+//   (un solo trick per posto, vince il primo), skillValue1 = cariche per battaglia (<= 0 infinite). Posti: 1 Steal
 //   (sv3 = moltiplicatore dei drop, lo applica il server, server.js), 3 Blast (sv2 = medaglia nascosta 3-7 il cui
 //   attacco e' il colpo a danno fisso, sv3 = soglia di HP, sv4 = soglia in %), 5 Esuna (sv2 = maschera degli stati),
 //   6 HP Recovery, 7/8/9 Poison/Sleep/Paralysis Boost (sv2 = valore), 10 Combo (sv2 = probabilita' /10000, sv3 = %
 //   del danno /10000), invokeType 4 + sv3 1/2/3 = posti 11/12/13 P/S/M Attack Boost (sv2 = cariche per turno, sv4 =
-//   livelli oltre il limite di ±20, [fn]/[fn]). openSkillIds di un rango = il livello piu' alto di
+//   livelli oltre il limite di ±20). openSkillIds di un rango = il livello piu' alto di
 //   ogni linea, in ordine di apprendimento. RICOSTRUITI (Notices): soglia % del Blast, valori di Poison/Sleep Boost,
 //   maschera di Esuna, cariche dei P/S/M Attack Boost, medaglie e burst del Blast.
-// - medal.addPetPt (punti Spirit della medaglia, riga medal +addPetPt): dalla khuxwiki (vedi addPetPtFor).
+// - medal.addPetPt (punti Spirit della medaglia, campo addPetPt della riga medal): dalla khuxwiki (vedi addPetPtFor).
 //
 // - shuffleskill type 2 = Special Trait («特別覚醒能力», trait dello Spirit Training, I-082): le 36
 //   righe della tabella «Special Traits» della khwiki (pagina Medal, D:\Progetto_Restauro_KH_UX\
 //   wiki\wiki_all.json; reference\pet\NOTE.md §10) con la «Unlock Rate» in centesimi di punto in
-//   rate (somma 10000). Il client: [fn] mette in medaglia +0x148 l'indice del primo trait
-//   la cui riga ha type (+8) 2 (e +0x144 = 1): e' il trait che mostrano il risultato del
-//   training ([fn] / [fn], Kakusei_Get1/2 e SpecialKakuseiSkill_Window) e la
-//   finestra Special Trait del dettaglio; [fn] fa la «roulette» di Kakusei_Get1 con le
-//   righe dello stesso type e rate (+0xc4) diverso da 0 (lista vuota = std::out_of_range).
-//   name e' un formato printf ([fn]/[fn]: sprintf(name, [fn](riga))):
+//   rate (somma 10000). Il client tiene come Special Trait della medaglia il primo trait
+//   la cui riga ha type 2: e' il trait che mostrano il risultato del
+//   training (Kakusei_Get1/2 e SpecialKakuseiSkill_Window) e la
+//   finestra Special Trait del dettaglio fa la «roulette» di Kakusei_Get1 con le
+//   righe dello stesso type e rate diverso da 0 (lista vuota = crash).
+//   name e' un formato printf:
 //   «%» raddoppiato. category = icona img/kakusei/Kakusei_Icon%04d.png e LWF
 //   lwf/medal/Kakusei/Kakusei_Icon%04d (make_kakusei_lwf.py), come i trait del Moogle Shop.
 //   Id 1001-1036 (1-13 Moogle Shop, 901/902 Burst). make-moogleshop.js riscrive shuffleskill.json:
@@ -84,7 +84,7 @@ const SKILLS = [
   [15, 'Blast V', 'Hits for 750,000 damage.', BLAST_C('750,000'), 16, 3, [1, 7, 750000, BLAST_PCT]],
   [63, 'Combo III', COMBO_D, COMBO_C(50), 17, 10, [6, 5000, 4000]],
 ];
-// Blast: medaglie nascoste 3-7 (copie della medal 2 del Burst, [fn] ne costruisce l'attacco) con burst 12-16 a
+// Blast: medaglie nascoste 3-7 (copie della medal 2, da cui il client costruisce l'attacco del Burst) con burst 12-16 a
 // danno fisso esatto (damageType 2 / specialPowerType 2, sp1 = danno x 10000 su un colpo, come i danni fissi originali
 // di server/fixed-damage.js). Nessuna riga originale sopravvissuta: id e aspetto nostri.
 const BLAST = SKILLS.filter((s) => s[5] === 3).map(([, name, , , , , v]) => ({ name, medalId: v[1], burstId: v[1] + 9, damage: v[2] }));
@@ -115,7 +115,7 @@ function petRankRows() {
     const opened = SKILLS.filter((s) => s[4] === rank).map((s) => s[0]);
     const open = openSkillsAt(rank);
     return { rank, needPt, magnification: magnification(rank), rankUpSkill: opened[0] || 0,
-      validOpenSkill: open.length, openSkillIds: open }; // validOpenSkill = numero di id della lista ([fn])
+      validOpenSkill: open.length, openSkillIds: open }; // validOpenSkill = numero di id della lista
   });
 }
 
@@ -202,7 +202,7 @@ function patch(dir) {
   write('petSkill', petSkillRows());
   out.push(`petRank ${MAX_RANK}`, `petSkill ${SKILLS.length}`);
   // misc 137 = rango massimo del pet: il dialog SPIRIT ricalcola il rango dai punti delle medaglie
-  // fermandosi li' ([fn], punti da [fn]). Nel master 5.0.1 vale 15: con 17 ranghi
+  // fermandosi li'. Nel master 5.0.1 vale 15: con 17 ranghi
   // il client mostrava Rank 15 x3.700 mentre il server (e la cella del 6° slot) usava 17 x3.9
   const miscFile = path.join(dir, 'misc.json');
   if (fs.existsSync(miscFile)) {
@@ -218,10 +218,9 @@ function patch(dir) {
     const special = specialTraitRows();
     const ids = new Set(special.map((r) => r.shuffleSkillId));
     const kept = rows.filter((r) => !ids.has(r.shuffleSkillId));
-    // anche l'acquisto di un trait nel Moogle Shop (SceneMoogleShop::openKakuseiResultPopup,
-    // [fn] / [fn]) gioca Kakusei_Get1 con la roulette [fn] sulle righe
+    // anche l'acquisto di un trait nel Moogle Shop gioca Kakusei_Get1 con la roulette sulle righe
     // type 1: con rate 0 ovunque la lista e' vuota e il primo «dispString» del nostro LWF
-    // (make_kakusei_lwf.py) farebbe std::out_of_range. rate 100 ai trait normali (non ai Burst
+    // (make_kakusei_lwf.py) manderebbe il client in crash. rate 100 ai trait normali (non ai Burst
     // 901/902), usato solo come «candidato della roulette».
     let rated = 0;
     for (const r of kept) if (r.type === 1 && r.shuffleSkillId < 900 && !r.rate) { r.rate = 100; rated++; }
@@ -250,9 +249,9 @@ function patch(dir) {
 }
 
 // Medaglie 3-7 e burst 12-16 del Blast (vedi BLAST): dopo make-guilt-burst.js, di cui copiano medal 2 e burst 11
-// target 2: i bersagli del Blast sono i nemici marcati dalla condizione (flag +0xe80.., [fn]); con target 1 il
-// client prende il nemico scelto dal giocatore, nullo per il pet: crash alla sconfitta ([fn] -> [fn]
-// legge [nemico+0x558], banco 20-10, quest 524)
+// target 2: i bersagli del Blast sono i nemici marcati dalla condizione; con target 1 il
+// client prende il nemico scelto dal giocatore, nullo per il pet: crash alla sconfitta
+// (banco 20-10, quest 524)
 function patchBlast(dir) {
   const read = (n) => JSON.parse(fs.readFileSync(path.join(dir, n + '.json'), 'utf8'));
   const write = (n, rows) => fs.writeFileSync(path.join(dir, n + '.json'), JSON.stringify(rows));
