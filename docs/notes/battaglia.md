@@ -474,3 +474,37 @@ di atk1_o assenti in 5045/5046), 1539 (wait/knockback non gemelle), 2006 (niente
 `tmp\integr\sheets\rc_<id>.png` (ricolorate col bordo magenta accanto al gemello). Risultato: 140 displayId completi
 su 245 (+12: categoria 2 1534, 1543, 1562, 1587, 1602; categoria 4 249, 1501, 1503, 1508, 1509, 1523, 2505; 15.163
 file, 66,5 MB). 1501 ha righe vere nel master (oggi 5038): passa a 1501 al prossimo make-game-tables completo.
+
+**Original copies found by content** (I-194, 22-10; category 2, original files, no new declaration). Many textures
+dropped by the JP extraction still exist, identical, in other LWFs of the same creature under another name and bitmap
+number: `lwf/character/raid` and `lwf/raid/demo` (raid version of the boss), `lwf/drama` films, another enemy,
+`burst`. `recon/tools/deep_donors.py` (deterministic redo of the scan in `tmp\deep_scan`, engine2 + mk_tsv; caches in
+`tmp\deep_donors_cache`, first run ~60 min for the LWF index of all local containers, then ~3 min) writes
+`recon/tools/extra_donors_deep.tsv`, read by `make_jp_enemies.py` after `extra_donors.tsv` (`--deep ''` excludes it).
+Method: for each incomplete family, survivors (original files only) and missing textures with their declared sizes;
+candidate donors = the 60 LWFs declaring most missing sizes; **anchors** = survivors equal by content to a donor
+texture (32x32 premultiplied signature, mean difference < 6/255, size +-1 px); donor accepted with >= 2 anchors, or 1
+anchor if its table covers >= 80% of the family's >= 8 declared sizes; a donor that picks wrong images on the family's
+own survivors (>= 2 and > 5%) is rejected (incoherent donor). Rules: **content-anchor** = every texture of the accepted
+donors with that size is the same image; **bracket** = the two table neighbours are known and the same two images
+enclose a texture of that size in the donors (all agree). Table alignment alone (`align`) is not used. Validation
+(`--validate`, 105 families): content-anchor self 1841/1856 (99.2%), hide 3871/3882 (99.7%); bracket 34/35 + 53/53
+(87/88); align 88/117 self (excluded). Visual check of every sheet (`tmp\deep_scan\sheets\v2_<family>.png`, new
+families `tmp\integr2\sheets\v3_<family>.png`): 84 rows rejected (`VISUAL_REJECT`): 285 (only survivor a 9x6 speck),
+1635 (clouds of a player ability), 2011 and 2021 (anchors only generic smoke; parts of another character), 1541 orange
+shell 74x41, 1645 knockback from film 2552701 (Turbo/Cy-Bug pieces), 1650 orange flame 36x56. Result: 1853 rows in 49
+families (identical to the scan's 1854 minus the 84 rejects, plus 83 rows of 1521, 1524, 1540, which the scan's
+hand-made family list did not include). Complete families 140 -> **141** (category 2: + **1028 Guard Armor Ω**,
+from raid 0006 and demo escape_0006); enemy.json 526-979: 181111028 (Quest 850) 22 -> 1028; family-clone rows by
+graphic: family 45, Dark Road 29, base 148 (before 44/29/149).
+Still incomplete after the copies, with the approved reconstruction rules of `jp_reconstructed.py` (<= 4 missing
+textures; shadow-family/shadow-common; family = same declared size in another animation, >= 3 candidates or the same
+bitmap number, all close) not enough (`tmp\integr2\recon_eval.py`, no new rule invented): 1561 Dragon Maleficent (8
+missing eye frames 103x65/104x65, bitmaps 2-8; the only candidates are bitmap 1, two of them for wait/atk1_o: rule
+fails, and they are different frames of the blink); 1548 Gear Golem (5: 170x149 and 645x336 have no candidate, the
+289x279 gears are ambiguous, difference 25/255); 1600 Crabby Cake (16 slots = 4 eye frames 20/23/24/25 x 4
+animations; the family rule would pick bitmaps 21/22, but 16 > 4 missing textures); 1610 Flappy Bug (5: 4 shadows
+97x24 + 65x53); 1520, 1615, 240, 1636 (6-13 missing); 255 Dual Blade (10 missing and no `dead` LWF at all: stays
+incomplete). 1524 Chill Ripper: wait/atk1_o/knockback are now complete with original copies (film 2290101); only
+`dead` has no LWF: the approved category-4 rule `recolour-whole` (generic smoke dead of the DR twin 5045) would
+complete it, but it is outside the reconstruction rules of this step and needs a Notice line: not done.
