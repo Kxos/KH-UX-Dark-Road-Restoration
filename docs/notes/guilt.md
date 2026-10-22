@@ -4,7 +4,11 @@
 Analysis of 12 October 2026 (agent): sources in `reference\guilt` (user's guide p.16/20/21, khuxwiki). Rules, client fields (`attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`, `guiltFactor` of userMedal, `[fn]`; `POST /user/medal/enhance` action 55, `[fn]`; table `guiltProb`, `[fn]`) and rules in `server/medal-guilt.js`. Brooms = Magic Broom (5*, Evolve material), Mickey & Brooms = Fantasia Mickey B (6*, type 8): previously missing from the master (make-game-tables.js discarded the Roboloid rows without an attribute).
 
 <a id="stato"></a>
-## Status (12 October 2026): wired up, TO BE VERIFIED on the bench
+## Status (12 October 2026): wired up; VERIFIED on the bench (closed 22 October 2026)
+
+Verified on the bench on 12-10 (I-083 and I-085 in [ISSUES](../ISSUES.md): dots, guilt unlock and reroll,
+Chip/Dale/Cid with their caps, Magic Broom and Fantasia Mickey B) and on 19-10 ([below](#banco-1910),
+[journal](../journal/2026-10-19.md)); I-079 and I-080 closed on 22-10.
 
 The plan below is applied. Tests without the client:
 - `node server/test-medal-guilt.js <repo>\server`: rules of the module.
