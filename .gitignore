@@ -102,6 +102,7 @@ tools/segdl.ps1
 tools/patch-apk.sh
 recon/tools/remote_zip.py
 recon/tools/remote_zip_ls.py
+recon/ghidra/
 tools/bin/
 server/game_data/
 
