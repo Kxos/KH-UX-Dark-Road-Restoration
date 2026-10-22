@@ -23,7 +23,7 @@ risorse (layout CocoStudio, testi, animazioni) vengono **ricostruite**: dagli or
 vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'epoca.
 
 **[HANDOFF.md](HANDOFF.md)** — come riprendere: stato del banco e prossimo passo.
-**[docs/NOTICES.md](docs/NOTICES.md)** — le Notices del gioco (in inglese): come funziona il gioco restaurato e dove differisce dall'originale.
+**[Notices del gioco](https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/)** (pagina web nello stile del gioco, in inglese; anche come [docs/NOTICES.md](docs/NOTICES.md)) — come funziona il gioco restaurato e dove differisce dall'originale.
 **[docs/ISSUES.md](docs/ISSUES.md)** — i problemi aperti e chiusi; note tecniche per area in
 [docs/notes/](docs/notes/), diario completo del lavoro (ogni problema risolto con la sua causa) in
 [docs/journal/](docs/journal/).

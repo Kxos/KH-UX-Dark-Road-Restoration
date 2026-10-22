@@ -1,16 +1,21 @@
 #!/usr/bin/env node
-// Writes the in-game Notices (Other > Notices, server/routes-info-album.js) to docs/NOTICES.md, so players and the
+// Writes the in-game Notices (Other > Notices, server/routes-info-album.js) to docs/NOTICES.md and, as a web page in
+// the in-game style, to docs/notices/index.html (project site on GitHub Pages, served from /docs), so players and the
 // community can read them outside the game. Generated from the same data the server serves: run it again after
-// changing a notice. `--check` exits with 1 if docs/NOTICES.md is out of date (no write).
+// changing a notice. `--check` exits with 1 if a file is out of date (no write).
 //
 //   node server/export-notices.js [--check]
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
-const { NOTICES, updateBody } = require('./routes-info-album');
+const { NOTICES, updateBody, noticesPage } = require('./routes-info-album');
 
-const OUT = path.join(__dirname, '..', 'docs', 'NOTICES.md');
+const DOCS = path.join(__dirname, '..', 'docs');
+const OUT = path.join(DOCS, 'NOTICES.md');
+const HTML = path.join(DOCS, 'notices', 'index.html');
+// without it GitHub Pages runs Jekyll on every .md of docs/ (and fails on some): files are served as they are
+const NOJEKYLL = path.join(DOCS, '.nojekyll');
 
 // the update notice is dynamic (title and countdown change with the clock): its general text, without the countdown
 const update = { date: '10/16', tag: 'IMPORTANT', title: 'About game data updates',
@@ -38,16 +43,23 @@ function render() {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
 }
 
+function files() {
+  return [[OUT, render()], [HTML, noticesPage(Date.now(), { web: true, notices: [update, ...NOTICES] })], [NOJEKYLL, '']];
+}
+
 if (require.main === module) {
-  const text = render();
+  const all = files();
   if (process.argv.includes('--check')) {
-    const cur = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
-    if (cur !== text) { console.error('docs/NOTICES.md is out of date: run node server/export-notices.js'); process.exit(1); }
-    console.log('docs/NOTICES.md is up to date');
+    const stale = all.filter(([f, text]) => !fs.existsSync(f) || fs.readFileSync(f, 'utf8') !== text);
+    if (stale.length) {
+      console.error(stale.map(([f]) => path.relative(DOCS, f)).join(', ') + ' out of date: run node server/export-notices.js');
+      process.exit(1);
+    }
+    console.log('notices export up to date');
   } else {
-    fs.writeFileSync(OUT, text);
-    console.log(`docs/NOTICES.md: ${1 + NOTICES.length} notices`);
+    for (const [f, text] of all) { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); }
+    console.log(`docs/NOTICES.md, docs/notices/index.html: ${1 + NOTICES.length} notices`);
   }
 }
 
-module.exports = { render };
+module.exports = { render, files };

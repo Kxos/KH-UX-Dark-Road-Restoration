@@ -217,12 +217,25 @@ function informationPopup(sessionBase) {
   return { popUpViewUrl: [noticesUrl(sessionBase)] };
 }
 
+// project site (opts.web): the notices inside a frame like the in-game Notices popup (reference\other_menu)
+const WEB_CSS = '<style>body{background:#000 linear-gradient(#06121c,#0a2233);min-height:100vh;padding:24px 12px;box-sizing:border-box}'
+  + '.frame{max-width:980px;margin:0 auto;border:4px solid #1d8fe0;border-radius:14px;background:#0b4f8f;padding:10px 12px 14px;'
+  + 'box-shadow:0 0 0 2px #0a2f55,0 8px 30px rgba(0,0,0,.6)}'
+  + '.ttl{font:bold 30px sans-serif;color:#fff;text-shadow:0 2px 0 #0a2f55;padding:4px 8px 10px}'
+  + '*{box-sizing:border-box}.x{min-width:0}#list{background:#174a5c;border:2px solid #36a6e6}.det{min-height:60vh}.bar{position:sticky}'
+  + '.foot{max-width:980px;margin:14px auto 0;color:#8fb3c0;font:13px sans-serif;text-align:center}.foot a{color:#5fe0f0}'
+  + '@media(max-width:600px){body{padding:12px 6px}.frame{padding:8px 6px 10px}.row{padding:10px 6px}.d{width:44px;font-size:13px}.t{width:96px;font-size:11px;margin-right:8px}.x{font-size:15px}.ttl{font-size:24px}}</style>';
+const WEB_FOOT = '<div class="foot">Kingdom Hearts Union &chi; fan restoration &middot; the in-game Notices, exported from the server '
+  + '&middot; <a href="https://github.com/Kxos/KH-UX-Dark-Road-Restoration">project on GitHub</a></div>';
+
 // Pagina /web/notices, come l'elenco originale (reference\other_menu\notices_list_yt_02.jpg: data,
 // etichetta colorata, titolo, freccia rossa) e il dettaglio (notices_detail_yt_03.jpg e notices_dialog_01.jpg:
 // fondo blu notte, testo spaziato, titoletti col quadratino, parole chiave in arancione, BACK blu in basso).
 // Testo delle notizie: «## Titolo» = sezione (le righe sotto diventano un elenco puntato), «**parola**» = evidenziata.
-function noticesPage(realMs = Date.now()) {
-  const notices = [updateNotice(realMs), ...NOTICES];
+// opts.web: static copy for the project site (docs/notices/, export-notices.js): opts.notices instead of the live list,
+// no timing beacon, a «Notices» frame like the in-game popup, centered, and #nN in the address opens notice N
+function noticesPage(realMs = Date.now(), opts = {}) {
+  const notices = opts.notices || [updateNotice(realMs), ...NOTICES];
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const rich = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="k">$1</b>');
   const bodyHtml = (body) => {
@@ -262,16 +275,20 @@ function noticesPage(realMs = Date.now()) {
     + '.back{display:inline-block;padding:7px 26px 8px;border-radius:10px;border:2px solid #9fd4ff;color:#fff;text-decoration:none;'
     + 'font:italic bold 20px sans-serif;letter-spacing:1px;background:linear-gradient(#5aa8ff,#2556c8 55%,#1b3f9c);'
     + 'box-shadow:0 2px 0 #0b2a66,inset 0 1px 0 rgba(255,255,255,.5);text-shadow:0 1px 2px #0a2a6a}.back span{display:inline-block;margin-left:12px;width:14px;height:9px;border:3px solid #fff;border-left:0;border-radius:0 8px 8px 0;vertical-align:1px;position:relative}.back span:after{content:"";position:absolute;left:-7px;bottom:-8px;border-style:solid;border-width:6px 9px 6px 0;border-color:transparent #fff transparent transparent}</style>'
+    + (opts.web ? WEB_CSS : '')
     + '<script>function show(i){document.getElementById("list").style.display=i<0?"block":"none";'
     + 'for(var k=0;k<' + notices.length + ';k++)document.getElementById("d"+k).style.display=k===i?"block":"none";'
+    + (opts.web ? 'history.replaceState(null,"",i<0?location.pathname:"#n"+i);' : '')
     + 'window.scrollTo(0,0)}'
+    + (opts.web ? 'window.addEventListener("load",function(){var m=/^#n([0-9]+)$/.exec(location.hash);if(m)show(+m[1])})' : '')
     // avvisa il server appena disegnata (tempi del popup al primo avvio, server.js noticesshown)
     // tempi delle fasi misurati dalla WebView (risposta, DOM pronto, primo disegno, load), in ms dall'inizio della navigazione
-    + 'window.addEventListener("load",function(){requestAnimationFrame(function(){var t=performance.timing,n=t.navigationStart,'
+    + (opts.web ? '' : 'window.addEventListener("load",function(){requestAnimationFrame(function(){var t=performance.timing,n=t.navigationStart,'
     + 'p=(performance.getEntriesByType&&performance.getEntriesByType("paint"))||[],fp=p.length?Math.round(p[0].startTime):-1;'
-    + 'new Image().src="/web/notices/shown?resp="+(t.responseEnd-n)+"&dom="+(t.domContentLoadedEventEnd-n)+"&paint="+fp+"&load="+(t.loadEventStart-n)+"&now="+Math.round(performance.now())})})'
+    + 'new Image().src="/web/notices/shown?resp="+(t.responseEnd-n)+"&dom="+(t.domContentLoadedEventEnd-n)+"&paint="+fp+"&load="+(t.loadEventStart-n)+"&now="+Math.round(performance.now())})})')
     + '</script></head><body>'
-    + `<div id="list">${rows}</div>${details}</body></html>`;
+    + (opts.web ? `<div class="frame"><div class="ttl">Notices</div><div id="list">${rows}</div>${details}</div>${WEB_FOOT}` : `<div id="list">${rows}</div>${details}`)
+    + '</body></html>';
 }
 
 // owned: medaglie possedute [{medalId, guiltFactor}]; medalRows: tabella master medal;
