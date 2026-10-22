@@ -6,7 +6,7 @@ Il client ([fn], animazione d'attesa dell'NPC, da [fn] -> [fn]) formatta
 lwf/character/npc/%d/wait/wait.lwf, la carica con [fn] (NULL se manca) e fa addChild(NULL):
 crash alle stanze con un NPC senza LWF (quest 953-955, NPC 11018). Per ogni id NPC di ogni parte di
 ogni stage in <files>/stage senza wait.lwf servita (elenchi --served) o gia' generata, scrive
-recon/tools/empty.lwf (492 byte) in <files>/lwf/character/npc/<id>/wait/wait.lwf. Gira PRIMA di
+l'LWF vuoto di empty_lwf.py (nostro) in <files>/lwf/character/npc/<id>/wait/wait.lwf. Gira PRIMA di
 import_jp_coco.py, che sostituisce il segnaposto col JP originale dove esistono tutte le texture.
 Deterministico, idempotente: non tocca i file gia' presenti.
 """
@@ -15,9 +15,9 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import empty_lwf  # noqa: E402
 import mapfile  # noqa: E402
 
-EMPTY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty.lwf')
 REL = 'lwf/character/npc/%d/wait/wait.lwf'
 
 
@@ -55,7 +55,7 @@ def served_set(tsvs):
 
 def run(files_dir, served=()):
     ids, errs = npc_ids(os.path.join(files_dir, 'stage'))
-    empty = open(EMPTY, 'rb').read()
+    empty = empty_lwf.build()
     written, present, served_ids = [], [], []
     for i in sorted(ids):
         rel = REL % i

@@ -642,7 +642,7 @@ fields: they do not talk.
 <a id="npc-senza-waitlwf-i-197"></a>
 ## NPCs without wait.lwf (I-197)
 
-The client loads `lwf/character/npc/<id>/wait/wait.lwf` for every NPC of the map (`[fn]`); if it is missing, `[fn]` returns NULL and `addChild(NULL)` crashes the room. Stages 526-979 use 124 NPC ids (only 4001 is served by the original); `recon/tools/npc_placeholders.py` writes `recon/tools/empty.lwf` (492 bytes) for all those without an LWF, before `import_jp_coco.py`, which puts the JP 4.3.1 one where it has all the textures (13 NPCs out of 65 new ones). The remaining 52 (and 1 old one) are invisible but do not crash: to show them the original textures are needed.
+The client loads `lwf/character/npc/<id>/wait/wait.lwf` for every NPC of the map (`[fn]`); if it is missing, `[fn]` returns NULL and `addChild(NULL)` crashes the room. Stages 526-979 use 124 NPC ids (only 4001 is served by the original); `recon/tools/npc_placeholders.py` writes the empty LWF of `recon/tools/empty_lwf.py` for all those without an LWF, before `import_jp_coco.py`, which puts the JP 4.3.1 one where it has all the textures (13 NPCs out of 65 new ones). The remaining 52 (and 1 old one) are invisible but do not crash: to show them the original textures are needed.
 
 <a id="musiche-per-missione-i-198"></a>
 ## Music per quest (I-198)

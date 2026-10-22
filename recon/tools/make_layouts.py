@@ -1830,25 +1830,22 @@ COPIES[PUB + 'Result_Clear_Challenge_Panel01B.png'] = PUB + 'Result_Clear_Challe
 # risorsa: il pulsante blu But16 (come Play Style)
 COPIES.update({'img/ui/But13_%s.png' % s: PUB + 'But16_%s.png' % s for s in ('Off', 'On', 'Disable')})
 # Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come
-# per gli NPC e il pet ([fn] restituisce NULL se manca: crash). LWF vuoto = recon/tools/empty.lwf
-# (492 byte, un fotogramma, copia dei vecchi NPC vuoti): prima era npc/2000/wait/wait.lwf del pacchetto, che
-# import_jp_coco.py ora sovrascrive con l'animazione JP di Chirithy (audit I-170 del 19-10)
-_EMPTY_LWF = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty.lwf')
-if os.path.exists(_EMPTY_LWF):
-    os.makedirs(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait'), exist_ok=True)
-    shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
-    # Potenziamento del keyblade (POST /keyblade/enhance, server/keyblade-evo.js), LWF assenti da
-    # ogni risorsa ([fn] -> nullo -> crash): risultato con slot nuovo ([fn]:
-    # KeyEvo_Medal_01B col gestore enterFrame di _root, KeyEvo_eff, e sul movie
-    # «medal_blank_slot» medal_blank_slot1-3 = attributo 3/1/2, tabella 0x1825aa0), evoluzione
-    # del design ([fn]: KeyBlade_Evolution, movie «keyblade_previous»/«keyblade», va
-    # avanti quando _root arriva all'ultimo fotogramma) e KeyBlade_StepUp ([fn]).
-    # LWF vuoti: niente animazione ma il flusso prosegue (un fotogramma = subito alla fine).
-    for _p in [['memudemo', 'KeyBlade_Evolution'], ['memudemo', 'KeyBlade_StepUp'],
-               ['keyblade', 'KeyEvo', 'KeyEvo_Medal_01B'], ['keyblade', 'KeyEvo', 'KeyEvo_Medal_02'],
-               ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
-        os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
-        shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
+# per gli NPC e il pet ([fn] restituisce NULL se manca: crash). LWF vuoto = empty_lwf.py
+# (nostro, un fotogramma, scritto in memoria a ogni build: nessun file in git)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import empty_lwf  # noqa: E402
+empty_lwf.write(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
+# Potenziamento del keyblade (POST /keyblade/enhance, server/keyblade-evo.js), LWF assenti da
+# ogni risorsa ([fn] -> nullo -> crash): risultato con slot nuovo ([fn]:
+# KeyEvo_Medal_01B col gestore enterFrame di _root, KeyEvo_eff, e sul movie
+# «medal_blank_slot» medal_blank_slot1-3 = attributo 3/1/2, tabella 0x1825aa0), evoluzione
+# del design ([fn]: KeyBlade_Evolution, movie «keyblade_previous»/«keyblade», va
+# avanti quando _root arriva all'ultimo fotogramma) e KeyBlade_StepUp ([fn]).
+# LWF vuoti: niente animazione ma il flusso prosegue (un fotogramma = subito alla fine).
+for _p in [['memudemo', 'KeyBlade_Evolution'], ['memudemo', 'KeyBlade_StepUp'],
+           ['keyblade', 'KeyEvo', 'KeyEvo_Medal_01B'], ['keyblade', 'KeyEvo', 'KeyEvo_Medal_02'],
+           ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
+    empty_lwf.write(os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
 # Spirit Training (I-082), LWF assenti da ogni risorsa:
 # - lwf/pet/demo/training_SE ([fn]: suono dell'animazione PetInfo_TrainingProduction,
 #   [fn] -> NULL -> addChild(NULL) se manca): vuoto (un fotogramma = subito alla fine);
@@ -1857,11 +1854,8 @@ if os.path.exists(_EMPTY_LWF):
 #   make_pet_training_fx.py, con le texture delle vignette di PetInfo_TrainingProduction.
 #   Prima Get1/2 erano vuoti: nessun trait nell'animazione, TAP SCREEN sul dettaglio della
 #   medaglia e il trait solo dopo il tocco (segnalazione utente 12-10).
-if os.path.exists(_EMPTY_LWF):
-    for _p in [['pet', 'demo', 'training_SE']]:
-        os.makedirs(os.path.join(OUT, 'lwf', *_p), exist_ok=True)
-        shutil.copyfile(_EMPTY_LWF, os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+for _p in [['pet', 'demo', 'training_SE']]:
+    empty_lwf.write(os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
 import make_pet_training_fx  # noqa: E402
 make_pet_training_fx.write_all(OUT, SRC)
 TEXTURES |= set(make_pet_training_fx.TEXTURE_NAMES)

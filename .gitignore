@@ -99,3 +99,6 @@ server/game_data/
 # area di lavoro dei piani (superpowers)
 .superpowers/
 *.stackdump
+
+# generated at build time by recon/tools/empty_lwf.py (never versioned)
+recon/tools/empty.lwf

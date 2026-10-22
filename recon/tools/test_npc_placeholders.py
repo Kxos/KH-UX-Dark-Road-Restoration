@@ -9,6 +9,9 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mapfile  # noqa: E402
 import npc_placeholders as p  # noqa: E402
+import empty_lwf  # noqa: E402
+import make_pet_motions as mpm  # noqa: E402
+import struct  # noqa: E402
 
 errori = []
 
@@ -43,10 +46,21 @@ with tempfile.TemporaryDirectory() as t:
     check(r['npc_ids'] == 6 and r['written'] == [777, 778, 2006, 11018], r)
     check(r['already_generated'] == [9] and r['served'] == [4001] and list(r['stage_errors']) == [3], r)
     f = os.path.join(t, 'lwf', 'character', 'npc', '11018', 'wait', 'wait.lwf')
-    check(open(f, 'rb').read() == open(p.EMPTY, 'rb').read() and os.path.getsize(f) == 492, 'contenuto segnaposto')
+    check(open(f, 'rb').read() == p.empty_lwf.build(), 'contenuto segnaposto')
     check(open(os.path.join(pre, 'wait.lwf'), 'rb').read() == b'gia', 'file presente non toccato')
     check(not os.path.exists(os.path.join(t, 'lwf', 'character', 'npc', '4001')), '4001 servito: niente file')
     check(p.run(t, {'lwf/character/npc/4001/wait/wait.lwf'})['written'] == [], 'idempotente')
+
+# l'LWF vuoto generato: stessa struttura del segnaposto usato finora (2 movie _root/_empty,
+# un fotogramma ciascuno, nessun controllo, nessuna grafica), deterministico
+b = empty_lwf.build()
+check(b[:8] == b'LWF\0\x12\x10\x10\0' and b == empty_lwf.build(), 'intestazione / deterministico')
+sec = {n: struct.unpack_from('<2i', b, 0x20 + 8 * i) for i, n in enumerate(mpm.SECTIONS)}
+counts = {n: c for n, (o, c) in sec.items() if c}
+check(counts == {'stringBytes': 20, 'translate': 1, 'alphaTransform': 1, 'objectData': 2, 'instanceName': 1,
+                 'frame': 2, 'movie': 2, 'movieLinkage': 2, 'stringData': 3}, counts)
+check(struct.unpack_from('<i', b, 0x20 + 8 * len(mpm.SECTIONS))[0] == len(b), 'lunghezza totale')
+check(all(o <= len(b) for o, c in sec.values()), 'offset nel file')
 
 if errori:
     print('ERRORI (%d)' % len(errori))
