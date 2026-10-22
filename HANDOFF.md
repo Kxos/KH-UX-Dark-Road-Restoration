@@ -117,7 +117,8 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
   visto dall'utente). Supernova a 1 colpo come l'originale (rev 160). **Attacchi originali dei nemici** (I-181 chiuso: stati alterati di nuovo, Esuna visto). **Crash nelle 86 stanze generate** (I-182 chiuso: segnaposto BTF da 45 byte, risorse 51). Banco: revisione **166**, **risorse 51** (4,09 GiB, tre pezzi), salvataggio `provetm`
   (prove525 + Trait Medal), `relogin.ps1 -Save provetm -RealNow 2026-12-08T10:00:00Z`. Dopo una modifica al server
   usare sempre `relogin.ps1`: riavviare solo il server fa perdere la sessione al client («6 ERROR :185»).
-- **STATO AL 21-10 SERA — RIPARTIRE DA QUI.** Banco: **risorse 56** installate, **master rev 174**, salvataggio di prova
+- **STATO AL 22-10 — RIPARTIRE DA QUI.** Banco: **risorse 56** (aggiornate con due `-Quick`), **master rev 175** (Warlock Step 2508 senza DR 5061), salvataggio `provefine`, `-RealNow 2026-12-08T10:00:00Z` (login bonus di quel giorno gia' riscosso: per vederlo usare 12-09). Fatto oggi: banco del giro I-194 ok (DR medium visibili ma creature sbagliate); **crash 699-704 risolto** (layout JP `ActMapTimeAttack_TimePanel.json`, 9234af2); README al 22-10. Ricerche I-194: web (nessuna texture; render KHInsider in `tmp\web_hunt`, Roboloid ha un dump piu' completo: email [e-mail removed]), rendering inverso (sconsigliato, `tmp\inverse_render`), ricerca per contenuto (`tmp\deep_scan`: 1.854 texture originali da raid/drama, 1028 completa) -> **integrazione in corso** (agente: regole content-anchor/bracket, enemy_gen, make-enemy-oltre), poi rev 176 + risorse 57 + update-resources. Post Reddit dell'utente: https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/ ; email a Roboloid e thethiny. Famiglie 2001-2024 = personaggi (Hercules, Aladdin, Filippo, Ralph, Lauriam...), molte senza knockback/dead.
+- **STATO AL 21-10 SERA.** Banco: **risorse 56** installate, **master rev 174**, salvataggio di prova
   **`provefine`** (provetm con tutte le 979 missioni finite): `relogin.ps1 -Save provefine -RealNow 2026-12-08T10:00:00Z`.
   Dopo `update-resources.ps1` toccare a mano KHUX START (200,1020) e Download (1220,715); se compare «Launcher3/UI sistema non
   risponde»: «Attendi» (640,649) o reboot + `phaseb-guest.sh` + relogin. Registro dei lavori (non in git):
@@ -137,7 +138,8 @@ otices_recovered_d8.json`). **Sotto-progetto 2c chiuso.** Conto alla rovescia de
   Cobra/Genie, Dragon Maleficent, Darkness, Ephemer&Skuld (boss della 979, video https://www.youtube.com/watch?v=vgIlsu_W7Ns 12:22),
   King Candy, Cy-Bug...; 52 NPC invisibili). Fonti automatiche ESAURITE (dump JP 4.3.1, OBB JP 5.0.1 in
   `external\[archive item]`, IPA JP 4.4.1, WW 5.0.1, 2016, Wayback: niente). Prossimi passi: (1) 20 texture di effetti
-  `show_effect2`/`eff_1004`: usare gli originali UX dell'IPA 4.4.1 (`tmp\jp441esolved_441.tsv` righe exact441-over-501) al posto
+  `show_effect2`/`eff_1004`: usare gli originali UX dell'IPA 4.4.1 (`tmp\jp441
+esolved_441.tsv` righe exact441-over-501) al posto
   delle immagini DR; 18 alias Shadow; bug `tools/segdl.ps1` ($args); (2) boss: abbinamento visivo dei pezzi nei filmati
   `lwf/drama` (candidati in `tmp\enemy_src2`); (3) contatti dell'utente: thethiny (chi ha fatto lo zip JP 4.3.1?),
   Roboloid/Ultimadei (Reddit [handle removed], [handle removed]), ShardofTruth (KH Wiki), appello community (testi pronti nella chat del
