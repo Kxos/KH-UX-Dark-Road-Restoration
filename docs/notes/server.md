@@ -1,7 +1,7 @@
 # Server: protocol, master, save
 
-The server is `server/server.js` (Node, no dependencies), with `server/README.md`. Addresses =
-Ghidra (file + 0x100000). History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
+The server is `server/server.js` (Node, no dependencies), with `server/README.md`.
+History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
 
 <a id="avvio"></a>
 ## Startup and variables
@@ -37,24 +37,24 @@ node server\server.js
 <a id="bootstrap"></a>
 ## Bootstrap and encrypted channel
 
-Host: **`api-s.sp.kingdomhearts.com`** (`json/server_config.json` of the APK). `[fn]` runs the
+Host: **`api-s.sp.kingdomhearts.com`** (`json/server_config.json` of the APK). The client runs the
 chain before action 251 or without a session; the errors stay `:251` for the whole chain.
 
 | # | Request | Accepted response |
 |---|---|---|
-| 1 | `PUT /system/status` `{appSignature}` in clear (`[fn]`) | `{"appStatus":{"mode":"","current":"","server":""}}` |
-| 2 | `GET /login/token?m=0` (`[fn]`) | `{url (complete), nativeToken}` |
-| 3 | `POST <url>?m=0` `{UUID, deviceType:2, nativeToken}` (`[fn]`) | `{nativeSessionId, sharedSecurityKey}`: **the AES key is chosen by the server** |
+| 1 | `PUT /system/status` `{appSignature}` in clear | `{"appStatus":{"mode":"","current":"","server":""}}` |
+| 2 | `GET /login/token?m=0` | `{url (complete), nativeToken}` |
+| 3 | `POST <url>?m=0` `{UUID, deviceType:2, nativeToken}` | `{nativeSessionId, sharedSecurityKey}`: **the AES key is chosen by the server** |
 | 4 | `POST /system/login` encrypted, action 251 | `ret` + `systemLogin {newcomerKhux, newcomerDark}` + `data` (>= 4 Base64 strings of 8/32/32/32 bytes; **`data[3]` = key of the resource indexes**) + 21 links (empty strings are fine) |
-| 5 | `GET /system/coppa` (26) | `ret` + `misc` {"116","804","900".."907": uint}; **116 = 1** (with 0 crash after the master update, `[fn]`) |
+| 5 | `GET /system/coppa` (26) | `ret` + `misc` {"116","804","900".."907": uint}; **116 = 1** (with 0 crash after the master update) |
 
 - Request body from step 4: form `v=<base64>` = AES-256-CBC of the JSON, zero IV, without
   inner Base64; GETs carry it in the query. `/system/login` sends `length`/`digest` of the
   library (server-side integrity check: accepting it is enough).
-- Responses in clear: `RESTClient::onRespond` (`[fn]`) with `application/json` parses
-  directly; `encoded-json`/`octet-stream` decrypts (`[fn]`).
+- Responses in clear: with Content-Type `application/json` the client parses directly;
+  `encoded-json`/`octet-stream` are decrypted.
 - **`maintenance` must be omitted** in all responses (even 0 = maintenance).
-- `ret` envelope (`[fn]`), order and types: `isMaintenance`, `isPhotonMaintenance`,
+- `ret` envelope, order and types: `isMaintenance`, `isPhotonMaintenance`,
   `isKhuxMaintenance`, `isDarkMaintenance`, `sessionTO` bool; `isNewDayPeriod` int; `isRetry` bool;
   `versionApp` string; `versionRes`, `versionResLow`, `versionDat`, `commonVersionDat`,
   `darkVersionRes`, `darkVersionDat`, `functionFlags` int; `serverTime` "YYYY-MM-DD HH:MM:SS". A wrong
@@ -65,13 +65,11 @@ chain before action 251 or without a session; the errors stay `:251` for the who
 <a id="dispatcher"></a>
 ## Response dispatcher and schemas
 
-- `[fn]`: switch on 320 actions (jump table at `0x177e414`, index id-1). A parser that
-  returns null = error 2. Linear disassembly: `khux_linear.py <out> 007c3204 007d1080` (copy in
-  `logs\dispatcher_linear.txt`).
-- Method for a new action: `recon/tools/action_case.py` -> decompile the parsers ->
-  `recon/tools/response_schema.py` -> schema in `recon/out/api_responses_ww431.json` -> response in
-  `server.js` -> test on the bench. `batch_schema.py` (plan/merge) generated
-  `api_responses_auto_ww431.json` (168 routes): the server uses it where a verified schema is missing.
+- The client checks every response per action: a missing mandatory key or a wrong type = error 2.
+- Method for a new action: schema of the response (`recon/tools/action_case.py`, `response_schema.py`)
+  -> `recon/out/api_responses_ww431.json` -> response in `server.js` -> test on the bench.
+  `batch_schema.py` (plan/merge) generated `api_responses_auto_ww431.json` (168 candidate routes): the
+  server uses it where a verified schema is missing.
 - **Ids at 0 in the generated responses = crash** (the client looks for a nonexistent master row, e.g.
   `medalId: 0` in `/user/support`): those routes must be done by hand.
 
@@ -88,17 +86,15 @@ chain before action 251 or without a session; the errors stay `:251` for the who
 -> /pvp/keyblade -> /stage/160310 (108) -> ...
 ```
 
-- `GET /user`: mandatory parsers `userData.user` (`[fn]`), `userPoint` (`[fn]`),
-  `userDetail` (`[fn]`), `stageResumption` (`[fn]`; `resumptionStatus` 0 = nothing),
-  `medalResumption` (`[fn]`), then `userPopUp.isPopBenefitStone`.
+- `GET /user`: mandatory keys `userData.user`, `userPoint`, `userDetail`, `stageResumption`
+  (`resumptionStatus` 0 = nothing), `medalResumption`, then `userPopUp.isPopBenefitStone`.
 - `/user/create` (253): `systemLogin.newcomerKhux` false + `gameLogin.acquirableLoginBonus`.
 - `/tutorial/status` (69/70): `phase`, `popupFlag` (uint64: the server saves the bits and once the tutorial
   is finished reports them all as seen, 2^53-1), `isFinished` (1 from phase 995: with 0 the drop-down menu
   stays inert; with 1 the home creates pet and NPCs, whose missing LWFs are empty LWFs in the pack),
   `acquireTutorialJewel`.
-- `GET /keyblade/subslot` (191, `[fn]`): `subslotMaxNum`, `userKeybladeSubslots[]`
-  (`keybladeSubslotId`, `subslotRate`, `subslots[]`): without it, Equipment crashes
-  (`std::out_of_range` in `[fn]`).
+- `GET /keyblade/subslot` (191): `subslotMaxNum`, `userKeybladeSubslots[]`
+  (`keybladeSubslotId`, `subslotRate`, `subslots[]`): without it, Equipment crashes.
 - After the Prologue: 86 `/party/member/list`, 62 `/user/sphere/reset`, 61 `/user/sphere/check`,
   120 `/raid/reward`, 241 `/user/notice`, 105 `/party/lux_up_time`, 169 `/stage/achievements`, 250
   `/stage/pickup` (`pisckupStages`, sic), 185 `/user/theater/available`, 81 `PUT /party/notice`, 59
@@ -188,7 +184,7 @@ chain before action 251 or without a session; the errors stay `:251` for the who
 - `KHUX_REAL_NOW` together with `KHUX_SERVER_TIME`: the fixed fake date also runs from the shifted instant
   (the offset is computed on `STARTED_AT`, `realNow` includes `REAL_SHIFT`), so the fake date
   turns out shifted by `KHUX_REAL_NOW - avvio` (startup). Use only one at a time.
-- 106 tables (names in the loader at `0x20a0b80`, stride 0x80). Every table = **array of rows**; every
+- 106 tables. Every table = **array of rows**; every
   schema field is mandatory, extra keys ignored; null row = «Master data error».
   Schema: `recon/out/master_types_ww431.json` (1,739 fields, `recon/tools/master_types.py`); the
   server does not serve the tables that do not pass.
@@ -239,7 +235,7 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # 
 <a id="risorse"></a>
 ## Resource protocol
 
-- `[fn]`: master (27) if the revision differs; resources (28 `GET /system/resource`) only
+- The client asks for the master (27) if the revision differs; resources (28 `GET /system/resource`) only
   if the player is not new and has finished the tutorial.
 - Response: `{resource: {mode (0/1 completo/2 incrementale), minVersion, versions: [{data: [{url,
   md5, size}], index: [...]}]}}` (mode 0/1 complete, 2 incremental). The server announces **only the latest version** (`ret.versionRes`
@@ -248,7 +244,7 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # 
   `application/octet-stream`. Installation: `files/r/misc.mp4` (+ `.1` beyond 2 GB) and `r/misc.png`;
   the index must have the records `/`, `md5` (32 characters, encrypted with `data[3]`) and `size`
   (= sum of the data), otherwise «Save error». `recon/tools/resource_index.py` builds it.
-- One-off crash right after an installation (`0x12c1ee0`): on restart it goes through.
+- One-off crash right after an installation: on restart it goes through.
 
 <a id="salvataggio"></a>
 ## Player save (`server/save/player.json`)
@@ -268,13 +264,10 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # 
 <a id="ap"></a>
 ## AP (consumption and recharge)
 
-- `userData.userPoint` (`[fn]`): `ap` -> +0x34, `maxAp` -> +0x3c, `lastApDatetime` -> +0x40
-  of the encrypted object (reader `[fn]`), singleton at +0x118 of the manager (`[fn]`).
-- **Displayed AP** `[fn]` (seconds to the next point in `*param_2`): if `ap < maxAp` and
-  `lastApDatetime` is past (`[fn]` <= 0), AP = `ap + trascorsi / (misc 101 x 60)` (elapsed), at
-  most `maxAp`; with `ap >= maxAp` it shows `ap` (even beyond the maximum) and does not recharge.
-  `[fn]` = seconds to full; `[fn]` = AP full (`maxAp <= AP`).
-  **misc 101 = 3: 1 AP every 3 minutes** (from the code, not from online sources).
+- `userData.userPoint`: `ap`, `maxAp`, `lastApDatetime`.
+- **Displayed AP** (client): if `ap < maxAp` and `lastApDatetime` is past, AP = `ap + elapsed / (misc 101
+  x 60)`, at most `maxAp`; with `ap >= maxAp` it shows `ap` (even beyond the maximum) and does not
+  recharge. **misc 101 = 3: 1 AP every 3 minutes** (from the client, not from online sources).
 - `maxAp` = column `ap` of the `player` table at the Lux rank (16 at level 1, 160 from 200), like
   `maxDeckCost` from `cost`, + `sphereBonus.ap` (before: fixed 10 + bonus).
 - Server: `player.ap` + `player.apTime` (real ms from which the recharge counts; `lastApDatetime` =
@@ -284,11 +277,11 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # 
 - `POST /stage/start` (body `stageId`, ...): deducts `useAp` of the `stage` row (Quest 130 = 10).
   `/stage/retire` and `/stage/continue` do not refund.
 - Level up (Lux rank going up in `/stage/clear`): AP = previous AP + new `maxAp` (beyond the maximum).
-- `POST /shop/ap/recover` (action 72, constructor `[fn]`, empty body; popup
-  `PopupNormal_AP_Recovery` in `[fn]`, price in the text = **misc 112 = 100 jewels**): -100
-  `freeStone`, AP + `maxAp`; response `userData.userPoint` + `userKeyblades`.
+- `POST /shop/ap/recover` (action 72, empty body; popup `PopupNormal_AP_Recovery`, price in the text =
+  **misc 112 = 100 jewels**): -100 `freeStone`, AP + `maxAp`; response `userData.userPoint` +
+  `userKeyblades`.
 - To be verified on the bench: HUD after the start (e.g. 18 -> 8), the timer of the balloon
-  `BalloonNomal_AP_Recovery` (`[fn]`), the recovery with jewels (full amount added or brought to the
+  `BalloonNomal_AP_Recovery`, the recovery with jewels (full amount added or brought to the
   maximum? hypothesis: added) and the AP of the level up (hypothesis, not confirmed by sources).
 
 <a id="api-funzioni"></a>
@@ -302,12 +295,11 @@ The screens have their own APIs, described in the area files: medals
 <a id="eventi"></a>
 ## Events (`GET /stage/event`, action 109)
 
-- «Events» button of the Story list (unlocked after Quest 14). Dispatcher branch at `0x7c5e98`:
-  parser `[fn]` (result at +0x278 of the manager, read by `[fn]`), then
-  `eventCategory` (int, **optional**, at the root -> +0x71).
+- «Events» button of the Story list (unlocked after Quest 14). Response: `events[]`, `highScoreRank`,
+  then `eventCategory` (int, **optional**, at the root).
 - Root: `events[]` (array, mandatory) and `highScoreRank` (uint, mandatory). Without events:
   `{"events": [], "highScoreRank": 0}` -> the client shows «No available events.» (Txt_NoEvent).
-- Element (`[fn]` -> `[fn]`), all mandatory:
+- Element, all mandatory:
   `stages[]` (like `stories[]` of `/stage/160310`: `stageId` int, `useAp` int, `score` uint64,
   `playStatus` int, `clearMissionIds` int[]), `eventStageId` int, `showIcon` int, `bannerUrl` string,
   `eventType` int, `status` int (2 = shows Txt_Description instead of the time), `endTime`
@@ -330,66 +322,62 @@ The screens have their own APIs, described in the area files: medals
 - Type 13 rewards in the tables: first clear (`clearGetItemType`: stage 1110 Quest 14 ->
   Treasure Trove 2000, then 1210, 1310, ...) and objectives (`submissionRewardType`). Earlier saves
   receive them once at server startup (block at the end of `server.js`).
-- Complete lists in every response: `userKeyblades` (`[fn]`/`[fn]`; `category`
+- Complete lists in every response: `userKeyblades` (`category`
   from the table: Starlight 1, Treasure Trove 201), `userDecks` (one per keyblade),
   `userKeybladeSubslots` (one per keyblade: without it, Equipment crashes).
-- `POST /user/keyblade/update/170516` (action 45, body from `[fn]`): `userKeyblades`
+- `POST /user/keyblade/update/170516` (action 45): `userKeyblades`
   [{userKeybladeId, userDeckId, isFavorite}] + `userDecks` [{userDeckId, medals[], petBaseSlotMedal}]:
   the server saves the decks and the favorite and replies `userKeyblades` + `userDecks`. Before, it ended up in the
   automatic schema (empty lists). To see on the bench the real body (log `[keyblade] deck`).
 - **3 decks per keyblade** (20-10; update 1.1.2 of 01/09/2016 «Save 3 decks per Keyblade», unlocked by a keyblade at
   +20; user's image and sources in `reference\keyblade_decks\`, research in `D:\Progetto_Restauro_KH_UX\tmp\deckset\RESEARCH.md`):
-  the client counts the decks of a keyblade from the `userDecks` with its `userKeybladeId` (array order, [fn]) and
+  the client counts the decks of a keyblade from the `userDecks` with its `userKeybladeId` (array order) and
   shows the buttons 1/2/3 only with more than one deck; active deck = `userKeyblades[].userDeckId`, changed and saved with
   action 45. Server: deck 1 = `userKeybladeId` (player.deck / keybladeDecks as before), deck 2/3 = n x 1,000,000 + id in
   `player.keybladeDeckSets[kb] = {active, 2, 3}`; 6th pet slot per userDeckId; Unequip also from 2/3. Test
   `test-deck-sets.js`. Bench 20-10: buttons in Equipment, deck 2 empty, return to deck 1 intact. To be tried: fill
   deck 2 and fight with it; `userPoint` (STR/DEF of the home) stays that of Starlight's deck 1 as before.
-  Optimize popup in «Select a Keyblade» ([fn] -> [fn]): the deck number is the texture
+  Optimize popup in «Select a Keyblade»: the deck number is the texture
   `img/ui/Deck_But%02d_On.png`, missing from all resources (WW, JP, 2016): the layout's `Deck_But01_On` remained, always
   «1» (bench 20-10, deck 2). Served as copies of the buttons (`originals.tsv` section 35); Optimize itself already used the
   active deck (deck 3 filled on the bench).
 - `/stage/start` saves `userKeybladeId` (`player.currentUserKeybladeId`): the gauge of `/stage/clear`
   goes into that keyblade. Unequip (`/user/medal/remove`) removes the medal from all decks.
-- Images: the popup of the obtained keyblade (`BattleResult_KB`, `[fn]`) and the reward icons
-  (`[fn]`, type 13) load `img/keyBlade/KeyBlade_%06d.png` with the `displayId` of the
-  keyblade table (field +0xcc): missing from all resources (`Deck_KeyBlade_0701_05` =
+- Images: the popup of the obtained keyblade (`BattleResult_KB`) and the reward icons
+  (type 13) load `img/keyBlade/KeyBlade_%06d.png` with the `displayId` of the
+  keyblade table: missing from all resources (`Deck_KeyBlade_0701_05` =
   Olympia remained). `recon/tools/make_keyblade_images.py` generates them (64) from the bitmap of the LWF
   `lwf/avatar/keyblade/keyblade_%04d_%02d` (displayId/100, displayId%100), in the pose of
   Deck_KeyBlade_0701_05, palette BTF; `build-resources.ps1` (also `-Quick`). Equipment and the
   keyblade choice use the LWFs, which are all there. References: `reference\keyblades\`.
 - Optimize (I-051, bench 11 October): `POST /user/keyblade/update/170516` with empty `userDecks` and
-  `isFavorite` 1 on the chosen keyblade. The body is built by `[fn]`: it sends all the keyblades
-  (`isFavorite` = the selected keyblade, `+0x8cc`) and only the changed decks (mask `+0x4d8`):
-  empty because Optimize had not saved anything yet. The crash afterwards (pc `0x8cb92c`, ARM `kbopt`) is
-  in the medal cell `[fn]` (DeckEdit_RevolverMedal_ver330, via `[fn]`): if
-  the medal attribute (medal row `+0x494`) is that of the slot (`attribute[]` of the keyblade,
-  4 = any) it creates `lwf/medal/medaltype/MedalType%d` (in cell modes 2/4/5/6/7
-  `MedalType01`); only MedalType3 (Magic) served, hence null LWF node. Starlight has slots 3/4/4
+  `isFavorite` 1 on the chosen keyblade: the client sends all the keyblades and only the changed decks
+  (empty because Optimize had not saved anything yet). The crash afterwards was in the medal cell of
+  `DeckEdit_RevolverMedal_ver330`: when the medal attribute matches the slot (`attribute[]` of the
+  keyblade, 4 = any) the client loads `lwf/medal/medaltype/MedalType%d` (in some cell modes
+  `MedalType01`); only MedalType3 (Magic) was served, hence a null LWF. Starlight has slots 3/4/4
   (never seen), Treasure Trove 4/4/1 (Power). `recon/tools/make_medaltype_lwf.py` writes MedalType1
   (red), MedalType2 (green), MedalType01 as recolored copies of MedalType3, with the textures both
   under the original name and as `<nome LWF>_<hex>.png`.
 - Optimize, second part (I-051): no crash but empty deck. The client uses the length of
-  `deckMedals` as the number of slots: Optimize (`[fn]` -> `[fn]`) fills only those
-  and `[fn]` marks the deck as changed (mask `+0x4d8`, hence sent in `userDecks`)
-  comparing only those entries. With `[]` nothing changed. An all-empty deck is now sent as
+  `deckMedals` as the number of slots: Optimize fills only those and sends in `userDecks` only the decks
+  whose entries changed. With `[]` nothing changed. An all-empty deck is now sent as
   `[0, 0, 0]` (`validConsist` of the keyblade row); the 0s of a partly full deck stay removed
   (battle, [battaglia.md](battaglia.md#slot-vuoto)): on those decks Optimize considers only the
   full slots.
 - Optimize like the original (I-075, bench 12 October): the button is in the «Select a
   Keyblade.» screen before the quest (`Button_Auto` of `StartDeckEdit2_Button_ToDeck_ver260`, popup
-  «Optimize Medals for <keyblade>?»). The algorithm is the client's: `[fn]` gives a value to every
-  medal (strength + trait, slot multiplier according to the attribute accord +0x114 / dlaccord
-  +0x128, guilt, quest bonus), `[fn]` fills the slots from the highest multiplier,
+  «Optimize Medals for <keyblade>?»). The algorithm is the client's: it gives a value to every
+  medal (strength + trait, slot multiplier according to the attribute accord / dlaccord, guilt, quest
+  bonus) and fills the slots from the highest multiplier,
   within the cost; the pet slot only with the pet. The number of slots = length of `deckMedals`: with the
   compact decks it filled only the slots already full (2/5). Now `sentKeybladeDeck` sends a 0 per
   empty slot up to the unlocked slots (Stock Medal, [battaglia.md](battaglia.md#slot-vuoto)); the
   client itself sends 0 in the slots that stay empty (`[318,0,317,0,456]`, cost 62/62).
   Player sources in `reference\optimize`.
-- Optimize, third part (I-051): with the slots `[0,0,0]` Optimize evaluates every owned medal
-  (`[fn]` -> `[fn]`): it reads the burst row of the medal's `burstId` (medal row
-  `+0x4fc`, burst table = id 0x26 of `[fn]`) without looking at `validBurst`. The 42
-  support medals (Dewey, Fairy Godmother, ...) have `burstId` 0 and no row: crash at 0x10.
+- Optimize, third part (I-051): with the slots `[0,0,0]` Optimize evaluates every owned medal and
+  reads the burst row of the medal's `burstId` without looking at `validBurst`. The 42
+  support medals (Dewey, Fairy Godmother, ...) have `burstId` 0 and no row: crash.
   `make-game-tables.js` adds an empty burst row 0 (all fields at 0; also added by hand to
   `master_data/burst.json`, master revision +1). Side effect to keep an eye on: with
   the deck `[0,0,0]` the box shows STR/DEF 150/150 (the 0s count as the fake medal) and a
@@ -397,14 +385,14 @@ The screens have their own APIs, described in the area files: medals
   `lwf/medal/medaldeck/MedalDeck_Type%d` (and `_Type%d1`, `_Type01`) for the attribute of the medal
   in the slot and `img/carouselDeck/Deck%03d.png`, `DeckButton_%03d.png`, `DeckMedalNumUI_%03d.png`
   (`_pvp_`) with displayId/100 of the keyblade. Only Type3 and 001 served: with the Optimize medals
-  (Power) in the Treasure Trove deck crash at 0x8d00e0 (fault 0x0). `make_keyblade_decks.py`
+  (Power) in the Treasure Trove deck crash. `make_keyblade_decks.py`
   writes the copies (decks recolored on the hue of the keyblade art, palette; Power glows
   red, Speed green). Generated pack at ~15.6 MB out of 16 MiB of reserve: the next big
-  addition requires a complete version with a higher reserve.- Pose of the keyblade in the menu boxes (I-052): `[fn]` (called by `[fn]`,
-  «Select a Keyblade», mode 3, and by `[fn]`) loads the LWF `keyblade_%04d_%02d` (if missing,
-  `img/keyBlade/KeyBlade_%06d.png`) and takes rotation, scale and position from
-  `rule/keyblade_rule.bin` (`[fn]`: records of 0x44 bytes, keybladeId + 4 modes x (rot x10000,
-  scale x10000, x, y); first the keybladeId, then the series id/1000*1000, then 1000). ofsX/ofsY of the
+  addition requires a complete version with a higher reserve.
+- Pose of the keyblade in the menu boxes (I-052): «Select a Keyblade» and the other menus load the LWF
+  `keyblade_%04d_%02d` (if missing, `img/keyBlade/KeyBlade_%06d.png`) and take rotation, scale and position
+  from `rule/keyblade_rule.bin` (records of 68 bytes: keybladeId + 4 modes x (rot x10000, scale x10000,
+  x, y); looked up by keybladeId, then by series id/1000*1000, then 1000). ofsX/ofsY of the
   keyblade table have nothing to do with it (tried on the bench, rev. 83/84). The served file has only 1000..11000
   and with the 5.0.1 LWFs Treasure Trove falls 17 units to the right. `recon/tools/keyblade_rule.py`
   computes the center of the art of every LWF (fragment -> translation -> matrices) and writes one row per
@@ -424,50 +412,48 @@ The screens have their own APIs, described in the area files: medals
   Breaker +35: the 5.0.1 ones kept). Removed the Trophy NI/CS/CK of Bad Guy Breaker (missing from
   `material`). Beyond +35 (+35.1..+60 of the last version, with the passives) no: `lv` is an integer, 5.0.1
   ends at +35.
-- `POST /keyblade/enhance` (action 54, «Strengthen»; body `[fn]` = `{userKeybladeId}`;
-  called by `[fn]`/`[fn]`): `server/keyblade-evo.js` removes the materials of the row,
+- `POST /keyblade/enhance` (action 54, «Strengthen»; body `{userKeybladeId}`):
+  `server/keyblade-evo.js` removes the materials of the row,
   moves to `evolveId` (Starlight in `player.starlightKeybladeId`, the others in `player.keyblades`),
-  no munny. Response (branch 54): `userKeyblades`, `userDecks`, `userMaterials`, `userTitles`.
+  no munny. Response: `userKeyblades`, `userDecks`, `userMaterials`, `userTitles`.
   Missing materials or maximum level: no change (log `[keyblade] enhance`);
   `KHUX_KB_FREE=1` = without materials. Afterwards, the client sends `PUT /passive/list` (249, `isList` 0 ->
   `newPassiveSettingIds`).
-- After the response `[fn]` compares the `displayId` (+0xcc) before and after: equal ->
-  result `[fn]` (`DeckEdit_KBStrength_Result_ver210`, `lwf/result/KeyEvo_LevelUp`, arrows
-  slot by slot on accord +0x114 / dlaccord +0x128); different -> `lwf/memudemo/KeyBlade_Evolution`
-  (`[fn]`: movies `keyblade_previous`/`keyblade` load the keyblade's LWFs, it advances when
-  `_root` reaches the last frame) and then the result. New slot: `KeyEvo_Medal_01B`,
-  `KeyEvo_eff`, `medal_blank_slot1-3` (attribute 3/1/2) in `lwf/keyblade/KeyEvo/`. None of these
-  LWFs exists in the resources (null = crash): `make_layouts.py` puts empty LWFs (the animation is skipped).
-- Sub-slots: `GET /keyblade/subslot` (191) and `POST /keyblade/subslot` (192, body `[fn]`:
+- After the response the client compares the keyblade's `displayId` before and after: equal ->
+  result `DeckEdit_KBStrength_Result_ver210` (`lwf/result/KeyEvo_LevelUp`, arrows slot by slot on accord
+  / dlaccord); different -> `lwf/memudemo/KeyBlade_Evolution` (movies `keyblade_previous`/`keyblade`
+  load the keyblade's LWFs, it advances when `_root` reaches the last frame) and then the result. New
+  slot: `KeyEvo_Medal_01B`, `KeyEvo_eff`, `medal_blank_slot1-3` (attribute 3/1/2) in `lwf/keyblade/KeyEvo/`.
+  None of these LWFs exists in the resources (null = crash): `make_layouts.py` puts empty LWFs (the
+  animation is skipped).
+- Sub-slots: `GET /keyblade/subslot` (191) and `POST /keyblade/subslot` (192, body
   `{updateKeybladeSubslots: [{keybladeSubslotId, subslotMedals: {"<n>": userMedalId}}]}`; response
   `subslotMaxNum`, `userKeybladeSubslots`, `userKeyblades`). Master `keybladeSubslot` (empty in
   5.0.1) regenerated: 120 sub-slots per series `{subslotId, category, slotNumber, attribute,
   darklight}` from the khuxwiki tree; `subslots[]` of every keyblade = 120 entries (0 = empty),
-  Equipment (`[fn]`) writes «Subslot n/120» (like the Japanese screenshot).
+  Equipment writes «Subslot n/120» (like the Japanese screenshot).
   `subslotRate` = sum of the per-tier bonuses (`guiltValue`) of the medals: 1..10 = 1, 2, 5, 8, 12, 16,
   20, 25, 30, 35 thousandths (user's guide p. 11, khuxwiki for 9-10); `userKeyblades[].subslotRate`
   = `subslotRate` of the row (16000/12000/10000 = x1.6/1.2/1.0 for 1/2/3 attributes). Texts:
-  `Txt_SubSlot_Rate` «+%01.3f» = (k * subslotRate / 100) / 1000 (`[fn]`, k to be verified),
+  `Txt_SubSlot_Rate` «+%01.3f» = (k * subslotRate / 100) / 1000 (k to be verified),
   `Txt_KeyBlade_Lv_Rate_Label` = subslotRate of the row /10000. `KHUX_SUBSLOT_MAX=0` turns off the
   sub-slots, `KHUX_SUBSLOT_SCALE` changes the unit.
-- Sub-slot screen (I-066, crash on tapping «Subslot»): `[fn]` -> `[fn]`
-  (SceneDeckEdit::openSubslotPanel) loads `DeckEditSubSlotScene_ver340` (missing; only
-  `_ver260`/`_ver310` served). It searches from the root (recursive): `DeckEdit_SubSlot_Select_Medal` (node) >
-  `Win_under` > `Scroll_Area` (creates MiniMedalScrollView there), `DeckEdit_SubSlot_Set_Medal` (node) >
-  `Win_under` > `Scroll_Area` (creates KeybladeSubslotMedalView there), `SubSlot_UpArrowEff` (armature
-  node), `BestButton` > `Txt_Best` (106180100 «Optimize»), `Txt_NotExist` (106140376),
+- Sub-slot screen (I-066, crash on tapping «Subslot»): the client loads `DeckEditSubSlotScene_ver340`
+  (missing; only `_ver260`/`_ver310` served) and looks up these widgets from the root (recursive):
+  `DeckEdit_SubSlot_Select_Medal` (node) > `Win_under` > `Scroll_Area` (medal list),
+  `DeckEdit_SubSlot_Set_Medal` (node) > `Win_under` > `Scroll_Area` (sub-slot list), `SubSlot_UpArrowEff`
+  (armature node), `BestButton` > `Txt_Best` (106180100 «Optimize»), `Txt_NotExist` (106140376),
   `Close_Button`, `Panel_34` > `Txt_Subslot_Caution_Label` (106140377); in the Set_Medal
   `Txt_KeyBlade_Label`, `Txt_SubSlot_Rate` (106140371), `Txt_SubSlot_Num` (106140374),
-  `Txt_KeyBlade_Lv_Rate_Label` («x%01.1f»). At every change `[fn]` writes
+  `Txt_KeyBlade_Lv_Rate_Label` («x%01.1f»). At every change the client writes
   `Txt_SubSlot_Rate_Label` («+%01.3f») and `Txt_SubSlot_Num_Label` (106140352) in the Set_Medal, creates
   the armature `EFFECT` in Win_under > `panel` when the multiplier goes up, makes
-  `Panel_34` blink if the slots are not in order. Cell `DeckEdit_SubSlotMedal_ver260` 164x154
-  (`[fn]`/`[fn]`/`[fn]`): `Medale`, `SubSlot_Route_LR/LR1/LR2/UD/UD1/UD2`,
-  `MedalBase` (ImageView, `img/ui/Subslot_MedalSlot%03d.png` with the keyblade's category = 1,
-  201 ... 1901, offset 0xd0 of the master), `Slot`, `SlotNum` (TextAtlas), `InfoPanel`, `TYpe`
-  (`img/ui/Deck_Medal%d`), `Icon_Type`, `Icon_Type_1` (`img/ui/Deck_Mark_*`), `Medal_S`,
-  `Txt_Mag_Label`, `Guilt_Icon`, `Cursor` (creates the armature `Z_SpCursor` there); `MatchSlotLWF`
-  optional. The revolver in sub-slot mode (DeckRevolverView, 0x8c9f0c) clones
+  `Panel_34` blink if the slots are not in order. Cell `DeckEdit_SubSlotMedal_ver260` 164x154:
+  `Medale`, `SubSlot_Route_LR/LR1/LR2/UD/UD1/UD2`, `MedalBase` (ImageView,
+  `img/ui/Subslot_MedalSlot%03d.png` with the keyblade's category = 1, 201 ... 1901), `Slot`, `SlotNum`
+  (TextAtlas), `InfoPanel`, `TYpe` (`img/ui/Deck_Medal%d`), `Icon_Type`, `Icon_Type_1`
+  (`img/ui/Deck_Mark_*`), `Medal_S`, `Txt_Mag_Label`, `Guilt_Icon`, `Cursor` (armature `Z_SpCursor`);
+  `MatchSlotLWF` optional. In sub-slot mode the medal revolver clones
   `DeckEdit_SubSlot_MedalInfo_ver260` into `Area_MedalInfo` with the name `SubslotInfoPanel` (`Icon_Type`,
   `Txt_Mag_Label`). Layouts generated in `make_layouts.py` (11 October, look from
   `reference\subslot`): scene ver340 = original ver310 with a new `DeckEdit_SubSlot_Set_Medal_ver340`,
@@ -476,53 +462,45 @@ The screens have their own APIs, described in the area files: medals
   `DeckEdit_SubSlot_MedalInfo_ver260`; textures in `make_textures.py`: `Subslot_MedalSlot%03d` (16
   categories), `Subslot_Route`, copies in img/ui of `Deck_Mark_Uplight/Reverse`, `Deck_Medal1` and
   `Deck_Medal2` (green, from 1). To be tried on the bench.
-- Sub-slots, look and dragging (bench sb_2..sb_5, 11 October). «SUBSLOT MEDALS» list:
-  MiniMedalScrollView = MedalScrollView (`[fn]`, vtable like Swap Medals) with fixed cells
-  120x164 (`[fn]`), columns = width of `Scroll_Area` / 120 (400 -> 3, like the 380 of
-  ver260); `+0xb26` = 1 (sub-slot) and mode 10 (`[fn]`). Every cell = small DeckRevolverView
-  (`[fn](1)` -> `[fn]`: original `DeckEdit_SmallMedal_ver330`, `Medal` = Medal_S
-  190x190 natural, plus `DeckEdit_Deck_MedalInfo_ver260` in `Area_MedalInfo`); mode 10 of
-  `[fn]` puts `img/ui/Minfo_Pet01.png` (missing) in `Icon_1` and «×%01.3f» (106140350) in
-  `Txt_1`, then adds `SubslotInfoPanel` («+%01.3f», 106140372, tier in `Guilt_Icon`, attribute in
-  `Icon_Type`): the panel must cover all of `Area_MedalInfo`, hence the opaque plate
-  `Subslot_InfoPlate` (sb_2 «×+0.030», tier cut at x -8). Size of the medals and
-  overlap of the wings as in subslot_JP_1 (same cell, cannot be changed without code). Slots:
-  `[fn]` loads the Medal_S (`[fn]`) into `Medal_S` without touching its size (layout:
-  190x190 ignoreSize, before 89x109 stretched). Dragging slot -> list (`[fn]`): copy
-  of the cell with `[fn](0)` (hides Route, MedalBase, Slot, SlotNum, InfoPanel, TYpe),
-  medal in `Medal_S`, scale 1.5, added to the layer of `[fn]`, but `Medal_S` is not
-  made visible: it was hidden in the layout (sb_4). List -> slot (`[fn]`): copy
-  `[fn](0)` = original `DeckEdit_RevolverMedal_ver330`, opacity 200; it starts only with a
-  first horizontal movement (>= 30) on a non-veiled medal, a vertical one (>= 20) scrolls
-  the list. `Panel_34` (warning): `[fn]` only makes it appear/fade, position
-  from the layout, now on the «Equipped Slots» bar. Client rules (`[fn]`,
-  `[fn]`): «Equipped Slots» = consecutive full slots from the first, the multiplier adds the
-  bonuses only up to the first empty slot: with slot 1 empty 0/120 and +0.000 are correct.
+- Sub-slots, look and dragging (bench sb_2..sb_5, 11 October). The «SUBSLOT MEDALS» list has fixed cells
+  120x164, columns = width of `Scroll_Area` / 120 (400 -> 3, like the 380 of ver260). Every cell uses the
+  original `DeckEdit_SmallMedal_ver330` (`Medal` = Medal_S 190x190 natural, plus
+  `DeckEdit_Deck_MedalInfo_ver260` in `Area_MedalInfo`); the client puts `img/ui/Minfo_Pet01.png`
+  (missing) in `Icon_1` and «×%01.3f» (106140350) in `Txt_1`, then adds `SubslotInfoPanel` («+%01.3f»,
+  106140372, tier in `Guilt_Icon`, attribute in `Icon_Type`): the panel must cover all of
+  `Area_MedalInfo`, hence the opaque plate `Subslot_InfoPlate` (sb_2 «×+0.030», tier cut at x -8). Size of
+  the medals and overlap of the wings as in subslot_JP_1 (same cell, fixed by the client). Slots: the
+  client loads the medal into `Medal_S` without touching its size (layout: 190x190 ignoreSize, before
+  89x109 stretched). Dragging slot -> list: the dragged copy hides Route, MedalBase, Slot, SlotNum,
+  InfoPanel, TYpe and shows the medal in `Medal_S` at scale 1.5, but does not make `Medal_S` visible: it
+  was hidden in the layout (sb_4). List -> slot: copy of the original `DeckEdit_RevolverMedal_ver330`,
+  opacity 200; it starts only with a first horizontal movement (>= 30) on a non-veiled medal, a vertical
+  one (>= 20) scrolls the list. `Panel_34` (warning): the client only makes it appear/fade, position
+  from the layout, now on the «Equipped Slots» bar. Client rules: «Equipped Slots» = consecutive full
+  slots from the first, the multiplier adds the bonuses only up to the first empty slot: with slot 1
+  empty 0/120 and +0.000 are correct.
 <a id="passive"></a>
-- Passive Effects of **Equipment** (I-065, bench 12 October): it is not the PassiveDialog but the web popup `Information2_Base` (`[fn]`/`[fn]`, title 106220508) on the `passiveSettingList` URL of the login (`[fn]` -> singleton +0x390 +0x228; `[fn]` adds a query). The server now sends `http://api-s.sp.kingdomhearts.com/web/passive` (HTML page of `respondPassivePage`): over https the WebView (Chromium) rejects the certificate that the native client accepts (`tls:errore CERTIFICATE_UNKNOWN`), with the transparent background nothing is visible. The PassiveDialog (original `Passive_Base_ver341`, `Txt_None` 106220507 visible if `passiveSettingIds` is empty) is opened by `[fn]`, callback of the `Button_Passive` button of the **Profile** (lambda `[fn]`, created by `[fn]`; I-086, [home_profilo](home_profilo.md#profilo)); the part below on `PUT /passive/list` concerns that one (where it says Equipment read Profile).
-- Passive Effects (I-065). The Equipment button sends `PUT /passive/list` (249, body
-  `[fn]`, on the bench only `{isList}`), and the callback `[fn]` opens
-  `PassiveDialog::open` (`[fn]`) only if the response is valid. Branch 249 (0x7c670c) reads
-  `isList` and then `[fn]`: with `isList` 1 it reads `passiveSettingIds`, with 0 it reads
-  `newPassiveSettingIds` (uint[]). If the array is missing the parser returns null, the branch fails and
-  nothing opens: that was the defect (before, the server replied only `ret`). With `isList` 1 it
-  also reads `userId`: if missing the list is one's own (singleton +0xab8), if present it belongs to another
-  player (+0xad8). `isList` 0 puts the new ones in +0xac8 and adds them to +0xab8 (`[fn]`).
-  The `PassiveResult` popup (`[fn]`) shows name and `description`.
+- Passive Effects of **Equipment** (I-065, bench 12 October): it is not the passive dialog but the web popup `Information2_Base` (title 106220508) on the `passiveSettingList` URL of the login (the client adds a query). The server now sends `http://api-s.sp.kingdomhearts.com/web/passive` (HTML page of `respondPassivePage`): over https the WebView (Chromium) rejects the certificate that the native client accepts (`tls:errore CERTIFICATE_UNKNOWN`), with the transparent background nothing is visible. The passive dialog (original `Passive_Base_ver341`, `Txt_None` 106220507 visible if `passiveSettingIds` is empty) is opened by the `Button_Passive` button of the **Profile** (I-086, [home_profilo](home_profilo.md#profilo)); the part below on `PUT /passive/list` concerns that one (where it says Equipment read Profile).
+- Passive Effects (I-065). The Equipment button sends `PUT /passive/list` (249, on the bench only
+  `{isList}`), and the client opens the passive dialog only if the response is valid. Response: `isList`,
+  then with `isList` 1 `passiveSettingIds`, with 0 `newPassiveSettingIds` (uint[]). If the array is
+  missing the response is rejected and nothing opens: that was the defect (before, the server replied
+  only `ret`). With `isList` 1 the client also reads `userId`: if missing the list is one's own, if
+  present it belongs to another player. With `isList` 0 the new ones are added to one's own list.
+  The `PassiveResult` popup shows name and `description`.
   - Screen: `Passive_Base_ver341` with `Scroll_Area`, `Txt_None`, `Total_Area`, `Total_Score_01..15`,
     `Panel_TotalSwitch`, `Button_PassiveInfo` (opens the `passiveSettingList` URL of /system/url);
     cells `Passive_Panel` (`Txt_Passive_Label` = `name` of the passive row, `Icon_New`), sorted by
     `sortId`. With the empty list «There are no passive effects.» (106220507) appears, as
-    in the original. The Total box (`[fn]`) shows HP, SP ATK Gauge, STR and DEF
-    (`[fn]`) and the STR per medal type (categories of `[fn]`: U, R, P/S/M,
-    Upright P/S/M, Reversed P/S/M; texts 106230203..217). All the layouts are already in the
+    in the original. The Total box shows HP, SP ATK Gauge, STR and DEF and the STR per medal type
+    (U, R, P/S/M, Upright P/S/M, Reversed P/S/M; texts 106230203..217). All the layouts are already in the
     served resources: nothing to add to `make_layouts.py`.
   - Masters (empty in 5.0.1), generated by `server/make-passives.js` (after
     `make-keyblade-levels.js`; reduced copy in `server/tables/passives.json`).
-    - `passive` (`[fn]`): `passiveId, name, validPassive, type[], value[], hp,
+    - `passive`: `passiveId, name, validPassive, type[], value[], hp,
       abilitygauge, attack, defense, attribute`. type 3 = medal filter, value = mask
       1 P, 2 S, 4 M, 8 Upright, 16 Reversed. Without type the passive applies to everything.
-    - `passiveSetting` (`[fn]`): `passiveSettingId, sortId, passiveConditions,
+    - `passiveSetting`: `passiveSettingId, sortId, passiveConditions,
       passiveValue1/2, description, passiveId`.
     - Data from the khuxwiki «Passives» (`reference\passives\`): Lux LV 350..999 (520 rows) and
       keyblade +35..+60 (791 rows, 23 distinct passives).
@@ -534,32 +512,28 @@ The screens have their own APIs, described in the area files: medals
     with 0 only those not yet communicated (`player.passiveSettingIds`), so the client does not
     add them twice. Only the +35 passives can be reached (one per keyblade, for example
     Starlight +35 «Upright S Medal STR +50») and the Lux ones from LV 350: beyond +35 the keyblade table
-    does not go. The passives apply in battle on the client side (`[fn]` per medal). To be tried
+    does not go. The passives apply in battle on the client side (per medal). To be tried
     on the bench.
 <a id="colosseo"></a>
 ## Colosseum
 
-- The Quests menu (`[fn]`) after Quest 130 writes the ui text 102850008 into `Txt_Title4`:
-  it was missing everywhere, crash at 0x8 (now in `make_layouts.py` TEXTS).
-- The tap on a tile calls `[fn](scena, 0x10)` -> `GET /multi/status` (action 158,
-  `[fn]`, parser `[fn]`; endpoint of another agent) -> `[fn](scena, 10)`.
+- The Quests menu after Quest 130 writes the ui text 102850008 into `Txt_Title4`:
+  it was missing everywhere, crash (now in `make_layouts.py` TEXTS).
+- The tap on a tile sends `GET /multi/status` (action 158, see [union_cross.md](union_cross.md)).
   To be verified which tile (Union Cross or Colosseum) opens which mode.
-- `GET /colosseum` (action 124, parser `[fn]`): `colosseumInfo {colosseumStageId int,
-  status int}`, `colosseumStages[]` (element `[fn]`: `stageId`, `useAp`, `rank`,
+- `GET /colosseum` (action 124): `colosseumInfo {colosseumStageId int,
+  status int}`, `colosseumStages[]` (element: `stageId`, `useAp`, `rank`,
   `stageCount`, all int), `colosseumRank` uint, `userColosseum {userRank, userStageCount,
   userStageTotalCount}` int. Other actions: 125 `/colosseum/reward/list`, 126 start, 127 retire,
   128 clear, 139/140/180 rankings.
-- Missing layouts: `AdventureTop2_Colosseum_Button` (`[fn]`: ColosseumInfo, Button_Start/
+- Missing layouts: `AdventureTop2_Colosseum_Button` (widgets ColosseumInfo, Button_Start/
   Txt_Start, ImageButton_QuestStart, Button_Ranking/Txt, Button_Reward, Button_Colosseum_Board/
-  Txt_Description; texts 0x6222151-153, 0x6283bb5-7), `AdventureTop2_Colosseum_Panel`
-  (`[fn]`), `_Target` (`[fn]`), `Colosseum_MainPanel` (`[fn]`),
+  Txt_Description), `AdventureTop2_Colosseum_Panel`, `_Target`, `Colosseum_MainPanel`,
   `BattleResultColosseumScene`, `RankingColosseumScene_ver1301`.
-- Path verified in the code: tile of the Quests menu (`[fn]`) -> popup
-  `PvP_SelectWindow` (`[fn]`) -> «Coliseum» (+0x440 = 6) -> `[fn](0x11)` ->
-  `GET /user/notice` (241, `raidNotice {isSelfRaid, isOthersRaid}` uint mandatory) -> mode 6 ->
-  `GET /colosseum` (124, builder `[fn]`) -> `[fn]` -> `[fn](6)` (map,
-  `[fn]`: stages only with status 1) + `[fn]` (`AdventureTop2_Colosseum_Button`;
-  status 2 = «This event is unavailable.»). The «PVP» (+0x440 = 0xb) goes to `[fn](0x17)`.
+- Path observed: tile of the Quests menu -> popup `PvP_SelectWindow` -> «Coliseum» ->
+  `GET /user/notice` (241, `raidNotice {isSelfRaid, isOthersRaid}` uint mandatory) ->
+  `GET /colosseum` (124) -> map (stages only with status 1) + `AdventureTop2_Colosseum_Button`
+  (status 2 = «This event is unavailable.»). «PVP» leads to the PvP tab.
 - **Master tables `colosseum` and `colosseumStage` empty** (offline 5.0.1): the client has no rows for
   the Colosseum stages, so the server replies status 2 and no stages (`respondColosseum`).
   To play it the master rows are needed (to be rebuilt) and `stage/cl_stg%05d_%02d.bin` (none
@@ -568,40 +542,34 @@ The screens have their own APIs, described in the area files: medals
 <a id="pvp"></a>
 ## Coliseum PvP (actions 194-205)
 
-«Empty» but valid state in `respondPvp` (server.js, route `pvp`). Branches of `[fn]` (Ghidra),
-a parser that returns null = «200 ERROR :<id>». Types: +0x11 bit 2 int, 3 uint, 5 uint64; +0x12
-bit 4 string (`recon/tools/response_schema.py`).
+«Empty» but valid state in `respondPvp` (server.js, route `pvp`). A missing mandatory key =
+«200 ERROR :<id>». Types as in `recon/tools/response_schema.py`.
 
-| Action | Request | Branch / parser | Mandatory keys | Server response |
-|---|---|---|---|---|
-| 195 | GET `/pvp` | 0x7ca204 / `[fn]` | `pvp {pvpId, playNumber, pvpPoint, pvpClass, pvpRank` uint, `openRankingId` uint64, `numParticipant` uint`}` | pvpId `KHUX_PVP_ID` (1), pvpClass 1, rest 0 |
-| 196/197 | GET/POST `/pvp/keyblade` | 0x7c3b9c / `[fn]` | `pvp.keybladeIds` [uint64], `pvp.userDecks` (`[fn]`, element `[fn]`) | saved keybladeIds (`player.pvpKeybladeIds`, empty), userDecks = `/user/deck` |
-| 198 | GET `/pvp/vs_list` | 0x7c559c / `[fn]` | `vsUsers` [] (element `[fn]`, 0x278 bytes) | `[]` |
-| 199 | GET `/ranking/pvpParade` | 0x7c9a24 / `[fn]` | `pvpParade {pvpClass uint, rankingPvpTopRanker []}` (element `[fn]`) | class 1, nobody |
-| 200/201/202 | GET `/ranking/pvp`, `/own`, `/border` | 0x7c6ec8 / 0x7c5d20 / 0x7c6db0, `[fn](chiave)` | `pvpRanking` / `pvpRankingOwn` / `pvpRankingBorder` = `{rankingDatas [], rankingStatus int, rankingTermStart, rankingTermEnd}` (dates "YYYY-MM-DD HH:MM:SS") | status 2, no data, season = current month |
-| 203 | GET `/pvp/rewardlist` | 0x7ca344 / `[fn]` | `pvpPoint` uint64, `scoreRewardId` [uint] | 0, `[]` |
-| 204/205 | POST `/pvp/entry`, DELETE `/pvp/lock` | 0x7d0f0c (no parser, outcome 1) | — | only `ret` |
+| Action | Request | Mandatory keys | Server response |
+|---|---|---|---|
+| 195 | GET `/pvp` | `pvp {pvpId, playNumber, pvpPoint, pvpClass, pvpRank` uint, `openRankingId` uint64, `numParticipant` uint`}` | pvpId `KHUX_PVP_ID` (1), pvpClass 1, rest 0 |
+| 196/197 | GET/POST `/pvp/keyblade` | `pvp.keybladeIds` [uint64], `pvp.userDecks` (as `/user/deck`) | saved keybladeIds (`player.pvpKeybladeIds`, empty), userDecks = `/user/deck` |
+| 198 | GET `/pvp/vs_list` | `vsUsers` [] | `[]` |
+| 199 | GET `/ranking/pvpParade` | `pvpParade {pvpClass uint, rankingPvpTopRanker []}` | class 1, nobody |
+| 200/201/202 | GET `/ranking/pvp`, `/own`, `/border` | `pvpRanking` / `pvpRankingOwn` / `pvpRankingBorder` = `{rankingDatas [], rankingStatus int, rankingTermStart, rankingTermEnd}` (dates "YYYY-MM-DD HH:MM:SS") | status 2, no data, season = current month |
+| 203 | GET `/pvp/rewardlist` | `pvpPoint` uint64, `scoreRewardId` [uint] | 0, `[]` |
+| 204/205 | POST `/pvp/entry`, DELETE `/pvp/lock` | — | only `ret` |
 
-- Element of `rankingDatas` (`[fn]`): a complete player (`userData` `[fn]`,
-  `userDetail`, `userKeyblades`, `userDecks`, medals, skills, avatar, `pvp/keyblade`,
-  `userPvpRanking` `[fn]`). `rankingStatus` (`[fn]`): 2 = list, 1 and 3 = texts
-  (0x652f715 / 0x63163a2 / 0x6316388). `[fn]` shows `rankingTermEnd` (+0xc).
-- Sequence of the PvP tab of AdventureTop (lambdas): DELETE `/pvp/lock` (`[fn]`) ->
-  `/pvp` (`[fn]`; skipped if session +0x790 -> +0x14 == 5) -> `/pvp/keyblade` (`[fn]`)
-  -> `/pvp/vs_list` (`[fn]`, if scene +0x43b) -> `[fn]` -> `[fn](modo)` +
-  `[fn]` (`cocostudio/publish/AdventureTop2_PvP_Button.json`: Button_PvPStart/Txt_PvPStart,
-  Button_Ranking, Button_Reward, PvP_DetailButton(_Panel/_Draw), PvP_Point_DetailBut, Txt_PvP_Detail).
-  The rankings (200-202) are requested by the Ranking scene (lambdas `[fn]`/`d63060`/`d634c0`),
-  `/ranking/reward/check` (142) also starts from `[fn]`.
-- **Blocking: master row `pvp`** (table 0x47, getter `[fn]`, null if missing).
-  `[fn]` (detailUrl at +0x94), `[fn]` (rankingId +0x90), `[fn]`,
-  `[fn]` (+0x29e), `[fn]` (scoreStartReward/EndReward +0x88/+0x8c) dereference it
-  without a check: with an empty `master_data/pvp.json` the PvP tab crashes as soon as it is built.
-  Schema (`master_types_ww431.json`): pvpId, stageId, stageBinId, dayCount, benefitDayCount,
+- Element of `rankingDatas`: a complete player (`userData`, `userDetail`, `userKeyblades`, `userDecks`,
+  medals, skills, avatar, `pvp/keyblade`, `userPvpRanking`). `rankingStatus`: 2 = list, 1 and 3 = texts.
+  The client shows `rankingTermEnd`.
+- Sequence of the PvP tab of AdventureTop: DELETE `/pvp/lock` -> `/pvp` -> `/pvp/keyblade` ->
+  `/pvp/vs_list` -> panel `cocostudio/publish/AdventureTop2_PvP_Button.json` (Button_PvPStart/
+  Txt_PvPStart, Button_Ranking, Button_Reward, PvP_DetailButton(_Panel/_Draw), PvP_Point_DetailBut,
+  Txt_PvP_Detail). The rankings (200-202) are requested by the Ranking scene; `/ranking/reward/check`
+  (142) too.
+- **Blocking: master row `pvp`**: the PvP tab needs it (detailUrl, rankingId,
+  scoreStartReward/EndReward of the row): with an empty `master_data/pvp.json` it crashes as soon as it
+  is built. Schema (`master_types_ww431.json`): pvpId, stageId, stageBinId, dayCount, benefitDayCount,
   battleTimeout, validHoldKeyblade, holdKeyblade int[9], validRank, rankUpPer int[8], rankDownPer
   int[8], groupId, scoreStartReward, scoreEndReward, rankingId, detailUrl string(512), startTime,
-  endTime. A placeholder row (pvpId 1, rankingId 0 = no `rankingPvp` row, so
-  `[fn]` hides the widget; scoreStartReward 1 > scoreEndReward 0 = no reward) requires
+  endTime. A placeholder row (pvpId 1, rankingId 0 = no `rankingPvp` row, so the client hides the
+  widget; scoreStartReward 1 > scoreEndReward 0 = no reward) requires
   a new `KHUX_REVISION`. `pvpScoreReward` and `rankingPvp` are empty too.
 - Missing layouts (catalog `missing_layouts.txt`): `AdventureTop2_PvP_Button`, `PvP_PlayerInfo`,
   `PvP_KeyBladeButton`, `PvP_KeyBladeBut_Base`, `DeckEdit_KeyBladeButton_PvP`, `StartDeckPvPScene`,
@@ -615,36 +583,35 @@ bit 4 string (`recon/tools/response_schema.py`).
 Bench 14-10 (I-106, I-113, I-114). Module `server/routes-party-ranking.js`.
 
 - **Party / Party Search** (Other > Party, home banner): `GET /payment/info` (24), `GET /party` (83),
-  `GET /party/member/list` (86), `PUT /party/notice` (81), `POST /party/login` (82), then SIGSEGV at
-  0x170. The responses are not the cause: with `userParty.partyId` 0 the 82 reads only `userParty`
-  (`[fn]`, jump to 0x7c4ab0 before `party`/`partyLeader`). The scene `[fn]` loads
+  `GET /party/member/list` (86), `PUT /party/notice` (81), `POST /party/login` (82), then a crash.
+  The responses are not the cause: with `userParty.partyId` 0 the 82 reads only `userParty`. The scene loads
   `cocostudio/publish/PartyTopScene_ver131.json`, missing from every WW resource, like all the 31 Party
   layouts the client cites (`PartyTop_*`, `PopupNormal_Party*`, `PopupNormal_PartySearch_*`; only
   `PartyTop_JoinManagement_Scene_ver150` and `PartyTop_MultiMemberList_Scene_ver150` served): GUIReader
   returns null. JP 4.3.1 originals in `recon/tools/jp_coco_layouts.txt` (all ok at `--check`).
-  Without a party `PartyTop_Initial.json` opens (`[fn]`: Txt_PREdit/Button_PREdit,
+  Without a party `PartyTop_Initial.json` opens (widgets Txt_PREdit/Button_PREdit,
   Txt/Button_InitialRequest = search, Txt/Button_InitialManagement = create).
 - `POST /party/login` (82): `userParty` + `isAbsenceLeader`. `GET /party/search/active` (87):
-  `partyList[]` (`[fn]`), empty.
+  `partyList[]`, empty.
 - **Single-player party** (15-10, tried): schemas worked out offline (agent, `D:\Progetto_Restauro_KH_UX\tmp\party_re\`
-  REPORT.md and decompiled code). Create Party = `POST /party/create` (79, branch 0x7c494c) `{name, message, playStyle,
+  REPORT.md). Create Party = `POST /party/create` (79) `{name, message, playStyle,
   agreeType}` -> `{userParty, party, firstReward int}`; `player.party` in the save. With `partyId` != 0 the chain
-  becomes 83 -> 86 -> 81 -> **84 `GET /party/detail`** (`{rank uint}`) -> 82, and these are needed: `party` (`[fn]`:
-  ... `chatId` uint, `chatEndpointUrl`), in 82 `partyLeader` = player element `[fn]` **with `userMedal` and
+  becomes 83 -> 86 -> 81 -> **84 `GET /party/detail`** (`{rank uint}`) -> 82, and these are needed: `party` (...
+  `chatId` uint, `chatEndpointUrl`), in 82 `partyLeader` = player element **with `userMedal` and
   `userSkills`** (like `/stage/support/list`, `selfPlayerElement` in server.js), in 86 `partyUserList` with the same
-  element plus the details `[fn]` (`userKeyblade`, `userRanking`, `lastStageId`, `comment`, `linkPlatformId`,
-  `userColosseumRanking`/`userPvpRanking` int, `raidHelpNumber`). The right panel (`[fn]`) looks for the leader
-  (`supportUserId` == `party.leaderUserId`) in `partyUserList`: without it, index -1. Leader not absent -> PartyTop_right1.
+  element plus the details (`userKeyblade`, `userRanking`, `lastStageId`, `comment`, `linkPlatformId`,
+  `userColosseumRanking`/`userPvpRanking` int, `raidHelpNumber`). The right panel looks for the leader
+  (`supportUserId` == `party.leaderUserId`) in `partyUserList`: it must be there. Leader not absent -> PartyTop_right1.
   Chat: separate HTTP service (not Photon), with `chatId` 0 and empty urls it does not start; ChatScene has no layout (crash
   likely when tapping Chat). Bench 15-10: «Kxos's Party» with Leader, Members 1/30, Play Style, Approval, message and
   buttons Edit/Recruit/Manage/Rankings/Search.
 - Party buttons (15-10, all tried on the bench, no crash):
-  - Edit = `POST /party/update` (80) with the body of create; Leave (in Manage) = `POST /party/leave` (85); same branch
-    0x7c3f88, only `userParty`. Leave -> «You have left the party.» and return to «Create or join a party».
-  - Recruit = `GET /party/invite/search` (98): `[fn]` with the key **`partyUserList`** (string 0x1775281),
+  - Edit = `POST /party/update` (80) with the body of create; Leave (in Manage) = `POST /party/leave` (85); same
+    response, only `userParty`. Leave -> «You have left the party.» and return to «Create or join a party».
+  - Recruit = `GET /party/invite/search` (98): list with the key **`partyUserList`**,
     not `supportUsers`: with the wrong key «200 ERROR :98».
   - Manage = served scene `PartyTop_JoinManagement_Scene_ver150`, which cites `PartyTop_JoinManagement_Right.json` missing
-    in WW (SIGSEGV in strlen from GUIReader): imported from JP (`jp_coco_layouts.txt`). Tabs: 91 `/party/applicant/list`
+    in WW (crash): imported from JP (`jp_coco_layouts.txt`). Tabs: 91 `/party/applicant/list`
     {partyApplicants, partyUserList}, 100 `/party/invite/list` {partyOffers, partyUserList}, 102 `/party/offer/list`
     {partyOffers, partyList}; 89 `/party/application/list` {partyApplicants, partyList}: all empty.
   - Rankings = party rankings 137/138/184 (empty); Search = 87 `/party/search/active` (empty).
@@ -659,29 +626,27 @@ Bench 14-10 (I-106, I-113, I-114). Module `server/routes-party-ranking.js`.
     verified which field chooses the icon (maybe the `rank` of 84 or the ranking).
 - «7 ERROR :249» on restart after the Party crash = `PUT /passive/list` (249) with curl code 7
   (connection refused): the guest network had dropped, it is not a server error.
-- **Rankings** (`[fn]` draws the list; Lux tab = type 4, `+0x360` 1 = own
-  position / 2 = top / other = border; `rankingStatus` 2 = list, 1/3 = message):
-  - Lux, parser `[fn]` with a key per action: 129 `/ranking/weekly/user`
+- **Rankings** (Lux tab = type 4; `rankingStatus` 2 = list, 1/3 = message):
+  - Lux, a key per action: 129 `/ranking/weekly/user`
     (`luxRankingWeekly`), 130 monthly (`luxRankingMonthly`), 131/132 `.../own`
     (`luxRankingWeeklyOwn`/`MonthlyOwn`), 133 `/ranking/lux` and 134 `/ranking/lux/own` (`luxRanking`),
     178 `/ranking/lux/border` (`luxRankingBorder`). Fields `rankingDatas[]`, `rankingStatus` int,
-    `rankingTermStart`/`rankingTermEnd` date, `lastRank` int. Element `[fn]`: **`userData.user`** and **`userData.userDetail` nested** as in `GET /user` (`[fn]` mode 0 looks for `user` inside `userData`, `[fn]` looks for `userData` -> `userDetail`; flat = «200 ERROR :133», bench 14-10): `userData`
-    (fields of `userData.user`, `[fn]`), `userDetail` (`[fn]`), `userAvatar`
-    (`[fn]`), `lux` uint64, `rank` int. Without 133: «200 ERROR :133».
-  - High score `[fn]` (135/136/179) and Colosseum `[fn]` (139/140/180): same fields;
-    Party `[fn]` (137/138/184): `rankingDatas`, `rankingStatus`, `lastRank`, `updateTime`,
+    `rankingTermStart`/`rankingTermEnd` date, `lastRank` int. Element: **`userData.user`** and
+    **`userData.userDetail` nested** as in `GET /user` (flat = «200 ERROR :133», bench 14-10),
+    `userAvatar`, `lux` uint64, `rank` int. Without 133: «200 ERROR :133».
+  - High score (135/136/179) and Colosseum (139/140/180): same fields;
+    Party (137/138/184): `rankingDatas`, `rankingStatus`, `lastRank`, `updateTime`,
     `nextUpdateTime`. Server: the player 1st in the Lux ones, the others empty.
-  - Layouts: `Ranking_MainPanel_ver230` (`[fn]`), `RankingPartyScene_ver1301` (`[fn]`)
+  - Layouts: `Ranking_MainPanel_ver230`, `RankingPartyScene_ver1301`
     and the other 17 `Ranking*` cited, all missing from the WW resources: JP originals in the list; 4
     (`Ranking_Result*`, `Ranking_Reward_ver1301`, `RankingRewardScene_ver1301`) to be decided because of
     `Rank_Title_3.png`/`Rank_Result_Deco.png` missing everywhere.
-  - Crash after `/ranking/lux/border` (SIGSEGV at 0x8, bench 14-10): `[fn]` fills the Lux list
-    (reads +0x5f0/+0x600/+0x7f0) and on the player's row creates the armature `Cursor_Anim_Ranking2`
-    (`[fn]`, then `getAnimation()->playWithIndex(0)`), registered by `[fn]` with
-    `Cursor_Anim_Ranking2.ExportJson`: missing from the WW resources (like `Cursor_Anim_Ranking`). Import in
+  - Crash after `/ranking/lux/border` (bench 14-10): on the player's row the client creates the armature
+    `Cursor_Anim_Ranking2` from `Cursor_Anim_Ranking2.ExportJson`: missing from the WW resources (like
+    `Cursor_Anim_Ranking`). Import in
     `import_jp_coco.py` (`JP_ARM`): JP ExportJson with plist and texture on the free name `MyPageAnime0`
     (new plists are not loaded, [risorse_layout](risorse_layout.md#regole)); the two armatures have the
     same frame `Rank_Panel_User_Eff.png` (`Cursor_Anim_Ranking20.png` is missing in JP too).
     Same row: position number `img/colosseum/Colosseum_Rank_Num1..10.png` and the balloons
-    `img/ranking/Rank_Balloon*` (`Ranking_IconPanel_ver131`, `[fn]`), missing from the WW resources:
+    `img/ranking/Rank_Balloon*` (`Ranking_IconPanel_ver131`), missing from the WW resources:
     from JP (`Rank_Balloon1_01` = copy of `1_02`, missing in JP too).

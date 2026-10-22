@@ -2,58 +2,49 @@
 
 «Union Cross» section of the Quest screen, unlocked after Quest 24. Server:
 `server/multi.js` (hooked in by `server.js`: routes `/multi/*` -> `multi().respond`), tables
-`server/make-multi-tables.js`. Addresses = Ghidra (file + 0x100000), library 4.3.1.
+`server/make-multi-tables.js`.
 
 <a id="api"></a>
-## `/multi/*` actions (dispatcher `[fn]`)
+## `/multi/*` actions
 
-| Action | Request (constructor, body fields) | Response read by the client |
+| Action | Request body fields | Response read by the client |
 |---|---|---|
-| 158 GET `/multi/status` | `[fn]`, no fields | `[fn]`: `serverAddress` string (req.), `multiEvents[]` (req.; element `[fn]`: `multiId` int, `useAp` int, `endTime` "YYYY-MM-DD HH:MM:SS", `bannerUrl` string), `multiUsers[]` (optional, elements like `supportUsers`, `[fn]`). Saved in APIManager+0x730 |
-| 159 GET `/multi/talk` | `[fn]` | `[fn]`: `multiTalkIds[]` |
-| 160 POST `/multi/create` | `[fn]`: `multiId` | `[fn]`: `userRandomEnemies[]`, `userEnemyDropItems[]`, `userTreasures[]`, `userRandomEnemyLevel[]` ({`uniqueSymbolEnemyId`, `addLevel`}), `timeMissionIds[]`, `multiStageId` uint, `multiRoomId` uint64 |
-| 161 POST `/multi/recreate` | `[fn]`: `multiId`, `prevMultiRoomId` | as 160 |
-| 162 POST `/multi/start` | `[fn]`: `multiId`, `multiStageId`, `userKeybladeId`, `roomCreateUserId`, `multiRoomId`, `isSteal` | `userData.userPoint` (`[fn]`), `[fn]` (`userKeybladeId` uint64, `campaigns[]`); then the branch (0x7c6be4) takes the room from the Photon manager (`[fn]`/`[fn]`) and prepares the battle |
-| 163 POST `/multi/clear` | `[fn]`: `exp`, `money`, `lux`, `getPoint`, `materialId`, `number` | as `/stage/clear` (userPoint, userDetail, `[fn]`, stageResumption, `[fn]`): automatic schema, never seen |
-| 164 POST `/multi/retire` | `[fn]` | only `ret` |
-| 165 POST `/multi/continue` | `[fn]` | `userKeyblades[]` (`[fn]`) |
-| 166 GET `/multi/matching/member/list` | `[fn]` | `[fn]` with the key **`matchingMemberList`** (same parser as `supportUsers` of `/stage/support/list`); empty accepted. In APIManager+0x770 |
+| 158 GET `/multi/status` | none | `serverAddress` string (req.), `multiEvents[]` (req.; element: `multiId` int, `useAp` int, `endTime` "YYYY-MM-DD HH:MM:SS", `bannerUrl` string), `multiUsers[]` (optional, elements like `supportUsers`) |
+| 159 GET `/multi/talk` | none | `multiTalkIds[]` |
+| 160 POST `/multi/create` | `multiId` | `userRandomEnemies[]`, `userEnemyDropItems[]`, `userTreasures[]`, `userRandomEnemyLevel[]` ({`uniqueSymbolEnemyId`, `addLevel`}), `timeMissionIds[]`, `multiStageId` uint, `multiRoomId` uint64 |
+| 161 POST `/multi/recreate` | `multiId`, `prevMultiRoomId` | as 160 |
+| 162 POST `/multi/start` | `multiId`, `multiStageId`, `userKeybladeId`, `roomCreateUserId`, `multiRoomId`, `isSteal` | `userData.userPoint`, `userKeybladeId` uint64, `campaigns[]`; then the client takes the room from its Photon connection and prepares the battle |
+| 163 POST `/multi/clear` | `exp`, `money`, `lux`, `getPoint`, `materialId`, `number` | as `/stage/clear` (userPoint, userDetail, rewards, stageResumption, Burst lists): automatic schema, never seen |
+| 164 POST `/multi/retire` | none | only `ret` |
+| 165 POST `/multi/continue` | none | `userKeyblades[]` |
+| 166 GET `/multi/matching/member/list` | none | key **`matchingMemberList`** (elements like `supportUsers` of `/stage/support/list`); empty accepted |
 
 - Before the work: `/multi/status` passed with the schema (`serverAddress`, `multiEvents` empty) and
-  166 received only `ret` -> null parser -> «200 ERROR :166».
+  166 received only `ret` -> rejected -> «200 ERROR :166».
 - Public servers (thethiny/KHUx-Server etc.): to be checked (research in
   `reference\union_cross\NOTE.md`).
 
 <a id="flusso"></a>
 ## Flow in the client
 
-1. Tap on «Union Cross» (mode 7 of the Quest screen, `[fn]` case 7): `/multi/status`,
-   then (callback `[fn]`) `/multi/matching/member/list`, then `[fn]` ->
-   `[fn]` + **`[fn]`** (panel `AdventureTop2_Multi_Button`).
-2. `[fn]` copies `multiEvents` and reads **`multiEvents[0].multiId` without a check** (empty
-   vector = null pointer = crash), then the master row `multi` of that multiId (`[fn]`,
-   table 0x3e: null row = crash) and uses its `detailUrl` (+0x289; empty = Detail button hidden).
-   Buttons: `Button_MultiStart` (text 0x6222151), `Mu_DetailButton`, `Button_Mu_Board` (text
-   0x6226f48, board), `Button_Last_Member` (text 0x6222153; visible only with a non-empty
-   `matchingMemberList`: opens `SceneMultiJoinList`, `[fn]` -> 166 ->
-   `PartyTop_MultiMemberList_Scene_ver150`, list of the Party members looking for companions).
-3. `Button_MultiStart` (`[fn]` -> `[fn]`): stage parameters from
-   `multiEvents[0]` (useAp, multiId) -> deck screen (`StartDeckMultiScene_ver260`,
-   `[fn]`).
-4. Deck confirmation (`[fn]`) -> matching panel (`[fn]`,
-   `StartDeckMulti_PartyMatching_Base/HostPanel/GuestsPanel/AcceptPanel`) and `[fn]`:
-   maxPlayers of the Photon room, Photon callbacks, **`/multi/create`**.
-5. After `/multi/create` the Photon manager (`[fn]`, singleton `[fn]`, 0x4e0 bytes)
-   connects: `[fn]` copies `serverAddress` from `/multi/status` (+0x308), lobby name
-   `"50:<xxh32 esadecimale>:<n>"` (+0x320), room properties `"%d:%d:%d"`; `[fn]`:
-   `Client::connect(auth CUSTOM con parametri key=value, "", serverAddress, serverType 1 =
-   MASTER)`; UDP protocol (Client built with connectionProtocol 0); then `opJoinLobby`,
-   `opJoinOrCreateRoom`/`opJoinRoom`/`opJoinRandomRoom` (`[fn]`).
+1. Tap on «Union Cross» (Quest screen): `/multi/status`, then `/multi/matching/member/list`, then the
+   panel `AdventureTop2_Multi_Button`.
+2. The panel needs **at least one entry in `multiEvents`** (empty = crash) and a row of the `multi`
+   master for `multiEvents[0].multiId` (missing row = crash); the row's `detailUrl` (empty = Detail button
+   hidden). Buttons: `Button_MultiStart`, `Mu_DetailButton`, `Button_Mu_Board` (board),
+   `Button_Last_Member` (visible only with a non-empty `matchingMemberList`: opens the list of the Party
+   members looking for companions, `PartyTop_MultiMemberList_Scene_ver150`, through action 166).
+3. `Button_MultiStart`: stage parameters from `multiEvents[0]` (useAp, multiId) -> deck screen
+   (`StartDeckMultiScene_ver260`).
+4. Deck confirmation -> matching panel
+   (`StartDeckMulti_PartyMatching_Base/HostPanel/GuestsPanel/AcceptPanel`) and **`/multi/create`**.
+5. After `/multi/create` the client connects to a Photon server at `serverAddress` from `/multi/status`
+   (custom authentication, master server, UDP), joins a lobby named `"50:<hex hash>:<n>"` and creates or
+   joins a room (room properties `"%d:%d:%d"`).
 6. In the room the host presses Start (`Button_Start`/`Button_LockStart`) -> `/multi/start`
-   (`[fn]`, with `roomCreateUserId`/`multiRoomId` taken from the Photon room) -> battle
-   synchronized with Photon events -> `/multi/clear` (`[fn]`) or `/multi/retire`; result
-   `BattleResultMultiScene_ver150` (`[fn]`). Connection error:
-   `StartDeckEdit2_MultiConnectionError` (`[fn]`).
+   (`roomCreateUserId`/`multiRoomId` taken from the Photon room) -> battle synchronized with Photon
+   events -> `/multi/clear` or `/multi/retire`; result `BattleResultMultiScene_ver150`. Connection error:
+   `StartDeckEdit2_MultiConnectionError`.
 
 <a id="offline"></a>
 ## What works offline and what does not
@@ -80,7 +71,7 @@
 1. `node server\make-multi-tables.js`, then server restart with master revision + 1
    (`relogin.ps1 -Revision <n+1>`).
 2. Quest -> Union Cross: no more «200 ERROR :166»; the panel shows the event. If it crashes,
-   look at the panel (`[fn]`) and the images of `Mu_Banner`/`Mu_Ground` (empty
+   look at the panel (`multiEvents`, `multi` row) and the images of `Mu_Banner`/`Mu_Ground` (empty
    `bannerUrl`).
 3. Start -> deck -> confirm: `/multi/create` in the log, then `[photon]` lines (the client tries
    port 5055) and after the timeout the connection error popup.
@@ -100,12 +91,12 @@ layout to generate for panel, deck, matching and connection error.
   (Result_Clear_Raid), `StartDeckEdit2_FieldMenu_Multi_ver350` (But32_*, Multi_Info_title,
   Multi_Member_Panel0), `PartyTop_MultiMemberList_ver150` (Bg_Shade_Top, Conpane_Top3).
 - **Certain crash if reached**: `PopupNormal_Continue_Multi` has `Countdown_panel` with 9-slice on
-  Plate21, missing (crash 0x2c, I-049): to be replaced like `NO_PLATE21` of `make_layouts.py`
+  Plate21, missing (crash, I-049): to be replaced like `NO_PLATE21` of `make_layouts.py`
   (but keeping the countdown visible) when the multi battle becomes possible.
 - In `catalog\missing_layouts.txt`: `PopupNormal_Party_General`/`_JoinRequest` (join
-  request by tapping a member in `SceneMultiJoinList`, `[fn]`: with an empty list it does not
+  request by tapping a member of the list: with an empty list it does not
   open), `PopupNormal_Invitation_NotJoin`/`_Invitation_Jewel`/`PopupNormal_Party_Jewel`
-  (`[fn]`/`d8b180`/`d8b908`, invitations), `BattleResultMultiRankUP(Lock)Scene_ver220`,
+  (invitations), `BattleResultMultiRankUP(Lock)Scene_ver220`,
   `BattleResult_GetItemMulti_ver220`, `BattleResult_MultiMember_Panel_ver220` (multi result),
   all the `PartyTop_*` (I-006).
 
