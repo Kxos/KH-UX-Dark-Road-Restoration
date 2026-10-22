@@ -236,3 +236,5 @@ ActionMap_PlayerStatusField_new.json    rev=360289 graft=BaseBuff_Avt_Null1,Base
 RaidBattle_EnemyStatusField_L.json         rev=438800 graft=BaseBuff_Enm1,BaseBuff_Enm2
 RaidBattle_EnemyStatusField_L_Multi.json   rev=376985 graft=BaseBuff_Enm1,BaseBuff_Enm2
 RaidBattle_EnemyStatusField_S_Boss.json    rev=376981 graft=BaseBuff_Enm1,BaseBuff_Enm2
+# pannello del tempo delle missioni a tempo: il client lo carica nelle 699-704 (Hidden Staircase), assente -> crash in GUIReader (banco 22-10)
+ActMapTimeAttack_TimePanel.json
