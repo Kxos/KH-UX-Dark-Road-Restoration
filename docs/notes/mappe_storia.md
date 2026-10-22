@@ -656,3 +656,113 @@ cross-checked with the masters 1-555 (area theme of the first room; default boss
 (`KHUX_BGM_OLTRE`); the world rule (`WORLD_BGM` / reference row) remains only for the quests missing from the file.
 Applied in place with `node server/make-story-oltre.js`: 30 rows changed (only bgm columns). 979 «The Key» = BBS_73_TheKey
 (501006057) in the three columns; 977 boss bgm_raid_0001 (501001010). To be verified: 979 against the video, field/battle (medium confidence).
+
+<a id="proud-mode"></a>
+## Proud Mode (I-200, research 22-10, not implemented)
+
+Hard version of the story quests. Work files: `D:\Progetto_Restauro_KH_UX\tmp\proud\` (decompiled `dec1.c`-`dec3.c`,
+wiki table `proud_quests_wiki.json`, scripts); screenshots and sources: `reference\proud_mode\README.md`.
+
+### What the original was (evidence)
+
+- **khuxwiki «Proud Mode»** (`wiki\wiki_all.json`): story quests at a higher level and with special rules: higher-level
+  enemies, **every** quest has a fixed Keyblade and a condition on which medals may use their special attack; no continues,
+  no Friend Medals. Opened with the «Proud» button of the Story Quests page. From quest 800 all objectives must be completed
+  together (badge «Must clear all together», screenshot `rd_vsrxydhxfux51.jpg`). Rewards: 6 keyblades (Sleeping Lion Q3,
+  Counterpoint Q103, Fenrir Q203, Darkgnaw Q328, Missing Ache Q378, Diamond Dust Q428), Power/Speed/Magic Gems, Dark Matter
+  and Electrum Ore (Proud keyblades), Magic Mirror 6★ (+1% special attack bonus), Sun/Moon Gems (685+), Avatar Coins, Huey/Dewey/Louie.
+- **Per-quest data** in the `proud*` fields of 978 quest pages (1-979 except 978, cutscene only): `proudlvl` (target level),
+  `proudkey` (required keyblade, all 16 series, 13-90 quests each), `proudcon` (41 kinds of condition), 3 objectives with rewards
+  (Magic Mirror 1127, Avatar Coin 767, Electrum Ore 300, Dark Matter 300, ...), `proudnajewel` (150 every 5 quests, 300/600 late),
+  `proudall` (800+), `proudap` (template default **10**, «zero» on 801-979; the screenshots of 2019-2021 show AP 0 also on Q300/321).
+  Level offset = `proudlvl - lvl`: +209 on the first quests, ~+110 at 300-500, +2000/2100 at 800-979.
+- **User's guide** (`reference\guida_basi`): «Story e Proud: every 5 quests 150 Jewels; Proud stays at 150 after 525»; the
+  6 Proud keyblades; Sun/Moon Gems strengthen the Proud keyblades.
+- **Screenshots** (`reference\proud_mode`): the list is the same AdventureTop2 screen as Standard but **red/magenta**
+  (PROUD logo, red panels, red cursor, «Standard Mode» button instead of «Proud Mode»), ticker
+  «In Proud Mode, special attacks are limited, and each quest has a fixed Keyblade.» (ui text 100620055). The start popup
+  (StartDeckProudScene) shows «This quest must be played with this Keyblade.» (103000016), CONDITION, «The option to Continue
+  is not available in this mode.» (103000017), the fixed keyblade without «Change», Skip/Start/Optimize/Equipment.
+
+### How the data identify a Proud stage (master)
+
+- **Separate stage rows, same map**: `stageKind` **4**, `stageId` = **1 000 000 + story stageId**, `id` = 1 000 000 + quest number,
+  `stageBinId` = the story stageId (the client loads `mappoi_stg<stageBinId>`: same maps, same enemies and chests). The
+  JP 4.3.1 data have no other range of `mappoi_stg` for Proud (story 01xxx-39xxx only); the khuxwiki Proud targets equal the
+  story ones (18 differences out of 978, all spelling).
+- The only complete original row is in our base: `server/master_data/stage_base.json` (offline 5.0.1) row **1001010**
+  «Prologue» (`check-stage-data.js` skips it): `stageKind 4`, `stageBinId 1010`, `useAp 0`, `validStopStage 0`,
+  `disableContinue 1`, **`addLevel 209`** (Lv 1 + 209 = LV 210 of the wiki), **`holdKeyblade 4000`** (series id of Three Wishes),
+  **`hardmodeRequire 13`**, `hardmodeName` «Only special attacks with a\nbonus value of %d%% or\nhigher allowed.»,
+  `hardmodeComparison 3`, `hardmodeNum 4000` (40.00 %), own objectives (`submission*`). Wiki Q1 Proud: LV 210, Three Wishes,
+  «bonus value of 40% or higher»: identical. `noPartner` is 0 in this row (the friend ban must come from the client).
+- thethiny's master (`external\thethiny_2026-10-13\KHUx-Server\data\stage.json`, the one called 1.1.3 in these notes) has
+  **50 rows stageKind 4, 1001010-1002130** (quests 1-50), `useAp 10`; 1001016 (Q3) has the first-clear reward type 13 id **8000**
+  (Sleeping Lion). Read with an older 46-field schema, the rest of the row is misaligned (texts «Only special…» inside the drama
+  arrays), so the hardmode fields cannot be recovered from it; the raw file `stage_raw.json` has only the 1140 story rows.
+- 4.3.1 schema (`recon/out/master_types_ww431.json`, reader `[fn]`): `addLevel`, `holdKeyblade`, `hardmodeRequire`,
+  `hardmodeName` string(128), `hardmodeComparison`, `hardmodeNum`, `disableContinue`, `noPartner`, `combinedSubmissionFlag`.
+  Only kind 13 of `hardmodeRequire` is known with its values; the codes of the other ~40 conditions must be read in the
+  client (battle readers of the row) or rebuilt.
+
+### Client 4.3.1 (Ghidra; names from the RTTI of the lambdas)
+
+- `SceneAdventureSelect`: Standard init `[fn]` (scene +0x328 = 5) loads `AdventureTop2_Proud_Button.json`
+  (Button_EV / Button_Standard / Button_Proud). **Button_Proud** («Proud\nMode», 102900042) is shown when **misc 125 != 0**
+  (ours = 940: it is shown today, bench screenshot `reference\quest_list\bench_bug_lb5_now.png`); its callback
+  `[fn]` -> `[fn]`. Button_EV needs `userDetail` +0x40 >= misc 123 (14).
+- `toProudSelect` `[fn]`: **GET `/stage/hard`** (action **110**, constructor `[fn]`) -> lambda `[fn]`:
+  GET `/party/lux_up_time` (105, `[fn]`) -> lambda `[fn]` -> `[fn](scene, 1)`: GET `/user/mission/list`
+  (206, `[fn]`) -> `initProud` `[fn]` (scene +0x328 = 6, +0x7c8 = +0x330 = 1, ticker 100620055, Button_Standard
+  «Standard Mode» 102900041 with lambda `$_64` `[fn]`, Events `$_63` `[fn]`). On error: `[fn]`.
+  Also `updateProudStageInfo` `[fn]`, `checkApProud` `[fn]`, `proudInAnimation`, UserDefault key
+  `proud_select_filter_state` (Proud filter). Action ids from `assets431\json\server_api.json`.
+- `/stage/hard` response (dispatcher branch 110, parser **`[fn]`**): the same shape as `/stage/160310`:
+  `stories[]` (element `[fn]`: `stageId`, `useAp`, `score`, `playStatus`, `clearMissionIds`), `newStageId`, `luxRank`,
+  `openRankingId`. So the Proud list = the kind-4 stageIds unlocked so far. Start/clear go through the usual `/stage/start`
+  (113) / `/stage/clear` with the 100xxxx stageId (no separate endpoint found).
+- `/stage/achievements` (169) has `strengthNumerator/Denominator` next to `main*`: most likely the Proud completion of the
+  Story screen (khuxwiki changelog: «completion percentage for Standard Mode and Proud Mode»).
+- Start popup: `[fn]` loads `StartDeckProudScene_ver260.json`; `[fn]` the `StartDeckProud_Deck_ver230`,
+  `StartDeckProud_Panel_KB(_Ad)_ver230` (keyblade without «Change»: `NotChangeKB_Name`); `[fn]` loads
+  `AdventureTop2_Proud_RaidInfo_Start.json`. Strings `PMode_Panel` (`[fn]`, `[fn]`), `PMode_Ability_Txt`.
+- Unlock rule: decided by the server (the list is whatever `/stage/hard` sends), not found in the wiki. Screenshots: after the
+  last released Proud quest come «Coming Soon!» cells (Q940 in 11-2020, Q977 in 05-2021: Proud releases lagged behind the
+  story). Per-player rule (Proud N after story N? after Proud N-1?) to be decided with the user.
+
+### Layouts and textures
+
+- Served today (catalog = WW resources): `AdventureTop2_Proud_Button`, `_Proud_Story_Title`, `_Proud_Story_Drama_Title_ver350`,
+  `_Proud_RaidInfo`, `_Proud_RaidInfo_Drama_ver350`, `_Proud_SubMission_ver131/270`, `StartDeckProudScene_ver230/260`,
+  `StartDeckProud_Deck_ver230`, `_Panel_KB_ver150/230`, `_Panel_KB_Ad_ver230`, `_Button_ToDeck_ver260`; textures `PMode_But1A/1B/2A/2B`,
+  `PMode_Logo`, `Panel11_pm`, `Panel11B_pm`, `Panel_Target_Mask2_pm`, `Plate01_pm`, `Plate09_pm`, `Win23_pm`, `Ch_Micon_Base_pm(2_*)`.
+- **Missing** (all present in the JP 4.3.1 data, `jp_final_4.3.1\cocostudio\publish\`): sub-layouts of the start scene
+  `StartDeckProud_Base_ver131`, `_Button_Skip_ver131`, `_Button_Start_ver131`, `_Rules_ver131`, `AdventureTop2_Proud_RaidInfo_Start`
+  (in `catalog\missing_layouts.txt`); textures `Panel03_pm`, `Panel04_pm`, `Deck_Panel_StartDeck_pm` (9-slice: **crash 0x2c** if
+  missing, layout_triage REPORT), `Win01_pm`, `Win16_pm`, `Plate11_pm`, `Plate18_pm`, `PMode_Rule_Logo`, `PMode_Rule_Panel_A`,
+  armature `Cursor_Anim_Proud` (red cursor; not cited by name in the binary, to verify). The ui texts are already there
+  (100620055, 102900041/42, 103000016/17, 104810145).
+
+### What we serve today
+
+- `/stage/hard` has no route: the generic answer from `api_responses_auto_ww431.json` (`stories: []`, `newStageId 0`, ...).
+  The master has only row 1001010 (Prologue, from the 5.0.1 base), never listed. Tap on «Proud Mode» never tried on the
+  bench: expected empty list or crash (`newStageId 0`, missing sub-layouts/9-slice textures of the start popup).
+- `respondStageStart`/`respondStageClear` know nothing of kind 4 (no POI for 100xxxx: no drops/chests, `useAp` from the row);
+  `/stage/achievements` all 0 (I-037); Beginner mission 41 «Complete up to story quest 3 in Proud Mode» and the 6 Proud
+  keyblades given by `grantMissingKeyblades` (home_profilo, I-087) wait for this feature.
+
+### Implementation proposal (to approve)
+
+1. Master: `make-proud.js` builds 978 rows kind 4 from the story rows + `proud_quests_wiki.json` (stageId +1 000 000,
+   stageBinId, `addLevel` = proudlvl - lvl, `holdKeyblade` = series id, `hardmode*` from the condition, `disableContinue 1`,
+   objectives/rewards of the wiki, `combinedSubmissionFlag` 800+, first-clear keyblade (6) and jewels every 5 quests);
+   row 1001010 of the 5.0.1 base kept as it is (reference). New revision.
+2. Client codes of the conditions: decompile the battle readers of `hardmodeRequire/Comparison/Num` to map the 41 texts;
+   whatever cannot be mapped is reconstructed (Notice).
+3. Server: route `/stage/hard` (same builder as `/stage/160310`, kind 4, unlock = story quest cleared), POIs of 100xxxx =
+   those of the story stage (`stageRowOf`/`stage_poi` by `stageBinId`), separate `stageScores`/objectives, `strength*` in
+   `/stage/achievements`, Beginner mission 41, keyblade rewards in place of `grantMissingKeyblades` (no duplicates).
+4. Resources: the 5 missing layouts and ~10 `_pm` textures from the JP 4.3.1 originals (`import_jp_coco.py`), WW localized
+   textures win; compare with `reference\proud_mode`.
+5. Notice for every reconstructed part (conditions without an original code, AP choice, rewards beyond the wiki).
