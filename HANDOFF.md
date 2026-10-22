@@ -52,7 +52,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 
 (Older state blocks, 17-22 October: [docs/journal/2026-10-22.md](docs/journal/2026-10-22.md).)
 
-- **STATE AS OF 22-10 AFTERNOON — RESTART FROM HERE.** Master **rev 177** (default of the 4 session scripts); resources
+- **STATE AS OF 22-10 EVENING — RESTART FROM HERE.** Master **rev 179** (Proud Mode rows I-200, guest allies I-199, new looks for 6 families); resources **60** being installed on the bench (download continued after update-resources.ps1 gave up: when the home appears, `relogin.ps1 -Save provefine -RealNow 2026-12-09T10:00:00Z`), then the bench check of Proud 1/3, quests 682/704/840/927/787 (new looks) and 350/525/760/905/977 (allies). **Legal cleanup done (22-10)**: audit (D:\Progetto_Restauro_KH_UX	mpudit\AUDIT.md), HEAD cleaned, history rewritten with git filter-repo and force-pushed, repo renamed **Re-Union-X** (site https://kxos.github.io/Re-Union-X/), commits with the GitHub noreply address; decryption/protector tools moved to D:\Progetto_Restauro_KH_UX\private (outside the repo, found by recon/tools/private_tools.py); GitHub Support ticket sent (cached views + GC); fork ZarxielZerg/KH-UX-Dark-Road-Restoration still has the old history (owner to be asked via an issue). Rules: never publish SE files, download sources, circumvention tools, decompiled code, private communications. A second independent legal check is running.
+- **STATE AS OF 22-10 AFTERNOON.** Master **rev 177** (default of the 4 session scripts); resources
   **58 installed** on the bench (22-10 evening; 57 built and superseded); save `provefine` with
   `relogin.ps1 -Save provefine -RealNow 2026-12-09T10:00:00Z` (day 12-09: Login Bonus received, verified by the user;
   use 12-10 for the next one). Bench check done (user, 22-10): Quest 850 Guard Armor Ω and Quest 670 Chill Ripper (original
