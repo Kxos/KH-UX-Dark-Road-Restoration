@@ -16,19 +16,18 @@ risorse aggiuntive», «Missioni di storia in automatico»). Agent documents in
 - `wiki_quests.py` -> `quests.json` (978 quests 1-979 with objectives, rewards, treasures and enemies per
   room; parser of the nested `{{EN|...}}` enemies to be fixed). wikiwiki.jp/khux has quests
   1-750 (AP, target, Lv, objectives, rewards): useful to check the rows.
-- STORY list: `/stage/160310` (108) `stories[]` (`[fn]`: `stageId`, `useAp`, `score`,
+- STORY list: `/stage/160310` (108) `stories[]` (`stageId`, `useAp`, `score`,
   `playStatus`, `clearMissionIds` <= 3), `newStageId`, `luxRank`, `openRankingId`. Going back to the
-  list `[fn]` opens the STG header of the **next quest** and looks up its
+  list the client opens the STG header of the **next quest** and looks up its
   target in the `enemy` table: a missing header = crash.
 - Thumbnails of the Story list (ISSUES I-003, I-064): the «Panel» box of every quest
-  (`[fn]`/`[fn]`) loads `img/adventure/stage/stage_select_ico_%d_%d.png` with
-  `worldId` (+0x118) and `thumbId` (+0x11c) of the `stage` master row; the locked quests
-  (`[fn]`) `stage_select_ico_Blank` («?») or, with flag 1, `stage_select_ico_Soon`.
+  loads `img/adventure/stage/stage_select_ico_%d_%d.png` with
+  `worldId` and `thumbId` of the `stage` master row; the locked quests
+  `stage_select_ico_Blank` («?») or, with flag 1, `stage_select_ico_Soon`.
   `thumbId` = room*10000 + variant*100 + sub-variant of the map `<XX>_<stanza>_<var>_<sub>`
   (1_40000 = DB_0004_00_00 1st District): the values are the real ones (thethiny), there is no need to touch
   the master. The resources had only 1_0, 1_40000, 2_0, 2_10000 (+ Blank) of the 99 pairs of
-  quests 1-525. With the file missing `ImageView::loadTexture` (`[fn]`, initWithFile)
-  fails and the box **keeps the previous texture**: the carousel recycles the boxes, so
+  quests 1-525. With the file missing the box **keeps the previous texture**: the carousel recycles the boxes, so
   scrolling with the arrows the quests show the thumbnail of another quest (Agrabah with
   Daybreak Town) or the «?» left over from a locked quest. No server field is involved.
 - `recon/tools/make_quest_thumbs.py` (in the resource build, after `make_textures.py`) generates the
@@ -46,8 +45,8 @@ risorse aggiuntive», «Missioni di storia in automatico»). Agent documents in
 
 Exact parser: `recon/tools/mapfile.py` (`parse_stg`, `parse_map`, `load_stage`, `check_stage`; from the command
 line `mapfile.py <cartella|file> [--json out] [--quiet]` checks every stage against the STG). It is
-used by `import_orig_stages.py` and `stage_poi.py`. Field names from the 1.0.1 decompilation with symbols
-(`reference\world_schema\decompile_101.md`), reads confirmed on 4.3.1 (`[fn]`, `[fn]`).
+used by `import_orig_stages.py` and `stage_poi.py`. Field names and meanings were checked against the client behaviour and on the bench (details in the private
+notes).
 
 **Versions** (`STG +0x04` = `MAP +0x04`, the year of the file's last change, not of the client: the client
 **does not read** the version). 13, 14, 15, 16, 17 have **the same format** (the one below). Check:
@@ -67,7 +66,7 @@ polygon); MAP 4 also exits of 0x1c (7 int) and npcs of 0x1c; 8 only empty files.
 | [2] | +0x08 | low short = parts, high = start part |
 | [3],[4] | +0x0c,+0x10 | start x, y |
 | [5] | +0x14 | low short = direction (1/3 -> +1, 2/4 -> -1; 3/4 fixed), high = n alternative starts (4.3.1 only: n x 4 shorts at +0x40: part, direction, x, y) |
-| [6] | +0x18 | enemyId of the target (`getStageBossEnemyID`) |
+| [6] | +0x18 | enemyId of the target |
 | [7] | +0x1c | ? (WW 1, JP 40/41/43...) |
 | [8] | +0x20 | squads, **without** those with bit 0x20 of [4] (91 JP stages out of 91); the server can remove some («random» squads) |
 | [9] | +0x24 | enemies of the counted squads; «defeat all» counts [9] - [13] |
@@ -88,8 +87,8 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
 | +0x0c | room name, 16 bytes (`DB_0000_00_00`: `map/<stanza>/..._info/_cls/_chp/_jmp.bin`) |
 | +0x1c | weather short (1 rain, 2/3 snow; only if short +8 of `_info` is 0) |
 | +0x20 | exits - 0x34 (always 0: block at +0x34) |
-| +0x24 | squads/enemies - 0x34 (`[fn]`: `X = [+0x24]`, `X+0x34` n squads, `X+0x38` n enemies) |
-| +0x28 | chests - 0x34 (`[fn]`) |
+| +0x24 | squads/enemies - 0x34 (the block starts with n squads, n enemies) |
+| +0x28 | chests - 0x34 |
 | +0x2c | materials - 0x34 |
 | +0x30 | npcs - 0x34 |
 
@@ -158,11 +157,11 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
 - `map/<S>/<S>_info.bin` («BMI»): `0x0a` u16 tiled layers, `0x0c` u16 whole images, `0x0e`
   u16 objects, `0x10` name, `0x20` W, H of `base1`; then records of 60 bytes (stanza[16], livello[16],
   W, H, x, y, W2, H2, flag), of 52 (stanza[16], livello[16], w, h, x, y, flag) and of 52 (nome[32], x,
-  y, ...). Paths (loader `[fn]`): `map/%s/%s_base1/%s_base1_%03d.png`,
+  y, ...). Paths: `map/%s/%s_base1/%s_base1_%03d.png`,
   `map/%s/%s_%s/%s_%s_%03d.png` (256 tiles, from 001, ceil(W2/256) x ceil(H2/256)),
   `map/%s/%s_%s.png`, `lwf/map/%s/%s.lwf`. The «room» of the records can be another folder.
-- Missing tile = crash (`[fn]`: null texture -> null sprite, no check).
-  Missing whole images and lwfs are tolerated (`[fn]` checks the null node): 43 rooms
+- Missing tile = crash.
+  Missing whole images and lwfs are tolerated: 43 rooms
   have some, among them DW_0001/DW_0003 played on the bench.
 - `recon/tools/check_rooms.py` (~25 s, cache in `stage_gen\rooms_info`) checks every room against
   the installed index (`names_v4.tsv` + `ipa431\names_addnl.tsv` + `medal_gen\files` +
@@ -203,11 +202,10 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
   DW_0001).
 - <a id="segnaposto-46"></a>**Crash in the generated rooms (I-182, 20-10)**: the placeholder of `make_jp_rooms.py` had an
   extra `00` at offset 16 (46 bytes instead of the 45 of the original `DB_0000_00_00_base1_001.png`): BTF fields
-  shifted, the decoder (`[fn]`, `memcpy` of the size at +0x22) read 0x05000100 bytes from a file of
-  46 and went out of memory (SIGSEGV at the end of the mapping) on entering one of the **86 generated rooms** with transparent
+  shifted, so the client read a compressed size of ~80 MB from a file of
+  46 bytes and went out of memory (SIGSEGV at the end of the mapping) on entering one of the **86 generated rooms** with transparent
   tiles (3,208 tiles; quest 13 DW_0004_00_00, 524 BC_0012_01_00). Since 14-10 (resources 35): not seen before
-  because from 18-10 `save/smoke.json` left only quest 132 (WW rooms). Found with `armtrace\stackcap.ps1`
-  (chain `[fn]` <- pack reader <- room loading, tile name on the stack).
+  because from 18-10 `save/smoke.json` left only quest 132 (WW rooms). Found with the private crash capture tools (tile name at the crash).
   Constant fixed (`assert len == 45`), the tiles with the wrong placeholder are rewritten; resources 51.
 - **Story rooms** (doors with story `scope` of `schema_v2\schema_mondi.json`, room and destination):
   231; with `rooms_gen` **230 complete** (`check_rooms.py --rooms-gen --out rooms_gen\rooms_check.json`:
@@ -356,10 +354,10 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   registered on the preview, finds the 4 real exits of Daybreak Town again (arrivals at 9-46 units). The
   wiki pairs are not always different parts (DW quests 8 and 11: wide maps without a wipe).
   In the video the arrow is 52-124 units towards the inside relative to the exit.
-- **Exit arrow in the code** (`freccia_uscita.md`): `[fn]` puts the marker on the point
-  of the exit without offset, `setRotation(angolo)`; the two sprites `map/next_map.png` are in a node
-  at y = -80 (`[data]`) and oscillate between -80 and -40 (`[fn]`, 40.0/80.0), the trail goes from -40
-  to 0. From map to screen y is inverted (`[fn]`); 0 degrees = up, clockwise. In CLS: **arrow =
+- **Exit arrow** (`freccia_uscita.md`): the client puts the marker on the point
+  of the exit without offset, rotated by the exit angle; the two sprites `map/next_map.png` sit at y = -80
+  and oscillate between -80 and -40, the trail goes from -40
+  to 0. From map to screen y is inverted; 0 degrees = up, clockwise. In CLS: **arrow =
   (x - d·sin a, y + d·cos a), d in [40,80], pointing towards (sin a, -cos a)**, that is 40-80 units BEFORE
   the exit towards the inside; hence exit ~ arrow + 60·(sin a, -cos a). Verified on the videos
   (3 exits of 1010/1013). The generator has the right angle convention (deviations 1-21 degrees
@@ -381,9 +379,8 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   facts until he gives permission.
 - **Local reference data** (13-10): from here on a local reference data folder (not provided by this project:
   `KHUX_JP_DATA`, `KHUX_REF_WORK`, see [SETUP.md](../SETUP.md)) with a 2016 resource bundle and the JP 4.3.1 data.
-- **Format confirmed by the 1.0.1 symbols** (`decompile_101.md`): `StageManager::createMapTransferInfo`
-  = exits (9 int: x, y, angle, remaining distance, [4], arrival x, arrival y, destination part,
-  direction), radius 96, `MapGateMarker`, section B = materials, C = NPCs. Corrections to
+- **Format confirmed** (13-10): exit record = 9 int: x, y, angle, remaining distance, [4], arrival x, arrival y,
+  destination part, direction; trigger radius 96; section B = materials, C = NPCs. Corrections to
   `stage_gen\exits\NOTE.md`: exit [4] not read (= 1 + steps from the destination part to that
   of the target, 635/681), direction [8] 0 = free; STG [13] = enemies excluded from «defeat all», [1] =
   format version (13/14 in 2016, 16 in 4.3.1), MAP +0x1c = weather; NPC with one more short.
@@ -477,7 +474,7 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   open at startup): **34 out of 40 alive**. Crashes: signature A (I-183) 1160, 11170, 15050, 15340; signature B (I-184) 2140,
   10400. None in the BTF decoder. Outcomes in `D:\Progetto_Restauro_KH_UX\tmp\i182_smoke.json`.
 - Fixes (resources 51 with `-Quick`): I-183 = `cocostudio/publish/ActionMapCoerceEnmAnim.*` («Coerce» warning
-  of the Armored Archer), I-184 = `lwf/map/hole_rain/` (rain, `[fn]`); from 2016 in `originals.tsv` #37-38.
+  of the Armored Archer), I-184 = `lwf/map/hole_rain/` (rain); from 2016 in `originals.tsv` #37-38.
   The 6 redone quests: all alive. The other unserved `.ExportJson` armatures (MedalEvoAnimation, Z_SpIcon_*...)
   are not opened by the WW client (it uses the LWFs).
 - 16180: Bag O' seen as a hand (I-185).
@@ -495,8 +492,8 @@ User's decisions (20-10):
 2. Q617 (20320) and Q661 (23010), part 1 missing: only that part is rebuilt in the room of the original door;
 3. Q555 (18300-18304): you face the master of **your own Union** (user; confirmed 20-10, exception Vulpes -> Ira):
    stageId = 18300 + unionId - 1 (Ursus 1 Aced, Anguis 2 Invi, Unicornis 3 Ira, Vulpes 4 Ira, Leopardus 5 Gula). The
-   client chooses it: master row 18300 with `branchType: 1` (loads mappoi_stg stageId + v - 1) + the 5 JP stages. Evidence: decompiled
-   1.2.3, master 1.1.3 (one row 18300, 5 maps in stage_maps.json), wiki Q555, JP texts of the drama. No other
+   client chooses it: master row 18300 with `branchType: 1` (loads mappoi_stg stageId + unionId - 1) + the 5 JP stages. Evidence: client
+   behaviour, master 1.1.3 (one row 18300, 5 maps in stage_maps.json), wiki Q555, JP texts of the drama. No other
    quest 526-979 changes per Union;
 4. SR_0009_01_00: graphics of SR_0009_00_00 with its own geometry;
 5. room names (mapName): only **originals**, with in-depth research where they are missing or diverge.
@@ -514,8 +511,7 @@ chests from the received id; `ensureUnion` sets to 1 (Ursus) a `unionId` 0/missi
 load, at `/user/create`, in `userDetail`): with 0 the client would look for 18299. Q978 (`onlyDrama`): no POI,
 `/stage/start` without drops or chests, `/stage/clear` records the quest and gives the rewards; fallback: a `/stage/clear`
 without `/stage/start` (`stageInProgress` off) with the current quest already finished and the next one `onlyDrama` records
-that one. Objectives per client id (evaluator `[fn]`, slots 0x4358 filled by `[fn]`/`[fn]`
-with `submissionId`, counted by `[fn]` only for that id): 555 has 5 different targets, so its two «Defeat
+that one. Objectives are counted by the client per `submissionId` (each objective counts only for its own id): 555 has 5 different targets, so its two «Defeat
 the target enemy within 2 turns» are 7 «Complete within 2 turns» (same reward, in the Notices). 1.1.3 objectives of 542-544,
 546, 548-552, 555 (enemy outside the JP stage) replaced with those of the wiki (`make-story-oltre.js`, ruling of the
 controller). Master redone with
@@ -611,13 +607,10 @@ Before/after cutscenes without `img/light/SEQ/<id>.l` or `lwf/drama/<id>/` disab
 
 <a id="npc-talk"></a>
 **NPC texts** (I-154, 18-10). Symptom on the bench: quest 132 (stage 5020, Agrabah), the guard has the
-yellow balloon but tapping does nothing (no text, no request). Client: the NPC init
-(4.3.1 `[fn]`; 1.0.1 `MapNonPlayableCharacter::init`) copies the two ints at +0x14/+0x18 of the npc
-record; `get_talk` uses the first with type 3, the first or the second with type 1 (flag at +0x3ac), 0 with the others;
-balloon `img/stage_npc/NPCTalkIcon.png` for `(tipo|2) == 3`. The window (`[fn]`,
-`SceneActionMap::makeTalkWindow`) reads `TextData::get(1, id % 200000000 + 200000000)` =
-`text/drama/<n>.txt` (types `ui`, `drama`, `misc` at file 0x1663e2c; pages separated by 0x0C) and without the
-file it exits returning 8, silently. The texts `2040xxxxx` (= 4 + 4-digit stage + 2-digit npc) came
+yellow balloon but tapping does nothing (no text, no request). Client: the npc record of the map holds two talk ids; the client uses the first with type 3, the first or the
+second with type 1, none with the others; balloon `img/stage_npc/NPCTalkIcon.png` for `(tipo|2) == 3`. The talk window
+reads `text/drama/<n>.txt` with n = id % 200000000 + 200000000 (pages separated by 0x0C) and without the
+file it closes silently. The texts `2040xxxxx` (= 4 + 4-digit stage + 2-digit npc) came
 from the CDN: in the WW resources there is only `204010301`. 5020: one npc (730, 690, id 2005, type 3, talk 4050201)
 -> `204050201.txt`, missing. Served maps: 178 texts cited, 1 served, 177 in the 2016 pack in
 English (176 also in JP). Fix: `recon/tools/import_npc_talk.py` in `build-resources.ps1` (after
@@ -639,7 +632,7 @@ fields: they do not talk.
 <a id="npc-senza-waitlwf-i-197"></a>
 ## NPCs without wait.lwf (I-197)
 
-The client loads `lwf/character/npc/<id>/wait/wait.lwf` for every NPC of the map (`[fn]`); if it is missing, `[fn]` returns NULL and `addChild(NULL)` crashes the room. Stages 526-979 use 124 NPC ids (only 4001 is served by the original); `recon/tools/npc_placeholders.py` writes the empty LWF of `recon/tools/empty_lwf.py` for all those without an LWF, before `import_jp_coco.py`, which puts the JP 4.3.1 one where it has all the textures (13 NPCs out of 65 new ones). The remaining 52 (and 1 old one) are invisible but do not crash: to show them the original textures are needed.
+The client loads `lwf/character/npc/<id>/wait/wait.lwf` for every NPC of the map; if it is missing the room crashes. Stages 526-979 use 124 NPC ids (only 4001 is served by the original); `recon/tools/npc_placeholders.py` writes the empty LWF of `recon/tools/empty_lwf.py` for all those without an LWF, before `import_jp_coco.py`, which puts the JP 4.3.1 one where it has all the textures (13 NPCs out of 65 new ones). The remaining 52 (and 1 old one) are invisible but do not crash: to show them the original textures are needed.
 
 <a id="musiche-per-missione-i-198"></a>
 ## Music per quest (I-198)
@@ -655,8 +648,8 @@ Applied in place with `node server/make-story-oltre.js`: 30 rows changed (only b
 <a id="proud-mode"></a>
 ## Proud Mode (I-200, research and implementation 22-10)
 
-Hard version of the story quests. Work files: `D:\Progetto_Restauro_KH_UX\tmp\proud\` (decompiled `dec1.c`-`dec3.c`,
-wiki table `proud_quests_wiki.json`, scripts); screenshots and sources: `reference\proud_mode\README.md`.
+Hard version of the story quests. Work files: `D:\Progetto_Restauro_KH_UX\tmp\proud\` (wiki table
+`proud_quests_wiki.json`, scripts); screenshots and sources: `reference\proud_mode\README.md`.
 
 ### What the original was (evidence)
 
@@ -695,32 +688,28 @@ wiki table `proud_quests_wiki.json`, scripts); screenshots and sources: `referen
   **50 rows stageKind 4, 1001010-1002130** (quests 1-50), `useAp 10`; 1001016 (Q3) has the first-clear reward type 13 id **8000**
   (Sleeping Lion). Read with an older 46-field schema, the rest of the row is misaligned (texts «Only special…» inside the drama
   arrays), so the hardmode fields cannot be recovered from it; the raw file `stage_raw.json` has only the 1140 story rows.
-- 4.3.1 schema (`recon/out/master_types_ww431.json`, reader `[fn]`): `addLevel`, `holdKeyblade`, `hardmodeRequire`,
+- 4.3.1 schema (`recon/out/master_types_ww431.json`): `addLevel`, `holdKeyblade`, `hardmodeRequire`,
   `hardmodeName` string(128), `hardmodeComparison`, `hardmodeNum`, `disableContinue`, `noPartner`, `combinedSubmissionFlag`.
-  Only kind 13 of `hardmodeRequire` is known with its values; the codes of the other ~40 conditions must be read in the
-  client (battle readers of the row) or rebuilt.
+  Only kind 13 of `hardmodeRequire` is known with its values; the codes of the other ~40 conditions had to be
+  established from the client behaviour or rebuilt.
 
-### Client 4.3.1 (Ghidra; names from the RTTI of the lambdas)
+### Client 4.3.1 (protocol)
 
-- `SceneAdventureSelect`: Standard init `[fn]` (scene +0x328 = 5) loads `AdventureTop2_Proud_Button.json`
-  (Button_EV / Button_Standard / Button_Proud). **Button_Proud** («Proud\nMode», 102900042) is shown when **misc 125 != 0**
-  (ours = 940: it is shown today, bench screenshot `reference\quest_list\bench_bug_lb5_now.png`); its callback
-  `[fn]` -> `[fn]`. Button_EV needs `userDetail` +0x40 >= misc 123 (14).
-- `toProudSelect` `[fn]`: **GET `/stage/hard`** (action **110**, constructor `[fn]`) -> lambda `[fn]`:
-  GET `/party/lux_up_time` (105, `[fn]`) -> lambda `[fn]` -> `[fn](scene, 1)`: GET `/user/mission/list`
-  (206, `[fn]`) -> `initProud` `[fn]` (scene +0x328 = 6, +0x7c8 = +0x330 = 1, ticker 100620055, Button_Standard
-  «Standard Mode» 102900041 with lambda `$_64` `[fn]`, Events `$_63` `[fn]`). On error: `[fn]`.
-  Also `updateProudStageInfo` `[fn]`, `checkApProud` `[fn]`, `proudInAnimation`, UserDefault key
+- The Story screen loads `AdventureTop2_Proud_Button.json` (Button_EV / Button_Standard / Button_Proud). **Button_Proud**
+  («Proud\nMode», 102900042) is shown when **misc 125 != 0** (ours = 940: it is shown today, bench screenshot
+  `reference\quest_list\bench_bug_lb5_now.png`). Button_EV needs a `userDetail` value >= misc 123 (14).
+- Tapping Proud: **GET `/stage/hard`** (action **110**), then GET `/party/lux_up_time` (105) and GET `/user/mission/list`
+  (206); then the Proud list (ticker 100620055, Button_Standard «Standard Mode» 102900041). UserDefault key
   `proud_select_filter_state` (Proud filter). Action ids from `assets431\json\server_api.json`.
-- `/stage/hard` response (dispatcher branch 110, parser **`[fn]`**): the same shape as `/stage/160310`:
-  `stories[]` (element `[fn]`: `stageId`, `useAp`, `score`, `playStatus`, `clearMissionIds`), `newStageId`, `luxRank`,
+- `/stage/hard` response: the same shape as `/stage/160310`:
+  `stories[]` (`stageId`, `useAp`, `score`, `playStatus`, `clearMissionIds`), `newStageId`, `luxRank`,
   `openRankingId`. So the Proud list = the kind-4 stageIds unlocked so far. Start/clear go through the usual `/stage/start`
   (113) / `/stage/clear` with the 100xxxx stageId (no separate endpoint found).
 - `/stage/achievements` (169) has `strengthNumerator/Denominator` next to `main*`: most likely the Proud completion of the
   Story screen (khuxwiki changelog: «completion percentage for Standard Mode and Proud Mode»).
-- Start popup: `[fn]` loads `StartDeckProudScene_ver260.json`; `[fn]` the `StartDeckProud_Deck_ver230`,
-  `StartDeckProud_Panel_KB(_Ad)_ver230` (keyblade without «Change»: `NotChangeKB_Name`); `[fn]` loads
-  `AdventureTop2_Proud_RaidInfo_Start.json`. Strings `PMode_Panel` (`[fn]`, `[fn]`), `PMode_Ability_Txt`.
+- Start popup: the client loads `StartDeckProudScene_ver260.json`, `StartDeckProud_Deck_ver230`,
+  `StartDeckProud_Panel_KB(_Ad)_ver230` (keyblade without «Change»: `NotChangeKB_Name`) and
+  `AdventureTop2_Proud_RaidInfo_Start.json`; strings `PMode_Panel`, `PMode_Ability_Txt`.
 - Unlock rule: decided by the server (the list is whatever `/stage/hard` sends), not found in the wiki. Screenshots: after the
   last released Proud quest come «Coming Soon!» cells (Q940 in 11-2020, Q977 in 05-2021: Proud releases lagged behind the
   story). Per-player rule (Proud N after story N? after Proud N-1?) to be decided with the user.
@@ -744,7 +733,6 @@ Files: `server/make-proud.js` (called at the end of `make-game-tables.js` after 
 in place with `node server/make-proud.js`, `KHUX_PROUD=0` turns it off), `server/server.js` (`/stage/hard`, POI, clear),
 `server/test-proud.js` (`node server/test-proud.js [master]`), `server/check-stage-data.js` (Proud rows checked on the
 story map), `server/test-keyblade-unlock.js` (Proud keyblades from the Proud rows), notice «Proud Mode» (IMPORTANT).
-Client research files: `D:\Progetto_Restauro_KH_UX\tmp\proud\ghidra\`.
 
 - **Rows**: 979 rows `stageKind 4` (quests 1-979; 978 «What Comes After» is cutscene only also in Proud: the wiki page has
   `proudnajewel 600`, Power Gem and Speed Gem), `stageId` 1 000 000 + story stageId, `id` 1 000 000 + number, `stageBinId` =
@@ -752,22 +740,21 @@ Client research files: `D:\Progetto_Restauro_KH_UX\tmp\proud\ghidra\`.
   (as 1001010 and thethiny's 1001016). Row **1001010 of the 5.0.1 base is kept as it is** (identical to the wiki data).
   Source: `wiki_all.json`, `proud*` fields of the pages «Quest N: ...» (the «/Archive» pages are skipped). Q3 comes out
   identical in shape to thethiny's 1001016 (13/8000 Sleeping Lion, Huey 6★ 90026).
-- **Unlock** (decision 1): the client has no rule. Button_Proud is a pure flag (`[fn]`: misc 125 != 0, read nowhere
+- **Unlock** (decision 1): the client has no rule. Button_Proud is a pure flag (misc 125 != 0, used nowhere
   else; misc 124 = 1 000 000 is the Proud stageId offset used by the client) and the list is exactly `stories[]` of
   `/stage/hard`. So the server decides: closed (`stories []`, `newStageId 0`) until story Quest 500 is cleared
   (`KHUX_PROUD_UNLOCK_QUEST`), then the cleared Proud quests + the next one, like `/stage/160310` (Proud N after Proud N-1;
   the 2019 screenshot rd_tharuko53wk31 shows the same pattern: cleared cells + one «NEW»). The «Coming Soon!» cells of the
   screenshots were the not-yet-released quests: not generated by the client code found, not needed (all 979 are released).
 - **AP** (decision 2): **0 on every Proud quest**, the final online value. The client charges the `useAp` of the
-  `/stage/hard` list entry (`checkApProud [fn]`), taken from the row. Evidence: 5.0.1 row 1001010 `useAp 0`;
+  `/stage/hard` list entry, taken from the row. Evidence: 5.0.1 row 1001010 `useAp 0`;
   screenshots 2019-07 Q300, 2019-09 Q321, 2021-05 Q977 show «AP 0»; thethiny's master (2017) has `useAp 10` on its 50 rows
   and the wiki template default is 10 (pages say «zero» only from 826): the value of the launch, changed later.
 - **Jewels** (decision 3): the per-quest wiki value `proudnajewel`: 150 every 5 quests up to 800, 300 for 805-880, 600 for
   885-979 (+600 on 976, 977, 979). The user's guide («Proud stays at 150 after 525») agrees up to 800 and predates the 800+
   quests; the wiki table is per quest and later, so it wins.
-- **Conditions** (decision 4): evaluator `[fn](stageId, userMedal)`; a medal that fails cannot use its special
-  (`[fn]`). Record offsets: hardmodeRequire 0x1a0, hardmodeName 0x1a4 (1025 bytes), **hardmodeComparison 0x5a8,
-  hardmodeNum 0x5ac**, combinedSubmissionFlag 0x820. Require 0/1 = no limit, >= 15 = always false. Comparison 1 `==`,
+- **Conditions** (decision 4): a medal that fails the condition cannot use its special. Fields: `hardmodeRequire`,
+  `hardmodeName` (up to 1025 bytes), **`hardmodeComparison`, `hardmodeNum`**, `combinedSubmissionFlag`. Require 0/1 = no limit, >= 15 = always false. Comparison 1 `==`,
   2 `<=`, 3 `>=`. Codes: 2 attribute (1 Power, 2 Speed, 3 Magic), 3 darklight (1 Upright, 2 Reversed), 4 medal source
   (unused by Proud), 5 rarity, 6 guilt tier («N-tier or more boosting»), 7 medal level, 8 STR (with fusion, no keyblade),
   9 DEF, 10 gauges of the special, 11 hits of the special, 12 special attack bonus «+N» (fusion), 13 bonus % x100,
@@ -776,8 +763,7 @@ Client research files: `D:\Progetto_Restauro_KH_UX\tmp\proud\ghidra\`.
   number as `%d`, wrapped at 28 characters like 1001010 (whose text is kept). **Nothing reconstructed** except the 3 quests
   without a condition (891, 892, 913: no `proudcon`, «—» in the «Proud Mode» page): `hardmodeRequire 0`.
 - **Objectives**: wiki texts with the codes of `make-story-oltre.js`, plus 32 («Deal N or less hits»), 34/35 («Equip N or
-  more Upright/Reversed Medals», own medals only; «Use N or more Reversed Medals (No borrowed Medals)» = 35) from
-  `[fn]`; 0 stopgaps. Rewards: Electrum Ore 55, Dark Matter 58, Power/Speed/Magic Gem 48/49/50, Sun/Moon Gem 51/52,
+  more Upright/Reversed Medals», own medals only; «Use N or more Reversed Medals (No borrowed Medals)» = 35); 0 stopgaps. Rewards: Electrum Ore 55, Dark Matter 58, Power/Speed/Magic Gem 48/49/50, Sun/Moon Gem 51/52,
   medals by name and rarity; medal rewards with `submissionSkillType 1 / SkillLv 1` like 1001010.
 - **Must clear all together**: `combinedSubmissionFlag 1` from 801 (`proudall`; the «Proud Mode» page says «from 800» but
   Q800 has no flag). The client shows the badge (106150400) but reports each objective alone: `respondStageClear` keeps the
@@ -791,12 +777,11 @@ Client research files: `D:\Progetto_Restauro_KH_UX\tmp\proud\ghidra\`.
   earned; `grantMissingKeyblades` no longer gives them (they are master rewards now), saves that have them keep them,
   `grantKeyblade` never duplicates a series.
 - **Server**: `/stage/hard` (`respondProudList`), `poiStageId` (drops and chests of the story map: `stageBinId` +
-  variant; the client loads `mappoi_stg` = stageId - misc 124, replaced by `stageBinId`, + unionId - 1 with branchType 1,
-  `[fn]`), separate `stageScores`/`clearMissions` (key 100xxxx), `lastClearStageId` not moved by Proud clears,
+  variant; the client loads `mappoi_stg` = stageId - misc 124, replaced by `stageBinId`, + unionId - 1 with branchType 1), separate `stageScores`/`clearMissions` (key 100xxxx), `lastClearStageId` not moved by Proud clears,
   Q978-without-start fallback also for Proud, Beginner 41 derived (`lastProudNumber() >= 3`).
-- `/stage/achievements` `strength*` = the Special quests category (panel Achieved3 in `[fn]`, opens at Quest 6,
+- `/stage/achievements` `strength*` = the Special quests category (panel Achieved3, opens at Quest 6,
   misc 122), **not** Proud: not touched (I-037).
-- **Open (bench)**: `addLevel` is read only in `[fn]` (raid-boss popup: level + addLevel); no battle reader found, so
+- **Open (bench)**: `addLevel` is shown only in the raid-boss popup (level + addLevel); no battle use found, so
   whether Proud enemies really are stronger must be checked on the bench (Proud 1 vs Story 1 enemy HP/level). Which stageId
   `/stage/start` sends for the Proud 555 (1018300 or 101830x; the server accepts both).
 - Resources (fork commit 77cee4c): root `StartDeckProudScene_ver260` in `jp_coco_layouts.txt` with its 5 JP sub-layouts and

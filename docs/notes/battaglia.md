@@ -6,15 +6,15 @@ battaglia», «Il Prologue giocato», «Il Prologue completato», «Missione 2»
 <a id="api"></a>
 ## Stage API
 
-- `GET /stage/support/list` (111): `supportUsers[]` (`[fn]` with `userMedal`, `userSkills`,
+- `GET /stage/support/list` (111): `supportUsers[]` (with `userMedal`, `userSkills`,
   `userAvatar`). Before «Begin»: `userDetail.maxMedal` > 0 (otherwise `PopupNormal_MedalOver`,
   missing) and `maxDeckCost` > 0 (`PopupNormal_Cost_Over`).
-- `POST /stage/start` (113): `userData.userPoint`, `startStageData` (`[fn]`),
-  `userRandomEnemies[]`, `userEnemyDropItems[]` (`[fn]`: `uniqueEnemyId`, `dropItemTypeIds`
-  int[] <= 4/5, `stealType`), `userTreasures[]` (`[fn]`), `campaigns[]`,
+- `POST /stage/start` (113): `userData.userPoint`, `startStageData`,
+  `userRandomEnemies[]`, `userEnemyDropItems[]` (`uniqueEnemyId`, `dropItemTypeIds`
+  int[] <= 4/5, `stealType`), `userTreasures[]`, `campaigns[]`,
   `luxMagnifications`, `supportUsers[]`. `GET /user/keyblade` (11) gives `userKeybladeId`,
   `GET /user/deck` (12) the deck.
-- `POST /stage/clear` (116, parser `[fn]`): `userData.{userPoint,userDetail,
+- `POST /stage/clear` (116): `userData.{userPoint,userDetail,
   stageResumption}`, `stageRewardUserMedalIds[]`, `highScoreReward[]`, `firstClearFlag`,
   `stageOpenNum`, `clearMissionIds[]`, `userPvpRanking`, `status`, `pet.userPetParts[]`, `emblemIds[]`,
   updated inventory (`userMaterials`, `userMedals`, `userSkills`, `userTitles`, `userKeyblades`,
@@ -30,19 +30,19 @@ battaglia», «Il Prologue giocato», «Il Prologue completato», «Missione 2»
 <a id="hp"></a>
 ## HP, CP, chests, bags
 
-- HP: `userPoint` `baseHp`/`hp`/`maxHp` (the client shows `maxHp`). `[fn]` sizes
+- HP: `userPoint` `baseHp`/`hp`/`maxHp` (the client shows `maxHp`). The client sizes
   the HP arc: above 3000 it loads `Avatar_Circle_01/06.png` and `Avatar_Side_01..04.png`, missing from
   every package (crash). Base HP 3000 (placeholder `KHUX_PLAYER_HP`; the real value at level 1 cannot
   be found), +20 per node of the boards (`player.sphereBonus.hp`).
-- Prize types (`[fn]`): 4 coins, 8 CP (special gauge), 9 HP, 2/3/5/6/7/10 items
+- Prize types: 4 coins, 8 CP (special gauge), 9 HP, 2/3/5/6/7/10 items
   (3 medal, 5 material, 14 Avatar Coin). Images `img/prizes/Prize_{Money,Hp,Cp,Treasure,Lux}NN`.
-- Chests: `StageUtil::getTreasurePrizes` (`[fn]`) at creation (`[fn]`) looks up
+- Chests: when a chest is created the client looks up
   the `uniqueTreasureId` in `userTreasures`, reads the map's `reward` row and keeps the prizes whose
   type appears in the same position of `dropItemTypeIds`. Real rows: 1 empty barrel, 80 CP 15.000
   (small Attack Prize), 81 CP 30.000 (medium), 90 HP 1.400 (barrel with HP); 10100 = random medal
   (first enemy of every map). Our quantities in use: CP 10.000/5.000, HP 500 (ISSUES I-032).
-- Bags (silver counter): enemy drops, `[fn](.., uid, reward)` looks up the `reward` row
-  (`[fn]`, internal table 7) and **crashes if it is missing**. They open in
+- Bags (silver counter): enemy drops; the client looks up the `reward` row
+  and **crashes if it is missing**. They open in
   CONGRATULATIONS.
 - Orange (CP) and green (HP) orbs from enemies: `enemy` table (Shadow `attackCp` 50, `suppressCp`
   100, `attackHp` 30, `suppressHp` 144).
@@ -50,16 +50,16 @@ battaglia», «Il Prologue giocato», «Il Prologue completato», «Missione 2»
 <a id="livello"></a>
 ## Level and RESULTS
 
-The level is the Lux rank: `[fn]` -> `[fn]` uses `userDetail.luxRank` and
-`userPoint.lux` against the cumulative `needExp` thresholds of the `lv` and `lv+1` rows of `player` (index
-0x5b; the level 0 row is needed). The server starts from rank 1 and adds the Lux of every `/stage/clear`.
+The level is the Lux rank: the client uses `userDetail.luxRank` and
+`userPoint.lux` against the cumulative `needExp` thresholds of the `lv` and `lv+1` rows of `player` (the level 0
+row is needed). The server starts from rank 1 and adds the Lux of every `/stage/clear`.
 `firstClearFlag` 1 changes the path after the stage (`/user/sphere/reset`, `/user/sphere/check`).
 
 <a id="slot-vuoto"></a>
 ## Empty Keyblade slot
 
 The client takes one turn for each entry of `userDecks[].deckMedals`: a 0 becomes master medal 1
-(«空き», `[fn]`/`[fn]`; analysis in `stage_gen\deck_empty_slot\REPORT.md`). It is the
+(«空き»; notes in `stage_gen\deck_empty_slot\REPORT.md`). It is the
 original's **Stock Medal** (album no. 0, STR/DEF 50, «Placeholder when Medal is not equipped»):
 an empty slot, even in the middle, played its turn with an almost null neutral attack
 (`reference\empty_slot`: khuxwiki and ~30 r/KHUx comments). Since 12 October the server sends full
@@ -85,8 +85,7 @@ in `userKeyblades[].burst`: the real field name is to be verified on the «[gaug
   anyway?» -> OK -> `POST /stage/retire` and return to the quest list.
 - Reproduction: `player.sphereBonus.hp = -2950` in the save (HP 50) and relogin; Quest 130
   (Armored Knight) is enough. Put `hp = 40` back once the test is over.
-- The old «crash in PartyTopScene» was a distorted capture (stackcap's startup taps
-  opened Party: use `-NoStart`); the real causes were missing layouts and the 9-slice on Plate21.
+- The old «crash in PartyTopScene» was a misread crash capture; the real causes were missing layouts and the 9-slice on Plate21.
 - Balance: Bandit + Red Nocturne (1240 part 2) wipe out 3040 HP at LV3 (ISSUES I-013).
 - In the tutorial, death shows a notice, never captured (ISSUES I-031).
 
@@ -95,48 +94,37 @@ in `userKeyblades[].burst`: the real field name is to be verified on the «[gaug
 
 Red button at the top right, once per quest (also raids and Coliseum), attack on all
 enemies with power from the Burst level (introduced in 1.40; khux-guides.tumblr.com/post/152649620061).
-Code: `CarouselGuiltBurst`, setup `[fn]` (battle) -> `[fn]` (UI).
 
-- **Button conditions** (encrypted battle object, `[fn]`):
-  - `+0x1c` = 1 from init (`[fn]`), cleared after the first setup: it is the «only the first time»;
-  - `+0x18` = `[fn]` = **`userData.userDetail.isGuilt`** (userDetail row +0x44,
-    singleton `[fn]` +0x128; in multi/raid, `+0x2c` = 2, the leader's one at +0x8b0 -> +0x60).
-    The server sent 0: **cause of the missing button**;
-  - level `[fn]` = **`userPoint.guiltBurstLv`** (userPoint row +100, singleton +0x118;
-    in multi +0x8b0 +4) != 0;
-  - not PvP (`[fn]`: CarouselDeck +0x300 = 1 outside PvP).
-- **Attack** (`[fn]`, battle slot +0x358): **medal 2** row (table 0x55 = medal,
-  `[fn]`): STR +0x4e0, DEF +0x4ec, +0x4d4; power = `Lv / 100 x battleMisc 134 / 10000 x
-  10000` = **Lv x 400** (battleMisc 134 = 40000; `[data]` = 100, `[data]` = 10000).
-  Without a medal 2 row the attack is not prepared. Then `[fn]` reads **shuffleskill 901 and 902**
-  (enemyKind/enemyKindRate, +0xac/+0xb0) **without a null check**: without the rows, crash
-  at battle start. The button: `Guiltburst_UI`, `Guiltburst_but`, `Guilt_Lv_Num` of
-  `ActionMap_Guiltburst.json` (served); usable if the flags +0x19/!+0x1a/!+0x1b (`[fn]`).
+- **Button conditions** (what the server must send): `userData.userDetail.isGuilt` = 1 (the server sent 0: **cause
+  of the missing button**) and `userPoint.guiltBurstLv` != 0; the button appears only once per quest and never in PvP.
+- **Attack**: the client uses the **medal 2** master row (STR/DEF; power = `Lv / 100 x battleMisc 134 / 10000 x
+  10000` = **Lv x 400**, battleMisc 134 = 40000). Without a medal 2 row the attack is not prepared. The client also
+  requires **shuffleskill 901 and 902** (enemyKind/enemyKindRate): without the rows, crash at battle start. The button:
+  `Guiltburst_UI`, `Guiltburst_but`, `Guilt_Lv_Num` of `ActionMap_Guiltburst.json` (served).
 - **Master rows** (`server/make-guilt-burst.js`, idempotent, also called by
   `make-game-tables.js` and `make-moogleshop.js`): medal 2 «Burst» (copy of 1, STR/DEF 5000
   placeholder `KHUX_GUILT_BURST_STR`, burstId 11); burst 11 = «11:ギルトボム» (Guilt Bomb, all
   enemies) from 5.0.1, with animations `abl_00011`/`eff_00011` missing -> those of Thundaga
   (10145/110145); shuffleskill 901/902 (enemyKind 1/2, bonus 0, icons 60/61). Master rev. +1.
-- **Level** (`server/guilt-burst.js`): +`addGuiltBurstLv` (medal row +0x4c4; in the tables 0 ->
-  1) at the first guilt of each medal, +`addGuiltBurstLvMax` (+0x4c8; 0 -> 5) at the first maximum
+- **Level** (`server/guilt-burst.js`): +`addGuiltBurstLv` (medal row; in the tables 0 ->
+  1) at the first guilt of each medal, +`addGuiltBurstLvMax` (0 -> 5) at the first maximum
   guilt. Here guilt is the tier (`guiltValue`, fixed, no `guiltFactor`): first guilt = first
   medal (medalId) owned with tier > 0; maximum guilt = first copy at `maxLv` (our choice).
   A record that never goes down in `player.guiltBurst {first, max}` (the old `player.guiltBurstLv` is no
   longer used). `isGuilt` = 1 if the level > 0. `KHUX_GUILT_BURST_LV=<n>` fixes the level for
   tests (the save with all medals gives Lv 1908 = power 763.200).
-- **Level popup**: `guiltBurstFirstUserMedalIds`/`guiltBurstMaxUserMedalIds` (`[fn]`:
-  `/stage/clear`, draw, Moogle Shop, raid reward) and `guiltBurstFirstLv`/`MaxLv` of the Level Up
-  (`[fn]`) open `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup` (`[fn]`, clips
-  `FromLv`/`ToLv`, `enterFrame` event on `_root`) and `GuiltBonus_BurstLvup_num` (`[fn]`),
+- **Level popup**: `guiltBurstFirstUserMedalIds`/`guiltBurstMaxUserMedalIds` (in `/stage/clear`, draw, Moogle Shop,
+  raid reward) and `guiltBurstFirstLv`/`MaxLv` of the Level Up open `lwf/medal/guilt_bonus/GuiltBonus_BurstLvup`
+  (clips `FromLv`/`ToLv`) and `GuiltBonus_BurstLvup_num`,
   imported from the JP 4.3.1 data (`import_jp_raisedraw.py`, with `GuiltBonus_Wfix0..9` and the layout
-  `MedalInfo_Burst_Info.json` of `[fn]`) with the «NOVA» logo instead of «BURST» (`make_nova_logo.py`,
+  `MedalInfo_Burst_Info.json`) with the «NOVA» logo instead of «BURST» (`make_nova_logo.py`,
   `--replace`), resources 41. Popup on by default (`KHUX_GUILT_BURST_POPUP=0` turns it off): tested on the bench from
   the Level Up on 17-10 (+1 «Unlocked X's Special Attack Bonus!», +5 «Maxed out X's Special Attack Bonus!», TAP SCREEN;
   [shop.md#sp2b](shop.md#sp2b)). The Level Up sends the arrival level ([guilt.md](guilt.md)); for the lists
   `guiltBurst*UserMedalIds` (draw, /stage/clear) the client computes the levels from the medal row
-  (`addGuiltBurstLv/Max` +0x4c4/+0x4c8, `[fn]`): 1/5 on the rows that a «guilt: max» preset can deliver (`make-nova-rows.js`, I-149 closed, [shop.md#sp2b](shop.md#sp2b)). Record per `groupId || medalId`.
-- **Super Burst** (`setupSuperGuiltBurst` `[fn]`, always called): for each medal of the
-  deck with `validSuperBurst` (+0x500) and `superBurstId` (+0x504) != 0 (`[fn]`) it adds a
+  (`addGuiltBurstLv/Max`): 1/5 on the rows that a «guilt: max» preset can deliver (`make-nova-rows.js`, I-149 closed, [shop.md#sp2b](shop.md#sp2b)). Record per `groupId || medalId`.
+- **Super Burst**: for each medal of the
+  deck with `validSuperBurst` and `superBurstId` != 0 the client adds a
   panel to `ActionMap_SuperBurst_SelectWindow/SelectPanel` (served). No medal in
   our tables has it: off. To turn it on you need `superBurstId` on the medals, dedicated burst rows
   (`superburstTiming`; animations `abl_50xx1`/`eff_50xx1` served),
@@ -147,7 +135,7 @@ Code: `CarouselGuiltBurst`, setup `[fn]` (battle) -> `[fn]` (UI).
 <a id="animazioni-speciali"></a>
 ## Special attack animations (I-180, 20-10)
 
-- A special's damage comes only from the `knockback_N` events of the motion's LWF (`lwf/burst/motion/abl_N`): one EnemyDamage per event, hit = attack x power / hitCount (BattleMisc::normalizeAttack, 1.0.1 with symbols). hitCount = knockbacks of the motion in 750/750 original rows: motion and hitCount must be changed together (the total stays the same).
+- A special's damage comes only from the `knockback_N` events of the motion's LWF (`lwf/burst/motion/abl_N`): one EnemyDamage per event, hit = attack x power / hitCount. hitCount = knockbacks of the motion in 750/750 original rows: motion and hitCount must be changed together (the total stays the same).
 - Rule of the originals: motion = family x 10 + {1,1,3,3,5,6}[level-1], effectId = 100000 + motion (14 exceptions), support 15001/15011/15021. WW 5.0.1 serves only 9 non-Supernova motions; the 2016 one has 339 complete, JP 671 (660 with missing textures).
 - `server/burst-anim-fix.js` reads `reference\burst_anim\mapping_final.json` (made by `finalize.js` from the `RESEARCH.md` research): originals where known, otherwise an original motion with the same hits as the text; Lesser Attack of the Trait Medals 10061 (1 hit). Resources: `originals.tsv` #36 (version 50). Resources first, then the master: a motion referenced and not served almost certainly crashes.
 - Supernova: the 51 served abl_500N1 motions have from 0 to 13 knockbacks (`supernova.js SN_KNOCKBACK`); bench 20-10 (user): 0 hits = no damage, 4 and 11 hits = 4 and 11 full hits. Roboloid: 1 hit (4 for the three «Reversed Strike All M»): `assignSnMotions` picks in rotation among the motions with those hits (revision 160).
@@ -159,39 +147,30 @@ Reference: `reference\battle_hud\hud_khux_utente.jpeg` (original) versus `screen
 Three elements are missing on our side.
 
 - **«530% BONUS» with the red arrow** (bottom right, during the special's cut-in) = the medal's
-  guilt. `CarouselDeck`: `[fn]` prepares the `GuiltBonus`/`GuiltBonus_Plus` movements
-  of the `ActMapCarouselAnim` armature (`[fn]`, table 0x1f1e820; `[fn]` returns NULL
-  if the movement is missing). On the special, `[fn]` reads the medal's `darklight` (medal row
-  +0x498: 1 normal cut-in, 2 «Dark», 3 none) and the slot's guilt (`CarouselDeck` +0x4fc +
-  4·slot): if != 0 it uses the `_Guilt` cut-in and calls `[fn]`, which writes `guilt/100 + plus`
-  (+0x488, max 999) into the `GuiltBonusNum1..3` bones and sets `GuiltBIcon`/`_eff` to image
-  `guiltValue - 1` (row +0x4c0, the tier). The slot's guilt comes from `[fn]` = field +0x10
-  of the battle medal, which `[fn]` copies from `userMedal.guiltFactor` (structure
-  +0x2c, parser `[fn]`) **only if the battle has `isGuilt`** (record +0x18 =
-  `userDetail.isGuilt`) or if it is the friend's medal (category 2). Server: already correct
+  guilt. The client plays the `GuiltBonus`/`GuiltBonus_Plus` movements of the `ActMapCarouselAnim` armature (a missing
+  movement is skipped). On the special the medal's `darklight` decides the cut-in (1 normal, 2 «Dark», 3 none); if the
+  medal has guilt it uses the `_Guilt` cut-in, writes `guilt/100 + plus` (max 999) into the `GuiltBonusNum1..3` bones and
+  sets the `GuiltBIcon` image to `guiltValue - 1` (the tier). The medal's guilt is `userMedal.guiltFactor`, used
+  **only if the player has `isGuilt`** or for the friend's medal. Server: already correct
   (`guiltFactor` in `userMedalElement`, `isGuilt` from Quest 34). On our side it is missing because the
   deck's medals have guilt 0: in the save only 2216 (Black Coat King Mickey, tier 3, guilt 10000)
   has it, and it is not in the deck of keyblade 2. Resource: the `GuiltBonus` movement exists in the served one,
-  but it is an old revision (8 movements, 52 frames): `GuiltBIcon` has 8 images and
-  `[fn]` (changeDisplayWithIndex) does not check the bound, so a tier 9/10 medal
-  (307 rows in the master) with guilt would read past the vector = crash at the cut-in; also missing are
+  but it is an old revision (8 movements, 52 frames): `GuiltBIcon` has 8 images and the client does not check the
+  bound, so a tier 9/10 medal (307 rows in the master) with guilt would crash at the cut-in; also missing are
   `GuiltBonus_Plus`, PvP and `MedalAttack_SBurst`. `recon/tools/make_carousel_anim.py` writes
   the current JP armature (18 movements, icons 1-10) with a single atlas with the served name (WW on the
   left, the 42 JP-only frames on the right, 2048x1024 canvas; a new plist would not be loaded).
 - **Status icons above the avatar** («↑↑↑ moon+sword ×15», «Re» in the attribute's colour):
-  `BattleStateIcon`. `[fn]` cycles the 16 types (tier at +0x300; >0 buff `BIconNN`, <0 debuff
-  `DIconNN`, tables 0x1f1be08/0x1f1be88) and loads `lwf/battle/ActMapBuffDeBuffAnim/<nome>/<nome>.lwf`
-  plus the tier `BuffNum_Up/DownNN` (0x1f1bf28, index tier + 20: «×15» = `BuffNum_Up15`);
-  `[fn]` the Reflect icons `lwf/battle/ActMapReflectionAnim/RIcon_*` (only if the file
+  the client cycles the 16 buff types (>0 buff `BIconNN`, <0 debuff `DIconNN`) and loads
+  `lwf/battle/ActMapBuffDeBuffAnim/<nome>/<nome>.lwf` plus the tier `BuffNum_Up/DownNN` («×15» = `BuffNum_Up15`), and the
+  Reflect icons `lwf/battle/ActMapReflectionAnim/RIcon_*` (only if the file
   exists). Neither folder is served (names_v4, addnl, stage_gen): no icons, no
   crash. JP 4.3.1 has them (69 + 6 folders; textures shared only once, e.g. «素材画像_Buff01»
   in DIcon02): added to `JP_LWF` of `import_jp_coco.py` with the same folders as filler
   (101 textures referenced, 0 missing; test on a copy: 176 files, new names in the index).
 - **Blue icon below the Burst** = place of the **Super Burst (Supernova)** button: `SuperBurst_UI` of
-  `ActionMap_SuperBurst_SelectWindow` (served; `createSuperBurstUI` `[fn]`). It is shown if
-  `setupSuperGuiltBurst` (`[fn]` -> `[fn]`) finds a deck medal with
-  `validSuperBurst` (+0x500) and `superBurstId` (+0x504) != 0, and the battle has `isGuilt`
-  (`[fn]`, record +0x18) or it is the friend's medal. «SB» = Supernova in WW (wiki:
+  `ActionMap_SuperBurst_SelectWindow` (served). It is shown if a deck medal has
+  `validSuperBurst` and `superBurstId` != 0, and the player has `isGuilt` or it is the friend's medal. «SB» = Supernova in WW (wiki:
   «"SB" Sephiroth» -> «Supernova - Sephiroth»; `SBurst_Icon1/2/3` = SN, SN+, SN++). On our side it is missing
   because no medal in the master has `superBurstId`. Note: the 4.3.1 button uses
   `SBurst_but01.png` (light blue compass; `ActionMap_SuperBurst_SelectWindow.json` identical in WW and in
@@ -214,38 +193,33 @@ up, effect of the burst row) or an enemy debuff -> icon and «×N» above the av
 <a id="supernova"></a>
 ## Supernova and new `burst` fields (client 4.3.1, 14-10)
 
-`burst` row in memory (reader `[fn]`, getter by id `[fn]`): 4-byte fields in
-schema order from `addTurn` +0x388 up to `unmatchMagnification` +0x52c (`target` +0x2a8,
-`critical` +0x2b8, `criticalPower` +0x2bc, `recovery` +0x4d0, `oprUrgencyId/Value` +0x4d4/+0x4d8,
-`addGuiltBonusId/Count/Value` +0x4dc..+0x4e4, `superburstTiming` +0x4e8, `recurringAttribute` +0x4ec,
-`reflection*` +0x4f0..+0x4fc, `addBase*` +0x500..+0x51c, `matchCount*` +0x520..+0x52c). Medal:
-`validBurst` +0x4f8, `burstId` +0x4fc, `validSuperBurst` +0x500, `superBurstId` +0x504.
+`burst` master fields in schema order from `addTurn` to `unmatchMagnification` (`recon/out/master_types_ww431.json`);
+medal fields `validBurst`, `burstId`, `validSuperBurst`, `superBurstId`.
 
 **Supernova** (high certainty):
 - `superBurstId` is a `burstId` of the `burst` table: the Supernova is a `burst` row like the
-  specials. `[fn]` picks the attack's row: with the attack's Supernova flag (+0x6a)
+  specials. The client picks the attack's row: for a Supernova
   `superBurstId` (if `validSuperBurst` != 0), otherwise `burstId` (if `validBurst` != 0). So buffs,
   debuffs, `addTurn`/`addCount`, `recovery`, guilt bonus etc. of the row also apply to the Supernova.
-- Button (`[fn]`, from `setupSuperGuiltBurst` `[fn]`): for each deck slot with
-  `validSuperBurst` and `superBurstId` != 0, if the battle has `isGuilt` (`[fn]`) or it is the
-  friend's medal (category 2), it adds the panel (`[fn]`) and sets the slot's bit
-  (one Supernova per medal per quest). Panel: name +0x14 and description +0x95 of the
+- Button: for each deck slot with
+  `validSuperBurst` and `superBurstId` != 0, if the player has `isGuilt` or it is the
+  friend's medal, the client adds a panel
+  (one Supernova per medal per quest). Panel: name and description of the
   `burst` row, target icon from `target` (1-3), `MultiplyNum_Label`, plate `SBurst_Plate01.png` or,
   with `recurringAttribute` != 0, `SBurst_Plate01re.png` (JP only).
-- `superburstTiming` (`[fn]`, AI only in PvP when defending): if > 0 the Supernova fires before
+- `superburstTiming` (AI only in PvP when defending): if > 0 the Supernova fires before
   slot `min(timing, n slot)` (1 = before slot 1), like the wiki's «Triggers before slot N is activated
   when defending in PVP» (Roboloid: field `Supernova.Timing`).
-- `recurringAttribute` (`[fn]`): mask; after the Supernova it re-enables the already used Supernova
+- `recurringAttribute`: mask; after the Supernova it re-enables the already used Supernova
   of the other deck medals whose Supernova row has `recurringAttribute` 0 and whose type matches:
-  bit 0/1/2 = attribute Power/Speed/Magic (medal +0x494 = 1/2/3), bit 3/4 = Upright/Reversed
-  (+0x498 = 1/2) (`[fn](mask, bit)`). Animation `lwf/battle/SBurst_Revival` (`[fn]`).
+  bit 0/1/2 = attribute Power/Speed/Magic (medal attribute 1/2/3), bit 3/4 = Upright/Reversed
+  (medal darklight 1/2). Animation `lwf/battle/SBurst_Revival`.
 - Bench 14-10 evening, deck of Supernovas only (keyblade 2: Supernova - SP Roxas, Supernova+ - SP Axel,
   Supernova+ - SP Xion, SN+ - Illustrated Sora, SN+ - HD Xion [EX]; cost 230, needs player level
   ~95 with the sphere: below that, «Exceeds equipment cost» as in the original): the button opens the
   panel with all 5, the chosen Supernova starts and works (tested by the user). No SN badge
   on the deck's medals (see below).
-- SN/SN+/SN++ badge (`[fn]`): from field +0x18 of the medal row (`displayId` in schema
-  order): 100/101 and 1100/1101 -> `img/ui/SBurst_Icon1`, 200/201 and 1200/1201 -> `Icon2`, 300/301 and
+- SN/SN+/SN++ badge: from the medal row's `displayId`: 100/101 and 1100/1101 -> `img/ui/SBurst_Icon1`, 200/201 and 1200/1201 -> `Icon2`, 300/301 and
   1300/1301 -> `Icon3`; from 1100 up the `...R.png` variant. On our side `displayId` = image id:
   no badge. To verify whether the client also uses the medals' `displayId` for the graphics.
 - Animations: `lwf/burst/motion/abl_50011..50521` (51) and `lwf/burst/effect/eff_500x1` (40) are
@@ -255,7 +229,7 @@ schema order from `addTurn` +0x388 up to `unmatchMagnification` +0x52c (`target`
   these fields; 5.0.1: no `medal` table). Source to reconstruct them: Roboloid
   `medal_db.json` field `Supernova` (`Name`, `Text`, `Multi` = multiplier, `Timing`, `Target`,
   `SelfBuffs`/`EnemyBuffs`), khuxwiki «Supernova».
-- Resources **missing** from the served ones (names_v4, addnl): `lwf/battle/Sburst/` (`[fn]`),
+- Resources **missing** from the served ones (names_v4, addnl): `lwf/battle/Sburst/`,
   `lwf/battle/SBurst_Revival/`, `lwf/battle/BurstGauge_Recovery/`, `img/ui/SBurst_Icon1..3.png` and
   `..1R..3R.png` (in the JP only the R ones are in `img/ui`; the non-R ones are in `cocostudio`),
   `cocostudio/publish/SBurst_Icon1/3.png` and `SBurst_Plate01re.png` (only `SBurst_Icon2` is served).
@@ -265,26 +239,23 @@ schema order from `addTurn` +0x388 up to `unmatchMagnification` +0x52c (`target`
 
 **New fields** (old thethiny format without these fields):
 - `critical` = critical chance in ten-thousandths (5000 = 50%), `criticalPower` = multiplier
-  x10000 of the critical hit (10000 = x1), `[fn]` (divisor 10000.0 `[data]`; the
-  chance is scaled by 1 + bonus/10000 of the traits). High certainty.
-- `recovery` = gauges recovered by the player («Gauge +N»): `[fn]` -> `[fn]` adds N
-  to the gauge (+0xbc0) and, if > 0, animates the recovery (`BurstGauge_Recovery`). High certainty.
-- `oprUrgencyId`/`oprUrgencyValue` = enemy countdown (`[fn]` ->
-  `[fn]`): id 1 = resets the counters to their initial value («Resets count»), id 2 = adds
+  x10000 of the critical hit (10000 = x1); the
+  chance is scaled by 1 + bonus/10000 of the traits. High certainty.
+- `recovery` = gauges recovered by the player («Gauge +N»): the client adds N
+  to the gauge and, if > 0, animates the recovery (`BurstGauge_Recovery`). High certainty.
+- `oprUrgencyId`/`oprUrgencyValue` = enemy countdown: id 1 = resets the counters to their initial value («Resets count»), id 2 = adds
   `oprUrgencyValue` (signed, maximum 999: «Enemy countdown +3» = 3, «±0» = 0) to the counters of
   type 2/3 enemy attacks. Other ids: nothing. High certainty.
-- `addGuiltBonusId`/`Count`/`Value` = «SP ATK B +N%» (`[fn]`/`[fn]` ->
-  `[fn]`): entry active only with id != 0, count > 0, value != 0; the bonus shown is the
-  **maximum** of the active entries (`[fn]`), in percent (230 = +230%), written into the
-  `CarouselDeck` +0x488 (added to guilt/100 in the cut-in, max 999). Id/count = type and duration
+- `addGuiltBonusId`/`Count`/`Value` = «SP ATK B +N%»: entry active only with id != 0,
+  count > 0, value != 0; the bonus shown is the **maximum** of the active entries, in percent (230 = +230%), added to
+  guilt/100 in the cut-in (max 999). Id/count = type and duration
   (presumably 1 = turns, 2 = attacks, like `addTurn`/`addCount`): to be verified on the bench.
-- `matchCountType`/`matchCountValue`/`matchMagnification`/`unmatchMagnification` (`[fn]`):
-  same list scheme (+0x590 with `matchMagnification`, +0x5e0 with `unmatchMagnification`, entry
-  active with type != 0 and value > 0); multipliers probably x10000. Meaning not verified.
-- `reflection*` (`[fn]` -> `[fn]` for each target): active with `reflectionTurn` > 0
+- `matchCountType`/`matchCountValue`/`matchMagnification`/`unmatchMagnification` :
+  same list scheme (entry active with type != 0 and value > 0); multipliers probably x10000. Meaning not verified.
+- `reflection*` (for each target): active with `reflectionTurn` > 0
   (turns), with `reflectionMagnification` and `reflectionAttribute`; `reflectionResetAttribute` read
   elsewhere. Icons `ActMapReflectionAnim/RIcon_*`. Units not verified.
-- `addBase*` («Medal STR/DEF ±N»): semantics verified in the code, see [Base buff](#basebuff).
+- `addBase*` («Medal STR/DEF ±N»): semantics verified, see [Base buff](#basebuff).
 - <a id="buff-degli-speciali"></a>Buffs/debuffs (from the 154 thethiny rows compared with Roboloid): `buf*` = positive levels,
   `debuf*` = **negative** levels (-N); `...All` = on all targets (specials with `target` 2),
   without `All` = on the target; `addTurn` = duration in turns, `addCount` = duration in attacks;
@@ -293,35 +264,24 @@ schema order from `addTurn` +0x388 up to `unmatchMagnification` +0x52c (`target`
 <a id="basebuff"></a>
 ## Base buff «Medal STR/DEF ±N» (I-155, 18-10)
 
-`burst` fields +0x500..+0x51c in schema order: `addBaseCountType`, `addBaseCountValue`, `addBaseAtkSelf`,
-`addBaseDefSelf`, `addBaseAtkOpponent`, `addBaseDefOpponent`, `resetBase` (+0x518), `addBaseAttribute` (+0x51c).
-Decompiled and disassembled in `D:\Progetto_Restauro_KH_UX\tmp\namine\` (`d1..d8.c`, `g2\lin_86f.txt`).
+`burst` fields in schema order: `addBaseCountType`, `addBaseCountValue`, `addBaseAtkSelf`,
+`addBaseDefSelf`, `addBaseAtkOpponent`, `addBaseDefOpponent`, `resetBase`, `addBaseAttribute`.
 
-- **Reading** (`[fn]`, after a special or a Supernova: row of `[fn]` and, if present, that of
-  `[fn]`): first `resetBase` (bit 0/1 = reset own STR/DEF `[fn]`/`[fn]`, bit 2/3 = those of the
-  targets), then `[fn]` on self (Self) and `[fn]` on **each target** (Opponent) ->
-  `[fn](object, type, duration, atk, def, attribute)` -> `[fn]` twice: STR list (+0) and DEF list
-  (+0x58). An entry is added only with **type != 0, duration >= 1, value != 0** (16-byte entry {type|8, duration,
-  value, attribute}; bit 8 = «added after the last reset», cleared by `[fn]`).
-- **Type** (`[fn]`: decrements by 1 the duration of the entries of that type, removes those at 0): **1 = turns**
-  (`[fn]`/`[fn]` at end of turn: `[fn](.,1)` next to `[fn]`, the decrement of the
-  turn-based buffs), **2 = attacks** (`[fn]` after the attack: `[fn](.,2)` next to `[fn]`, the
-  count-based buffs). DEF side the same with `[fn]`. «1 turn: Medal STR +2000» = type 1, duration 1, value 2000;
-  «3 attacks: ...» = type 2, duration 3. No other type in the code.
-- **Absolute value** added to the medal's STR: `[fn]` = STR of the row + `[fn](list,
-  mask)`, minimum 0, then the multipliers; enemy DEF/enemy STR with the total sum (`[fn]`,
-  `[fn]`, `[fn]`). Equal entries **stack** (Naminé 2000 + 2000, then Supernova +5000 = 9000).
-- **Attribute** (`[fn]`, static masks 0x7 and 0x18; medal mask from `[fn]`): bit 0/1/2
-  = Power/Speed/Magic (medal +0x494 = 1/2/3, or the changed attribute `[fn]`), bit 3/4 = Upright/Reversed
-  (+0x498 = 1/2), like `recurringAttribute`. If the entry has PSM bits the medal must have one of them; if it has U/R bits,
+- **When**: after a special or a Supernova. First `resetBase` (bit 0/1 = reset own STR/DEF, bit 2/3 = those of the
+  targets), then the Self values on the attacker and the Opponent values on **each target**. An entry is added only
+  with **type != 0, duration >= 1, value != 0**.
+- **Type**: **1 = turns** (decremented at the end of each turn), **2 = attacks** (decremented after each attack); entries
+  at 0 are removed. «1 turn: Medal STR +2000» = type 1, duration 1, value 2000; «3 attacks: ...» = type 2, duration 3.
+  No other type.
+- **Absolute value** added to the medal's STR (minimum 0), then the multipliers; enemy DEF/enemy STR with the total sum.
+  Equal entries **stack** (Naminé 2000 + 2000, then Supernova +5000 = 9000).
+- **Attribute** (`addBaseAttribute`): bit 0/1/2 = Power/Speed/Magic, bit 3/4 = Upright/Reversed, like
+  `recurringAttribute`. If the entry has PSM bits the medal must have one of them; if it has U/R bits,
   likewise; **0 = all medals**. «P- & S-Medal STR» = 3, «U-Medal» = 8, «Medal STR» = 0. «PSM-STR» in the
   descriptions is the notation of the level buffs (`buf*`), not of the base buffs.
-- **HUD**: `[fn]` (player: sum of STR filtered by the medal, sum of DEF, flag `[fn]`) and
-  `[fn]` (enemy) -> `[fn]` -> plate. Layouts `ActionMap_BaseBuff_Avt/_Enm` (+ `_eff`) loaded
-  by `[fn]` only if they exist, attached by `[fn]` to the nodes `BaseBuff_Avt_Null1/2`
-  (player) or `BaseBuff_Enm1/2` (enemy, in the bar `RaidBattle_EnemyStatusField_*`; client strings:
-  `BaseBuff_Avt_Null1/2`, `BaseBuff_Enm1/2`, `BaseBuff_Enm_Null1/2`); everything checks for null. PvP:
-  `ActionMapPvP_BaseBuff_*` (not imported).
+- **HUD**: layouts `ActionMap_BaseBuff_Avt/_Enm` (+ `_eff`), loaded only if they exist, attached to the nodes
+  `BaseBuff_Avt_Null1/2` (player) or `BaseBuff_Enm1/2` (enemy, in the bar `RaidBattle_EnemyStatusField_*`; also
+  `BaseBuff_Enm_Null1/2`); everything is optional. PvP: `ActionMapPvP_BaseBuff_*` (not imported).
 - **Data**: no original source has values != 0 (thethiny 11 and 751 rows, JP 4.3.1 without master). Reconstructed
   from the descriptions with `server/make-base-buff.js` (called by `make-game-tables.js`, idempotent; test
   `test-base-buff.js`): **397 rows** (378 turn-based, 19 attack-based, 314 with attribute, 4 with DEF, 3
@@ -357,13 +317,12 @@ Flower Rider, Possessor, Loudmouth, Neoshadow, Creeper/Fire/Ice Plant, White Ros
 <a id="cornice-avatar"></a>
 ## Avatar frame in the HUD (I-125, 14-10)
 
-`[fn](?, angle, ?)` (called by `[fn]`, `ActionMap_PlayerStatusField_new`) loads
+The player status field (`ActionMap_PlayerStatusField_new`) loads
 `img/ui/PlayerStatusIndicator/Avatar_Circle_0N.png` for the angle of lost health
-`(1 - HP/HPmax) * [data]` against the thresholds `[data]` = 90 and `[data]` = 180:
-< 90 Circle_01, 90-180 Circle_05, >= 180 Circle_06 (then Side_01/02). The null texture is not
-checked: SIGSEGV at 0x24, pc `0xb17adc` (logcat -b crash: `rbx` = ARM address). The WW resources
-served only Circle_03/04/05 and Msk: Circle_06 and Side_02-04 from the JP data, Circle_01/02 and Side_01 from the
-2016 package (`import_jp_coco.py`, `JP_IMG`). How to recognize it: crash right after `/stage/start`.
+`(1 - HP/HPmax)` against the thresholds 90 and 180 degrees:
+< 90 Circle_01, 90-180 Circle_05, >= 180 Circle_06 (then Side_01/02). A missing texture crashes the client. The WW
+resources served only Circle_03/04/05 and Msk: Circle_06 and Side_02-04 from the JP data, Circle_01/02 and Side_01 from
+the 2016 package (`import_jp_coco.py`, `JP_IMG`). How to recognize it: crash right after `/stage/start`.
 
 <a id="nemici-jp"></a>
 ## Original enemy graphics (enemy_gen, 14-10)
@@ -372,15 +331,12 @@ Problem: the WW resources serve `lwf/character/enemy/<displayId>/` only for 1, 6
 the Dark Road series: `make-game-tables.js` gave all the others a substitute (Shadow, Armored
 Knight, Dark Road table), e.g. Munny Egg with the Shadow.
 
-What the 4.3.1 client loads (Ghidra): `[fn](enemy, state, n)` formats the LWF from the table
-`0x1f1cc88` = {0 `wait`, 1 `bwait`, 2 `move`, 3 `atk%d_o`, 4 `atkSp`, 5 `knockback`, 6 `dead`} and
-opens it with `[fn]`, which returns NULL if the file is missing; right after, `+0x4a0` is read: crash.
-`[fn]` (creation) only checks that `bwait` and `atkSp` exist (`[fn]`, flags
-`+0x892`/`+0x893`): if absent -> states 1 and 4 fall back to `wait`. `atk%d_o`: n = `attackMotion` of the
-`enemyAttack` row (`[fn]`/`[fn]`, field `+0x2d8`; 2 = `atkSp`); in our master
-all rows have `attackMotion` 1. `[fn]` preloads the 7 entries (tolerates absent ones).
+What the 4.3.1 client loads: per enemy state the LWF `wait`, `bwait`, `move`, `atk%d_o`, `atkSp`, `knockback`,
+`dead`; a missing file crashes when the state is entered. Only `bwait` and `atkSp` are optional (if absent the client
+falls back to `wait`). `atk%d_o`: n = `attackMotion` of the `enemyAttack` row (2 = `atkSp`); in our master
+all rows have `attackMotion` 1. All 7 are preloaded (absent ones tolerated at preload).
 Therefore **mandatory: `wait`, `move`, `atk1_o`, `knockback`, `dead`**; optional `bwait`,
-`atkSp`, `atkN_o`. `move` is needed only when the enemy walks on the field (`[fn]` state 3):
+`atkSp`, `atkN_o`. `move` is needed only when the enemy walks on the field:
 142 of the 360 JP enemies do not have it (plants, stationary bosses, like the served 37), but our maps
 can make them move (Yellow Opera crash on Dark Road 5075): it is reconstructed from `wait` like
 `make_enemy_moves.py`. Appearance effect: `lwf/character/enemy/show_effect_fla/show_effect<showSwf>/`.
@@ -518,10 +474,10 @@ base 148.
 quest is stored in the stage file as an enemy record in a team with flag bit 5 (0x20); the client puts it in a
 separate **ally list**, draws it on the field, makes it join the boss battle and has it **attack the enemies**
 with its own `enemyAttack` rows after the player's turn. It **cannot be tapped/targeted**, has **no HP gauge**,
-is **never attacked** and is not counted. Confidence: high for list/touch/HP bar/ally attack (code read in 1.0.1
-with symbols and confirmed in 4.3.1); medium for "never attacked" (deduced: enemy target lists are built only from
+is **never attacked** and is not counted. Confidence: high for list/touch/HP bar/ally attack (client behaviour, confirmed
+in 4.3.1); medium for "never attacked" (deduced: enemy target lists are built only from
 the engaged-enemy list and the avatar). Work files: `D:\Progetto_Restauro_KH_UX\tmp\npc20xx\` (`scan.py`,
-`scan.json`, `near.py`, Ghidra outputs in `gh\d1-d5.c`).
+`scan.json`, `near.py`).
 
 **Stage files** (JP 4.3.1, `stage_gen\files\stage`, `mapfile.py`; 2,588 files): the 20xx families appear **only**
 in teams with flag 0x20 (51 teams, 46 stages; one with 0xA0), and every 0x20 team contains one of them (no other
@@ -549,31 +505,18 @@ the boss; in 28 of 51 cases also within 200 px of the player start. Level: the s
 | 923, 930-932, 935, 955, 965, 975 (39103-39155) | 2013-2020 | Ralph: 923 «Ralph ... together with Player fights the Heartless», 932 «Ralph joins Player to fight the Heartless» |
 | 977 (39157) | 2021-2024 | Union leaders: «The Union leaders fight Darkness with the help of Player» (2024 Lauriam) |
 
-**Client code.** 1.0.1 with symbols (local reference data, not provided by this project):
-`StageActorManager::setupEnemyActorPlatoon` (0x74ED80): `if (team.flags & 0x20) { actor+650 = 1; ally list
-(+64) } else enemy list (+52)`. `checkEncount` (0x74F1A4): the encountered team's members go to the battle list
-(+76) from the enemy list only; **if the team has bit 0 (boss)** every ally gets `setEncountAction(1)` and
-`lookAt(boss)`. `showWanderingSymbolEnemy` deploys allies on the field too. `deploy`/`setEncountAction`: no
-`RaidBossHPIndicator` when +650. Touch lambda `sub_74E134`: ignores actors with +650 (not targetable). Named
-functions `hasActiveAlly` (0x74F8C4), `startAllyAttack` (0x7527F8), `isEndAllyAttack` (0x752904),
-`doAttackAllyActor` (0x75296C: first engaged living enemy, then `EnemyActor::select_enemy_attack(ally)`).
-4.3.1 (Ghidra = file + 0x100000; RTTI string `ZN17StageActorManager15startAllyAttackEvE3$_9` at 0x188b400):
-`[fn]` = setupEnemyActorPlatoon (`flags >> 5 & 1` -> `+0x352` = 1, ally vector `+0x40`, else `+0x28`);
-`[fn]` touch handler skips `+0x352`; `[fn]`/`[fn]` no HP indicator for `+0x352`;
-`[fn]` = hasActiveAlly (`+0x354` encountered); `[fn]` = startAllyAttack (each ally after a random
-2-18 frame delay); `[fn]` = isEndAllyAttack; `[fn]` = doAttackAllyActor: if an engaged enemy
-(`+0x58` list, `+0x353`) is alive, `[fn]` picks the ally's skill (skillId/skillOdds/skillRequire like an
-enemy), `[fn]` builds the target list from the attack's target code (4 = all living engaged enemies,
-3 = itself, 5 = one picked by `[fn]`), `[fn]` resolves it (with code 2 it also adds the avatar:
-probably the heal/buff rows, e.g. 200201 heal 3500 + attack up), `[fn]` plays the motion: `attackMotion`
-2 -> `atkSp`, else `atk%d_o`. Battle loop `[fn]`: state 10 (after the player's attack) -> if
-`hasActiveAlly` state 0x2b (ally attack) -> 0x2c (wait) -> 0x2d -> enemy phase (0xb) or victory (9) if no engaged
-enemy is alive (`[fn]`): **an ally can land the finishing blow**.
+**Client behaviour.** A team with flag 0x20 goes into the ally list (not an encounter target, no HP indicator, not
+touchable). When the encountered team has bit 0 (boss) every ally joins the battle and faces the boss; allies are also
+shown on the field. After the player's attack each ally (after a random 2-18 frame delay) picks a skill from its own
+`skillId`/`skillOdds`/`skillRequire` like an enemy and attacks: `enemyAttack.target` 4 = all living engaged enemies,
+3 = itself, 5 = one picked at random, 2 also includes the avatar (probably the heal/buff rows, e.g. 200201 heal 3500 +
+attack up); motion `attackMotion` 2 -> `atkSp`, else `atk%d_o`. Then the enemy phase, or victory if no engaged enemy
+is alive: **an ally can land the finishing blow**. Details of the client analysis are kept in the private notes.
 
 **Animations it needs.** Motions requested for an ally: `wait` (field, and battle `bwait` falls back to it),
 `atk1_o` (attackMotion 1) and `atkSp` (attackMotion 2, falls back to `wait` if absent), probably `move` (the attack
 waits for `updateMapPosition`, i.e. an approach); `knockback`/`dead` are never requested (not a target, never
-dies). This explains the sources: 2001-2024 have only wait/atk1_o/atkSp. `[fn]` crashes on a missing LWF
+dies). This explains the sources: 2001-2024 have only wait/atk1_o/atkSp. The client crashes on a missing LWF
 when a state is entered, so `wait` + `atk1_o` (+ `move`) are the real minimum; 2014, 2015, 2019, 2020 have no
 `wait` in any source.
 
@@ -614,8 +557,7 @@ meaning of `enemyAttack.target` 1/2/3 for an ally (who receives the heal/buff ro
 look-alike, confidence, quests, evidence), read by both generators:
 - `recon/tools/make_jp_enemies.py`: **ally completeness rule**, only for the families of the table (never for
   enemies): mandatory `wait` + `atk1_o`; `move`, `knockback` and `dead` copied from `wait` when absent or incomplete.
-  They are never opened for an ally (the evidence above), so the copies are only a safety net against the NULL LWF of
-  `[fn]`; `move` may be entered by the attack approach and was already rebuilt from `wait` for every enemy.
+  They are never opened for an ally (the evidence above), so the copies are only a safety net against a missing LWF; `move` may be entered by the attack approach and was already rebuilt from `wait` for every enemy.
   `atkSp` stays optional (falls back to `wait`). Result: **2001, 2002, 2003 complete** (wait/atk1_o/atkSp JP with
   textures from the 2016 package, the other three from wait; `report.json` `allies_complete`); 2004-2024 still
   incomplete (`wait` and `atk1_o` miss most textures in every source). enemy_gen: 145 complete displayIds, +652 files.

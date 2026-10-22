@@ -11,41 +11,39 @@ is no longer written). Tests: `node server/test-gacha-data.js`, `node server/tes
 `python recon/tools/test_make_banner_catalog.py`. Plan and spec: `docs/superpowers/plans/2026-10-16-shop-estrazioni.md`.
 
 <a id="protocollo"></a>
-## Protocol (WW client 4.3.1, Ghidra addresses)
+## Protocol (WW client 4.3.1)
 
 ### GET /gacha/list (action 75)
 
-- Parser `[fn]` (`gachaList`, element `[fn]`, 0x90 bytes) **and** `[fn]` (`petGachaList`):
-  without `petGachaList` -> «200 ERROR :75». Saved in the singleton `[fn]` +0x560.
-- `[fn]` makes one plate per element (map scene+0x998, grouped by the list's `sortId`, ascending, then drawMedalTypeId; the master's sortId does not count): +0x18 drawMedalTypeId,
-  +0x1c price, +0x20 lotCount, +0x28 bannerUrl, +0x40 drawType, +0x44 payType, +0x48 isDayLimited,
-  +0x4c userLimitedCount (draws LEFT today), +0x50 userWarrantDisplayOfTime, +0x58 warrantMedalIds.
-- The **DrawMedalType** master (parser `[fn]`, getter `[fn]`, table 0x5c) is mandatory: the plate
-  reads the row without checking (displayTimeLeft in `[fn]`, detailUrl in `[fn]`). Every change to
+- The response needs `gachaList` **and** `petGachaList`: without `petGachaList` -> «200 ERROR :75».
+- One plate per `gachaList` element, ordered by the list's `sortId` (ascending), then drawMedalTypeId (the master's
+  sortId does not count). Element fields used: drawMedalTypeId, price, lotCount, bannerUrl, drawType, payType,
+  isDayLimited, userLimitedCount (draws LEFT today), userWarrantDisplayOfTime, warrantMedalIds.
+- The **DrawMedalType** master row of every plate is mandatory: the plate reads it without checking
+  (displayTimeLeft, detailUrl). Every change to
   `drawMedalType.json` = master revision (BASE 118 since 16-10, 119 since 17-10 with the banner catalogue, 120 since
   17-10 with the limits of the free ones in the `comment`).
-- `bannerUrl` downloaded over http by the client (`[fn]` -> `[fn]`), 640x140: `/web/gacha/img/<id>.png`.
+- `bannerUrl` downloaded over http by the client, 640x140: `/web/gacha/img/<id>.png`.
   The images of off-screen plates are downloaded only when the plate enters the view (bench: the
   Platinum plate showed the placeholder heart until `GET /web/gacha/img/10456.png` had arrived).
 
 ### POST /gacha/draw (action 76)
 
-- Tap on DrawButton1/3 -> `[fn]` (busy +0x990/+0x991; drawType in {1,3,5,6}; isDayLimited with
-  userLimitedCount 0 -> no action) -> `[fn]`: local check of jewels (`[fn]`) or tickets
-  (`[fn]`), full box -> popup 0xd; price 0 -> direct draw `[fn]` (never price 0), otherwise
-  confirmation `[fn]` -> `[fn]` (request `[fn]`, then `[fn]` -> SceneDrawRaise).
+- Tap on DrawButton1/3 (drawType in {1,3,5,6}; isDayLimited with userLimitedCount 0 -> no action): the client checks
+  jewels or tickets locally, a full box gives a popup; price 0 -> direct draw without confirmation (never use price 0),
+  otherwise a confirmation, then the request and the draw scene.
 - Request `{"drawMedalTypeId", "count"}` (count = lotCount); payType and price are taken by the server from its catalogue.
-- Response (dispatcher branch 76 at 0x7c46bc; parsers `[fn]`, `[fn]`, `[fn]`): `userData.userPoint`,
+- Response: `userData.userPoint`,
   `userMedals`, `userSkills`, `userMaterials`, `gachaBonus` `{addType: 1, number: 0, userMedalIds: []}` (addType 0
   opens the bonus popup with a missing layout), `firstGetUserMedalIds`, `userMedalIds` (every id must exist after the
   merge of `userMedals`), `effectNumbers` (one per medal, only 0: 1/2 look for missing LWFs),
   `guiltBurstFirstUserMedalIds`, `guiltBurstMaxUserMedalIds`. No jewels in the response: after the response the client
-  requests `GET /user/stone`; OK in the result (`[fn]` -> `[fn]`) -> `GET /gacha/list` and back to the Shop.
-- Scene (`[fn]`, popup `[fn]`): `lwf/raisedraw/demo/raidgacha_result_display_%02d` with %02d = number
+  requests `GET /user/stone`; OK in the result -> `GET /gacha/list` and back to the Shop.
+- Scene: `lwf/raisedraw/demo/raidgacha_result_display_%02d` with %02d = number
   of medals (missing = crash; no _11, maximum 10), per medal `lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare>`.
-- WebView Details (`[fn]`, url from the master `detailUrl`): closing it (`[fn]`) only clears owner+0x991,
+- WebView Details (url from the master `detailUrl`): closing it sends
   **no new /gacha/list** (confirmed on the bench, below).
-- Draw Odds: global `odds` link from the login (+0xf0, `[fn]`); the client **appends the plate's
+- Draw Odds: global `odds` link from `/system/login`; the client **appends the plate's
   drawMedalTypeId** to the url (bench: `GET /web/gacha/odds9001`), so the link is `/web/gacha/odds/` and the route
   `/web/gacha/odds/<id>` shows the rates of that banner (all of them for the Catalog plate 9001).
 
@@ -53,7 +51,7 @@ is no longer written). Tests: `node server/test-gacha-data.js`, `node server/tes
 ## Plate rules
 
 - **payType**: 1 jewel (free+pay, the only one used for jewels), 3 payStone only (always 0: never), 4-6 drawTicket1-3
-  (always 0), 7/8 limitedDrawTicket1/2 (Platinum/Draw Ticket, `userPoint` +0x74..), **9 = crash** when drawing (text
+  (always 0), 7/8 limitedDrawTicket1/2 (Platinum/Draw Ticket, from `userPoint`), **9 = crash** when drawing (text
   106240303 missing). payType 1 -> DrawButton1 with the price text; 4-9 with tickets < price -> grey
   button (`But07_Disable`, since resources 39).
 - **price** never 0 (draw without confirmation); **benefitId** always 0 (locked plate: padlock, the tap
@@ -138,8 +136,8 @@ used today, tickets 0.
 2. Missing Medal_D_*: not observed (pool without darklight 3; None1-6 are not needed).
 3. Raisedraw LWFs in the index: served by resources 40 (raisedraw_gen), animations for 1, 3, 5 and 10 seen.
 4. Repeated ids and Icon_New: not observed (no new medal in the draws done; no repeated id).
-5. Full-box popup 0xd, /user/stone error: not tested.
-6. `[fn]` (analytics only): no visible effect with payType 1.
+5. Full-box popup, /user/stone error: not tested.
+6. Analytics call of the client: no visible effect with payType 1.
 7. Server rejection («200 ERROR :76»): not tested on the bench (covered by `test-gacha-server.js`).
 
 <a id="sp2"></a>
@@ -535,16 +533,16 @@ reduced save was put back identical (hash). Banners: `-GachaShow B0306,B0629,B00
   arrive maxed from any banner (rule above, in the Rules); the preset of B0306-B0308 (2018) remains
   for their Tier 1-4 7★.
 - **Popup levels after a draw**: with `guiltBurstFirst/MaxUserMedalIds` the client computes the levels from the
-  medal rows of the listed copies (`[fn]`: start = `userPoint.guiltBurstLv` - `addGuiltBurstLv` +0x4c4
-  of the first ones - `addGuiltBurstLvMax` +0x4c8 of the max ones; `[fn]`/`[fn]` add them back at each step).
+  medal rows of the listed copies (start = `userPoint.guiltBurstLv` - `addGuiltBurstLv` of the first ones -
+  `addGuiltBurstLvMax` of the max ones, then added back at each step).
   With 0 in the master the popup showed the same level twice. `server/make-nova-rows.js` (at the end of
   `make-game-tables.js`, idempotent, `test-nova-rows.js`) puts 1/5 only on the attack rows with a Tier that a preset
   «guilt: max» can deliver and on their boosted ones: today 1669 rows, i.e. **all** the attack 7★ with Tier > 0 and
   their boosted ones (slot 0 of B0306-B0308). It is a deliberate approximation, wider than slot 0 of B0306 (Tier <= 4):
   filtering by `tierMin`/`tierMax` would have required another master revision (controller's decision). The
   popup starts only when the server sends the lists, so normal draws do not show it (except the Tier
-  9-10 7★ from the dates of decision 13-bis, which arrive maxed); other readers of the
-  field in the client (`[fn]`, `[fn]`, `[fn]`) were not understood: that is why 1/5 was not put
+  9-10 7★ from the dates of decision 13-bis, which arrive maxed); other uses of the
+  field in the client were not understood: that is why 1/5 was not put
   on all medals.
 - **Bench (17-10, rev 122, full save)**: normal draw on B0629 -> no popup (2bf_n1_after1-4);
   B0306 -> slot 0 Aladdin 7★ (Tier 3) with 5 dots and guilt 10000 (the Tier's maximum) in the save, popup «NOVA
@@ -570,7 +568,7 @@ reduced save was put back identical (hash). Banners: `-GachaShow B0306,B0629,B00
   no Nova popup; the next draw on B0619 closes without a backlog popup (b2b_evo8c, b2b_post_ok1).
   The Evolve preview shows +280% (maximum of Tier 9): it is the client, not the server.
 - **B0637, long yellow strip (M1): BROKEN**. The client writes «A  guaranteed in !» (no names, no
-  number; tmp\strip_all.png); with few targets (B0619, 7★ Medal Deal) the strip is correct. Cause: 0x400-byte
+  number; tmp\strip_all.png); with few targets (B0619, 7★ Medal Deal) the strip is correct. Cause: 1024-byte
   buffer of the client's format, 12 banners involved: I-153.
 - Stumbles: after killing the server to edit the save, the relogin stopped at the title with «Launcher3 non
   risponde» (Wait, then KHUX START by hand); the first tap on MENU after the Notices is lost (I-143).
@@ -579,13 +577,13 @@ reduced save was put back identical (hash). Banners: `-GachaShow B0306,B0629,B00
 #### I-153: pity strip with long lists, «Category text» (17-10, commit 086ab8e, master BASE 123)
 
 Analysis (static, WW client 4.3.1) in `D:\Progetto_Restauro_KH_UX\tmp\strip_b0637\report.md` (with `measure.js`). With
-`validComment` 0 and several names `[fn]` joins the distinct names of `warrantMedalIds` into
+`validComment` 0 and several names the client joins the distinct names of `warrantMedalIds` into
 «<important>nome</important>» with «, » and «, or » before the last one and formats
-`A ${1:%s} guaranteed in <important>${2:%d :#try:#tries}</important>!` with `vsnprintf` into 0x400 bytes
-(`[fn]`), then `[fn]` wraps it in `<xml>%s</xml>` into another 0x400 bytes: limit **J <= 963 bytes**,
+`A ${1:%s} guaranteed in <important>${2:%d :#try:#tries}</important>!` into a 1024-byte buffer, then wraps it in
+`<xml>%s</xml>` into another 1024 bytes: limit **J <= 963 bytes**,
 beyond 1021 names and number stay empty («A  guaranteed in !»). J = sum(23 + UTF-8 bytes of the name) + 2·(k-2) + 5 for
-k >= 2 distinct names (one name: its bytes). With `validComment` != 0 the client only does `sprintf(comment,
-userWarrantDisplayOfTime)` (master +0x6ec, 0x801 bytes) and **does not read** `warrantMedalIds` (the same branch that the
+k >= 2 distinct names (one name: its bytes). With `validComment` != 0 the client only formats the master
+`comment` (up to 2049 bytes) with userWarrantDisplayOfTime and **does not read** `warrantMedalIds` (the same branch that the
 banners without pity have always used, with an empty list).
 
 User's decision: «Category text». Rules (`server/gacha.js`, `server/make-banners.js`):
@@ -835,7 +833,7 @@ got in. Now (`gacha-data.shopWindow`, `server.js storyCtx`, `gacha.shopBanners`)
 - Details «Not in the Shop now»: in how many weeks the banner comes back, or «ran before your current Story period»;
   Shop notice with the «Weekly rotation» section. Banners from past periods remain only in the Catalog.
 - Countdown under the button (19-10, user's request from the video Z_JRaJF7GbQ): the plate's original label
-  `Plate_Limit` (`[fn]`: if `displayTimeLeft` of the drawMedalType row is not 0, time until
+  `Plate_Limit` (if `displayTimeLeft` of the drawMedalType row is not 0, time until
   `endDate`; with payType 7-9 the label `Plate_Limit_LimitDraw` under 100 days). The server (`servedMasterRows`)
   sets `displayTimeLeft: 1` and `endDate` = the Monday 08:00 on which the rotation removes the banner from the Shop
   (`gacha.shopLeaveWeeks`), in fake time like the quests; banners that stay for the whole tranche period

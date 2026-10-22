@@ -1,4 +1,4 @@
-# LDPlayer bench: startup, scripts, crash capture
+# LDPlayer bench: startup, scripts, crashes
 
 Technical notes of the test bench. Full history in
 [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
@@ -12,9 +12,7 @@ Technical notes of the test bench. Full history in
   arm64-v8a translated by houdini, root via `ld.exe`). **Original** APK 4.3.1 (the patched one stops
   at LIAPP's anti-repackaging, see [protector.md](protector.md)):
   `D:\Progetto_Restauro_KH_UX\apk\khux-4.3.1-original.apk`.
-- Ghidra 12.1.4: `D:\Progetto_Restauro_KH_UX\Android\ghidra_12.1.4_PUBLIC_20260921` (junction from the
-  old `C:\work\Android\ghidra_…`), project in `recon/ghidra/project` (not versioned).
-- Screenshots and tombstones: `D:\Progetto_Restauro_KH_UX\screenshots` (they go through the shared
+- Screenshots: `D:\Progetto_Restauro_KH_UX\screenshots` (they go through the shared
   folder `Documents\XuanZhi9\Pictures` and are moved). Server log:
   `D:\Progetto_Restauro_KH_UX\logs\server.log`.
 - Player save: `server/save/player.json` (excluded from git; `KHUX_SAVE` changes it).
@@ -147,33 +145,18 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 <a id="crash"></a>
 ## Recipe for a client crash
 
-1. `tools/ldplayer/tombstone.ps1`: the suspicious ARM (Ghidra) addresses from the latest tombstone. Under
-   houdini the backtrace is all in `libhoudini`, but: the x86 registers contain the current ARM
-   instruction (e.g. `rbx = 0xf9400808` = `ldr x8,[x0,#0x10]`), and the houdini stack keeps the PC and
-   returns of the translated code (values in the `r--` mapping of `libcocos2dcpp.so`; Ghidra = value
-   - base + `0x100000`). The fp/lr pairs below rsp are the real ARM chain.
-2. If that is not enough, the crash capture tools (**armtrace**: ARM registers and stack at the crash)
-   are used. They are kept private, outside the public repository; their output is in
-   `<W>\dumps\armtrace`.
-3. (developer) `armtrace\stackcap.ps1 -Tag x [-MenuY 697] [-NoMenu] -Taps 'x,y'` (private copy) captures the
-   ARM stack at the crash; `-NoStart -WaitSec N` arms the capture while another script triggers the crash.
-4. Reading the capture: registers, backtrace and the short libc++ strings left on the stack (byte =
-   length*2, then the name).
-5. **Library base**: it changes at every emulator start (0x31c0000 on 9 October, 0x31d4000 on the
-   10th, 0x320c000 and 0x3314000 on the 11th). stackcap prints it: pass it with `$env:KHUX_BASE` to
-   the analysis scripts. With a wrong base you get false leads (the «PetInfoDialog»
-   of 11 October).
-6. **pc/lr between 0x11ad000 and 0x11b2000 = GUIReader = missing cocostudio layout**: the path of the
-   layout is in a register (x24 or similar) or as a string in `stack.bin` (quests 699-704 on 22-10:
-  `ActMapTimeAttack_TimePanel.json`, captured with `stackcap.ps1 -NoStart`, imported from the JP via
-  `recon/tools/jp_coco_layouts.txt`). List in `catalog\missing_layouts.txt`.
-7. Then `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi>` and
-   `recon/tools/widget_lookup.py` for the names of the widgets the code looks for. See
-   [analisi.md](analisi.md).
+1. Note the last screen and the last request in `logs\server.log`: most client crashes on this bench come from a
+   master row the client asks for and the server does not send, or from a resource the client loads and the
+   server does not serve (missing layout, LWF or texture).
+2. **Missing cocostudio layout**: the client stops while loading a layout that is not in the served
+   resources (quests 699-704 on 22-10: `ActMapTimeAttack_TimePanel.json`, imported from the JP via
+   `recon/tools/jp_coco_layouts.txt`). List in `catalog\missing_layouts.txt`.
+3. The crash capture tools (ARM registers and stack at the crash) and the notes on reading a capture are
+   kept private, outside the public repository.
 
 <a id="ldplayer"></a>
 ## LDPlayer: pitfalls
-- **Error «g_pPipeMemHead->arBufHead[i].usingPipeId != nPipeId» and LDPlayer crash** (11 October, twice): several ld.exe at once (quest in the background + capture or screenshot every second) or an ld.exe killed halfway corrupt the shared memory of the pipes. Now Sh of bench_lib.ps1 (and tombstone.ps1) goes through a system mutex Global\khux_ld_exe: one ld.exe at a time even across different scripts. Never Stop-Process on ld.exe: if it stays hung, ldconsole quit and launch.
+- **Error «g_pPipeMemHead->arBufHead[i].usingPipeId != nPipeId» and LDPlayer crash** (11 October, twice): several ld.exe at once (quest in the background + capture or screenshot every second) or an ld.exe killed halfway corrupt the shared memory of the pipes. Now Sh of bench_lib.ps1 (and the other bench scripts) goes through a system mutex Global\khux_ld_exe: one ld.exe at a time even across different scripts. Never Stop-Process on ld.exe: if it stays hung, ldconsole quit and launch.
 
 - adb does not open on this version: use `ld.exe -s 0 "<comando>"` (root shell in the guest) and
   `ldconsole installapp --index 0 --filename <apk>`. `ldconsole quit` may not be enough:

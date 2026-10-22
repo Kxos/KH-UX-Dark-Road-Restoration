@@ -1,7 +1,7 @@
 <a id="guilt"></a>
 # Guilt and Level Up with special medals (I-079, I-080)
 
-Analysis of 12 October 2026 (agent): sources in `reference\guilt` (user's guide p.16/20/21, khuxwiki). Rules, client fields (`attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`, `guiltFactor` of userMedal, `[fn]`; `POST /user/medal/enhance` action 55, `[fn]`; table `guiltProb`, `[fn]`) and rules in `server/medal-guilt.js`. Brooms = Magic Broom (5*, Evolve material), Mickey & Brooms = Fantasia Mickey B (6*, type 8): previously missing from the master (make-game-tables.js discarded the Roboloid rows without an attribute).
+Analysis of 12 October 2026 (agent): sources in `reference\guilt` (user's guide p.16/20/21, khuxwiki). Rules, client fields (`attackUpperNumber`, `defenseUpperNumber`, `burstUpperNumber`, `upperCost`, `guiltFactor` of userMedal; `POST /user/medal/enhance` action 55; table `guiltProb`) and rules in `server/medal-guilt.js`. Brooms = Magic Broom (5*, Evolve material), Mickey & Brooms = Fantasia Mickey B (6*, type 8): previously missing from the master (make-game-tables.js discarded the Roboloid rows without an attribute).
 
 <a id="stato"></a>
 ## Status (12 October 2026): wired up; VERIFIED on the bench (closed 22 October 2026)
@@ -54,7 +54,7 @@ dots only with identical copies (medalId) or Mickey & Brooms, as on the wiki.
   guiltProb, isGuilt: isGuiltUnlocked()})`; the state goes into `medalState` and into
   `afterEnhanceUserMedal`. Log: `pallini a->b, guilt a->b (tiri ...), STR +, DEF +, costo -`.
 - `guiltBurstFirstLv/MaxLv` = TARGET level of the «NOVA LEVEL UP!» popup (`guiltBurst().gained()`): the client
-  (`[fn]` -> `[fn](scena, da, a)`) shows «LV <its own level> » LV <field>», so first guilt =
+  shows «LV <its own level> » LV <field>», so first guilt =
   level after the +1, maximum guilt = level after the +5 as well, 0 = no popup (commit bad55f1: with the increase the
   bench showed «LV 6 » LV 1»). Popup on by default since sub-project 2b (JP LWF
   `GuiltBonus_BurstLvup(_num)`, `GuiltBonus_Wfix0..9`, layout `MedalInfo_Burst_Info.json`, «NOVA» logo from
@@ -66,17 +66,17 @@ dots only with identical copies (medalId) or Mickey & Brooms, as on the wiki.
   (notice 56838); before that only with the preset ([shop.md#sp2b](shop.md#sp2b)).
 - `userDetail.isGuilt = isGuiltUnlocked()`: quest number >= 34 (Power Bangle; `stageNumber` of
   `lastClearStageId`), or always 1 with `KHUX_GUILT_BURST_LV` > 0 (Burst tests). The client
-  ([fn], [fn]) allows unlock/reroll and Magic Mirror only with `isGuilt`; the
-  Burst button stays hidden while `guiltBurstLv` is 0 ([fn]). The support row
+  allows unlock/reroll and Magic Mirror only with `isGuilt`; the
+  Burst button stays hidden while `guiltBurstLv` is 0. The support row
   (`supportUsers`, isGuilt 0) does not change.
 - `module.exports._test`: functions for `test-medal-enhance.js`.
 
 - Dot overflow (bench 18-10, Vexen [+] 2 dots + two copies with 1: the client showed the unlock
-  with «00%», the server had lost the overflow): the client preview ([fn], [fn]) adds
-  1 + dots of each copy; if base dots + sum > maximum (strict) it raises the unlock flag
-  (scene +0x524, ~0x00c826a8) and the copy that overflows is the last selectable one. With guilt > 0 only one copy
-  (reroll, +0x523, «Bonus range» popup); guilt at maximum: the copy rolls a trait (+0x525). The guilt
-  of the copy is never read; only one roll per fusion. The result ([fn]) shows only the
+  with «00%», the server had lost the overflow): the client preview adds
+  1 + dots of each copy; if base dots + sum > maximum (strict) it shows the unlock
+  and the copy that overflows is the last selectable one. With guilt > 0 only one copy
+  (reroll, «Bonus range» popup); guilt at maximum: the copy rolls a trait. The guilt
+  of the copy is not used; only one roll per fusion. The result shows only the
   guiltFactor of the response. `applyEnhance` follows this rule; bench case in `test-medal-guilt.js`.
 - <a id="banco-1910"></a>**Tried on the bench on 19-10** (rev 128, resources 43, server with `-GachaShow B0280`):
   Vexen [+] 2865 shows a yellow «+201%» in Medal List and detail. Reroll: 2865 (5 dots, 20100) + copy with
@@ -87,7 +87,7 @@ dots only with identical copies (medalId) or Mickey & Brooms, as on the wiki.
   client (EXP x1.5: 34,222 -> 51,333, the preview shows the EXP without the Great Success).
 - <a id="lwf-originali"></a>**Original animations (19-10, resources 44)**: `lwf/medal/guilt_bonus/GuiltBonus` (unlock/reroll),
   `GuiltBonus_result`, `GuiltBonus_max` (guilt at maximum, «MAX» logo) and the digits `GuiltBonus_Yfix0-9`/`Rfix0-9`
-  were OURS (`make_guilt_bonus_lwf.py`, now only a fallback); the originals are in the JP 4.3.1 data (thethiny)
+  were OURS (`make_guilt_bonus_lwf.py`, now only a fallback); the originals are in the JP 4.3.1 data (local reference data)
   and `import_jp_raisedraw.py` imports them into the raisedraw_gen pack. The JP export saves a shared
   texture only in the first folder that uses it: source by exact original NAME + declared dimensions
   (`name_index`/`by_name`, guilt folders only, never «ビットマップ N»): yellow digits of Yfix and _result from
@@ -110,18 +110,15 @@ button, only from `guiltBurstLv` in the logs).
 - Medal List: the new rows 300948/300913 appear (grant-all-medals picks them up: `sell` > 0) and
   type 8 does not break sorting/filters.
 - Level Up preview: Chip/Dale/Cid/Mirror selectable, «+STR/+DEF/COST» and «Bonus range +40 - 100%»
-  (texts 101300036/101300043-45), result with effects 7 (dot/unlock) and 8 (guilt up) of
-  [fn] (animations `[fn](…,7/8)`: check that the LWFs exist).
+  (texts 101300036/101300043-45), result with effects 7 (dot/unlock) and 8 (guilt up)
+  (each plays a guilt LWF: check that the LWFs are served).
 - STR in the detail = STR of the level + attackUpperNumber.
 - Cost (bench rev. 95: Cid 90076 = -1 as on the khuxwiki, but «Cost 46» unchanged): `upperCost` is
-  a signed int, the change of the cost, negative for Cid. `[fn]` (construction
-  of the medal object from the `userMedal` of `[fn]`, structure +0x28) writes object +0x2c =
-  **-upperCost**, and all readers use `cost - (+0x2c)`: sum of the deck cost
-  (`[fn]`), comparison for sorting (`[fn]`), Optimize (`[fn]`),
-  preview limit (`[fn]`: `minCost < cost - (+0x2c) - accumulato`), effect 6 of the
-  result (`[fn]`: if +0x2c goes up). The server sent +1 (effective cost 47): now
-  `userMedalElement` sends `-medalState.upperCost` (fix of 12-10, after rev. 95). The medal
-  detail (`[fn]`, 0x7308b4) instead prints the master's `cost` without subtracting
-  anything: there 46 stays 46 in the original 4.3.1 as well.
+  a signed int, the change of the cost (negative for Cid): the client's effective cost is
+  **cost + upperCost**, used for the deck cost
+  sum, sorting, Optimize, the Level Up preview limit and effect 6 of the result. The server sent +1
+  (effective cost 47): now `userMedalElement` sends `-medalState.upperCost` (fix of 12-10, after rev. 95).
+  The medal detail instead prints the master's `cost` unchanged: there 46 stays 46 in the original 4.3.1
+  as well.
 - The server result matches the client preview (dots, guilt unlock): if the
   client computes differently (e.g. guilt with `isGuilt` 0) the detail after the fusion shows it.
