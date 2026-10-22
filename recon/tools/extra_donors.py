@@ -34,6 +34,7 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 TABLE = os.path.join(HERE, 'extra_donors.tsv')
 RECOLOUR_TABLE = os.path.join(HERE, 'jp_recoloured.tsv')
+DEEP_TABLE = os.path.join(HERE, 'extra_donors_deep.tsv')
 D = r'D:\Progetto_Restauro_KH_UX'
 ROOTS = {
     'jp431': [os.path.join(D, '[local reference data]', '', '[local reference data]', 'data', '[local reference data]',
@@ -44,7 +45,7 @@ ROOTS = {
     'recolour': [os.path.join(D, 'enemy_gen_src', 'recolour')],
 }
 RULES = {'exact501': 1, 'lwfmatch+anchors': 2, 'unique': 2, 'align&donor': 2, 'donor&order': 2, 'twinfam': 2,
-         'whole-dr-twin': 2, 'recolour': 4, 'recolour-whole': 4}
+         'whole-dr-twin': 2, 'content-anchor': 2, 'bracket': 2, 'recolour': 4, 'recolour-whole': 4}
 
 
 def category(rule):

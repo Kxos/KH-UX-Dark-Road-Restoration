@@ -41,6 +41,8 @@ vista, anche animazioni intere (recon/tools/extra_donors.tsv, categoria 2; `--ex
 (categoria 3) e per ultime le RICOLORATE dal gemello di colore (recon/tools/jp_recoloured.tsv, categoria 4, PNG generati
 in enemy_gen_src\\recolour; `--recolour ''` la esclude), con la dead generica intera del gemello. Radici dei contenitori:
 `--src-root jp501=<cartella>`. Ogni famiglia completa ha la sua categoria (la peggiore) in report.json.
+Category 2 also includes the original copies found by content in other LWFs of the same creature (I-194, 22-10:
+recon/tools/extra_donors_deep.tsv from deep_donors.py, rules content-anchor and bracket; `--deep ''` excludes it).
 
 Effetti di comparsa: lwf/character/enemy/show_effect_fla/show_effect<N>/ per gli showSwf originali
 (external\\thethiny\\enemy_dec.json) non serviti, stesse regole (completi o niente).
@@ -77,6 +79,8 @@ ap.add_argument('--recon', default=None,
                 help="tabella delle texture ricostruite (default recon/tools/jp_reconstructed.tsv; '' = nessuna)")
 ap.add_argument('--extra', default=None,
                 help="copie originali da altri contenitori (default recon/tools/extra_donors.tsv; '' = nessuna)")
+ap.add_argument('--deep', default=None,
+                help="original copies found by content (default recon/tools/extra_donors_deep.tsv, deep_donors.py; '' = none)")
 ap.add_argument('--recolour', default=None,
                 help="texture ricolorate da un gemello (default recon/tools/jp_recoloured.tsv; '' = nessuna)")
 ap.add_argument('--src-root', action='append', default=[], metavar='CONTENITORE=CARTELLA',
@@ -104,6 +108,10 @@ import jp_reconstructed  # noqa: E402
 RECON = jp_reconstructed.load(jp_reconstructed.TABLE if a.recon is None else a.recon)
 import extra_donors  # noqa: E402
 EXTRA = extra_donors.load(extra_donors.TABLE if a.extra is None else a.extra, rules=set(extra_donors.RULES) - {'recolour', 'recolour-whole'})
+# original copies found by content (deep_donors.py: rules content-anchor and bracket, category 2); extra_donors.tsv
+# wins on the same rows
+EXTRA = dict(extra_donors.load(extra_donors.DEEP_TABLE if a.deep is None else a.deep,
+                               rules={'content-anchor', 'bracket'}), **EXTRA)
 RECOL = extra_donors.load(extra_donors.RECOLOUR_TABLE if a.recolour is None else a.recolour, rules={'recolour', 'recolour-whole'})
 ROOTS = dict(extra_donors.ROOTS, jp431=[a.jp_root])
 for _x in a.src_root:
