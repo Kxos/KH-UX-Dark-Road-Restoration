@@ -17,7 +17,7 @@ function blueFairyRows(medalRows, broomId) {
     ...broom, medalId: id, imageId: id, thumbId: id, cutinId: id, artId: id, displayId: id,
     sortId: BLUE_FAIRY_ALBUM[lv], listSortId: BLUE_FAIRY_ALBUM[lv],
     name: `Blue Fairy [SA Bonus LV ${lv}]`,
-    flavor: "A fairy who gives life to Pinocchio, and tasks\nJiminy Cricket to be the boy's conscience.",
+    flavor: "The fairy who brings Pinocchio to life\nand makes Jiminy Cricket his conscience.",
     advantage: `A Medal necessary to evolve a 6★ Medal\nwith a special attack bonus LV of ${lv}.`,
     rare: 6, darklight: 1,
   }));

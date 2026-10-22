@@ -35,9 +35,10 @@ const check = (ok, msg) => { if (!ok) errors.push(msg); };
 const L10 = (r) => r.lv10 ?? r.lv * 10;
 
 // tabella khuxwiki ridotta (make-keyblade-levels.js): materiali per il livello dopo
-const wiki = JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'keyblade_levels.json'), 'utf8'));
+// (generata in locale, non versionata: ensureTable la rifa' dal dump della wiki se manca)
 // id dei materiali senza id nella khuxwiki (Trophy NI/CS/CK -> 61/62/63, make-trophy-materials.js)
-const { materialIdOf } = require('./make-keyblade-levels');
+const { materialIdOf, ensureTable } = require('./make-keyblade-levels');
+const wiki = ensureTable();
 
 // ---- 1. tabelle: catene +0..+60 per serie ---------------------------------------------------
 const chains = new Map();

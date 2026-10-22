@@ -17,7 +17,7 @@ function meowRows(medalRows, broomId) {
     ...broom, medalId: id, imageId: id, thumbId: id, cutinId: id, artId: id, displayId: id,
     sortId: MEOW_ALBUM[lv], listSortId: MEOW_ALBUM[lv],
     name: `Dual Meow Wow [SAB LV ${lv}]`,
-    flavor: 'KINGDOM HEARTS 3D (2012)\n\nAn adorable Dream Eater that attacks\nwith its cute little horn.',
+    flavor: 'KINGDOM HEARTS 3D (2012)\n\nA friendly Dream Eater that charges\nin horn first.',
     advantage: `Grants Supernova to or strengthens the\nSupernova of specific Medals with an\nSP attack bonus LV of ${lv}.`,
     rare: 6, darklight: 1,
   }));

@@ -6,7 +6,7 @@
 // keybladeId di evolveId, quindi senza le righe in mezzo si saltava da +0 a +5. Qui si
 // ricostruiscono tutti i livelli interi +0..+35 dalle tabelle della khuxwiki (ricerca in
 // D:\Progetto_Restauro_KH_UX\reference\keyblades\keyblade_levels.json, copia ridotta in
-// server/tables/keyblade_levels.json):
+// server/tables/keyblade_levels.json, generata qui e MAI versionata: dati della wiki, .gitignore):
 //   - keybladeId: serie*1000 + livello*10 fino a +20, poi serie*1000 + 200 + (livello-20)
 //     (Bad Guy Breaker: livello*10 sempre), come le righe della 5.0.1;
 //   - design (displayId), passiva, rotazione/scala: quelli della riga 5.0.1 precedente;
@@ -28,6 +28,9 @@
 // category, slotNumber, attribute 1/2/3, darklight 1 Upright / 2 Reversed / 3 nessuno}.
 //
 //   node server\make-keyblade-levels.js [keyblade_levels.json della ricerca]
+//   node server\make-keyblade-levels.js --table-only [keyblade_levels.json della ricerca]
+//     (solo la tabella ridotta, senza toccare server/master_data: la usano anche i test)
+// Sorgente predefinita: KHUX_KEYBLADE_REF oppure REF qui sotto.
 // Poi alzare KHUX_REVISION (revisione dei master).
 'use strict';
 
@@ -36,7 +39,7 @@ const path = require('path');
 
 const MASTER = path.join(__dirname, 'master_data');
 const TABLE = path.join(__dirname, 'tables', 'keyblade_levels.json');
-const REF = 'D:\\Progetto_Restauro_KH_UX\\reference\\keyblades\\keyblade_levels.json';
+const REF = process.env.KHUX_KEYBLADE_REF || 'D:\\Progetto_Restauro_KH_UX\\reference\\keyblades\\keyblade_levels.json';
 const ATTR = { Power: 1, Speed: 2, Magic: 3 };
 const DL = { Upright: 1, Reversed: 2 };
 const MAX_LV = 35;
@@ -79,15 +82,26 @@ function extract(ref) {
   return out;
 }
 
+// tabella ridotta: da refPath se dato, altrimenti quella gia' generata, altrimenti da REF
+function ensureTable(refPath) {
+  if (!refPath && fs.existsSync(TABLE)) return load(TABLE);
+  const src = refPath || REF;
+  if (!fs.existsSync(src)) {
+    throw new Error(`${TABLE} manca e non c'e' la sorgente ${src}: impostare KHUX_KEYBLADE_REF (dump locale della wiki)`);
+  }
+  const table = extract(load(src));
+  fs.mkdirSync(path.dirname(TABLE), { recursive: true });
+  save(TABLE, table);
+  console.log(`tabella ridotta: ${TABLE}`);
+  return table;
+}
+
 function main() {
-  const refPath = process.argv[2] || (fs.existsSync(TABLE) ? null : REF);
-  let table;
-  if (refPath) {
-    table = extract(load(refPath));
-    fs.mkdirSync(path.dirname(TABLE), { recursive: true });
-    save(TABLE, table);
-    console.log(`tabella ridotta: ${TABLE}`);
-  } else table = load(TABLE);
+  const args = process.argv.slice(2);
+  const tableOnly = args.includes('--table-only');
+  const refPath = args.find((a) => !a.startsWith('--'));
+  const table = ensureTable(refPath);
+  if (tableOnly) return;
 
   const kbFile = path.join(MASTER, 'keyblade.json');
   const anchors = load(kbFile).filter((r) => !r.generated);
@@ -197,4 +211,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { MATERIAL_BY_NAME, TROPHY_STEPS, materialIdOf };
+module.exports = { MATERIAL_BY_NAME, TROPHY_STEPS, materialIdOf, ensureTable };

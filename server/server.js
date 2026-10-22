@@ -1126,7 +1126,7 @@ function stageEnemyDrops(stageId) {
 // Trick Steal del pet (I-137): il client manda isSteal a /stage/start se un trick aperto ha invokeType 1
 // ([fn]); il server sceglie il drop rubato (stealType != 0 -> nemico +0x35a, banner e recovery_skill alla morte)
 // e a /stage/clear ne da' la quantita' x skillValue3, la stessa che il client mostra nei risultati ([fn]: max
-// sv3 dei trick con invokeType 1). Wiki: «50% trigger rate when enemies drop an item. 1 charge per battle»: un tiro
+// sv3 dei trick con invokeType 1). Lista della community: 50% di attivazione quando un nemico lascia un drop, una volta per battaglia: un tiro
 // del 50% per nemico con drop, in ordine di uid, il primo che riesce.
 const STEAL_CHANCE = 0.5;
 function stealMultiplier() {

@@ -140,7 +140,7 @@ function extraMedalRows(medalRows) {
     out.push({
       ...mickeyA, medalId: BROOM_ID, imageId: BROOM_ID, thumbId: BROOM_ID, sortId: 673, listSortId: 673,
       name: 'Magic Broom',
-      flavor: "The Sorcerer's Apprentice (1940)\n\nKing Mickey cast a spell on these brooms\nand turned them into hard workers.",
+      flavor: "The Sorcerer's Apprentice (1940)\n\nEnchanted brooms put to work\nby King Mickey's magic.",
       advantage: 'A Medal necessary to evolve\na Fantasia Mickey Medal.',
       type: 6, rare: 5, validPack: 1, validEvolve: 0, evolveId: 0, validEvolveNeed: 0, evolveNeedId: [0, 0, 0, 0, 0],
     });
@@ -149,7 +149,7 @@ function extraMedalRows(medalRows) {
     out.push({
       ...mirror, medalId: MICKEY_B_ID, imageId: MICKEY_B_ID, thumbId: MICKEY_B_ID, sortId: 652, listSortId: 652,
       name: 'Fantasia Mickey B',
-      flavor: "The Sorcerer's Apprentice (1940)\n\nMickey back when he was still in\ntraining under Master Yen Sid.",
+      flavor: "The Sorcerer's Apprentice (1940)\n\nA young Mickey, still learning\nfrom Master Yen Sid.",
       advantage: 'Boosts the special attack of a\n3★ Medal or higher by 1 level.',
       darklight: 1, type: 8, rare: 6, validPack: 1, enhanceGuilt: 0,
     });

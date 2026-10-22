@@ -76,8 +76,8 @@ function shopWindow(catalog, quest, week, rot) {
 // Decisione 13-bis, regola originale: dalla data del notice le 7★ di quel Tier estratte arrivano con pallini e guilt al
 // massimo (server.js respondGachaDraw), confrontata con asOf del banner (la stessa data delle medaglie del pool).
 const MAX_GUILT_FROM = Object.freeze({
-  9: Object.freeze({ date: '2019-01-01', notice: 48236 }),   // «Birth by Sleep Falling Price Deals!»: «7★ Tier 9 Medals come with the maximum bonus percentage of 280%»
-  10: Object.freeze({ date: '2019-09-01', notice: 56838 }),  // «Supernova+ Foreteller Deals!»: «7★ Tier 10 Medals come with the maximum bonus percentage of 320%»
+  9: Object.freeze({ date: '2019-01-01', notice: 48236 }),   // deal Birth by Sleep a prezzo calante: i 7★ di Tier 9 col bonus massimo del 280%
+  10: Object.freeze({ date: '2019-09-01', notice: 56838 }),  // deal Supernova+ dei Foreteller: i 7★ di Tier 10 col bonus massimo del 320%
 });
 // true se una 7★ di quel Tier, estratta alla data at (asOf), arriva al massimo per la regola (senza preset)
 const maxGuiltRule = (rare, tier, at) => rare === 7 && !!MAX_GUILT_FROM[tier] && String(at) >= MAX_GUILT_FROM[tier].date;

@@ -215,7 +215,7 @@ Recommended model: Opus (heterogeneous sentences).
 - [ ] **Step 1: Failing tests** (real sentences, research §3 and catalog)
 
 ```python
-e = g.enhance_of("Even better, the 7★ Medal you receive is guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus!", [], [], M, S)
+e = g.enhance_of(TXT_B0310, [], [], M, S)   # notice B0310 (7★ con speciale sbloccato e bonus massimo), testo locale
 check(e['preset'] == [{'on': {'star': 7}, 'dots': 'max', 'guilt': 'max'}], 'B0310')
 s = g.assign_slots(g.parse_reservations("Guarantees one Tier 4 or higher Medal with its special attack strengthened 1 to 3 times."), [[6, 1], [5, 9]])
 check(g.enhance_of("Guarantees one Tier 4 or higher Medal with its special attack strengthened 1 to 3 times.", s, [], M, S)['preset']

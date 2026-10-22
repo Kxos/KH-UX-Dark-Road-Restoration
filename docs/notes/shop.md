@@ -468,9 +468,9 @@ and `node server/make-nova-rows.js` and `node server/make-trait-groups.js` are e
   maximum (T9 28000, T10 32000). Draw date = the banner's `gacha-data.asOf`, the same as for the pool medals:
   the start of the banner, for the PERMANENT ones the story date limited to start-end. Dates and notices in a constant,
   `gacha-data.MAX_GUILT_FROM`. Before those dates the Tier 9-10 7★ arrive maxed only with the banner's preset.
-  Sources: notice 48236 (01-01-2019, «Birth by Sleep Falling Price Deals!») «7★ Tier 9 Medals come with the maximum
-  bonus percentage of 280%» and notice 56838 (01-09-2019, «Supernova+ Foreteller Deals!») «7★ Tier 10 Medals come with
-  the maximum bonus percentage of 320%»; research in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\guilt-rule.md`. The 7★ of lower
+  Sources: notice 48236 (01-01-2019, Birth by Sleep falling-price deals): the 7★ of Tier 9 come
+  with the top bonus of 280%; notice 56838 (01-09-2019, Supernova+ Foreteller deals): the 7★ of Tier 10 come with
+  the top bonus of 320%; research in `D:\Progetto_Restauro_KH_UX\tmp\sp2b\guilt-rule.md`. The 7★ of lower
   Tier stay maxed only with the banner's preset; preset and rule together: the maximum of the two
   (`respondGachaDraw` in server.js, test 13-bis in test-gacha-server.js). The Nova rises (+1/+5, `make-nova-rows.js` already has
   1/5 on all the 7★ with a Tier) and the popup appears. Original behaviour: no line in the Notices; in the
@@ -526,8 +526,8 @@ reduced save was put back identical (hash). Banners: `-GachaShow B0306,B0629,B00
 ### Fix 1 of Task 10: Nova from a draw (I-148, I-149; commit 2bf8b4b, master BASE 122)
 
 - **B0306-B0308 with maxed guilt**: B0310 «Get a 7★ Medal in each Draw!» (INCOMPLETE, stays in the catalogue) is
-  the announcement of the three 7★ Medal Deals (HD Axel, Illustrated Aqua A, Illustrated Ventus): «the 7★ Medal you receive is
-  guaranteed to come with its Special Attack unlocked and with a maximum Special Attack Bonus». Before the fix the three
+  the announcement of the three 7★ Medal Deals (HD Axel, Illustrated Aqua A, Illustrated Ventus): the notice
+  promises that the 7★ Medal drawn has its Special Attack unlocked and its Special Attack Bonus at the maximum. Before the fix the three
   deals had an empty `enhance.preset`. New field `preset` in `recon/tools/banner_overrides.tsv` (`slots=0;dots=max;
   guilt=max`, with the source), applied by `make_banner_catalog.apply_enhance_overrides`. It is the original
   behaviour (Details: «comes with its Special Attack Bonus maxed (original)»), no line in the Notices. They are no
@@ -697,8 +697,8 @@ Notices 23113, 23538, 24587, 24593, 24843 («guaranteed at least one of the new 
 
 18 Gem Deals (B0142-B0144, B0160-B0162, B0177-B0179, B0191-B0193, B0209-B0211, B0232-B0234) write in the wiki
 «Includes 3 Power Gems» without «bonus»: `make_banner_catalog.BONUS` now accepts the form without «bonus» only before
-Power/Speed/Magic/Sun/Moon Gem. Sources: notices 30125/31604/32524/33510 («guarantees three Power Gems or Speed Gems or
-Magic Gems in each pull») and the art (epic medal x1, 4★+ x4, Gem x3). Only those 18 banners change. The server
+Power/Speed/Magic/Sun/Moon Gem. Sources: notices 30125/31604/32524/33510 (three Power, Speed or Magic Gems with every
+pull) and the art (epic medal x1, 4★+ x4, Gem x3). Only those 18 banners change. The server
 delivers the bonus into the Present Box (server.js, «Bonus: <banner>»): bench 19-10, B0142 -> «Power Gem × 3 — Bonus: Gem Deal».
 
 <a id="sp2c-g7"></a>

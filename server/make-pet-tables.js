@@ -48,35 +48,36 @@
 const fs = require('fs');
 const path = require('path');
 
-// [skillId, nome, Details, Conditions, rango, invokeType, [sv1..sv5]], in ordine di apprendimento
-const STEAL_C = 'Has a 50% trigger rate when enemies drop an item. 1 charge per battle.';
-const BLAST_C = (n) => `Triggers after your turn if an enemy has low HP. Enemies with high HP: triggers at ${n} HP or less. 1 charge per battle.`;
-const BOOST_C = (k) => `Triggers when using a special attack that raises ${k}-STR. 1 charge per turn.`;
-const COMBO_C = (p) => `Has a ${p}% trigger rate when player attacks (ignores Spirit slot). 6 charges per battle.`;
-const COMBO_D = "Deals damage equal to 40% of player's attack.";
+// [skillId, nome, Details, Conditions, rango, invokeType, [sv1..sv5]], in ordine di apprendimento.
+// Testi scritti da noi (22-10): stessi effetti e valori della lista della community, parole nostre.
+const STEAL_C = '50% chance to activate when an enemy drops an item. Usable once per battle.';
+const BLAST_C = (n) => `Activates at the end of your turn against an enemy low on HP (tougher enemies: at ${n} HP or below). Usable once per battle.`;
+const BOOST_C = (k) => `Activates when you use a special attack that boosts ${k}-STR. Usable once per turn.`;
+const COMBO_C = (p) => `${p}% chance to activate on each player attack, whatever the Spirit slot. Usable 6 times per battle.`;
+const COMBO_D = "Adds damage worth 40% of the player's attack.";
 const BLAST_PCT = 25; // soglia «low HP» in % (ricostruita: l'originale non e' noto)
 const SKILLS = [
-  [1, 'Steal I', 'Obtains dropped items x 2.', STEAL_C, 2, 1, [1, 0, 2]],
-  [11, 'Blast I', 'Deals 10,000 damage.', BLAST_C('10,000'), 3, 3, [1, 3, 10000, BLAST_PCT]],
-  [21, 'Esuna I', 'Cures your status ailments.', 'Triggers when you are affected with a status ailment. 1 charge per battle.', 4, 5, [1, 7]],
-  [31, 'HP Recovery I', 'You return with 1 HP.', 'Triggers when your HP is 0. 1 charge per battle.', 5, 6, [1]],
-  [2, 'Steal II', 'Obtains dropped items x 3.', STEAL_C, 6, 1, [1, 0, 3]],
-  [41, 'Poison Boost I', 'Deals more poison damage to targets you poisoned.', 'Triggers when you poison an enemy.', 7, 7, [0, 2]],
-  [42, 'Paralysis Boost I', 'Immobilizes targets you paralyzed.', 'Triggers when you paralyze an enemy. 1 charge per battle.', 7, 9, [1]],
-  [43, 'Sleep Boost I', 'Keeps targets you put to sleep asleep for 3 hits.', 'Triggers when you put an enemy to sleep. 2 charges per battle.', 7, 8, [2, 4]],
-  [12, 'Blast II', 'Deals 30,000 damage.', BLAST_C('30,000'), 8, 3, [1, 4, 30000, BLAST_PCT]],
-  [51, 'P Attack Boost I', 'Raises your P-STR 1 tier for 1 turn. Ignores limit.', BOOST_C('P'), 9, 4, [0, 1, 1, 1]],
-  [52, 'S Attack Boost I', 'Raises your S-STR 1 tier for 1 turn. Ignores limit.', BOOST_C('S'), 9, 4, [0, 1, 2, 1]],
-  [53, 'M Attack Boost I', 'Raises your M-STR 1 tier for 1 turn. Ignores limit.', BOOST_C('M'), 9, 4, [0, 1, 3, 1]],
-  [3, 'Steal III', 'Obtains dropped items x 4.', STEAL_C, 10, 1, [1, 0, 4]],
+  [1, 'Steal I', 'Item drops are doubled.', STEAL_C, 2, 1, [1, 0, 2]],
+  [11, 'Blast I', 'Hits for 10,000 damage.', BLAST_C('10,000'), 3, 3, [1, 3, 10000, BLAST_PCT]],
+  [21, 'Esuna I', 'Removes your status ailments.', 'Activates when a status ailment hits you. Usable once per battle.', 4, 5, [1, 7]],
+  [31, 'HP Recovery I', 'Brings you back with 1 HP.', 'Activates when your HP drops to 0. Usable once per battle.', 5, 6, [1]],
+  [2, 'Steal II', 'Item drops are tripled.', STEAL_C, 6, 1, [1, 0, 3]],
+  [41, 'Poison Boost I', 'Enemies you poisoned take extra poison damage.', 'Activates when you poison an enemy.', 7, 7, [0, 2]],
+  [42, 'Paralysis Boost I', 'Enemies you paralyzed cannot move.', 'Activates when you paralyze an enemy. Usable once per battle.', 7, 9, [1]],
+  [43, 'Sleep Boost I', 'Enemies you put to sleep stay asleep for 3 hits.', 'Activates when you put an enemy to sleep. Usable twice per battle.', 7, 8, [2, 4]],
+  [12, 'Blast II', 'Hits for 30,000 damage.', BLAST_C('30,000'), 8, 3, [1, 4, 30000, BLAST_PCT]],
+  [51, 'P Attack Boost I', 'Your P-STR goes up 1 tier for 1 turn, past the usual cap.', BOOST_C('P'), 9, 4, [0, 1, 1, 1]],
+  [52, 'S Attack Boost I', 'Your S-STR goes up 1 tier for 1 turn, past the usual cap.', BOOST_C('S'), 9, 4, [0, 1, 2, 1]],
+  [53, 'M Attack Boost I', 'Your M-STR goes up 1 tier for 1 turn, past the usual cap.', BOOST_C('M'), 9, 4, [0, 1, 3, 1]],
+  [3, 'Steal III', 'Item drops are quadrupled.', STEAL_C, 10, 1, [1, 0, 4]],
   [61, 'Combo I', COMBO_D, COMBO_C(25), 11, 10, [6, 2500, 4000]],
-  [13, 'Blast III', 'Deals 100,000 damage.', BLAST_C('100,000'), 12, 3, [1, 5, 100000, BLAST_PCT]],
-  [54, 'P Attack Boost II', 'Raises your P-STR 2 tiers for 1 turn. Ignores limit.', BOOST_C('P'), 13, 4, [0, 1, 1, 2]],
-  [55, 'S Attack Boost II', 'Raises your S-STR 2 tiers for 1 turn. Ignores limit.', BOOST_C('S'), 13, 4, [0, 1, 2, 2]],
-  [56, 'M Attack Boost II', 'Raises your M-STR 2 tiers for 1 turn. Ignores limit.', BOOST_C('M'), 13, 4, [0, 1, 3, 2]],
-  [14, 'Blast IV', 'Deals 500,000 damage.', BLAST_C('500,000'), 14, 3, [1, 6, 500000, BLAST_PCT]],
+  [13, 'Blast III', 'Hits for 100,000 damage.', BLAST_C('100,000'), 12, 3, [1, 5, 100000, BLAST_PCT]],
+  [54, 'P Attack Boost II', 'Your P-STR goes up 2 tiers for 1 turn, past the usual cap.', BOOST_C('P'), 13, 4, [0, 1, 1, 2]],
+  [55, 'S Attack Boost II', 'Your S-STR goes up 2 tiers for 1 turn, past the usual cap.', BOOST_C('S'), 13, 4, [0, 1, 2, 2]],
+  [56, 'M Attack Boost II', 'Your M-STR goes up 2 tiers for 1 turn, past the usual cap.', BOOST_C('M'), 13, 4, [0, 1, 3, 2]],
+  [14, 'Blast IV', 'Hits for 500,000 damage.', BLAST_C('500,000'), 14, 3, [1, 6, 500000, BLAST_PCT]],
   [62, 'Combo II', COMBO_D, COMBO_C(33), 15, 10, [6, 3300, 4000]],
-  [15, 'Blast V', 'Deals 750,000 damage.', BLAST_C('750,000'), 16, 3, [1, 7, 750000, BLAST_PCT]],
+  [15, 'Blast V', 'Hits for 750,000 damage.', BLAST_C('750,000'), 16, 3, [1, 7, 750000, BLAST_PCT]],
   [63, 'Combo III', COMBO_D, COMBO_C(50), 17, 10, [6, 5000, 4000]],
 ];
 // Blast: medaglie nascoste 3-7 (copie della medal 2 del Burst, [fn] ne costruisce l'attacco) con burst 12-16 a

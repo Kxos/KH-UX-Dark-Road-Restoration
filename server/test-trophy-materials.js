@@ -45,7 +45,7 @@ check(Object.keys(TROPHIES).join() === '61,62,63', 'TROPHIES 61-63');
 check(materialIdOf([null, 1, 'Trophy NI']) === 61 && materialIdOf([null, 1, 'Trophy CS']) === 62
   && materialIdOf([null, 1, 'Trophy CK']) === 63, 'materialIdOf: nomi dei trofei');
 check(materialIdOf([48, 1, 'Power Gem']) === 48 && materialIdOf([null, 1, 'Ignoto']) === null, 'materialIdOf: id esplicito, ignoto null');
-const table = JSON.parse(fs.readFileSync(path.join(__dirname, 'tables', 'keyblade_levels.json'), 'utf8'));
+const table = require('./make-keyblade-levels').ensureTable();   // generata in locale, non versionata
 const bgb = table['Bad Guy Breaker'].levels.filter((l) => l.mat.some(([, , n]) => /^Trophy/.test(n)))
   .map((l) => `${l.lv}:${l.mat.map(materialIdOf).join('+')}`);
 check(bgb.join() === '4:61,9:61,14:62,19:62,24:62,29:62,30:63', `tabella: passi coi trofei ${bgb}`);

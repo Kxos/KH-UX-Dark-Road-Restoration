@@ -494,7 +494,7 @@ def is_boosted(r):
 
 # ---------- bonus (note «Includes N bonus ...») ----------
 # senza «bonus» solo le Gem: «Includes 3 Power Gems» delle Gem Deal 2017 (2c/G6, 18 banner B0142-B0234; notice 30125
-# «guarantees three Power Gems or Speed Gems or Magic Gems in each pull»)
+# : tre Gem Power, Speed o Magic a ogni estrazione)
 BONUS = re.compile(r'[Ii]ncludes? (a|one|two|three|five|\d+) (?:bonus |(?=(?:\[\[)?(?:Power|Speed|Magic|Sun|Moon) Gem))')
 
 
@@ -895,8 +895,8 @@ def apply_slot_override(g, ov_row):
 
 def apply_boosted_override(enh, ov_row):
     """2c/G4: versione boosted promessa dal notice ma assente dal testo del banner (campo «boosted»:
-    «slots=0;str=1000;def=0;chance=small», B0046/B0047 notice 20865: «a small chance of getting an even rarer
-    version of an Organization XIII Medal that has 1,000 more base strength»). Aggiunge la voce se non c'e'."""
+    «slots=0;str=1000;def=0;chance=small», B0046/B0047 notice 20865: piccola probabilita' di una versione
+    piu' rara di una medaglia dell'Organizzazione XIII con 1.000 di forza base in piu'). Aggiunge la voce se non c'e'."""
     v = ((ov_row or {}).get('boosted') or '').strip()
     if not v:
         return enh
@@ -944,8 +944,8 @@ def apply_pity_override(g, ov_row):
 
 def apply_max_skill_override(enh, ov_row, skill_rows):
     """2c/G2: abilita' al massimo promesse solo dal notice (campo «max_skill»: «pity;skills=a|b|c», B0435
-    notice 48299: «The guaranteed ... 7★ Prime - Chernabog will come with one of the following skills at max skill
-    level»). Selettore come i preset (pity, slots=, names=); le abilita' assenti da skill.json -> notReproduced."""
+    notice 48299: il 7★ Prime - Chernabog garantito arriva con una delle abilita' elencate al
+    livello massimo). Selettore come i preset (pity, slots=, names=); le abilita' assenti da skill.json -> notReproduced."""
     v = ((ov_row or {}).get('max_skill') or '').strip()
     if not v:
         return enh

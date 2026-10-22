@@ -121,7 +121,7 @@ def _parse_one(s):
     c = TIER_COUNT.search(s)
     if (c or 'one of which is guaranteed' in s) and (TIER_RE.search(s) or SAB_RE.search(s)):
         tmin, tmax = _tier(s)
-        # «receive five 7★ Medals, one of which is guaranteed to be a tier 4 Medal» (B0340): una
+        # cinque 7★ di cui una garantita di Tier 4 (B0340): una
         count = _num(c.group(1)) if c else 1
         star = re.search(r'(\d)★', re.split(r'\s+with\b', s)[0])
         head = re.sub(r'^.*?guarantee[sd]? (?:to (?:get|receive) |to be )?(?:either )?(?:at least )?(?:' + NUMW + r')?\s*', '',
