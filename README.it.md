@@ -40,14 +40,13 @@ vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'e
 
 ## Cosa cerchiamo
 
-Gran parte dei contenuti del gioco veniva scaricata dal CDN in `files/r/misc.mp4` e non e' mai stata
-nei pacchetti dell'app. Le mappe e le stanze della storia ora vengono dai dati JP 4.3.1 condivisi da
-thethiny, ma le texture di circa **90 famiglie di nemici** delle missioni 526–979 (Gearbit, Flappy Bug,
-Cy-Bug, King Candy, Jafar, Dragon Maleficent, Darkness, Ephemer & Skuld...) mancano in tutti gli
-archivi pubblici (appello del 22 ottobre su [Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/)). Cerchiamo anche tutto cio' che riguarda **eventi, raid, Coliseum, Union Cross e PvP**
-(screenshot, video, regole, premi, catture del traffico). Chi ha ancora una cartella `files/r/` o un
-backup del dispositivo con KHUx installato (Global o JP, qualsiasi versione), o uno di questi materiali,
-puo' contattarci aprendo una issue.
+Chiediamo solo **informazioni**, mai file del gioco. Gran parte dei contenuti veniva scaricata dai
+server dopo l'installazione e viene ricostruita dal progetto; manca ancora l'aspetto di circa
+**90 famiglie di nemici** delle missioni 526–979 (Gearbit, Flappy Bug, Cy-Bug, King Candy, Jafar,
+Dragon Maleficent, Darkness, Ephemer & Skuld...) (appello del 22 ottobre su
+[Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/)). Aiutano screenshot e video, e
+tutto cio' che riguarda **eventi, raid, Coliseum, Union Cross e PvP** (screenshot, video, regole,
+premi, guide). Contattaci aprendo una issue; non inviare ne' pubblicare file del gioco.
 
 ## Sintesi tecnica
 
