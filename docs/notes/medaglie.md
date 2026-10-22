@@ -326,7 +326,7 @@ STR/DEF 1, cost 999, 15 Pet Points, «Lesser Attack» x1.00 at 1 gauge. About 31
     Evolve chains. It also applies to part A (SN fused onto SN+ gives a trait).
   - **List** `server/trait_medals.json` (313 entries) from `make-trait-medal-list.js`: #1-#188 and #274 from the khuxwiki
     table (first column = EN Album number = sortId); #189-#313 from the khuxwiki «Trait Medal N» pages, which
-    point to the medal («Trait Medal #190 ... can be used to add or re-roll a trait on SN++ - KH III Roxas»;
+    point to the medal (the wiki says Trait Medal #190 adds or re-rolls a trait of SN++ - KH III Roxas;
     `reference\trait_medals\khuxwiki_trait_medal_189_313.json` and `_RESULT.md`). The notices of the SN++ deals do not print the
     number; the 46 numbers that appear in other notices (VIP, events, Moogle Shop) do not contradict the wiki.
   - **Rows** (`make-trait-medals.js`, after make-trait-groups): medalId 9,000,000+N, type 9, 6★, STR/DEF 1, cost 999,

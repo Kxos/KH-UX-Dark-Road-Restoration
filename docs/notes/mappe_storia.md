@@ -678,7 +678,7 @@ wiki table `proud_quests_wiki.json`, scripts); screenshots and sources: `referen
   6 Proud keyblades; Sun/Moon Gems strengthen the Proud keyblades.
 - **Screenshots** (`reference\proud_mode`): the list is the same AdventureTop2 screen as Standard but **red/magenta**
   (PROUD logo, red panels, red cursor, «Standard Mode» button instead of «Proud Mode»), ticker
-  «In Proud Mode, special attacks are limited, and each quest has a fixed Keyblade.» (ui text 100620055). The start popup
+  ui text 100620055 (Proud Mode: limited special attacks, one fixed Keyblade per quest). The start popup
   (StartDeckProudScene) shows «This quest must be played with this Keyblade.» (103000016), CONDITION, «The option to Continue
   is not available in this mode.» (103000017), the fixed keyblade without «Change», Skip/Start/Optimize/Equipment.
 
