@@ -1,404 +1,404 @@
-# Risorse, layout mancanti, texture
+# Resources, missing layouts, textures
 
-Come sono fatte le risorse servite al client 4.3.1 e come si ricostruiscono le schermate
-mancanti. Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
+How the resources served to the 4.3.1 client are made and how the missing screens are
+rebuilt. History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md).
 
 <a id="pacchetti"></a>
-## Pacchetti BGAD e indici
+## BGAD packs and indexes
 
-- Gli asset (`misc.mp4`, `extra.mp4`, `aliud.png`, OBB, `addnl`) sono pacchetti **BGAD** del
-  `bg::FileManager`: record con header di 24 byte, cifratura ChaCha8 (chiave a `[offset]` della
-  libreria, IV dal nonce in coda). I nomi stanno nell'indice `.png` omonimo, con un secondo strato
-  ChaCha8. Nomi dei record offuscati con LCG `seed*0x19660d + 0x3c6ef35f`. Formato descritto in
-  testa a `recon/tools/bgad.py`.
-- I record con cifratura 3 dei pacchetti montati come risorse si aprono con la chiave di sessione
-  (per noi la 5.0.1): `BGAD_KEY=<hex> recon/tools/bgad_extract.py`.
-- Il client monta: lato KHUX `r/misc.png`+`r/misc.mp4` (slot 1) e `addnl.png`+`addnl.mp4` (slot 2,
-  solo iOS); lato Dark `aliud.png` con [OBB main, OBB patch, `r/.misc.mp4`].
-- **Versione 3** = OBB 5.0.1 (`main.76` + `patch.87`, dati di Dark Road ma con la grafica completa)
-  + `addnl` dell'IPA iOS 4.3.1 (layout KHUX della 4.3.1) in un solo pacchetto
-  (`resource_merge.py`; a parita' di nome vince il primo). Dalla 4 in poi si aggiunge il pacchetto
-  generato (`resource_pack.py`), dalla 30 anche il pacchetto delle medaglie (`medal_gen`, penultimo
-  pezzo). `--last-wins`: il pacchetto generato puo' sostituire file originali.
-- **Pezzi di una versione completa** (`build-resources.ps1 -Version N`): `d0000`-`d0034` della 7
-  (hard link: OBB 5.0.1, `aliud`, `addnl` 4.3.1), poi i pacchetti statici, ricostruiti solo nelle
-  versioni complete: `d0035` medaglie (`medal_gen`, ~850 MB), `d0036` **stanze recuperate**
-  (`rooms_gen`, `make_jp_rooms.py`, 732 MB nella 35; `-NoRooms` per farne a meno), dalla 36
-  `d0037` **grafiche originali dei nemici** (`enemy_gen`, `make_jp_enemies.py`, 53 MB;
-  `-NoEnemies` per farne a meno, con il master rigenerato a `KHUX_NO_ENEMY_GEN=1`:
-  [battaglia.md#nemici-jp](battaglia.md#nemici-jp)), poi il generato (`stage_gen`, `d0037` fino alla
-  35, `d0038` dalla 36, `d0039` dalla 46; riserva 176 MiB nella 47, 168 MiB dalla 48) che vince su tutti. Elenco dei pacchetti statici in
-  `resource_data\<N>\packs.txt`: `-Quick`/`-DryRun` rimettono nell'indice quelli della versione
-  installata (senza `packs.txt`, versioni <= 34: niente stanze) e non ricostruiscono mai `rooms_gen`
-  ne' `enemy_gen`.
-  Il client spezza i dati in `misc.mp4`, `misc.mp4.1`, `misc.mp4.2` ... a 2 GiB: la 47 ha
-  4.286.993.546 byte (3,99 GiB, **7,6 MiB sotto i 4 GiB**); limiti e misure in [Pezzi e 4 GiB](#pezzi).
-  Stanze: [mappe_storia.md#stanze-jp](mappe_storia.md#stanze-jp).
-- Strumenti: `res_get.py <nomi.tsv> <resource_data\N\data> <uscita> <nome>...` (estrae per nome in
-  `D:\Progetto_Restauro_KH_UX\layouts\orig\`), `res_bulk.py` (estrazione in blocco, 16 s per 4000
-  file), `catalog.py` (catalogo, 2 min), `asset_coverage.py` (asset citati dal binario contro un
-  indice), `resource_split.py` (pezzi da 64 MB), `remote_zip.py` (un file da uno zip remoto con
+- The assets (`misc.mp4`, `extra.mp4`, `aliud.png`, OBB, `addnl`) are **BGAD** packs of the
+  `bg::FileManager`: records with a 24-byte header, ChaCha8 encryption (key at `[offset]` of the
+  library, IV from the nonce at the tail). The names are in the `.png` index of the same name, with a second
+  ChaCha8 layer. Record names obfuscated with the LCG `seed*0x19660d + 0x3c6ef35f`. Format described at the
+  top of `recon/tools/bgad.py`.
+- The records with encryption 3 of the packs mounted as resources open with the session key
+  (for us the 5.0.1 one): `BGAD_KEY=<hex> recon/tools/bgad_extract.py`.
+- The client mounts: KHUX side `r/misc.png`+`r/misc.mp4` (slot 1) and `addnl.png`+`addnl.mp4` (slot 2,
+  iOS only); Dark side `aliud.png` with [OBB main, OBB patch, `r/.misc.mp4`].
+- **Version 3** = OBB 5.0.1 (`main.76` + `patch.87`, Dark Road data but with the complete graphics)
+  + `addnl` of the iOS IPA 4.3.1 (KHUX layouts of 4.3.1) in a single pack
+  (`resource_merge.py`; with equal names the first wins). From 4 onwards the generated pack is added
+  (`resource_pack.py`), from 30 also the medal pack (`medal_gen`, second-to-last
+  part). `--last-wins`: the generated pack can replace original files.
+- **Parts of a complete version** (`build-resources.ps1 -Version N`): `d0000`-`d0034` of 7
+  (hard links: OBB 5.0.1, `aliud`, `addnl` 4.3.1), then the static packs, rebuilt only in the
+  complete versions: `d0035` medals (`medal_gen`, ~850 MB), `d0036` **recovered rooms**
+  (`rooms_gen`, `make_jp_rooms.py`, 732 MB in 35; `-NoRooms` to do without), from 36
+  `d0037` **original enemy graphics** (`enemy_gen`, `make_jp_enemies.py`, 53 MB;
+  `-NoEnemies` to do without, with the master regenerated with `KHUX_NO_ENEMY_GEN=1`:
+  [battaglia.md#nemici-jp](battaglia.md#nemici-jp)), then the generated one (`stage_gen`, `d0037` up to
+  35, `d0038` from 36, `d0039` from 46; reserve 176 MiB in 47, 168 MiB from 48) which wins over all. List of the static packs in
+  `resource_data\<N>\packs.txt`: `-Quick`/`-DryRun` put back into the index those of the installed
+  version (without `packs.txt`, versions <= 34: no rooms) and never rebuild `rooms_gen`
+  or `enemy_gen`.
+  The client splits the data into `misc.mp4`, `misc.mp4.1`, `misc.mp4.2` ... at 2 GiB: 47 has
+  4,286,993,546 bytes (3.99 GiB, **7.6 MiB under 4 GiB**); limits and measurements in [Parts and 4 GiB](#pezzi).
+  Rooms: [mappe_storia.md#stanze-jp](mappe_storia.md#stanze-jp).
+- Tools: `res_get.py <nomi.tsv> <resource_data\N\data> <uscita> <nome>...` (extracts by name into
+  `D:\Progetto_Restauro_KH_UX\layouts\orig\`), `res_bulk.py` (bulk extraction, 16 s for 4000
+  files), `catalog.py` (catalog, 2 min), `asset_coverage.py` (assets cited by the binary against an
+  index), `resource_split.py` (64 MB parts), `remote_zip.py` (one file from a remote zip with
   Range).
 
 <a id="pezzi"></a>
-## Pezzi e 4 GiB (I-171)
+## Parts and 4 GiB (I-171)
 
-Analisi statica del client WW 4.3.1 (20-10, `D:\Progetto_Restauro_KH_UX\tmp\res4g\client-analysis.md`):
-- I "data" scaricati si accodano in `files/r/misc.mp4` e, ogni 2 GiB (0x80000000), nel pezzo dopo:
-  `misc.mp4.1`, `misc.mp4.2` ... (`[fn]`, `"%s.%d"`). Il lettore (`[fn]`) apre al
-  massimo **10 file** (`misc.mp4` .. `misc.mp4.9`): tetto **20 GiB** (21.474.836.480 byte). Oltre, lo
-  scrittore crea `misc.mp4.10` che nessuno legge: dimensioni diverse all'avvio, risorse cancellate e
-  riscaricate a ogni avvio.
-- Offset, posizioni e totali a 64 bit: pezzo = offset >> 31, offset locale = offset & 0x7fffffff
-  (`DividedFilesInputStream::read`, `[fn]`). Gli offset dei record nell'indice BGI sono **u64
-  assoluti** nel flusso concatenato (la divisione in pezzi non si vede dall'indice). Dimensione salvata
-  `resource_size_64` (8 byte).
-- Ogni file di `/system/resource` ha `size` letto come int: **ogni pezzo servito sotto i 2 GiB** (i
-  nostri: 64 MiB per OBB/addnl, medaglie ~0,96 GB il piu' grande).
-- Il record `size` dell'indice vale solo se < 2^32: oltre 4 GiB e' ignorato (nessun errore, solo un
-  controllo in meno).
-- **Nessun controllo dello spazio libero** prima del download: disco pieno = «Save error. Please check the
-  storage space on your device.» (`fwrite` corto). Picco = dati installati + un pezzo in cache.
-- Ancora da provare al banco: un download con `misc.mp4.2` (ricetta in
+Static analysis of the WW 4.3.1 client (20-10, `D:\Progetto_Restauro_KH_UX\tmp\res4g\client-analysis.md`):
+- The downloaded "data" are appended to `files/r/misc.mp4` and, every 2 GiB (0x80000000), to the next part:
+  `misc.mp4.1`, `misc.mp4.2` ... (`[fn]`, `"%s.%d"`). The reader (`[fn]`) opens at
+  most **10 files** (`misc.mp4` .. `misc.mp4.9`): ceiling **20 GiB** (21,474,836,480 bytes). Beyond that, the
+  writer creates `misc.mp4.10` which nobody reads: different sizes at startup, resources deleted and
+  downloaded again at every startup.
+- Offsets, positions and totals are 64-bit: part = offset >> 31, local offset = offset & 0x7fffffff
+  (`DividedFilesInputStream::read`, `[fn]`). The record offsets in the BGI index are **absolute
+  u64** in the concatenated stream (the split into parts is not visible from the index). Saved size
+  `resource_size_64` (8 bytes).
+- Every file of `/system/resource` has `size` read as an int: **every served part under 2 GiB** (ours:
+  64 MiB for OBB/addnl, medals ~0.96 GB the largest).
+- The index `size` record is valid only if < 2^32: beyond 4 GiB it is ignored (no error, just one
+  check less).
+- **No free-space check** before the download: full disk = «Save error. Please check the
+  storage space on your device.» (short `fwrite`). Peak = installed data + one cached part.
+- Still to be tried on the bench: a download with `misc.mp4.2` (recipe in
   `D:\Progetto_Restauro_KH_UX\tmp\res4g\bench-recipe.md`): `build-resources.ps1 -Version N -TestStraddle <nome>`
-  mette prima del generato un pezzo di zeri (`resource_parts.py --straddle`, nome del pezzo in
-  `resource_data\<N>\testpad.txt`, rispettato da `-Quick`) perche' il record <nome> del generato stia a
-  cavallo dei 4 GiB; la versione dopo, senza, torna sotto.
+  puts a part of zeros before the generated one (`resource_parts.py --straddle`, name of the part in
+  `resource_data\<N>\testpad.txt`, honored by `-Quick`) so that the record <nome> of the generated pack straddles
+  the 4 GiB; the next version, without it, goes back under.
 
-Misure della 47 (`D:\Progetto_Restauro_KH_UX\tmp\res4g\inventory.md`): 40 pezzi, 4.286.993.546 byte; OBB
-main+patch 2.185.902.806, addnl 132.056.004, medaglie 965.832.467, stanze 731.805.396, nemici 53.227.192,
-raisedraw 33.620.305, generato 184.549.376 (contenuto 138.817.141 + 45.732.235 di zeri della riserva).
+Measurements of 47 (`D:\Progetto_Restauro_KH_UX\tmp\res4g\inventory.md`): 40 parts, 4,286,993,546 bytes; OBB
+main+patch 2,185,902,806, addnl 132,056,004, medals 965,832,467, rooms 731,805,396, enemies 53,227,192,
+raisedraw 33,620,305, generated 184,549,376 (content 138,817,141 + 45,732,235 of reserve zeros).
 
-Strumenti (20-10):
-- `bgad.py read_index` legge gli offset u64 (prima u32: oltre 4 GiB troncati).
-- `-Quick` scrive il generato nel pezzo del guest `offset >> 31` e, se lo attraversa, nel successivo
-  (`resource_parts.py`); prima controlla che i pacchetti prima del generato siano lunghi quanto i pezzi
-  installati.
-- **Compattazione** (`resource_compact.py`, di default nelle versioni complete dalla 48, `-NoCompact` per
-  farne a meno): OBB, addnl e medaglie riscritti con i soli record citabili dall'indice unito (un record e'
-  vivo se un nome del suo pacchetto lo cita e nessun pacchetto prima ha quel nome; restano quelli dei nomi
-  che il generato sostituisce, cosi' un `-Quick` che smette di sostituirli ritrova l'originale). Sugli
-  ingressi della 47: OBB -30.080.308, addnl -54.662.654, medaglie -4.911.439 byte (stanze, nemici,
-  raisedraw: 0). `resource_compare.py` ha verificato che ogni nome (396.297) ha gli stessi byte. Cache
-  in `D:\Progetto_Restauro_KH_UX\compact` (pezzi di OBB e addnl condivisi con hard link fra le versioni),
-  elenco in `resource_data\<N>\compact.txt` con l'impronta di ogni pacchetto compattato (byte dei dati,
-  SHA1 dell'indice, impronta degli ingressi): `-Quick` la ricalcola e si ferma se un build successivo li ha
-  rifatti.
-- Riserva del generato **168 MiB** (era 176): contenuto 132,4 MiB nella 47, restano ~35,6 MiB di `-Quick`
-  (piu' del blocco di originali di I-170, ~33 MB). Una versione completa con queste regole: **~4.188.950.537
-  byte (3,90 GiB), ~101 MiB sotto i 4 GiB**, prima di nuovi contenuti.
-- Non tolte: le 41 immagini di medaglia senza `imageId`/`thumbId`/`cutinId` in `medal.json` (16 MB): 17
-  hanno ancora una riga (le copie 1xxxxx dell'Organizzazione XIII, rimappate da `MEDAL_MAP_FIX` di
-  `make-game-tables.js`), 13 sono i doppioni 3004xx di `server.js`; solo 10 (2,6 MB) non sono citate da
-  nulla.
+Tools (20-10):
+- `bgad.py read_index` reads the u64 offsets (before u32: beyond 4 GiB truncated).
+- `-Quick` writes the generated pack into the guest part `offset >> 31` and, if it crosses it, into the next one
+  (`resource_parts.py`); first it checks that the packs before the generated one are as long as the installed
+  parts.
+- **Compaction** (`resource_compact.py`, by default in the complete versions from 48, `-NoCompact` to
+  do without): OBB, addnl and medals rewritten with only the records citable from the merged index (a record is
+  alive if a name of its pack cites it and no earlier pack has that name; those of the names
+  that the generated pack replaces remain, so a `-Quick` that stops replacing them finds the original again). On the
+  inputs of 47: OBB -30,080,308, addnl -54,662,654, medals -4,911,439 bytes (rooms, enemies,
+  raisedraw: 0). `resource_compare.py` verified that every name (396,297) has the same bytes. Cache
+  in `D:\Progetto_Restauro_KH_UX\compact` (OBB and addnl parts shared with hard links across versions),
+  list in `resource_data\<N>\compact.txt` with the fingerprint of every compacted pack (data bytes,
+  SHA1 of the index, fingerprint of the inputs): `-Quick` recomputes it and stops if a later build has
+  redone them.
+- Reserve of the generated pack **168 MiB** (was 176): content 132.4 MiB in 47, ~35.6 MiB remain for `-Quick`
+  (more than the block of originals of I-170, ~33 MB). A complete version with these rules: **~4,188,950,537
+  bytes (3.90 GiB), ~101 MiB under 4 GiB**, before new content.
+- Not removed: the 41 medal images without `imageId`/`thumbId`/`cutinId` in `medal.json` (16 MB): 17
+  still have a row (the 1xxxxx copies of Organization XIII, remapped by `MEDAL_MAP_FIX` of
+  `make-game-tables.js`), 13 are the 3004xx duplicates of `server.js`; only 10 (2.6 MB) are cited by
+  nothing.
 
 <a id="btf"></a>
-## Texture BTF
+## BTF textures
 
-- `\x89BTF`, 38 byte di intestazione: tela a +0x16, ritaglio (+0x1a x,y; +0x1e w,h), dimensione
-  compressa +0x22, poi zlib RGBA (tipo 8 RGBA8888, tipo 9 palette + indici; anche RGBA4444).
-  `recon/tools/btf.py` decodifica e codifica, `btf_to_png.py` converte.
-- **Le originali hanno l'alpha premoltiplicata**: `btf.encode` premoltiplica, `decode` la toglie;
-  `btf_fix.py` (nel build) converte PNG e BTF vecchi. Senza: bordi bianchi (es. Paperino).
-- `Result_LU_Win_Star.png` usata come ImageView si vede a righe: non usarla.
+- `\x89BTF`, 38-byte header: canvas at +0x16, crop (+0x1a x,y; +0x1e w,h), compressed size
+  +0x22, then zlib RGBA (type 8 RGBA8888, type 9 palette + indexes; also RGBA4444).
+  `recon/tools/btf.py` decodes and encodes, `btf_to_png.py` converts.
+- **The originals have premultiplied alpha**: `btf.encode` premultiplies, `decode` removes it;
+  `btf_fix.py` (in the build) converts old PNGs and BTFs. Without it: white edges (e.g. Donald).
+- `Result_LU_Win_Star.png` used as an ImageView shows up striped: do not use it.
 
 <a id="regole"></a>
-## Regole scoperte (valgono per ogni schermata)
+## Discovered rules (valid for every screen)
 
-- **Plist nuovi non si caricano**: il client legge solo plist con nomi gia' presenti e usa la
-  texture col nome del plist (`X0.plist` -> `X0.png`). Un'armatura nuova con frame propri sostituisce
-  plist+png di un'armatura che il binario non cita: liberi `EquipmentBGAction0` (usato da
+- **New plists are not loaded**: the client reads only plists with names already present and uses the
+  texture with the plist's name (`X0.plist` -> `X0.png`). A new armature with its own frames replaces
+  the plist+png of an armature that the binary does not cite: free ones `EquipmentBGAction0` (used by
   `Cursor_Anim_MedalSell`), `MyPageAnime0`, `AdventureTopAnima0`, `GlobalNaviAnimation0`,
   `LuxUpPanelAnimation0`, `ActMapTreasureBox*0`, `Cursor_Anim_QuestPanel0`/`QuestArrow0`.
-- `ArmatureAnimation::play` (`[fn]`) con un movimento assente = crash.
-- I pulsanti di `[fn]` caricano `img/ui/<nome>_On.png` al tocco: senza, crash (46 copiati).
-- Gli ImageView del modello hanno il 9-slice (bordo 50): per icone a dimensione naturale `s9=False`.
-- **9-slice + texture assente = crash** in GUIReader (setScale9Enabled ricrea lo Scale9Sprite sul file
-  mancante, SIGSEGV a 0x2c, banco absmax). Senza 9-slice la texture mancante e' tollerata. Era il
-  `Countdown_panel` (Plate21) di `PopupNormal_Continue_Multi` (Continue, AP_Recovery, Ability_MAX)
-  e `Win_Over` (Panel07) di `MedalInfo_ReleaseWindow`; stessa trappola negli originali serviti
+- `ArmatureAnimation::play` (`[fn]`) with a missing movement = crash.
+- The buttons of `[fn]` load `img/ui/<nome>_On.png` on tap: without it, crash (46 copied).
+- The template's ImageViews have 9-slice (border 50): for icons at natural size `s9=False`.
+- **9-slice + missing texture = crash** in GUIReader (setScale9Enabled recreates the Scale9Sprite on the missing
+  file, SIGSEGV at 0x2c, bench absmax). Without 9-slice the missing texture is tolerated. It was the
+  `Countdown_panel` (Plate21) of `PopupNormal_Continue_Multi` (Continue, AP_Recovery, Ability_MAX)
+  and `Win_Over` (Panel07) of `MedalInfo_ReleaseWindow`; same trap in the served originals
   `PassiveResult`, `DeckEdit_SubSlot_Select_Medal_ver260`, `StartDeckProud_*`, `ActionMap_Multi*`.
-- **Texture caricate dal codice e assenti = crash** in `ImageView::loadTexture` (SIGSEGV 0x2c, stack
-  `[fn]` -> `[fn]`), anche fuori da GUIReader. Caso: la piastra di Shop > Draw
-  (`[fn]`) carica sempre in `Lock_icon` (118x118, figlio di `LockMask`) `img/ui/ShopBut_Lock.png`
-  (flag +0x350 di `[fn]` acceso) o `ShopBut_Lock_Disable.png`, anche senza blocco; Dark Road le ha
-  rinominate `dark_Icon_Lock` / `_Disable` (stessa grafica di `QuestBut_Lock`): `make_shop_lock.py` le copia
-  dal catalogo (risorse 39, I-133). Una piastra bloccata spegne i pulsanti di estrazione con
-  `[fn](btn, 1)` -> `[fn]`, che carica `img/ui/%s_Disable.png` (anche `_Off`/`_On`) su un ImageView
-  con 9-slice: `But07_Disable` mancava (copia di `But24_Disable`, stessa sagoma). Tocco sul lucchetto: I-134.
-- Un ImageView di cui il codice prende la texture (renderer +0x598, texture +0x4e8, es. `Image_3`
-  del banner Events) deve essere senza 9-slice e con una texture servita.
-- `[fn]` accetta il tocco in un rettangolo grande quanto il bersaglio ma **centrato sulla
-  sua origine**: i pannelli-pulsante vanno con l'origine al centro della freccia.
-- Quando il codice prende «il primo figlio» di `LeftUI`/`RightUI`/`CenterUI`, un pannello vuoto
-  manda in crash; un Panel toccabile a schermo intero assorbe i tocchi.
-- Un LWF vuoto (`waist_c.lwf` dei costumi, 492 byte) evita i crash dei LWF mancanti, ma un LWF che
-  deve avere un'etichetta (es. `SpIcon_Open`) va copiato da uno con l'etichetta (Result_Reward).
-- Pulsanti But01 piu' alti di 68: 9-slice verticale a meta' (`TALL9`, capInsetsY 32); con`n  capInsetsY 0 la prima riga quasi trasparente si stira in una fascia chiara (PvP_SelectWindow).
-- Testi: `[fn]` legge `text/<categoria>/<id>.txt` (ui/drama/audio); un id mancante =
-  crash. 856 id costanti citati (`ui_text_ids.py`, `layouts\ui_text_ids.tsv`); 2.332 originali
-  importati dal `misc` dell'IPA 4.4.0 (`import_ui_texts.py`). Mancano anche li': 102850008,
-  106260102, 1062402xx (filtri, ora «%d»/«%d+»), 106240301 «Tickets», 101210001-003 (spazio nelle
-  risorse inglesi).
-- Codici dei widget: `[fn]` figlio per nome, `[fn]` testo di un figlio,
-  `[fn]` carica un layout, `[fn]` crea un CustomRichText da una Label
-  (`Txt_X` -> `Txt_X_Cus`: non metterlo nel layout), `[fn]` sostituisce un TextField.
+- **Textures loaded by the code and missing = crash** in `ImageView::loadTexture` (SIGSEGV 0x2c, stack
+  `[fn]` -> `[fn]`), even outside GUIReader. Case: the plate of Shop > Draw
+  (`[fn]`) always loads into `Lock_icon` (118x118, child of `LockMask`) `img/ui/ShopBut_Lock.png`
+  (flag +0x350 of `[fn]` on) or `ShopBut_Lock_Disable.png`, even without a lock; Dark Road
+  renamed them `dark_Icon_Lock` / `_Disable` (same graphics as `QuestBut_Lock`): `make_shop_lock.py` copies them
+  from the catalog (resources 39, I-133). A locked plate turns off the draw buttons with
+  `[fn](btn, 1)` -> `[fn]`, which loads `img/ui/%s_Disable.png` (also `_Off`/`_On`) onto an ImageView
+  with 9-slice: `But07_Disable` was missing (copy of `But24_Disable`, same shape). Tap on the padlock: I-134.
+- An ImageView whose texture the code takes (renderer +0x598, texture +0x4e8, e.g. `Image_3`
+  of the Events banner) must be without 9-slice and with a served texture.
+- `[fn]` accepts the tap in a rectangle as large as the target but **centered on its
+  origin**: button panels must have their origin at the center of the arrow.
+- When the code takes «the first child» of `LeftUI`/`RightUI`/`CenterUI`, an empty panel
+  crashes; a full-screen touchable Panel absorbs the taps.
+- An empty LWF (`waist_c.lwf` of the outfits, 492 bytes) avoids the crashes of missing LWFs, but an LWF that
+  must have a label (e.g. `SpIcon_Open`) must be copied from one with the label (Result_Reward).
+- But01 buttons taller than 68: vertical 9-slice at half height (`TALL9`, capInsetsY 32); with`n  capInsetsY 0 the almost transparent first row stretches into a light band (PvP_SelectWindow).
+- Texts: `[fn]` reads `text/<categoria>/<id>.txt` (ui/drama/audio); a missing id =
+  crash. 856 constant ids cited (`ui_text_ids.py`, `layouts\ui_text_ids.tsv`); 2,332 originals
+  imported from the `misc` of the IPA 4.4.0 (`import_ui_texts.py`). Missing there too: 102850008,
+  106260102, 1062402xx (filters, now «%d»/«%d+»), 106240301 «Tickets», 101210001-003 (space in the
+  English resources).
+- Widget code: `[fn]` child by name, `[fn]` text of a child,
+  `[fn]` loads a layout, `[fn]` creates a CustomRichText from a Label
+  (`Txt_X` -> `Txt_X_Cus`: do not put it in the layout), `[fn]` replaces a TextField.
 
 <a id="make-layouts"></a>
-## `recon/tools/make_layouts.py` e `make_textures.py`
+## `recon/tools/make_layouts.py` and `make_textures.py`
 
-- Tipi di voce: `copy` (da un layout esistente, con `retex` dark_* -> KHUX via `DARK_TO_KHUX`, nomi
-  cambiati, `('text', nome, testo)`, `('clone', sorgente, nome, genitore)`), `scene` (nodi vuoti o
-  `GUIComponent` che carica un layout: `('CenterUI', 'publish/X.json')`), `build` (da descrizione:
-  `P` pannello, `I` immagine, `B` pulsante con Label, `L` etichetta; `scale`; `('frame', ...)` cornice a
-  9 fette con 8 ossa), `armature` (copia di `ArrowAnim.ExportJson` rinominata), `func`.
-- Scrive in `D:\Progetto_Restauro_KH_UX\stage_gen\files`; poi `build-resources.ps1 -Quick`.
-- `make_textures.py` (Pillow): texture che non esistono in nessuna risorsa, disegnate dagli
-  screenshot originali (Sf_Switch, frecce, rare_star, Buff, But23, MedalInfo_Guilt9 = copia della 8,
-  Mogshop_plate1, But29/31, pagine del Profilo, Sphere_*, wipe_N...).
-- Equivalenti KHUX usati spesso: `Panel04` (riquadro blu scuro), `Plate12`/`Plate13`, `But16`
-  rosso, `But17` arancione, `Win01`/`Win11`, `Win09` (9-slice con zona elastica centrale),
+- Entry types: `copy` (from an existing layout, with `retex` dark_* -> KHUX via `DARK_TO_KHUX`, changed
+  names, `('text', nome, testo)`, `('clone', sorgente, nome, genitore)`), `scene` (empty nodes or a
+  `GUIComponent` that loads a layout: `('CenterUI', 'publish/X.json')`), `build` (from a description:
+  `P` panel, `I` image, `B` button with Label, `L` label; `scale`; `('frame', ...)` 9-slice
+  frame with 8 bones), `armature` (renamed copy of `ArrowAnim.ExportJson`), `func`.
+- Writes into `D:\Progetto_Restauro_KH_UX\stage_gen\files`; then `build-resources.ps1 -Quick`.
+- `make_textures.py` (Pillow): textures that do not exist in any resource, drawn from the
+  original screenshots (Sf_Switch, arrows, rare_star, Buff, But23, MedalInfo_Guilt9 = copy of 8,
+  Mogshop_plate1, But29/31, Profile pages, Sphere_*, wipe_N...).
+- Often used KHUX equivalents: `Panel04` (dark blue box), `Plate12`/`Plate13`, red `But16`,
+  orange `But17`, `Win01`/`Win11`, `Win09` (9-slice with an elastic central zone),
   `Plate18`, `But06`.
-- Ciclo per una schermata mancante: `func_strings.py` + `widget_lookup.py` (nomi cercati dal
-  codice), `text_ids.py` (testi mancanti), layout in `make_layouts.py`, texture in
-  `make_textures.py`, prova con `-Quick`, crash con la ricetta di [banco.md](banco.md#crash).
-  `layout_tree.py` (albero di un layout UI 1.6), `scene_tree.py` (scene SceneEditor).
+- Cycle for a missing screen: `func_strings.py` + `widget_lookup.py` (names looked up by the
+  code), `text_ids.py` (missing texts), layout in `make_layouts.py`, textures in
+  `make_textures.py`, test with `-Quick`, crashes with the recipe of [banco.md](banco.md#crash).
+  `layout_tree.py` (tree of a UI 1.6 layout), `scene_tree.py` (SceneEditor scenes).
 
 <a id="mancanti"></a>
-## Layout mancanti
+## Missing layouts
 
-- Dei 601 layout cocostudio citati dal binario 4.3.1 ne mancavano 441 con i soli OBB, 285 con
-  `addnl`, ~307/250 nelle misure successive; elenco attuale in
-  `D:\Progetto_Restauro_KH_UX\catalog\missing_layouts.txt` (254 all'11 ottobre: Album, Chat, Party,
-  Ranking, PvP, Pet, TresCommu, ShopBuyItem_*, Purchase_Pop, Information_Save...). Ogni schermata che
-  li usa va in crash in GUIReader finche' non si generano (ISSUES I-002, triage in corso).
-- La 5.0.1 offline ha tolto le funzioni online e i loro asset; gli asset online della 4.x
-  arrivavano dal CDN (`r/misc`), di cui non risulta una copia pubblica.
-- Generati finora (vedi `make_layouts.py`): Presents, Medal List/dettaglio/Sort/vendita, Evolve,
-  Sell Materials, Moogle Shop, Profilo, Avatar Boards, Other (MenuDialog_ver300), Missioni,
+- Of the 601 cocostudio layouts cited by the 4.3.1 binary, 441 were missing with the OBBs alone, 285 with
+  `addnl`, ~307/250 in later measurements; current list in
+  `D:\Progetto_Restauro_KH_UX\catalog\missing_layouts.txt` (254 at 11 October: Album, Chat, Party,
+  Ranking, PvP, Pet, TresCommu, ShopBuyItem_*, Purchase_Pop, Information_Save...). Every screen that
+  uses them crashes in GUIReader until they are generated (ISSUES I-002, triage in progress).
+- The offline 5.0.1 removed the online features and their assets; the online assets of 4.x
+  came from the CDN (`r/misc`), of which no public copy is known.
+- Generated so far (see `make_layouts.py`): Presents, Medal List/detail/Sort/sale, Evolve,
+  Sell Materials, Moogle Shop, Profile, Avatar Boards, Other (MenuDialog_ver300), Missions,
   MyPage_ChirishiBaloon, PopupNormal_Continue, BattleResult_LB_ver120, BattleResult_KB,
   BattleResult_Skill_ver130, PopupNormal_Cost_Over/AP_Recovery/MedalOver/Ability_MAX,
-  DeckEdit_Cost_Over_ver131, scheda Events (AdventureTop2_EV_Banner_ver220, _EV_Button, _Raid_Button)
-  e altri. Triage dei 254 in `stage_gen\layout_triage\REPORT.md`.
-- Mancano ancora tutti i `PartyTop_*` (scena `PartyTopScene` richiesta anche al KO in solo: ISSUES
-  I-001/I-006), `PetInfoScene_ver320`, `PetInfoAnim`, `lwf/pet/motion` (generati da
-  `make_pet_motions.py`, LWF nostri con «end»: [home_profilo](home_profilo.md#pet)); di
-  `lwf/pet/part` c'e' solo `001`.
-- **Dati JP 4.3.1 di thethiny** (13-10, ISSUES I-117, `D:\Progetto_Restauro_KH_UX\reference\world_schema\jp431_cocostudio.md`):
-  `jp_final_4.3.1\cocostudio\` ha 1.596 layout json (revisione corrente = entry id piu' alto), PNG non premoltiplicate
-  (convertire con `btf_fix.py`); 243 dei 256 mancanti, tutte le schermate online complete; i layout JP sono
-  quelli WW (284/466 identici). Le texture localizzate WW (11, es. Ch_Logo, World_Stage_Clear) vincono
-  sempre. I layout usano testo libero (segnaposto giapponesi, anche nei WW: il codice li sovrascrive
-  dagli id text/ui). Senza fonte solo 13 layout propri del WW.
-- Dal 13-10 74 dei nostri layout generati sono sostituiti dagli originali JP: vedi
-  [sotto](#jp-originali).
+  DeckEdit_Cost_Over_ver131, Events tab (AdventureTop2_EV_Banner_ver220, _EV_Button, _Raid_Button)
+  and others. Triage of the 254 in `stage_gen\layout_triage\REPORT.md`.
+- Still missing: all the `PartyTop_*` (scene `PartyTopScene` requested also on KO in solo: ISSUES
+  I-001/I-006), `PetInfoScene_ver320`, `PetInfoAnim`, `lwf/pet/motion` (generated by
+  `make_pet_motions.py`, our LWFs with «end»: [home_profilo](home_profilo.md#pet)); of
+  `lwf/pet/part` there is only `001`.
+- **thethiny's JP 4.3.1 data** (13-10, ISSUES I-117, `D:\Progetto_Restauro_KH_UX\reference\world_schema\jp431_cocostudio.md`):
+  `jp_final_4.3.1\cocostudio\` has 1,596 layout jsons (current revision = highest entry id), non-premultiplied PNGs
+  (convert with `btf_fix.py`); 243 of the 256 missing, all online screens complete; the JP layouts are
+  the WW ones (284/466 identical). The WW localized textures (11, e.g. Ch_Logo, World_Stage_Clear) always
+  win. The layouts use free text (Japanese placeholders, also in the WW ones: the code overwrites them
+  from the text/ui ids). Without a source only 13 layouts specific to WW.
+- Since 13-10, 74 of our generated layouts are replaced by the JP originals: see
+  [below](#jp-originali).
 
 <a id="jp-originali"></a>
-## Layout originali JP al posto dei generati (I-117)
+## Original JP layouts in place of the generated ones (I-117)
 
-Decisione dell'utente (13-10): dove abbiamo un layout generato e l'originale e' nei dati JP 4.3.1,
-si usa l'originale. Fonte `[local reference data]\\...\jp_final_4.3.1\cocostudio\` (spazio
-iniziale nel percorso; sola lettura; dati di terzi, mai nel repository).
+User's decision (13-10): where we have a generated layout and the original is in the JP 4.3.1 data,
+the original is used. Source `[local reference data]\\...\jp_final_4.3.1\cocostudio\` (leading
+space in the path; read-only; third-party data, never in the repository).
 
-**Strumento** `recon/tools/import_jp_coco.py` (Pillow: senza `-I`), lanciato da `build-resources.ps1`
-dopo `make_layouts`/`make_textures`/testi e prima di `btf_fix`. Legge l'elenco versionato
-`recon/tools/jp_coco_layouts.txt` (una radice per riga; opzioni `rev=N`, `need=a,b`, `+absent-ok`, `clone=`, `set=`, `graft=`;
-`? Nome # motivo` = da decidere) e per ogni radice prende la chiusura (sotto-layout delle scene,
-armature, texture) e la scrive in `stage_gen\files\cocostudio\publish\` sopra il generato.
-- Revisione: entry id piu' alto, salvo `rev=`. **Attenzione**: l'estrattore a volte da' a una
-  revisione il contenuto di un altro layout (`PresentBOX_Panel_ver131.00265720` e' un pannello di
-  icone): se la revisione scelta ha meno di meta' dei nomi della prima, la radice si ferma.
-- Nomi gia' serviti (`names_v4.tsv`): mai copiati, vince la WW (comprese le 11 texture localizzate).
-  Radice WW servita che make_layouts sovrascriveva (`MedalInfo_ReleaseWindow`): torna il WW,
-  copiato solo per tradurne i testi, con le texture mancanti da JP (Panel07, 9-slice di I-049).
-  Eccezione `graft=W1,W2` (solo radici WW servite): innesta nel WW i widget W1, W2 della revisione JP
-  (`rev=`), sotto il genitore con lo stesso nome e con la stessa posizione; tag nuovo se gia' usato; gia'
-  presenti = nulla. Usata per `BaseBuff_Avt_Null1/2` di `ActionMap_PlayerStatusField_new` (rev. 00360289,
-  I-155, [battaglia](battaglia.md#basebuff)): il resto del layout resta WW.
-- Sotto-layout nostri non in elenco restano i nostri; texture disegnate da noi sostituite
-  dall'originale JP (stessa tela o nessun altro layout generato le usa; mai gli atlanti delle
-  armature). Texture di `publish/` che l'estrattore ha tolto come doppioni: si prendono con lo
-  stesso nome da `cocostudio/` o `img/` JP (Panel10, BG_Black, MD_Guilt4_On, Complete_icon1...).
-- PNG JP (alpha diritta) -> BTF premoltiplicato con `btf.encode`.
-- Texture con giapponese disegnato (QuestBut6/7_Title, Rank_Title_3, Comeback_Tutorial_*,
-  Camp_Balloon3, TresXTresStartUp_*_Logo): mai importate, contano come assenti.
-- Testi: etichetta giapponese uguale (spazi esclusi) a un `text/ui/<id>` JP -> inglese dello stesso
-  id se tutti gli id candidati danno lo stesso testo; testi a mano in `recon/tools/jp_coco_texts.tsv`;
-  il resto resta segnaposto (lo scrive il codice). Sui 74: 198 sostituiti (1 da `jp_coco_texts.tsv`), 99 segnaposto rimasti
-  (elenco in `stage_gen\jp_import\report.json`, `texts_left`).
-- Si ferma (resta il generato): 9-slice su texture che non ci sarebbe, plist non servito, texture
-  assente (salvo `+absent-ok`), widget `Txt_*_Cus`, `need=` mancante, layout assente in JP.
-- Reversibile: `stage_gen\jp_import\manifest.json` (provenienza e sha1) e `orig\` (copie dei nostri
-  file sostituiti). Togliere una riga dall'elenco = al build successivo i file non piu' richiesti si
-  tolgono o tornano com'erano (solo se nessun generatore li ha riscritti). Provato: import, import di
-  nuovo (identico), `--none` -> albero identico a prima (sha1).
-- `build-resources.ps1 -NoJp`: build senza originali (pulisce gli importati). `-DryRun`: tutti i
-  generatori su una copia (`tmp\stage_gen_dry`), pacchetto e indice confrontati con la riserva di
-  `-Quick` dell'ultima versione; niente login, niente guest, niente `resource_data`.
+**Tool** `recon/tools/import_jp_coco.py` (Pillow: without `-I`), launched by `build-resources.ps1`
+after `make_layouts`/`make_textures`/texts and before `btf_fix`. It reads the versioned list
+`recon/tools/jp_coco_layouts.txt` (one root per line; options `rev=N`, `need=a,b`, `+absent-ok`, `clone=`, `set=`, `graft=`;
+`? Nome # motivo` = to be decided) and for every root takes the closure (sub-layouts of the scenes,
+armatures, textures) and writes it into `stage_gen\files\cocostudio\publish\` over the generated one.
+- Revision: highest entry id, unless `rev=`. **Warning**: the extractor sometimes gives a
+  revision the content of another layout (`PresentBOX_Panel_ver131.00265720` is a panel of
+  icons): if the chosen revision has fewer than half of the names of the first, the root stops.
+- Names already served (`names_v4.tsv`): never copied, WW wins (including the 11 localized textures).
+  Served WW root that make_layouts overwrote (`MedalInfo_ReleaseWindow`): the WW one comes back,
+  copied only to translate its texts, with the missing textures from JP (Panel07, 9-slice of I-049).
+  Exception `graft=W1,W2` (only served WW roots): grafts into the WW the widgets W1, W2 of the JP revision
+  (`rev=`), under the parent with the same name and in the same position; new tag if already used; already
+  present = nothing. Used for `BaseBuff_Avt_Null1/2` of `ActionMap_PlayerStatusField_new` (rev. 00360289,
+  I-155, [battaglia](battaglia.md#basebuff)): the rest of the layout stays WW.
+- Our sub-layouts not in the list stay ours; textures drawn by us replaced
+  by the JP original (same canvas or no other generated layout uses them; never the armature
+  atlases). Textures of `publish/` that the extractor removed as duplicates: they are taken with the
+  same name from JP `cocostudio/` or `img/` (Panel10, BG_Black, MD_Guilt4_On, Complete_icon1...).
+- JP PNG (straight alpha) -> premultiplied BTF with `btf.encode`.
+- Textures with drawn Japanese (QuestBut6/7_Title, Rank_Title_3, Comeback_Tutorial_*,
+  Camp_Balloon3, TresXTresStartUp_*_Logo): never imported, they count as missing.
+- Texts: Japanese label equal (spaces excluded) to a JP `text/ui/<id>` -> English of the same
+  id if all the candidate ids give the same text; hand-made texts in `recon/tools/jp_coco_texts.tsv`;
+  the rest stays a placeholder (the code writes it). On the 74: 198 replaced (1 from `jp_coco_texts.tsv`), 99 placeholders left
+  (list in `stage_gen\jp_import\report.json`, `texts_left`).
+- It stops (the generated one stays): 9-slice on a texture that would not be there, plist not served, missing
+  texture (unless `+absent-ok`), widget `Txt_*_Cus`, missing `need=`, layout absent in JP.
+- Reversible: `stage_gen\jp_import\manifest.json` (provenance and sha1) and `orig\` (copies of our
+  replaced files). Removing a line from the list = at the next build the files no longer requested are
+  removed or go back to how they were (only if no generator rewrote them). Tried: import, import
+  again (identical), `--none` -> tree identical to before (sha1).
+- `build-resources.ps1 -NoJp`: build without originals (cleans the imported ones). `-DryRun`: all the
+  generators on a copy (`tmp\stage_gen_dry`), pack and index compared with the `-Quick` reserve
+  of the latest version; no login, no guest, no `resource_data`.
 
-**Controllo dei widget cercati dal codice** (13-10): `who_refs.py` sulle stringhe
-`cocostudio/publish/<nome>` (e sulla tabella di puntatori dei layout del Profilo, 0x1f850c0..),
-45 finestre di indirizzi attorno ai caricatori decompilate in un solo avvio
-(`recon/ghidra/khux_decomp_ranges.py`, 7.406 funzioni, ~10 min), `widget_lookup.py` sulle sole
-ricerche ([fn], [fn], [fn], [fn]), `jp_coco_widgets.py` (nomi
-nostri assenti dall'originale e cercati dal codice), commenti di `make_layouts.py`, confronto delle
-classi. Ogni nome rimasto guardato nel C: quasi tutti sono di altre schermate o controllati (null)
-prima dell'uso (FaceBook_PhotoPanel, Count_Label, ImageButton_Buy1/LockMask, Button_Change,
-Button_Passive; Txt_Countdown solo nel ramo multi di [fn]; «Count_Rare» = stringa
-Plate_Count_Rare + 6, presente nell'originale). **Il JP 4.3.1 non e' sempre il WW 4.3.1**:
-`Sphere_Popup_Get_ver240` JP non ha Button_Ok/Txt_Ok che [fn] usa senza controllo.
+**Check of the widgets looked up by the code** (13-10): `who_refs.py` on the strings
+`cocostudio/publish/<nome>` (and on the pointer table of the Profile layouts, 0x1f850c0..),
+45 address windows around the loaders decompiled in a single launch
+(`recon/ghidra/khux_decomp_ranges.py`, 7,406 functions, ~10 min), `widget_lookup.py` on the lookups
+only ([fn], [fn], [fn], [fn]), `jp_coco_widgets.py` (names
+of ours absent from the original and looked up by the code), comments of `make_layouts.py`, comparison of the
+classes. Every remaining name looked at in the C: almost all belong to other screens or are checked (null)
+before use (FaceBook_PhotoPanel, Count_Label, ImageButton_Buy1/LockMask, Button_Change,
+Button_Passive; Txt_Countdown only in the multi branch of [fn]; «Count_Rare» = string
+Plate_Count_Rare + 6, present in the original). **JP 4.3.1 is not always WW 4.3.1**:
+JP `Sphere_Popup_Get_ver240` does not have Button_Ok/Txt_Ok which [fn] uses without a check.
 
-**Esito** (`-DryRun`, 13-10): 74 radici sostituite, 9 da decidere; 324 file (102 json, 222 texture
-BTF, 219 nomi nuovi); json tutti leggibili, nessun 9-slice su texture assente, assenti solo
-Camp_Balloon3 (Guilt, fumetto della campagna) e LB_Charge (carta delle bacheche), entrambe senza
-9-slice. Pacchetto generato 24,5 MB su 32 MiB; **indice oltre la riserva di `-Quick`** (30.058.100
-> 30.049.366 byte, la riserva rimasta era ~3,6 KB): serve una versione completa, `-Version 34`
-(indice 30.123.635 con la riserva nuova di 64 KiB). Fino ad allora `-Quick` solo con `-NoJp`.
+**Outcome** (`-DryRun`, 13-10): 74 roots replaced, 9 to be decided; 324 files (102 json, 222 BTF
+textures, 219 new names); all json readable, no 9-slice on a missing texture, missing only
+Camp_Balloon3 (Guilt, campaign balloon) and LB_Charge (board card), both without
+9-slice. Generated pack 24.5 MB out of 32 MiB; **index beyond the `-Quick` reserve** (30,058,100
+> 30,049,366 bytes, the remaining reserve was ~3.6 KB): a complete version is needed, `-Version 34`
+(index 30,123,635 with the new 64 KiB reserve). Until then `-Quick` only with `-NoJp`.
 
-Sostituiti (elenco completo in `jp_coco_layouts.txt`): Presents (scena, Base, Panel `rev=0`,
-IconPanel), Medal List e vendita (scene, Check/Ok, RareCaution e Panel, Guilt, MaxEnhanced), Evolve
-(scena, Evo_Medal), ReleaseWindow (WW), Sort, SlideMedalInfo, MedalOver, Cost_Over, DeckEdit
-Cost_Over, Subslot (scena e 5 layout), Moogle Shop (scena, righe Traits/Items, IconPanel, MedalSelect,
-AddCheck, OverwriteCheck), Sell Materials (scena, Block, Step1/2, Medal_Step1), Avatar Boards
-(scena elenco, carta, scena bacheca, Sphere_Incentive e _ver240, SphereCoinCheck), Profilo (scena,
-Oneself, User, Txt2, Comment e U13, PlayStyle, AvatarTitle_Base, TresCommu User/Other), Chirithy,
-Missioni (Base, Panel), Other (MenuDialog_ver300), Pet (PetInfoScene, PetSkill_Panel, Rename,
+Replaced (complete list in `jp_coco_layouts.txt`): Presents (scene, Base, Panel `rev=0`,
+IconPanel), Medal List and sale (scenes, Check/Ok, RareCaution and Panel, Guilt, MaxEnhanced), Evolve
+(scene, Evo_Medal), ReleaseWindow (WW), Sort, SlideMedalInfo, MedalOver, Cost_Over, DeckEdit
+Cost_Over, Subslot (scene and 5 layouts), Moogle Shop (scene, Traits/Items rows, IconPanel, MedalSelect,
+AddCheck, OverwriteCheck), Sell Materials (scene, Block, Step1/2, Medal_Step1), Avatar Boards
+(list scene, card, board scene, Sphere_Incentive and _ver240, SphereCoinCheck), Profile (scene,
+Oneself, User, Txt2, Comment and U13, PlayStyle, AvatarTitle_Base, TresCommu User/Other), Chirithy,
+Missions (Base, Panel), Other (MenuDialog_ver300), Pet (PetInfoScene, PetSkill_Panel, Rename,
 TrainingEdit, TrainingProduction, TrainingRestartPop, PetEditScene, PetEdit_Panel, PetEdit_Check2),
-risultati (KB, LB, Skill), Continue, AP_Recovery, Ability_MAX, EV_Banner.
+results (KB, LB, Skill), Continue, AP_Recovery, Ability_MAX, EV_Banner.
 
-Da decidere (restano i generati, motivo nell'elenco): MedalInfo_Information_R1 (crash dopo Evolve
-senza Panel_MixResult_Area/Tap_Screen_Area), PetInfo_TrainingSlotCheck_ver320 (Win_under usato senza
-controllo da [fn]), Sphere_Popup_Get_ver240 (Button_Ok/Txt_Ok), Sphere_Popup_Comp_ver310
-(SphereMap_Complete assente, cornice diversa dal riferimento), PvP_SelectWindow (titoli con
-giapponese disegnato), AdventureTop2_EV_Button e _Colosseum_Button (World_Ico7/8 assenti),
-AdventureTop2_Colosseum_Panel e _Raid_Button (nomi cercati dalle celle; online, non provabili).
+To be decided (the generated ones stay, reason in the list): MedalInfo_Information_R1 (crash after Evolve
+without Panel_MixResult_Area/Tap_Screen_Area), PetInfo_TrainingSlotCheck_ver320 (Win_under used without
+a check by [fn]), Sphere_Popup_Get_ver240 (Button_Ok/Txt_Ok), Sphere_Popup_Comp_ver310
+(SphereMap_Complete missing, frame different from the reference), PvP_SelectWindow (titles with
+drawn Japanese), AdventureTop2_EV_Button and _Colosseum_Button (World_Ico7/8 missing),
+AdventureTop2_Colosseum_Panel and _Raid_Button (names looked up by the cells; online, not testable).
 
 <a id="wipe"></a>
-## Tendine dei cambi di parte
+## Wipes of the part changes
 
-All'uscita fra parti di una missione `[fn]` mostra `img/wipe/wipe_%d.png` con %d = worldId
-della tabella `world` il cui worldName e' il prefisso della stanza (`[fn]`, tabella master
-0x22; nessuna corrispondenza -> 1). Nelle risorse c'e' solo `wipe_1` (DB): senza file
-`Sprite::initWithFile` fallisce (`[fn]`) e il distruttore cocos crasha.
-`make_textures.py` copia `wipe_1` in `wipe_2..14`, `10000`, `10001` (rete: gli originali vengono dopo e vincono). Gli originali per mondo non
-si trovano online (ISSUES I-027). Poi `recon/tools/originals.tsv` mette gli originali JP 4.3.1 di
-`wipe_2..8` (sezione 13) e `wipe_11..14` dei mondi di Ralph (sezione 40: righe `world` 11-14 NL/HD/CS/SR aggiunte da
+On the exit between parts of a quest `[fn]` shows `img/wipe/wipe_%d.png` with %d = worldId
+of the `world` table whose worldName is the prefix of the room (`[fn]`, master table
+0x22; no match -> 1). In the resources there is only `wipe_1` (DB): without the file
+`Sprite::initWithFile` fails (`[fn]`) and the cocos destructor crashes.
+`make_textures.py` copies `wipe_1` into `wipe_2..14`, `10000`, `10001` (safety net: the originals come later and win). The per-world originals cannot
+be found online (ISSUES I-027). Then `recon/tools/originals.tsv` puts the JP 4.3.1 originals of
+`wipe_2..8` (section 13) and `wipe_11..14` of Ralph's worlds (section 40: `world` rows 11-14 NL/HD/CS/SR added by
 `server/make-story-oltre.js`).
-I-196: `import_originals.py` prendeva i glob con `[..]` per file singoli (un file letterale `wipe_1[1-4].png`, nessun wipe_11..14 -> crash
-ad ogni cambio di parte nelle missioni di Ralph); ora `*`, `?` e `[` sono glob.
+I-196: `import_originals.py` took globs with `[..]` as single files (a literal file `wipe_1[1-4].png`, no wipe_11..14 -> crash
+at every part change in Ralph's quests); now `*`, `?` and `[` are globs.
 
 <a id="addnl-431"></a>
-## OBB 5.0.1 contro addnl 4.3.1 (I-091)
+## OBB 5.0.1 versus addnl 4.3.1 (I-091)
 
-Nell'indice unito (`resource_merge.py`) a parita' di nome vince l'OBB 5.0.1, che precede l'addnl
-dell'IPA 4.3.1; solo il pacchetto generato (ultimo, `--last-wins`) sostituisce. Dei 19805 nomi
-dell'addnl, 13148 sono serviti dall'OBB e 2376 di questi hanno contenuto diverso (soprattutto
-`lwf/drama`; in `lwf/avatar/motion` 19 file). Il caso visibile: `lwf/avatar/motion/wait/wait.lwf`,
-che il client 4.3.1 usa per l'avatar fermo nel campo ([fn] -> [fn](avatar, 0x1b);
-camminata = walk 0x1c / move 0x17 / run 0x18 in [fn]). Il keyblade si attacca al movie con
-nome di istanza `key` (parte 30 della tabella 0x1f18970, [fn], percorso
-`lwf/avatar/keyblade/keyblade_%04d_%02d` da displayId). Il wait 5.0.1 e' una posa frontale
-(`serious_o_c`) senza `key`, `shadow`, `mark`; il wait 4.3.1 ha `key`, `shadow`, `mark`,
-`face_normal_o_c`, come nei video originali (`reference\field_idle`). Anche `win_levelup` 5.0.1 non
-ha `key`/`shadow`/faccia. `recon/tools/prefer_addnl.py` (in `build-resources.ps1`) copia in
-`stage_gen\files` le versioni 4.3.1 di wait e win_levelup con le loro texture. Gli altri motion
-diversi (bwait, btlEnd, knockback, dead1-3) hanno `key` e `shadow` in entrambe le versioni.
+In the merged index (`resource_merge.py`) with equal names the OBB 5.0.1 wins, since it precedes the addnl
+of the IPA 4.3.1; only the generated pack (last, `--last-wins`) replaces. Of the 19805 names
+of the addnl, 13148 are served by the OBB and 2376 of these have different content (mostly
+`lwf/drama`; in `lwf/avatar/motion` 19 files). The visible case: `lwf/avatar/motion/wait/wait.lwf`,
+which the 4.3.1 client uses for the avatar standing still in the field ([fn] -> [fn](avatar, 0x1b);
+walking = walk 0x1c / move 0x17 / run 0x18 in [fn]). The keyblade attaches to the movie with
+instance name `key` (part 30 of the table 0x1f18970, [fn], path
+`lwf/avatar/keyblade/keyblade_%04d_%02d` from displayId). The 5.0.1 wait is a frontal pose
+(`serious_o_c`) without `key`, `shadow`, `mark`; the 4.3.1 wait has `key`, `shadow`, `mark`,
+`face_normal_o_c`, as in the original videos (`reference\field_idle`). The 5.0.1 `win_levelup` also does not
+have `key`/`shadow`/face. `recon/tools/prefer_addnl.py` (in `build-resources.ps1`) copies into
+`stage_gen\files` the 4.3.1 versions of wait and win_levelup with their textures. The other differing
+motions (bwait, btlEnd, knockback, dead1-3) have `key` and `shadow` in both versions.
 
 <a id="suoni-jp"></a>
-## Effetti sonori dei LWF dal JP 4.3.1 (I-152)
+## Sound effects of the LWFs from JP 4.3.1 (I-152)
 
-- **Client**: `AudioLWFNode` (`[fn]` -> init `[fn]`) registra gli eventi dei LWF; un evento
-  `se_<nome>` arriva a `[fn]`: id = `[fn](<nome>)` (testo `text/audio/<nome>`, es.
-  `ui2_se_000039` -> `509000390`), se 0 `atoi(<nome>)`; poi `[fn]` carica `audio/%09d.akb`. Senza
-  file non suona nulla e non c'e' errore. `playBGM_<nome>` ([fn]) risolve allo stesso modo.
-  Nessun campo del server coinvolto.
-- **Caso visto** (17-10): l'estrazione x10 (`raidgacha_result_display_10`, evento `se_ui2_se_000039`) e il
-  popup del Nova (`GuiltBonus_BurstLvup`, `se_ui2_se_000074`) erano muti; x1-x9 usano `509000370`, servito.
-  I LWF sono identici a quelli JP; mancano gli AKB 509000390 e 509000740 da OBB 5.0.1 + addnl. Servite
-  solo 40/90 `ui2_se` e 4/80 `ui_se`. Indagine: `D:\Progetto_Restauro_KH_UX\tmp\sound_draw\report.md`.
-- **Strumento** `recon/tools/jp_sound_effects.py` (test `test_jp_sound_effects.py`), chiamato da
-  `import_jp_coco.py` dopo tutte le altre scelte (anche con `-NoJp`), come le BGM Medals
+- **Client**: `AudioLWFNode` (`[fn]` -> init `[fn]`) registers the LWF events; an event
+  `se_<nome>` reaches `[fn]`: id = `[fn](<nome>)` (text `text/audio/<nome>`, e.g.
+  `ui2_se_000039` -> `509000390`), if 0 `atoi(<nome>)`; then `[fn]` loads `audio/%09d.akb`. Without the
+  file nothing plays and there is no error. `playBGM_<nome>` ([fn]) resolves the same way.
+  No server field involved.
+- **Observed case** (17-10): the x10 draw (`raidgacha_result_display_10`, event `se_ui2_se_000039`) and the
+  Nova popup (`GuiltBonus_BurstLvup`, `se_ui2_se_000074`) were silent; x1-x9 use `509000370`, served.
+  The LWFs are identical to the JP ones; the AKBs 509000390 and 509000740 are missing from OBB 5.0.1 + addnl. Only
+  40/90 `ui2_se` and 4/80 `ui_se` served. Investigation: `D:\Progetto_Restauro_KH_UX\tmp\sound_draw\report.md`.
+- **Tool** `recon/tools/jp_sound_effects.py` (test `test_jp_sound_effects.py`), called by
+  `import_jp_coco.py` after all the other choices (also with `-NoJp`), like the BGM Medals
   ([medaglie.md#bgm-medals](medaglie.md#bgm-medals)):
-  - LWF effettivi: i serviti di `names_v4.tsv` (letti da `resource_data\7\data`), poi `medal_gen`,
-    `rooms_gen`, `enemy_gen`, `raisedraw_gen` (`files\`), poi `stage_gen\files` e i LWF JP che l'import sta
-    per scrivere (a nome ripetuto vince l'ultimo, come nell'indice unito);
-  - eventi dalla sezione `eventName` (indice 25 dell'intestazione: un id di stringa per evento), nomi
-    `se_*` e `playBGM_*`; id come il client (testo servito, poi del generato, poi JP; se 0 `atoi`);
-  - `audio/%09d.akb` gia' servito, in un pacchetto statico o scritto da un altro generatore: nulla;
-    altrimenti la revisione piu' alta del JP (`<id>.<8 cifre>.akb`) nel pacchetto generato. Se manca il
-    `text/audio/<nome>` servito si copia anche quello (senza testo l'id sarebbe 0);
-  - **ordine nel build**: `make_nova_logo` + `import_jp_raisedraw` (raisedraw_gen\files) girano ora *prima*
-    di `import_jp_coco`, cosi' anche partendo da un raisedraw_gen vuoto i LWF dell'estrazione x10 e del
-    Nova ci sono quando si cercano i suoni (con `-Quick` stessa condizione di prima: solo se manca
-    `raisedraw_gen\files`). Le cartelle `files\` di rooms_gen ed enemy_gen le scrivono `make_jp_rooms.py` e
-    `make_jp_enemies.py`, fuori dal build: ci sono gia' all'inizio, il build ne fa solo il pacchetto;
-  - pacchetti statici esclusi: `--no-static <nome>` (dal build con `-NoRooms`/`-NoEnemies`/`-NoRaisedraw`
-    e, con `-Quick`, per quelli assenti da `packs.txt` della versione installata): i loro LWF e AKB non
-    contano;
-  - **addnl**: `names_v4.tsv` e' l'indice unito della versione 7 e contiene tutti i 19.806 nomi
-    dell'addnl: 13.148 con l'offset della copia OBB (vince, come nell'indice servito) e gli altri con
-    quello della copia addnl (fra questi 175 LWF). Leggere names_v4 da' quindi la copia che il client
-    carica davvero; le 654 copie addnl perdenti non si caricano mai (le due che servono, wait e
-    win_levelup, le mette `prefer_addnl.py` in stage_gen, letto come generato). Senza
-    `resource_data\7\data` o `names_v4.tsv` un avviso: si cercano solo i suoni dei LWF generati;
-  - deterministico (nomi ordinati), manifest e pulizia di `import_jp_coco.py`; con `--check` niente
-    `sound_effects.json` e cache solo letta; rapporto
-    `stage_gen\jp_import\sound_effects.json` (id, byte, LWF che li citano, assenti, non risolti); cache
-    degli eventi dei serviti in `served_lwf_sounds.json` (impronta di indice e dati; prima corsa ~45 s,
-    poi ~5 s). Da solo (`python -I recon/tools/jp_sound_effects.py`) e' un resoconto che non scrive nulla.
-- **Prova a secco** (17-10, copia di `stage_gen` in `tmp\se_dry_r1`, risorse 41; ripetuta dopo la revisione con lo stesso esito): 1.395 LWF con suoni, 627 nomi;
-  **216 AKB nuovi, 4.327.702 byte**: 509000390/740 (x10, Nova), 509000700 (`BurstGauge_Recovery`),
-  509100190/220 (motion `dash`, `excavate` dell'avatar), 509100250 (`Sburst`), 509100310/320
-  (`card_evolution_result_*`, animazione dell'Evolve), 508000020-080 (eff_se dei
-  nemici), 198 id 504xxxxxx (ene_se dei nemici JP di `enemy_gen` ed effetti `hit_effect_fla`), 503005003,
-  505001110, 506002010/020 (boss 7002-7005 e 1023); piu' 4 testi `text/audio` (ene_se_153401-403, npc_se_000503); nessun AKB assente anche
-  nel JP. Non risolti (nessun testo ne' id, muti anche nell'originale servito): `bgm_boss0112`,
-  `kh2_Laughter` (drama), `ene_se_165101` (nemico 8021), `player_se_000101` (dutch_roll). Pacchetto
-  generato 108.128.458 byte su 134.217.728 di riserva (80,6%); indice: entra nella dimensione installata
-  della 41 (restano ~57,6 KB di riserva): basta un `-Quick`.
-- I suoni sono originali: nessuna riga nelle Notices.
+  - effective LWFs: the served ones of `names_v4.tsv` (read from `resource_data\7\data`), then `medal_gen`,
+    `rooms_gen`, `enemy_gen`, `raisedraw_gen` (`files\`), then `stage_gen\files` and the JP LWFs that the import is
+    about to write (with a repeated name the last wins, as in the merged index);
+  - events from the `eventName` section (index 25 of the header: one string id per event), names
+    `se_*` and `playBGM_*`; ids like the client (served text, then the generated one, then JP; if 0 `atoi`);
+  - `audio/%09d.akb` already served, in a static pack or written by another generator: nothing;
+    otherwise the highest JP revision (`<id>.<8 cifre>.akb`) in the generated pack. If the served
+    `text/audio/<nome>` is missing that is copied too (without the text the id would be 0);
+  - **order in the build**: `make_nova_logo` + `import_jp_raisedraw` (raisedraw_gen\files) now run *before*
+    `import_jp_coco`, so even starting from an empty raisedraw_gen the LWFs of the x10 draw and of the
+    Nova are there when the sounds are looked up (with `-Quick` same condition as before: only if
+    `raisedraw_gen\files` is missing). The `files\` folders of rooms_gen and enemy_gen are written by `make_jp_rooms.py` and
+    `make_jp_enemies.py`, outside the build: they are already there at the start, the build only makes the pack;
+  - excluded static packs: `--no-static <nome>` (from the build with `-NoRooms`/`-NoEnemies`/`-NoRaisedraw`
+    and, with `-Quick`, for those absent from `packs.txt` of the installed version): their LWFs and AKBs do not
+    count;
+  - **addnl**: `names_v4.tsv` is the merged index of version 7 and contains all the 19,806 names
+    of the addnl: 13,148 with the offset of the OBB copy (it wins, as in the served index) and the others with
+    that of the addnl copy (among these 175 LWFs). Reading names_v4 therefore gives the copy that the client
+    really loads; the 654 losing addnl copies are never loaded (the two that are needed, wait and
+    win_levelup, are put by `prefer_addnl.py` into stage_gen, read as generated). Without
+    `resource_data\7\data` or `names_v4.tsv` a warning: only the sounds of the generated LWFs are looked up;
+  - deterministic (sorted names), manifest and cleanup of `import_jp_coco.py`; with `--check` no
+    `sound_effects.json` and cache only read; report
+    `stage_gen\jp_import\sound_effects.json` (ids, bytes, LWFs citing them, missing, unresolved); cache
+    of the events of the served ones in `served_lwf_sounds.json` (fingerprint of index and data; first run ~45 s,
+    then ~5 s). On its own (`python -I recon/tools/jp_sound_effects.py`) it is a report that writes nothing.
+- **Dry run** (17-10, copy of `stage_gen` in `tmp\se_dry_r1`, resources 41; repeated after the review with the same outcome): 1,395 LWFs with sounds, 627 names;
+  **216 new AKBs, 4,327,702 bytes**: 509000390/740 (x10, Nova), 509000700 (`BurstGauge_Recovery`),
+  509100190/220 (avatar motions `dash`, `excavate`), 509100250 (`Sburst`), 509100310/320
+  (`card_evolution_result_*`, Evolve animation), 508000020-080 (eff_se of the
+  enemies), 198 ids 504xxxxxx (ene_se of the JP enemies of `enemy_gen` and `hit_effect_fla` effects), 503005003,
+  505001110, 506002010/020 (bosses 7002-7005 and 1023); plus 4 `text/audio` texts (ene_se_153401-403, npc_se_000503); no AKB missing also
+  in JP. Unresolved (no text nor id, silent also in the served original): `bgm_boss0112`,
+  `kh2_Laughter` (drama), `ene_se_165101` (enemy 8021), `player_se_000101` (dutch_roll). Generated
+  pack 108,128,458 bytes out of 134,217,728 of reserve (80.6%); index: it fits in the installed size
+  of 41 (~57.6 KB of reserve remain): a `-Quick` is enough.
+- The sounds are original: no line in the Notices.
 
 <a id="icone-numerate"></a>
-## Immagini dal nome numerato (controllo del 18-10, I-158/I-159)
+## Images with numbered names (check of 18-10, I-158/I-159)
 
-Il client compone molti percorsi `img/...` con `sprintf` da un id del master o da un numero; se il file manca
-`ImageView::loadTexture`/`Sprite::setTexture` lasciano la texture di prima (icona sbagliata, nessun crash: caso
-`Skill_Icon3`, I-158). Controllo **offline**: 119 formati `img/` e `cocostudio/publish/...%d` dalle stringhe della
-libreria 4.3.1 (`strings` + `who_refs.py` + Ghidra sulle funzioni che li usano), valori dal master servito
-(`server/master_data`), file serviti = `names_v4.tsv` + `medal_gen`/`rooms_gen`/`enemy_gen`/`raisedraw_gen`/`stage_gen`
-`files\` (un file solo in `cocostudio/publish/` non vale per `img/`). Lavoro e script in
-`D:\Progetto_Restauro_KH_UX\tmp\icons\` (`check.py`, `fmt_other.py`, `seq.py`, decompilati `helpers*.c`).
+The client composes many `img/...` paths with `sprintf` from a master id or from a number; if the file is missing
+`ImageView::loadTexture`/`Sprite::setTexture` keep the previous texture (wrong icon, no crash: case
+`Skill_Icon3`, I-158). **Offline** check: 119 `img/` and `cocostudio/publish/...%d` formats from the strings of the
+4.3.1 library (`strings` + `who_refs.py` + Ghidra on the functions that use them), values from the served master
+(`server/master_data`), served files = `names_v4.tsv` + `medal_gen`/`rooms_gen`/`enemy_gen`/`raisedraw_gen`/`stage_gen`
+`files\` (a file only in `cocostudio/publish/` does not count for `img/`). Work and scripts in
+`D:\Progetto_Restauro_KH_UX\tmp\icons\` (`check.py`, `fmt_other.py`, `seq.py`, decompiled `helpers*.c`).
 
-| Formato | Numero da | Valori usati | Mancanti | Fonte / esito |
+| Format | Number from | Values used | Missing | Source / outcome |
 |---|---|---|---|---|
-| `img/skill/Skill_Icon%d` | `skill.thumbId` (riga skill +8, [fn], [fn] tipo 0) | 5 | 0 (la 3 dal 2016, I-158) | - |
-| `img/medal/Medal_S_%d` / `Medal_L_%d` | `medal.thumbId` (+8, premio tipo 3) / `medal.imageId` | 2090 | 0 | - |
-| `img/Cutin/Cutin_%d` | `medal.cutinId` (+0xc, carosella delle mosse speciali [fn]/[fn]) | 2088 | 173 | nessuna (I-159) |
-| `img/art/Art_%d` | `medal.artId` (+0x14, scena `MedalArtAnim` [fn]) | 2088 | 2088 | nessuna; JP 55 id solo giapponesi (I-159) |
-| `img/material/material_%d` | `material.materialId` (+0, premio tipo 5) | 53 | 54 | 2016 |
-| `img/avatarParts/ai%d` / `ai%03d` | id della parte (premio 0x12-0x14/0x17) | 2824 | 103 (partsType 7) | non chieste: sotto-parti di `setCloth`, mai premio |
-| `img/petParts/pi%d` | `petParts.petPartsId` (premio 0x21, missioni tipo 33) | 668 | 0 | - |
+| `img/skill/Skill_Icon%d` | `skill.thumbId` (skill row +8, [fn], [fn] type 0) | 5 | 0 (3 from 2016, I-158) | - |
+| `img/medal/Medal_S_%d` / `Medal_L_%d` | `medal.thumbId` (+8, reward type 3) / `medal.imageId` | 2090 | 0 | - |
+| `img/Cutin/Cutin_%d` | `medal.cutinId` (+0xc, carousel of the special attacks [fn]/[fn]) | 2088 | 173 | none (I-159) |
+| `img/art/Art_%d` | `medal.artId` (+0x14, scene `MedalArtAnim` [fn]) | 2088 | 2088 | none; JP 55 ids Japanese only (I-159) |
+| `img/material/material_%d` | `material.materialId` (+0, reward type 5) | 53 | 54 | 2016 |
+| `img/avatarParts/ai%d` / `ai%03d` | part id (reward 0x12-0x14/0x17) | 2824 | 103 (partsType 7) | not requested: sub-parts of `setCloth`, never a reward |
+| `img/petParts/pi%d` | `petParts.petPartsId` (reward 0x21, missions type 33) | 668 | 0 | - |
 | `img/sphere_incentive/%d`, `sphere_board/Board_%04d`, `sphere_kind/Kind_%04d` | `sphere.sphereBoardId` / `boardId` / `kindId` | 118 / 1 / 2 | 0 | - |
-| `img/keyBlade/KeyBlade_%06d` | `keyblade.displayId` (+0xcc, premio tipo 13) | 64 | 0 | `make_keyblade_images.py` |
+| `img/keyBlade/KeyBlade_%06d` | `keyblade.displayId` (+0xcc, reward type 13) | 64 | 0 | `make_keyblade_images.py` |
 | `img/carouselDeck/*%03d`, `img/ui/Subslot_MedalSlot%03d` | `keyblade.displayId / 100` | 16 | 0 | `make_keyblade_decks.py` |
 | `img/kakusei/Kakusei_Icon%04d` | `shuffleskill.category` (+4, [fn]) | 11 | 0 | - |
 | `img/userTitle/title_%04d` | `title.label` | 102 | 0 | - |
 | `img/Theater/World_Icon_%d`, `img/wipe/wipe_%d`, `stage_select_ico_%d_%d` | `theater.worldId`, `world.worldId`, `stage.worldId`+`thumbId` | 14 / 10 / 99 | 0 | - |
-| `img/light/{BG,NPC,NARRATION}/%d` | comando 4002 dei 40 SEQ serviti `img/light/SEQ/*.l` (slot 5003 BG, 5004 narrazione, 5008-5012 NPC) | tutti gli id citati | 4 | 39994/39996/39997 dal 2016; 30019 nessuna (I-159) |
-| `img/incentive/IncentiveIcon_NN` | costanti per tipo di premio ([fn]): usati 7, 8, 9, 26, 40, 41 (reward, mission) | 27 nomi | 24 | 06-29 dal 2016 (non 10/12: giapponese disegnato), 30-41 JP (rev. piu' alta), 42 = `cocostudio/publish/IncentiveIcon_42` |
-| `img/incentive/Star7_Ticket_%02d`, `draw_Ticket_%02d` | tipo di premio 37-42 | 6 | 0 | serviti con «仮» (segnaposto WW, Star7 39 in `make_shop_art.py`) |
-| `img/prizes/Prize_Treasure%02d` | premio +0x48 ([fn]) | 1-4 | 02-04 | 2016 |
-| `img/ui/AvtInfo_CrownIcon%d`, `AvtInfo_trophyIcon%d` | Profilo ([fn]): `(mvpCount-1)/50+1`, `(pvpMvpCount-1)/50+1` senza segno, max 4; col nostro 0: Crown1 e trophy4 | 1-4 | tutte | 1-3/1-2 JP, Crown4 e trophy3/4 da `cocostudio/publish/` (WW) |
-| `img/ui/Topinfo_BarBut%d_Off/_On` | indice della scheda + 1 (`Button_%d`, finestra Missioni [fn]/[fn]/[fn]) | 1-7 | 1, 3-7 | 2016 (uguali byte per byte a `publish/Topinfo_BarBut*_Off`) |
-| `img/ui/Deck_Arrow_U%d` / `R%d` | attributo 1-3 (deck, [fn]) | 1-3 | tutte | 2016 |
-| `img/tutorial/tutorial_%d` | id 1-65 costanti dei chiamanti di [fn] (12/41 -> 40, 44 -> 6; 100-120 altro ramo) | 34 dalle costanti | 25 | 19 dal 2016 (inglese, grafica 2016: la 5 servita e' diversa); 49-55, 57-59, 61, 65 solo JP giapponese (I-159) |
-| `img/damage/dmgGuardBreak_num%d`, `dmgReflection_num%d` (+ `_comma`) | tipo di danno 5 e 6 (tabella 0x1f2c2a0, [fn]) | 0-9 | tutte | JP |
-| `img/download_background/image_%02d` | costante 9 ([fn]) | 9 | 09 | nessuna (I-159) |
-| `img/ui/guilt/*%d*`, `Deck_Medal%d`, `Deck_Slot_Num_%d`, `Av_Box_Num%d`, `damage/dmg*_num%d`, `LoginTime_Icon%02d`, `KeyBlade_type_%02d` | livelli, slot, ore | - | 0 | - |
-| `talkstamp_%d`, `Emblem_%d`, `gesture/m_act%d`, `Shop_BuyItem_%02d`, `Rank_Title_%d`, `Comeback_Tutorial_%d`, `raid_boss_%d`, `xtres/*`, `union/*`, `colosseum/*`, `result/Result_PvPRank*`, `dark_*` | tabelle vuote o funzioni online / Dark Road | - | - | non controllati oltre (JP ha talkstamp, Emblem, m_act0-13, raid_boss) |
+| `img/light/{BG,NPC,NARRATION}/%d` | command 4002 of the 40 served SEQs `img/light/SEQ/*.l` (slot 5003 BG, 5004 narration, 5008-5012 NPC) | all cited ids | 4 | 39994/39996/39997 from 2016; 30019 none (I-159) |
+| `img/incentive/IncentiveIcon_NN` | constants per reward type ([fn]): used 7, 8, 9, 26, 40, 41 (reward, mission) | 27 names | 24 | 06-29 from 2016 (not 10/12: drawn Japanese), 30-41 JP (highest rev.), 42 = `cocostudio/publish/IncentiveIcon_42` |
+| `img/incentive/Star7_Ticket_%02d`, `draw_Ticket_%02d` | reward type 37-42 | 6 | 0 | served with «仮» (WW placeholder, Star7 39 in `make_shop_art.py`) |
+| `img/prizes/Prize_Treasure%02d` | reward +0x48 ([fn]) | 1-4 | 02-04 | 2016 |
+| `img/ui/AvtInfo_CrownIcon%d`, `AvtInfo_trophyIcon%d` | Profile ([fn]): `(mvpCount-1)/50+1`, `(pvpMvpCount-1)/50+1` unsigned, max 4; with our 0: Crown1 and trophy4 | 1-4 | all | 1-3/1-2 JP, Crown4 and trophy3/4 from `cocostudio/publish/` (WW) |
+| `img/ui/Topinfo_BarBut%d_Off/_On` | tab index + 1 (`Button_%d`, Missions window [fn]/[fn]/[fn]) | 1-7 | 1, 3-7 | 2016 (byte-for-byte equal to `publish/Topinfo_BarBut*_Off`) |
+| `img/ui/Deck_Arrow_U%d` / `R%d` | attribute 1-3 (deck, [fn]) | 1-3 | all | 2016 |
+| `img/tutorial/tutorial_%d` | constant ids 1-65 of the callers of [fn] (12/41 -> 40, 44 -> 6; 100-120 other branch) | 34 from the constants | 25 | 19 from 2016 (English, 2016 graphics: the served 5 is different); 49-55, 57-59, 61, 65 only Japanese JP (I-159) |
+| `img/damage/dmgGuardBreak_num%d`, `dmgReflection_num%d` (+ `_comma`) | damage type 5 and 6 (table 0x1f2c2a0, [fn]) | 0-9 | all | JP |
+| `img/download_background/image_%02d` | constant 9 ([fn]) | 9 | 09 | none (I-159) |
+| `img/ui/guilt/*%d*`, `Deck_Medal%d`, `Deck_Slot_Num_%d`, `Av_Box_Num%d`, `damage/dmg*_num%d`, `LoginTime_Icon%02d`, `KeyBlade_type_%02d` | levels, slots, hours | - | 0 | - |
+| `talkstamp_%d`, `Emblem_%d`, `gesture/m_act%d`, `Shop_BuyItem_%02d`, `Rank_Title_%d`, `Comeback_Tutorial_%d`, `raid_boss_%d`, `xtres/*`, `union/*`, `colosseum/*`, `result/Result_PvPRank*`, `dark_*` | empty tables or online / Dark Road features | - | - | not checked further (JP has talkstamp, Emblem, m_act0-13, raid_boss) |
 
-- Le icone di `IncentiveIcon_40/41` nel JP hanno piu' revisioni (biglietti stagionali; l'estrattore ne scambia
-  alcune): si prende la piu' alta (40 = biglietto platino, 41 = biglietto azzurro), come `import_jp_coco.py`.
-- `tutorial_%d` con id >= 53: `popupFlag` vale 2^53 - 1 a tutorial finito (`server.js`), quindi le finestre
-  oltre il bit 52, se il bit e' l'id, si aprirebbero ancora; da vedere al banco se compaiono (tutte senza fonte inglese).
-- Nessuna riga nelle Notices: sono grafiche originali (2016, JP o WW sotto altro percorso).
+- The icons of `IncentiveIcon_40/41` in JP have several revisions (seasonal tickets; the extractor swaps
+  some of them): the highest is taken (40 = platinum ticket, 41 = light blue ticket), as in `import_jp_coco.py`.
+- `tutorial_%d` with id >= 53: `popupFlag` is 2^53 - 1 when the tutorial is finished (`server.js`), so the windows
+  beyond bit 52, if the bit is the id, would still open; to be seen on the bench whether they appear (all without an English source).
+- No line in the Notices: they are original graphics (2016, JP or WW under another path).
