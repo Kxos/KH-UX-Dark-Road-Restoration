@@ -52,7 +52,9 @@ if ($Quick) {
 # compattazione) i pacchetti condivisi di $D\compact su cui conta il -Quick della versione installata
 if ($TestStraddle -and $Quick) { throw '-TestStraddle vale solo per una versione completa (-Version N), non con -Quick o -DryRun' }
 if (-not $Quick -and (Test-Path "$D\resource_data\$Version")) { throw "$D\resource_data\$Version esiste gia'" }
-$key = python -I -c "import sys; d=open(sys.argv[1],'rb').read(); print(d[[offset]:[offset]+32].hex())" "$D\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so"
+# chiave delle risorse: dalla configurazione locale fuori dal repository (recon/tools/private_tools.py)
+$key = python -I recon\tools\private_tools.py key
+if ($LASTEXITCODE -or -not $key) { throw 'chiave delle risorse non disponibile: vedi recon/tools/private_tools.py' }
 python -I recon\tools\make_layouts.py "$D\layouts\orig" "$sg\files"
 # texture assenti da ogni risorsa, ricostruite (Pillow: senza -I)
 python recon\tools\make_textures.py "$D\catalog\files" "$sg\files"

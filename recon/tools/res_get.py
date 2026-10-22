@@ -10,6 +10,8 @@ import subprocess
 import sys
 
 here = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, here)
+import private_tools  # noqa: E402  (bgad_extract.py is kept outside the public repository)
 tsv, datadir, out = sys.argv[1:4]
 want = set(sys.argv[4:])
 offs = {}
@@ -27,6 +29,6 @@ for n in sorted(want):
         continue
     dst = os.path.join(out, *n.split('/'))
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    subprocess.run([sys.executable, '-I', os.path.join(here, 'bgad_extract.py'), here, lib, offs[n], dst] + data,
+    subprocess.run([sys.executable, '-I', private_tools.path('bgad_extract.py'), here, lib, offs[n], dst] + data,
                    check=True, stdout=subprocess.DEVNULL)
     print(n, os.path.getsize(dst))

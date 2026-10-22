@@ -10,7 +10,7 @@ Formato del BGI (dopo lo strato esterno):
     +0x00 '\\x89BGI'  +0x04 u32 versione (3)  +0x08 u32 flag (bit 0 = strato interno)
     +0x0c u32 n_rec   +0x10 u32 n_nomi
     +0x14 u64 offset[n_rec]   u32 rec[n_nomi]   u32 off_nome[n_nomi]   pool di nomi \\0
-    in coda 8 byte: IV dello strato interno xor [constant]
+    in coda 8 byte: IV dello strato interno (derivato dal nonce, vedi gli strumenti privati)
 Lo strato interno copre da +0x0c fino agli 8 byte finali esclusi.
 
 --alias <tsv>: nomi in piu' che puntano al record di un nome esistente (es. le cartelle

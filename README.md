@@ -72,8 +72,7 @@ docs/                   ISSUES.md (issues), notes/ (technical notes by area), jo
                         NOTICES.md and notices/ (in-game Notices, web page on GitHub Pages)
 server/                 Node.js server: REST API, DNS, generated master and game tables
                         (server/README.md)
-tools/ldplayer/         LDPlayer bench: startup, sessions (session/), ARM crash capture
-                        under houdini (armtrace/, with README)
+tools/ldplayer/         LDPlayer bench: startup, sessions (session/), tombstones
 recon/tools/            Analysis and resource-building tools (Python)
 recon/ghidra/           Scripts for headless Ghidra (decompilation, disassembly)
 recon/out/              Distilled outputs: master:: classes, response schemas
@@ -87,7 +86,6 @@ recon/dl/ ext/ web/     Proprietary material — NOT versioned
 | `tools/ldplayer/session/relogin.ps1` | restarts server and app with the saved player, up to the home screen |
 | `tools/ldplayer/session/build-resources.ps1 -Quick` | rebuilds layouts and texts and writes them into the guest (~40 s, no download) |
 | `tools/ldplayer/session/build-resources.ps1 -Version N` + `update-resources.ps1` | new full resource version, downloaded by the client (~5 min); then tap KHUX START (200,1020) and Download (1220,715) by hand |
-| `tools/ldplayer/armtrace/stackcap.ps1 -MenuY y -Taps 'x,y'` | reproduces a crash and captures ARM registers and stack (`-NoStart`: waits for a crash triggered by another script) |
 | `node server/check-stage-data.js` | offline check of the quest data |
 | `node server/export-notices.js [--check]` | exports the in-game Notices to `docs/NOTICES.md` and `docs/notices/index.html` |
 

@@ -152,23 +152,17 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
    instruction (e.g. `rbx = 0xf9400808` = `ldr x8,[x0,#0x10]`), and the houdini stack keeps the PC and
    returns of the translated code (values in the `r--` mapping of `libcocos2dcpp.so`; Ghidra = value
    - base + `0x100000`). The fp/lr pairs below rsp are the real ARM chain.
-2. If that is not enough, **armtrace** (`tools/ldplayer/armtrace/`, see its README): `capture.ps1 -Arm`,
-   trigger the crash, `capture.ps1 -Collect`, **always `-Release`** (otherwise the tombstones
-   stay off). It stops the process by suspending `[crash service]`, reads the memory with
-   `[memory read]` (LIAPP kills the game if `/proc/<pid>/mem` is opened: code [code]) and the
-   emulated ARM registers from the houdini state. `vmread` is rebuilt with `build_vmread.py`.
-   `freeze_on_crash.sh` fires only if the `crash_dump64` is for a game thread: the WebView renderer
-   of the Notices crashes on its own and before gave empty captures (20-10).
-3. `armtrace\stackcap.ps1 -Tag x [-MenuY 697] [-NoMenu] -Taps 'x,y'` captures the ARM stack at the crash;
-   `-NoStart -WaitSec N` arms the capture while another script triggers the crash. **Do not truncate
-   the output with `Select-Object -First`**: it interrupts the script before the `-Release`.
-4. `findregs.py` (searches the subfolders, accepts pc outside the library; `--lib-pc` for the
-   old constraint), `backtrace.py`, and the short libc++ strings left on the stack (byte =
+2. If that is not enough, the crash capture tools (**armtrace**: ARM registers and stack at the crash)
+   are used. They are kept private, outside the public repository; their output is in
+   `<W>\dumps\armtrace`.
+3. (developer) `armtrace\stackcap.ps1 -Tag x [-MenuY 697] [-NoMenu] -Taps 'x,y'` (private copy) captures the
+   ARM stack at the crash; `-NoStart -WaitSec N` arms the capture while another script triggers the crash.
+4. Reading the capture: registers, backtrace and the short libc++ strings left on the stack (byte =
    length*2, then the name).
 5. **Library base**: it changes at every emulator start (0x31c0000 on 9 October, 0x31d4000 on the
    10th, 0x320c000 and 0x3314000 on the 11th). stackcap prints it: pass it with `$env:KHUX_BASE` to
-   `findregs.py`/`backtrace.py`. With a wrong base you get false leads (the «PetInfoDialog»
-   of 11 October). `capture.ps1` assumes 0x3308000: subtract the difference.
+   the analysis scripts. With a wrong base you get false leads (the «PetInfoDialog»
+   of 11 October).
 6. **pc/lr between 0x11ad000 and 0x11b2000 = GUIReader = missing cocostudio layout**: the path of the
    layout is in a register (x24 or similar) or as a string in `stack.bin` (quests 699-704 on 22-10:
   `ActMapTimeAttack_TimePanel.json`, captured with `stackcap.ps1 -NoStart`, imported from the JP via

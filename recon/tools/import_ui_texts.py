@@ -16,6 +16,8 @@ import subprocess
 import sys
 
 here = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, here)
+import private_tools  # noqa: E402  (bgad_extract.py is kept outside the public repository)
 served_tsv, ipa_tsv, datadir, out = sys.argv[1:5]
 served = set()
 for line in open(served_tsv, encoding='utf-8'):
@@ -56,7 +58,7 @@ for name, off in todo:
         n += 1
         continue
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    r = subprocess.run([sys.executable, '-I', os.path.join(here, 'bgad_extract.py'), here, lib, off, dst] + data,
+    r = subprocess.run([sys.executable, '-I', private_tools.path('bgad_extract.py'), here, lib, off, dst] + data,
                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     if r.returncode == 0:
         n += 1

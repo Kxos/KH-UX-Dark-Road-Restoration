@@ -91,8 +91,14 @@ server/master_data/
 server/resource_data/
 # salvataggio del giocatore (dati personali di gioco)
 server/save/
-# binario costruito da tools/ldplayer/armtrace/build_vmread.py
-tools/ldplayer/armtrace/vmread
+# kept private, outside the public repository (recon/tools/private_tools.py)
+tools/ldplayer/armtrace/
+recon/tools/memdump/
+recon/tools/bgad_extract.py
+recon/tools/bgi_keyhunt.py
+recon/tools/pack_keyhunt.py
+recon/tools/spriters/
+tools/segdl.ps1
 tools/bin/
 server/game_data/
 

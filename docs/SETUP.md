@@ -74,7 +74,7 @@ goes» column uses the folder layout the scripts expect today
 | Android APK `com.square_enix.android_googleplay.khuxww`, **arm64-v8a** variant | **WW 4.3.1** (April 2021; not 4.4.0, a post-shutdown transition build) | `<W>\apk\khux-4.3.1-original.apk`, and its `lib/arm64-v8a/libcocos2dcpp.so` extracted to `<repo>\recon\ext\ww431\` | the game itself (installed unmodified in LDPlayer); the library is read by the resource index builder |
 | `main.76.com.square_enix.android_googleplay.khuxww.obb` | 5.0.1 WW | `<W>\obb76\` | base game graphics served as KHUX resources |
 | `patch.87.com.square_enix.android_googleplay.khuxww.obb` | 5.0.1 WW | `<W>\obb76\` | same |
-| `base.apk` of the offline client | **5.0.1** WW | extracted (it is a zip) to `<W>\apk501\ext\` | `assets\aliud.png` (index of the OBBs) and `lib\arm64-v8a\libcocos2dcpp.so`, from which the scripts read the **resource key** at offset `[offset]`; its `extra.mp4` holds the 55 offline master tables (`<W>\apk501\extra_files\`) |
+| `base.apk` of the offline client | **5.0.1** WW | extracted (it is a zip) to `<W>\apk501\ext\` | `assets\aliud.png` (index of the OBBs) and `lib\arm64-v8a\libcocos2dcpp.so`, which holds the **resource key** (read through a local, untracked configuration: `recon/tools/private_tools.py`); its `extra.mp4` holds the 55 offline master tables (`<W>\apk501\extra_files\`) |
 | iOS IPA | **WW 4.3.1** | `addnl.mp4` + `addnl.png` (and the name list `names_addnl.tsv`) in `<W>\ipa431\` | the KHUX layouts of 4.3.1 that the Android OBBs lack |
 | iOS IPA | **WW 4.4.0** | its `misc.mp4` data in `<W>\ipa440\miscdata`, name list `names440misc.tsv` | 2,403 original `text/ui` texts, a few layouts and images |
 | JP 4.3.1 data, 2016 resource bundle, 1.1.3 master dump | JP 4.3.1 final data (`[local reference data]\data\jp_final_4.3.1`) | `<W>\[local reference data]\\...` (the folder name **starts with a space**), the 2016 bundle extracted to `<W>\tmp\thethiny_x\bundle2016\files` | original story maps and rooms of quests 1-979, enemy graphics, JP CocoStudio layouts, NPC texts, many images; **not public** ([Current limitations](#current-limitations)) |
@@ -204,7 +204,8 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json
 not written down in one place. **Project rule: never run `make-game-tables.js` alone** on an existing `master_data`:
 it regenerates tables that the other generators then extend or patch. Check the result with `node server\check-stage-data.js`.
 The 5.0.1 tables in `apk501\extra_files` are extracted from the 5.0.1 `extra.mp4` with the 5.0.1 key
-(`recon/tools/bgad_extract.py`).
+(container format decoding and protector analysis tools are kept private; `recon/tools/private_tools.py`
+says where the build looks for them).
 
 After any change to `server/master_data`, raise the **master revision** (`-Revision`, default **178** in
 `run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1`) so the game downloads the tables again.
@@ -300,7 +301,7 @@ The guest script prints `CA di sistema: N`, `uid del gioco ...: 80/443 -> <ip>`,
 
 | Script (`tools/ldplayer/session/`) | What it does |
 |---|---|
-| `run-server.ps1 [-Revision N] [-RealNow ISO] [-Save name] [-TutorialFinished]` | starts only the server (`node server\server.js`) with the environment it needs (public URL, resource folder, resource key read from the 5.0.1 library, pet on); log in `<W>\logs\server.log` |
+| `run-server.ps1 [-Revision N] [-RealNow ISO] [-Save name] [-TutorialFinished]` | starts only the server (`node server\server.js`) with the environment it needs (public URL, resource folder, resource key from the local configuration, pet on); log in `<W>\logs\server.log` |
 | `relogin.ps1 -Tag x [same options]` | stops `node`, starts `run-server.ps1` detached, relaunches the game and taps KHUX START until `/khux/login`, then waits for the home (screenshot `x_home`) |
 | `cycle.ps1 -Tag x` | **deletes `server\save\player.json`** and plays a new player automatically up to the home |
 | `update-resources.ps1` | makes the game download and install the newest resource version, then `relogin.ps1` |
@@ -309,7 +310,7 @@ The guest script prints `CA di sistema: N`, `uid del gioco ...: 80/443 -> <ip>`,
 | `sweep.ps1`, `login-time.ps1` | developer checks (button map, login timing) |
 
 Other scripts in `tools/ldplayer/`: `bench_start.ps1` (launch + KHUX START for an existing player),
-`bench_flow.ps1`/`bench_prologue.ps1` (new player automation), `tombstone.ps1` and `armtrace\` (crash capture).
+`bench_flow.ps1`/`bench_prologue.ps1` (new player automation), `tombstone.ps1` (crash capture; the deeper capture tools are kept private).
 All of them use `bench_lib.ps1`, which **refuses to tap when the game is not running** (taps on the LDPlayer
 home open advertising tabs in your browser).
 
@@ -322,7 +323,7 @@ home open advertising tabs in your browser).
 | **«7 ERROR»** / guest without network (`ip route` has no default route) | `ldconsole reboot --index 0`, wait for boot (`ld.exe -s 0 "getprop sys.boot_completed"` = 1), `phaseb-guest.sh`, `relogin.ps1`. If it persists after a quick restart: `ldconsole quitall`, wait until `Ld9BoxHeadless` is gone, end the leftover `VBoxNetDHCP`/`VBoxNetNAT`, launch again |
 | TLS errors / no HTTP request in the log, only DNS lines | the CA is missing as a system CA (`CA di sistema` count unchanged): check the `<hash>.0` file in `Misc` and that the certificate was made for your current IP |
 | **Black screen** or stuck after login | a resource download or install was interrupted, or the installed version does not match the served one: run `update-resources.ps1` and let it finish |
-| **Crash** to the LDPlayer home | right after an installation a one-off crash is known: relaunch. Otherwise note what you did and report it ([Reporting bugs](#reporting-bugs)); developers capture it with `tombstone.ps1` / `armtrace` ([banco.md](notes/banco.md#crash)) |
+| **Crash** to the LDPlayer home | right after an installation a one-off crash is known: relaunch. Otherwise note what you did and report it ([Reporting bugs](#reporting-bugs)); developers capture it with `tombstone.ps1` ([banco.md](notes/banco.md#crash)) |
 | **Download stuck** or downloads everything again at every start | full disk in the guest («Save error … storage space»): free space; or a newer version was built while the game was running. Run `update-resources.ps1` and wait until it says `installate` |
 | «Game data has been updated. You will be returned to the title screen.» | the master revision changed (new week/month or new `-Revision`): OK, then log in again (`relogin.ps1`; twice if the first crashes after the master download) |
 | LDPlayer error **«g_pPipeMemHead->arBufHead[i].usingPipeId != nPipeId»** and LDPlayer crash | several `ld.exe` at once, or one killed halfway. Never kill `ld.exe`; `ldconsole quit --index 0`, `launch`, `phaseb-guest.sh` again. The scripts serialize `ld.exe` with a system mutex |
@@ -432,7 +433,7 @@ not listed except where noted. Tools used only for research (Ghidra) are in a se
 | `session/run-server.ps1:23` | `KHUX_PUBLIC_URL = 'https://192.168.1.185'` | **PC IP** | **yes** |
 | `session/run-server.ps1:19` | `-Revision 178` default | master revision | no (raised by the project) |
 | `session/run-server.ps1:45` | `D:\Progetto_Restauro_KH_UX\resource_data` | resources | **yes** |
-| `session/run-server.ps1:49` | `D:\Progetto_Restauro_KH_UX\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so` (key at `[offset]`) | 5.0.1 library path | **yes** (offset: no) |
+| `<W>\private\khux_local.json` (read by `recon/tools/private_tools.py`, used by `run-server.ps1` and `build-resources.ps1`) | where the resource key comes from (local, untracked; or the `KHUX_RESOURCE_KEY` variable) | local configuration | **yes** |
 | `session/relogin.ps1:10`, `:12` | `-Revision 178`; log `D:\…\logs\server.log` | revision; log path | log: **yes** |
 | `session/cycle.ps1:5`, `:7` | `-Revision 178`; log path | same | log: **yes** |
 | `session/update-resources.ps1:7`, `:9`, `:28` | `-Revision 178`; log path; `D:\…\resource_data` | same | **yes** |
@@ -443,7 +444,6 @@ not listed except where noted. Tools used only for research (Ghidra) are in a se
 | `smoke_quests.ps1:6`, `:10` | `<W>\stage_gen\smoke_results.json`, log path | paths | yes (developer) |
 | `route_1060.ps1:2`, `:4` | `Set-Location 'D:\…\Android\KH-UX-Dark-Road-Restoration'`, log path | repo path | yes (developer) |
 | `tombstone.ps1:5`, `:7` | `<W>\screenshots`, `$env:USERPROFILE\Documents\XuanZhi9\Pictures` | paths | yes (crash capture) |
-| `armtrace/capture.ps1:18`, `armtrace/stackcap.ps1:9`, `:13` | `<W>\dumps\armtrace`, log path | paths | yes (crash capture) |
 
 ### Server and certificate
 
@@ -495,7 +495,6 @@ All overridable by an environment variable, but the defaults point to the author
 | File:line | Value |
 |---|---|
 | `recon/ghidra/decomp.ps1:8`, `recon/ghidra/run-ww.bat:26` | `JAVA_HOME = D:\Programmi\Android\Android Studio\jbr` |
-| `recon/tools/memdump/capture.ps1:5`, `:7` | `<W>\MuMuPlayer\nx_main\adb.exe`, `<W>\dumps` |
 | `tools/patch-apk.sh:4` | example IP `192.168.1.198` (argument); the patched APK is refused by LIAPP anyway |
 
 ### Not in files, but machine state

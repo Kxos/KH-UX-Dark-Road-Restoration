@@ -23,8 +23,8 @@ $env:KHUX_RESOURCE_KEY  = "<chiave 5.0.1>"          # see below
 node server\server.js
 ```
 
-- 5.0.1 key (not versioned): `python -I -c "import sys; d=open(sys.argv[1],'rb').read();
-  print(d[[offset]:[offset]+32].hex())" D:\Progetto_Restauro_KH_UX\apk501\ext\lib\arm64-v8a\libcocos2dcpp.so`.
+- 5.0.1 key (not versioned): `KHUX_RESOURCE_KEY`, set by `run-server.ps1` from the local untracked
+  configuration (`python -I recon/tools/private_tools.py key`).
 - Other variables: `KHUX_HIJACK` (hijacked DNS suffixes, includes `kingdomhearts.com`),
   `KHUX_PLAYER_HP` (placeholder), `KHUX_TUTORIAL_LAST_PHASE`, `KHUX_MASTER_SERVE_INVALID=1` (serves
   also the tables that do not pass the schema).

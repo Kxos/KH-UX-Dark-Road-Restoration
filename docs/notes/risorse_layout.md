@@ -7,10 +7,10 @@ rebuilt. History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-
 ## BGAD packs and indexes
 
 - The assets (`misc.mp4`, `extra.mp4`, `aliud.png`, OBB, `addnl`) are **BGAD** packs of the
-  `bg::FileManager`: records with a 24-byte header, ChaCha8 encryption (key at `[offset]` of the
-  library, IV from the nonce at the tail). The names are in the `.png` index of the same name, with a second
-  ChaCha8 layer. Record names obfuscated with the LCG `seed*0x19660d + 0x3c6ef35f`. Format described at the
-  top of `recon/tools/bgad.py`.
+  `bg::FileManager`: records with a 24-byte header, encrypted with a key held by the client library.
+  The names are in the `.png` index of the same name, with a second encrypted layer. Record names are
+  obfuscated (`bgad_names.py`). The decoding tools (`bgad.py` and related) are kept private, outside
+  the public repository (`recon/tools/private_tools.py`).
 - The records with encryption 3 of the packs mounted as resources open with the session key
   (for us the 5.0.1 one): `BGAD_KEY=<hex> recon/tools/bgad_extract.py`.
 - The client mounts: KHUX side `r/misc.png`+`r/misc.mp4` (slot 1) and `addnl.png`+`addnl.mp4` (slot 2,

@@ -43,8 +43,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   client: only with the bench stopped, then `update-resources.ps1`.
 - After every change to `server/master_data`: raise the revision in the 4 session scripts and
   `relogin.ps1` (twice if the first one crashes). Do not restart only the server with a session open.
-- Crashes: `tombstone.ps1`, then `armtrace\stackcap.ps1` (the library base differs at every start:
-  pass it with `KHUX_BASE`; always `capture.ps1 -Release` after `-Arm`). Full recipe in
+- Crashes: `tombstone.ps1`, then the private crash capture tools (armtrace, outside the repository;
+  the library base differs at every start: pass it with `KHUX_BASE`). Full recipe in
   [banco.md](docs/notes/banco.md#crash); `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <name> <x> <y>` taps, saves
   requests, logcat and screenshots. Taps only while the game is alive (`bench_lib` refuses taps with the game closed).
 
