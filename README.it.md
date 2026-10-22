@@ -7,6 +7,11 @@
 > Oggi installare il gioco è lungo e complesso (a lavoro finito diventerà un unico launcher), e il gioco è
 > in lavorazione: aspettatevi bug e crash, e segnalateli per favore.
 
+> **Avvertenza.** Questo è un progetto amatoriale, non ufficiale e non commerciale. Non è affiliato a Square Enix
+> o Disney, né approvato o sponsorizzato da loro. *Kingdom Hearts*, *Kingdom Hearts Union χ[Cross]* e tutti i
+> nomi, personaggi e asset collegati appartengono ai rispettivi proprietari. Qui non si distribuiscono file del
+> gioco. Vedi [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 > La documentazione di lavoro (HANDOFF, ISSUES, note tecniche, diario) è in inglese dal 22 ottobre 2026;
 > questa pagina riassume il progetto in italiano.
 
@@ -127,11 +132,15 @@ Questo restauro si regge sul lavoro di chi ha conservato e documentato il gioco 
 
 ## Regole del repository
 
-Questo repository contiene **esclusivamente codice e documentazione originali**.
+Il codice e la documentazione sono lavoro nostro, con licenza MIT ([LICENSE](LICENSE)), che copre solo
+quelli. Alcuni file di dati contengono fatti e testi brevi ricavati da wiki e database della community,
+citati in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); i nomi di giochi, personaggi, medaglie e luoghi
+servono solo a indicare con cosa lavora il codice e appartengono ai rispettivi proprietari.
 
 Non vengono mai versionati APK, IPA, OBB, librerie native, asset, audio, né master data
-di Square Enix — `.gitignore` li esclude. Chi vuole riprodurre il lavoro si procura il
-client per conto proprio.
+di Square Enix — `.gitignore` li esclude. Chi vuole riprodurre il lavoro estrae il client
+dal proprio dispositivo o dalla propria installazione; il progetto non lo fornisce né lo linka.
+Gli strumenti di decodifica del formato dei pacchetti e di analisi del protettore restano privati.
 
 Progetto **non commerciale**, a scopo di preservazione e interoperabilità con un servizio
 dismesso.

@@ -8,6 +8,9 @@
 >   finished the process will be simplified into a **single launcher**; until then, expect to spend time on it.
 > - **The game is a work in progress.** Expect bugs and crashes. You are very welcome to report them
 >   ([Reporting bugs](#reporting-bugs)) and we will try to fix them as soon as possible.
+> - **Unofficial fan project.** It is not affiliated with, endorsed or sponsored by Square Enix or Disney;
+>   *Kingdom Hearts* and all related names and assets belong to their owners
+>   ([THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)).
 > - **This repository never distributes Square Enix files** (APK, OBB, IPA, assets, audio, master
 >   data). You must dump them yourself from your own device or your own installation of the game; this
 >   project does not provide, host or link them. This guide only lists which files the scripts expect.

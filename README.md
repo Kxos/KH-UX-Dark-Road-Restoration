@@ -7,6 +7,11 @@
 > Setting the game up today is long and complex (it will become a single launcher when the work is finished),
 > and the game is a work in progress: expect bugs and crashes, and please report them.
 
+> **Disclaimer.** This is an unofficial, non-commercial fan project. It is not affiliated with, endorsed or
+> sponsored by Square Enix or Disney. *Kingdom Hearts*, *Kingdom Hearts Union χ[Cross]* and all related names,
+> characters and assets belong to their owners. No game files are distributed here. See
+> [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 Preservation project: bringing **Kingdom Hearts Union χ[Cross] · Dark Road** back as a
 locally playable experience, after the servers shut down (May 2021) and almost all of
 Union χ was removed from the app, which was reduced to a theater mode.
@@ -127,11 +132,15 @@ This restoration stands on the work of people who preserved and documented the g
 
 ## Repository rules
 
-This repository contains **only original code and documentation**.
+The code and documentation are our own work, under the MIT licence ([LICENSE](LICENSE)), which covers
+only that. A few data files hold facts and short texts derived from community wikis and databases,
+credited in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); names of games, characters, Medals and
+places appear only to identify what the code works with and belong to their owners.
 
 APKs, IPAs, OBBs, native libraries, assets, audio and Square Enix master data are never
-versioned — `.gitignore` excludes them. Anyone who wants to reproduce the work has to obtain
-the client on their own.
+versioned — `.gitignore` excludes them. Anyone who wants to reproduce the work has to dump
+the client from their own device or installation; the project does not provide or link it.
+Container format decoding and protector analysis tools are kept private.
 
 **Non-commercial** project, for preservation and interoperability with a discontinued
 service.
