@@ -44,18 +44,9 @@ Credits and licences are in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.m
   keyblade unlocks, tiers, traits.
 
 <a id="contatti"></a>
-## Contacts to make (user's task, ISSUES I-029)
+## Community (ISSUES I-029)
 
-- thethiny (CDN `r/` files, complete masters), Roboloid.
-  **13-10: thethiny replied** (user's message with the English README): willing to
-  send ~4 GB of KHUx 1.0.1, 1.1.3, 4.4.0 and final JP data (only the gacha graphics from the CDN and
-  some `m` files 1.1.3-1.3.0 are missing, covered by 5.0.1) to a shared Google Drive folder created by
-  us; he also offers his work journal with Claude. He updated the repos on 13-10 (KHUx-Recomp:
-  recompilation of 1.0.1). Study of the repos: `reference\world_schema\thethiny_repos.md`.
-- Appeal on r/KHUx for anyone who still has `files/r/` of a 4.x.
-- **Arena7664** («Cross Road», 5.0.1 client in the browser via Rellume/WASM; knows how to repack
-  `extra_mp4`; github.com/Arena7664).
-- Restoration Union and other preservation communities.
-- **22-10** (I-194, enemy graphics of quests 526-979): user's post on Reddit
-  https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/ ; emails to Roboloid (more complete dump of the JP
-  data) and to thethiny. Appeal also in the README («What we are looking for»).
+- The project asks the community only for **information** (screenshots, videos, rules, guides), never
+  for game files: README «What we are looking for» and the
+  [Reddit post of 22 October](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/).
+- Study of thethiny's public repositories: `reference\world_schema\thethiny_repos.md` (local).

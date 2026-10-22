@@ -54,7 +54,7 @@ No Union Cross, raids, Coliseum PvP or events yet.
 | **Python** | **3.10** (the bench uses 3.10.11), on `PATH` as `python` | resource-building tools in `recon/tools/` |
 | Python packages | `pip install pillow numpy scipy` (bench: Pillow 12.2.0, numpy 2.2.6, scipy 1.15.3) | the only third-party imports of `recon/tools/` (Pillow and numpy for textures and maps, scipy for `make_nova_logo.py`) |
 | **Git for Windows** (with Git Bash and its OpenSSL) | any | cloning, and `server/make-cert.sh` (OpenSSL 3.x) |
-| **Disk space** | plan for **at least 60 GB free** on the drive that holds the work folder | inputs ~7 GB (OBBs 2.1 GB, 5.0.1 APK 0.2 GB, IPAs 0.2 GB, thethiny data ~5 GB or more), intermediate packs a few GB, **every resource version ~4.2 GiB** (versions share the OBB parts through hard links, so the folder must be on NTFS), plus ~4.2 GiB inside the emulator and a download cache peak; the author's `resource_data` folder holds 30 GB of old versions |
+| **Disk space** | plan for **at least 60 GB free** on the drive that holds the work folder | inputs ~7 GB (OBBs 2.1 GB, 5.0.1 APK 0.2 GB, IPAs 0.2 GB, other non-public inputs ~5 GB or more), intermediate packs a few GB, **every resource version ~4.2 GiB** (versions share the OBB parts through hard links, so the folder must be on NTFS), plus ~4.2 GiB inside the emulator and a download cache peak; the author's `resource_data` folder holds 30 GB of old versions |
 | RAM | 16 GB recommended | after several 2-4 GB downloads `Ld9BoxHeadless` grows to ~30 GB committed memory ([banco.md](notes/banco.md#ldplayer)) |
 | Administrator rights | only to change the Windows DNS server and, if needed, firewall rules | see [Network](#44-network-windows-dns-ip-firewall) |
 
@@ -77,7 +77,7 @@ goes» column uses the folder layout the scripts expect today
 | `base.apk` of the offline client | **5.0.1** WW | extracted (it is a zip) to `<W>\apk501\ext\` | `assets\aliud.png` (index of the OBBs) and `lib\arm64-v8a\libcocos2dcpp.so`, from which the scripts read the **resource key** at offset `[offset]`; its `extra.mp4` holds the 55 offline master tables (`<W>\apk501\extra_files\`) |
 | iOS IPA | **WW 4.3.1** | `addnl.mp4` + `addnl.png` (and the name list `names_addnl.tsv`) in `<W>\ipa431\` | the KHUX layouts of 4.3.1 that the Android OBBs lack |
 | iOS IPA | **WW 4.4.0** | its `misc.mp4` data in `<W>\ipa440\miscdata`, name list `names440misc.tsv` | 2,403 original `text/ui` texts, a few layouts and images |
-| thethiny's shared KHUx data | JP 4.3.1 final data (`[local reference data]\data\jp_final_4.3.1`), 2016 resource bundle, 1.1.3 master dump | `<W>\[local reference data]\\...` (the folder name **starts with a space**), the 2016 bundle extracted to `<W>\tmp\thethiny_x\bundle2016\files` | original story maps and rooms of quests 1-979, enemy graphics, JP CocoStudio layouts, NPC texts, many images | **not public**: shared privately with the project by thethiny on 13 October 2026 ([ricerca_esterna.md](notes/ricerca_esterna.md#contatti)); see [thethiny's GitHub](https://github.com/thethiny) (`KHUxTools`, `KHUx-Server`) and the preservation Discord «Traverse Town» cited in the notes |
+| JP 4.3.1 data, 2016 resource bundle, 1.1.3 master dump | JP 4.3.1 final data (`[local reference data]\data\jp_final_4.3.1`) | `<W>\[local reference data]\\...` (the folder name **starts with a space**), the 2016 bundle extracted to `<W>\tmp\thethiny_x\bundle2016\files` | original story maps and rooms of quests 1-979, enemy graphics, JP CocoStudio layouts, NPC texts, many images; **not public** ([Current limitations](#current-limitations)) |
 | thethiny `KHUx-Server` data | `data/*.json` (`burst.json`, `enemyAttack.json`, `stage.json` ...) | `<W>\external\thethiny_2026-10-13\KHUx-Server\data\` and `<W>\external\thethiny\` | values used when generating the master tables; community project credited in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
 | Roboloid medal database and images | `medal_db.json`, medal PNGs | `<W>\external\roboloid\` | medal values and medal images (`fetch_medal_images.py`); community project credited in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
 | khuxwiki dumps | `medals.json`, `quests.json`, `wiki_all.json`, `enemy_stats_oltre.json` | `<W>\wiki\` | medal values, quest objectives, enemy stats; made with `recon/tools/wiki_dump.py` from [khuxwiki.com](https://www.khuxwiki.com/) |
@@ -385,9 +385,10 @@ Template to copy, fill and paste:
 What is missing in the game is listed in the in-game Notices and in [ISSUES.md](ISSUES.md). This list is
 about **the setup**: steps that today are impossible or very hard for someone outside the project.
 
-1. **thethiny's JP 4.3.1 data and 2016 bundle are not public.** `build-resources.ps1` stops without them
-   (`manca ...`), and they are the source of the story maps and rooms of quests 1-979, enemy graphics and
-   many layouts. Today they can only be obtained by asking thethiny.
+1. **Some build inputs are not public** (the JP 4.3.1 data and the 2016 bundle). `build-resources.ps1`
+   stops without them (`manca ...`), and they are the source of the story maps and rooms of quests 1-979,
+   enemy graphics and many layouts. A simplified setup that works only from files a user can legally dump
+   from their own installation is planned.
 2. **No reproducible rebuild of the master tables** (`server/master_data`, `server/game_data`): no single
    script, an undocumented order, and inputs that are the author's research files (`reference\world_schema\
    oltre525\*.json`, `reference\keyblades\keyblade_levels.json`, `reference\passives\...`, `wiki\*.json`,

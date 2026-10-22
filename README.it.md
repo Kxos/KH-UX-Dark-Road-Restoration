@@ -121,9 +121,8 @@ Questo restauro si regge sul lavoro di chi ha conservato e documentato il gioco 
 - **thethiny** — [KHUxTools](https://github.com/thethiny/KHUxTools) (strumenti per risorse e master data),
   [KHUx-Server](https://github.com/thethiny/KHUx-Server) (rifacimento del server e delle API, master data originali),
   [KHUx-Recomp](https://github.com/thethiny/KHUx-Recomp) (ricompilazione statica e decompilato del client 1.0.1),
-  [Modding-Database](https://github.com/thethiny/Modding-Database) e l'archivio condiviso dei dati di KHUx (dati JP
-  4.3.1, mappe degli stage, dump del master 1.1.3 e il diario di ricerca). Gran parte di cio' che questo progetto serve
-  viene dai formati e dai dati che ha documentato e condiviso.
+  [Modding-Database](https://github.com/thethiny/Modding-Database). Gran parte di cio' che questo progetto fa si basa
+  sui formati che ha documentato.
 - **Roboloid** e **Ultimadei** — il [database KHUχ di Roboloid](https://roboloid.github.io/khux/) (dati delle medaglie,
   moltiplicatori, condizioni degli speciali, galleria degli asset).
 - **KHUX Wiki** ([khuxwiki.com](https://www.khuxwiki.com/)) e **KH Wiki** ([khwiki.com](https://www.khwiki.com/)) —

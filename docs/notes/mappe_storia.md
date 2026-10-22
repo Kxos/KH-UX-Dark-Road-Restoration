@@ -351,9 +351,7 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
   not sufficient (~5 tips per room, 1-2 used): hence the imprecision of the tours.
 - **Archives** (`fonti_risorse.md`): no known client build (IPA WW/JP 1.0.1-5.0.1, APK JP/TW, 5.0.1 web
   edition) has additional quests or rooms: they came from the CDN in `files/r/misc.mp4`.
-  Only known source: **thethiny** (misc.mp4 from the CDN, ~898 STG, ~124 rooms against 86, same key
-  KEY_DOWNLOAD); public only `stage_maps.json` (enemies/chests per stage, without exits). Contact to
-  be made (user, I-029).
+  Public: only `stage_maps.json` of thethiny's repositories (enemies/chests per stage, without exits).
 - **Videos** (`video\`): 186 videos catalogued (gothwood9 1-760 complete); the light blue arrow is visible and,
   registered on the preview, finds the 4 real exits of Daybreak Town again (arrivals at 9-46 units). The
   wiki pairs are not always different parts (DW quests 8 and 11: wide maps without a wipe).
