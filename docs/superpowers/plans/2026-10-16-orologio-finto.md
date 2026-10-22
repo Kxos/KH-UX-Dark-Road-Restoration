@@ -273,7 +273,7 @@ function clockOffset() {
 function serverTime() {
   return serverTimeAt(realNow());
 }
-// The server time corresponding to a real instant (ms). Format read by [fn].
+// The server time corresponding to a real instant (ms). Format read.
 function serverTimeAt(realMs) {
   return clock.fakeString(realMs, clockOffset());
 }

@@ -15,12 +15,12 @@
 - Original APK unmodified: only server responses, master tables, downloadable resources and WebView pages are changed.
 - Repo: only original code and documentation. Never Square Enix APKs, assets, master data, images or decompiled code in the repo: `server/master_data/`, `server/game_data/`, `server/save/` are ignored by git; the generated bitmaps and LWFs live outside (stage_gen, game_data); only the scripts go in the repo.
 - Git: always `git -c safe.directory=*`; message in a UTF-8 file without BOM in `D:\Progetto_Restauro_KH_UX\tmp\msg_*.txt` written with the Write tool, then `git commit -F <file>`; `git pull --rebase` before `git push`; messages in Italian ending with the line `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; never `git add -A` (add files by name; `.claude/` is not tracked). Commit and push at every verified task.
-- Code and comments in Italian, in the style of the neighbouring files (dense comments with Ghidra addresses and bench dates). Texts shown to the player in English.
+- Code and comments in Italian, in the style of the neighbouring files (dense comments with bench dates). Texts shown to the player in English.
 - Tests: standalone scripts `node server/test-<name>.js` that print `OK: ...` or `ERRORI (n)` and exit with 1; never the real save (`KHUX_SAVE` in a temporary folder).
 - Tiles: never `price` 0 (draw without confirmation), never `benefitId` != 0 (padlock: tap = crash), never payType 3 (it only counts payStone, which is always 0) nor payType 9 (Shop crash). Jewels = payType 1.
 - `/gacha/draw` response: `effectNumbers` only 0; `gachaBonus` always `{addType: 1, number: 0, userMedalIds: []}`; every id in `userMedalIds` must appear in `userMedals` of the same response or already be known to the client; at most 10 medals per draw.
 - Every difference from the original must be explained in the in-game Notices, in English (reconstructed odds, Catalog tile).
-- Bench: only one Ghidra process at a time; taps only while the game is alive (`AppAlive`); press SKIP in dialogues; copy the save before testing; heavy files in `D:\Progetto_Restauro_KH_UX\tmp`.
+- Bench: taps only while the game is alive (`AppAlive`); press SKIP in dialogues; copy the save before testing; heavy files in `D:\Progetto_Restauro_KH_UX\tmp`.
 
 ## Review Focus
 
@@ -65,7 +65,7 @@ Recommended model: Opus (judgement on the missing textures).
 - Consumes: JP data in `lwf\raisedraw\` of the local reference data folder (`KHUX_JP_DATA`, read-only); served index `D:\Progetto_Restauro_KH_UX\resource_data\names_v4.tsv`; `recon/tools/btf.py` (`btf.encode(Image) -> bytes`).
 - Produces: `<stage_gen>\files\lwf\raisedraw\demo\raidgacha_result_display_NN\...` (NN 02-10), the missing `...\Medal\Medal_D_{Up,Rev,None}N\...`, `<stage_gen>\raisedraw_report.json`. The server (Task 5) allows `lotCount` only among the `raidgacha_result_display_NN` folders that are served or complete in the report.
 
-Facts (findings.md §4): the SceneDrawRaise scene opens `lwf/raisedraw/demo/raidgacha_result_display_%02d/` with %02d = number of medals (missing file = crash) and for each medal `lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare>` according to `darklight`. The WW resources only serve `raidgacha_result_display_01` and `Medal_D_Up3`. In the JP data folders 02-10 have the LWF but almost no textures (the JP extraction removes identical files): the textures are named `<base>_<UTF-8 hex of the original name>.png` and are the same «ビットマップ N.png» as in `raidgacha_result_display_01` (served WW). The folders with a `.res` list them; the others must be read from the LWF.
+Facts (findings.md §4): the Draw scene opens `lwf/raisedraw/demo/raidgacha_result_display_%02d/` with %02d = number of medals (missing file = crash) and for each medal `lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare>` according to `darklight`. The WW resources only serve `raidgacha_result_display_01` and `Medal_D_Up3`. In the JP data folders 02-10 have the LWF but almost no textures (the JP extraction removes identical files): the textures are named `<base>_<UTF-8 hex of the original name>.png` and are the same «ビットマップ N.png» as in `raidgacha_result_display_01` (served WW). The folders with a `.res` list them; the others must be read from the LWF.
 
 - [ ] **Step 1: Extract the served (WW) raisedraw once**
 
@@ -89,7 +89,7 @@ Run the same command by hand (same `BGAD_KEY`) and check that `D:\Progetto_Resta
                                               --report <stage_gen\\raisedraw_report.json> [--check]
                                               (Pillow: without -I)
 
-SceneDrawRaise (init [fn], docs/notes/shop.md) opens
+The Draw scene (docs/notes/shop.md) opens
 lwf/raisedraw/demo/raidgacha_result_display_%02d/ (%02d = medals drawn, 1-10; missing file =
 crash) and for each medal lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare> according to darklight.
 The WW resources only serve raidgacha_result_display_01 and Medal_D_Up3.
@@ -291,7 +291,7 @@ Facts (server_facts.md §5): the Gold Ticket uses the texts 106140392 (name), 10
     python recon/tools/make_shop_art.py <stage_gen\\files> <server\\game_data>     (Pillow: without -I)
 
 The Catalog tile is a Gold Ticket draw (payType 6) that nobody owns: the button stays
-grey ([fn]) and shows the texts 106140420-424 and the icon img/incentive/Star7_Ticket_39.png.
+grey and shows the texts 106140420-424 and the icon img/incentive/Star7_Ticket_39.png.
 Here the texts become the invitation to open Details and the icon (original with the «仮» mark) becomes a
 small list of banners. The 640x140 banner of the tile is written too (served by the server,
 /web/gacha/img/9001.png). Texts after the copy of the IPA texts in build-resources.ps1 (otherwise
@@ -523,7 +523,7 @@ function rollDraw(banner, rng) {
   });
 }
 
-// drawMedalType master row (47 fields, recon/out/master_types_ww431.json; parser [fn]).
+// drawMedalType master row (47 fields, recon/out/master_types_ww431.json).
 // bannerUrl/detailUrl are paths: server.js (servedMasterRows) prepends the http address.
 // drawType 1; benefitId 0 (the padlock opens the in-app purchase: crash, I-134); comment = scrolling
 // strip under the banner, printf string (no loose %), visible with warrantDisplayOfTime 1
@@ -860,9 +860,9 @@ module.exports = { parseTsv, wikiMedals, maxSetOf, buildPool, bannerFromRow, PLA
 
 ```js
 // Shop > Draw: list, draw and WebView pages (docs/notes/shop.md; spec 2026-10-16-shop-banner-design.md).
-// GET /gacha/list (action 75): gachaList[] ([fn], all fields mandatory) and petGachaList[]
+// GET /gacha/list (action 75): gachaList[] (all fields mandatory) and petGachaList[]
 // (mandatory even if empty: without it, «200 ERROR :75»). The client requests it every time the Shop opens
-// and after every draw; closing the Details WebView does NOT request it ([fn]).
+// and after every draw; closing the Details WebView does NOT request it.
 // POST /gacha/draw (action 76): body {drawMedalTypeId, count = lotCount}; the client first checks
 // jewels/tickets and 1 slot in the box, then opens the scene and re-reads GET /user/stone: the jewels are
 // deducted by the server here. Response in server.js (respondGachaDraw).
@@ -873,7 +873,7 @@ const gd = require('./gacha-data');
 const WALLET = { 1: 'freeStone', 7: 'limitedDrawTicket1', 8: 'limitedDrawTicket2' };
 
 // «Banner Catalog» tile (spec 4.1): Gold Ticket (payType 6, drawTicket3 always 0) price 1: grey
-// button, the tap sends no requests ([fn]); Details opens the catalog (detailUrl of the master).
+// button, the tap sends no requests; Details opens the catalog (detailUrl of the master).
 function catalogRow() {
   return gd.drawMedalTypeRow({ drawMedalTypeId: gd.CATALOG_ID, name: 'Banner Catalog', payType: 6, price: 1, sortId: 1,
     bannerUrl: `/web/gacha/img/${gd.CATALOG_ID}.png`, detailUrl: '/web/gacha/catalog', comment: 'Open Details to browse all banners' });
@@ -1155,10 +1155,10 @@ function respondGachaList(res) {
   send(res, 200, { ret: ret(), ...gacha.gachaListData(gachaBanners(), player, { realMs: realNow(), webBase: WEB_BASE, test: GACHA_TEST, sizes: GACHA_SIZES }) });
 }
 
-// POST /gacha/draw (action 76): branch 0x7c46bc of [fn], parser [fn] (userPoint),
-// [fn] (userMedals, userSkills, userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds,
-// effectNumbers: all mandatory) and [fn] (guiltBurstFirst/MaxUserMedalIds). A refusal
-// responds only {ret}: «200 ERROR :76» and the client goes back to the Shop ([fn]).
+// POST /gacha/draw (action 76): the client reads userPoint, then userMedals, userSkills,
+// userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds, effectNumbers (all mandatory)
+// and guiltBurstFirst/MaxUserMedalIds. A refusal
+// responds only {ret}: «200 ERROR :76» and the client goes back to the Shop.
 function respondGachaDraw(res, body) {
   const now = serverTime(), realMs = realNow();
   const banner = gachaData.bannerById(gachaBanners(), body?.drawMedalTypeId);
@@ -1222,7 +1222,7 @@ In the handler, next to `if (kind === 'noticespage')`:
 In `respondLogin`, after `body.license = ...`:
 
 ```js
-  // Shop Draw Odds (button on every tile, global link +0xf0, [fn])
+  // Shop Draw Odds (button on every tile, global link)
   body.odds = `${WEB_BASE}/web/gacha/odds`;
 ```
 
@@ -1320,7 +1320,7 @@ With `. .\tools\ldplayer\bench_lib.ps1`, screenshots with `Shot shop_<name>`:
 8. Repeat 10 Shop openings (Home <-> Shop): no crash.
 9. Tickets: server stopped, `limitedDrawTicket1 = 2` in the save (node -e on `server\save\player.json`), `relogin.ps1 -Tag gt` with `$env:KHUX_GACHA_TEST="1"` in the run-server environment (or a parameter if one exists); draw Platinum Ticket Draw x5 if size 5 is complete, otherwise only verify that the tile shows 2 tickets and note it. Then go back to the normal server and restore the tickets to 0.
 10. Notices: «Shop» notice and line in the differences.
-In case of a crash: stop every script immediately, `tools\ldplayer\armtrace\tombstone.ps1`, note the missing file (often a texture or an LWF of the scene) and fix it in the right Task before continuing.
+In case of a crash: stop every script immediately, `tools\ldplayer\tombstone.ps1`, note the missing file (often a texture or an LWF of the scene) and fix it in the right Task before continuing.
 
 - [ ] **Step 5: Documentation**
 

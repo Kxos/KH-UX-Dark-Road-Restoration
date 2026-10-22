@@ -23,7 +23,7 @@
 - No medal before its date (spec 9.3 of sub-project 2: no 6★ before 15/07/2016, no 7★ before 25/05/2018) nor outside the promised Tier; the fixed-star pity does not override the date.
 - Compatibility: `guarantee.list/count/slot` of sub-project 2 stay written and valid (first list reservation); the server uses `slots[]` if present, otherwise the old path.
 - Every difference from the original must be explained in the in-game Notices, in English (the boosted «small chance» reconstructed at 5%, the Trait Medals, the missing abilities).
-- Bench: taps only while the game is alive (`AppAlive`); SKIP in every dialogue that shows it; copy of the save before the tests; only one script at a time; immediate stop after a crash (`tools\ldplayer\armtrace\tombstone.ps1`); screenshots compared with `reference\shop_boosted` and `reference\nova_lvup`; heavy files in `D:\Progetto_Restauro_KH_UX\tmp`.
+- Bench: taps only while the game is alive (`AppAlive`); SKIP in every dialogue that shows it; copy of the save before the tests; only one script at a time; immediate stop after a crash (`tools\ldplayer\tombstone.ps1`); screenshots compared with `reference\shop_boosted` and `reference\nova_lvup`; heavy files in `D:\Progetto_Restauro_KH_UX\tmp`.
 
 ## Review Focus
 
@@ -42,8 +42,8 @@
 | U2 | Effect of `groupId` on the dots (the server merges boosted and normal in `medal-guilt.js groupOf`) and in the Level Up preview | merge allowed | Task 10 step 5: Level Up normal -> boosted, preview and result consistent, no crash |
 | U3 | Name with «&» in `warrantMedalIds` (XML parser of the strip) | names as they are (`validComment 0`) | Task 10 step 4 on a banner with pity on a name with «&»; if the text breaks, `WARRANT_XML_SAFE = true` in `make-banners.js` (Task 4) and regenerate |
 | U4 | Message box for the +1 («Unlocked ...») | no change: the client decides it | Task 10 step 3: screenshot of the +1 and of the +5 against `reference\nova_lvup` |
-| U5 | `displayId` of the boosted medal for the medals with a `displayId` other than 0/100/200/300/1100/1200/1300 (most of them: e.g. 31013) | `1` (boosted without badge) | Task 3 step 1: readers of +0x18 in the decompiled code before the code |
-| U6 | boosted medalId >= 1,000,000 (`variante * 1000000 + medalId`) accepted by the client | yes (uint32) | Task 3 step 1 (parser `[fn]`) and Task 10 step 5 |
+| U5 | `displayId` of the boosted medal for the medals with a `displayId` other than 0/100/200/300/1100/1200/1300 (most of them: e.g. 31013) | `1` (boosted without badge) | Task 3 step 1: client behaviour checked before the code |
+| U6 | boosted medalId >= 1,000,000 (`variante * 1000000 + medalId`) accepted by the client | yes (uint32) | Task 3 step 1 and Task 10 step 5 |
 | U7 | Nova of the boosted medal (first copy per medalId or per group) | per group (Review Focus 6) | Task 10 step 5 (no +1 for a boosted medal of an already guilted medal) |
 
 ---
@@ -247,7 +247,7 @@ Mapping from research §3: «maximum Special Attack Bonus»/«Special Attack Bon
 
 ### Task 3: boosted rows in the `medal` master
 
-Recommended model: Opus (verification in the decompiled code before the code).
+Recommended model: Opus (verification of the client behaviour before the code).
 
 **Files:**
 - Create: `server/medal-boost.js`, `server/make-boosted-medals.js`, `server/test-medal-boost.js`
@@ -262,9 +262,9 @@ Recommended model: Opus (verification in the decompiled code before the code).
   - `isBoosted(row) -> bool` (`groupId` != 0)
   - `make-boosted-medals.js`: `patch(masterDir, catalogFile) -> {added, kept}`
 
-- [ ] **Step 1: Verification in the decompiled code (U5, U6)**
+- [ ] **Step 1: Verification of the client behaviour (U5, U6)**
 
-In the Ghidra project WW 4.3.1 (one process only) or in the tests of `D:\Progetto_Restauro_KH_UX\tmp\sp2b\d*.c`: list the readers of field +0x18 of the medal row besides `[fn]`/`[fn]` and the type of medalId in `[fn]`. Expected: no reader that uses `displayId` as an image or table index; medalId uint32. If a reader uses it for something else, stop and report before writing code. Note the outcome in `docs/notes/medaglie.md` (Task 10 rereads it).
+Check (private research notes) how the client uses `displayId` of the medal row and the type of medalId. Expected: no reader that uses `displayId` as an image or table index; medalId uint32. If a reader uses it for something else, stop and report before writing code. Note the outcome in `docs/notes/medaglie.md` (Task 10 rereads it).
 
 - [ ] **Step 2: Failing tests**
 
@@ -493,7 +493,7 @@ Copy `server\save` to `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-2b`. Th
 7. User test with the reduced save for the Nova (spec 6.6): the user draws from a banner with guilt at max and confirms the popup.
 8. Ten openings of the Shop and of the Notices: no crash, new lines present.
 
-After a crash: stop everything, `tools\ldplayer\armtrace\tombstone.ps1`, ISSUE opened, the task stays open. At the end server without `-GachaShow` and save restored from the backup if the tests altered it.
+After a crash: stop everything, `tools\ldplayer\tombstone.ps1`, ISSUE opened, the task stays open. At the end server without `-GachaShow` and save restored from the backup if the tests altered it.
 
 - [ ] **Step 4: Outcomes of the uncertainties** — for U1-U7 write in `docs/notes/shop.md` (section «Sotto-progetto 2b») the outcome and, if a choice changes, the commit that corrects it (with a new revision if it touches the master).
 

@@ -90,12 +90,12 @@ the plate's `userWarrantDisplayOfTime`; there are also `warrantNumberOfTime`/`wa
   of the original if found), `warrantNumberOfTime` = pity, `userWarrantDisplayOfTime` = `pity - sinceFeatured`
   (5, 4, ... and 5 again when the featured medal comes out), `warrantMedalIds` = id of the featured medal.
 - **The number of remaining draws in golden colour** (user request of 17-10, approval of the spec),
-  to distinguish it from the rest of the text. Search in the decompiled code: if the strip accepts a colour markup (rich
+  to distinguish it from the rest of the text. Check in the client: if the strip accepts a colour markup (rich
   text tags, colour codes in the format), the number is written in gold with the markup; if not, a resource (font or
   layout of the strip) that allows it without touching the client is evaluated; if neither is possible, the user is told
   before choosing a fallback. Difference from the original to be declared in the Notices if the colour was not
   already golden in the original.
-- To be verified on the bench how the client uses `warrantDisplayOfTime`/`warrantMedalIds` (search in the decompiled code
+- To be verified on the bench how the client uses `warrantDisplayOfTime`/`warrantMedalIds` (check the client behaviour
   before the code). New master revision.
 
 ### 4.5 Medals strengthened at the draw
@@ -109,7 +109,7 @@ the plate's `userWarrantDisplayOfTime`; there are also `warrantNumberOfTime`/`wa
 - **Boosted** (~40 banners, «boosted version ... with 1000 more base strength and defense»): STR +1000, DEF +1000,
   Cost -10 compared with the normal one (video: SN++ Master Eraqus 43802/14474/36 versus 42802/13474/46), values in
   yellow, «BOOSTED» band in the result, red LV tag in the list; Chip/Dale stay free (user). The
-  band is drawn by the client: **search in the decompiled code** for the field that turns it on (player's medal or
+  band is drawn by the client: **check in the client** which field turns it on (player's medal or
   distinct medalId of the master) before choosing how to represent it. «Small chance» odds: reconstructed
   (proposal: 5% per eligible slot, declared «reconstructed»).
 - **Abilities at max level** («with one of the following skills at max level», 62 banners): abilities of the
@@ -162,14 +162,14 @@ screenshots compared with the video frames.
 They replace the hypotheses of points 4.4-4.6 where they differ.
 
 - **Boosted = distinct row of the medal master** (not a state of the player's medal): the client recognizes it from
-  `displayId` = that of the normal one + 1 (`[fn]`); `groupId` (+0x510) points to the normal one and the detail colours
-  the better STR/DEF/Cost in yellow (`[fn]`); the printed Cost is that of the row. Therefore: new boosted rows in the
+  `displayId` = that of the normal one + 1; `groupId` points to the normal one and the detail colours
+  the better STR/DEF/Cost in yellow; the printed Cost is that of the row. Therefore: new boosted rows in the
   master (`attack`/`maxAttack` +1000, `defense`/`maxDefense` +1000, `cost` -10, `displayId` +1, `groupId` of the
-  normal one), Chip/Dale independent. «BOOSTED» band (`[fn]`): `Bonus_Plate` + `Bonus_TextStatus.png` (already
-  served) + LWF `Draw_StatusBonus` (to be imported from JP). Red LV tag (`[fn]`): `Minfo_Def12_SB.png`,
+  normal one), Chip/Dale independent. «BOOSTED» band: `Bonus_Plate` + `Bonus_TextStatus.png` (already
+  served) + LWF `Draw_StatusBonus` (to be imported from JP). Red LV tag: `Minfo_Def12_SB.png`,
   `Deck_Panel_SB.png` (to be imported from JP). To be verified: `minCost` of the boosted row, effect of `groupId` on the
   dots.
-- **Guarantee strip (replaces the «golden number»)**: XML rich text (`[fn]`, tag `<important>` =
+- **Guarantee strip (replaces the «golden number»)**: XML rich text (tag `<important>` =
   yellow 255,255,0, `<big>`, `<middle>`, `<br>`). Original text already in the WW texts: «`<important>`Nome`</important>`
   guaranteed in `<important>`N tries`</important>`!» (106180307/308, lists 106180302-306). **User decision
   (17-10): original yellow**, no difference to declare. The strip appears only with `warrantDisplayOfTime` (the

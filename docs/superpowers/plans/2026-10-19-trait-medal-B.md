@@ -6,7 +6,7 @@
 medal = trait + dot, appearing in the banners in place of the fallback 6★.
 
 **Architecture:** everything goes through the master. The client recognizes the trait from an equal `shuffleSkillGroupId` and the dot
-from the base's `burstEnhanceCategory` that contains the Trait Medal's group ([fn]): the server already applies
+from the base's `burstEnhanceCategory` that contains the Trait Medal's group: the server already applies
 the same rules (`medal-trait.js`, `medal-guilt.js`), so the fusion needs no new code, only the right rows.
 Grey images generated in the `stage_gen` package (like the Stock Medal). Banners: the catalog derives the number #N and the
 server draws the Trait Medal row.

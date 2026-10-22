@@ -35,7 +35,7 @@ Client (Shop, `ShopDraw_3Plate_ver340`, plates `ShopDraw_3Plate_Plate_ver310`):
   plate variant (ver310): the draw buttons cannot be hidden.
 - `GET /gacha/list` (action 75) is requested **every time the Shop is opened**. Response: `gachaList[]`
   and `petGachaList[]` (mandatory, even empty; without it: «200 ERROR :75»). Mandatory fields of
-  `gachaList[]` ([fn]): validAdd, drawMedalTypeId, drawType, sortId, payType, price, lotCount,
+  `gachaList[]`: validAdd, drawMedalTypeId, drawType, sortId, payType, price, lotCount,
   isDayLimited, userLimitedCount, userWarrantDisplayOfTime, name, description, bannerUrl,
   warrantMedalIds[]; drawTicketlimitDate is also read.
 - Each plate requires a row of the master `drawMedalType` with the same id (read without checks:
@@ -47,9 +47,9 @@ Client (Shop, `ShopDraw_3Plate_ver340`, plates `ShopDraw_3Plate_Plate_ver310`):
 - Draw Odds opens the global `odds` link of the login (one for all banners).
 - Native padlock (`benefitId` != 0 without an active benefit): shows the panel with the padlock and
   disables the draw, but tapping the padlock opens the in-app purchase of a Shop product
-  ([fn]): **do not use it** (crash, or in-app purchase).
+ : **do not use it** (crash, or in-app purchase).
 - Draw button with tickets (payType 4-9) and tickets < price: grey, the tap does
-  nothing and does not reach the server ([fn]). Price 0 = immediate draw without confirmation: never 0.
+  nothing and does not reach the server. Price 0 = immediate draw without confirmation: never 0.
   payType 1/3 (jewels) with insufficient funds offers the purchase of jewels. payType 9 crashes
   the Shop (text 106240303 missing).
 - «Buy discounted jewels» is hard-wired to the in-app purchase: not reusable.

@@ -27,7 +27,7 @@ Union χ was removed from the app, which was reduced to a theater mode.
 |---|---|---|
 | 1 | Obtaining the client and assessing feasibility | ✅ done |
 | 2 | Technical reconnaissance — architecture, protocol, data schema | ✅ done |
-| A | Ghidra on `libcocos2dcpp.so`, extraction of hosts and endpoints | ✅ done |
+| A | Static analysis of the client: hosts and endpoints | ✅ done |
 | B | Minimal REST server → the client reaches the home screen | ✅ **unmodified original** APK 4.3.1 on LDPlayer 9 (Android 9): new player, Prologue, home |
 | C | Field schema of the 54 master tables | ✅ done — 106 tables, 1,739 fields |
 | D | Master data, quests and single-player combat | 🔄 from new player to home; story quests **1–979** with the original maps and rooms (from the JP 4.3.1 data), cutscenes, per-quest music, original enemy stats and levels, objectives, chests and Trophies; Special Attacks with variable damage and enemy attacks; Medal List, selling, Level Up (Special Attack dots and Bonus, Skills, traits, Trait Medals), Evolve, Moogle Shop, Shop with the original banners (807 deals with their guarantees, pity, weekly rotation, seasonal banners, a kept banner and a filterable catalog), Profile, Missions and Limited campaigns, Avatar Boards, pet, Lux levels up to 999, in-game Notices explaining every deviation from the original. In progress: original graphics for about 90 enemy families of quests 526–979 (today shown with the look of a similar enemy) |
@@ -35,7 +35,7 @@ Union χ was removed from the app, which was reduced to a theater mode.
 
 Status as of 22 October 2026. Screens that the 4.3.1 client can no longer find in its
 resources (CocoStudio layouts, texts, animations) are **rebuilt**: from nearby originals,
-from widget names read in the code, and from reference images of the time.
+from the widget names the client looks up, and from reference images of the time.
 
 **[HANDOFF.md](HANDOFF.md)** — how to resume: bench status and next step.
 **[In-game Notices](https://kxos.github.io/Re-Union-X/notices/)** (web page in the game's style; also as [docs/NOTICES.md](docs/NOTICES.md)) — how the restored game works and where it differs from the original.
@@ -43,7 +43,7 @@ from widget names read in the code, and from reference images of the time.
 [docs/notes/](docs/notes/), full work journal (every solved issue with its cause) in
 [docs/journal/](docs/journal/).
 **[REPORT.md](REPORT.md)** — reconnaissance results. **[PHASE-A.md](PHASE-A.md)** — static analysis.
-**[PHASE-C.md](PHASE-C.md)** — the fields of the `master::` tables, derived without Ghidra.
+**[PHASE-C.md](PHASE-C.md)** — the fields of the master tables.
 
 ## What we are looking for
 
@@ -58,12 +58,13 @@ rules, rewards, guides). Please get in touch by opening an issue; do not send or
 ## Technical summary
 
 - The game is **Cocos2d-x with logic in native C++** (not Unity/IL2CPP).
-- **The binary is 95% stripped**: 4,882 named functions out of 97,879, almost all of them
-  libraries. The API layer is found via xrefs on protocol strings, not by name.
-- The client is protected by `lib__57d5__.so`, packed and not removable.
+- The client library carries almost no function names: the API layer was found from the protocol
+  strings.
+- The client is protected by a third-party protector: only the original APK runs, on Android 9
+  ([protector.md](docs/notes/protector.md)).
 - Two network stacks: **REST** (AES-256-CBC + gzip, key negotiated with the server) and
   **Photon/eNet UDP** for realtime.
-- The `master::` namespace exposes the data schema: **107 tables** in the online WW 4.3.1
+- The client's master table classes expose the data schema: **107 tables** in the online WW 4.3.1
   build, **54 removed** in the move to the offline 5.0.1. Those 54 are the exact measure of
   the work — and their **759 fields** were recovered from the binary, with column names and
   order.
@@ -81,8 +82,8 @@ server/                 Node.js server: REST API, DNS, generated master and game
                         (server/README.md)
 tools/ldplayer/         LDPlayer bench: startup, sessions (session/), tombstones
 recon/tools/            Analysis and resource-building tools (Python)
-recon/ghidra/           Scripts for headless Ghidra (decompilation, disassembly)
-recon/out/              Distilled outputs: master:: classes, response schemas
+recon/out/              Interface schemas: master table fields and types, response schemas
+                        (the Ghidra research scripts are kept private, outside the repository)
 recon/dl/ ext/ web/     Proprietary material — NOT versioned
 ```
 
@@ -100,19 +101,16 @@ recon/dl/ ext/ web/     Proprietary material — NOT versioned
 
 | Script | Function |
 |---|---|
-| `vtables.py` | Vtables and virtual methods of a C++ class, via RTTI and relocations |
-| `codeindex.py` | Function boundaries from `.eh_frame`; constants addressed by ADRP/ADD |
-| `master_fields.py` | The phase C pipeline: from `master::` classes to their fields |
+| `vtables.py`, `codeindex.py` | Research helpers that produced the interface schemas in `recon/out` |
+| `master_fields.py` | The phase C pipeline: fields of the master tables |
 | `strings.py` | String extractor for binaries |
-| `demangle.py` | Recovers and classifies Itanium C++ symbols |
-| `scope_methods.py` | Lists class members matching a pattern |
+| `demangle.py`, `scope_methods.py` | Research helpers on the names in the binary |
 | `elfinfo.py` | Architecture and endianness of an ELF |
 | `make_layouts.py` | Replacement CocoStudio layouts: copies of originals, scenes, built layouts, widget clones, armatures, texts |
 | `resource_pack.py`, `resource_merge.py` | BGAD package of the generated resources and merged index (with space reserve for the quick cycle) |
 | `import_ui_texts.py`, `ui_text_ids.py` | Original `text/ui` texts from the 4.4.0 IPA; ids of the texts used by the binary |
-| `widget_lookup.py`, `layout_tree.py`, `scene_tree.py` | Widget names looked up by the code; layout and scene structure |
-| `action_case.py`, `batch_schema.py` | Branch of an action in the response dispatcher and parser schemas |
-| `who_refs.py` | Who uses an address (BL, ADRP/ADD, relocations) |
+| `widget_lookup.py`, `layout_tree.py`, `scene_tree.py` | Widget names the client looks up; layout and scene structure |
+| `action_case.py`, `batch_schema.py`, `who_refs.py` | Research helpers that produced the response schemas in `recon/out` |
 | `import_orig_stages.py`, `make_jp_rooms.py` | Original story stages and rooms from the JP 4.3.1 and 2016 data (quests 1-979) |
 | `import_jp_coco.py` | Original JP CocoStudio layouts in place of the generated ones (list `jp_coco_layouts.txt`) |
 | `make_jp_enemies.py`, `deep_donors.py` | Original enemy graphics; missing textures found by content in other files of the same creature |

@@ -59,9 +59,8 @@ It is also needed for 2c: the banners that promise «a powerful skill at max ski
   skill at level 1), `maxSkill` of the banners (today only on the 12 skills present).
 - `server/medal-skill.js`: Scrooge medals with a **guessed** skill by rarity; Level Up Overwrite (20% ->
   100% from medalMisc 121/122, same `categoryEvolve`), to be tested on the bench (I-088).
-- Battle: the effects are calculated by the **client** from the master (`AvatarActor::invokeSkillFromDeck`,
-  `invokeDamageSkill`). Skill EXP after the battle **is not done**: `/stage/clear` carries no skill data,
-  so the server must give it; the client has `BattleResultDialog::popUpSkillLevelUp`.
+- Battle: the effects are calculated by the **client** from the master. Skill EXP after the battle **is not done**: `/stage/clear` carries no skill data,
+  so the server must give it; the client has a skill level-up popup in the battle result.
 
 ## 5. What is done
 

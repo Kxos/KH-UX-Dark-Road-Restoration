@@ -20,7 +20,7 @@ behaviour from the sources. What we reconstruct must be declared in the Notices 
   JP 37748, 69947, 67015; the user's guide pp. 21-23; khuxwiki «Trait Medal», «Medal#Traits»).
 - Original screens: `D:\Progetto_Restauro_KH_UX\reference\trait_medals\video_Z_JRaJF7GbQ\` (NOTE.md: fusion with
   Trait Medal, wheel, «Tap Screen», replacement popup with full slots).
-- Client 4.3.1 (Ghidra): decompiled code in `D:\Progetto_Restauro_KH_UX\tmp\trait\re\`; contract summarized below.
+- Client 4.3.1: research notes kept private; contract summarized below.
 
 ## Original rules (confirmed by the sources)
 
@@ -52,16 +52,16 @@ behaviour from the sources. What we reconstruct must be declared in the Notices 
 - Outside this work: the Moogle Shop Trait Medals («Trait Medal #N x10», 2021) and the event reward ones:
   they will arrive with their respective modes. Boosters (I-166): with the events.
 
-## Client contract (Ghidra, high confidence except where indicated)
+## Client contract (high confidence except where indicated)
 
-- **Fusion, `POST /user/medal/enhance` (action 55)**, result scene `[fn]`:
+- **Fusion, `POST /user/medal/enhance` (action 55)**, result scene:
   - free slots: the new trait goes AT THE END of `afterEnhanceUserMedal.userShuffleSkills`, and
     `medalResumption = {userShuffleSkills: [], resumptionStatus: 0}`. The client shows the wheel on the LAST element;
   - full slots: `afterEnhanceUserMedal.userShuffleSkills` unchanged and
     `medalResumption = {userShuffleSkills: [pending], resumptionStatus: 1}`. With status 1 the list must NOT be
     empty (the client reads `[0]` without checking);
   - `overwriteSkills`/`successOverwrite`/`isOverwriteSkill` are the skills (I-088), not the traits.
-  - trait element (`[fn]`): `{userShuffleSkillId (uint64), shuffleSkillId, userMedalId, getDatetime, type}`;
+  - trait element: `{userShuffleSkillId (uint64), shuffleSkillId, userMedalId, getDatetime, type}`;
     for fusion traits `type` != 2 (2 = pet Special Trait); 1 proposed (medium confidence).
 - **Choice, `POST /user/medal/shuffleskill` (action 57)**:
   - Replace: `{userMedalId, userShuffleSkillId: existing trait to remove, enableUserShuffleSkillId: pending}`;
@@ -69,10 +69,10 @@ behaviour from the sources. What we reconstruct must be declared in the Notices 
   - response: `userMedal` (format of `userMedals`) and `medalResumption` at the root, both mandatory; after the
     choice `{[], 0}`. No animation after 57.
 - **Login**: `userData.medalResumption` with status 1 -> popup «There are traits that have not been set.», then
-  (`[fn]`) if `pending[0].type == 2` Spirit, otherwise the choice window on the medal
+  if `pending[0].type == 2` Spirit, otherwise the choice window on the medal
   `pending[0].userMedalId`. `POST /pet/expedition` (244) also updates the same value: it must be kept consistent.
-- **Identical copy / Trait Medal** (`[fn]`, preview `[fn]`): «trait» material if
-  `base.shuffleSkillGroupId` (+0x53c) != 0, equal to that of the material, and `base.shuffleskillSlot` > 0. No
+- **Identical copy / Trait Medal** (preview): «trait» material if
+  `base.shuffleSkillGroupId` != 0, equal to that of the material, and `base.shuffleskillSlot` > 0. No
   check on the `type`. Today `shuffleSkillGroupId` is 0 in all 3,241 rows of `medal`: it must be filled in.
   The «dot» is a separate check (groupId / `burstEnhanceCategory` / type 8).
 - **Trait Medals in the lists**: `type` 9 = «Trait Medals» filter (10 = Subslot). Grey, cost 999, sale and EXP

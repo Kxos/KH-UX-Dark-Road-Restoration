@@ -43,9 +43,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   client: only with the bench stopped, then `update-resources.ps1`.
 - After every change to `server/master_data`: raise the revision in the 4 session scripts and
   `relogin.ps1` (twice if the first one crashes). Do not restart only the server with a session open.
-- Crashes: `tombstone.ps1`, then the private crash capture tools (armtrace, outside the repository;
-  the library base differs at every start: pass it with `KHUX_BASE`). Full recipe in
-  [banco.md](docs/notes/banco.md#crash); `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <name> <x> <y>` taps, saves
+- Crashes: `tombstone.ps1`; the deeper crash capture tools and their recipe are private (outside the
+  repository). `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <name> <x> <y>` taps, saves
   requests, logcat and screenshots. Taps only while the game is alive (`bench_lib` refuses taps with the game closed).
 
 ## State and next step
@@ -115,10 +114,13 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 | [docs/notes/shop.md](docs/notes/shop.md) | Shop > Draw: /gacha/list, /gacha/draw, plates, raisedraw, tests |
 | [docs/notes/bacheche.md](docs/notes/bacheche.md) | Avatar Boards |
 | [docs/notes/home_profilo.md](docs/notes/home_profilo.md) | home, Other, Profile, Missions, pet, Presents |
-| [docs/notes/analisi.md](docs/notes/analisi.md) | Ghidra headless and `recon/tools` tools |
+| [docs/notes/analisi.md](docs/notes/analisi.md) | `recon/tools` tools |
 | [docs/notes/ricerca_esterna.md](docs/notes/ricerca_esterna.md) | downloaded files, sources, contacts |
 | [docs/notes/protector.md](docs/notes/protector.md) | LIAPP and choice of the bench |
 | [docs/journal/](docs/journal/) | journal by day (archive up to 11 October, text removed in f10ea90, states 14-16 October, [state blocks 17-22 October](docs/journal/2026-10-22.md)) |
+
+Detailed research notes (addresses, client internals, protector, crash capture) are kept in a private
+folder outside the repository (`D:\Progetto_Restauro_KH_UX\private\docs_full\`), never in the public docs.
 
 Setting up a new machine (prerequisites, clone, certificates, Windows network): §3-§4 of
 [docs/journal/fino-al-2026-10-11.md](docs/journal/fino-al-2026-10-11.md).

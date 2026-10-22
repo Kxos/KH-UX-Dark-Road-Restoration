@@ -12,10 +12,10 @@ work without installing anything.
 It answers the two initial exchanges derived from the binary (see `../PHASE-A.md`) and
 **logs everything else**.
 
-| Exchange | Response | Read by |
-|---|---|---|
-| bootstrap | `{maintenance: 0, url, nativeToken}` | `[fn]` |
-| session | `{nativeSessionId, sharedSecurityKey}` | `[fn]` |
+| Exchange | Response |
+|---|---|
+| bootstrap | `{url, nativeToken}` (`maintenance` omitted: any value, even `0`, means maintenance) |
+| session | `{nativeSessionId, sharedSecurityKey}` |
 
 The key point: **we choose the `sharedSecurityKey`**, so from that moment on we
 control the AES key of the whole channel. And the `url` we hand over becomes the

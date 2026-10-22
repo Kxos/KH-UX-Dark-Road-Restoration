@@ -23,7 +23,7 @@ the end of the real month; after a server restart the values stay consistent.
 - The countdowns follow the **server time** (`serverTime` of the login), not the device time
   (bench 16-10: guest at 10/1/2021, server at 15/5/2021, Daily «19 hours left»;
   `docs/notes/server.md#master`).
-- Daily: the client counts up to `startDate + k*86400` of the master row ([fn]). Weekly and
+- Daily: the client counts up to `startDate + k*86400` of the master row. Weekly and
   Limited: it shows the row's `endDate`. The Weekly and Limited deadlines therefore come **only from
   the master**.
 - The client downloads **all** 106 tables again when the global revision changes (the per-table

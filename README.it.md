@@ -27,7 +27,7 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 |---|---|---|
 | 1 | Reperimento client e valutazione fattibilità | ✅ completata |
 | 2 | Ricognizione tecnica — architettura, protocollo, schema dati | ✅ completata |
-| A | Ghidra su `libcocos2dcpp.so`, estrazione host ed endpoint | ✅ completata |
+| A | Analisi statica del client: host ed endpoint | ✅ completata |
 | B | Server REST minimo → il client raggiunge la home screen | ✅ APK 4.3.1 **originale** su LDPlayer 9 (Android 9): nuovo giocatore, Prologue, home |
 | C | Schema dei campi delle 54 tabelle master | ✅ completata — 106 tabelle, 1.739 campi |
 | D | Popolamento master data, quest e combattimento single-player | 🔄 dal nuovo giocatore alla home; missioni di storia **1–979** con le mappe e le stanze originali (dai dati JP 4.3.1), filmati, musica per missione, statistiche e livelli originali dei nemici, obiettivi, forzieri e Trophy; Special Attack con danno variabile e attacchi dei nemici; Medal List, vendita, Level Up (pallini e guilt, skill, trait, Trait Medal), Evolve, Moogle Shop, Shop con i banner originali (807 deal con garanzie, pity, rotazione settimanale, stagionali, banner fissato e catalogo con filtri), Profilo, Missioni e campagne Limited, Avatar Boards, pet, livelli Lux fino a 999, Notices in gioco che spiegano ogni differenza dall'originale. In corso: grafiche originali di circa 90 famiglie di nemici delle missioni 526–979 (oggi con l'aspetto di un nemico simile) |
@@ -35,7 +35,7 @@ rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theate
 
 Stato aggiornato al 22 ottobre 2026. Le schermate che il client 4.3.1 non trova più nelle
 risorse (layout CocoStudio, testi, animazioni) vengono **ricostruite**: dagli originali
-vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'epoca.
+vicini, dai nomi dei widget cercati dal client e da immagini di riferimento dell'epoca.
 
 **[HANDOFF.md](HANDOFF.md)** — come riprendere: stato del banco e prossimo passo.
 **[Notices del gioco](https://kxos.github.io/Re-Union-X/notices/)** (pagina web nello stile del gioco, in inglese; anche come [docs/NOTICES.md](docs/NOTICES.md)) — come funziona il gioco restaurato e dove differisce dall'originale.
@@ -43,7 +43,7 @@ vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'e
 [docs/notes/](docs/notes/), diario completo del lavoro (ogni problema risolto con la sua causa) in
 [docs/journal/](docs/journal/).
 **[REPORT.md](REPORT.md)** — risultati della ricognizione. **[PHASE-A.md](PHASE-A.md)** — analisi statica.
-**[PHASE-C.md](PHASE-C.md)** — i campi delle tabelle `master::`, ricavati senza Ghidra.
+**[PHASE-C.md](PHASE-C.md)** — i campi delle tabelle master.
 
 ## Cosa cerchiamo
 
@@ -58,12 +58,13 @@ premi, guide). Contattaci aprendo una issue; non inviare ne' pubblicare file del
 ## Sintesi tecnica
 
 - Il gioco è **Cocos2d-x con logica in C++ nativo** (non Unity/IL2CPP).
-- **Il binario è strippato al 95%**: 4.882 funzioni con nome su 97.879, quasi tutte
-  librerie. Il livello API si trova per xref sulle stringhe di protocollo, non per nome.
-- Il client è protetto da `lib__57d5__.so`, impacchettata e non rimovibile.
+- La libreria del client non ha quasi nomi di funzione: il livello API si è trovato dalle stringhe
+  di protocollo.
+- Il client è protetto da un protector di terze parti: gira solo l'APK originale, su Android 9
+  ([protector.md](docs/notes/protector.md)).
 - Due stack di rete: **REST** (AES-256-CBC + gzip, chiave negoziata col server) e
   **Photon/eNet UDP** per il realtime.
-- Il namespace `master::` espone lo schema dei dati: **107 tabelle** nella build online
+- Le classi delle tabelle master del client espongono lo schema dei dati: **107 tabelle** nella build online
   WW 4.3.1, **54 rimosse** nel passaggio alla 5.0.1 offline. Quelle 54 sono la misura
   esatta del lavoro — e i loro **759 campi** sono stati ricavati dal binario, con nome
   e ordine delle colonne.
@@ -81,8 +82,8 @@ server/                 Server Node.js: API REST, DNS, tabelle master e di gioco
                         (server/README.md)
 tools/ldplayer/         Banco su LDPlayer: avvio, sessioni (session/), tombstone
 recon/tools/            Strumenti di analisi e di costruzione delle risorse (Python)
-recon/ghidra/           Script per Ghidra headless (decompilazione, disassemblato)
-recon/out/              Output distillati: classi master::, schemi delle risposte
+recon/out/              Schemi d'interfaccia: campi e tipi delle tabelle master, schemi delle risposte
+                        (gli script di ricerca per Ghidra restano privati, fuori dal repository)
 recon/dl/ ext/ web/     Materiale proprietario — NON versionato
 ```
 
@@ -100,19 +101,16 @@ recon/dl/ ext/ web/     Materiale proprietario — NON versionato
 
 | Script | Funzione |
 |---|---|
-| `vtables.py` | Vtable e metodi virtuali di una classe C++, via RTTI e rilocazioni |
-| `codeindex.py` | Confini di funzione da `.eh_frame`; costanti indirizzate da ADRP/ADD |
-| `master_fields.py` | La pipeline della fase C: dalle classi `master::` ai loro campi |
+| `vtables.py`, `codeindex.py` | Strumenti di ricerca che hanno prodotto gli schemi d'interfaccia in `recon/out` |
+| `master_fields.py` | La pipeline della fase C: campi delle tabelle master |
 | `strings.py` | Estrattore di stringhe da binari |
-| `demangle.py` | Recupera e classifica i simboli C++ Itanium |
-| `scope_methods.py` | Elenca i membri delle classi che corrispondono a un pattern |
+| `demangle.py`, `scope_methods.py` | Strumenti di ricerca sui nomi presenti nel binario |
 | `elfinfo.py` | Architettura ed endianness di un ELF |
 | `make_layouts.py` | Layout CocoStudio sostitutivi: copie di originali, scene, layout costruiti, cloni di widget, armature, testi |
 | `resource_pack.py`, `resource_merge.py` | Pacchetto BGAD delle risorse generate e indice unito (con riserva di spazio per il ciclo rapido) |
 | `import_ui_texts.py`, `ui_text_ids.py` | Testi `text/ui` originali dall'IPA 4.4.0; id dei testi usati dal binario |
-| `widget_lookup.py`, `layout_tree.py`, `scene_tree.py` | Nomi dei widget cercati dal codice; struttura di layout e scene |
-| `action_case.py`, `batch_schema.py` | Ramo di un'azione nel dispatcher delle risposte e schemi dei parser |
-| `who_refs.py` | Chi usa un indirizzo (BL, ADRP/ADD, rilocazioni) |
+| `widget_lookup.py`, `layout_tree.py`, `scene_tree.py` | Nomi dei widget cercati dal client; struttura di layout e scene |
+| `action_case.py`, `batch_schema.py`, `who_refs.py` | Strumenti di ricerca che hanno prodotto gli schemi delle risposte in `recon/out` |
 | `import_orig_stages.py`, `make_jp_rooms.py` | Stage e stanze originali della storia dai dati JP 4.3.1 e 2016 (missioni 1-979) |
 | `import_jp_coco.py` | Layout CocoStudio originali JP al posto di quelli generati (elenco `jp_coco_layouts.txt`) |
 | `make_jp_enemies.py`, `deep_donors.py` | Grafiche originali dei nemici; texture mancanti ritrovate per contenuto in altri file della stessa creatura |
