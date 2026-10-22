@@ -114,3 +114,6 @@ server/game_data/
 recon/tools/empty.lwf
 # generated locally by server/make-keyblade-levels.js --table-only from the local wiki dump (never versioned)
 server/tables/keyblade_levels.json
+recon/tools/master_types.py
+recon/tools/response_schema.py
+recon/tools/batch_schema.py

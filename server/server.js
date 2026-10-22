@@ -819,7 +819,7 @@ function respondLoginBonus(res) {
 // campo dello schema e' obbligatorio; gli array restano vuoti.
 // ---------------------------------------------------------------------------
 const API_SCHEMA_FILE = path.join(__dirname, '..', 'recon', 'out', 'api_responses_ww431.json');
-// Gli schemi candidati di recon/tools/batch_schema.py valgono solo dove manca una voce
+// Gli schemi candidati di a private analysis tool (batch_schema) valgono solo dove manca una voce
 // verificata.
 const API_SCHEMA_AUTO_FILE = path.join(__dirname, '..', 'recon', 'out', 'api_responses_auto_ww431.json');
 const API_SCHEMA = Object.assign(
@@ -857,7 +857,7 @@ function schemaResponse(apiPath) {
 // GET /user (azione 1). Campi obbligatori: userData.user, userData.userPoint,
 // userData.userDetail, userData.stageResumption, userData.medalResumption e
 // userPopUp.isPopBenefitStone.
-// Tipi da recon/tools/response_schema.py. I valori sono nostri segnaposto: un
+// Tipi da uno strumento di analisi privato (response_schema). I valori sono nostri segnaposto: un
 // giocatore di livello 1, senza progressi.
 const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
 
