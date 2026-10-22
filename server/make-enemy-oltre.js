@@ -87,7 +87,8 @@ const DR_LOOK = {
   1537: { displayId: 5034, confidence: 'medium', note: 'Martial Monkey: Powerwild, Heartless scimmia dello stesso tipo' },
   1552: { displayId: 5016, confidence: 'medium', note: 'Luna Bandit: Red Bandit (turbante, scimitarra rossa)' },
   1629: { displayId: 5017, confidence: 'medium', note: 'Cherry Kaboom: bomba con miccia (5017, famiglia Bomb)' },
-  2508: { displayId: 5061, confidence: 'medium', note: 'Warlock Step: Tornado Step, stessa famiglia Step (cappello a punta, gambe)' },
+  // 2508 Warlock Step -> 5061 (Tornado Step DR) tolto il 22-10: crash all'avvio della battaglia in 703/704 (684 con
+  // 5040 ok; tombstone in GUIReader/0x11af9d8, causa nel client non trovata); resta la base 14 Tornado Step UX
   2510: { displayId: 5040, confidence: 'medium', note: 'Shadow Magician: Shadow Witch (Shadow con cappello e scopa)' },
 };
 
