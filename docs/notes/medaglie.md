@@ -201,7 +201,7 @@ edge (x 1722) and check that Undo is gray. To do: `target` 3 for the random Supe
 ## Level Up, Evolve, Unequip
 
 - Level Up: `POST /user/medal/enhance`, client EXP curve, rare materials popup. Special medals
-  and copies (`server/medal-guilt.js`, 12-10, TO BE VERIFIED): special attack dots
+  and copies (`server/medal-guilt.js`, 12-10, verified on the bench 12-10 and 19-10: I-079, I-080, I-083): special attack dots
   (`burstUpperNumber`, up to `burst.maxEnhanceCount`: 6★/7★ 5), guilt unlock/reroll
   (`guiltFactor`, with `isGuilt` = Quest 34), Magic Mirror +1%, Chip/Dale STR/DEF (up to
   `addMaxAttack/addMaxDefense`), Cid cost (up to `cost - minCost`, 6★/7★ 20), Fantasia Mickey B

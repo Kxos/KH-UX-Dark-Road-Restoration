@@ -106,7 +106,7 @@ rules (ownership, maximum level) remain, so an existing save does not lose level
 bench save has 1,908 registered medals: Burst 1,908, the +1/+5 increase is not visible from the
 button, only from `guiltBurstLv` in the logs).
 
-## 4. To be verified on the bench
+## 4. Bench checks (all verified: 12-10 in I-083, 19-10 in [banco-1910](#banco-1910))
 - Medal List: the new rows 300948/300913 appear (grant-all-medals picks them up: `sell` > 0) and
   type 8 does not break sorting/filters.
 - Level Up preview: Chip/Dale/Cid/Mirror selectable, «+STR/+DEF/COST» and «Bonus range +40 - 100%»
