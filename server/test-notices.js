@@ -12,7 +12,8 @@ check(p.includes('Next update: in 2 days 17 hours'), 'venerdi 15:00 -> 2 giorni 
 const pos = (s) => p.indexOf(`<span class="x">${s}</span>`);
 check(pos('About game data updates') >= 0 && pos('About game data updates') < pos('Differences from the original game')
   && pos('Differences from the original game') < pos('Missions'), 'ordine: dati aggiornati, differenze, poi il resto');
-check(pos('Missions') < pos('Shop'), 'notizia Shop dopo Missions');
+// since 22-10 the list is newest first (byDate): Shop (10/20) comes before Missions (10/16)
+check(pos('Shop') < pos('Missions'), 'newest first: Shop (10/20) before Missions (10/16)');
 check(n.NOTICES.some((x) => x.title === 'Missions' && /joins the rotation only once your Story reaches the date/.test(x.body.join(' '))), 'Missions: campagne con medaglia legate alla storia');
 check(n.NOTICES.some((x) => x.title === 'Missions' && /are given once/.test(x.body.join(' ')) && /did not finish in time come back/.test(x.body.join(' '))), 'Missions: premi unici una volta sola');
 check(n.NOTICES.some((x) => x.title === 'Differences from the original game' && /draw rates are reconstructed/.test(x.body.join(' '))), 'probabilita nelle differenze');
