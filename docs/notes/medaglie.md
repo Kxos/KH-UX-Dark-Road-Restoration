@@ -348,8 +348,9 @@ STR/DEF 1, cost 999, 15 Pet Points, «Lesser Attack» x1.00 at 1 gauge. About 31
   Medal; in the Level Up of Illustrated Sora A #106 is among the dot materials, preview «Trait», fusion ->
   Paralysis Resist 20% (slot 1/2) + 1 dot + EXP (Great x1.5). Deal B0513: Details «Guarantees one Trait Medal #106», the
   draw gives the 7★ and #106. In the Level Up the materials are added by dragging them onto the slot (`Swipe 1430 410 240 630 900`).
-- Limit: the Trait deals (from 13-3-2018) are beyond the date of the story (quest 525 = 8-12-2016), so today they cannot be
-  reached by playing (only with `-GachaShow`); the original Moogle Shop also sold them («Trait Medal #N x10», 1,000
+- Limit (until 21-10): the Trait deals (from 13-3-2018) were beyond the date of the story (quest 525 = 8-12-2016), so they
+  could not be reached by playing (only with `-GachaShow`); with quests 526-979 they unlock with the story (e.g. B0259,
+  `unlockQuest` 725 in `server/game_data/gacha_catalog.json`), not yet seen on the bench; the original Moogle Shop also sold them («Trait Medal #N x10», 1,000
   jewels, in the deal window; khuxwiki for #189-#313): not done yet.
 
 <a id="skill"></a>
@@ -551,7 +552,7 @@ e`). 10000 = 1.0:
 - Details: Attack Boost VI (rebuilt) 1/20 at 39% (`invokeProb` 3975), Second Chance (real) 15/15 at 32%; correct icons and descriptions.
 - Growth: Combat 101 gives `getPoint.exp` 14 with 17 enemies; with EXP at 595 the quest brings the skill to LV 3 and the RESULTS show
   «Supernova+ - SP Roxas's Attack Boost VI leveled up!» (the client compares the level of `userSkills` before and after the response of
-  `/stage/clear`, `[fn]`/`[fn]`; no dedicated field, `D:\Progetto_Restauro_KH_UX\tmp\skill\popupnswer.md`).
+  `/stage/clear`, `[fn]`/`[fn]`; no dedicated field, `D:\Progetto_Restauro_KH_UX\tmp\skill\popup\answer.md`).
 - Overwrite: material Donald Ver. A with Attack Boost VII 20/20 on the left -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
   Attack Boost VII?», base with Attack Boost VII 20/20. «Skill» sorting of the list: medals with a skill at the top.
 - «& GA N» combos (18-10, user's bench): `burstLock` = fixed cost of the special in gauge x 10000; AB VIII Max &

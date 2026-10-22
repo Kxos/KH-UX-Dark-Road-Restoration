@@ -1,4 +1,4 @@
-# Story quests and generated maps
+# Story quests and maps (original stages, generator, rooms)
 
 History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md) («Mappe generate e
 risorse aggiuntive», «Missioni di storia in automatico»). Agent documents in
@@ -8,9 +8,11 @@ risorse aggiuntive», «Missioni di storia in automatico»). Agent documents in
 <a id="dati"></a>
 ## Quest data
 
-- Story quests = `stageBinId` 1..525 of thethiny's rows (`stage_dec`, 1,140 stages; no
-  gaps; the final version went up to 979, the data beyond 525 are not there: ISSUES I-009).
-  `make-game-tables.js` merges them into the `stage` master (missing fields derived).
+- Story quests 1-525 = `stageBinId` 1..525 of thethiny's rows (`stage_dec`, 1,140 stages; no
+  gaps); `make-game-tables.js` merges them into the `stage` master (missing fields derived). Quests
+  526-979 (the final version went up to 979): rows from the wiki and the 1.1.3 master (`make-story-oltre.js`)
+  with the original JP 4.3.1 stages ([oltre525](#oltre525), I-009 closed on 21-10). All 1-979 are played
+  on the original stages and rooms (`import_orig_stages.py`, `make_jp_rooms.py`), not on generated maps.
 - `wiki_quests.py` -> `quests.json` (978 quests 1-979 with objectives, rewards, treasures and enemies per
   room; parser of the nested `{{EN|...}}` enemies to be fixed). wikiwiki.jp/khux has quests
   1-750 (AP, target, Lv, objectives, rewards): useful to check the rows.
@@ -146,7 +148,8 @@ at the offsets written in the header (+ 0x34), in this order and contiguous:
 - Coverage: 18 of the 86 rooms of quests 1-525 exact, 154 quests out of 525 with all rooms
   exact. Missing from the resources: West Wing, Boardwalk, Market, Dwarf's Cottage, Waterfront Park,
   Avenue, Morning Dew Grove, Garden Maze... (replaced with a room of the same world: ISSUES
-  I-036). Quest 8 (1050) uses DW_0003.
+  I-036). Quest 8 (1050) uses DW_0003. This is the coverage of the WW resources alone: since version 35 the
+  rooms recovered from the 2016 and JP 4.3.1 data are served by `rooms_gen` ([below](#stanze-jp)).
 - Roboloid has 379 room previews (`images/map`, reference only).
 
 <a id="incomplete"></a>
@@ -487,7 +490,7 @@ Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
 <a id="oltre525"></a>
 ## Quests 526-979: original JP stages and user's decisions (20-10)
 
-Report: `D:\Progetto_Restauro_KH_UXeference\world_schema\oltre525\RAPPORTO.md` (tables in `_tables.md`,
+Report: `D:\Progetto_Restauro_KH_UX\reference\world_schema\oltre525\RAPPORTO.md` (tables in `_tables.md`,
 matches in `oltre525.json`, script `match_oltre525.py`). All the 453 battle quests 526-979 have the
 original stage in the JP 4.3.1 data (330 exact, 39 good, 83 probable in Ralph's worlds, 979 <-> 39159 by hand;
 978 cutscene only); 526-555 identical in 2016. 253 rooms (203 new, 225 served, 27 to be added to the
@@ -647,7 +650,7 @@ The client loads `lwf/character/npc/<id>/wait/wait.lwf` for every NPC of the map
 ## Music per quest (I-198)
 
 The columns `bgmField`/`bgmBattle`/`bgmBoss` of 556-979 no longer come from the world rule but from
-`reference\world_schema\oltre525gm_per_quest.json` (423 quests, all except 978; ids, AKB names, evidence and confidence per row).
+`reference\world_schema\oltre525\bgm_per_quest.json` (423 quests, all except 978; ids, AKB names, evidence and confidence per row).
 Source: khwiki «Forum:Notes 29 (Project Music: Where songs play) - KeybladeSpyMaster», tables of the Union X bosses per quest,
 cross-checked with the masters 1-555 (area theme of the first room; default boss dw_bgm_000003). `make-story-oltre.js` requires it
 (`KHUX_BGM_OLTRE`); the world rule (`WORLD_BGM` / reference row) remains only for the quests missing from the file.

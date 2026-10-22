@@ -60,3 +60,6 @@ All the Square Enix material lives outside the repository, on `D:\Progetto_Resta
   `extra_mp4`; github.com/Arena7664, IA `[archive item]`).
 - Discord **«Traverse Town»** ([invite removed]): active preservation community.
 - Restoration Union and other preservation communities.
+- **22-10** (I-194, enemy graphics of quests 526-979): user's post on Reddit
+  https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/ ; emails to Roboloid (more complete dump of the JP
+  data) and to thethiny. Appeal also in the README («What we are looking for»).

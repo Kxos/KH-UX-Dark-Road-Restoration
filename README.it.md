@@ -2,6 +2,9 @@
 
 [English](README.md) | **Italiano**
 
+> La documentazione di lavoro (HANDOFF, ISSUES, note tecniche, diario) è in inglese dal 22 ottobre 2026;
+> questa pagina riassume il progetto in italiano.
+
 Progetto di preservazione: ripristinare **Kingdom Hearts Union χ[Cross] · Dark Road**
 come esperienza giocabile in locale, dopo la chiusura dei server (maggio 2021) e la
 rimozione dall'app di quasi tutte le funzionalità di Union χ, ridotta a theater mode.
@@ -36,7 +39,7 @@ Gran parte dei contenuti del gioco veniva scaricata dal CDN in `files/r/misc.mp4
 nei pacchetti dell'app. Le mappe e le stanze della storia ora vengono dai dati JP 4.3.1 condivisi da
 thethiny, ma le texture di circa **90 famiglie di nemici** delle missioni 526–979 (Gearbit, Flappy Bug,
 Cy-Bug, King Candy, Jafar, Dragon Maleficent, Darkness, Ephemer & Skuld...) mancano in tutti gli
-archivi pubblici. Cerchiamo anche tutto cio' che riguarda **eventi, raid, Coliseum, Union Cross e PvP**
+archivi pubblici (appello del 22 ottobre su [Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/)). Cerchiamo anche tutto cio' che riguarda **eventi, raid, Coliseum, Union Cross e PvP**
 (screenshot, video, regole, premi, catture del traffico). Chi ha ancora una cartella `files/r/` o un
 backup del dispositivo con KHUx installato (Global o JP, qualsiasi versione), o uno di questi materiali,
 puo' contattarci aprendo una issue.
@@ -61,7 +64,8 @@ puo' contattarci aprendo una issue.
 ```
 REPORT.md, PHASE-*.md   Ricognizione e analisi
 HANDOFF.md              Come riprendere il lavoro (stato e prossimo passo)
-docs/                   ISSUES.md (problemi), notes/ (note tecniche per area), journal/ (diario)
+docs/                   ISSUES.md (problemi), notes/ (note tecniche per area), journal/ (diario),
+                        NOTICES.md e notices/ (Notices del gioco, pagina web su GitHub Pages)
 server/                 Server Node.js: API REST, DNS, tabelle master e di gioco generate
                         (server/README.md)
 tools/ldplayer/         Banco su LDPlayer: avvio, sessioni (session/), cattura dei crash
@@ -78,9 +82,10 @@ recon/dl/ ext/ web/     Materiale proprietario — NON versionato
 |---|---|
 | `tools/ldplayer/session/relogin.ps1` | riavvia server e app con il giocatore salvato, fino alla home |
 | `tools/ldplayer/session/build-resources.ps1 -Quick` | rigenera layout e testi e li scrive nel guest (~40 s, nessun download) |
-| `tools/ldplayer/session/build-resources.ps1 -Version N` + `update-resources.ps1` | nuova versione completa delle risorse, scaricata dal client (~5 min) |
-| `tools/ldplayer/armtrace/stackcap.ps1 -MenuY y -Taps 'x,y'` | riproduce un crash e cattura registri e stack ARM |
+| `tools/ldplayer/session/build-resources.ps1 -Version N` + `update-resources.ps1` | nuova versione completa delle risorse, scaricata dal client (~5 min); poi toccare a mano KHUX START (200,1020) e Download (1220,715) |
+| `tools/ldplayer/armtrace/stackcap.ps1 -MenuY y -Taps 'x,y'` | riproduce un crash e cattura registri e stack ARM (`-NoStart`: aspetta un crash provocato da un altro script) |
 | `node server/check-stage-data.js` | controllo offline dei dati delle missioni |
+| `node server/export-notices.js [--check]` | esporta le Notices del gioco in `docs/NOTICES.md` e `docs/notices/index.html` |
 
 ### Strumenti
 
@@ -100,6 +105,9 @@ recon/dl/ ext/ web/     Materiale proprietario — NON versionato
 | `widget_lookup.py`, `layout_tree.py`, `scene_tree.py` | Nomi dei widget cercati dal codice; struttura di layout e scene |
 | `action_case.py`, `batch_schema.py` | Ramo di un'azione nel dispatcher delle risposte e schemi dei parser |
 | `who_refs.py` | Chi usa un indirizzo (BL, ADRP/ADD, rilocazioni) |
+| `import_orig_stages.py`, `make_jp_rooms.py` | Stage e stanze originali della storia dai dati JP 4.3.1 e 2016 (missioni 1-979) |
+| `import_jp_coco.py` | Layout CocoStudio originali JP al posto di quelli generati (elenco `jp_coco_layouts.txt`) |
+| `make_jp_enemies.py`, `deep_donors.py` | Grafiche originali dei nemici; texture mancanti ritrovate per contenuto in altri file della stessa creatura |
 
 ## Ringraziamenti
 

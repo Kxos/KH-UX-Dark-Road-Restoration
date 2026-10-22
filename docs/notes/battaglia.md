@@ -505,3 +505,8 @@ animations; the family rule would pick bitmaps 21/22, but 16 > 4 missing texture
 incomplete). 1524 Chill Ripper: wait/atk1_o/knockback are now complete with original copies (film 2290101); only
 `dead` has no LWF: the approved category-4 rule `recolour-whole` (generic smoke dead of the DR twin 5045) would
 complete it, but it is outside the reconstruction rules of this step and needs a Notice line: not done.
+**1524 Chill Ripper completed (22-10, user's decision)**: its `dead` = the generic smoke dead of the DR twin 5045,
+category 4 `recolour-whole` (`recon/tools/jp_recoloured.tsv` +10 rows), declared in the Notice «Story Quests 526-979»
+(defeat animation reconstructed; the Notice also names Guard Armor Ω as recovered); master revision 177. Complete
+families **142** (category 1: 120, 2: 8, 3: 6, 4: 8); family-clone rows 526-979 by graphic: family 46, Dark Road 28,
+base 148.

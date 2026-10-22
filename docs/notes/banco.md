@@ -33,7 +33,7 @@ Technical notes of the test bench. Full history in
 # 1. emulator (if off)
 D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ldconsole.exe launch --index 0
 # 2. server + re-entry of the saved player up to the home
-.\tools\ldplayer\session\relogin.ps1 -Tag x            # default -Revision 81
+.\tools\ldplayer\session\relogin.ps1 -Tag x            # default -Revision 177 (22-10)
 # 3. MANDATORY after every emulator start (system CA, clock 15/5/2021,
 #    DNS towards the PC, private DNS off, TCP 80/443 redirection of the game)
 D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"
@@ -42,10 +42,10 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - Without `phaseb-guest.sh` the client does not reach the server and stays on the «End of Service» popup
   (date deadline inside the client: the guest clock must be kept before 29/6/2021).
 - The script is in `tools/ldplayer/phaseb-guest.sh` and must be copied into `Documents\XuanZhi9\Misc`.
-- After an emulator restart the client may download the whole latest version again (~3 GB, minutes).
+- After an emulator restart the client may download the whole latest version again (~4.2 GiB since version 56, minutes).
 - Other session scripts (`tools/ldplayer/session/`):
   - `cycle.ps1 -Tag x`: as a NEW player (deletes the save);
-  - `run-server.ps1 -Revision 81 [-TutorialFinished]`: only the server (it starts detached with
+  - `run-server.ps1 [-Revision N] [-TutorialFinished]`: only the server (it starts detached with
     `Win32_Process.Create`: with `Start-Process` it died with the script); `-GachaShow B0306,B0456` (also in `relogin.ps1`):
     catalog banners added to the Shop list (`KHUX_GACHA_SHOW`, [shop.md](shop.md#sp2));
   - `update-resources.ps1`: makes the client download the latest complete version (~5 min) and waits for the end
@@ -88,7 +88,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   downloaded by the client: do it only with the bench stopped, then `update-resources.ps1`.
 - `resource_merge` caches decrypted indexes and keystreams in `%TEMP%\khux_bgi_cache` (1 s
   instead of 60).
-- Status at 11 October: **resources 32, master revision 81**.
+- Status at 11 October: **resources 32, master revision 81**. Current state (revision, installed and built
+  resources): [HANDOFF.md](../../HANDOFF.md#restarting).
 
 <a id="script"></a>
 ## Bench scripts (`tools/ldplayer/`)
@@ -169,7 +170,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
    `findregs.py`/`backtrace.py`. With a wrong base you get false leads (the «PetInfoDialog»
    of 11 October). `capture.ps1` assumes 0x3308000: subtract the difference.
 6. **pc/lr between 0x11ad000 and 0x11b2000 = GUIReader = missing cocostudio layout**: the path of the
-   layout is in a register (x24 or similar). List in `catalog\missing_layouts.txt`.
+   layout is in a register (x24 or similar) or as a string in `stack.bin` (quests 699-704 on 22-10:
+  `ActMapTimeAttack_TimePanel.json`, captured with `stackcap.ps1 -NoStart`, imported from the JP via
+  `recon/tools/jp_coco_layouts.txt`). List in `catalog\missing_layouts.txt`.
 7. Then `recon/ghidra/decomp.ps1 -Out <file.c> [-Timeout s] <indirizzi>` and
    `recon/tools/widget_lookup.py` for the names of the widgets the code looks for. See
    [analisi.md](analisi.md).

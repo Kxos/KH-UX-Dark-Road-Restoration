@@ -28,7 +28,7 @@ History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md). T
 - Party members' bubble in the home (16-10, bench): the button with the two arrows changes the value shown
   (Quest Progress, Weekly Lux, Raid Support, PVE Ranking, PVP Ranking) from `partyUserList` of `/party/member/list`.
   Quest Progress = `lastStageId` shown as is (quest number, not the stageId: with the stageId «Quest 5020»):
-  now the most advanced story quest (id 1-525) cleared (`lastStoryStageId`, «Quest 132»). Weekly Lux = `userRanking.lux`:
+  now the most advanced story quest (id 1-979 since 21-10) cleared (`lastStoryStageId`, «Quest 132»). Weekly Lux = `userRanking.lux`:
   previously the total Lux, now `player.weeklyLux` {period, lux} (week of the weekly missions, added at every
   /stage/clear). Raid Support `raidHelpNumber` 0, PVE/PVP «---» (`userColosseumRanking`/`userPvpRanking` 0): correct
   as long as raids, Colosseum and PvP do not exist.
@@ -587,7 +587,8 @@ Dry run (14-10): package at 81.6% of the reserve, index = installed: a `-Quick` 
   Three Wishes (Q34, 1310), Olympia (Q130, 4100), Divine Rose (Q433, 15080). The other 10 in the original
   game came from Proud Mode (Sleeping Lion Q3, Counterpoint Q103, Fenrir Q203, Darkgnaw
   Q328, Missing Ache Q378, Diamond Dust Q428), from the Moogle Quests (Moogle O' Glory) and from quests beyond
-  525 (Stroke of Midnight Q595, Fairy Stars Q683, Bad Guy Breaker Q880): none is in the master.
+  525 (Stroke of Midnight Q595, Fairy Stars Q683, Bad Guy Breaker Q880): none was in the master. Since 21-10 (quests
+  526-979, I-009) the last three are first-clear rewards of their quests (stage 20100, 26080, 39060; `clearGetItemType` 13).
 - Save of 12-10: Starlight +0, Treasure Trove +35, Lady Luck +0, Olympia +0. Three
   Wishes was missing with stage 1310 cleared (the reward recovery ran only with `player.keyblades`
   missing) and the 10 without a source.
@@ -659,9 +660,9 @@ Dry run (14-10): package at 81.6% of the reserve, index = installed: a `-Quick` 
 | Darkgnaw | Proud Quest 328 | stage 11280 normal only | `grantMissingKeyblades` |
 | Missing Ache | Proud Quest 378 | stage 13030 normal only | `grantMissingKeyblades` |
 | Diamond Dust | Proud Quest 428 | stage 15030 normal only | `grantMissingKeyblades` |
-| Stroke of Midnight | Quest 595 | missing (story up to 525) | `grantMissingKeyblades` |
-| Fairy Stars | Quest 683 | missing | `grantMissingKeyblades` |
-| Bad Guy Breaker | Quest 880 | missing | `grantMissingKeyblades` |
+| Stroke of Midnight | Quest 595 | stage 20100, 10000 (since 21-10) | first `/stage/clear` |
+| Fairy Stars | Quest 683 | stage 26080, 14000 (since 21-10) | first `/stage/clear` |
+| Bad Guy Breaker | Quest 880 | stage 39060, 16000 (since 21-10) | first `/stage/clear` |
 
 - Server: `respondStageClear` -> on the first completion (`stageId` missing from
   `player.stageScores`) and `validClearGetItem` > 0, `grantItem` of each `clearGetItemType`; type 13

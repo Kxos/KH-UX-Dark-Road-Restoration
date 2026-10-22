@@ -6,8 +6,8 @@ Preservation project: bringing **Kingdom Hearts Union χ[Cross] · Dark Road** b
 locally playable experience, after the servers shut down (May 2021) and almost all of
 Union χ was removed from the app, which was reduced to a theater mode.
 
-> The working documentation (HANDOFF, ISSUES, technical notes, journal) is written in Italian.
-> This page summarizes the project in English; feel free to open an issue in English.
+> All the working documentation (HANDOFF, ISSUES, technical notes, journal) is in English since 22 October 2026;
+> this README is also available [in Italian](README.it.md). Feel free to open an issue.
 
 ## Status
 
@@ -39,7 +39,7 @@ Most of the game content was downloaded from the CDN into `files/r/misc.mp4` and
 inside the app packages. The story maps and rooms now come from the JP 4.3.1 data shared by thethiny,
 but the textures of about **90 enemy families** of quests 526–979 (Gearbits, Flappy Bugs, Cy-Bugs,
 King Candy, Jafar, Dragon Maleficent, Darkness, Ephemer & Skuld...) are missing from every public
-archive. We are also looking for anything about **events, raids, Coliseum, Union Cross and PvP**
+archive (appeal of 22 October on [Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/)). We are also looking for anything about **events, raids, Coliseum, Union Cross and PvP**
 (screenshots, videos, rules, rewards, network captures). If you still have a `files/r/` folder or a
 device backup from a KHUx install (Global or JP, any version), or any of the above, please get in
 touch by opening an issue.
@@ -64,7 +64,8 @@ touch by opening an issue.
 ```
 REPORT.md, PHASE-*.md   Reconnaissance and analysis
 HANDOFF.md              How to resume the work (status and next step)
-docs/                   ISSUES.md (issues), notes/ (technical notes by area), journal/ (journal)
+docs/                   ISSUES.md (issues), notes/ (technical notes by area), journal/ (journal),
+                        NOTICES.md and notices/ (in-game Notices, web page on GitHub Pages)
 server/                 Node.js server: REST API, DNS, generated master and game tables
                         (server/README.md)
 tools/ldplayer/         LDPlayer bench: startup, sessions (session/), ARM crash capture
@@ -81,9 +82,10 @@ recon/dl/ ext/ web/     Proprietary material — NOT versioned
 |---|---|
 | `tools/ldplayer/session/relogin.ps1` | restarts server and app with the saved player, up to the home screen |
 | `tools/ldplayer/session/build-resources.ps1 -Quick` | rebuilds layouts and texts and writes them into the guest (~40 s, no download) |
-| `tools/ldplayer/session/build-resources.ps1 -Version N` + `update-resources.ps1` | new full resource version, downloaded by the client (~5 min) |
-| `tools/ldplayer/armtrace/stackcap.ps1 -MenuY y -Taps 'x,y'` | reproduces a crash and captures ARM registers and stack |
+| `tools/ldplayer/session/build-resources.ps1 -Version N` + `update-resources.ps1` | new full resource version, downloaded by the client (~5 min); then tap KHUX START (200,1020) and Download (1220,715) by hand |
+| `tools/ldplayer/armtrace/stackcap.ps1 -MenuY y -Taps 'x,y'` | reproduces a crash and captures ARM registers and stack (`-NoStart`: waits for a crash triggered by another script) |
 | `node server/check-stage-data.js` | offline check of the quest data |
+| `node server/export-notices.js [--check]` | exports the in-game Notices to `docs/NOTICES.md` and `docs/notices/index.html` |
 
 ### Tools
 
@@ -103,6 +105,9 @@ recon/dl/ ext/ web/     Proprietary material — NOT versioned
 | `widget_lookup.py`, `layout_tree.py`, `scene_tree.py` | Widget names looked up by the code; layout and scene structure |
 | `action_case.py`, `batch_schema.py` | Branch of an action in the response dispatcher and parser schemas |
 | `who_refs.py` | Who uses an address (BL, ADRP/ADD, relocations) |
+| `import_orig_stages.py`, `make_jp_rooms.py` | Original story stages and rooms from the JP 4.3.1 and 2016 data (quests 1-979) |
+| `import_jp_coco.py` | Original JP CocoStudio layouts in place of the generated ones (list `jp_coco_layouts.txt`) |
+| `make_jp_enemies.py`, `deep_donors.py` | Original enemy graphics; missing textures found by content in other files of the same creature |
 
 ## Credits
 

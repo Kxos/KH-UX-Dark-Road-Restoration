@@ -12,13 +12,15 @@ Restoration of **Kingdom Hearts Union χ** (Android WW 4.3.1 client, service shu
 Node server (`server/server.js`) answers the **original**, unmodified client, which runs on
 **LDPlayer 9 (Android 9)**, the only bench where the LIAPP protector lets it start
 ([protector](docs/notes/protector.md)). The resources are the 5.0.1 OBBs + `addnl` from the iOS 4.3.1 IPA +
-a package we generate (maps, rebuilt CocoStudio layouts, textures, medals). You can play
-from the new player to the home screen, story quests 1-525 (generated maps), Medal List, selling,
-Level Up, Evolve, Moogle Shop, Profile, Missions, Avatar Boards.
+the packages we build (original JP/2016 stages and rooms, original and rebuilt CocoStudio layouts, textures, medals,
+enemy graphics). You can play from the new player to the home screen, story quests **1-979** on the original stages
+and rooms (JP 4.3.1 data), Medal List, selling, Level Up, Evolve, Moogle Shop, Shop, Profile, Missions, Avatar Boards,
+pet; every deviation from the original is declared in the in-game Notices
+([docs/NOTICES.md](docs/NOTICES.md), [web page](https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/)).
 
 ## Restarting
 
-Bench state: **resources 56 installed** (21-10 evening, 4.22 GiB on misc.mp4.2; before: 49 (20-10: compacted, 3.90 GiB; above 4 GiB tested with 48, I-171 closed), **master revision: BASE 174** (default of the 4 session scripts; the server sends `BASE*100000 + past deadlines`, [server.md](docs/notes/server.md#orologio)). Fake clock
+Bench state (22-10): **resources 56 installed** (21-10 evening, 4.22 GiB, then updated with two `-Quick` on 22-10; before: 49 (20-10: compacted, 3.90 GiB; above 4 GiB tested with 48, I-171 closed); **57 built** (`D:\Progetto_Restauro_KH_UX\resource_data\57`, 4.22 GiB, 40 parts) but superseded by **58** (being built on 22-10): that one is to be installed with `update-resources.ps1`, then tap KHUX START (200,1020) and Download (1220,715) by hand, **never `-Quick` until then**), **master revision: BASE 177** (default of the 4 session scripts; the server sends `BASE*100000 + past deadlines`, [server.md](docs/notes/server.md#orologio)). Fake clock
 (twin months 2016-2021), `-RealNow <ISO>` to test a week change: [server.md](docs/notes/server.md#orologio);
 full history in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -31,7 +33,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ldconsole.exe launch --index 0
 D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/phaseb-guest.sh 192.168.1.185"
 ```
 
-- After an emulator restart the client may re-download version 32 (~3 GB, minutes).
+- After an emulator restart the client may re-download the latest version (~4.2 GiB, minutes).
 - Windows IPv4 DNS on **192.168.1.185** during tests, **automatic** at the end of the session. Guest network broken
   («7 ERROR», `ip route` with no default): `ldconsole reboot --index 0`, `sys.boot_completed`, `phaseb-guest.sh`, relogin.
 - Layout tests: `.\tools\ldplayer\session\build-resources.ps1 -Quick` (~40 s, no
@@ -45,7 +47,7 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   [banco.md](docs/notes/banco.md#crash); `D:\Progetto_Restauro_KH_UX\tmp\repro.ps1 <name> <x> <y>` taps, saves
   requests, logcat and screenshots. Taps only while the game is alive (`bench_lib` refuses taps with the game closed).
 
-## State as of 17 October 2026 and next step
+## State and next step (blocks from 17 October on; the newest is «STATE AS OF 22-10 AFTERNOON»)
 
 - **Shop**: sub-project 1 (16-10), 2 «List of the original banners» (17-10, [shop.md#sp2](docs/notes/shop.md#sp2),
   final correction [shop.md#correzione-finale](docs/notes/shop.md#correzione-finale)) and **2b «Guarantees»**
@@ -115,14 +117,23 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
   seen by the user). Supernova at 1 hit like the original (rev 160). **Original enemy attacks** (I-181 closed: status ailments again, Esuna seen). **Crash in the 86 generated rooms** (I-182 closed: 45-byte BTF placeholder, resources 51). Bench: revision **166**, **resources 51** (4.09 GiB, three pieces), save `provetm`
   (prove525 + Trait Medal), `relogin.ps1 -Save provetm -RealNow 2026-12-08T10:00:00Z`. After a change to the server
   always use `relogin.ps1`: restarting only the server makes the client lose the session («6 ERROR :185»).
-- **STATE AS OF 22-10 — RESTART FROM HERE.** Bench: **resources 56** (updated with two `-Quick`), **master rev 175** (Warlock Step 2508 without DR 5061), save `provefine`, `-RealNow 2026-12-08T10:00:00Z` (login bonus of that day already collected: to see it use 12-09). Done today: bench run of the I-194 round ok (DR medium visible but wrong creatures); **crash 699-704 solved** (JP layout `ActMapTimeAttack_TimePanel.json`, 9234af2); README as of 22-10. I-194 searches: web (no textures; KHInsider renders in `tmp\web_hunt`, Roboloid has a more complete dump: email [e-mail removed]), inverse rendering (not recommended, `tmp\inverse_render`), content search (`tmp\deep_scan`: 1,854 original textures from raid/drama, 1028 complete) -> **integration in progress** (agent: content-anchor/bracket rules, enemy_gen, make-enemy-oltre), then rev 176 + resources 57 + update-resources. User's Reddit post: https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/ ; emails to Roboloid and thethiny. Families 2001-2024 = characters (Hercules, Aladdin, Phillip, Ralph, Lauriam...), many without knockback/dead.
+- **STATE AS OF 22-10 AFTERNOON — RESTART FROM HERE.** Master **rev 177** (default of the 4 session scripts); resources
+  **56** on the bench, **58** to install (57 built and superseded): `update-resources.ps1` + the two taps by hand, then
+  `relogin.ps1 -Save provefine -RealNow 2026-12-08T10:00:00Z` and a bench check of the new enemy graphics (Quest 850 Guard
+  Armor Ω, Chill Ripper's defeat). Done in the afternoon: I-194 integration of the original copies found by content
+  (`recon/tools/deep_donors.py`, `extra_donors_deep.tsv`; rev 176: 1028 Guard Armor Ω), 1524 Chill Ripper completed
+  (dead of the DR twin 5045, user's decision, rev 177): **142 complete families**; 526-979 family rows: 46 own graphics,
+  28 Dark Road, 148 base; ~88 families still missing (including the 6 DR medium placeholders). Notices exported by
+  `node server/export-notices.js` to `docs/NOTICES.md` and the GitHub Pages page `docs/notices/` (newest first); all
+  docs and commit messages in English.
+- **STATE AS OF 22-10 MORNING.** Bench: **resources 56** (updated with two `-Quick`), **master rev 175** (Warlock Step 2508 without DR 5061), save `provefine`, `-RealNow 2026-12-08T10:00:00Z` (login bonus of that day already collected: to see it use 12-09). Done today: bench run of the I-194 round ok (DR medium visible but wrong creatures); **crash 699-704 solved** (JP layout `ActMapTimeAttack_TimePanel.json`, 9234af2); README as of 22-10. I-194 searches: web (no textures; KHInsider renders in `tmp\web_hunt`, Roboloid has a more complete dump: email [e-mail removed]), inverse rendering (not recommended, `tmp\inverse_render`), content search (`tmp\deep_scan`: 1,854 original textures from raid/drama, 1028 complete) -> **integration in progress** (agent: content-anchor/bracket rules, enemy_gen, make-enemy-oltre; done in the afternoon, see above). User's Reddit post: https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/ ; emails to Roboloid and thethiny. Families 2001-2024 = characters (Hercules, Aladdin, Phillip, Ralph, Lauriam...), many without knockback/dead.
 - **STATE AS OF 21-10 EVENING.** Bench: **resources 56** installed, **master rev 174**, test save
   **`provefine`** (provetm with all 979 quests finished): `relogin.ps1 -Save provefine -RealNow 2026-12-08T10:00:00Z`.
   After `update-resources.ps1` tap KHUX START (200,1020) and Download (1220,715) by hand; if «Launcher3/System UI isn't
   responding» appears: «Wait» (640,649) or reboot + `phaseb-guest.sh` + relogin. Work ledger (not in git):
   `.superpowers/sdd/2026-10-21-missioni-526-979/progress.md` (rulings, deferred minors, outcomes per task).
-- **Quests 526-979 (I-009): DONE and tested on the bench** (plan `docs/superpowers/plans/2026-10-21-missioni-526-979.md`, Tasks 1-6
-  complete and reviewed, Task 7 = bench in progress): master rows (`make-story-oltre.js`: Q555 for Union, Q978 onlyDrama, Ralph
+- **Quests 526-979 (I-009): DONE and tested on the bench** (plan `docs/superpowers/plans/2026-10-21-missioni-526-979.md`, Tasks 1-7
+  complete and reviewed, bench of 21-10): master rows (`make-story-oltre.js`: Q555 for Union, Q978 onlyDrama, Ralph
   worlds 11-14, music per quest from khwiki I-198, 81 original objectives + Trophy 61-63 of Bad Guy Breaker), enemies
   (`make-enemy-oltre.js`: 62 exact clones base 5-then-4 digits, 250 family clones from the proposal in
   `reference\world_schema\oltre525\enemy_clone_proposal.json`, D-A), 457 JP stages imported (`import_orig_stages.py --oltre`,
@@ -132,24 +143,24 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **OPEN, priority: enemy/NPC graphics (I-194).** User's rule: originals always first; order = direct originals >
   original copies (`recon/tools/jp_dedup_donors.tsv`, `extra_donors.tsv`, rules >=99% on 2016) > rebuilt
   (`jp_reconstructed.tsv`) > recoloured (`jp_recoloured.tsv`) > Dark Road substitute of the same species (`DR_LOOK` in
-  make-enemy-oltre.js). Today 312 rows 526-979: 44 with their own graphics, 31 Dark Road, 147 base; 117 incomplete families (bosses: Jafar
+  make-enemy-oltre.js); since 22-10 also original copies found by content (`extra_donors_deep.tsv`). Status 22-10 afternoon: 312 rows 526-979: 46 with their own graphics, 28 Dark Road, 148 base; 142 complete families, ~88 still missing (bosses: Jafar
   Cobra/Genie, Dragon Maleficent, Darkness, Ephemer&Skuld (boss of 979, video https://www.youtube.com/watch?v=vgIlsu_W7Ns 12:22),
-  King Candy, Cy-Bug...; 52 invisible NPCs). Automatic sources EXHAUSTED (JP 4.3.1 dump, JP 5.0.1 OBB in
+  King Candy, Cy-Bug...; NPC/character families 2001-2024 (Hercules, Aladdin, Phillip, Ralph, Lauriam...), many without knockback/dead in any source). Automatic sources EXHAUSTED (JP 4.3.1 dump, JP 5.0.1 OBB in
   `external\[archive item]`, JP 4.4.1 IPA, WW 5.0.1, 2016, Wayback: nothing). Next steps: (1) 20 effect textures
   `show_effect2`/`eff_1004`: use the UX originals from the 4.4.1 IPA (`tmp\jp441\resolved_441.tsv` rows exact441-over-501) instead
   of the DR images; 18 Shadow aliases; bug `tools/segdl.ps1` ($args); (2) bosses: visual matching of the pieces in the
   `lwf/drama` movies (candidates in `tmp\enemy_src2`); (3) user's contacts: thethiny (who made the JP 4.3.1 zip?),
-  Roboloid/Ultimadei (Reddit [handle removed], [handle removed]), ShardofTruth (KH Wiki), community appeal (texts ready in the chat of
-  21-10); credits already in the README (0cb3827).
+  Roboloid/Ultimadei (Reddit [handle removed], [handle removed]), ShardofTruth (KH Wiki); community appeal done on 22-10 (Reddit post,
+  emails to Roboloid and thethiny); credits already in the README (0cb3827). Inverse rendering studied and not recommended
+  (`tmp\inverse_render`).
 - **Other open items noted by the user**: I-191 (active banners on the home screen), I-192 (Beginner's Guide WebView), checks with the
   Roboloid data (Supernova, buffs) and with the wiki's Special Attack page (16 hits, Rapid Storm, 2 conditions; tmp\sa_wiki), final
   web page «Kingdom Hearts Re-Union X» only as the LAST task (memory).
 - **Trait Medal (I-084)**: parts A and B done, **bench 20-10 ok** ([medaglie.md#trait-medal-b](docs/notes/medaglie.md#trait-medal-b)).
-  Trait Medal Moogle Shop deferred to the balancing (I-164); what remains is the reachability of the Trait deals (story beyond 2018).
+  Trait Medal Moogle Shop deferred to the balancing (I-164); the Trait deals now unlock with the story (526-979, e.g. B0259 at quest 725): not yet seen on the bench.
 - Open Shop items: I-139 (24 INCOMPLETE), I-140 (Epic filter), I-141 (image of B0612), I-142 (Blue Fairy Deal),
   I-143 (tap lost after the Notices), I-145, I-146 (missing abilities), I-150 (broken catalogue names), I-151
-  (lists that go up a star). Afterwards: **sub-project 3** (catalogue with filters, unlocks, rotation, seasonals; closing
-  the Details does not reload the list).
+  (lists that go up a star). Sub-project 3 (catalogue with filters, unlocks, rotation, seasonals) done on 20-10 (above).
 - **Bench (18-10 evening)**: FULL save put back (intact copy in
   `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-nova-test\player.json`; the reduced one of 17-10 in
   `tmp\save-before-skill`), migrated to the skills (`skillVersion` 1), rev 124. Test changes: skills given to SP Roxas
@@ -190,6 +201,9 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 | [docs/notes/mappe_storia.md](docs/notes/mappe_storia.md) | STG/MAP format, exits, generator, rooms, enemies |
 | [docs/notes/medaglie.md](docs/notes/medaglie.md) | Medal List, selling, Sort/Filter, Level Up, Evolve, graphics |
 | [docs/notes/moogle_shop.md](docs/notes/moogle_shop.md) | Moogle Shop and traits |
+| [docs/notes/guilt.md](docs/notes/guilt.md) | guilt and Level Up with special medals (Chip, Dale, Cid) |
+| [docs/notes/union_cross.md](docs/notes/union_cross.md) | Union Cross (multiplayer): `/multi/*` routes, tables |
+| [docs/NOTICES.md](docs/NOTICES.md) | in-game Notices (generated by `node server/export-notices.js`, also `docs/notices/`) |
 | [docs/notes/shop.md](docs/notes/shop.md) | Shop > Draw: /gacha/list, /gacha/draw, plates, raisedraw, tests |
 | [docs/notes/bacheche.md](docs/notes/bacheche.md) | Avatar Boards |
 | [docs/notes/home_profilo.md](docs/notes/home_profilo.md) | home, Other, Profile, Missions, pet, Presents |
@@ -205,7 +219,7 @@ Setting up a new machine (prerequisites, clone, certificates, Windows network): 
 
 - **New problem**: a row in [docs/ISSUES.md](docs/ISSUES.md) with the next free ID (never
   reuse an ID) and the technical detail in the right file of `docs/notes/` (with an
-  `<a id="...">` anchor to link). When it is closed: status CLOSED, row moved to «Chiusi», proof =
+  `<a id="...">` anchor to link). When it is closed: status CLOSED, row moved to «Closed», proof =
   commit.
 - **Session journal**: `docs/journal/YYYY-MM-DD.md` of the day (what was tried, outcomes,
   screenshots). The facts that stay true also go into the area notes.

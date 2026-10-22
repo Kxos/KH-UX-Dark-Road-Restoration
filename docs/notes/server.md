@@ -222,7 +222,8 @@ node server\make-game-tables.js D:\Progetto_Restauro_KH_UX\wiki\medals.json   # 
 ```
 
 - `make-game-tables.js`: medal, player (lv 0-99), reward, mypageBackground, stage 1-525 (from
-  thethiny), generated bursts, enemyAttack generated for all skillIds (the enemies with `validSkill` 3
+  thethiny; 526-979 from `make-story-oltre.js` and enemies from `make-enemy-oltre.js`, called by the same run since 21-10,
+  [mappe_storia](mappe_storia.md#oltre525)), generated bursts, enemyAttack generated for all skillIds (the enemies with `validSkill` 3
   crashed), mission (`server/tables/mission.json`), sphere/sphereArray/sphereMasu
   (`server/tables/`). Options: `KHUX_MEDALS_ALL=1` (2,094 medals), `KHUX_ZOO=1`
   (`KHUX_ZOO_COUNT`) for the zoo quests 990001...
@@ -336,7 +337,7 @@ The screens have their own APIs, described in the area files: medals
   the server saves the decks and the favorite and replies `userKeyblades` + `userDecks`. Before, it ended up in the
   automatic schema (empty lists). To see on the bench the real body (log `[keyblade] deck`).
 - **3 decks per keyblade** (20-10; update 1.1.2 of 01/09/2016 «Save 3 decks per Keyblade», unlocked by a keyblade at
-  +20; user's image and sources in `reference\keyblade_decks\`, research in `D:\Progetto_Restauro_KH_UX	mp\deckset\RESEARCH.md`):
+  +20; user's image and sources in `reference\keyblade_decks\`, research in `D:\Progetto_Restauro_KH_UX\tmp\deckset\RESEARCH.md`):
   the client counts the decks of a keyblade from the `userDecks` with its `userKeybladeId` (array order, [fn]) and
   shows the buttons 1/2/3 only with more than one deck; active deck = `userKeyblades[].userDeckId`, changed and saved with
   action 45. Server: deck 1 = `userKeybladeId` (player.deck / keybladeDecks as before), deck 2/3 = n x 1,000,000 + id in

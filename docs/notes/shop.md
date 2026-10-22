@@ -415,13 +415,13 @@ node server/make-banners.js                                  # drawMedalType: st
 .\tools\ldplayer\session\relogin.ps1 -Tag x -Revision <BASE+1>   # today BASE 123 -> 124, also in the 4 session scripts
 ```
 
-Only if the client's LWFs or images change: `build-resources.ps1 -Version <N+1>` with the bench stopped (today 41
-installed), then `update-resources.ps1 -Revision <BASE>`.
+Only if the client's LWFs or images change: `build-resources.ps1 -Version <N+1>` with the bench stopped (current installed version in
+[HANDOFF](../../HANDOFF.md#restarting)), then `update-resources.ps1 -Revision <BASE>`.
 
 Variables of `make-game-tables.js` (read in the script, lines 148-215 and 616-690): `KHUX_MEDALS_ALL=1` (without it: 522
 normal medals instead of 2,107, 3,233 rows with the boosted ones; with them the boosted and Nova rows disappear); `KHUX_WORLDTOUR=1` (rows 991001-991008 of the world
 tours: without it, `stage.json` loses them, because the script redoes it every time from `stage_base.json`); `KHUX_STORY_MAX`
-(default 525, the one in use). `KHUX_TOURS_V2=1` must **not** be set to rebuild the master in use: it adds 57
+(default 525, the one in use: thethiny's rows; quests 526-979 are added by `make-story-oltre.js` in the same run). `KHUX_TOURS_V2=1` must **not** be set to rebuild the master in use: it adds 57
 992xxx rows of the v2 tours (`stage.json` from 535 to 592 rows), which are set aside, only for tests of the original components
 (user's decision, journal fino-al-2026-10-16): the command with `KHUX_TOURS_V2` in
 [mappe_storia.md#tour-v2](mappe_storia.md#tour-v2) is the test one; guilt.md uses the same two variables as here. No `KHUX_ZOO` (0 rows 99000x in the master in use).
