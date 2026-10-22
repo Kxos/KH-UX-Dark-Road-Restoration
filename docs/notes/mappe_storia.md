@@ -1,293 +1,293 @@
-# Missioni di storia e mappe generate
+# Story quests and generated maps
 
-Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md) («Mappe generate e
-risorse aggiuntive», «Missioni di storia in automatico»). Documenti degli agenti in
+History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md) («Mappe generate e
+risorse aggiuntive», «Missioni di storia in automatico»). Agent documents in
 `D:\Progetto_Restauro_KH_UX\stage_gen\` (`exits\NOTE.md`, `reach\REPORT.md`, `multiroom\`,
 `story\`, `quest_thumbs\`).
 
 <a id="dati"></a>
-## Dati delle missioni
+## Quest data
 
-- Missioni di storia = `stageBinId` 1..525 delle righe di thethiny (`stage_dec`, 1.140 stage; nessun
-  buco; la versione finale arrivava a 979, i dati oltre la 525 non ci sono: ISSUES I-009).
-  `make-game-tables.js` le unisce al master `stage` (campi assenti derivati).
-- `wiki_quests.py` -> `quests.json` (978 missioni 1-979 con obiettivi, premi, tesori e nemici per
-  stanza; parser dei nemici `{{EN|...}}` annidati da correggere). wikiwiki.jp/khux ha le missioni
-  1-750 (AP, bersaglio, Lv, obiettivi, premi): utile per controllare le righe.
-- Lista STORY: `/stage/160310` (108) `stories[]` (`[fn]`: `stageId`, `useAp`, `score`,
-  `playStatus`, `clearMissionIds` <= 3), `newStageId`, `luxRank`, `openRankingId`. Tornando alla
-  lista `[fn]` apre l'intestazione STG della **missione successiva** e cerca il suo
-  bersaglio nella tabella `enemy`: un'intestazione mancante = crash.
-- Miniature dell'elenco Story (ISSUES I-003, I-064): il riquadro «Panel» di ogni missione
-  (`[fn]`/`[fn]`) carica `img/adventure/stage/stage_select_ico_%d_%d.png` con
-  `worldId` (+0x118) e `thumbId` (+0x11c) della riga master `stage`; le missioni non sbloccate
-  (`[fn]`) `stage_select_ico_Blank` («?») o, con il flag 1, `stage_select_ico_Soon`.
-  `thumbId` = stanza*10000 + variante*100 + sottovariante della mappa `<XX>_<stanza>_<var>_<sub>`
-  (1_40000 = DB_0004_00_00 1st District): i valori sono quelli veri (thethiny), non serve toccare
-  il master. Le risorse avevano solo 1_0, 1_40000, 2_0, 2_10000 (+ Blank) delle 99 coppie delle
-  missioni 1-525. Con il file assente `ImageView::loadTexture` (`[fn]`, initWithFile)
-  fallisce e il riquadro **tiene la texture di prima**: il carosello ricicla i riquadri, quindi
-  scorrendo con le frecce le missioni mostrano la miniatura di un'altra missione (Agrabah con
-  Daybreak Town) o il «?» rimasto da una missione non sbloccata. Nessun campo del server c'entra.
-- `recon/tools/make_quest_thumbs.py` (nel build delle risorse, dopo `make_textures.py`) genera le
-  95 assenti in `stage_gen\files\img\adventure\stage` (BTF a palette, ~630 KB in tutto) dalle
-  anteprime delle stanze di Roboloid (`images/map`, cache in `external\roboloid\cache\map`):
-  ritaglio di 1200 px della stanza scelto dove e' piena, 145x132 con alpha e bordo delle
-  originali; `CROP` nello script per correggere a mano. 87 stanze esatte, 8 dalla stessa stanza
-  in un'altra variante (Corridor of Darkness 0100 per le 5 varianti, Waterfront Park 0008_01,
-  Dwarf's Cottage 1F 0006_01, Frozen Forest 0012_01). `stage_select_ico_Soon` = copia di Blank.
-  Fogli di controllo e `report.json` in `stage_gen\quest_thumbs`, nota in
+- Story quests = `stageBinId` 1..525 of thethiny's rows (`stage_dec`, 1,140 stages; no
+  gaps; the final version went up to 979, the data beyond 525 are not there: ISSUES I-009).
+  `make-game-tables.js` merges them into the `stage` master (missing fields derived).
+- `wiki_quests.py` -> `quests.json` (978 quests 1-979 with objectives, rewards, treasures and enemies per
+  room; parser of the nested `{{EN|...}}` enemies to be fixed). wikiwiki.jp/khux has quests
+  1-750 (AP, target, Lv, objectives, rewards): useful to check the rows.
+- STORY list: `/stage/160310` (108) `stories[]` (`[fn]`: `stageId`, `useAp`, `score`,
+  `playStatus`, `clearMissionIds` <= 3), `newStageId`, `luxRank`, `openRankingId`. Going back to the
+  list `[fn]` opens the STG header of the **next quest** and looks up its
+  target in the `enemy` table: a missing header = crash.
+- Thumbnails of the Story list (ISSUES I-003, I-064): the «Panel» box of every quest
+  (`[fn]`/`[fn]`) loads `img/adventure/stage/stage_select_ico_%d_%d.png` with
+  `worldId` (+0x118) and `thumbId` (+0x11c) of the `stage` master row; the locked quests
+  (`[fn]`) `stage_select_ico_Blank` («?») or, with flag 1, `stage_select_ico_Soon`.
+  `thumbId` = room*10000 + variant*100 + sub-variant of the map `<XX>_<stanza>_<var>_<sub>`
+  (1_40000 = DB_0004_00_00 1st District): the values are the real ones (thethiny), there is no need to touch
+  the master. The resources had only 1_0, 1_40000, 2_0, 2_10000 (+ Blank) of the 99 pairs of
+  quests 1-525. With the file missing `ImageView::loadTexture` (`[fn]`, initWithFile)
+  fails and the box **keeps the previous texture**: the carousel recycles the boxes, so
+  scrolling with the arrows the quests show the thumbnail of another quest (Agrabah with
+  Daybreak Town) or the «?» left over from a locked quest. No server field is involved.
+- `recon/tools/make_quest_thumbs.py` (in the resource build, after `make_textures.py`) generates the
+  95 missing ones in `stage_gen\files\img\adventure\stage` (palette BTF, ~630 KB in all) from
+  Roboloid's room previews (`images/map`, cache in `external\roboloid\cache\map`):
+  1200 px crop of the room chosen where it is full, 145x132 with alpha and the border of the
+  originals; `CROP` in the script to correct by hand. 87 exact rooms, 8 from the same room
+  in another variant (Corridor of Darkness 0100 for the 5 variants, Waterfront Park 0008_01,
+  Dwarf's Cottage 1F 0006_01, Frozen Forest 0012_01). `stage_select_ico_Soon` = copy of Blank.
+  Check sheets and `report.json` in `stage_gen\quest_thumbs`, note in
   `reference\story_thumbs`.
 
 <a id="formato"></a>
-## Formato STG e MAP
+## STG and MAP format
 
-Parser esatto: `recon/tools/mapfile.py` (`parse_stg`, `parse_map`, `load_stage`, `check_stage`; da riga
-di comando `mapfile.py <cartella|file> [--json out] [--quiet]` controlla ogni stage contro l'STG). Lo
-usano `import_orig_stages.py` e `stage_poi.py`. Nomi dei campi dal decompilato 1.0.1 con simboli
-(`reference\world_schema\decompile_101.md`), letture confermate sul 4.3.1 (`[fn]`, `[fn]`).
+Exact parser: `recon/tools/mapfile.py` (`parse_stg`, `parse_map`, `load_stage`, `check_stage`; from the command
+line `mapfile.py <cartella|file> [--json out] [--quiet]` checks every stage against the STG). It is
+used by `import_orig_stages.py` and `stage_poi.py`. Field names from the 1.0.1 decompilation with symbols
+(`reference\world_schema\decompile_101.md`), reads confirmed on 4.3.1 (`[fn]`, `[fn]`).
 
-**Versioni** (`STG +0x04` = `MAP +0x04`, l'anno dell'ultima modifica del file, non del client: il client
-**non legge** la versione). 13, 14, 15, 16, 17 hanno **lo stesso formato** (quello qui sotto). Verifica:
-tutte le 9.173 parti JP 4.3.1 (ogni revisione) e le 1.300 del 2016 hanno le cinque sezioni contigue,
-senza buchi e senza coda, e squadre/nemici = totali STG su tutti gli stage completi (4.510 JP); il
-vecchio parser euristico sbagliava sulle 13 per la forma dei record, non per il formato. I file 4, 6, 7, 8
-(solo eventi del 2016 e revisioni JP superate, nessuno tra le 525) sono diversi e il client 4.3.1 li
-leggerebbe male: STG v4 da 28 byte (7 int), v6/v7 da 40 (10 int); MAP 6/7 squadre da 0x24 (9 int, senza
-poligono); MAP 4 anche uscite da 0x1c (7 int) e npc da 0x1c; 8 solo file vuoti.
+**Versions** (`STG +0x04` = `MAP +0x04`, the year of the file's last change, not of the client: the client
+**does not read** the version). 13, 14, 15, 16, 17 have **the same format** (the one below). Check:
+all the 9,173 JP 4.3.1 parts (every revision) and the 1,300 of 2016 have the five sections contiguous,
+without gaps and without a tail, and squads/enemies = STG totals on all complete stages (4,510 JP); the
+old heuristic parser got the 13 ones wrong because of the record shape, not the format. Files 4, 6, 7, 8
+(only 2016 events and superseded JP revisions, none among the 525) are different and the 4.3.1 client would
+read them wrongly: STG v4 of 28 bytes (7 int), v6/v7 of 40 (10 int); MAP 6/7 squads of 0x24 (9 int, without
+polygon); MAP 4 also exits of 0x1c (7 int) and npcs of 0x1c; 8 only empty files.
 
-`stage/mappoi_stg<id>.bin`, **STG** (64 byte letti sempre, poi le partenze alternative):
+`stage/mappoi_stg<id>.bin`, **STG** (64 bytes always read, then the alternative starts):
 
-| int | byte | campo |
+| int | byte | field |
 |---|---|---|
 | [0] | +0x00 | `STG\0` |
-| [1] | +0x04 | versione |
-| [2] | +0x08 | short basso = parti, alto = parte di partenza |
-| [3],[4] | +0x0c,+0x10 | partenza x, y |
-| [5] | +0x14 | short basso = verso (1/3 -> +1, 2/4 -> -1; 3/4 fisso), alto = n partenze alternative (solo 4.3.1: n x 4 short a +0x40: parte, verso, x, y) |
-| [6] | +0x18 | enemyId del bersaglio (`getStageBossEnemyID`) |
+| [1] | +0x04 | version |
+| [2] | +0x08 | low short = parts, high = start part |
+| [3],[4] | +0x0c,+0x10 | start x, y |
+| [5] | +0x14 | low short = direction (1/3 -> +1, 2/4 -> -1; 3/4 fixed), high = n alternative starts (4.3.1 only: n x 4 shorts at +0x40: part, direction, x, y) |
+| [6] | +0x18 | enemyId of the target (`getStageBossEnemyID`) |
 | [7] | +0x1c | ? (WW 1, JP 40/41/43...) |
-| [8] | +0x20 | squadre, **senza** quelle col bit 0x20 di [4] (91 stage JP su 91); il server puo' toglierne (squadre «random») |
-| [9] | +0x24 | nemici delle squadre contate; «sconfiggi tutti» conta [9] - [13] |
-| [10] | +0x28 | enemyId della scheda del bersaglio (0 = [6]) |
-| [11] | +0x2c | bonus di livello della scheda |
+| [8] | +0x20 | squads, **without** those with bit 0x20 of [4] (91 JP stages out of 91); the server can remove some («random» squads) |
+| [9] | +0x24 | enemies of the counted squads; «defeat all» counts [9] - [13] |
+| [10] | +0x28 | enemyId of the target's card (0 = [6]) |
+| [11] | +0x2c | level bonus of the card |
 | [12] | +0x30 | ? |
-| [13] | +0x34 | nemici da non contare |
-| [14] | +0x38 | forzieri, [15] +0x3c materiali: **non mantenuti** (89 delle 518 importate e 125 dei 4.793 JP hanno somme delle parti maggiori, anche nel 2016); usati solo dagli obiettivi 17 «Open all treasure chests» / 18 «Collect all materials» (nessuno dei 5 stage con quegli obiettivi e' sfasato) |
+| [13] | +0x34 | enemies not to be counted |
+| [14] | +0x38 | chests, [15] +0x3c materials: **not maintained** (89 of the 518 imported and 125 of the 4,793 JP have larger sums of the parts, also in 2016); used only by objectives 17 «Open all treasure chests» / 18 «Collect all materials» (none of the 5 stages with those objectives is out of step) |
 
-`stage/mappoi_stg<id>_NN.bin`, **MAP** (parte = stanza): intestazione da 0x34 byte, poi cinque sezioni
-agli offset scritti nell'intestazione (+ 0x34), in quest'ordine e contigue:
+`stage/mappoi_stg<id>_NN.bin`, **MAP** (part = room): 0x34-byte header, then five sections
+at the offsets written in the header (+ 0x34), in this order and contiguous:
 
-| byte | campo |
+| byte | field |
 |---|---|
 | +0x00 | `MAP\0` |
-| +0x04 | versione |
-| +0x08 | 40 (non letto) |
-| +0x0c | nome della stanza, 16 byte (`DB_0000_00_00`: `map/<stanza>/..._info/_cls/_chp/_jmp.bin`) |
-| +0x1c | short meteo (1 pioggia, 2/3 neve; solo se lo short +8 di `_info` e' 0) |
-| +0x20 | uscite - 0x34 (sempre 0: blocco a +0x34) |
-| +0x24 | squadre/nemici - 0x34 (`[fn]`: `X = [+0x24]`, `X+0x34` n squadre, `X+0x38` n nemici) |
-| +0x28 | forzieri - 0x34 (`[fn]`) |
-| +0x2c | materiali - 0x34 |
-| +0x30 | npc - 0x34 |
+| +0x04 | version |
+| +0x08 | 40 (not read) |
+| +0x0c | room name, 16 bytes (`DB_0000_00_00`: `map/<stanza>/..._info/_cls/_chp/_jmp.bin`) |
+| +0x1c | weather short (1 rain, 2/3 snow; only if short +8 of `_info` is 0) |
+| +0x20 | exits - 0x34 (always 0: block at +0x34) |
+| +0x24 | squads/enemies - 0x34 (`[fn]`: `X = [+0x24]`, `X+0x34` n squads, `X+0x38` n enemies) |
+| +0x28 | chests - 0x34 (`[fn]`) |
+| +0x2c | materials - 0x34 |
+| +0x30 | npcs - 0x34 |
 
-| sezione | contenuto |
+| section | content |
 |---|---|
-| uscite | u32 n, n x 36: `x, y, angolo freccia, distanza residua al bersaglio, [4] (mai letto: 1 + passaggi fino alla parte del bersaglio), arrivo x, arrivo y, parte di destinazione, verso`; scattano entro 96 unita' |
-| squadre/nemici | u32 n_squadre, u32 n_nemici, n_squadre x 0x44, n_nemici x 0x20 |
-| squadra (17 int) | `[0]` primo nemico (indice nella parte), `[1]` quanti, `[2]` 128, `[3]` ?, `[4]` flag (bit 0 capo/bersaglio, bit 2-3 comportamento, bit 5 = 0x20 seconda lista: non contata nell'STG, bit 6), `[5]` uid della squadra, `[6]`,`[7]` parametri del simbolo, `[8]` verso, `[9..16]` 4 punti del poligono d'incontro |
-| nemico (8 int) | `x, y, enemyId, f3 (0; 1 nelle missioni JP ridisegnate), f4 (1), livello, rewardId, uid` |
-| forzieri | u32 n, n x 0x14: `x, y, rewardId, aspetto (look: pari = specchiato, (look % 6) >> 1 e look / 6 = grafica; 0..19 negli originali), uid` |
-| materiali | u32 n, n x 0x10: `x, y, materialId, quantita'`; uid calcolato `(32*parte + 32) | ((i+1) << 10) | 6` |
-| npc | u32 n, n x 0x20: `x, y, id, short tipo (3, 4; 5 = dentro un livello grafico), short ?, short verso, short livello, int talk, int talk2, int ordine`; grafica `lwf/character/npc/<id>/wait/wait.lwf`; talk/talk2 = testi di dialogo (vedi [Filmati e dialoghi](#filmati)) |
+| exits | u32 n, n x 36: `x, y, angolo freccia, distanza residua al bersaglio, [4] (mai letto: 1 + passaggi fino alla parte del bersaglio), arrivo x, arrivo y, parte di destinazione, verso` (arrow angle, remaining distance to the target, [4] (never read: 1 + steps up to the target's part), arrival x, arrival y, destination part, direction); they trigger within 96 units |
+| squads/enemies | u32 n_squadre, u32 n_nemici, n_squadre x 0x44, n_nemici x 0x20 |
+| squad (17 int) | `[0]` first enemy (index in the part), `[1]` how many, `[2]` 128, `[3]` ?, `[4]` flags (bit 0 leader/target, bits 2-3 behavior, bit 5 = 0x20 second list: not counted in the STG, bit 6), `[5]` uid of the squad, `[6]`,`[7]` parameters of the symbol, `[8]` direction, `[9..16]` 4 points of the encounter polygon |
+| enemy (8 int) | `x, y, enemyId, f3 (0; 1 nelle missioni JP ridisegnate), f4 (1), livello, rewardId, uid` (f3 0, 1 in the redesigned JP quests; f4 1; level) |
+| chests | u32 n, n x 0x14: `x, y, rewardId, aspetto (look: pari = specchiato, (look % 6) >> 1 e look / 6 = grafica; 0..19 negli originali), uid` (appearance: even = mirrored, (look % 6) >> 1 and look / 6 = graphics; 0..19 in the originals) |
+| materials | u32 n, n x 0x10: `x, y, materialId, quantita'` (quantity); uid computed `(32*parte + 32) | ((i+1) << 10) | 6` |
+| npcs | u32 n, n x 0x20: `x, y, id, short tipo (3, 4; 5 = dentro un livello grafico), short ?, short verso, short livello, int talk, int talk2, int ordine` (short type (3, 4; 5 = inside a graphic layer), short ?, short direction, short layer, int talk, int talk2, int order); graphics `lwf/character/npc/<id>/wait/wait.lwf`; talk/talk2 = dialogue texts (see [Cutscenes and dialogues](#filmati)) |
 
-- `uid` di squadre, nemici e forzieri **globali fra le parti**; e' lo spazio di id di `userTreasures`/
-  `userEnemyDropItems` e di `getTreasures`/`getEnemyDropItems`. Gli uid delle squadre non hanno record
-  di nemico (es. 1 nel Prologue).
-- Collisione: `map/<stanza>/<stanza>_cls.bin` ('CLS', larghezza, altezza, byte per riga, 1 bit per
-  pixel, bit alto a sinistra, 0 = percorribile).
-- Le mappe originali dopo il tutorial arrivavano dal CDN: nelle risorse WW solo 1010-1040 (1040_00
-  si apre con la chiave 5.0.1 in `BGAD_KEY`); le altre vengono dai dati JP 4.3.1 e dal pacchetto 2016
-  (`recon/tools/import_orig_stages.py`, I-116). Il JP ha ridisegnato 17 missioni (capo unico, enemyId
-  solo JP 1027/10240/10242/10261/11025/11028/11029/11033/11530, obiettivi della master non piu'
-  soddisfatti): per quelle l'importatore prende il 2016, che corrisponde alla master WW.
+- `uid` of squads, enemies and chests **global across the parts**; it is the id space of `userTreasures`/
+  `userEnemyDropItems` and of `getTreasures`/`getEnemyDropItems`. The squad uids have no enemy
+  record (e.g. 1 in the Prologue).
+- Collision: `map/<stanza>/<stanza>_cls.bin` ('CLS', width, height, bytes per row, 1 bit per
+  pixel, high bit on the left, 0 = walkable).
+- The original maps after the tutorial came from the CDN: in the WW resources only 1010-1040 (1040_00
+  opens with the 5.0.1 key in `BGAD_KEY`); the others come from the JP 4.3.1 data and from the 2016 pack
+  (`recon/tools/import_orig_stages.py`, I-116). JP redesigned 17 quests (single boss, JP-only enemyIds
+  1027/10240/10242/10261/11025/11028/11029/11033/11530, master objectives no longer
+  satisfied): for those the importer takes the 2016 one, which matches the WW master.
 
 <a id="generatore"></a>
-## Generatore
+## Generator
 
-- `recon/tools/gen_story_maps.py <stage_gen\story_cfg.json>` (~75 s; con `world_links` uscite sulle
-  porte e missioni Tour, vedi [collegamenti](#collegamenti)): per ogni missione stanza da
-  `recon/tools/story_rooms.json` (84 stanze verificate) o una dello stesso mondo, nemici e tesori
-  dalla wiki, posizioni sulla collisione. Con `"multiroom": true` una parte per stanza della wiki,
-  uscite avanti e indietro, uid globali, bersaglio nell'ultima stanza (95 missioni: 86 da 2 parti, 9
-  da 3). Con `cfg['poi']` scrive nemici e forzieri in `server/game_data/stage_poi.json` (aggiunge al
-  file esistente: copiarlo prima in `reach\stage_poi.json`). Uscita in `stage_gen\story`, da copiare
-  a mano in `stage_gen\files\stage` (non sovrascrive 1010-1050).
-- `walk_grid` teneva solo punti con 80x80 libere: i corridoi da 33-80 spezzavano la griglia e si
-  prendeva la sacca d'ingresso. Ora, se il pezzo arriva a meno di 0,4 della componente, distanze a
-  piedi sui pixel (`geodesic`). 132 file / 88 stage rigenerati.
+- `recon/tools/gen_story_maps.py <stage_gen\story_cfg.json>` (~75 s; with `world_links` exits on the
+  doors and Tour quests, see [collegamenti](#collegamenti)): for every quest a room from
+  `recon/tools/story_rooms.json` (84 verified rooms) or one from the same world, enemies and treasures
+  from the wiki, positions on the collision. With `"multiroom": true` one part per wiki room,
+  exits forward and back, global uids, target in the last room (95 quests: 86 with 2 parts, 9
+  with 3). With `cfg['poi']` it writes enemies and chests into `server/game_data/stage_poi.json` (adds to the
+  existing file: copy it first into `reach\stage_poi.json`). Output in `stage_gen\story`, to be copied
+  by hand into `stage_gen\files\stage` (it does not overwrite 1010-1050).
+- `walk_grid` kept only points with 80x80 free: corridors of 33-80 broke the grid and
+  the entrance pocket was taken. Now, if the piece reaches less than 0.4 of the component, walking distances
+  on the pixels (`geodesic`). 132 files / 88 stages regenerated.
 - `recon/tools/validate_maps.py <cartella stage> D:\Progetto_Restauro_KH_UX\maps_x --json r.json`
-  (numpy/scipy): flood-fill sulla collisione (gioco 16, aggancio 48, avviso giri oltre 1,5x e 800
-  unita'). 0 errori all'11 ottobre. 46 stage con giro >= 1,25 (`detour125.json`); 0 avvisi «giro
-  lungo» dopo la regola `short_exit` ([collegamenti](#collegamenti)).
-- Altri: `mappoi_gen.py <modello> <spec.json> <uscita>`, `mappoi_room.py` (stanza senza modello,
-  spec es. `stage_gen\spec_1050.json`), `stage_poi.py` (POI delle mappe vere ->
-  `server/game_data/stage_poi.json`), `server/check-stage-data.js [--verbose]` (controllo offline di
-  reward, forzieri, materiali, confronto con la wiki: da eseguire dopo ogni modifica).
+  (numpy/scipy): flood-fill on the collision (game 16, snap 48, detour warning beyond 1.5x and 800
+  units). 0 errors at 11 October. 46 stages with detour >= 1.25 (`detour125.json`); 0 «long
+  detour» warnings after the `short_exit` rule ([collegamenti](#collegamenti)).
+- Others: `mappoi_gen.py <modello> <spec.json> <uscita>`, `mappoi_room.py` (room without a template,
+  spec e.g. `stage_gen\spec_1050.json`), `stage_poi.py` (POIs of the real maps ->
+  `server/game_data/stage_poi.json`), `server/check-stage-data.js [--verbose]` (offline check of
+  rewards, chests, materials, comparison with the wiki: to be run after every change).
 
 <a id="stanze"></a>
-## Stanze
+## Rooms
 
-- 86 cartelle `map/` nelle risorse. Schema `XX_NNNN_VV_00` = Roboloid `<Mondo>_NNNN_VV` (VV =
-  variante giorno/notte). Note: DB_0000 Fountain Square, DB_0004 1st District, DB_0004_01_00 2nd
-  District, DW_0000 Flower Glade, DW_0001 Dark Forest: Entrance, **DW_0003 = Path to the Mine** (non
-  Dwarf's Cottage). Prefissi: CS Game Central Station, HD Cy-Bug Sector, NL Niceland, SR Candy
+- 86 `map/` folders in the resources. Scheme `XX_NNNN_VV_00` = Roboloid `<Mondo>_NNNN_VV` (VV =
+  day/night variant). Notes: DB_0000 Fountain Square, DB_0004 1st District, DB_0004_01_00 2nd
+  District, DW_0000 Flower Glade, DW_0001 Dark Forest: Entrance, **DW_0003 = Path to the Mine** (not
+  Dwarf's Cottage). Prefixes: CS Game Central Station, HD Cy-Bug Sector, NL Niceland, SR Candy
   Kingdom, DG_0200 Corridor of Darkness, AG Agrabah.
-- Copertura: 18 delle 86 stanze delle missioni 1-525 esatte, 154 missioni su 525 con tutte le stanze
-  esatte. Mancano dalle risorse West Wing, Boardwalk, Market, Dwarf's Cottage, Waterfront Park,
-  Avenue, Morning Dew Grove, Garden Maze... (sostituite con una stanza dello stesso mondo: ISSUES
-  I-036). La missione 8 (1050) usa DW_0003.
-- Roboloid ha 379 anteprime di stanze (`images/map`, solo riferimento).
+- Coverage: 18 of the 86 rooms of quests 1-525 exact, 154 quests out of 525 with all rooms
+  exact. Missing from the resources: West Wing, Boardwalk, Market, Dwarf's Cottage, Waterfront Park,
+  Avenue, Morning Dew Grove, Garden Maze... (replaced with a room of the same world: ISSUES
+  I-036). Quest 8 (1050) uses DW_0003.
+- Roboloid has 379 room previews (`images/map`, reference only).
 
 <a id="incomplete"></a>
-### Stanze incomplete (ISSUES I-074)
+### Incomplete rooms (ISSUES I-074)
 
-- `map/<S>/<S>_info.bin` («BMI»): `0x0a` u16 livelli a tessere, `0x0c` u16 immagini intere, `0x0e`
-  u16 oggetti, `0x10` nome, `0x20` W, H di `base1`; poi record da 60 byte (stanza[16], livello[16],
-  W, H, x, y, W2, H2, flag), da 52 (stanza[16], livello[16], w, h, x, y, flag) e da 52 (nome[32], x,
-  y, ...). Percorsi (caricatore `[fn]`): `map/%s/%s_base1/%s_base1_%03d.png`,
-  `map/%s/%s_%s/%s_%s_%03d.png` (tessere da 256, da 001, ceil(W2/256) x ceil(H2/256)),
-  `map/%s/%s_%s.png`, `lwf/map/%s/%s.lwf`. La «stanza» dei record puo' essere un'altra cartella.
-- Tessera assente = crash (`[fn]`: texture nulla -> sprite nullo, nessun controllo).
-  Immagini intere e lwf assenti sono tollerati (`[fn]` controlla il nodo nullo): 43 stanze
-  ne hanno, fra cui DW_0001/DW_0003 giocate sul banco.
-- `recon/tools/check_rooms.py` (~25 s, cache in `stage_gen\rooms_info`) controlla ogni stanza contro
-  l'indice installato (`names_v4.tsv` + `ipa431\names_addnl.tsv` + `medal_gen\files` +
-  `stage_gen\files`; `rooms_gen\files` solo se l'ultima versione di `resource_data` lo contiene, cioe'
-  `packs.txt`, o con `--rooms-gen`; base1 dal nome nel BMI a +0x10) e dice quali stage la usano ->
-  `stage_gen\rooms_check.json`. Con `rooms_gen` ([#stanze-jp](#stanze-jp)) le due incomplete qui
-  sotto diventano complete. Incomplete fino alla 34:
-  **DB_0018_01_00** (Underground Waterway: sky2, spover, over di `DB_0018_00_00`, 172 tessere) e
-  **ED_0011_01_00** (over, sky di `ED_0011_00_00`, 171 tessere); nessuna missione originale le usa.
-- `gen_story_maps.py` con `"rooms_check"` (o `"exclude_rooms"`) nella config le tratta come assenti
-  (I-036; la scelta delle altre missioni non cambia). Rigenerati 991001 (11 parti: la porta
-  «Underground Waterway Entrance» porta a Waterfront Park: Dock), 991008 (17), 12210-12250,
-  14230-14250 (Fountain Square/Warehouse); tolte le parti in piu' 991001_11, 991008_17.
+- `map/<S>/<S>_info.bin` («BMI»): `0x0a` u16 tiled layers, `0x0c` u16 whole images, `0x0e`
+  u16 objects, `0x10` name, `0x20` W, H of `base1`; then records of 60 bytes (stanza[16], livello[16],
+  W, H, x, y, W2, H2, flag), of 52 (stanza[16], livello[16], w, h, x, y, flag) and of 52 (nome[32], x,
+  y, ...). Paths (loader `[fn]`): `map/%s/%s_base1/%s_base1_%03d.png`,
+  `map/%s/%s_%s/%s_%s_%03d.png` (256 tiles, from 001, ceil(W2/256) x ceil(H2/256)),
+  `map/%s/%s_%s.png`, `lwf/map/%s/%s.lwf`. The «room» of the records can be another folder.
+- Missing tile = crash (`[fn]`: null texture -> null sprite, no check).
+  Missing whole images and lwfs are tolerated (`[fn]` checks the null node): 43 rooms
+  have some, among them DW_0001/DW_0003 played on the bench.
+- `recon/tools/check_rooms.py` (~25 s, cache in `stage_gen\rooms_info`) checks every room against
+  the installed index (`names_v4.tsv` + `ipa431\names_addnl.tsv` + `medal_gen\files` +
+  `stage_gen\files`; `rooms_gen\files` only if the latest version of `resource_data` contains it, that is
+  `packs.txt`, or with `--rooms-gen`; base1 from the name in the BMI at +0x10) and tells which stages use it ->
+  `stage_gen\rooms_check.json`. With `rooms_gen` ([#stanze-jp](#stanze-jp)) the two incomplete ones
+  below become complete. Incomplete up to 34:
+  **DB_0018_01_00** (Underground Waterway: sky2, spover, over of `DB_0018_00_00`, 172 tiles) and
+  **ED_0011_01_00** (over, sky of `ED_0011_00_00`, 171 tiles); no original quest uses them.
+- `gen_story_maps.py` with `"rooms_check"` (or `"exclude_rooms"`) in the config treats them as missing
+  (I-036; the choice for the other quests does not change). Regenerated 991001 (11 parts: the door
+  «Underground Waterway Entrance» leads to Waterfront Park: Dock), 991008 (17), 12210-12250,
+  14230-14250 (Fountain Square/Warehouse); removed the extra parts 991001_11, 991008_17.
 
 <a id="stanze-jp"></a>
-### Stanze recuperate nelle risorse (`rooms_gen`, versione 35)
+### Rooms recovered into the resources (`rooms_gen`, version 35)
 
-- `recon/tools/make_jp_rooms.py` (Pillow: senza `-I`; ~10 min la prima volta, poi incrementale)
-  scrive in `D:\Progetto_Restauro_KH_UX\rooms_gen\files\` tutti i file che il client apre per le
-  stanze di `tmp\thethiny_x\rooms_merged\` non ancora servite (cartella per cartella; cio' che li'
-  manca dai dati JP 4.3.1, revisione piu' alta). Obbligatori: i 4 `.bin`, le tessere di base1 della
-  stanza scritta nel BMI a +0x10 (97 stanze sono alias grafici di un'altra) e quelle dei livelli a
-  tessere, da 001 a ceil(W/256)*ceil(H/256); una stanza entra **solo se nessuno manca**. Facoltativi:
-  immagini intere e oggetti `lwf/map/<O>/` (lwf + tutti i png citati; il `.res` non serve). I file
-  gia' serviti non si riscrivono mai. Rapporto in `rooms_gen\report.md/.json`.
-- Texture: PNG JP (alpha non premoltiplicata) -> BTF tipo 8 con `btf.encode` (verificato: decodifica
-  identica al PNG sui pixel opachi); tessere del tutto trasparenti -> il segnaposto BTF tipo 1 da 45
-  byte delle originali (le tessere vuote servite sono cosi': 588 su 592 hanno il PNG JP trasparente,
-  le altre 4 alpha <= 3); BTF del 2016 copiati. Texture di lwf scartate come stub da thethiny: si
-  prende lo stesso nome originale (`<oggetto>_<esadecimale>.png`) da un altro oggetto JP solo se
-  tutti i candidati hanno contenuto identico (79 texture).
-- **Esito** (14-10): 413 stanze; **319 nuove complete**, 34 servite completate (immagini intere, lwf
-  e i livelli mancanti: DB_0018_01_00 e ED_0011_01_00 ora complete), 52 servite gia' complete, 8
-  scartate: 7 senza `_info.bin` (DB_0000_00_01, DW_0100_00/01_00, ED_0020_00_00, SR_0009_01_00,
-  WL_0004_00_01, WL_0100_00_00: la INFO si apre dalla cartella, usarle = crash) e DB_0000_01_00 (4
-  tessere di base1 assenti ovunque). 39.816 file, **1.035 MB** (map 994, lwf 41). Oggetti lwf: 203
-  aggiunti, 22 gia' serviti, 116 non copiati (texture assenti: l'oggetto manca, tollerato come in
+- `recon/tools/make_jp_rooms.py` (Pillow: without `-I`; ~10 min the first time, then incremental)
+  writes into `D:\Progetto_Restauro_KH_UX\rooms_gen\files\` all the files the client opens for the
+  rooms of `tmp\thethiny_x\rooms_merged\` not yet served (folder by folder; what is missing
+  there from the JP 4.3.1 data, highest revision). Mandatory: the 4 `.bin`, the base1 tiles of the
+  room written in the BMI at +0x10 (97 rooms are graphic aliases of another) and those of the tiled
+  layers, from 001 to ceil(W/256)*ceil(H/256); a room gets in **only if none is missing**. Optional:
+  whole images and objects `lwf/map/<O>/` (lwf + all the cited pngs; the `.res` is not needed). Files
+  already served are never rewritten. Report in `rooms_gen\report.md/.json`.
+- Textures: JP PNG (non-premultiplied alpha) -> BTF type 8 with `btf.encode` (verified: decoding
+  identical to the PNG on the opaque pixels); fully transparent tiles -> the 45-byte BTF type 1 placeholder
+  of the originals (the served empty tiles are like that: 588 of 592 have the transparent JP PNG,
+  the other 4 alpha <= 3); 2016 BTFs copied. lwf textures discarded as stubs by thethiny: the
+  same original name (`<oggetto>_<esadecimale>.png`) is taken from another JP object only if
+  all the candidates have identical content (79 textures).
+- **Outcome** (14-10): 413 rooms; **319 new complete**, 34 served completed (whole images, lwfs
+  and the missing layers: DB_0018_01_00 and ED_0011_01_00 now complete), 52 served already complete, 8
+  discarded: 7 without `_info.bin` (DB_0000_00_01, DW_0100_00/01_00, ED_0020_00_00, SR_0009_01_00,
+  WL_0004_00_01, WL_0100_00_00: the INFO is opened from the folder, using them = crash) and DB_0000_01_00 (4
+  base1 tiles missing everywhere). 39,816 files, **1,035 MB** (map 994, lwf 41). lwf objects: 203
+  added, 22 already served, 116 not copied (missing textures: the object is missing, tolerated as in
   DW_0001).
-- <a id="segnaposto-46"></a>**Crash nelle stanze generate (I-182, 20-10)**: il segnaposto di `make_jp_rooms.py` aveva un
-  `00` in piu' all'offset 16 (46 byte invece dei 45 dell'originale `DB_0000_00_00_base1_001.png`): campi del BTF
-  slittati, il decodificatore (`[fn]`, `memcpy` della dimensione a +0x22) leggeva 0x05000100 byte da un file di
-  46 e usciva dalla memoria (SIGSEGV a fine mappatura) entrando in una delle **86 stanze** generate con tessere
-  trasparenti (3.208 tessere; quest 13 DW_0004_00_00, 524 BC_0012_01_00). Dal 14-10 (risorse 35): non visto prima
-  perche' dal 18-10 `save/smoke.json` lasciava solo la quest 132 (stanze WW). Trovato con `armtrace\stackcap.ps1`
-  (catena `[fn]` <- lettore dei pacchetti <- caricamento della stanza, nome della tessera nello stack).
-  Costante corretta (`assert len == 45`), le tessere col segnaposto sbagliato si riscrivono; risorse 51.
-- **Stanze di storia** (porte `scope` storia di `schema_v2\schema_mondi.json`, stanza e destinazione):
-  231; con `rooms_gen` **230 complete** (`check_rooms.py --rooms-gen --out rooms_gen\rooms_check.json`:
-  405 stanze, 0 incomplete; senza, come prima: 86 stanze, 2 incomplete). Manca solo **SR_0009_01_00** (porta SR_0008_00_00 <-> SR_0009_01_00, solo
-  `storia_oltre`, fuori dalla master): nessuna INFO in nessuna fonte.
-  **21-10 (missioni 526-979, I-009)**: `make_jp_rooms.py` prende anche le stanze degli stage `storia_oltre` (+27 stanze, tutte
-  complete) e `INFO_ALIAS` costruisce l'INFO di SR_0009_01_00 (decisione dell'utente): copia byte per byte dell'INFO di
-  SR_0009_00_00 (il BMI cita gia' 00_00 per nome, livelli e oggetti), con `_cls` e `_chp` propri (identici a quelli di 00_00)
-  e il `_jmp` JP proprio (16 byte, zero salti). Pacchetto: 35.326 file, 853,7 MB (era 30.465, 728,9 MB; +124,8 MB).
-- `--story-only`: solo le stanze delle porte di storia (24.406 file, 615 MB). Default: tutte le
-  complete. `build-resources.ps1` ne fa il pacchetto statico `rooms_gen\gen.*`
-  ([risorse_layout.md#pacchetti](risorse_layout.md#pacchetti)). Finche' la 35 non e' costruita
-  `check_rooms.py` (e quindi `"rooms_check"` di `gen_story_maps.py`) non vede queste stanze: le mappe
-  che le usano vanno generate solo dopo la 35. Da provare sul banco: una stanza alias (es.
-  DB_0020_00_01), una con lwf aggiunti, DB_0018_01_00.
+- <a id="segnaposto-46"></a>**Crash in the generated rooms (I-182, 20-10)**: the placeholder of `make_jp_rooms.py` had an
+  extra `00` at offset 16 (46 bytes instead of the 45 of the original `DB_0000_00_00_base1_001.png`): BTF fields
+  shifted, the decoder (`[fn]`, `memcpy` of the size at +0x22) read 0x05000100 bytes from a file of
+  46 and went out of memory (SIGSEGV at the end of the mapping) on entering one of the **86 generated rooms** with transparent
+  tiles (3,208 tiles; quest 13 DW_0004_00_00, 524 BC_0012_01_00). Since 14-10 (resources 35): not seen before
+  because from 18-10 `save/smoke.json` left only quest 132 (WW rooms). Found with `armtrace\stackcap.ps1`
+  (chain `[fn]` <- pack reader <- room loading, tile name on the stack).
+  Constant fixed (`assert len == 45`), the tiles with the wrong placeholder are rewritten; resources 51.
+- **Story rooms** (doors with story `scope` of `schema_v2\schema_mondi.json`, room and destination):
+  231; with `rooms_gen` **230 complete** (`check_rooms.py --rooms-gen --out rooms_gen\rooms_check.json`:
+  405 rooms, 0 incomplete; without, as before: 86 rooms, 2 incomplete). Only **SR_0009_01_00** is missing (door SR_0008_00_00 <-> SR_0009_01_00, only
+  `storia_oltre`, outside the master): no INFO in any source.
+  **21-10 (quests 526-979, I-009)**: `make_jp_rooms.py` also takes the rooms of the `storia_oltre` stages (+27 rooms, all
+  complete) and `INFO_ALIAS` builds the INFO of SR_0009_01_00 (user's decision): byte-for-byte copy of the INFO of
+  SR_0009_00_00 (the BMI already cites 00_00 by name, layers and objects), with its own `_cls` and `_chp` (identical to those of 00_00)
+  and its own JP `_jmp` (16 bytes, zero jumps). Pack: 35,326 files, 853.7 MB (was 30,465, 728.9 MB; +124.8 MB).
+- `--story-only`: only the rooms of the story doors (24,406 files, 615 MB). Default: all the
+  complete ones. `build-resources.ps1` makes the static pack `rooms_gen\gen.*` from it
+  ([risorse_layout.md#pacchetti](risorse_layout.md#pacchetti)). Until 35 is built
+  `check_rooms.py` (and hence `"rooms_check"` of `gen_story_maps.py`) does not see these rooms: the maps
+  that use them must be generated only after 35. To be tried on the bench: an alias room (e.g.
+  DB_0020_00_01), one with added lwfs, DB_0018_01_00.
 
 <a id="collegamenti"></a>
-## Collegamenti fra le aree e missioni «Tour»
+## Links between the areas and «Tour» quests
 
-ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_links\` (`NOTE.md`,
-`wiki_worlds.txt` = pagine dei mondi della wiki, `doors\` = punte dei sentieri sulla grafica,
-`tour\` = uscite e arrivi di ogni parte delle missioni Tour, `previews\` = anteprime Roboloid).
+ISSUES I-072. Tests and images in `D:\Progetto_Restauro_KH_UX\reference\world_links\` (`NOTE.md`,
+`wiki_worlds.txt` = wiki pages of the worlds, `doors\` = tips of the paths on the graphics,
+`tour\` = exits and arrivals of every part of the Tour quests, `previews\` = Roboloid previews).
 
-- **Causa del flusso sbagliato**: le sequenze di stanze della wiki sono coerenti (102 coppie su 104
-  vicine nel grafo, 2 saltano un piano), ma il generatore metteva l'uscita «avanti» nel punto piu'
-  lontano dalla partenza e quella «indietro» nel punto piu' a sinistra, senza guardare le porte: es.
-  missione 93 (Fountain Square -> 1st District) usciva dalla scala a destra (che porta al 2nd
-  District) e arrivava nel 1st District dalla parte sbagliata. In piu' 95 coppie su 104 hanno almeno
-  una stanza sostituita (I-036).
-- **Grafo** `recon/tools/world_links.json`: per mondo le aree (nome, codice `XX_NNNN_VV_00` dal
-  `thumbId` delle missioni, `res` = nelle risorse, `variant_of` per le varianti giorno/notte, alias dei
-  nomi della wiki), le porte delle stanze nelle risorse (`{area vicina: [x, y]}` sulla bitmap CLS) e i
-  collegamenti con `conf` (high = uscite originali 1010-1016 o wiki esplicita, medium = wiki + porta
-  scelta sulla grafica, low = dedotto, none = `tour: true`, solo per collegare i gruppi isolati nel giro)
-  e la fonte. Fonte principale: pagine dei mondi della KHUX wiki («The northeast exit of the Flower
-  Glade leads to...»), nel dump `wiki\wiki_all.json`. Le uscite vere confermano la convenzione: la
-  scala in basso a sinistra della Fountain Square porta in alto a destra del 1st District, quella a
-  destra in basso a sinistra del 2nd District.
-- **Porte**: le uscite stanno in fondo ai sentieri della zona percorribile (punte), non sul bordo
-  dell'immagine. L'anteprima Roboloid ha la stessa larghezza della CLS ed e' allineata in basso
-  (`y_grafica = y_cls - (H_cls - H_anteprima)`). Le punte candidate (rilievo geodetico + estremi nelle
-  8 direzioni) sono in `doors\*.png`; la porta di ogni collegamento e' scelta a mano con la direzione
-  della wiki.
-- **Generatore** (`gen_story_maps.py`, config `"world_links"`): nelle missioni a piu' stanze l'uscita
-  della stanza k va sulla porta verso la stanza k+1 (o verso il primo passo del percorso nel grafo) e
-  l'uscita indietro sulla porta verso k-1; nelle stanze sostitute una porta qualsiasi (la piu' lontana
-  dall'altra uscita). Porte agganciate al pixel percorribile (la griglia di 40 non entra nei corridoi
-  stretti), arrivi a ~240 unita' a piedi dalla porta e a piu' di 160 dalle altre uscite, freccia con
-  l'angolo verso l'esterno della zona percorribile (media dei pixel bloccati entro 160). Banco
-  991001: l'uscita «Moogle Shop» sul bordo della fontana non scattava: la freccia (creduta ~100
-  unita' oltre l'uscita; in realta' 40-80 prima, verso l'interno: [schema-mondi](#schema-mondi), controllo
-  corretto il 14-10) cadeva sulla fontana, toccandola il giocatore saltava sulla cima della fontana
-  (isola libera della CLS staccata dalla piazza) e restava fuori dal raggio di 96. Ora le uscite stanno
-  a >= 240 dalle isole libere da >= 1000 pixel e la punta della freccia a > 200 (angolo ruotato fino a
-  90 gradi); la porta del negozio e' sul bordo alto della piazza a sinistra della fontana (la porta vera
-  sta dietro la fontana, fuori dalla CLS). Senza `world_links` l'uscita e' identica byte per byte a prima. Rapporto
-  delle coppie in `stage_gen\world_links_story.json` (relazione nel grafo, note delle porte); 205
-  uscite spostate, 55 sulla porta giusta (37 di piu' di 300 unita').
-- **Giro lungo** (banco 991001, parte 2 «2nd District»): l'uscita «Underground Waterway Entrance» in
-  (2020,2068), sul camminamento basso fra i canali, dall'arrivo da Fountain Square (820,2100) si
-  raggiungeva solo con ~4500 unita' a piedi contro 1200 in linea d'aria (su per la scala, porta a
-  destra, giu' dietro un edificio coperto dagli occlusori): il giocatore non la trova, il bot resta
-  contro la ringhiera. Regola (`short_exit`): con la stessa misura del giro lungo di
-  `validate_maps.detour` (celle da 8, Dijkstra), se dall'ingresso principale della parte (partenza o
-  primo arrivo, nell'ordine del validatore) il percorso verso un'uscita e' > 1,5 volte la linea d'aria
-  e > 800, l'uscita va sul punto della componente con percorso <= 1,5 volte la linea d'aria piu'
-  vicino alla porta, a >= 300 dall'ingresso e dalle altre uscite, a >= 240 dagli altri arrivi e a >
-  240 dalle isole libere (freccia ricalcolata). Si ricalcola solo l'arrivo di ritorno accanto a
-  quella porta; le distanze residue [3] delle uscite della missione cambiano di conseguenza. Se non
-  c'e' un punto buono la porta resta e la nota va nel rapporto (`doubts` / `notes`). Spostamenti in
-  `worldtour_report.json` (`moved_exits`) e `story_report.json` (`doubts`). Esito: 991001 parte 2
-  (2020,2068) -> (1616,1640), in cima alla ringhiera sopra il camminamento (percorso 988, linea
-  d'aria 919); 991008 parti 6, 12, 15 (4 uscite); 13 missioni di storia (stanze WL_0004, DB_0001,
-  DW_0001). Validatore: avvisi «giro lungo» da 15 stage a 0, errori 0.
-- **Missioni Tour** (config `"worldtour": true`): una per mondo, tutte le stanze del mondo nelle
-  risorse (varianti escluse), una parte per stanza; ogni porta porta alla stanza delle risorse piu'
-  vicina nel grafo attraversando le aree assenti (es. Fountain Square, grande porta a sinistra ->
-  Warehouse via Market). Un solo Shadow (bersaglio) nella stanza piu' lontana dalla partenza; niente
-  forzieri. Rapporto `stage_gen\worldtour_report.json` (uscite, arrivi, `via`).
+- **Cause of the wrong flow**: the wiki's room sequences are consistent (102 pairs out of 104
+  adjacent in the graph, 2 skip a floor), but the generator put the «forward» exit at the point farthest
+  from the start and the «back» one at the leftmost point, without looking at the doors: e.g.
+  quest 93 (Fountain Square -> 1st District) exited from the stairs on the right (which lead to the 2nd
+  District) and arrived in the 1st District from the wrong side. Moreover 95 pairs out of 104 have at least
+  one replaced room (I-036).
+- **Graph** `recon/tools/world_links.json`: per world the areas (name, code `XX_NNNN_VV_00` from the
+  `thumbId` of the quests, `res` = in the resources, `variant_of` for the day/night variants, aliases of the
+  wiki names), the doors of the rooms in the resources (`{area vicina: [x, y]}` on the CLS bitmap) and the
+  links with `conf` (high = original exits 1010-1016 or explicit wiki, medium = wiki + door
+  chosen on the graphics, low = deduced, none = `tour: true`, only to connect the isolated groups in the tour)
+  and the source. Main source: the world pages of the KHUX wiki («The northeast exit of the Flower
+  Glade leads to...»), in the dump `wiki\wiki_all.json`. The real exits confirm the convention: the
+  stairs at the bottom left of Fountain Square lead to the top right of the 1st District, the one on the
+  right to the bottom left of the 2nd District.
+- **Doors**: the exits are at the end of the paths of the walkable zone (tips), not on the edge
+  of the image. The Roboloid preview has the same width as the CLS and is bottom-aligned
+  (`y_grafica = y_cls - (H_cls - H_anteprima)`). The candidate tips (geodesic relief + extremes in the
+  8 directions) are in `doors\*.png`; the door of every link is chosen by hand with the direction
+  from the wiki.
+- **Generator** (`gen_story_maps.py`, config `"world_links"`): in multi-room quests the exit
+  of room k goes on the door towards room k+1 (or towards the first step of the path in the graph) and
+  the back exit on the door towards k-1; in substitute rooms any door (the farthest
+  from the other exit). Doors snapped to the walkable pixel (the 40 grid does not fit in narrow
+  corridors), arrivals at ~240 walking units from the door and more than 160 from the other exits, arrow with
+  the angle towards the outside of the walkable zone (average of the blocked pixels within 160). Bench
+  991001: the «Moogle Shop» exit on the edge of the fountain did not trigger: the arrow (believed ~100
+  units beyond the exit; actually 40-80 before it, towards the inside: [schema-mondi](#schema-mondi), check
+  corrected on 14-10) fell on the fountain, tapping it the player jumped onto the top of the fountain
+  (free island of the CLS detached from the square) and stayed outside the 96 radius. Now the exits are
+  at >= 240 from the free islands of >= 1000 pixels and the arrow tip at > 200 (angle rotated up to
+  90 degrees); the shop door is on the top edge of the square to the left of the fountain (the real door
+  is behind the fountain, outside the CLS). Without `world_links` the exit is byte-for-byte identical to before. Report
+  of the pairs in `stage_gen\world_links_story.json` (relation in the graph, notes on the doors); 205
+  exits moved, 55 onto the right door (37 by more than 300 units).
+- **Long detour** (bench 991001, part 2 «2nd District»): the «Underground Waterway Entrance» exit at
+  (2020,2068), on the low walkway between the canals, from the arrival from Fountain Square (820,2100) could
+  be reached only with ~4500 walking units against 1200 as the crow flies (up the stairs, door on the
+  right, down behind a building covered by the occluders): the player does not find it, the bot stays
+  against the railing. Rule (`short_exit`): with the same measure of the long detour as
+  `validate_maps.detour` (cells of 8, Dijkstra), if from the main entrance of the part (start or
+  first arrival, in the validator's order) the path to an exit is > 1.5 times the straight-line distance
+  and > 800, the exit goes to the point of the component with path <= 1.5 times the straight-line distance closest
+  to the door, at >= 300 from the entrance and from the other exits, at >= 240 from the other arrivals and at >
+  240 from the free islands (arrow recomputed). Only the return arrival next to
+  that door is recomputed; the remaining distances [3] of the quest's exits change accordingly. If there
+  is no good point the door stays and the note goes into the report (`doubts` / `notes`). Moves in
+  `worldtour_report.json` (`moved_exits`) and `story_report.json` (`doubts`). Outcome: 991001 part 2
+  (2020,2068) -> (1616,1640), at the top of the railing above the walkway (path 988, straight-line
+  distance 919); 991008 parts 6, 12, 15 (4 exits); 13 story quests (rooms WL_0004, DB_0001,
+  DW_0001). Validator: «long detour» warnings from 15 stages to 0, errors 0.
+- **Tour quests** (config `"worldtour": true`): one per world, all the rooms of the world in the
+  resources (variants excluded), one part per room; every door leads to the nearest resource room
+  in the graph crossing the missing areas (e.g. Fountain Square, big door on the left ->
+  Warehouse via Market). A single Shadow (target) in the room farthest from the start; no
+  chests. Report `stage_gen\worldtour_report.json` (exits, arrivals, `via`).
 
-| stageId | Tour | parti | bersaglio |
+| stageId | Tour | parts | target |
 |---|---|---|---|
-| 991001 | Daybreak Town | 11 (con Corridor of Darkness) | Beach D |
+| 991001 | Daybreak Town | 11 (with Corridor of Darkness) | Beach D |
 | 991002 | Dwarf Woodlands | 3 | Path to the Mine |
 | 991003 | Wonderland | 2 | White Rabbit's House |
 | 991004 | Agrabah | 17 | Cave of Wonders: Monkey Statue |
@@ -296,359 +296,361 @@ ISSUES I-072. Prove e immagini in `D:\Progetto_Restauro_KH_UX\reference\world_li
 | 991007 | Castle of Dreams | 2 | Castle: Ballroom |
 | 991008 | Enchanted Dominion | 17 | Tower Room |
 
-- Master: `KHUX_WORLDTOUR=1` in `make-game-tables.js` aggiunge le righe 991001-991008 (copie della
-  1050 come le zoo, `id` 9101-9108, nome «Tour <mondo>», mondo/miniatura/musica dalla prima missione
-  del mondo, AP 0). Si avviano come le zoo: `server/save/smoke.json` `{"stageId": 991001}` -> l'elenco
-  Story mostra solo quella missione; `{"stageIds": [991001, ..., 991008]}` mostra tutti i tour
-  insieme (banco 13-10: 9101-9108 nell'elenco, tutti NEW). Mappe da `stage_gen\story` in `stage_gen\files\stage`.
-- Mancano dalle risorse quasi tutte le aree dei mondi 2-7 (Dwarf's Cottage, Market, West Wing...):
-  i giri di DW, WL, OC, BC, CD hanno 2-3 stanze.
+- Master: `KHUX_WORLDTOUR=1` in `make-game-tables.js` adds the rows 991001-991008 (copies of
+  1050 like the zoo ones, `id` 9101-9108, name «Tour <mondo>», world/thumbnail/music from the first quest
+  of the world, AP 0). They are started like the zoo ones: `server/save/smoke.json` `{"stageId": 991001}` -> the Story
+  list shows only that quest; `{"stageIds": [991001, ..., 991008]}` shows all the tours
+  together (bench 13-10: 9101-9108 in the list, all NEW). Maps from `stage_gen\story` into `stage_gen\files\stage`.
+- Almost all the areas of worlds 2-7 are missing from the resources (Dwarf's Cottage, Market, West Wing...):
+  the tours of DW, WL, OC, BC, CD have 2-3 rooms.
 
 <a id="schema-mondi"></a>
-## Schema esatto dei mondi (ISSUES I-116)
+## Exact world schema (ISSUES I-116)
 
-Esito delle prove dell'utente sui tour 991001-991008 (13-10): **posizione degli indicatori di
-spostamento fra le aree molto imprecisa**; nei mondi a cui mancano aree le porte portano a stanze
-sostitute e il giocatore non capisce dove si trova. Lo stesso difetto passa alle missioni di storia
-generate. Il grafo attuale (`world_links.json`) mescola collegamenti certi (`high`) con collegamenti
-dedotti (`medium`/`low`/`none`) e porte scelte a mano sulla grafica: non basta.
+Outcome of the user's tests on the tours 991001-991008 (13-10): **position of the markers for
+moving between the areas very imprecise**; in the worlds that lack areas the doors lead to substitute
+rooms and the player does not understand where he is. The same defect carries over to the generated story
+quests. The current graph (`world_links.json`) mixes certain links (`high`) with deduced
+links (`medium`/`low`/`none`) and doors chosen by hand on the graphics: it is not enough.
 
-**Regola dell'utente**: prima uno schema esatto e verificato della struttura di ogni mondo, poi le
-missioni. Nessuna missione standard (storia) si rigenera finche' lo schema non e' confermato.
+**User's rule**: first an exact and verified schema of the structure of every world, then the
+quests. No standard (story) quest is regenerated until the schema is confirmed.
 
-Ordine del lavoro:
-1. **Inventario delle aree** per mondo: tutte le aree del gioco originale (nome, codice
-   `XX_NNNN_VV_00`, varianti giorno/notte), con la fonte di ciascuna; segnare quali sono nelle
-   risorse (OBB 5.0.1, `addnl` dell'IPA 4.3.1, pacchetto nostro) e quali mancano.
-2. **Collegamenti certi**: un collegamento entra nello schema solo con una prova diretta: uscita di
-   una missione originale (`.stg` 1010-1016 e altre recuperabili), video/screenshot del gioco originale
-   che mostra il passaggio, oppure testo esplicito della wiki confermato da un'immagine. Ogni arco porta
-   la fonte; gli archi senza prova restano fuori, non si deducono.
-3. **Posizione esatta degli indicatori**: per ogni porta la coordinata dell'uscita e l'angolo della
-   freccia presi da una missione originale quando esiste; altrimenti dalla porta visibile nella grafica
-   della stanza, confrontata con video/screenshot dell'originale (salvati in
-   `D:\Progetto_Restauro_KH_UX\reference\world_links\`). Da verificare sul banco porta per porta
-   (screenshot dell'indicatore e dell'arrivo), non solo con il validatore.
-4. **Aree mancanti**: cercarle prima (altre versioni del client: JP, OBB/patch precedenti, IPA,
-   archivi della comunita', Dark Road; registrare in [ricerca_esterna](ricerca_esterna.md)); solo se
-   introvabili, rigenerarle con la massima precisione dall'originale (grafica, zona percorribile CLS,
-   livelli a tessere, porte) e documentare come.
-5. **Schema finale** in un file unico (aree, collegamenti, porte, fonti) da far **confermare
-   all'utente**; poi si rigenerano i tour, l'utente li prova, e solo dopo si rigenerano le missioni di
-   storia.
+Order of the work:
+1. **Inventory of the areas** per world: all the areas of the original game (name, code
+   `XX_NNNN_VV_00`, day/night variants), with the source of each; mark which ones are in the
+   resources (OBB 5.0.1, `addnl` of the IPA 4.3.1, our pack) and which are missing.
+2. **Certain links**: a link enters the schema only with direct proof: exit of
+   an original quest (`.stg` 1010-1016 and others recoverable), video/screenshot of the original game
+   showing the passage, or explicit wiki text confirmed by an image. Every edge carries
+   its source; edges without proof stay out, they are not deduced.
+3. **Exact position of the markers**: for every door the exit coordinate and the arrow angle
+   taken from an original quest when one exists; otherwise from the door visible in the room
+   graphics, compared with videos/screenshots of the original (saved in
+   `D:\Progetto_Restauro_KH_UX\reference\world_links\`). To be verified on the bench door by door
+   (screenshot of the marker and of the arrival), not only with the validator.
+4. **Missing areas**: look for them first (other client versions: JP, earlier OBB/patch, IPA,
+   community archives, Dark Road; record in [ricerca_esterna](ricerca_esterna.md)); only if
+   they cannot be found, regenerate them with the highest precision from the original (graphics, CLS walkable zone,
+   tiled layers, doors) and document how.
+5. **Final schema** in a single file (areas, links, doors, sources) to be **confirmed
+   by the user**; then the tours are regenerated, the user tries them, and only after that are the story
+   quests regenerated.
 
-Risultati (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
-- **Dati locali** (`dati_locali.md`, `exits_original.json`): le uniche uscite originali sono le 6 di
-  1010/1013/1016 (FS basso-sinistra <-> 1st District alto-destra, FS destra <-> 2nd District
-  basso-sinistra); 1019/1020/1030 una parte sola, 1040 solo intestazione. Nessun file della stanza
-  (`_chp` griglia 0/1/2 a celle da 60, `_jmp` salti interni, `_info` solo grafica), tabella o testo
-  codifica porte o destinazioni; al passaggio solo tendina `wipe_<mondo>` e freccia `next_map.png`, mai
-  il nome dell'area. Le uscite sono per missione (1013 e 1016: stessa porta, coordinate diverse). Le
-  punte della zona percorribile sono condizione necessaria (6/6 uscite vere a 12-86 da una punta) ma
-  non sufficiente (~5 punte per stanza, 1-2 usate): da qui l'imprecisione dei tour.
-- **Archivi** (`fonti_risorse.md`): nessun pacchetto pubblico (IPA WW/JP 1.0.1-5.0.1, APK JP/TW, web
-  Arena7664, api.sp, Wayback) ha missioni o stanze in piu': arrivavano dal CDN in `files/r/misc.mp4`.
-  Unica fonte nota: **thethiny** (misc.mp4 dal CDN, ~898 STG, ~124 stanze contro 86, stessa chiave
-  KEY_DOWNLOAD); pubblico solo `stage_maps.json` (nemici/forzieri per stage, senza uscite). Contatto da
-  fare (utente, I-029).
-- **Video** (`video\`): 186 video catalogati (gothwood9 1-760 completo); la freccia azzurra si vede e,
-  registrata sull'anteprima, ritrova le 4 uscite vere di Daybreak Town (arrivi a 9-46 unita'). Le
-  coppie della wiki non sono sempre parti diverse (DW missioni 8 e 11: mappe larghe senza tendina).
-  Nel video la freccia sta 52-124 unita' verso l'interno rispetto all'uscita.
-- **Freccia d'uscita nel codice** (`freccia_uscita.md`): `[fn]` mette il marker sul punto
-  dell'uscita senza offset, `setRotation(angolo)`; le due sprite `map/next_map.png` stanno in un nodo
-  a y = -80 (`[data]`) e oscillano fra -80 e -40 (`[fn]`, 40.0/80.0), la scia va da -40
-  a 0. Da mappa a schermo y invertita (`[fn]`); 0 gradi = su, orario. In CLS: **freccia =
-  (x - d·sin a, y + d·cos a), d in [40,80], punta verso (sin a, -cos a)**, cioe' 40-80 unita' PRIMA
-  dell'uscita verso l'interno; quindi uscita ~ freccia + 60·(sin a, -cos a). Verificato sui video
-  (3 uscite di 1010/1013). Il generatore ha la convenzione dell'angolo giusta (scarti 1-21 gradi
-  sulle uscite originali) ma **controlla la freccia 100 unita' oltre l'uscita** (`gen_story_maps.py`
-  righe 602-623, `tx = p + 100·sin`): va corretto in d = 40..80 verso l'interno prima di rigenerare.
-  **Applicata il 14-10** in `exit_angle` (punti d = 40/60/80 prima dell'uscita lontani > 200 dalle isole;
-  mappe non ancora rigenerate, I-116).
-- **Daybreak Town dai video** (`video\daybreak_town.md/.json`): 27 passaggi con 3 fotogrammi ciascuno
+Results (13-10, in `D:\Progetto_Restauro_KH_UX\reference\world_schema\`):
+- **Local data** (`dati_locali.md`, `exits_original.json`): the only original exits are the 6 of
+  1010/1013/1016 (FS bottom-left <-> 1st District top-right, FS right <-> 2nd District
+  bottom-left); 1019/1020/1030 a single part, 1040 header only. No room file
+  (`_chp` 0/1/2 grid with cells of 60, `_jmp` internal jumps, `_info` graphics only), table or text
+  encodes doors or destinations; on the passage only the `wipe_<mondo>` wipe and the `next_map.png` arrow, never
+  the area name. The exits are per quest (1013 and 1016: same door, different coordinates). The
+  tips of the walkable zone are a necessary condition (6/6 real exits at 12-86 from a tip) but
+  not sufficient (~5 tips per room, 1-2 used): hence the imprecision of the tours.
+- **Archives** (`fonti_risorse.md`): no public pack (IPA WW/JP 1.0.1-5.0.1, APK JP/TW, web
+  Arena7664, api.sp, Wayback) has additional quests or rooms: they came from the CDN in `files/r/misc.mp4`.
+  Only known source: **thethiny** (misc.mp4 from the CDN, ~898 STG, ~124 rooms against 86, same key
+  KEY_DOWNLOAD); public only `stage_maps.json` (enemies/chests per stage, without exits). Contact to
+  be made (user, I-029).
+- **Videos** (`video\`): 186 videos catalogued (gothwood9 1-760 complete); the light blue arrow is visible and,
+  registered on the preview, finds the 4 real exits of Daybreak Town again (arrivals at 9-46 units). The
+  wiki pairs are not always different parts (DW quests 8 and 11: wide maps without a wipe).
+  In the video the arrow is 52-124 units towards the inside relative to the exit.
+- **Exit arrow in the code** (`freccia_uscita.md`): `[fn]` puts the marker on the point
+  of the exit without offset, `setRotation(angolo)`; the two sprites `map/next_map.png` are in a node
+  at y = -80 (`[data]`) and oscillate between -80 and -40 (`[fn]`, 40.0/80.0), the trail goes from -40
+  to 0. From map to screen y is inverted (`[fn]`); 0 degrees = up, clockwise. In CLS: **arrow =
+  (x - d·sin a, y + d·cos a), d in [40,80], pointing towards (sin a, -cos a)**, that is 40-80 units BEFORE
+  the exit towards the inside; hence exit ~ arrow + 60·(sin a, -cos a). Verified on the videos
+  (3 exits of 1010/1013). The generator has the right angle convention (deviations 1-21 degrees
+  on the original exits) but **checks the arrow 100 units beyond the exit** (`gen_story_maps.py`
+  lines 602-623, `tx = p + 100·sin`): it must be corrected to d = 40..80 towards the inside before regenerating.
+  **Applied on 14-10** in `exit_angle` (points d = 40/60/80 before the exit farther than 200 from the islands;
+  maps not yet regenerated, I-116).
+- **Daybreak Town from the videos** (`video\daybreak_town.md/.json`): 27 passages with 3 frames each
   (FS-2nd, FS-1st, FS-Corridor of Darkness, Market-Warehouse, Market-Avenue, Avenue-Boardwalk,
-  Boardwalk-Waterfront Park (due collegamenti: passeggiata alta e parco in basso a sinistra),
+  Boardwalk-Waterfront Park (two links: upper promenade and park at the bottom left),
   WP-Office, Office-Dock, Attic-Moogle Shop, Rooftop-Attic, Underground Waterway-Clock Tower Level).
-  Uscita derivata = freccia + 60·(sin a, -cos a): 26-31 unita' dalle uscite vere. Coordinate CLS
-  solo per le stanze nelle risorse; per Market/Avenue/Boardwalk/WP pixel dell'immagine wiki. La
-  tendina cambia dopo la ~230 («artigli», non nera). Non coperti: Q351-375 e Q401-425 (YouTube chiede
-  login), Q846-869 (nessun video), interni della Clock Tower (Q541-555, 20 tendine non attribuite).
-- **thethiny** (`thethiny_repos.md`): i suoi strumenti leggono nemici e forzieri, non le uscite; chiavi
-  uguali alle nostre; il tutorial 1.x e' diverso dalla 4.3.1 (1010: bersaglio 89001 e 7 nemici contro
-  81020 e 14) -> uscite da prendere dai dati 4.4.0 WW / JP finale. Repo senza licenza: solo fatti
-  tecnici finche' non da' un permesso. Piano per i suoi ~4 GB nel §5: `[local reference data]\<versione>\` +
-  manifest, estrazione con `bgad.py`, verifiche, tutte le uscite -> `schema_mondi.json/.md`.
-- **Dati di thethiny arrivati** (13-10, `D:\Progetto_Restauro_KH_UX\[local reference data]\`): build, decompilati
-  IDA 1.0.1 con simboli, dati 1.0.1/1.1.3/1.2.3/4.4.0, **pacchetto globale 2016** (`misc.mp4`, 1,27 GB),
-  JOURNAL. Manca `data/jp_final_4.3.1` (4.793 stage, 394 stanze): chiesto di nuovo dall'utente.
-- **Formato confermato dai simboli 1.0.1** (`decompile_101.md`): `StageManager::createMapTransferInfo`
-  = uscite (9 int: x, y, angolo, distanza residua, [4], arrivo x, arrivo y, parte di destinazione,
-  verso), raggio 96, `MapGateMarker`, sezione B = materiali, C = NPC. Correzioni a
-  `stage_gen\exits\NOTE.md`: uscita [4] non letta (= 1 + passaggi dalla parte di destinazione a quella
-  del bersaglio, 635/681), verso [8] 0 = libero; STG [13] = nemici esclusi da «sconfiggi tutti», [1] =
-  versione del formato (13/14 nel 2016, 16 nella 4.3.1), MAP +0x1c = meteo; NPC con uno short in piu'.
-  Nessuna tabella dei nomi delle stanze nel codice.
-- **Estrattore** `reference\world_schema\scripts\extract_all_exits.py` (CHECK OK sulle 6 uscite di
-  1010-1016, cartelle sciolte con revisioni, pacchetti BGAD). **Pacchetto 2016**: 923 stage, 1.300
-  parti, 236 a piu' parti (fino a 23), **697 uscite, 241 collegamenti fra 119 stanze** con coordinate
-  originali -> `stages_2016.json` (superato, vedi sotto).
-- **Pacchetto 2016 inventariato** (`bundle2016.md`, `[local reference data]\MANIFEST.md`): `misc.mp4` = 27
-  pacchetti BGAD in fila (base rev. 8 + aggiornamenti 9-34), 161.651 record modo 2; a nome ripetuto
-  vale l'ultimo. **Stub**: int32 contato dal primo record vero del *proprio* blocco di aggiornamento
-  (negativo = blocco precedente), non indice assoluto come nel JOURNAL di thethiny (82.736/82.736
-  coerenti). `misc.png` si apre con KEY_DOWNLOAD ed e' di una revisione successiva. OBB 4.4.0 di
-  thethiny identici ai nostri. **150 stanze (144 complete)**: recuperate 93 stanze che mancavano (DW 20,
-  WL 17, BC 15, DB 14, AG 13, OC 9, DG 5) + 38 codici nuovi; le 19 in comune con le nostre hanno CLS/CHP/JMP
-  identici; DB_0018_01_00 completa nel 2016 (chiude il buco di I-074); OC_0001_00_00 nostra piu' nuova.
-  `base1` si carica dal nome stanza nel BMI a +0x10 (28 stanze usano la grafica di un'altra):
-  `check_rooms.py` va adeguato. Mancano ancora 139 stanze (CD, ED, mondi di Ralph, DB_0020-0031,
-  AG_0005-0023): dati JP 4.3.1. **Missioni**: tutte le 525 di storia della master sono nel 2016;
-  uscite in `stage_exits_2016.json` (744 uscite, versioni piu' recenti). Tutorial 1010-1030 diversi
-  dalla 4.3.1 (stesse stanze, contenuto diverso): per i contenuti vale la versione piu' vicina.
-- **Schema dei mondi v1** (`reference\world_schema\schema\`: `schema_mondi.json/.md`, `index.html` locale,
-  `img\<mondo>\` = stanza con porte, freccia e arrivi + `_grafo.png`; script `schema_mondi.py`,
-  `schema_report.py`, `room_render.py`): dalle uscite 2016, 695 uscite valide, **277 porte in 90
-  stanze, 118 collegamenti**, 5 sensi unici, 42 coppie con piu' porte. Scartate 45 uscite di «parti
-  residue» (file di parte oltre il numero dichiarato nello STG: destinazione sbagliata, es. 72020) e 4
-  di STG vecchi. Controlli: 6/6 uscite 4.3.1 concordano; video di Daybreak Town 17 concordi, 7
-  discordanze tutte su arrivi poco affidabili nel video o angoli (porte sempre coincidenti). BC senza
-  porte (missioni 2016 tutte a una parte); CD, ED e mondi di Ralph attendono i dati JP 4.3.1.
-  Sfondo delle immagini = base1 ricomposta dalle tessere BTF, allineata alla CLS. Non pubblicare:
-  grafica Square Enix. Da confermare con l'utente dopo l'unione con i dati JP 4.3.1 (decisione
-  dell'utente 13-10: rivedere solo lo schema unito). **Collegamenti fra mondi diversi** (solo stage
-  evento 91000 e 16160: Boardwalk <-> Mine: Corridor <-> Dreadful Dunes, Path to the Mine <-> Scarab
-  Sands, FS -> Corridor of Darkness): tenuti a parte, non usati per le missioni di storia (utente
+  Derived exit = arrow + 60·(sin a, -cos a): 26-31 units from the real exits. CLS coordinates
+  only for the rooms in the resources; for Market/Avenue/Boardwalk/WP pixels of the wiki image. The
+  wipe changes after ~230 («claws», not black). Not covered: Q351-375 and Q401-425 (YouTube asks
+  for login), Q846-869 (no video), interiors of the Clock Tower (Q541-555, 20 wipes not attributed).
+- **thethiny** (`thethiny_repos.md`): his tools read enemies and chests, not the exits; keys
+  equal to ours; the 1.x tutorial is different from 4.3.1 (1010: target 89001 and 7 enemies against
+  81020 and 14) -> exits to be taken from the 4.4.0 WW / final JP data. Repos without a license: only technical
+  facts until he gives permission. Plan for his ~4 GB in §5: `[local reference data]\<versione>\` +
+  manifest, extraction with `bgad.py`, checks, all the exits -> `schema_mondi.json/.md`.
+- **thethiny's data arrived** (13-10, `D:\Progetto_Restauro_KH_UX\[local reference data]\`): builds, IDA decompilations
+  of 1.0.1 with symbols, data 1.0.1/1.1.3/1.2.3/4.4.0, **2016 global pack** (`misc.mp4`, 1.27 GB),
+  JOURNAL. Missing `data/jp_final_4.3.1` (4,793 stages, 394 rooms): asked again by the user.
+- **Format confirmed by the 1.0.1 symbols** (`decompile_101.md`): `StageManager::createMapTransferInfo`
+  = exits (9 int: x, y, angle, remaining distance, [4], arrival x, arrival y, destination part,
+  direction), radius 96, `MapGateMarker`, section B = materials, C = NPCs. Corrections to
+  `stage_gen\exits\NOTE.md`: exit [4] not read (= 1 + steps from the destination part to that
+  of the target, 635/681), direction [8] 0 = free; STG [13] = enemies excluded from «defeat all», [1] =
+  format version (13/14 in 2016, 16 in 4.3.1), MAP +0x1c = weather; NPC with one more short.
+  No table of the room names in the code.
+- **Extractor** `reference\world_schema\scripts\extract_all_exits.py` (CHECK OK on the 6 exits of
+  1010-1016, loose folders with revisions, BGAD packs). **2016 pack**: 923 stages, 1,300
+  parts, 236 with several parts (up to 23), **697 exits, 241 links between 119 rooms** with original
+  coordinates -> `stages_2016.json` (superseded, see below).
+- **2016 pack inventoried** (`bundle2016.md`, `[local reference data]\MANIFEST.md`): `misc.mp4` = 27
+  BGAD packs in a row (base rev. 8 + updates 9-34), 161,651 mode-2 records; with a repeated name
+  the last one counts. **Stubs**: int32 counted from the first real record of its *own* update block
+  (negative = previous block), not an absolute index as in thethiny's JOURNAL (82,736/82,736
+  consistent). `misc.png` opens with KEY_DOWNLOAD and is from a later revision. thethiny's OBB 4.4.0
+  identical to ours. **150 rooms (144 complete)**: recovered 93 rooms that were missing (DW 20,
+  WL 17, BC 15, DB 14, AG 13, OC 9, DG 5) + 38 new codes; the 19 in common with ours have identical CLS/CHP/JMP;
+  DB_0018_01_00 complete in 2016 (closes the gap of I-074); OC_0001_00_00 ours is newer.
+  `base1` is loaded from the room name in the BMI at +0x10 (28 rooms use the graphics of another):
+  `check_rooms.py` must be adapted. Still missing 139 rooms (CD, ED, Ralph's worlds, DB_0020-0031,
+  AG_0005-0023): JP 4.3.1 data. **Quests**: all the 525 story quests of the master are in 2016;
+  exits in `stage_exits_2016.json` (744 exits, more recent versions). Tutorial 1010-1030 different
+  from 4.3.1 (same rooms, different content): for the contents the closest version counts.
+- **World schema v1** (`reference\world_schema\schema\`: `schema_mondi.json/.md`, local `index.html`,
+  `img\<mondo>\` = room with doors, arrow and arrivals + `_grafo.png`; scripts `schema_mondi.py`,
+  `schema_report.py`, `room_render.py`): from the 2016 exits, 695 valid exits, **277 doors in 90
+  rooms, 118 links**, 5 one-way, 42 pairs with several doors. Discarded 45 exits of «leftover
+  parts» (part files beyond the number declared in the STG: wrong destination, e.g. 72020) and 4
+  of old STGs. Checks: 6/6 4.3.1 exits agree; Daybreak Town videos 17 agreeing, 7
+  discrepancies all on unreliable arrivals in the video or angles (doors always coinciding). BC without
+  doors (2016 quests all single-part); CD, ED and Ralph's worlds await the JP 4.3.1 data.
+  Image background = base1 recomposed from the BTF tiles, aligned to the CLS. Do not publish:
+  Square Enix graphics. To be confirmed with the user after merging with the JP 4.3.1 data (user's
+  decision 13-10: review only the merged schema). **Links between different worlds** (only event
+  stages 91000 and 16160: Boardwalk <-> Mine: Corridor <-> Dreadful Dunes, Path to the Mine <-> Scarab
+  Sands, FS -> Corridor of Darkness): kept apart, not used for the story quests (user
   13-10).
-- **Dati JP 4.3.1** (`jp431.md`, `stage_exits_jp431.json`, `[local reference data]\MANIFEST_jp.md`): 272.673 file,
-  4.793 stage, 7.701 parti, 5.763 uscite, 392 stanze. L'estrazione di thethiny ha **scartato gli stub**:
-  mancano `_jmp` di 265 stanze, CLS/CHP di ~70 varianti, 8 STG e parti di 272 stage, 3 stanze
-  DG_0100_*; ricostruibili (jmp vuoto da 16 byte o della stanza-geometria: 133/133; CLS/CHP da stanza
-  con stesse dimensioni scelta coi punti delle missioni: 15/15, 38 stanze ancora ambigue). Le nostre 86
-  stanze sono in JP identiche; uscite del tutorial identiche alle nostre WW: **i dati di mappa JP 4.3.1
-  sono quelli WW**. Recuperate 132 delle 139 stanze mancanti; restano assenti solo DB_0001_01_00,
-  DW_0026_00_00, SA_0000/SA_0004_00..03 (nessuno stage le usa). Tutte le 525 missioni della master
-  presenti con lo stesso stageId; nelle comuni col 2016 porte identiche; 5 missioni con stanze diverse
-  (2060, 3310, 5300, 7170, 11220): per il WW vale il 2016 (concorda con mapName e miniatura della
-  master). 507 coppie di stanze collegate (113 nel 2016).
-- **Schema dei mondi v2** (`reference\world_schema\schema_v2\`, `index.html` locale; script
-  `rooms_merge_v2.py`, `exits_merge_v2.py`, `schema_mondi_v2.py`, `schema_report_v2.py`): stanze unite
-  in `tmp\thethiny_x\rooms_merged\` (413: nostre 86 + JP + 2016; 633 file ricostruiti con la regola in
-  `_manifest.md`; 38 a geometria incerta lasciate senza CLS/CHP). Uscite unite: 5.849 stage, 8.516
-  uscite (2016 per 2060/3310/5300/7170/11220, JP per il resto, + multi_stage); tipi storia_master 525,
-  storia_oltre 459, storia_variante 28, evento 3.808, raid/prova 47, multi 982. 1.747 porte: **P =
-  storia 497** (geografia certa), E = solo eventi/raid/multi 694, X = fra mondi 556 (a parte).
-  Controlli: 6/6 uscite 4.3.1, video DB 19 concordi / 8 discordi (arrivi e angoli). Grafi per mondo
-  (`_grafo_storia`, `_grafo_completo`, sottografi per zona, PNG+SVG) leggibili. 15 dubbi per l'utente
-  nel rapporto (Underground Waterway DB_0020-0023 e DB_0010 a geometria incerta, nomi mancanti,
-  classificazione degli stage, angoli diversi fra missioni, mediana storia/tutte).
-  **Decisioni dell'utente (13-10)**: varianti 9060-10390 = storia; 3xxxxx = eventi, 80000-99999 e
-  9000xxxx = raid/prove; ogni missione usa il proprio angolo originale (lo schema mostra il piu'
-  frequente); posizione della porta = mediana sulle sole missioni di storia; AG_0000_00_00 con la
-  nostra INFO (client WW). Le 38 stanze a geometria incerta si risolvono solo con prove dai dati
+- **JP 4.3.1 data** (`jp431.md`, `stage_exits_jp431.json`, `[local reference data]\MANIFEST_jp.md`): 272,673 files,
+  4,793 stages, 7,701 parts, 5,763 exits, 392 rooms. thethiny's extraction **discarded the stubs**:
+  missing `_jmp` of 265 rooms, CLS/CHP of ~70 variants, 8 STGs and parts of 272 stages, 3 rooms
+  DG_0100_*; rebuildable (empty 16-byte jmp or that of the geometry room: 133/133; CLS/CHP from a room
+  with the same dimensions chosen with the quest points: 15/15, 38 rooms still ambiguous). Our 86
+  rooms are identical in JP; tutorial exits identical to our WW ones: **the JP 4.3.1 map data
+  are the WW ones**. Recovered 132 of the 139 missing rooms; only DB_0001_01_00,
+  DW_0026_00_00, SA_0000/SA_0004_00..03 remain missing (no stage uses them). All the 525 quests of the master
+  present with the same stageId; in those common with 2016 identical doors; 5 quests with different rooms
+  (2060, 3310, 5300, 7170, 11220): for WW the 2016 one counts (it agrees with mapName and thumbnail of the
+  master). 507 pairs of linked rooms (113 in 2016).
+- **World schema v2** (`reference\world_schema\schema_v2\`, local `index.html`; scripts
+  `rooms_merge_v2.py`, `exits_merge_v2.py`, `schema_mondi_v2.py`, `schema_report_v2.py`): rooms merged
+  in `tmp\thethiny_x\rooms_merged\` (413: our 86 + JP + 2016; 633 files rebuilt with the rule in
+  `_manifest.md`; 38 with uncertain geometry left without CLS/CHP). Merged exits: 5,849 stages, 8,516
+  exits (2016 for 2060/3310/5300/7170/11220, JP for the rest, + multi_stage); types storia_master 525,
+  storia_oltre 459, storia_variante 28, event 3,808, raid/trial 47, multi 982. 1,747 doors: **P =
+  story 497** (certain geography), E = only events/raid/multi 694, X = between worlds 556 (apart).
+  Checks: 6/6 4.3.1 exits, DB videos 19 agreeing / 8 disagreeing (arrivals and angles). Graphs per world
+  (`_grafo_storia`, `_grafo_completo`, subgraphs per zone, PNG+SVG) readable. 15 doubts for the user
+  in the report (Underground Waterway DB_0020-0023 and DB_0010 with uncertain geometry, missing names,
+  classification of the stages, different angles between quests, median story/all).
+  **User's decisions (13-10)**: variants 9060-10390 = story; 3xxxxx = events, 80000-99999 and
+  9000xxxx = raids/trials; every quest uses its own original angle (the schema shows the most
+  frequent); door position = median over the story quests only; AG_0000_00_00 with our
+  INFO (WW client). The 38 rooms with uncertain geometry are resolved only with proof from the data
   (`reference\world_schema\stanze_incerte.md`).
-- **38 stanze incerte risolte** (`stanze_incerte.md/.json`, `scripts\stanze_incerte.py`, regole R3/R4 in
-  `rooms_merge_v2.py`): prova decisiva = indice `misc.png` del 2016 (revisione globale successiva):
-  stesso offset di un nome deduplicato = stesso file (verificato CLS 58/58, CHP 54/54, JMP 9.595/9.595,
-  0 contraddizioni). 26 certe (es. DB_0020_* -> DB_0020_01_03, DB_0021_* -> DB_0021_01_03, CD_0012_04/06/07
-  -> CD_0012_05_00, dove la regola dei punti avrebbe sbagliato), 12 molto probabili (DB_0010_0x_0y ->
-  propria _00 col BMI identico; DB_0026_01_00 -> DB_0026_06_00; NL_*). Tarature: con la geometria vera
-  bloccati 0% forzieri, 0,24% nemici, 0,23% arrivi; uscite 45% (non discriminano). Corretti 18 jmp
-  vuoti smentiti dall'indice; restano da rivedere HD_0002_00_00 e SR_0009_01_00 (jmp vuoto senza
-  prove). Schema v2 rigenerato: 0 stanze incerte, porte invariate. Storia oltre la master 18010-39xxx; `text\`
-  solo giapponese, nessuna tabella dei nomi delle aree. Rilancio con due fonti: `schema_mondi.py --exits stage_exits_jp431.json
-  stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, poi `schema_report.py`.
-- **Inventario** (`areas.md`/`areas.json`): gallerie della wiki (343 immagini) confrontate con le 379
-  anteprime Roboloid `images/map` (nome file = codice stanza) + thumbId/mapName di thethiny + stage
-  originali. Mondi 1-8: ~166 aree con nome, ~247 stanze (codici), **solo 59 stanze complete nelle
-  risorse** (84 su 86 in totale; incomplete DB_0018_01_00, ED_0011_01_00). Mancano quasi tutte le
-  aree di DW, WL, OC (Underworld), BC, CD, il deserto e il Bazaar di AG, mezza Daybreak Town.
-  Roboloid ha l'anteprima grafica intera di molte stanze assenti: base per un'eventuale
-  rigenerazione. Dubbi: AG_0003_01_00 con tre nomi, thumbId diverso dalla stanza nominata in alcune
-  righe (OC_0001_00, WL_0001/0002, DW_0004, DB_0007), prefisso del Corridor of Darkness dedotto.
+- **38 uncertain rooms resolved** (`stanze_incerte.md/.json`, `scripts\stanze_incerte.py`, rules R3/R4 in
+  `rooms_merge_v2.py`): decisive proof = the 2016 `misc.png` index (later global revision):
+  same offset as a deduplicated name = same file (verified CLS 58/58, CHP 54/54, JMP 9,595/9,595,
+  0 contradictions). 26 certain (e.g. DB_0020_* -> DB_0020_01_03, DB_0021_* -> DB_0021_01_03, CD_0012_04/06/07
+  -> CD_0012_05_00, where the points rule would have been wrong), 12 very probable (DB_0010_0x_0y ->
+  its own _00 with identical BMI; DB_0026_01_00 -> DB_0026_06_00; NL_*). Calibrations: with the real geometry
+  blocked 0% chests, 0.24% enemies, 0.23% arrivals; exits 45% (they do not discriminate). Fixed 18 empty
+  jmps contradicted by the index; HD_0002_00_00 and SR_0009_01_00 remain to be reviewed (empty jmp without
+  proof). Schema v2 regenerated: 0 uncertain rooms, doors unchanged. Story beyond the master 18010-39xxx; `text\`
+  Japanese only, no table of the area names. Rerun with two sources: `schema_mondi.py --exits stage_exits_jp431.json
+  stage_exits_2016.json --rooms jp431=... 2016=... nostre=...`, then `schema_report.py`.
+- **Inventory** (`areas.md`/`areas.json`): wiki galleries (343 images) compared with the 379
+  Roboloid previews `images/map` (file name = room code) + thethiny's thumbId/mapName + original
+  stages. Worlds 1-8: ~166 named areas, ~247 rooms (codes), **only 59 complete rooms in the
+  resources** (84 of 86 in total; incomplete DB_0018_01_00, ED_0011_01_00). Almost all the
+  areas of DW, WL, OC (Underworld), BC, CD, the desert and the Bazaar of AG, half of Daybreak Town are missing.
+  Roboloid has the whole graphic preview of many missing rooms: a basis for a possible
+  regeneration. Doubts: AG_0003_01_00 with three names, thumbId different from the named room in some
+  rows (OC_0001_00, WL_0001/0002, DW_0004, DB_0007), prefix of the Corridor of Darkness deduced.
 
 <a id="smoke-2110"></a>
-## Prova delle stanze generate dopo I-182 (21-10)
+## Test of the generated rooms after I-182 (21-10)
 
-- Offline: `recon/tools/btf_check.py` (lunghezza dichiarata = lunghezza del file; tipo 8 `0x26 + u32@0x22`, tipi 1 e 9
-  `0x28 + u32@0x24`; il tipo 1 non e' solo il segnaposto da 45 byte: e' una palette senza zlib) su rooms_gen,
-  stage_gen, enemy_gen, medal_gen, raisedraw_gen: ~57.800 BTF, **0 incoerenti**.
-- Le 86 stanze col segnaposto sono usate oggi da 42 missioni (40 come prima stanza, 10400 e 16160 solo come seconda);
-  44 servono solo alle 526-979.
-- Banco (`smoke_quests.ps1`, salvataggio `provetm`, risorse 51, rev 166; lo script ora chiude le Notices se sono
-  aperte all'avvio): **34 su 40 vive**. Crash: firma A (I-183) 1160, 11170, 15050, 15340; firma B (I-184) 2140,
-  10400. Nessuno nel decodificatore BTF. Esiti in `D:\Progetto_Restauro_KH_UX\tmp\i182_smoke.json`.
-- Correzioni (risorse 51 con `-Quick`): I-183 = `cocostudio/publish/ActionMapCoerceEnmAnim.*` (avviso «Coerce»
-  dell'Armored Archer), I-184 = `lwf/map/hole_rain/` (pioggia, `[fn]`); dal 2016 in `originals.tsv` #37-38.
-  Le 6 missioni rifatte: tutte vive. Le altre armature `.ExportJson` non servite (MedalEvoAnimation, Z_SpIcon_*...)
-  il client WW non le apre (usa le LWF).
-- 16180: Bag O' visto come una mano (I-185).
+- Offline: `recon/tools/btf_check.py` (declared length = file length; type 8 `0x26 + u32@0x22`, types 1 and 9
+  `0x28 + u32@0x24`; type 1 is not only the 45-byte placeholder: it is a palette without zlib) on rooms_gen,
+  stage_gen, enemy_gen, medal_gen, raisedraw_gen: ~57,800 BTFs, **0 inconsistent**.
+- The 86 rooms with the placeholder are used today by 42 quests (40 as first room, 10400 and 16160 only as second);
+  44 are needed only by 526-979.
+- Bench (`smoke_quests.ps1`, save `provetm`, resources 51, rev 166; the script now closes the Notices if they are
+  open at startup): **34 out of 40 alive**. Crashes: signature A (I-183) 1160, 11170, 15050, 15340; signature B (I-184) 2140,
+  10400. None in the BTF decoder. Outcomes in `D:\Progetto_Restauro_KH_UX\tmp\i182_smoke.json`.
+- Fixes (resources 51 with `-Quick`): I-183 = `cocostudio/publish/ActionMapCoerceEnmAnim.*` («Coerce» warning
+  of the Armored Archer), I-184 = `lwf/map/hole_rain/` (rain, `[fn]`); from 2016 in `originals.tsv` #37-38.
+  The 6 redone quests: all alive. The other unserved `.ExportJson` armatures (MedalEvoAnimation, Z_SpIcon_*...)
+  are not opened by the WW client (it uses the LWFs).
+- 16180: Bag O' seen as a hand (I-185).
 
 <a id="oltre525"></a>
-## Missioni 526-979: stage originali JP e decisioni dell'utente (20-10)
+## Quests 526-979: original JP stages and user's decisions (20-10)
 
-Rapporto: `D:\Progetto_Restauro_KH_UX
-eference\world_schema\oltre525\RAPPORTO.md` (tabelle in `_tables.md`,
-abbinamenti in `oltre525.json`, script `match_oltre525.py`). Tutte le 453 missioni di battaglia 526-979 hanno lo
-stage originale nei dati JP 4.3.1 (330 esatte, 39 buone, 83 probabili nei mondi di Ralph, 979 <-> 39159 a mano;
-978 solo filmato); le 526-555 identiche nel 2016. 253 stanze (203 nuove, 225 servite, 27 da aggiungere al
-pacchetto: `make_jp_rooms.py --story-only` le esclude), 386 uscite tutte porte P dello schema v2.
-Decisioni dell'utente (20-10):
-1. dove ci sono gli originali valgono gli originali: si importano gli stage JP, niente tour prima;
-2. Q617 (20320) e Q661 (23010), parte 1 assente: si ricostruisce solo quella parte nella stanza della porta originale;
-3. Q555 (18300-18304): si affronta il maestro della **propria Unione** (utente; confermato 20-10, eccezione Vulpes -> Ira):
-   stageId = 18300 + unionId - 1 (Ursus 1 Aced, Anguis 2 Invi, Unicornis 3 Ira, Vulpes 4 Ira, Leopardus 5 Gula). Lo sceglie
-   il client: riga master 18300 con `branchType: 1` (carica mappoi_stg stageId + v - 1) + i 5 stage JP. Prove: decompilato
-   1.2.3, master 1.1.3 (una riga 18300, 5 mappe in stage_maps.json), wiki Q555, testi JP del dramma. Nessun'altra
-   missione 526-979 cambia per Unione;
-4. SR_0009_01_00: grafica di SR_0009_00_00 con la geometria propria;
-5. nomi delle stanze (mapName): solo **originali**, con ricerca approfondita dove mancano o divergono.
-   Ricerca 20-10 (`oltre525\RICERCA_Q555_NOMI.md`): 37 stanze, 9 certe dal mapName WW (AG_0003_04/05_00 Tortuous/Parched
-   Sands, DB_0010_* Clock Tower: Level, DB_0013_00_00 Clock Tower: Elevator), 27 probabili (room1 della wiki, che coincide col
-   mapName WW in 537/555), 1 introvabile (DB_0011_01_00). mapName delle righe 526-979: room1 della wiki per missione
-   (526-555: mapName della master 1.1.3).
-Lavoro tecnico: 312 enemyId mancanti nel master (`enemies_oltre525.json`), righe master 526-979 dalla wiki (Lv dalla
-wiki, 87 STG con Lv 1), worldId e tendina dei mondi di Ralph (I-027).
+Report: `D:\Progetto_Restauro_KH_UX
+eference\world_schema\oltre525\RAPPORTO.md` (tables in `_tables.md`,
+matches in `oltre525.json`, script `match_oltre525.py`). All the 453 battle quests 526-979 have the
+original stage in the JP 4.3.1 data (330 exact, 39 good, 83 probable in Ralph's worlds, 979 <-> 39159 by hand;
+978 cutscene only); 526-555 identical in 2016. 253 rooms (203 new, 225 served, 27 to be added to the
+pack: `make_jp_rooms.py --story-only` excludes them), 386 exits all P doors of schema v2.
+User's decisions (20-10):
+1. where the originals exist the originals count: the JP stages are imported, no tours first;
+2. Q617 (20320) and Q661 (23010), part 1 missing: only that part is rebuilt in the room of the original door;
+3. Q555 (18300-18304): you face the master of **your own Union** (user; confirmed 20-10, exception Vulpes -> Ira):
+   stageId = 18300 + unionId - 1 (Ursus 1 Aced, Anguis 2 Invi, Unicornis 3 Ira, Vulpes 4 Ira, Leopardus 5 Gula). The
+   client chooses it: master row 18300 with `branchType: 1` (loads mappoi_stg stageId + v - 1) + the 5 JP stages. Evidence: decompiled
+   1.2.3, master 1.1.3 (one row 18300, 5 maps in stage_maps.json), wiki Q555, JP texts of the drama. No other
+   quest 526-979 changes per Union;
+4. SR_0009_01_00: graphics of SR_0009_00_00 with its own geometry;
+5. room names (mapName): only **originals**, with in-depth research where they are missing or diverge.
+   Research 20-10 (`oltre525\RICERCA_Q555_NOMI.md`): 37 rooms, 9 certain from the WW mapName (AG_0003_04/05_00 Tortuous/Parched
+   Sands, DB_0010_* Clock Tower: Level, DB_0013_00_00 Clock Tower: Elevator), 27 probable (room1 of the wiki, which matches the
+   WW mapName in 537/555), 1 not found (DB_0011_01_00). mapName of rows 526-979: room1 of the wiki per quest
+   (526-555: mapName of the 1.1.3 master).
+Technical work: 312 enemyIds missing in the master (`enemies_oltre525.json`), master rows 526-979 from the wiki (Lv from the
+wiki, 87 STGs with Lv 1), worldId and wipe of Ralph's worlds (I-027).
 
-Server e master (Task 6, 21-10): storia fino alla 979 in `server.js` (`STORY_LAST`: `lastStoryStageId`, Beginner 30,
-Shop/biglietti; `gacha.js` `RESTORED_QUEST` 979); l'elenco va 525 -> 526 e 979 -> tour 991001 (ordine per `id`).
-Q555: `stageRowOf` fa valere la riga 18300 per le varianti 18301-18304 (AP, premi, obiettivi, `stageScores`), drop e
-forzieri dall'id ricevuto; `ensureUnion` porta a 1 (Ursus) un `unionId` 0/assente di un giocatore creato (al
-caricamento, a `/user/create`, in `userDetail`): con 0 il client cercherebbe la 18299. Q978 (`onlyDrama`): nessun POI,
-`/stage/start` senza drop ne' forzieri, `/stage/clear` registra la missione e da' i premi; ripiego: un `/stage/clear`
-senza `/stage/start` (`stageInProgress` spento) con la missione corrente gia' finita e la prossima `onlyDrama` registra
-quella. Obiettivi per id del client (valutatore `[fn]`, slot 0x4358 riempiti da `[fn]`/`[fn]`
-con `submissionId`, contati da `[fn]` solo per quell'id): la 555 ha 5 bersagli diversi, quindi i suoi due «Defeat
-the target enemy within 2 turns» sono 7 «Complete within 2 turns» (stesso premio, nelle Notices). Obiettivi 1.1.3 di 542-544,
-546, 548-552, 555 (nemico fuori dallo stage JP) sostituiti con quelli della wiki (`make-story-oltre.js`, ruling del
-controller). Master rifatto con
+Server and master (Task 6, 21-10): story up to 979 in `server.js` (`STORY_LAST`: `lastStoryStageId`, Beginner 30,
+Shop/tickets; `gacha.js` `RESTORED_QUEST` 979); the list goes 525 -> 526 and 979 -> tour 991001 (order by `id`).
+Q555: `stageRowOf` makes row 18300 apply to the variants 18301-18304 (AP, rewards, objectives, `stageScores`), drops and
+chests from the received id; `ensureUnion` sets to 1 (Ursus) a `unionId` 0/missing of a created player (at
+load, at `/user/create`, in `userDetail`): with 0 the client would look for 18299. Q978 (`onlyDrama`): no POI,
+`/stage/start` without drops or chests, `/stage/clear` records the quest and gives the rewards; fallback: a `/stage/clear`
+without `/stage/start` (`stageInProgress` off) with the current quest already finished and the next one `onlyDrama` records
+that one. Objectives per client id (evaluator `[fn]`, slots 0x4358 filled by `[fn]`/`[fn]`
+with `submissionId`, counted by `[fn]` only for that id): 555 has 5 different targets, so its two «Defeat
+the target enemy within 2 turns» are 7 «Complete within 2 turns» (same reward, in the Notices). 1.1.3 objectives of 542-544,
+546, 548-552, 555 (enemy outside the JP stage) replaced with those of the wiki (`make-story-oltre.js`, ruling of the
+controller). Master redone with
 `KHUX_MEDALS_ALL=1 KHUX_WORLDTOUR=1 KHUX_STAGE_POI_EXTRA=<stage_gen\orig_stages\stage_poi_orig.json>;<stage_gen\orig_stages_oltre\stage_poi_oltre.json> node server/make-game-tables.js <wiki\medals.json>`
-(+454 stage, +4 world, +312 enemy, +96 reward; -37 righe boosted rimaste da un catalogo vecchio, nessun riferimento) e
-`stage_poi_oltre.json` unito a `server/game_data/stage_poi.json` (457 stage, 1041 in tutto).
+(+454 stages, +4 world, +312 enemy, +96 reward; -37 boosted rows left over from an old catalog, no references) and
+`stage_poi_oltre.json` merged into `server/game_data/stage_poi.json` (457 stages, 1041 in all).
 
 <a id="tour-v2"></a>
-## Tour v2: un giro per zona sulle porte originali (I-116)
+## Tour v2: one tour per zone on the original doors (I-116)
 
-Sostituiscono i tour 991001-991008 (porte indovinate). `recon/tools/gen_tours_v2.py [config.json]
-[--available stanze.json] [--worlds DB,AG] [--out DIR]` (~4 min, numpy/scipy) legge lo schema v2 approvato
-(`reference\world_schema\schema_v2\schema_mondi.json` + `_graphs.json`), le stanze di
-`tmp\thethiny_x\rooms_merged\` e le intestazioni STG JP (partenze originali). Uscita in
-`D:\Progetto_Restauro_KH_UX\stage_gen\tours_v2\` (NON in `stage_gen\files`): `mappoi_stg99xxxx*.bin`,
-`reports\<id>.json/.md` (stanze, porte usate con id della porta, coordinate originali e usate, porte omesse
-con il motivo, note), `tours.json` (indice e righe del master), `stage_poi_tours_v2.json` (lo Shadow di ogni
-tour, da unire a mano in `server/game_data/stage_poi.json`), `available_rooms.json`, `validate.json`.
+They replace the tours 991001-991008 (guessed doors). `recon/tools/gen_tours_v2.py [config.json]
+[--available stanze.json] [--worlds DB,AG] [--out DIR]` (~4 min, numpy/scipy) reads the approved schema v2
+(`reference\world_schema\schema_v2\schema_mondi.json` + `_graphs.json`), the rooms of
+`tmp\thethiny_x\rooms_merged\` and the JP STG headers (original starts). Output in
+`D:\Progetto_Restauro_KH_UX\stage_gen\tours_v2\` (NOT in `stage_gen\files`): `mappoi_stg99xxxx*.bin`,
+`reports\<id>.json/.md` (rooms, doors used with door id, original and used coordinates, omitted doors
+with the reason, notes), `tours.json` (index and master rows), `stage_poi_tours_v2.json` (the Shadow of every
+tour, to be merged by hand into `server/game_data/stage_poi.json`), `available_rooms.json`, `validate.json`.
 
-- **Zone**: `zone_storia` di `_graphs.json` (DB 6, AG 4); negli altri mondi le componenti connesse del grafo
-  delle porte di storia (etichette `c1`, `c2`...). Solo porte `scope = storia` fra stanze dello stesso mondo e
-  della zona; omesse (nel rapporto) le porte verso stanze fuori zona o non disponibili, quelle verso la stessa
-  stanza (anelli: il tour ha una parte per stanza) e, fra porte della stessa stanza a <= 96 verso stanze
-  diverse (varianti, es. il labirinto DB_0010), tutte meno quella con piu' missioni di storia.
-- **Porta** (decisioni 13-10): uscita = `story_median`; angolo = il piu' frequente fra le missioni di storia
-  (a parita' quello della missione piu' vicina alla mediana); arrivo = mediana del gruppo di arrivi (a catena
-  entro 96) piu' numeroso delle missioni di storia, verso = il piu' frequente nel gruppo (quasi sempre 0 =
-  libero: il validatore lo segnala come avviso, e' il valore originale). [3] = distanza residua al bersaglio,
-  [4] = 1 + passi dalla parte di destinazione a quella del bersaglio (come gli originali).
-- **Aggancio**: le uscite originali stanno spesso su un pixel bloccato (bordo). Si tiene il punto originale se
-  e' percorribile e aggancia una componente raggiunta entro 48 (regole di `validate_maps.py`), altrimenti il
-  pixel con spazio libero > 16 piu' vicino di una componente raggiunta, al massimo 96 (raggio di scatto del
-  client; oltre, porta omessa): 14-10, 206 uscite su 346 spostate, al massimo 85, mediana 35. Arrivi a <= 120
-  da un'uscita della parte di destinazione spostati nella stessa componente a >= 140 da tutte (10 arrivi,
-  24-167 dall'originale). Porte omesse: 55 «stessa porta», 24 irraggiungibili, 19 anelli, 16 verso stanze non
-  disponibili (piu' quelle fuori zona). Componenti raggiunte a punto fisso dalla partenza seguendo le uscite attive, **con i salti
-  interni** (`_jmp.bin`: record {cella CHP, k, k x (x1, y1, x2, y2, h)} di interi, gradini fra livelli,
-  presi nei due versi): `validate_maps.py --jmp` fa lo stesso (senza `--jmp` invariato).
-- **Partenza**: stanza con piu' partenze di missioni di storia fra quelle che raggiungono almeno 3/4 delle
-  stanze del pezzo (es. DB z2 = Fountain Square); punto = medoide delle partenze originali in quella stanza
-  (spostato a >= 300 dalle uscite se a < 200). Le stanze non raggiunte (sensi unici, uscite irraggiungibili)
-  fanno un tour a parte (zona `z1.2`...). Ordine delle parti = BFS sulle uscite attive.
-- **Bersaglio**: uno Shadow (10001) nella stanza piu' lontana (passi), nel punto piu' lontano a piedi
-  dall'ingresso a >= 240 dalle uscite, preferendo i punti senza giro lungo; niente altri nemici, niente
-  forzieri.
-- **stageId** = 992000 + indice del mondo x 100 + numero progressivo del tour nel mondo (DB 1 ... ED 8, DG 9,
-  CS 11, HD 12, NL 13, SR 14): 992101-993406; `id` del master = stageId - 900000. Nome «Tour <XX><n> <stanza
-  di partenza>».
-- **Stanze disponibili**: servite oggi (`names_v4.tsv`, `ipa431\names_addnl.tsv`, `stage_gen\files`, meno le
-  incomplete di `rooms_check.json`) + complete in `rooms_merged` (`_manifest.json` status `completa`): 399.
-  Quando `rooms_gen` (risorse 35) e' pronto rilanciare con `--available <lista finale>` (JSON lista o
-  `{"available": [...]}`). Oggi solo 992112, 992802, 993102 usano solo stanze gia' servite.
+- **Zones**: `zone_storia` of `_graphs.json` (DB 6, AG 4); in the other worlds the connected components of the graph
+  of the story doors (labels `c1`, `c2`...). Only doors with `scope = storia` between rooms of the same world and
+  of the zone; omitted (in the report) the doors towards rooms outside the zone or not available, those towards the same
+  room (loops: the tour has one part per room) and, among doors of the same room within <= 96 towards different
+  rooms (variants, e.g. the DB_0010 labyrinth), all except the one with the most story quests.
+- **Door** (decisions 13-10): exit = `story_median`; angle = the most frequent among the story quests
+  (on a tie that of the quest closest to the median); arrival = median of the largest group of arrivals (chained
+  within 96) of the story quests, direction = the most frequent in the group (almost always 0 =
+  free: the validator flags it as a warning, it is the original value). [3] = remaining distance to the target,
+  [4] = 1 + steps from the destination part to that of the target (as in the originals).
+- **Snapping**: the original exits are often on a blocked pixel (edge). The original point is kept if
+  it is walkable and snaps to a component reached within 48 (rules of `validate_maps.py`), otherwise the
+  nearest pixel with free space > 16 of a reached component, at most 96 (trigger radius of the
+  client; beyond that, door omitted): 14-10, 206 exits out of 346 moved, at most 85, median 35. Arrivals within <= 120
+  of an exit of the destination part moved into the same component at >= 140 from all of them (10 arrivals,
+  24-167 from the original). Omitted doors: 55 «same door», 24 unreachable, 19 loops, 16 towards rooms not
+  available (plus those outside the zone). Components reached as a fixed point from the start following the active exits, **with the internal
+  jumps** (`_jmp.bin`: records {CHP cell, k, k x (x1, y1, x2, y2, h)} of integers, steps between layers,
+  taken in both directions): `validate_maps.py --jmp` does the same (without `--jmp` unchanged).
+- **Start**: room with the most story-quest starts among those that reach at least 3/4 of the
+  rooms of the piece (e.g. DB z2 = Fountain Square); point = medoid of the original starts in that room
+  (moved to >= 300 from the exits if at < 200). The rooms not reached (one-way, unreachable exits)
+  make a separate tour (zone `z1.2`...). Order of the parts = BFS on the active exits.
+- **Target**: one Shadow (10001) in the farthest room (steps), at the point farthest on foot
+  from the entrance at >= 240 from the exits, preferring the points without a long detour; no other enemies, no
+  chests.
+- **stageId** = 992000 + world index x 100 + progressive number of the tour in the world (DB 1 ... ED 8, DG 9,
+  CS 11, HD 12, NL 13, SR 14): 992101-993406; master `id` = stageId - 900000. Name «Tour <XX><n> <stanza
+  di partenza>» (start room).
+- **Available rooms**: served today (`names_v4.tsv`, `ipa431\names_addnl.tsv`, `stage_gen\files`, minus the
+  incomplete ones of `rooms_check.json`) + complete in `rooms_merged` (`_manifest.json` status `completa`): 399.
+  When `rooms_gen` (resources 35) is ready rerun with `--available <lista finale>` (JSON list or
+  `{"available": [...]}`). Today only 992112, 992802, 993102 use only rooms already served.
 
-Esito 14-10: **57 tour, 207 parti** (2: 23, 3: 13, 4: 8, 5: 5, 6: 4, 7-9: 3, 17: 1); 19 stanze disponibili
-senza porte utilizzabili (in `tours.json` `single_rooms`). `validate_maps.py <tours_v2> <cartella con map\ ->
-rooms_merged> --jmp`: **0 errori**; avvisi: verso d'arrivo 0 (originale), «giro lungo» in 8 tour (9 verso porte
-originali, lasciate dove sono: es. 992101 labirinto DB_0010, 992502 Underworld; 1 verso il bersaglio, 993402),
-un bersaglio a 163 da un'uscita (992201, stanza piccola). Senza `--jmp` 14 tour hanno porte raggiungibili solo con
-i salti. Per il validatore: giunzione `D:\Progetto_Restauro_KH_UX\tmp\tours_v2_cls\map` -> `rooms_merged`.
+Outcome 14-10: **57 tours, 207 parts** (2: 23, 3: 13, 4: 8, 5: 5, 6: 4, 7-9: 3, 17: 1); 19 available rooms
+without usable doors (in `tours.json` `single_rooms`). `validate_maps.py <tours_v2> <cartella con map\ ->
+rooms_merged> --jmp`: **0 errors**; warnings: arrival direction 0 (original), «long detour» in 8 tours (9 towards original
+doors, left where they are: e.g. 992101 labyrinth DB_0010, 992502 Underworld; 1 towards the target, 993402),
+a target at 163 from an exit (992201, small room). Without `--jmp` 14 tours have doors reachable only with
+the jumps. For the validator: junction `D:\Progetto_Restauro_KH_UX\tmp\tours_v2_cls\map` -> `rooms_merged`.
 
-Master: `KHUX_TOURS_V2=1` (o il percorso di `tours.json`) in `make-game-tables.js` aggiunge le righe dei tour
-(copie della 1050 come i 99100N; worldId del tour, mondi di Ralph -> 1; musica e miniatura dalla prima
-missione del mondo, miniatura della stanza di partenza se una missione ha lo stesso thumbId). Provato su una
-copia: +57 righe, nessuna riga esistente cambiata. Comando (poi alzare la revisione del master):
+Master: `KHUX_TOURS_V2=1` (or the path of `tours.json`) in `make-game-tables.js` adds the tour rows
+(copies of 1050 like the 99100N; worldId of the tour, Ralph's worlds -> 1; music and thumbnail from the first
+quest of the world, thumbnail of the start room if a quest has the same thumbId). Tried on a
+copy: +57 rows, no existing row changed. Command (then raise the master revision):
 `$env:KHUX_MEDALS_ALL='1'; $env:KHUX_WORLDTOUR='1'; $env:KHUX_TOURS_V2='1'; node server\make-game-tables.js
-D:\Progetto_Restauro_KH_UX\wiki\medals.json`. Avvio: `server/save/smoke.json` `{"stageIds": [992101, ...]}`
-(server.js accetta gia' gli stageId del master); mappe da copiare in `stage_gen\files\stage` e POI da unire.
+D:\Progetto_Restauro_KH_UX\wiki\medals.json`. Start: `server/save/smoke.json` `{"stageIds": [992101, ...]}`
+(server.js already accepts the master stageIds); maps to be copied into `stage_gen\files\stage` and POIs to be merged.
 
 <a id="nemici"></a>
-## Nemici nelle mappe
+## Enemies in the maps
 
-- Grafica `lwf/character/enemy/<displayId>/` solo per 1, 6, 7, 8, 17, 37, 1020 (Shadow, Soldier,
-  Large Body, Nosy Mole, Armored Knight, Dire Plant, Mega-Shadow) e le serie Dark Road 5001-5086,
-  7001-7005, 8001-8022. `make-game-tables.js` assegna per nome la grafica Dark Road
-  (`recon/tools/enemy_display_map.json`: 312 nemici, 51 grafiche) o un sostituto
-  (`DISPLAY_SUBSTITUTE`, poi per taglia); displayId veri in `enemy_display_orig.json`.
-  `make_enemy_moves.py` (nel build) crea `move` copiando `wait` (le grafiche Dark Road non hanno
+- Graphics `lwf/character/enemy/<displayId>/` only for 1, 6, 7, 8, 17, 37, 1020 (Shadow, Soldier,
+  Large Body, Nosy Mole, Armored Knight, Dire Plant, Mega-Shadow) and the Dark Road series 5001-5086,
+  7001-7005, 8001-8022. `make-game-tables.js` assigns by name the Dark Road graphics
+  (`recon/tools/enemy_display_map.json`: 312 enemies, 51 graphics) or a substitute
+  (`DISPLAY_SUBSTITUTE`, then by size); real displayIds in `enemy_display_orig.json`.
+  `make_enemy_moves.py` (in the build) creates `move` by copying `wait` (the Dark Road graphics do not have
   `move`).
-- Effetto di comparsa `show_effect<showSwf>` presente solo per 1-4, 100, 501-506, 1000: gli altri ->
-  quello dello Shadow. Obiettivi «Defeat <nemico>» su enemyId assenti -> Shadow.
-- Missioni «zoo» (`KHUX_ZOO=1`, stage 990001.., copie della 1050 nella Fountain Square, aree da 5):
-  un avvio verifica decine di nemici. Esito: 50 missioni su 51 partono (990018: tocco perso, da
-  riprovare).
-- Esempi Dark Road: 5002 Large Body, 5075 TopOperaY = Yellow Opera, 5054 Ifrit, 5063 Yeti, 5070
+- Appearance effect `show_effect<showSwf>` present only for 1-4, 100, 501-506, 1000: the others ->
+  the Shadow's one. «Defeat <nemico>» objectives on missing enemyIds -> Shadow.
+- «Zoo» quests (`KHUX_ZOO=1`, stages 990001.., copies of 1050 in Fountain Square, areas of 5):
+  one start checks dozens of enemies. Outcome: 50 quests out of 51 start (990018: tap lost, to be
+  retried).
+- Dark Road examples: 5002 Large Body, 5075 TopOperaY = Yellow Opera, 5054 Ifrit, 5063 Yeti, 5070
   Shiva, 8001 Flame Core, 5008 Bandit, 5004 Red Nocturne.
 
 <a id="filmati"></a>
-## Filmati e dialoghi
+## Cutscenes and dialogues
 
-Filmati prima/dopo senza `img/light/SEQ/<id>.l` ne' `lwf/drama/<id>/` disattivati (base in
-`stage_base.json`). Dei 116 filmati lwf (2xxxxxx) ne mancano 5 (tutti 2999951); i 175 dialoghi
-(script SEQ 1xxxxxx) quasi tutti assenti: si tolgono gli id assenti (ISSUES I-014).
+Before/after cutscenes without `img/light/SEQ/<id>.l` or `lwf/drama/<id>/` disabled (base in
+`stage_base.json`). Of the 116 lwf cutscenes (2xxxxxx) 5 are missing (all 2999951); the 175 dialogues
+(SEQ scripts 1xxxxxx) almost all missing: the missing ids are removed (ISSUES I-014).
 
 <a id="npc-talk"></a>
-**Testi degli NPC** (I-154, 18-10). Sintomo al banco: missione 132 (stage 5020, Agrabah), la guardia ha la
-nuvoletta gialla ma il tocco non fa nulla (niente testo, nessuna richiesta). Client: l'init dell'NPC
-(4.3.1 `[fn]`; 1.0.1 `MapNonPlayableCharacter::init`) copia i due int a +0x14/+0x18 del record
-npc; `get_talk` usa il primo col tipo 3, il primo o il secondo col tipo 1 (flag a +0x3ac), 0 con gli altri;
-nuvoletta `img/stage_npc/NPCTalkIcon.png` per `(tipo|2) == 3`. La finestra (`[fn]`,
-`SceneActionMap::makeTalkWindow`) legge `TextData::get(1, id % 200000000 + 200000000)` =
-`text/drama/<n>.txt` (tipi `ui`, `drama`, `misc` a file 0x1663e2c; pagine separate da 0x0C) e senza il
-file esce restituendo 8, in silenzio. I testi `2040xxxxx` (= 4 + stage a 4 cifre + npc a 2) arrivavano
-dal CDN: nelle risorse WW c'e' solo `204010301`. 5020: un npc (730, 690, id 2005, tipo 3, talk 4050201)
--> `204050201.txt`, assente. Mappe servite: 178 testi citati, 1 servito, 177 nel pacchetto 2016 in
-inglese (176 anche nel JP). Correzione: `recon/tools/import_npc_talk.py` in `build-resources.ps1` (dopo
-i testi ui, prima di `resource_pack`) copia nel pacchetto generato la revisione corrente del 2016, in
-mancanza quella JP (segnalata), rapporto `stage_gen
-pc_talk.json`. Gli npc di tipo 4 hanno 1/2 in quei
-campi: non parlano.
+**NPC texts** (I-154, 18-10). Symptom on the bench: quest 132 (stage 5020, Agrabah), the guard has the
+yellow balloon but tapping does nothing (no text, no request). Client: the NPC init
+(4.3.1 `[fn]`; 1.0.1 `MapNonPlayableCharacter::init`) copies the two ints at +0x14/+0x18 of the npc
+record; `get_talk` uses the first with type 3, the first or the second with type 1 (flag at +0x3ac), 0 with the others;
+balloon `img/stage_npc/NPCTalkIcon.png` for `(tipo|2) == 3`. The window (`[fn]`,
+`SceneActionMap::makeTalkWindow`) reads `TextData::get(1, id % 200000000 + 200000000)` =
+`text/drama/<n>.txt` (types `ui`, `drama`, `misc` at file 0x1663e2c; pages separated by 0x0C) and without the
+file it exits returning 8, silently. The texts `2040xxxxx` (= 4 + 4-digit stage + 2-digit npc) came
+from the CDN: in the WW resources there is only `204010301`. 5020: one npc (730, 690, id 2005, type 3, talk 4050201)
+-> `204050201.txt`, missing. Served maps: 178 texts cited, 1 served, 177 in the 2016 pack in
+English (176 also in JP). Fix: `recon/tools/import_npc_talk.py` in `build-resources.ps1` (after
+the ui texts, before `resource_pack`) copies into the generated pack the current revision of 2016, failing
+that the JP one (flagged), report `stage_gen
+pc_talk.json`. The type 4 npcs have 1/2 in those
+fields: they do not talk.
 
 <a id="prove"></a>
-## Prove sul banco
+## Tests on the bench
 
-- Missioni 1-8 giocate; 1060 (Dark Forest, 2 parti) intera due volte (`route_1060.ps1`); 1240
-  (Agrabah, 3 parti, wipe_4) con partenze spostate; 1050 corretta (forziere uid 4 spostato, totali
-  STG 1,1,2,4) fino a `/stage/clear`.
-- Crash del passaggio di parte: erano le tendine `wipe_N` mancanti (vedi
+- Quests 1-8 played; 1060 (Dark Forest, 2 parts) in full twice (`route_1060.ps1`); 1240
+  (Agrabah, 3 parts, wipe_4) with moved starts; 1050 fixed (chest uid 4 moved, STG totals
+  1,1,2,4) up to `/stage/clear`.
+- Crash on the part change: it was the missing `wipe_N` wipes (see
   [risorse_layout.md](risorse_layout.md#wipe)).
-- `-Seek` non funziona sulle mappe scure (ISSUES I-008): la 1070 va giocata a mano.
+- `-Seek` does not work on the dark maps (ISSUES I-008): 1070 must be played by hand.
 
-## NPC senza wait.lwf (I-197)
+<a id="npc-senza-waitlwf-i-197"></a>
+## NPCs without wait.lwf (I-197)
 
-Il client carica `lwf/character/npc/<id>/wait/wait.lwf` per ogni NPC della mappa (`[fn]`); se manca, `[fn]` torna NULL e `addChild(NULL)` manda in crash la stanza. Gli stage 526-979 usano 124 id NPC (solo 4001 e' servito dall'originale); `recon/tools/npc_placeholders.py` scrive `recon/tools/empty.lwf` (492 byte) per tutti quelli senza LWF, prima di `import_jp_coco.py`, che mette il JP 4.3.1 dove ha tutte le texture (13 NPC su 65 nuovi). I 52 restanti (e 1 vecchio) sono invisibili ma non crashano: per mostrarli servono le texture originali.
+The client loads `lwf/character/npc/<id>/wait/wait.lwf` for every NPC of the map (`[fn]`); if it is missing, `[fn]` returns NULL and `addChild(NULL)` crashes the room. Stages 526-979 use 124 NPC ids (only 4001 is served by the original); `recon/tools/npc_placeholders.py` writes `recon/tools/empty.lwf` (492 bytes) for all those without an LWF, before `import_jp_coco.py`, which puts the JP 4.3.1 one where it has all the textures (13 NPCs out of 65 new ones). The remaining 52 (and 1 old one) are invisible but do not crash: to show them the original textures are needed.
 
-## Musiche per missione (I-198)
+<a id="musiche-per-missione-i-198"></a>
+## Music per quest (I-198)
 
-Le colonne `bgmField`/`bgmBattle`/`bgmBoss` delle 556-979 non vengono piu' dalla regola del mondo ma da
-`reference\world_schema\oltre525gm_per_quest.json` (423 missioni, tutte tranne la 978; ids, nomi AKB, evidenza e confidenza per riga).
-Fonte: khwiki «Forum:Notes 29 (Project Music: Where songs play) - KeybladeSpyMaster», tabelle dei capi di Union X per missione,
-incrociata coi master 1-555 (tema d'area della prima stanza; capo di default dw_bgm_000003). `make-story-oltre.js` la richiede
-(`KHUX_BGM_OLTRE`); la regola del mondo (`WORLD_BGM` / riga di riferimento) resta solo per le missioni assenti dal file.
-Applicato sul posto con `node server/make-story-oltre.js`: 30 righe cambiate (solo colonne bgm). 979 «The Key» = BBS_73_TheKey
-(501006057) nelle tre colonne; 977 capo bgm_raid_0001 (501001010). Da verificare: 979 contro il video, campo/battaglia (confidenza media).
+The columns `bgmField`/`bgmBattle`/`bgmBoss` of 556-979 no longer come from the world rule but from
+`reference\world_schema\oltre525gm_per_quest.json` (423 quests, all except 978; ids, AKB names, evidence and confidence per row).
+Source: khwiki «Forum:Notes 29 (Project Music: Where songs play) - KeybladeSpyMaster», tables of the Union X bosses per quest,
+cross-checked with the masters 1-555 (area theme of the first room; default boss dw_bgm_000003). `make-story-oltre.js` requires it
+(`KHUX_BGM_OLTRE`); the world rule (`WORLD_BGM` / reference row) remains only for the quests missing from the file.
+Applied in place with `node server/make-story-oltre.js`: 30 rows changed (only bgm columns). 979 «The Key» = BBS_73_TheKey
+(501006057) in the three columns; 977 boss bgm_raid_0001 (501001010). To be verified: 979 against the video, field/battle (medium confidence).
