@@ -21,7 +21,7 @@ pet; every deviation from the original is declared in the in-game Notices
 
 ## Restarting
 
-Bench state (22-10): **resources 56 installed** (21-10 evening, 4.22 GiB, then updated with two `-Quick` on 22-10; before: 49 (20-10: compacted, 3.90 GiB; above 4 GiB tested with 48, I-171 closed); **57 built** (`D:\Progetto_Restauro_KH_UX\resource_data\57`, 4.22 GiB, 40 parts) but superseded by **58** (being built on 22-10): that one is to be installed with `update-resources.ps1`, then tap KHUX START (200,1020) and Download (1220,715) by hand, **never `-Quick` until then**), **master revision: BASE 177** (default of the 4 session scripts; the server sends `BASE*100000 + past deadlines`, [server.md](docs/notes/server.md#orologio)). Fake clock
+Bench state (22-10 evening): **resources 58 installed** (4.22 GiB, 40 parts; after `update-resources.ps1` tap KHUX START (200,1020) and Download (1220,715) by hand; before: 56 (21-10), 49 (20-10: compacted, 3.90 GiB; above 4 GiB tested with 48, I-171 closed)), **master revision: BASE 177** (default of the 4 session scripts; the server sends `BASE*100000 + past deadlines`, [server.md](docs/notes/server.md#orologio)). Fake clock
 (twin months 2016-2021), `-RealNow <ISO>` to test a week change: [server.md](docs/notes/server.md#orologio);
 full history in [fino-al-2026-10-16.md](docs/journal/fino-al-2026-10-16.md).
 
@@ -53,9 +53,10 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 (Older state blocks, 17-22 October: [docs/journal/2026-10-22.md](docs/journal/2026-10-22.md).)
 
 - **STATE AS OF 22-10 AFTERNOON — RESTART FROM HERE.** Master **rev 177** (default of the 4 session scripts); resources
-  **56** on the bench, **58** to install (57 built and superseded): `update-resources.ps1` + the two taps by hand, then
-  `relogin.ps1 -Save provefine -RealNow 2026-12-08T10:00:00Z` and a bench check of the new enemy graphics (Quest 850 Guard
-  Armor Ω, Chill Ripper's defeat). Done in the afternoon: I-194 integration of the original copies found by content
+  **58 installed** on the bench (22-10 evening; 57 built and superseded); save `provefine` with
+  `relogin.ps1 -Save provefine -RealNow 2026-12-09T10:00:00Z` (day 12-09: Login Bonus received, verified by the user;
+  use 12-10 for the next one). To check on the bench: the new enemy graphics (Quest 850 Guard Armor Ω, Quest 670 Chill
+  Ripper's defeat). Done in the afternoon: I-194 integration of the original copies found by content
   (`recon/tools/deep_donors.py`, `extra_donors_deep.tsv`; rev 176: 1028 Guard Armor Ω), 1524 Chill Ripper completed
   (dead of the DR twin 5045, user's decision, rev 177): **142 complete families**; 526-979 family rows: 46 own graphics,
   28 Dark Road, 148 base; ~88 families still missing (including the 6 DR medium placeholders). Notices exported by
