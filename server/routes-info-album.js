@@ -298,4 +298,4 @@ function albumData(owned, medalRows, maxGuilt) {
   };
 }
 
-module.exports = { NOTICES, noticesUrl, informationList, informationPopup, noticesPage, albumData };
+module.exports = { NOTICES, updateBody, noticesUrl, informationList, informationPopup, noticesPage, albumData };

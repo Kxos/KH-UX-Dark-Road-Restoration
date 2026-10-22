@@ -26,6 +26,7 @@ resources (CocoStudio layouts, texts, animations) are **rebuilt**: from nearby o
 from widget names read in the code, and from reference images of the time.
 
 **[HANDOFF.md](HANDOFF.md)** — how to resume: bench status and next step.
+**[docs/NOTICES.md](docs/NOTICES.md)** — the in-game Notices: how the restored game works and where it differs from the original.
 **[docs/ISSUES.md](docs/ISSUES.md)** — open and closed issues; technical notes by area in
 [docs/notes/](docs/notes/), full work journal (every solved issue with its cause) in
 [docs/journal/](docs/journal/).
