@@ -2,7 +2,7 @@
 
 [English](README.md) | **Italiano**
 
-**Come giocare:** [docs/SETUP.md](docs/SETUP.md) (in inglese) · **Notices del gioco:** <https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/> · **Cerchiamo aiuto:** [post su Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [Cosa cerchiamo](#cosa-cerchiamo) · **Bug:** [segnala un bug](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)
+**Come giocare:** [docs/SETUP.md](docs/SETUP.md) (in inglese) · **Sito del progetto:** [Kingdom Hearts Re-Union X](https://kxos.github.io/KH-UX-Dark-Road-Restoration/) · **Cerchiamo aiuto:** [post su Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [Cosa cerchiamo](#cosa-cerchiamo) · **Bug:** [segnala un bug](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)
 
 > Oggi installare il gioco è lungo e complesso (a lavoro finito diventerà un unico launcher), e il gioco è
 > in lavorazione: aspettatevi bug e crash, e segnalateli per favore.
