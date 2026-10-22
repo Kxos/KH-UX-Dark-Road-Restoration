@@ -55,8 +55,8 @@ D:\Progetto_Restauro_KH_UX\LDPlayer\LDPlayer9\ld.exe -s 0 "sh /mnt/shared/Misc/p
 - **STATE AS OF 22-10 AFTERNOON — RESTART FROM HERE.** Master **rev 177** (default of the 4 session scripts); resources
   **58 installed** on the bench (22-10 evening; 57 built and superseded); save `provefine` with
   `relogin.ps1 -Save provefine -RealNow 2026-12-09T10:00:00Z` (day 12-09: Login Bonus received, verified by the user;
-  use 12-10 for the next one). To check on the bench: the new enemy graphics (Quest 850 Guard Armor Ω, Quest 670 Chill
-  Ripper's defeat). Done in the afternoon: I-194 integration of the original copies found by content
+  use 12-10 for the next one). Bench check done (user, 22-10): Quest 850 Guard Armor Ω and Quest 670 Chill Ripper (original
+  look, reconstructed defeat) work. Done in the afternoon: I-194 integration of the original copies found by content
   (`recon/tools/deep_donors.py`, `extra_donors_deep.tsv`; rev 176: 1028 Guard Armor Ω), 1524 Chill Ripper completed
   (dead of the DR twin 5045, user's decision, rev 177): **142 complete families**; 526-979 family rows: 46 own graphics,
   28 Dark Road, 148 base; ~88 families still missing (including the 6 DR medium placeholders). Notices exported by
