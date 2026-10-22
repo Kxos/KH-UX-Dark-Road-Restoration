@@ -1,731 +1,731 @@
-# Medaglie: Medal List, dettaglio, vendita, Level Up, Evolve, grafica
+# Medals: Medal List, detail, sale, Level Up, Evolve, graphics
 
-Storia: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md) (sezioni del 9-10
-ottobre). Tocchi in [banco.md](banco.md#tocchi).
+History: [../journal/fino-al-2026-10-11.md](../journal/fino-al-2026-10-11.md) (sections of 9-10
+October). Taps in [banco.md](banco.md#tocchi).
 
 <a id="dati"></a>
-## Dati delle medaglie
+## Medal data
 
-- Id: prima cifra il rango (1 bronzo, 3 argento, 9 speciale), seconda l'attributo (1 Power, 2
-  Speed, 3 Magic). Deck iniziale: 13021 Donald A, 11021 Goofy A, 13031 Yuna; 90041 Dewey.
-- `medal` (63 campi): dalle righe binarie di thethiny (522 medaglie vere, `raw_master_old.py`) +
-  Roboloid (`external\roboloid\medal_db.json`, 2.100 medaglie con evoluzioni) con
-  `KHUX_MEDALS_ALL=1` (medalId 300000 + id Roboloid). `imageId` = medalId (il client compone
+- Id: first digit the rank (1 bronze, 3 silver, 9 special), second the attribute (1 Power, 2
+  Speed, 3 Magic). Starting deck: 13021 Donald A, 11021 Goofy A, 13031 Yuna; 90041 Dewey.
+- `medal` (63 fields): from thethiny's binary rows (522 real medals, `raw_master_old.py`) +
+  Roboloid (`external\roboloid\medal_db.json`, 2,100 medals with evolutions) with
+  `KHUX_MEDALS_ALL=1` (medalId 300000 + Roboloid id). `imageId` = medalId (the client composes
   `img/medal/Medal_L_%d.png`).
-- Medaglia mancante -> ripiego sulla **medaglia 1** (`[fn]`): `make-game-tables.js`
-  aggiunge la riga 1 (master 1 = Paperino blu senza costo).
-- Medaglie di supporto impilate: `validPack` (thethiny `unk_1116`), badge rosso.
-- <a id="tier"></a>**Tier** (SP Attack Bonus, «SAB Tier» della khuxwiki, 1-10) = `guiltValue`
-  (+0x4c0). Il dettaglio carica `img/ui/guilt/MedalInfo_Guilt<guiltValue>.png` (`[fn]` ->
-  `[fn]`: 0 = icona nascosta; se 0 e `validEvolve` segue `evolveId`); un file assente lascia
-  la texture del layout, cioe' l'**1** (per questo tutte le tier 9-10 sembravano tier 1). Fonte:
-  campo `Guilt` di Roboloid, identico alla khuxwiki (controllate SN++ - MoM Kairi 10, Illustrated
-  Leon 6★ 5, KH CoM Naminé 6★ 3). Le righe di thethiny avevano 0: ora prese da Roboloid via
-  `medal_map.json` (480 medaglie cambiate, rev. 82). Distribuzione: 0 (supporto) 186, 1:146,
-  2:274, 3:461, 4:127, 5:163, 6:58, 7:131, 8:241, 9:125, 10:182. Il bonus per tier (khuxwiki):
-  1 +25%, 2 +50%, 3 +100%, 4 +130%, 5 +150%, 6 +180%, 7 +200%, 8 +230%, 9 +280%, 10 +320% (la
-  guida dell'utente si ferma alla 8, scritta prima delle tier 9-10). Il moltiplicatore dei
-  subslot dipende dal tier (calcolato dal client; subslot non ancora serviti: `subslotMaxNum` 0).
-  `userMedal.guiltFactor` (bonus sbloccato della copia, centesimi di %) dal Level Up; `guiltProb`
-  = intervalli della khuxwiki per tier ([guilt.md](guilt.md), 12-10, da verificare al banco).
-  Icone (`reference\medal_tier\NOTE.md`): dettaglio e filtro = `MedalInfo_Guilt1-8` originali
-  (tondo blu con la cifra, non segnaposto) + 9-10 generate; le icone quadrate della guida
-  dell'utente sono le `Guilt<n>_On` delle schermate keyblade (`[fn]`, che carica anche
-  `_Off`, `_Err`, `_num`, `MD_Guilt<n>_*`): nelle risorse solo `Guilt4_On`, `Guilt5_On` e
-  `Guilt1-8_Err`; `make_textures.py` genera le altre (On/Off dalla khuxwiki; `_num` e `MD_*` copie).
-- Shuffleskill/trait: `shuffleskillSlot` (+0x4b4) e `spShuffleskillSlot` (+0x4b8) non esistono nel
-  formato vecchio. `make-game-tables.js` (`traitSlots`, khuxwiki «Trait Slots»): tier 1-3 -> 1,
-  4-5 -> 2, 6-10 -> 3, SN/Supernova e Prime 7★ -> 5, Prime 6★ -> 3, supporto 0; 1 slot speciale a
-  tutte le medaglie d'attacco. Eccezioni della wiki (alcune 6★) non applicate. Le «7★» di Roboloid
-  senza prefisso (561, es. Wakka) hanno una rarita' sospetta: non usata per gli slot.
-- Elemento `userMedal` (`[fn]`): `userMedalId` uint64, `medalId`, `number`, `level`, `exp`,
+- Missing medal -> fallback to **medal 1** (`[fn]`): `make-game-tables.js`
+  adds row 1 (master 1 = blue Donald without cost).
+- Stacked support medals: `validPack` (thethiny `unk_1116`), red badge.
+- <a id="tier"></a>**Tier** (SP Attack Bonus, «SAB Tier» of the khuxwiki, 1-10) = `guiltValue`
+  (+0x4c0). The detail loads `img/ui/guilt/MedalInfo_Guilt<guiltValue>.png` (`[fn]` ->
+  `[fn]`: 0 = icon hidden; if 0 and `validEvolve` it follows `evolveId`); a missing file leaves
+  the layout's texture, that is **1** (this is why all tier 9-10 looked like tier 1). Source:
+  Roboloid's `Guilt` field, identical to the khuxwiki (checked SN++ - MoM Kairi 10, Illustrated
+  Leon 6★ 5, KH CoM Naminé 6★ 3). thethiny's rows had 0: now taken from Roboloid via
+  `medal_map.json` (480 medals changed, rev. 82). Distribution: 0 (support) 186, 1:146,
+  2:274, 3:461, 4:127, 5:163, 6:58, 7:131, 8:241, 9:125, 10:182. The bonus per tier (khuxwiki):
+  1 +25%, 2 +50%, 3 +100%, 4 +130%, 5 +150%, 6 +180%, 7 +200%, 8 +230%, 9 +280%, 10 +320% (the
+  user's guide stops at 8, written before tiers 9-10). The multiplier of the
+  subslots depends on the tier (computed by the client; subslots not yet served: `subslotMaxNum` 0).
+  `userMedal.guiltFactor` (unlocked bonus of the copy, hundredths of %) from the Level Up; `guiltProb`
+  = khuxwiki ranges per tier ([guilt.md](guilt.md), 12-10, to be verified on the bench).
+  Icons (`reference\medal_tier\NOTE.md`): detail and filter = original `MedalInfo_Guilt1-8`
+  (blue circle with the digit, not placeholders) + 9-10 generated; the square icons of the user's
+  guide are the `Guilt<n>_On` of the keyblade screens (`[fn]`, which also loads
+  `_Off`, `_Err`, `_num`, `MD_Guilt<n>_*`): in the resources only `Guilt4_On`, `Guilt5_On` and
+  `Guilt1-8_Err`; `make_textures.py` generates the others (On/Off from the khuxwiki; `_num` and `MD_*` copies).
+- Shuffleskill/trait: `shuffleskillSlot` (+0x4b4) and `spShuffleskillSlot` (+0x4b8) do not exist in the
+  old format. `make-game-tables.js` (`traitSlots`, khuxwiki «Trait Slots»): tier 1-3 -> 1,
+  4-5 -> 2, 6-10 -> 3, SN/Supernova and Prime 7★ -> 5, Prime 6★ -> 3, support 0; 1 special slot for
+  all attack medals. Wiki exceptions (some 6★) not applied. Roboloid's «7★»
+  without prefix (561, e.g. Wakka) have a suspicious rarity: not used for the slots.
+- `userMedal` element (`[fn]`): `userMedalId` uint64, `medalId`, `number`, `level`, `exp`,
   `attack/defense/burstUpperNumber`, `lock`, `upperCost`, `guiltFactor`, `userSkills` <= 2,
   `userShuffleSkills`, `getDatetime`.
-- <a id="boosted"></a>**Boosted** (sotto-progetto 2b, Task 3, 17-10): una riga a parte del master `medal`
-  (`server/medal-boost.js`, `server/make-boosted-medals.js`, in fondo a `make-game-tables.js`), non un campo di
-  `userMedal`. medalId = variante x 1.000.000 + normale (1 = +1000 STR, 2 = +1000 STR/DEF, 3 = +2000 STR/DEF);
-  `displayId` = normale + 1 se la normale e' in {0, 100, 200, 300, 1100, 1200, 1300}, altrimenti 1; `groupId` =
-  normale (la normale resta 0); STR/DEF base e massimi + str/def; `cost`/`minCost` - 10 (minimo 0; video LFJ5:
-  SN++ - Master Eraqus 46 -> 36; `minCost` proposta); `validPack` 0; tutto il resto (immagini, nome, `sortId`,
-  burst, `guiltValue`, `addMaxAttack/Defense`, Evolve) uguale. Righe dalle voci `enhance.boosted` del catalogo:
-  **1125** (1000/1000: 1023, 1000/0: 95, 2000/2000: 7; per nome 442 coppie, per Tier 1003, per slot 140, gia'
-  coperte dalle altre due); `medal.json` da 2108 a 3233 righe (2.435.784 -> 3.770.561 byte). Nomi del catalogo
-  senza riga: «launchpad mcquakc», «webby vanderquakc», «axel [ex]», «kairi [ex+]», «sn++ - master eraqus
-  supernova+ - ava» (refusi/frasi del catalogo, nessuna riga). `make_banner_catalog.py` ignora le boosted:
-  rigenerato dopo la patch, catalogo identico (sha1 47861a1a).
-  **Verifica nel decompilato (U5/U6, WW 4.3.1)**: lettori del campo +0x18 della riga medal (getter
-  `[fn]` con offset 0x18 su `*(medaglia+0x168)`, scansione di tutte le 80 chiamate con offset 0x18 in
-  `D:\Progetto_Restauro_KH_UX\tmp\sp2b\t3\ctx18.txt`): `[fn]` (boosted se 1/101/201/301/1101/1201/1301),
-  `[fn]` (badge: confronta `displayId - 100/200/300/1100/1200/1300 < 2`, cioe' n e n+1 uguali),
-  `[fn]`/`[fn]`/`[fn]` (SN/SN+/SN++, stesso schema `- n < 2`, dopo il campo +0x504).
-  Nessuno usa `displayId` come indice di immagine o di tabella; 1 non cade in nessun intervallo del badge (come
-  0). Le altre chiamate con offset 0x18 leggono altre tabelle (dimensione 1/8/0x21/0x505, oppure +0x24 intero
-  dentro il nome della medaglia, `[fn]`) o un oggetto con +0x38 (barra a rapporto in `[fn]` a
-  0x733500); `[fn]` copia +0x14/+0x18 in un'altra riga allo stesso offset. medalId nel parser
-  `[fn]`: rapidjson `IsInt()` (bit 0x400 di flags, byte +0x11 bit 2) e copia di 4 byte: intero a 32
-  bit, gli id fino a 3.301.993 stanno ben sotto 2^31. Esito: nessun blocco.
-  Altre ricerche per nome che vedrebbero le boosted (da filtrare con `isBoosted` nei task che le toccano):
-  `make-limited-missions.js` (mappa nome -> riga a rarita' massima: la boosted, a pari rarita' e dopo, non
-  sostituisce la normale), `grant-all-medals.js` (darebbe anche le boosted), album/Medal List in `server.js`.
-  `supernova.js` e `blue-fairy.js` cercano per id e girano prima della patch: nessun filtro.
-  **Rigenerazione**: le boosted copiano la normale in fondo a `make-game-tables.js`; lanciare da soli
-  `supernova.js`, `blue-fairy.js` o `make-pet-tables.js` lascia le copie boosted con i valori vecchi finche'
-  `make-game-tables.js` non gira di nuovo (con `KHUX_MEDALS_ALL=1`: senza, il master scende a 522 medaglie).
-  **Al banco (Task 10, 17-10, risorse 41, rev 121)**: fascia BOOSTED nel risultato, dettaglio con STR/DEF/Cost gialli,
-  Cost 36 (46 - 10) e il No. della normale, targhetta LV rossa in Medal List e Level Up; Level Up normale ->
-  boosted con il pallino (U2), Cid sulla boosted (U1), Medal List/dettaglio/Evolve senza crash (U6); esiti in
+- <a id="boosted"></a>**Boosted** (sub-project 2b, Task 3, 17-10): a separate row of the `medal` master
+  (`server/medal-boost.js`, `server/make-boosted-medals.js`, at the end of `make-game-tables.js`), not a field of
+  `userMedal`. medalId = variant x 1,000,000 + normal (1 = +1000 STR, 2 = +1000 STR/DEF, 3 = +2000 STR/DEF);
+  `displayId` = normal + 1 if the normal one is in {0, 100, 200, 300, 1100, 1200, 1300}, otherwise 1; `groupId` =
+  normal (the normal one stays 0); base and maximum STR/DEF + str/def; `cost`/`minCost` - 10 (minimum 0; video LFJ5:
+  SN++ - Master Eraqus 46 -> 36; `minCost` proposed); `validPack` 0; everything else (images, name, `sortId`,
+  burst, `guiltValue`, `addMaxAttack/Defense`, Evolve) the same. Rows from the `enhance.boosted` entries of the catalog:
+  **1125** (1000/1000: 1023, 1000/0: 95, 2000/2000: 7; by name 442 pairs, by Tier 1003, by slot 140, already
+  covered by the other two); `medal.json` from 2108 to 3233 rows (2,435,784 -> 3,770,561 bytes). Catalog names
+  without a row: «launchpad mcquakc», «webby vanderquakc», «axel [ex]», «kairi [ex+]», «sn++ - master eraqus
+  supernova+ - ava» (typos/phrases of the catalog, no row). `make_banner_catalog.py` ignores the boosted ones:
+  regenerated after the patch, identical catalog (sha1 47861a1a).
+  **Check in the decompilation (U5/U6, WW 4.3.1)**: readers of field +0x18 of the medal row (getter
+  `[fn]` with offset 0x18 on `*(medaglia+0x168)`, scan of all the 80 calls with offset 0x18 in
+  `D:\Progetto_Restauro_KH_UX\tmp\sp2b\t3\ctx18.txt`): `[fn]` (boosted if 1/101/201/301/1101/1201/1301),
+  `[fn]` (badge: compares `displayId - 100/200/300/1100/1200/1300 < 2`, that is n and n+1 equal),
+  `[fn]`/`[fn]`/`[fn]` (SN/SN+/SN++, same scheme `- n < 2`, after field +0x504).
+  None uses `displayId` as an image or table index; 1 falls in no badge interval (like
+  0). The other calls with offset 0x18 read other tables (size 1/8/0x21/0x505, or +0x24 integer
+  inside the medal name, `[fn]`) or an object with +0x38 (ratio bar in `[fn]` at
+  0x733500); `[fn]` copies +0x14/+0x18 into another row at the same offset. medalId in the parser
+  `[fn]`: rapidjson `IsInt()` (bit 0x400 of flags, byte +0x11 bit 2) and copy of 4 bytes: 32-bit
+  integer, the ids up to 3,301,993 are well below 2^31. Outcome: no blocker.
+  Other lookups by name that would see the boosted ones (to be filtered with `isBoosted` in the tasks that touch them):
+  `make-limited-missions.js` (name -> row map at maximum rarity: the boosted one, at equal rarity and later, does not
+  replace the normal one), `grant-all-medals.js` (would also give the boosted ones), album/Medal List in `server.js`.
+  `supernova.js` and `blue-fairy.js` look up by id and run before the patch: no filter.
+  **Regeneration**: the boosted ones copy the normal one at the end of `make-game-tables.js`; running on their own
+  `supernova.js`, `blue-fairy.js` or `make-pet-tables.js` leaves the boosted copies with the old values until
+  `make-game-tables.js` runs again (with `KHUX_MEDALS_ALL=1`: without it, the master drops to 522 medals).
+  **On the bench (Task 10, 17-10, resources 41, rev 121)**: BOOSTED band in the result, detail with yellow STR/DEF/Cost,
+  Cost 36 (46 - 10) and the No. of the normal one, red LV plate in Medal List and Level Up; Level Up normal ->
+  boosted with the dot (U2), Cid on the boosted one (U1), Medal List/detail/Evolve without crash (U6); outcomes in
   [shop.md#sp2b](shop.md#sp2b).
 
 <a id="burst"></a>
-## Attacchi speciali (`burst`)
+## Special attacks (`burst`)
 
-La tabella vera ha 11 righe (`master_data/burst_base.json`). `make-game-tables.js` genera le
-altre: clone della famiglia (burstId/10) con «+k» e +300 di potenza per livello, oppure modello per
-attributo con nome, gauge, bersaglio, descrizione e moltiplicatore dalla khuxwiki (85 famiglie su
-109). 63 righe restano «Special Attack»; animazioni ed effetti sono quelli del modello (Thunder
+The real table has 11 rows (`master_data/burst_base.json`). `make-game-tables.js` generates the
+others: clone of the family (burstId/10) with «+k» and +300 power per level, or a template per
+attribute with name, gauge, target, description and multiplier from the khuxwiki (85 families out of
+109). 63 rows stay «Special Attack»; animations and effects are those of the template (Thunder
 Raid, Thundaga, Heaven's Sword) (ISSUES I-033).
 
 <a id="grafica"></a>
-## Grafica
+## Graphics
 
-- `recon/tools/fetch_medal_images.py` (`--all`): immagini di Roboloid/khux (file originali del gioco)
-  associate per nome e stelle -> Medal_L/Medal_S/Cutin in `D:\Progetto_Restauro_KH_UX\medal_gen\files`
-  (2.130 medaglie dal 18-10, comprese le 13 6★ [+] 301446...301782 ottenute dal master rigenerato, stessa riga di
-  Roboloid per nome+stelle: le copie potenziate 2301xxx riusano l'imageId della base; nomi con `%23` decodificati).
-  Pacchetto penultimo delle versioni complete: `-Quick` NON lo ricostruisce, per nuove immagini serve `-Version N+1`
-  (offline, non tocca il guest; poi `update-resources.ps1`).
-- Controllo dell'agente (`stage_gen\medal_check\REPORT.md`): le 21 Medal_L e 5 Cutin che esistevano
-  sono identiche agli originali; limiti della fonte: 185 Cutin assenti (41 nel master), 419 medaglie
-  aggiunte condividono la Medal_L, 590 Cutin senza bagliore bianco, Medal_S leggermente piu' morbide
+- `recon/tools/fetch_medal_images.py` (`--all`): images from Roboloid/khux (original game files)
+  matched by name and stars -> Medal_L/Medal_S/Cutin in `D:\Progetto_Restauro_KH_UX\medal_gen\files`
+  (2,130 medals from 18-10, including the 13 6★ [+] 301446...301782 obtained from the regenerated master, same Roboloid
+  row by name+stars: the boosted copies 2301xxx reuse the base's imageId; names with `%23` decoded).
+  Second-to-last pack of the complete versions: `-Quick` does NOT rebuild it, for new images `-Version N+1` is needed
+  (offline, does not touch the guest; then `update-resources.ps1`).
+- Agent's check (`stage_gen\medal_check\REPORT.md`): the 21 Medal_L and 5 Cutin that existed
+  are identical to the originals; limits of the source: 185 Cutin missing (41 in the master), 419 added
+  medals share the Medal_L, 590 Cutin without the white glow, Medal_S slightly softer
   (ISSUES I-039).
 
 <a id="medal-list"></a>
-## Medal List e dettaglio
+## Medal List and detail
 
-- Scena `MedalListScene_ver130`; `LeftUI` = `MedalSell_Back.json` (originale). Nomi da
-  `[fn]` e vicine: `Win_Bottom` (`Txt`, `Txt_Button`), `Medal_Sell_Panel` (solo la barra in
-  alto), `Scroll_Area`, `Button_Back`, `Button_Sort`, `Button_Sell1`/`Txt_Sell1`; contatore
+- Scene `MedalListScene_ver130`; `LeftUI` = `MedalSell_Back.json` (original). Names from
+  `[fn]` and neighbors: `Win_Bottom` (`Txt`, `Txt_Button`), `Medal_Sell_Panel` (only the top
+  bar), `Scroll_Area`, `Button_Back`, `Button_Sort`, `Button_Sell1`/`Txt_Sell1`; counter
   `Txt_MedalGet` («Slots», 101200050), `Txt_MedalGet_Num_Label` / `Txt_MedalGet_All_Label`
-  (`[fn]`); barra di ordinamento generica `[fn]` (`Txt_Sort`, `Txt_Sort_Label`,
+  (`[fn]`); generic sort bar `[fn]` (`Txt_Sort`, `Txt_Sort_Label`,
   `Txt_Filter_On`).
-- Griglia: scena scalata 1,6875 e centrata (x_schermo = 960 + (x - 480)·1,6875), celle 120x164
-  (`[fn]`); 7 colonne intere: `MedalList_Gen` `Scroll_Area` 954 px da x=3, vendita 942 px da
-  x=9 (passo 126, prima a 33 dal bordo). Pulsanti scalati 0,765, prima riga sotto la barra.
-- Dettaglio: `[fn]` carica `SlideMedalInfoScene_ver341` sopra `MedalInfoScene_ver320`; il
-  primo figlio di `LeftUI`/`RightUI` diventa pulsante (`[fn]`), callback
-  `[fn]`/`[fn]` -> `[fn]`/`[fn]` (scorrimento come lo swipe).
-  `Panel_Left`/`Panel_Right` con origine al centro della freccia (30,320 e 930,320; 120x220).
-- Cursore della griglia: armatura `Cursor_Anim_MedalSell` (movimento `Animation1`, `[fn]`) =
-  copia del cursore della fusione `Cursor_Anim_MdalMix_ver103` (bagliore `Medal_Syn_Select_Eff02`,
-  144x172). Selezione: `MedalSelectAnimation` (`Medal_Select01`, `[fn]`).
-- Targhetta sotto la medaglia: segue l'ordinamento; sulle medaglie di supporto alterna il prezzo con
-  i testi 101210001-003, che nelle risorse inglesi sono uno spazio (originale «FOR SYNTHESIS»)
+- Grid: scene scaled 1.6875 and centered (x_screen = 960 + (x - 480)·1.6875), cells 120x164
+  (`[fn]`); 7 whole columns: `MedalList_Gen` `Scroll_Area` 954 px from x=3, sale 942 px from
+  x=9 (stride 126, first at 33 from the edge). Buttons scaled 0.765, first row below the bar.
+- Detail: `[fn]` loads `SlideMedalInfoScene_ver341` over `MedalInfoScene_ver320`; the
+  first child of `LeftUI`/`RightUI` becomes a button (`[fn]`), callback
+  `[fn]`/`[fn]` -> `[fn]`/`[fn]` (scrolling like the swipe).
+  `Panel_Left`/`Panel_Right` with origin at the center of the arrow (30,320 and 930,320; 120x220).
+- Grid cursor: armature `Cursor_Anim_MedalSell` (movement `Animation1`, `[fn]`) =
+  copy of the fusion cursor `Cursor_Anim_MdalMix_ver103` (glow `Medal_Syn_Select_Eff02`,
+  144x172). Selection: `MedalSelectAnimation` (`Medal_Select01`, `[fn]`).
+- Plate under the medal: follows the sorting; on the support medals it alternates the price with
+  the texts 101210001-003, which in the English resources are a space (original «FOR SYNTHESIS»)
   (ISSUES I-022).
-- Animazione della targhetta (ISSUES I-047): nessun ciclo STR -> DEF -> costo, ne' nell'originale
-  ne' nel codice. Un solo valore per modalita' di ordinamento (`+0x470`, switch in `[fn]`);
-  le medaglie con uno stato alternano valore ed etichetta: `[fn]` (ogni frame da
-  `[fn]`) tiene 2 s il valore, 1 s di dissolvenza, 2 s l'etichetta, 1 s di dissolvenza
-  (periodo 6 s; `[fn]` applica le opacita'). Etichetta da `[fn]`: medaglia in un
-  deck di `userDecks` (`[fn]`) -> «Equipped» (101210004); Spirit 106110305; Subslot
-  101210010. Video originale (2019): stessi tempi misurati al decimo di secondo
-  (`reference\medal_list_plate\`). Sul banco il deck e' [1, 0, 3] (medaglie iniziali, in fondo
-  alla lista per Strength): le medaglie in vista non sono equipaggiate e restano ferme, come
-  nell'originale.
+- Plate animation (ISSUES I-047): no STR -> DEF -> cost cycle, neither in the original
+  nor in the code. A single value per sort mode (`+0x470`, switch in `[fn]`);
+  medals with a state alternate value and label: `[fn]` (every frame from
+  `[fn]`) holds the value 2 s, 1 s fade, 2 s the label, 1 s fade
+  (period 6 s; `[fn]` applies the opacities). Label from `[fn]`: medal in a
+  deck of `userDecks` (`[fn]`) -> «Equipped» (101210004); Spirit 106110305; Subslot
+  101210010. Original video (2019): same timings measured to a tenth of a second
+  (`reference\medal_list_plate\`). On the bench the deck is [1, 0, 3] (starting medals, at the bottom
+  of the list by Strength): the medals in view are not equipped and stay still, as
+  in the original.
 
 <a id="sort"></a>
-## Popup Sort/Filter
+## Sort/Filter popup
 
-`[fn]` carica `PopupNormal_SortButton_ver350` (generato dalla ver320). `[fn]`
-(troppo grande per il decompilatore: nomi dallo stack e dal blocco di stringhe) cerca `Dummy_Sb` con
+`[fn]` loads `PopupNormal_SortButton_ver350` (generated from ver320). `[fn]`
+(too large for the decompiler: names from the stack and from the string block) looks for `Dummy_Sb` with
 ~30 `Filter_Sb*`, `Txt_TitleSb`, `Txt_SubTitleSb01/02`, `Filter_Subslot`, `Filter_Trait`,
-`Filter_Evo_Set`, `Filter_Ability_*`: cloni nascosti di CheckBox (`Filter_Sb` dentro `Dummy_Sb`,
-genitore letto a 00a482ac). Texture ricostruite in `make_textures.py` (riferimenti
-`reference\medal_list\sort_filter\`). Da confrontare con l'originale: «Favorite», «SP Attack Bonus /
-No Bonus» grigi, «Imitation», «Special Traits» con 11 icone e «None» due volte (ISSUES I-023).
+`Filter_Evo_Set`, `Filter_Ability_*`: hidden clones of a CheckBox (`Filter_Sb` inside `Dummy_Sb`,
+parent read at 00a482ac). Textures rebuilt in `make_textures.py` (references
+`reference\medal_list\sort_filter\`). To be compared with the original: «Favorite», «SP Attack Bonus /
+No Bonus» gray, «Imitation», «Special Traits» with 11 icons and «None» twice (ISSUES I-023).
 
-Riga «SP Attack Bonus» (tier): il layout originale ver320 ha `Filter_Guilt1..9` (8 in alto, il 9
-sotto a sinistra) con `Logo_01` = `MedalInfo_Guilt<n>.png`; il codice (`[fn]`) cerca
-`Filter_Guilt%d` da 1 finche' li trova, e la ver350 ne vuole 10 (clone di `make_layouts.py`). Prima
-il 10 era nascosto sotto il 9 e `MedalInfo_Guilt9` era una copia dell'8; ora 9 e 10 sono disegnate
-(`make_textures.py`, stile delle 1-8 originali) e il 10 sta accanto al 9 (x 185). Le tier 9-10
-esistono (khuxwiki: 307 medaglie): la riga non si ferma all'8 della guida. Icone e confronti:
+«SP Attack Bonus» row (tier): the original ver320 layout has `Filter_Guilt1..9` (8 at the top, 9
+below on the left) with `Logo_01` = `MedalInfo_Guilt<n>.png`; the code (`[fn]`) looks for
+`Filter_Guilt%d` from 1 as long as it finds them, and ver350 wants 10 of them (clone of `make_layouts.py`). Before,
+10 was hidden under 9 and `MedalInfo_Guilt9` was a copy of 8; now 9 and 10 are drawn
+(`make_textures.py`, style of the original 1-8) and 10 sits next to 9 (x 185). Tiers 9-10
+exist (khuxwiki: 307 medals): the row does not stop at the guide's 8. Icons and comparisons:
 `D:\Progetto_Restauro_KH_UX\reference\medal_tier\NOTE.md` ([tier](#tier)).
 
 <a id="filtri"></a>
-Sezione **Supernova** (visibile da quando le medaglie hanno `validSuperBurst`, master 108). Testi
-106240205-227 assenti ovunque (IPA 4.4.0 e JP 4.3.1: segnaposto «[id]»): nostri, in
-`make_layouts.py` (TEXTS). Filtro `[fn]` (unico chiamante `[fn]`, 15 controlli in
-AND); riga «SN» = `burst` di `superBurstId` (`[fn]`, nessun limite agli id 4000000+).
+**Supernova** section (visible since the medals have `validSuperBurst`, master 108). Texts
+106240205-227 missing everywhere (IPA 4.4.0 and JP 4.3.1: placeholder «[id]»): ours, in
+`make_layouts.py` (TEXTS). Filter `[fn]` (only caller `[fn]`, 15 checks in
+AND); «SN» row = `burst` of `superBurstId` (`[fn]`, no limit on the ids 4000000+).
 
-| Pulsante (flag del filtro) | Testo | Condizione |
+| Button (filter flag) | Text | Condition |
 |---|---|---|
-| Filter_Sb / SbPlus / SbPlusPlus (0x12-0x14) | icone SB | medaglia `displayId` 100/200/300 (+1, +1000, +1001), `validSuperBurst` 1 (`[fn]/61ac/6298`) |
-| Filter_Sb_NotSet (0x3c) | None | nessuno dei tre |
-| Filter_Sb_Single/All/Random (0x2c-0x2e) | Single/All/Random | riga SN `target` 1/2/3 (in OR) |
-| Filter_Sb01-08, 09, 12 (0x2f-0x38) | icone (sotto «Types», 106240205) | buff/debuff della riga SN (`bufAttack*`, `debufDefense*`, ...) |
-| Filter_Sb_Guard / BaseAttack / BaseDefence (0x39-0x3b) | Pierce DEF / Base STR / Base DEF | `penetrate` > 0 / `addBaseAtk*` / `addBaseDef*` != 0: `penetrate` sempre 0; `addBase*` dalle descrizioni dal 18-10 ([battaglia](battaglia.md#basebuff), I-155) |
+| Filter_Sb / SbPlus / SbPlusPlus (0x12-0x14) | SB icons | medal `displayId` 100/200/300 (+1, +1000, +1001), `validSuperBurst` 1 (`[fn]/61ac/6298`) |
+| Filter_Sb_NotSet (0x3c) | None | none of the three |
+| Filter_Sb_Single/All/Random (0x2c-0x2e) | Single/All/Random | SN row `target` 1/2/3 (in OR) |
+| Filter_Sb01-08, 09, 12 (0x2f-0x38) | icons (under «Types», 106240205) | buffs/debuffs of the SN row (`bufAttack*`, `debufDefense*`, ...) |
+| Filter_Sb_Guard / BaseAttack / BaseDefence (0x39-0x3b) | Pierce DEF / Base STR / Base DEF | `penetrate` > 0 / `addBaseAtk*` / `addBaseDef*` != 0: `penetrate` always 0; `addBase*` from the descriptions since 18-10 ([battaglia](battaglia.md#basebuff), I-155) |
 | Filter_Sb_Recovery (0x3d) | Heal | `heal`, `cure*`, `recovery` |
-| Filter_Sb_Special (0x3f) | Special | copia/azzeramento buff, contatore, riflesso |
+| Filter_Sb_Special (0x3f) | Special | buff copy/reset, counter, reflect |
 | Filter_Sb_Recovery2 (0x3e) | SN Renew | `recurringAttribute` > 0 |
-| Filter_Sb_AttackOnly (0x40) | Attack Only | `specialPowerType` 1 e nessun effetto |
-| Filter_Sb_Timing1-7 (0x41-0x47) | 1-7 sotto «PvP Timing» (106240220) | `superburstTiming` == n |
+| Filter_Sb_AttackOnly (0x40) | Attack Only | `specialPowerType` 1 and no effect |
+| Filter_Sb_Timing1-7 (0x41-0x47) | 1-7 under «PvP Timing» (106240220) | `superburstTiming` == n |
 
-106240206-208 = Pierce DEF / Base STR / Base DEF della sezione Special Attacks (riga `burstId`).
-Restano a `%d`/`%d+` solo 106240201-204 (Hits/Gauges). Banco 14-10 (un filtro alla volta): SN+,
-None, Single, SN Renew (le 16 SN++ «R», icona verde) corretti. Attenzione: uno swipe che parte su un
-pulsante lo attiva (Hits/Gauges fuori vista davano liste vuote o solo Moogle): scorrere sul bordo
-destro (x 1722) e controllare che Undo sia grigio. Da fare: `target` 3 per le Supernova casuali
-(Roboloid ha solo Single/All) e `penetrate` (nessuna fonte con i valori originali; `addBase*` ricostruiti dalle descrizioni, [battaglia](battaglia.md#basebuff)).
+106240206-208 = Pierce DEF / Base STR / Base DEF of the Special Attacks section (`burstId` row).
+Only 106240201-204 (Hits/Gauges) stay at `%d`/`%d+`. Bench 14-10 (one filter at a time): SN+,
+None, Single, SN Renew (the 16 SN++ «R», green icon) correct. Warning: a swipe that starts on a
+button activates it (Hits/Gauges out of view gave empty lists or only Moogle): scroll on the right
+edge (x 1722) and check that Undo is gray. To do: `target` 3 for the random Supernovas
+(Roboloid has only Single/All) and `penetrate` (no source with the original values; `addBase*` rebuilt from the descriptions, [battaglia](battaglia.md#basebuff)).
 
 <a id="vendita"></a>
-## Vendita (Sell Medals) e lucchetto
+## Sale (Sell Medals) and lock
 
-- `[fn]` carica `MedalSellScene_ver350`: CenterUI `MedalSell_Gen.json`, LeftUI
-  `MedalSell_Back.json`, RightUI pannello vuoto (`[fn]` usa il primo figlio dei tre). Nomi:
+- `[fn]` loads `MedalSellScene_ver350`: CenterUI `MedalSell_Gen.json`, LeftUI
+  `MedalSell_Back.json`, RightUI empty panel (`[fn]` uses the first child of the three). Names:
   `Txt_Money`/`Txt_Money_Label` (`[fn]`), `Txt_Money_Total`/`Txt_Money_Total_Lavel` (sic),
   `Txt_A_Coin(_Label)`, `Plate_A_Jewel`/`Plate_A_Ticket`, `BoxNow`, `BoxMaxLabel`, `DeckBase2`.
-- Conferma `PopupNormal_MedalSell_Check_ver350` (`[fn]`), esito
-  `PopupNormal_MedalSell_Ok_ver350` (`[fn]`): copie di `PopupNormal_Text_34_4Line_OkCancel/
-  Ok`; ricompense `Panel_1..4` con `Obtain_Plate_a..d` (`[fn]`: `Txt`, `Txt_Label`, `Icon`);
-  medaglie rare: `Alert_Area` <- `PopupNormal_MedalMix_RareCaution_Panel.json` (generato).
+- Confirmation `PopupNormal_MedalSell_Check_ver350` (`[fn]`), outcome
+  `PopupNormal_MedalSell_Ok_ver350` (`[fn]`): copies of `PopupNormal_Text_34_4Line_OkCancel/
+  Ok`; rewards `Panel_1..4` with `Obtain_Plate_a..d` (`[fn]`: `Txt`, `Txt_Label`, `Icon`);
+  rare medals: `Alert_Area` <- `PopupNormal_MedalMix_RareCaution_Panel.json` (generated).
 - `POST /user/medal/sell` (51) `{"userMedalIds":[..],"numbers":[..]}` -> `userData.userPoint`,
   `userSkills`, `userMedals`, `sellUserMedalIds`.
-- Popup della quantita' `EquipSell_Medal_Step1_ver131`: «1/N» = `Txt_MaterialStock_Fix_2`,
-  `Txt_data3` «/», `_Fix_3` massimo; fascia rossa «Includes ★★★ Medals or higher.» (Panel
-  233,18,38, bordi 255,2,0, `rare_star.png`) se la pila ha piu' di 2 stelle.
-- Lucchetto: `POST /user/medal/lock` (46) `{"userMedalIds":[..],"isLocks":[..]}`, mandato **solo
-  uscendo da Medal List**; risposta `userMedals` (`[fn]`), `deleteUserMedalIds`,
-  `isSubslotUpdate`. Salvato in `player.medalLocks`.
+- Quantity popup `EquipSell_Medal_Step1_ver131`: «1/N» = `Txt_MaterialStock_Fix_2`,
+  `Txt_data3` «/», `_Fix_3` maximum; red band «Includes ★★★ Medals or higher.» (Panel
+  233,18,38, borders 255,2,0, `rare_star.png`) if the stack has more than 2 stars.
+- Lock: `POST /user/medal/lock` (46) `{"userMedalIds":[..],"isLocks":[..]}`, sent **only
+  when leaving Medal List**; response `userMedals` (`[fn]`), `deleteUserMedalIds`,
+  `isSubslotUpdate`. Saved in `player.medalLocks`.
 
 <a id="level-evolve"></a>
 ## Level Up, Evolve, Unequip
 
-- Level Up: `POST /user/medal/enhance`, curva EXP del client, popup dei materiali rari. Medaglie
-  speciali e copie (`server/medal-guilt.js`, 12-10, DA VERIFICARE): pallini dell'attacco speciale
-  (`burstUpperNumber`, fino a `burst.maxEnhanceCount`: 6★/7★ 5), sblocco/rilancio della guilt
-  (`guiltFactor`, con `isGuilt` = Quest 34), Magic Mirror +1%, Chip/Dale STR/DEF (fino a
-  `addMaxAttack/addMaxDefense`), Cid costo (fino a `cost - minCost`, 6★/7★ 20), Fantasia Mickey B
-  (300913, type 8) +1 pallino; Magic Broom (300948) e Fantasia Mickey A -> B con 5 Broom. Salvati
-  in `medalState`, serviti in `userMedal`. Dettagli e prove: [guilt.md](guilt.md#stato).
-- Conferma del rilancio della guilt (`[fn]`): `PopupNormal_Guilt_ver130` mancava (crash al
-  tocco di Level Up con una copia su una medaglia con guilt), generato da `PopupNormal_Text_34_4Line_
-  OkCancel`: `Win` > `Txt_Wording1` (101300035), `Txt_Wording2` (101300036, intervalli uguali) o
+- Level Up: `POST /user/medal/enhance`, client EXP curve, rare materials popup. Special medals
+  and copies (`server/medal-guilt.js`, 12-10, TO BE VERIFIED): special attack dots
+  (`burstUpperNumber`, up to `burst.maxEnhanceCount`: 6★/7★ 5), guilt unlock/reroll
+  (`guiltFactor`, with `isGuilt` = Quest 34), Magic Mirror +1%, Chip/Dale STR/DEF (up to
+  `addMaxAttack/addMaxDefense`), Cid cost (up to `cost - minCost`, 6★/7★ 20), Fantasia Mickey B
+  (300913, type 8) +1 dot; Magic Broom (300948) and Fantasia Mickey A -> B with 5 Brooms. Saved
+  in `medalState`, served in `userMedal`. Details and tests: [guilt.md](guilt.md#stato).
+- Guilt reroll confirmation (`[fn]`): `PopupNormal_Guilt_ver130` was missing (crash on
+  tapping Level Up with a copy on a medal with guilt), generated from `PopupNormal_Text_34_4Line_
+  OkCancel`: `Win` > `Txt_Wording1` (101300035), `Txt_Wording2` (101300036, equal ranges) or
   `Dummy` > `Txt_Wording4` «Bonus range:», `Txt_Wording5` -> `Syn_Arrow02` -> `Txt_Wording6`
-  (101300055: intervallo +0x508 -> +0x510) con `Dummy_Announce` > `Txt_Announce` (101300056,
-  lampeggia), `Txt_Wording3` (101300037). Testi tutti gia' serviti. Nessuno screenshot originale.
-- Avviso dei materiali rari (`[fn]`): i `_Panel` stanno in `Alert_Area` con x = 0, quindi
-  `Alert_Area` e' larga 600 e centrata; caso 1 = rarita' > 2 (`[fn]`), «Includes ★★★
-  Medals or higher.» con le stelle figlie di `Star1`.
-- Evolve (azione 56): la medaglia diventa `evolveId` al livello 1, materiali consumati (anche dalle
-  pile), costo `evolveMoney`; risposta `before/afterEvolveUserMedal`, `pet`, `attachmentMedalIds`.
-  Scena `MedalEvoScene_ver320` generata (stile `reference\medal_evolve\`); `MedalInfo_Information_R1`
-  con `Panel_MixResult_Area`/`Tap_Screen_Area` della R3. Le LWF
-  `lwf/medal/compose/evolution/card_evolution_result_01..05` mancano: copie del Level Up (ISSUES
-  I-024). Provata sul banco: Donald 1★ LV20 + Cheshire Cat -> Donald 2★.
-- Evolve con medaglie richieste (client 4.3.1, 14-10; Supernova: 5 Dual Meow Wow [SAB LV 7/8/9]
-  dello stesso tipo, khuxwiki): riga medaglia `validEvolve` +0x544, `evolveId` +0x548, `evolveMoney`
-  +0x54c, `validEvolveNeed` +0x550 = **numero** di medaglie richieste (fino a 5), `evolveNeedId[5]`
-  +0x554 = medalId richiesto per ogni posto (5 Dual Meow Wow uguali = `[X,X,X,X,X]`). La scena
-  (`[fn]`) raggruppa gli id consecutivi uguali e conta le copie possedute (elenco delle
-  medaglie dell'utente, record da 0x148, medalId a +0). `[fn]`: `validEvolve` non e' solo
-  0/1 (3 = ramo diverso, 1 = suoni/tutorial), da verificare. La richiesta (`[fn]`, azione 56)
-  ha solo `baseUserMedalId` e `attachmentMedalIds`: le medaglie richieste arrivano in
-  `attachmentMedalIds` insieme ai materiali (da confermare sul banco, anche per le pile `validPack`:
-  stesso userMedalId ripetuto?). Il server deve consumarle e rispondere come per l'Evolve normale.
+  (101300055: range +0x508 -> +0x510) with `Dummy_Announce` > `Txt_Announce` (101300056,
+  blinks), `Txt_Wording3` (101300037). Texts all already served. No original screenshot.
+- Rare materials warning (`[fn]`): the `_Panel`s are in `Alert_Area` with x = 0, so
+  `Alert_Area` is 600 wide and centered; case 1 = rarity > 2 (`[fn]`), «Includes ★★★
+  Medals or higher.» with the stars as children of `Star1`.
+- Evolve (action 56): the medal becomes `evolveId` at level 1, materials consumed (also from the
+  stacks), cost `evolveMoney`; response `before/afterEvolveUserMedal`, `pet`, `attachmentMedalIds`.
+  Scene `MedalEvoScene_ver320` generated (style `reference\medal_evolve\`); `MedalInfo_Information_R1`
+  with `Panel_MixResult_Area`/`Tap_Screen_Area` of R3. The LWFs
+  `lwf/medal/compose/evolution/card_evolution_result_01..05` are missing: copies of the Level Up (ISSUES
+  I-024). Tried on the bench: Donald 1★ LV20 + Cheshire Cat -> Donald 2★.
+- Evolve with required medals (client 4.3.1, 14-10; Supernova: 5 Dual Meow Wow [SAB LV 7/8/9]
+  of the same type, khuxwiki): medal row `validEvolve` +0x544, `evolveId` +0x548, `evolveMoney`
+  +0x54c, `validEvolveNeed` +0x550 = **number** of required medals (up to 5), `evolveNeedId[5]`
+  +0x554 = required medalId for every place (5 identical Dual Meow Wow = `[X,X,X,X,X]`). The scene
+  (`[fn]`) groups the equal consecutive ids and counts the owned copies (list of the
+  user's medals, records of 0x148, medalId at +0). `[fn]`: `validEvolve` is not only
+  0/1 (3 = different branch, 1 = sounds/tutorial), to be verified. The request (`[fn]`, action 56)
+  has only `baseUserMedalId` and `attachmentMedalIds`: the required medals arrive in
+  `attachmentMedalIds` together with the materials (to be confirmed on the bench, also for the `validPack` stacks:
+  same userMedalId repeated?). The server must consume them and reply as for the normal Evolve.
 <a id="blue-fairy"></a>
-- **Evolve 6★ -> 7★ con le Blue Fairy** (15-10, fonte dell'utente e khuxwiki «Blue_Fairy»): 5 Blue Fairy [SA Bonus LV n]
-  dello stesso tier della medaglia (`guiltValue`), Set 26 EN (maggio 2018), dalle draw dei ticket PvP. `server/blue-fairy.js`:
-  8 righe (Roboloid 1495-1502 -> medalId 301495-301502, album 1447-1454, copiate da Magic Broom; grafica gia' in
-  medal_gen) e `validEvolveNeed` 5 / `evolveNeedId` [fata del tier x5] sulle 397 righe 6★ evolvibili in 7★ che non
-  avevano medaglie richieste (`evolveMoney` 99999 invariato). Master revisione 109.
-  Il client (`[fn]`) accende Evolve solo con: livello massimo (+0x4cc), tutte le medaglie richieste, munny >=
-  `evolveMoney` (+0x54c) e, se la 7★ ha +0x4ac maggiore, guilt della medaglia utente (+0x15c) al **massimo**
-  dell'intervallo del tier (`[fn]`): il «Max Guilted» della fonte e' imposto dal client.
-  Banco 15-10: Lexaeus A 6★ LV100, 5 pallini, guilt 10000 (max tier 3) + 5 Blue Fairy [3] -> Lexaeus A 7★ (No. 1111),
-  richiesta `{baseUserMedalId:723, attachmentMedalIds:[2313 x5]}` (la pila ripete il primo id), il server consuma
-  2313-2317 e 99999 munny. Come si ottengono senza PvP: I-126 (decisione rimandata).
+- **Evolve 6★ -> 7★ with the Blue Fairies** (15-10, user's source and khuxwiki «Blue_Fairy»): 5 Blue Fairy [SA Bonus LV n]
+  of the same tier as the medal (`guiltValue`), Set 26 EN (May 2018), from the PvP ticket draws. `server/blue-fairy.js`:
+  8 rows (Roboloid 1495-1502 -> medalId 301495-301502, album 1447-1454, copied from Magic Broom; graphics already in
+  medal_gen) and `validEvolveNeed` 5 / `evolveNeedId` [fairy of the tier x5] on the 397 6★ rows evolvable into 7★ that
+  had no required medals (`evolveMoney` 99999 unchanged). Master revision 109.
+  The client (`[fn]`) enables Evolve only with: maximum level (+0x4cc), all the required medals, munny >=
+  `evolveMoney` (+0x54c) and, if the 7★ has a higher +0x4ac, guilt of the user medal (+0x15c) at the **maximum**
+  of the tier range (`[fn]`): the «Max Guilted» of the source is enforced by the client.
+  Bench 15-10: Lexaeus A 6★ LV100, 5 dots, guilt 10000 (max tier 3) + 5 Blue Fairy [3] -> Lexaeus A 7★ (No. 1111),
+  request `{baseUserMedalId:723, attachmentMedalIds:[2313 x5]}` (the stack repeats the first id), the server consumes
+  2313-2317 and 99999 munny. How to get them without PvP: I-126 (decision postponed).
 <a id="bgm-medals"></a>
-- **BGM Medals** (15-10, `reference\bgm_medals\`, khuxwiki «Category:BGM_Medals»): 37 medaglie con un brano che
-  suona nel dettaglio della medaglia e in home quando e' condivisa (Share). Client: `medal.bgm` int (+0x56c,
-  `[fn]`) = id del suono; `[fn]` lo suona (`[fn]`, dissolvenza 500 ms) e caricando
-  `audio/%09d.akb` (`[fn]`, banco SQEX AKB v2 con Ogg Vorbis; senza file non suona nulla, ma l'icona ♪
-  `Support_Bgm` compare lo stesso). `text/audio/<nome>` e' solo testo (nome -> id).
-  Server: `server/medal_bgm.json` (nome -> id, abbinamenti incerti in `_incerti`) applicato da `make-game-tables.js`
-  (71 righe, master revisione 110); i 20 AKB non serviti dal JP 4.3.1 (`import_jp_coco.py`, `audio/` fuori da
-  cocostudio/publish), riserva delle versioni complete portata a 128 MiB (risorse 37). Share = `POST
-  /user/support/update` {supportMedalId} (azione 47, stesso ramo 0x7c4124 della 19): `player.supportUserMedalId`,
-  servito da `GET /user/support`. Banco 15-10: HD Roxas -> Another Side nel dettaglio e, condivisa, in home;
-  Sephiroth [EX] -> One-Winged Angel (sentiti dall'utente). Senza file: HD King Mickey [EX] (Vim and Vigor).
-  Crash intermittente della home dopo il -Quick (pet `wait.lwf` non caricato, `[fn]`): non riprodotto
-  con le stesse risorse dopo un riavvio, da tenere d'occhio.
-  16-10 (master 113): le Supernova (SN/SN+/SN++ - X) prendono il brano della medaglia base X (decisione
-  dell'utente; nell'originale documentata solo Supernova - Sephiroth): +7 righe (SN++ - Final Boss Xion, SN++ - HD
-  Roxas, SN++ - Illustrated Xion, SN/SN+ - Casual Roxas, SN/SN+ - HD Xion [EX]), 78 in tutto. Prova mirata:
-  `D:\Progetto_Restauro_KH_UX\tmp\bgm_save.js` (a server fermo) lascia nel salvataggio solo le 78 medaglie con
-  musica; salvataggio vero in `tmp\player_before_bgmtest.json`, da rimettere dopo la prova.
-  **Banco 16-10: tutte le 78 suonano** (sentite dall'utente), anche Dearly Beloved (501006001) e HD Ventus [EX]
-  (501006019): i loro AKB sono gia' negli OBB serviti. Resta senza brano solo HD King Mickey [EX] (Vim and Vigor, bgm 0).
-- Unequip: `POST /user/medal/remove` (237); prima il client chiede `GET /user/medal/preremove`, a cui
-  il server da' una risposta generica (ISSUES I-038).
+- **BGM Medals** (15-10, `reference\bgm_medals\`, khuxwiki «Category:BGM_Medals»): 37 medals with a track that
+  plays in the medal detail and in the home when it is shared (Share). Client: `medal.bgm` int (+0x56c,
+  `[fn]`) = sound id; `[fn]` plays it (`[fn]`, 500 ms fade) by loading
+  `audio/%09d.akb` (`[fn]`, SQEX AKB v2 bank with Ogg Vorbis; without the file nothing plays, but the ♪ icon
+  `Support_Bgm` appears anyway). `text/audio/<nome>` is only text (name -> id).
+  Server: `server/medal_bgm.json` (name -> id, uncertain matches in `_incerti`) applied by `make-game-tables.js`
+  (71 rows, master revision 110); the 20 AKBs not served taken from JP 4.3.1 (`import_jp_coco.py`, `audio/` outside
+  cocostudio/publish), reserve of the complete versions raised to 128 MiB (resources 37). Share = `POST
+  /user/support/update` {supportMedalId} (action 47, same branch 0x7c4124 as 19): `player.supportUserMedalId`,
+  served by `GET /user/support`. Bench 15-10: HD Roxas -> Another Side in the detail and, shared, in the home;
+  Sephiroth [EX] -> One-Winged Angel (heard by the user). Without the file: HD King Mickey [EX] (Vim and Vigor).
+  Intermittent crash of the home after the -Quick (pet `wait.lwf` not loaded, `[fn]`): not reproduced
+  with the same resources after a restart, to keep an eye on.
+  16-10 (master 113): the Supernovas (SN/SN+/SN++ - X) take the track of the base medal X (user's
+  decision; in the original only Supernova - Sephiroth is documented): +7 rows (SN++ - Final Boss Xion, SN++ - HD
+  Roxas, SN++ - Illustrated Xion, SN/SN+ - Casual Roxas, SN/SN+ - HD Xion [EX]), 78 in all. Targeted test:
+  `D:\Progetto_Restauro_KH_UX\tmp\bgm_save.js` (with the server stopped) leaves in the save only the 78 medals with
+  music; real save in `tmp\player_before_bgmtest.json`, to be put back after the test.
+  **Bench 16-10: all 78 play** (heard by the user), also Dearly Beloved (501006001) and HD Ventus [EX]
+  (501006019): their AKBs are already in the served OBBs. Only HD King Mickey [EX] stays without a track (Vim and Vigor, bgm 0).
+- Unequip: `POST /user/medal/remove` (237); first the client requests `GET /user/medal/preremove`, to which
+  the server gives a generic response (ISSUES I-038).
 
 <a id="materiali"></a>
 ## Sell Materials
 
-`EquipSellScene` (`[fn]`): `Panel_1` > `EquipSell_Scroll_Area`, riga `Panel_On`, popup
-`EquipSell_Dialog_Step1` (`Txt_data4`), conferma `EquipSell_Dialog_Step2` (`[fn]`, serve
-`Txt_cancel` minuscolo). `POST /user/material/sell` {userMaterialId, number} (50) ->
-`userData.userPoint` + `userMaterial`. Prezzi khuxwiki: Mythril Stone 50, Gem 100, Crystal 150, altri
-10; Mythril Shard e Orichalcum non vendibili. Icone dei materiali: `fetch_material_icons.py` (44 su 45,
-manca Remembrance Gem).
+`EquipSellScene` (`[fn]`): `Panel_1` > `EquipSell_Scroll_Area`, row `Panel_On`, popup
+`EquipSell_Dialog_Step1` (`Txt_data4`), confirmation `EquipSell_Dialog_Step2` (`[fn]`, needs
+lowercase `Txt_cancel`). `POST /user/material/sell` {userMaterialId, number} (50) ->
+`userData.userPoint` + `userMaterial`. khuxwiki prices: Mythril Stone 50, Gem 100, Crystal 150, others
+10; Mythril Shard and Orichalcum not sellable. Material icons: `fetch_material_icons.py` (44 of 45,
+Remembrance Gem missing).
 
 <a id="trait-medal"></a>
 ## Trait Medal (I-084)
 
-Fonti in `reference\trait_medals\NOTE.md` (avvisi Square Enix 38128, 46740, 54963; guida dell'utente
-p. 21-23; khuxwiki). «Dedicated Awakening Medal»: ognuna e' legata a una medaglia (es. Trait Medal #1
--> Illustrated KH Riku [EX]), 6★ in bianco e nero con la stessa immagine, stessa voce dell'Album;
-STR/DEF 1, costo 999, 15 Pet Point, «Lesser Attack» x1,00 a 1 gauge. Circa 313 (khuxwiki: 189).
-- Fusa sulla sua medaglia: +1 trait casuale e +1 pallino; con i pallini pieni sblocca o rilancia
-  la guilt (come una copia identica o Mickey & Brooms; il +1% e' il Magic Mirror). Su altre
-  medaglie solo EXP. Slot dei trait pieni: il giocatore sceglie quale sostituire o scarta il nuovo.
-- Dalla 3.3.0 si impilano fino a 99, niente spirit slot ne' condivisione. Ottenute da deal
-  dedicati, eventi, Moogle Shop («Trait Medal #N x10», 1.000 jewel).
-- Client 4.3.1: filtro della Medal List (`[fn]`) con i tipi 1, 2, 4/8, 5, 6, 3, 9, 10 =
-  Attack, EXP, Boost, Cost, Evolve, Sell, Trait, Subslot (Trait = type 9, da confermare);
-  `[fn]` esclude 9 e 10 dagli Special Trait. Materiale «da pallino» (`[fn]`):
-  stessa groupId, groupId in `burstEnhanceCategory` della base, o type 8: la Trait Medal va
-  collegata cosi'. Il trait lo decide il server: `afterEnhanceUserMedal.userShuffleSkills`,
+Sources in `reference\trait_medals\NOTE.md` (Square Enix notices 38128, 46740, 54963; user's guide
+p. 21-23; khuxwiki). «Dedicated Awakening Medal»: each one is tied to a medal (e.g. Trait Medal #1
+-> Illustrated KH Riku [EX]), 6★ in black and white with the same image, same Album entry;
+STR/DEF 1, cost 999, 15 Pet Points, «Lesser Attack» x1.00 at 1 gauge. About 313 (khuxwiki: 189).
+- Fused onto its medal: +1 random trait and +1 dot; with the dots full it unlocks or rerolls
+  the guilt (like an identical copy or Mickey & Brooms; the +1% is the Magic Mirror). On other
+  medals only EXP. Trait slots full: the player chooses which one to replace or discards the new one.
+- From 3.3.0 they stack up to 99, no spirit slot nor sharing. Obtained from dedicated
+  deals, events, Moogle Shop («Trait Medal #N x10», 1,000 jewels).
+- Client 4.3.1: Medal List filter (`[fn]`) with types 1, 2, 4/8, 5, 6, 3, 9, 10 =
+  Attack, EXP, Boost, Cost, Evolve, Sell, Trait, Subslot (Trait = type 9, to be confirmed);
+  `[fn]` excludes 9 and 10 from the Special Traits. «Dot» material (`[fn]`):
+  same groupId, groupId in `burstEnhanceCategory` of the base, or type 8: the Trait Medal must be
+  linked this way. The trait is decided by the server: `afterEnhanceUserMedal.userShuffleSkills`,
   `overwriteSkills`, `successOverwrite`, `medalResumption {userShuffleSkills, resumptionStatus}`;
-  slot pieni -> `POST /user/medal/shuffleskill` (azione 57) `{userMedalId, userShuffleSkillId,
-  enableUserShuffleSkillId}` (testi «Choose a trait to replace.», «There are traits that have not
+  slots full -> `POST /user/medal/shuffleskill` (action 57) `{userMedalId, userShuffleSkillId,
+  enableUserShuffleSkillId}` (texts «Choose a trait to replace.», «There are traits that have not
   been set.»).
-- Stato: nessuna riga nel master locale; `shuffleskill.json` ha `rate` 0 (pesi ignoti). Il server
-  non da' trait da fusione (ne' dalle copie identiche) e `medalResumption` e' sempre vuoto.
+- Status: no row in the local master; `shuffleskill.json` has `rate` 0 (weights unknown). The server
+  gives no traits from fusion (nor from identical copies) and `medalResumption` is always empty.
 
-- **Parte A, passo 1 (19-10, revisione 142)**: `server/make-trait-groups.js` (in fondo a make-game-tables.js,
-  idempotente) mette `shuffleSkillGroupId` = medalId piu' basso dello stesso nome (1.114 gruppi) e porta la ruota
-  sugli 11 trait originali (righe 14-17 nuove: Max HP +800, Poison/Sleep/Paralysis Resist 20%, copiate dai Special
-  Trait 1024/1029/1032/1035; rate 100 solo sugli 11, 0 su Max HP +300 e sui 5 della 4.1.0). make-pet-tables.js
-  non rimette piu' rate 100 sui trait solo-negozio. Test: `node server/test-trait-groups.js`. Dopo una rigenerazione
-  dei banner: `make-boosted-medals.js`, `make-nova-rows.js`, `make-trait-groups.js` (le boosted nuove prendono il gruppo).
-- **Passi 2-4 (19-10)**: `server/medal-trait.js` (regole pure), fusione (`respondMedalEnhance`: un trait per fusione con
-  una copia dello stesso gruppo, slot pieni -> `player.traitPending`), azione 57 `POST /user/medal/shuffleskill`
-  (`respondMedalShuffleSkill`: Replace/Skip), `userData.medalResumption` al login, training del pet che non azzera la
-  coda. Test: test-medal-trait.js, test-medal-enhance.js (sezione 11), test-trait-choice.js.
-- **Passo 5 (19-10, risorse 44 con -Quick)**: dai dati JP le LWF originali `lwf/medal/Kakusei/Kakusei_Get1`, `Kakusei_Get2`
-  e le 11 `Kakusei_Icon0010-0100` (al posto delle nostre di make_pet_training_fx.py, ora ripiego) e il layout
-  `MedalInfo_SkillChangeWindow.json` (finestra «Choose a trait to replace», con Kakusei_New/Kakusei_Get_Eff).
-  Texture condivise: quelle di Get1 stanno in Kakusei_Get2, l'icona 0090 nella sua cartella senza il prefisso png_
-  (`import_jp_coco.py`, LWF_FILL e fill_idx).
+- **Part A, step 1 (19-10, revision 142)**: `server/make-trait-groups.js` (at the end of make-game-tables.js,
+  idempotent) sets `shuffleSkillGroupId` = lowest medalId with the same name (1,114 groups) and brings the wheel
+  to the 11 original traits (new rows 14-17: Max HP +800, Poison/Sleep/Paralysis Resist 20%, copied from the Special
+  Traits 1024/1029/1032/1035; rate 100 only on the 11, 0 on Max HP +300 and on the 5 of 4.1.0). make-pet-tables.js
+  no longer puts rate 100 back on the shop-only traits. Test: `node server/test-trait-groups.js`. After a regeneration
+  of the banners: `make-boosted-medals.js`, `make-nova-rows.js`, `make-trait-groups.js` (the new boosted ones take the group).
+- **Steps 2-4 (19-10)**: `server/medal-trait.js` (pure rules), fusion (`respondMedalEnhance`: one trait per fusion with
+  a copy of the same group, slots full -> `player.traitPending`), action 57 `POST /user/medal/shuffleskill`
+  (`respondMedalShuffleSkill`: Replace/Skip), `userData.medalResumption` at login, pet training that does not reset the
+  queue. Tests: test-medal-trait.js, test-medal-enhance.js (section 11), test-trait-choice.js.
+- **Step 5 (19-10, resources 44 with -Quick)**: from the JP data the original LWFs `lwf/medal/Kakusei/Kakusei_Get1`, `Kakusei_Get2`
+  and the 11 `Kakusei_Icon0010-0100` (in place of ours from make_pet_training_fx.py, now a fallback) and the layout
+  `MedalInfo_SkillChangeWindow.json` («Choose a trait to replace» window, with Kakusei_New/Kakusei_Get_Eff).
+  Shared textures: those of Get1 are in Kakusei_Get2, icon 0090 in its folder without the png_ prefix
+  (`import_jp_coco.py`, LWF_FILL and fill_idx).
 
 <a id="trait-medal-b"></a>
-- **Parte B (19-10, rev 150, risorse 45)**, piano `docs/superpowers/plans/2026-10-19-trait-medal-B.md`:
-  - **Stessa medaglia = linea dell'Album** (`make-trait-groups.js`): gruppo = componenti connesse di stesso nome e stesso
-    sortId > 0 (949 gruppi). Prova: il deal «SN+ - KH III Xemnas Trait Medal Deal» (notice 2019-08-05) vende la Trait
-    Medal #130, che la khuxwiki lega a «SN - KH III Xemnas»; le 138 linee multi-nome del master sono tutte catene di
-    Evolve. Vale anche per la parte A (SN fusa su SN+ da' un trait).
-  - **Elenco** `server/trait_medals.json` (313 voci) da `make-trait-medal-list.js`: #1-#188 e #274 dalla tabella della
-    khuxwiki (prima colonna = numero di Album EN = sortId); #189-#313 dalle pagine «Trait Medal N» della khuxwiki, che
-    rimandano alla medaglia («Trait Medal #190 ... can be used to add or re-roll a trait on SN++ - KH III Roxas»;
-    `reference\trait_medals\khuxwiki_trait_medal_189_313.json` e `_RESULT.md`). I notice dei deal SN++ non stampano il
-    numero; i 46 numeri che compaiono in altri notice (VIP, eventi, Moogle Shop) non contraddicono la wiki.
-  - **Righe** (`make-trait-medals.js`, dopo make-trait-groups): medalId 9.000.000+N, type 9, 6★, STR/DEF 1, costo 999,
-    15 Pet Point, sortId della medaglia, impilabili, senza slot dei trait, `shuffleSkillGroupId` della linea; burst
-    9.000.000 «Lesser Attack» (1 nemico, 1 gauge, x1,00, 5 pallini); EXP, vendita e tier della guilt dalla medaglia
-    (ricostruiti). Pallino: `burstEnhanceCategory[0]` di tutte le righe della linea = medalId della Trait Medal
-    ([fn]). Album: la type 9 non e' una voce. La fusione non ha codice nuovo (test-medal-enhance.js sez. 12).
-  - **Immagini** (`recon/tools/make_trait_medal_images.py`, in build-resources su stage_gen): luminanza della medaglia
-    (Medal_L/S e Cutin), media e deviazione entro il 7% delle 3 originali (`--check`). ~180 MB: stanno nel pacchetto
-    `medal_gen` (versione completa), oltre la riserva di 128 MB del pacchetto generato.
-  - **Banner**: lo slot Trait legge #N («Guarantees one Trait Medal #23»), il catalogo ha le voci «trait medal #N»
-    (cls LIST, fuori dai pool standard), il server le estrae solo nello slot (non nel pool generico), nelle liste
-    (B0324 #18) e nelle pity «entro 5» (B0259...B0292). Nessun banner resta col ripiego (prima 38, coi numeri
-    #189-#249 prima della ricerca del 19-10). Details e Draw Odds: «Trait Medal #N (for <medaglia>)». Le «boosted Trait Medal» dei
-    notice sono ignorate (nessuna riga boosted).
+- **Part B (19-10, rev 150, resources 45)**, plan `docs/superpowers/plans/2026-10-19-trait-medal-B.md`:
+  - **Same medal = Album line** (`make-trait-groups.js`): group = connected components with the same name and the same
+    sortId > 0 (949 groups). Evidence: the deal «SN+ - KH III Xemnas Trait Medal Deal» (notice 2019-08-05) sells Trait
+    Medal #130, which the khuxwiki ties to «SN - KH III Xemnas»; the 138 multi-name lines of the master are all
+    Evolve chains. It also applies to part A (SN fused onto SN+ gives a trait).
+  - **List** `server/trait_medals.json` (313 entries) from `make-trait-medal-list.js`: #1-#188 and #274 from the khuxwiki
+    table (first column = EN Album number = sortId); #189-#313 from the khuxwiki «Trait Medal N» pages, which
+    point to the medal («Trait Medal #190 ... can be used to add or re-roll a trait on SN++ - KH III Roxas»;
+    `reference\trait_medals\khuxwiki_trait_medal_189_313.json` and `_RESULT.md`). The notices of the SN++ deals do not print the
+    number; the 46 numbers that appear in other notices (VIP, events, Moogle Shop) do not contradict the wiki.
+  - **Rows** (`make-trait-medals.js`, after make-trait-groups): medalId 9,000,000+N, type 9, 6★, STR/DEF 1, cost 999,
+    15 Pet Points, sortId of the medal, stackable, without trait slots, `shuffleSkillGroupId` of the line; burst
+    9,000,000 «Lesser Attack» (1 enemy, 1 gauge, x1.00, 5 dots); EXP, sale and guilt tier from the medal
+    (rebuilt). Dot: `burstEnhanceCategory[0]` of all the rows of the line = medalId of the Trait Medal
+    ([fn]). Album: type 9 is not an entry. The fusion has no new code (test-medal-enhance.js sect. 12).
+  - **Images** (`recon/tools/make_trait_medal_images.py`, in build-resources on stage_gen): luminance of the medal
+    (Medal_L/S and Cutin), mean and deviation within 7% of the 3 originals (`--check`). ~180 MB: they go in the
+    `medal_gen` pack (complete version), beyond the 128 MB reserve of the generated pack.
+  - **Banners**: the Trait slot reads #N («Guarantees one Trait Medal #23»), the catalog has the entries «trait medal #N»
+    (cls LIST, outside the standard pools), the server draws them only in the slot (not in the generic pool), in the lists
+    (B0324 #18) and in the «within 5» pities (B0259...B0292). No banner stays with the fallback (before 38, with the numbers
+    #189-#249 before the research of 19-10). Details and Draw Odds: «Trait Medal #N (for <medaglia>)». The «boosted Trait Medal» of the
+    notices are ignored (no boosted row).
 
-- **Banco 20-10** (salvataggio `provetm` = prove525 + regali #106 x3, #108 x2, #131; `-GachaShow B0513`): regali in bianco e
-  nero, filtro «Trait» della Medal List, dettagli (STR/DEF 1, costo 999, Lesser Attack x1,00), niente Level Up sulla Trait
-  Medal; nel Level Up di Illustrated Sora A la #106 sta fra i materiali da pallino, anteprima «Trait», fusione ->
-  Paralysis Resist 20% (slot 1/2) + 1 pallino + EXP (Great x1,5). Deal B0513: Details «Guarantees one Trait Medal #106», la
-  pescata da' la 7★ e la #106. Nel Level Up i materiali si aggiungono trascinandoli sullo slot (`Swipe 1430 410 240 630 900`).
-- Limite: i deal Trait (dal 13-3-2018) sono oltre la data della storia (quest 525 = 8-12-2016), quindi oggi non si
-  raggiungono giocando (solo con `-GachaShow`); il Moogle Shop originale le vendeva anche («Trait Medal #N x10», 1.000
-  jewel, nella finestra del deal; khuxwiki per #189-#313): non ancora fatto.
+- **Bench 20-10** (save `provetm` = prove525 + gifts #106 x3, #108 x2, #131; `-GachaShow B0513`): gifts in black and
+  white, «Trait» filter of the Medal List, details (STR/DEF 1, cost 999, Lesser Attack x1.00), no Level Up on the Trait
+  Medal; in the Level Up of Illustrated Sora A #106 is among the dot materials, preview «Trait», fusion ->
+  Paralysis Resist 20% (slot 1/2) + 1 dot + EXP (Great x1.5). Deal B0513: Details «Guarantees one Trait Medal #106», the
+  draw gives the 7★ and #106. In the Level Up the materials are added by dragging them onto the slot (`Swipe 1430 410 240 630 900`).
+- Limit: the Trait deals (from 13-3-2018) are beyond the date of the story (quest 525 = 8-12-2016), so today they cannot be
+  reached by playing (only with `-GachaShow`); the original Moogle Shop also sold them («Trait Medal #N x10», 1,000
+  jewels, in the deal window; khuxwiki for #189-#313): not done yet.
 
 <a id="skill"></a>
-## Skill e Overwrite Skill del Level Up (I-088)
+## Skills and Overwrite Skill of the Level Up (I-088)
 
-Fonti (`reference\medal_overwrite\NOTE.md`): khuxwiki «Medal» (sezione Skills) e «Scrooge»
+Sources (`reference\medal_overwrite\NOTE.md`): khuxwiki «Medal» (Skills section) and «Scrooge»
 (`reference\guilt\khuxwiki_raw.md`), kingdomhearts.fandom «Medals», khwiki «Skill», GameFAQs
 (thread 74095652), Reddit r/KHUx (`reference\optimize\reddit_subslot_pet_levelup_optimize.md`),
-testi del client 101300020-032 e 100620003.
-- Skill = abilita' passiva della medaglia (tabella `skill`, 163 righe dal 18-10: vedi «Tabella skill»
-  sotto; maxLv 10/15/20). Una per medaglia (khwiki; il client ne legge 2). Sale di livello usando la
-  medaglia in battaglia (EXP della skill, tabella `skillExp`). Rara sulle medaglie dei deal; le
-  **Scrooge** (EXP medal 3/5/6★, Colosseo ed eventi) la portano sempre al livello massimo.
-- Overwrite (wiki): la skill del materiale **piu' a sinistra** passa alla base; 20% al livello 1 della
-  skill, fino al 100% al massimo (Scrooge sempre 100%); spesso la base tiene la sua. Con «Overwrite
-  Skill» spento le skill dei materiali si perdono (101300031 «"Overwrite Skill" is OFF. Skills will
-  be lost!», 101300032). Il livello passa con la skill (le Scrooge la danno al massimo); Evolve
-  conserva il livello (101400007). Costo: nessuno in piu' (il munny del Level Up resta medalMisc 115).
-- Client 4.3.1: richiesta `[fn]` = `{baseUserMedalId, componentUserMedalIds, isOverwriteSkill
-  (0/1, scena +0x578, pulsante `Button_Overwrite`, `[fn]`), numbers, isGreatSuccess}`: nessuna
-  skill scelta. Probabilita' (`[fn]`, «Success Rate %d%%» 101300021): skill del primo materiale
-  (`Txt_SkillName_Label`, `Icon_Skill`); per ogni skill dei materiali con la stessa `categoryEvolve`
-  (+0x114) somma `121 + (122 - 121) * (lv - 1) / (maxLv - 1)` (medalMisc 121 = 2000, 122 = 10000) per
-  il moltiplicatore delle campagne (+0x5e0, «Increased probability of skill overwrite» 104600016) /
-  10000; limite 100%. Risposta (`[fn]`): `overwriteSkills` = elementi userSkill,
-  `successOverwrite` (+0x2b0): il risultato (`[fn]`, `[fn]`) mostra il nome della
-  skill della base dopo la fusione.
-- **Ramo 55 (Level Up): `userSkills` = skill da CANCELLARE** (banco 18-10, crash al tocco sul risultato):
-  0x7ceed8 raccoglie gli `userSkillId` della lista, 0x7cf0c0 `[fn]` ricostruisce la tabella +0x1c8
-  senza quegli id, poi upsert di `overwriteSkills` (0x7cf0c4) e delle medaglie; `componentUserMedalIds`
-  toglie solo medaglie (`[fn]`). Mandando la lista intera il client svuotava la tabella e
-  l'ordinamento «Skill» della Medal List (`[fn]` -> `[fn]`) crashava (riga skill 0). Il
-  server manda solo le skill dei materiali consumati; la base con skill tiene il suo `userSkillId`. Altri
-  rami: vendita (51) upsert, `GET /user/skill` (13) sostituisce tutto. Prova: Level Up di Leon con un
-  materiale senza skill, lista per «Skill», nessun crash e skill delle altre medaglie intatte.
-- Pulsante «Overwrite Skill» sempre grigio (I-157): interruttore `skill_mix_button` (`[fn]`:
-  `img/ui/skill_mix_button_On.png` / `_Off` / `_Disable`); acceso cambia anche le cornici degli slot
-  (`img/ui/Medal_Syn_Select_Panel02.png`). Serviamo solo `_Off`: mancano `_On` (azzurra nel pacchetto
-  2016) e `Medal_Syn_Select_Panel02` in `img/ui/`.
-- Elemento userSkill (`[fn]`): `userSkillId` uint64, `skillId`, `level`, `exp`, `userMedalId`,
-  `getDatetime`; `userMedal.userSkills` = soli id (int). Il client cerca ogni id nella tabella della
-  sessione (`[fn]`, +0x1c8, riempita dalle liste `userSkills`): id senza oggetto = riga skill
-  0 = crash; con l'oggetto legge `skillExp` per `expType` (getter senza controllo del null).
-- Curva `skillExp` (I-146, 18-10, disassemblato `0x00eb7960-0x00eb7ab8`): `[fn]` limita il livello a
-  `maxLv` (riga skill +0x108), prende la riga `skillExp` di `expType` (+0x10c, `[fn]` = getter, tipo
-  master 0x35; parser `[fn]`: `expId`, `value` int[3] a +4) e calcola in float
-  `soglia(L) = trunc(value[1] * powf((L - 1) / (value[0] - 1), value[2] / 10000.0f))` (costante a `0x01763f00`)
-  per il livello attuale (oggetto +0x18) e `L` al posto di `L - 1` per il successivo (+0x14); l'EXP della skill
-  (+0x10) e' quindi **totale** (0 al LV 1). Righe vere: `[30,12132,13500]` = 12132 EXP al LV 30, esponente 1.35
-  (LV 2-4: 128, 328, 567; LV 8: 1780; LV 10: 2499). `maxLv` non entra nella curva. Server: `expToReach`,
-  `levelForExp`, `addSkillExp` in `server/medal-skill.js`, prova `server/test-skill-exp.js`.
-- Controllo col wiki «Skill EXP» (maxLv 10 da LV 1 a LV 8 in due giri, 15 -> LV 7 e 20 -> LV 6 in quattro): non
-  torna con l'`exp` dei nemici. La stage 82003 (601001 x3 + 611001, `exp` 200/1200) da' 1800 EXP a giro: un giro
-  porta gia' una maxLv 10 a LV 8 (expType 1), due giri al massimo; 11001-11006 al livello piu' alto (5/20) danno
-  15-35 EXP a giro, LV 1-2. Nessuna riga `skillExp` spiega insieme LV 8 (maxLv 10, 2 giri) e LV 7 (maxLv 15,
-  4 giri): la quantita' di EXP data dall'originale resta da capire (Task 3), non la curva.
-- Server (`server/medal-skill.js`, 12-10): `player.medalSkills[userMedalId]` dopo un Overwrite
-  riuscito (userSkillId da `player.nextUserSkillId`); le Scrooge hanno una skill calcolata (id
-  1000000000 + userMedalId, livello massimo; quale skill avesse ogni Scrooge non si sa: ipotesi 3★
-  rango 1, 5★ rango 2, 6★ rango 3, scelta con userMedalId; vedi «Scrooge e wiki» e «Migrazione» sotto). `userSkills` intera in login, inventario,
-  Level Up, vendita, trait; il supporto manda la skill della sua medaglia. `skillExp` = le 4 righe vere
-  (vedi «Tabella skill»; la vecchia `server/tables/skillExp.json` inventata e' stata tolta). Prova: `server/test-medal-enhance.js`
-  (punto 9).
-- Scrooge e wiki (I-146, 18-10, ricerca in `wiki_all.json`): la pagina «Scrooge» dice solo «grants a skill»
-  (3★/5★/6★, EXP 1400/5150/15150, dal Colosseo o dagli eventi) e il master ha una riga per rarita' (90123/
-  90125/90126, nome sempre «Scrooge»): la skill **non dipende dalla medaglia ma dal premio**. Il wiki la scrive
-  accanto al premio: tabelloni (`6★ Scrooge (Board)`: «Scrooge 5★ (Paralysis)», «Scrooge 6★ (Attack Boost II)»),
-  Shop/2016-2017 («Scrooge Medal with the [[Attack Boost III]] Skill»), Moogle Shop (Scrooge 6★ con «ATK B XIV
-  Max & Sleep», «Second Chance IV», ...), regali (Organization XIII A: «ATK B III Max & SP GA II»). Premi
-  contati sui tabelloni: 3★ = Poison/Paralysis/Sleep/Attack Boost I/All I/Defense Boost I (tutte rango 1);
-  5★ = Boost II, All II, Defense Boost II, stati e stati «+» (rango 1-2); 6★ = Attack Boost II, No Cost, Attack
-  Prize Plus, «Max» e combinazioni (rango 2-3). Nessun abbinamento per nome possibile: resta la regola per
-  rarita' (3★ rango 1, 5★ rango 2, 6★ rango 3, `pool[userMedalId % pool.length]` per skillId, livello massimo)
-  sulla tabella completa: 3★ invariate (le 6 rango 1 erano gia' tutte nel master), 5★ da 5 a 14 skill, 6★ da
-  1 (No Cost) a 143.
-- Migrazione (I-146, `migrateSkills()` in `server.js`, `player.skillVersion` 1, all'avvio dopo le tabelle): le
-  Scrooge gia' possedute senza voce salvano la skill di prima (`scroogeSkillV1` = stessa regola sulle 12 skill
-  di allora 1100-1113, stesso `userSkillId` 1000000000 + userMedalId, `getDatetime` della medaglia); ogni
-  skill salvata tiene il livello mostrato e prende `exp` = soglia vera di quel livello (`expToReach`, limitata a
-  maxLv: la curva inventata dava altri numeri). Medaglie senza skill restano senza; Scrooge nuove = regola
-  sulla tabella completa, calcolata (exp = soglia del livello massimo, come le migrate; guardia: con un master vecchio o ridotto la migrazione si rimanda con un avviso `[skill] migrazione rimandata`). Nuovo giocatore: `skillVersion` 1 subito. Prova:
+client texts 101300020-032 and 100620003.
+- Skill = passive ability of the medal (`skill` table, 163 rows since 18-10: see «Skill table»
+  below; maxLv 10/15/20). One per medal (khwiki; the client reads 2). It levels up by using the
+  medal in battle (skill EXP, table `skillExp`). Rare on deal medals; the
+  **Scrooges** (EXP medal 3/5/6★, Colosseum and events) always bring it at the maximum level.
+- Overwrite (wiki): the skill of the **leftmost** material passes to the base; 20% at skill level 1,
+  up to 100% at the maximum (Scrooge always 100%); often the base keeps its own. With «Overwrite
+  Skill» off the skills of the materials are lost (101300031 «"Overwrite Skill" is OFF. Skills will
+  be lost!», 101300032). The level passes with the skill (the Scrooges give it at the maximum); Evolve
+  keeps the level (101400007). Cost: nothing extra (the Level Up munny stays medalMisc 115).
+- Client 4.3.1: request `[fn]` = `{baseUserMedalId, componentUserMedalIds, isOverwriteSkill
+  (0/1, scena +0x578, pulsante `Button_Overwrite`, `[fn]`), numbers, isGreatSuccess}` (scene +0x578, button `Button_Overwrite`): no
+  skill chosen. Probability (`[fn]`, «Success Rate %d%%» 101300021): skill of the first material
+  (`Txt_SkillName_Label`, `Icon_Skill`); for every skill of the materials with the same `categoryEvolve`
+  (+0x114) it adds `121 + (122 - 121) * (lv - 1) / (maxLv - 1)` (medalMisc 121 = 2000, 122 = 10000) times
+  the campaign multiplier (+0x5e0, «Increased probability of skill overwrite» 104600016) /
+  10000; cap 100%. Response (`[fn]`): `overwriteSkills` = userSkill elements,
+  `successOverwrite` (+0x2b0): the result (`[fn]`, `[fn]`) shows the name of the
+  base's skill after the fusion.
+- **Branch 55 (Level Up): `userSkills` = skills to DELETE** (bench 18-10, crash on tapping the result):
+  0x7ceed8 collects the `userSkillId`s of the list, 0x7cf0c0 `[fn]` rebuilds the table +0x1c8
+  without those ids, then upsert of `overwriteSkills` (0x7cf0c4) and of the medals; `componentUserMedalIds`
+  removes only medals (`[fn]`). Sending the whole list, the client emptied the table and
+  the «Skill» sorting of the Medal List (`[fn]` -> `[fn]`) crashed (skill row 0). The
+  server sends only the skills of the consumed materials; the base with a skill keeps its `userSkillId`. Other
+  branches: sale (51) upsert, `GET /user/skill` (13) replaces everything. Test: Level Up of Leon with a
+  material without a skill, list by «Skill», no crash and skills of the other medals intact.
+- «Overwrite Skill» button always gray (I-157): switch `skill_mix_button` (`[fn]`:
+  `img/ui/skill_mix_button_On.png` / `_Off` / `_Disable`); when on it also changes the slot frames
+  (`img/ui/Medal_Syn_Select_Panel02.png`). We serve only `_Off`: missing `_On` (light blue in the 2016
+  pack) and `Medal_Syn_Select_Panel02` in `img/ui/`.
+- userSkill element (`[fn]`): `userSkillId` uint64, `skillId`, `level`, `exp`, `userMedalId`,
+  `getDatetime`; `userMedal.userSkills` = ids only (int). The client looks up every id in the session
+  table (`[fn]`, +0x1c8, filled from the `userSkills` lists): id without an object = skill row
+  0 = crash; with the object it reads `skillExp` by `expType` (getter without a null check).
+- `skillExp` curve (I-146, 18-10, disassembly `0x00eb7960-0x00eb7ab8`): `[fn]` caps the level at
+  `maxLv` (skill row +0x108), takes the `skillExp` row of `expType` (+0x10c, `[fn]` = getter, master
+  type 0x35; parser `[fn]`: `expId`, `value` int[3] at +4) and computes in float
+  `soglia(L) = trunc(value[1] * powf((L - 1) / (value[0] - 1), value[2] / 10000.0f))` (threshold; constant at `0x01763f00`)
+  for the current level (object +0x18) and `L` in place of `L - 1` for the next one (+0x14); the skill EXP
+  (+0x10) is therefore **total** (0 at LV 1). Real rows: `[30,12132,13500]` = 12132 EXP at LV 30, exponent 1.35
+  (LV 2-4: 128, 328, 567; LV 8: 1780; LV 10: 2499). `maxLv` does not enter the curve. Server: `expToReach`,
+  `levelForExp`, `addSkillExp` in `server/medal-skill.js`, test `server/test-skill-exp.js`.
+- Check against the wiki «Skill EXP» (maxLv 10 from LV 1 to LV 8 in two runs, 15 -> LV 7 and 20 -> LV 6 in four): it
+  does not match the `exp` of the enemies. Stage 82003 (601001 x3 + 611001, `exp` 200/1200) gives 1800 EXP per run: one run
+  already brings a maxLv 10 to LV 8 (expType 1), two runs to the maximum; 11001-11006 at the highest level (5/20) give
+  15-35 EXP per run, LV 1-2. No `skillExp` row explains both LV 8 (maxLv 10, 2 runs) and LV 7 (maxLv 15,
+  4 runs): the amount of EXP given by the original remains to be understood (Task 3), not the curve.
+- Server (`server/medal-skill.js`, 12-10): `player.medalSkills[userMedalId]` after a successful Overwrite
+  (userSkillId from `player.nextUserSkillId`); the Scrooges have a computed skill (id
+  1000000000 + userMedalId, maximum level; which skill each Scrooge had is not known: hypothesis 3★
+  rank 1, 5★ rank 2, 6★ rank 3, chosen with userMedalId; see «Scrooge and wiki» and «Migration» below). Whole `userSkills` at login, inventory,
+  Level Up, sale, trait; the support sends the skill of its medal. `skillExp` = the 4 real rows
+  (see «Skill table»; the old invented `server/tables/skillExp.json` was removed). Test: `server/test-medal-enhance.js`
+  (point 9).
+- Scrooge and wiki (I-146, 18-10, search in `wiki_all.json`): the «Scrooge» page only says «grants a skill»
+  (3★/5★/6★, EXP 1400/5150/15150, from the Colosseum or the events) and the master has one row per rarity (90123/
+  90125/90126, name always «Scrooge»): the skill **does not depend on the medal but on the reward**. The wiki writes it
+  next to the reward: boards (`6★ Scrooge (Board)`: «Scrooge 5★ (Paralysis)», «Scrooge 6★ (Attack Boost II)»),
+  Shop/2016-2017 («Scrooge Medal with the [[Attack Boost III]] Skill»), Moogle Shop (Scrooge 6★ with «ATK B XIV
+  Max & Sleep», «Second Chance IV», ...), gifts (Organization XIII A: «ATK B III Max & SP GA II»). Rewards
+  counted on the boards: 3★ = Poison/Paralysis/Sleep/Attack Boost I/All I/Defense Boost I (all rank 1);
+  5★ = Boost II, All II, Defense Boost II, statuses and «+» statuses (rank 1-2); 6★ = Attack Boost II, No Cost, Attack
+  Prize Plus, «Max» and combinations (rank 2-3). No match by name is possible: the rule by
+  rarity remains (3★ rank 1, 5★ rank 2, 6★ rank 3, `pool[userMedalId % pool.length]` by skillId, maximum level)
+  on the complete table: 3★ unchanged (the 6 rank-1 ones were already all in the master), 5★ from 5 to 14 skills, 6★ from
+  1 (No Cost) to 143.
+- Migration (I-146, `migrateSkills()` in `server.js`, `player.skillVersion` 1, at startup after the tables): the
+  Scrooges already owned without an entry save the previous skill (`scroogeSkillV1` = same rule on the 12 skills
+  of that time 1100-1113, same `userSkillId` 1000000000 + userMedalId, `getDatetime` of the medal); every
+  saved skill keeps the shown level and takes `exp` = real threshold of that level (`expToReach`, capped at
+  maxLv: the invented curve gave other numbers). Medals without a skill stay without; new Scrooges = rule
+  on the complete table, computed (exp = threshold of the maximum level, like the migrated ones; guard: with an old or reduced master the migration is postponed with a warning `[skill] migrazione rimandata`). New player: `skillVersion` 1 immediately. Test:
   `server/test-skill-migration.js`.
-- Tabella skill (I-146, 18-10, `server/make-skill-table.js`, chiamato da `make-game-tables.js` dopo
-  `make-pet-tables`; prova `server/test-skill-table.js`; report `D:\Progetto_Restauro_KH_UX\tmp\skill\report.md`).
-  Sorgenti lette a build-time, fuori dal repo: 25 righe vere di thethiny (1100-1126, `D:\Progetto_Restauro_KH_UX\external\thethiny_2026-10-13\KHUx-Server\data\skill.json`), le 4
-  righe vere di `skillExp` (expId 1-4) e la lista «List of Skills» della pagina «Medal» del wiki (163 skill,
-  nessun doppione). Regole:
-  - righe vere: numeri di thethiny invariati (anche `thumbId` 1-5; il 5.0.1 usa 6-9 e Lux Plus `luxUp` 15000
-    contro 30000); i 4 campi del layout 4.3.1 che thethiny non ha (`value1`, `burstLock`, `pvpConditionTurn`,
-    `pvpConditionCount`) dalla riga 5.0.1 del master se c'e' (1100-1113: es. Poison `value1` 1000,
-    `pvpConditionCount` 3), altrimenti dalla descrizione: `value1` 1000 per gli stati (1120-1122) e 10000 per le
-    altre, `burstLock` 10000/20000 per SP Attack Gauge I/II (1124/1126), `pvp*` = `condition*`. Le righe del
-    master oltre la 1113 sono generate e non valgono come fonte di questi campi;
-  - abbinamento al wiki per nome normalizzato (maiuscole, «Plus»/«+», «ATK»/«Attack», numeri romani, ordine
-    delle parti «&»: «ATK Prize+ & ATK Boost II» = «ATK Boost II & ATK Prize+»);
-  - ricostruite (138, id 1127-1264 in ordine di wiki, `sortId` = `skillId`, `categoryEvolve` unico dal 31):
-    copia della sorella = riga vera della stessa famiglia (dalla descrizione: Attack Boost, Attack Boost All,
-    Defense Boost, Second Chance, stato, stato «+», SP Attack Gauge, ATK & Lux, ATK & Prize, No Cost) piu' vicina
-    per maxLv, «Max», stato, probabilita' e potenza; `rank`/`expType` della sorella se ha lo stesso maxLv,
-    altrimenti della riga vera piu' comune con quel maxLv (20 -> 3/3); potenza dalla descrizione (`attackUp`
-    N*10000, `damageCut` 10000*(1-a/b), `luxUp` 30000 o 50000 per «vastly» (stima), `prizeBurstUp` 220000,
-    `add*` 10000 e `conditionTurn` 1 con «1 turn», `value1` 1000 per gli stati (500 con «Effective on enemies
-    up to LV 1999»), `burstCancel` 1 con «no special attack gauges», `burstLock` N*10000 con «uses only N»);
-    `invokeProbPerLv` della sorella (le «Max» con sorella non «Max»: 10 come Attack Boost II Max),
-    `invokeProb` dal trigger% del wiki, che e' **troncato** (vere: 47.2% -> 47, 44.5% -> 44, 54.25% -> 54): quello
-    della sorella se da' lo stesso trigger%, altrimenti l'unico multiplo di 100 che lo da' (`baseProb`, ritrova
-    tutte le 25 vere); i 100% esatti restano 10000 - perLv * (maxLv - 1) (9810, Defense Boost I Max 9860);
-  - famiglie senza riga vera, sorella col tipo di attivazione piu' vicino: ATK & stato (13, Poison+/Paralysis+/
-    Sleep+), Triple Threat (2, Poison+, tutti e tre gli stati), ATK & SP Gauge (42, Attack Boost III Max con
-    l'icona 5 delle SP Attack Gauge, `invokeType` 1 e `invokeShowTiming` 6: vedi sotto);
-  - testi <= 71 byte (`string(72)`): frasi intere del wiki, abbreviazioni fisse se non bastano (anche 6
-    righe vere: 1114, 1117, 1120-1123).
-- Unita' dei campi d'effetto (verifica del 18-10, client 4.3.1 con l'aiuto del decompilato con simboli 1.0.1 di
-  thethiny; parser `[fn]`, riga offuscata di 0x17c byte, offset `rank` 0x104 ... `raidUp` 0x178 nell'ordine
-  del master; decompilati in `D:Progetto_Restauro_KH_UX\tmpskillcheck
-e`). 10000 = 1,0:
-  | campo | unita' / effetto | prova |
+- Skill table (I-146, 18-10, `server/make-skill-table.js`, called by `make-game-tables.js` after
+  `make-pet-tables`; test `server/test-skill-table.js`; report `D:\Progetto_Restauro_KH_UX\tmp\skill\report.md`).
+  Sources read at build time, outside the repo: 25 real rows from thethiny (1100-1126, `D:\Progetto_Restauro_KH_UX\external\thethiny_2026-10-13\KHUx-Server\data\skill.json`), the 4
+  real rows of `skillExp` (expId 1-4) and the «List of Skills» list of the wiki's «Medal» page (163 skills,
+  no duplicates). Rules:
+  - real rows: thethiny's numbers unchanged (also `thumbId` 1-5; 5.0.1 uses 6-9 and Lux Plus `luxUp` 15000
+    against 30000); the 4 fields of the 4.3.1 layout that thethiny does not have (`value1`, `burstLock`, `pvpConditionTurn`,
+    `pvpConditionCount`) from the 5.0.1 row of the master if it exists (1100-1113: e.g. Poison `value1` 1000,
+    `pvpConditionCount` 3), otherwise from the description: `value1` 1000 for the statuses (1120-1122) and 10000 for the
+    others, `burstLock` 10000/20000 for SP Attack Gauge I/II (1124/1126), `pvp*` = `condition*`. The master rows
+    beyond 1113 are generated and do not count as a source for these fields;
+  - match with the wiki by normalized name (capitals, «Plus»/«+», «ATK»/«Attack», Roman numerals, order
+    of the «&» parts: «ATK Prize+ & ATK Boost II» = «ATK Boost II & ATK Prize+»);
+  - rebuilt (138, ids 1127-1264 in wiki order, `sortId` = `skillId`, unique `categoryEvolve` from 31):
+    copy of the sibling = real row of the same family (from the description: Attack Boost, Attack Boost All,
+    Defense Boost, Second Chance, status, «+» status, SP Attack Gauge, ATK & Lux, ATK & Prize, No Cost) closest
+    by maxLv, «Max», status, probability and power; `rank`/`expType` of the sibling if it has the same maxLv,
+    otherwise of the most common real row with that maxLv (20 -> 3/3); power from the description (`attackUp`
+    N*10000, `damageCut` 10000*(1-a/b), `luxUp` 30000 or 50000 for «vastly» (estimate), `prizeBurstUp` 220000,
+    `add*` 10000 and `conditionTurn` 1 with «1 turn», `value1` 1000 for the statuses (500 with «Effective on enemies
+    up to LV 1999»), `burstCancel` 1 with «no special attack gauges», `burstLock` N*10000 with «uses only N»);
+    `invokeProbPerLv` of the sibling (the «Max» ones with a non-«Max» sibling: 10 like Attack Boost II Max),
+    `invokeProb` from the wiki's trigger%, which is **truncated** (real: 47.2% -> 47, 44.5% -> 44, 54.25% -> 54): that
+    of the sibling if it gives the same trigger%, otherwise the only multiple of 100 that gives it (`baseProb`, finds again
+    all 25 real ones); the exact 100% stay 10000 - perLv * (maxLv - 1) (9810, Defense Boost I Max 9860);
+  - families without a real row, sibling with the closest activation type: ATK & status (13, Poison+/Paralysis+/
+    Sleep+), Triple Threat (2, Poison+, all three statuses), ATK & SP Gauge (42, Attack Boost III Max with
+    icon 5 of the SP Attack Gauges, `invokeType` 1 and `invokeShowTiming` 6: see below);
+  - texts <= 71 bytes (`string(72)`): whole sentences of the wiki, fixed abbreviations if they do not fit (also 6
+    real rows: 1114, 1117, 1120-1123).
+- Units of the effect fields (check of 18-10, client 4.3.1 with the help of thethiny's 1.0.1 decompilation with symbols;
+  parser `[fn]`, obfuscated row of 0x17c bytes, offsets `rank` 0x104 ... `raidUp` 0x178 in the order
+  of the master; decompiled code in `D:Progetto_Restauro_KH_UX\tmpskillcheck
+e`). 10000 = 1.0:
+  | field | unit / effect | proof |
   |---|---|---|
-  | `invokeProb`, `invokeProbPerLv` | probabilita' in 1/10000: `invokeProb + perLv * (min(lv, maxLv) - 1)` (Attack Boost I LV 10 = 47,2%), per (1 + bonus di battaglia +0xbe4) | `[fn]` |
-  | `invokeShowTiming` | momento: 1 attacco di medaglia, 2 danno subito, 3/4 inizio turno (4 anche Second Chance), 5 attacco speciale, 6 = 1 o 5 (un tiro per battaglia, poi sempre o mai), 7 = 2 o 5 | `[fn]` (`stage::skill::invoke`) |
-  | `invokeType` | filtro sul tipo d'attacco: 4 solo speciale, 5 solo medaglie «tutti», 7 tutto tranne «tutti» e speciale (stati base: solo bersaglio singolo), 3 solo timing 4, 0 mai, 1/2/6 nessun filtro | idem |
-  | `attackUp` | moltiplicatore del danno /10000: 24000 = danno x2,4 (non +40%) | `[fn]` |
-  | `damageCut` | danno subito * damageCut / 10000 (minimo 1; fra piu' skill vince il piu' basso): 10000 nessuna riduzione, 5000 = -1/2, 3333 = -2/3, 2000 = -80% | `[fn]`, `[fn]` |
-  | `dokonjo` | flag: con HP a 0 resta a 1 HP, una volta | `[fn]` |
-  | `burstCancel` | 1 = speciale gratis | `[fn]` |
-  | `burstLock` | con `burstCancel` 0: costo fisso dello speciale in gauge*10000 (10000 = «only 1 gauge», 20000 = «only 2»); **0 = gratis** | idem |
-  | `add*` | flag (10000 non e' una probabilita'): riuscita = attivazione * rate del nemico * `value1` | `[fn]`, `[fn]` |
-  | `value1` | solo stati: fattore clamp(1 - X * value1 / 1e6, 0, 1); X = livello del nemico (deduzione: 1000 = fino al LV 999, 500 = «up to LV 1999»; 10000 = niente oltre il LV 99) | `[fn]` |
-  | `conditionTurn` / `conditionCount` | durata in turni / in azioni; con turn > 0 count si azzera; riapplicazione = massimo | `[fn]` |
-  | `prizeHpUp`, `prizeBurstUp` | moltiplicatori /10000 dei prize HP / gauge del nemico colpito (220000 = x22 sui punti gauge, non una probabilita') | `[fn]`, `[fn]` |
-  | `luxUp` | moltiplicatore /10000 dei Lux (per colpo, colpo finale, raid): 30000 = x3, 15000 = x1,5 | `[fn]`, `[fn]` |
-  | `pvpConditionTurn/Count`, `moneyUp`, `raidUp`, `counter`, `addAction` | **mai letti** nella 4.3.1 (neutri) | lettori degli offset |
-  Lux e prize valgono solo se la skill e' scattata sull'attacco che colpisce il nemico (+0x740).
-- Verifica riga per riga del 18-10 (descrizione della riga e wiki contro i numeri, 163 righe):
-  - corrette nel generatore (master rigenerato, 98 righe cambiate): `invokeProb` di 30 ricostruite (Attack Boost
-    IV-XII, ATK & Lux e ATK & AP & Lux non Max 3975 -> 4000, Defense Boost IV-VI 2950 -> 3000, ATK & AP+ 3950 ->
-    4000, Second Chance II/III 5950/7950 -> 6000/8000: il vecchio calcolo prendeva il trigger% del wiki come
-    esatto); `burstLock` di SP Attack Gauge I/II (0 -> 10000/20000: erano gratis come No Cost) e delle 29 combo
-    «GA 1/2»; `invokeShowTiming` 1 -> 6 delle 42 combo ATK & GA (con 1 il costo dello speciale, letto al timing
-    5, non cambiava mai; 6 e' una deduzione, nessuna riga vera la usa: da provare al banco); `value1` 10000 ->
-    1000 delle 3 «+» vere (con 10000 lo stato non riusciva sui nemici dal LV 100) e 500 delle 21 ricostruite
-    «up to LV 1999» (le altre di stato 1000).
-  - **Stato 4.3.1 (18-10 sera, `ERA_431` in make-skill-table.js, ricerca in `tmp\skill\suspicious_rows.md`)**:
-    thethiny e' il master di feb.-mar. 2017, la 5.0.1 (2021) la fonte piu' vicina alla 4.3.1 (primavera 2021).
-    Lux Plus 1109 `luxUp` 30000 -> 15000 (x1,5 come 5.0.1); gradi Lux delle ricostruite: «increases» 15000,
-    «greatly» 30000 (combo vere), «vastly» 50000 (stima). Icone: le risorse WW 4.3.1 hanno Skill_Icon1,2,4-9 e
-    non la 3 (falso che la 4.3.1 non avesse 6-9): 6 attacco a tutti (1102/1103), 7 prize (1107/1117), 8 Lux
-    (1109/1114/1123), 9 costo gauge (1110/1124/1126; le ultime 5 per deduzione). La Skill_Icon3 del 2016 servita
-    da I-158 non la usa piu' nessuna riga. SP Attack Gauge II e Attack Prize Plus x22 restano (uguali nelle fonti).
-  - (storico) righe vere sospette: Lux Plus 1109 `luxUp` 30000 (x3) nei dati di thethiny (era 1.1.3) contro
-    15000 (x1,5) nel 5.0.1, stessa descrizione; le combo «greatly increases Lux» (1114, 1123) hanno 30000 e la
-    4.3.1 potrebbe avere i valori del 5.0.1; SP Attack Gauge II 1126 ha `maxLv` 15 con `expType` 3 (le altre
-    maxLv 15 hanno 2) e `categoryEvolve` 29 come la I; Attack Prize Plus `prizeBurstUp` 220000 (x22) e' molto
-    piu' di «increases», ma e' il numero vero. Le altre 25 tornano con descrizione e wiki.
-  - stime rimaste: Lux++ `luxUp` 50000 («vastly», nessuna riga vera), le combo «GA» (timing 6).
-  Aperti: X di `value1` (livello del nemico) e il timing 6 delle combo ATK & GA, da provare al banco.
-- Optimize del Level Up (`Button_MaxEnhanced`, `openMaxEnhancePopup` -> `runMaxEnhance`, `[fn]`):
-  tutto nel client, che sceglie i materiali e manda la stessa `/user/medal/enhance` (con `numbers`
-  per le pile); nessun dato in piu' dal server. Dalla 3.3.0 usa Huey & Dewey & Louie e non le medaglie
-  d'attacco, riempie la barra dell'EXP; le Scrooge messe a mano non le tocca (Reddit).
+  | `invokeProb`, `invokeProbPerLv` | probability in 1/10000: `invokeProb + perLv * (min(lv, maxLv) - 1)` (Attack Boost I LV 10 = 47.2%), times (1 + battle bonus +0xbe4) | `[fn]` |
+  | `invokeShowTiming` | moment: 1 medal attack, 2 damage taken, 3/4 start of turn (4 also Second Chance), 5 special attack, 6 = 1 or 5 (one roll per battle, then always or never), 7 = 2 or 5 | `[fn]` (`stage::skill::invoke`) |
+  | `invokeType` | filter on the attack type: 4 special only, 5 «all» medals only, 7 everything except «all» and special (base statuses: single target only), 3 timing 4 only, 0 never, 1/2/6 no filter | same |
+  | `attackUp` | damage multiplier /10000: 24000 = damage x2.4 (not +40%) | `[fn]` |
+  | `damageCut` | damage taken * damageCut / 10000 (minimum 1; among several skills the lowest wins): 10000 no reduction, 5000 = -1/2, 3333 = -2/3, 2000 = -80% | `[fn]`, `[fn]` |
+  | `dokonjo` | flag: with HP at 0 it stays at 1 HP, once | `[fn]` |
+  | `burstCancel` | 1 = free special | `[fn]` |
+  | `burstLock` | with `burstCancel` 0: fixed cost of the special in gauge*10000 (10000 = «only 1 gauge», 20000 = «only 2»); **0 = free** | same |
+  | `add*` | flag (10000 is not a probability): success = activation * enemy rate * `value1` | `[fn]`, `[fn]` |
+  | `value1` | statuses only: factor clamp(1 - X * value1 / 1e6, 0, 1); X = enemy level (deduction: 1000 = up to LV 999, 500 = «up to LV 1999»; 10000 = nothing beyond LV 99) | `[fn]` |
+  | `conditionTurn` / `conditionCount` | duration in turns / in actions; with turn > 0 count is reset; reapplication = maximum | `[fn]` |
+  | `prizeHpUp`, `prizeBurstUp` | multipliers /10000 of the HP / gauge prizes of the enemy hit (220000 = x22 on the gauge points, not a probability) | `[fn]`, `[fn]` |
+  | `luxUp` | multiplier /10000 of the Lux (per hit, final hit, raid): 30000 = x3, 15000 = x1.5 | `[fn]`, `[fn]` |
+  | `pvpConditionTurn/Count`, `moneyUp`, `raidUp`, `counter`, `addAction` | **never read** in 4.3.1 (neutral) | readers of the offsets |
+  Lux and prize apply only if the skill triggered on the attack that hits the enemy (+0x740).
+- Row-by-row check of 18-10 (row description and wiki against the numbers, 163 rows):
+  - fixed in the generator (master regenerated, 98 rows changed): `invokeProb` of 30 rebuilt ones (Attack Boost
+    IV-XII, non-Max ATK & Lux and ATK & AP & Lux 3975 -> 4000, Defense Boost IV-VI 2950 -> 3000, ATK & AP+ 3950 ->
+    4000, Second Chance II/III 5950/7950 -> 6000/8000: the old computation took the wiki's trigger% as
+    exact); `burstLock` of SP Attack Gauge I/II (0 -> 10000/20000: they were free like No Cost) and of the 29
+    «GA 1/2» combos; `invokeShowTiming` 1 -> 6 of the 42 ATK & GA combos (with 1 the cost of the special, read at timing
+    5, never changed; 6 is a deduction, no real row uses it: to be tried on the bench); `value1` 10000 ->
+    1000 of the 3 real «+» ones (with 10000 the status did not succeed on enemies from LV 100) and 500 of the 21 rebuilt
+    «up to LV 1999» ones (the other status ones 1000).
+  - **4.3.1 state (18-10 evening, `ERA_431` in make-skill-table.js, research in `tmp\skill\suspicious_rows.md`)**:
+    thethiny is the master of Feb.-Mar. 2017, 5.0.1 (2021) the source closest to 4.3.1 (spring 2021).
+    Lux Plus 1109 `luxUp` 30000 -> 15000 (x1.5 as 5.0.1); Lux grades of the rebuilt ones: «increases» 15000,
+    «greatly» 30000 (real combos), «vastly» 50000 (estimate). Icons: the WW 4.3.1 resources have Skill_Icon1,2,4-9 and
+    not 3 (it is false that 4.3.1 did not have 6-9): 6 attack on all (1102/1103), 7 prize (1107/1117), 8 Lux
+    (1109/1114/1123), 9 gauge cost (1110/1124/1126; the last 5 by deduction). The 2016 Skill_Icon3 served
+    by I-158 is no longer used by any row. SP Attack Gauge II and Attack Prize Plus x22 stay (the same in the sources).
+  - (historical) suspicious real rows: Lux Plus 1109 `luxUp` 30000 (x3) in thethiny's data (era 1.1.3) against
+    15000 (x1.5) in 5.0.1, same description; the «greatly increases Lux» combos (1114, 1123) have 30000 and
+    4.3.1 might have the 5.0.1 values; SP Attack Gauge II 1126 has `maxLv` 15 with `expType` 3 (the other
+    maxLv 15 have 2) and `categoryEvolve` 29 like I; Attack Prize Plus `prizeBurstUp` 220000 (x22) is much
+    more than «increases», but it is the real number. The other 25 match description and wiki.
+  - remaining estimates: Lux++ `luxUp` 50000 («vastly», no real row), the «GA» combos (timing 6).
+  Open: X of `value1` (enemy level) and timing 6 of the ATK & GA combos, to be tried on the bench.
+- Level Up Optimize (`Button_MaxEnhanced`, `openMaxEnhancePopup` -> `runMaxEnhance`, `[fn]`):
+  all in the client, which chooses the materials and sends the same `/user/medal/enhance` (with `numbers`
+  for the stacks); no extra data from the server. From 3.3.0 it uses Huey & Dewey & Louie and not the attack
+  medals, it fills the EXP bar; it does not touch the Scrooges put in by hand (Reddit).
 
 <a id="optimize"></a>
-### Popup di Optimize (I-090)
+### Optimize popup (I-090)
 
-- Il crash al tocco di Optimize (banco 12-10, pc in `[fn]` -> `[fn]`, x2 = 0x191924c
-  «widgetTree») e' GUIReader su un layout assente: `openMaxEnhancePopup` (`[fn]`) carica
-  `cocostudio/publish/MedalInfo_MaxEnhanced_ver340.json`, che non c'e' in nessuna risorsa. Server,
-  master e risposte non c'entrano (`runMaxEnhance` `[fn]` arriva solo dopo il popup).
-- Widget cercati (tutti senza controlli tranne `Announce`): `Scroll_Area` (MaxEnhanceMedalScrollView
-  con i materiali scelti), `Txt_Title` (106220300 «Choose a parameter to max out.»), `Txt_attention`
-  (106220301), `Base_Money1`/`Base_Money2` > `Txt_Money` (100300002/3) e `Txt_Money_Label` (costo e
-  posseduti), `Button_Mix` (vi aggiunge il pulsante But01) > `Txt_Mix` (106220314 «Level Up»),
-  `Close_Button`; per MaxLv/MaxAtk/MaxDef/MaxCost/MaxGuilt un nodo con `CheckBox_<p>` (CheckBox vero),
-  `Plate_Max` (lampeggia, la mostra `[fn]`), `Txt_<p>` (106220304/306/308/310/312) e
-  `Txt_<p>_Label` (valore «%d», «+%d», «Maxed Out»...). Le scelte si ricalcolano a ogni tocco
-  (`[fn]` -> `[fn]`, aggiornamento `[fn]`); Level Up chiama `runMaxEnhance`,
-  che manda la normale `/user/medal/enhance`.
-- Layout generato in `make_layouts.py` (12-10): finestra Win04, filtri But16 a sinistra, griglia a
-  destra, targhe Munny e Level Up come `MedalInfo_Mix_ver340`. Nessuno screenshot originale trovato.
-  Banco 12-10: il popup si apre, ma «No Medals» su ogni parametro.
-- Candidati (`[fn]` -> `[fn]`, scorre la lista della scena +0x330, cioe' le medaglie
-  della lista del Level Up, probabilmente gia' filtrate dal Sort/filtro): riga medal con
-  `autoEnhance` (+0x488) != 0 e `type` (+0x490) 2, 4 o 5; medalId non nella mappa di esclusione
-  (+0x680); medaglia non protetta (`[fn]`, elenco locale degli userMedalId); `userMedal`
-  +0x48 < 1. Per ogni parametro **non** spuntato si scartano le medaglie che lo darebbero:
+- The crash on tapping Optimize (bench 12-10, pc in `[fn]` -> `[fn]`, x2 = 0x191924c
+  «widgetTree») is GUIReader on a missing layout: `openMaxEnhancePopup` (`[fn]`) loads
+  `cocostudio/publish/MedalInfo_MaxEnhanced_ver340.json`, which is not in any resource. Server,
+  master and responses are not involved (`runMaxEnhance` `[fn]` arrives only after the popup).
+- Widgets looked up (all without checks except `Announce`): `Scroll_Area` (MaxEnhanceMedalScrollView
+  with the chosen materials), `Txt_Title` (106220300 «Choose a parameter to max out.»), `Txt_attention`
+  (106220301), `Base_Money1`/`Base_Money2` > `Txt_Money` (100300002/3) and `Txt_Money_Label` (cost and
+  owned), `Button_Mix` (adds the But01 button to it) > `Txt_Mix` (106220314 «Level Up»),
+  `Close_Button`; for MaxLv/MaxAtk/MaxDef/MaxCost/MaxGuilt a node with `CheckBox_<p>` (real CheckBox),
+  `Plate_Max` (blinks, shown by `[fn]`), `Txt_<p>` (106220304/306/308/310/312) and
+  `Txt_<p>_Label` (value «%d», «+%d», «Maxed Out»...). The choices are recomputed at every tap
+  (`[fn]` -> `[fn]`, update `[fn]`); Level Up calls `runMaxEnhance`,
+  which sends the normal `/user/medal/enhance`.
+- Layout generated in `make_layouts.py` (12-10): window Win04, But16 filters on the left, grid on the
+  right, Munny and Level Up plates like `MedalInfo_Mix_ver340`. No original screenshot found.
+  Bench 12-10: the popup opens, but «No Medals» on every parameter.
+- Candidates (`[fn]` -> `[fn]`, scans the list of scene +0x330, that is the medals
+  of the Level Up list, probably already filtered by the Sort/filter): medal row with
+  `autoEnhance` (+0x488) != 0 and `type` (+0x490) 2, 4 or 5; medalId not in the exclusion map
+  (+0x680); medal not protected (`[fn]`, local list of the userMedalIds); `userMedal`
+  +0x48 < 1. For every parameter **not** ticked the medals that would give it are discarded:
   LV -> `materialExp` (+0x518), STR -> `enhanceAttack` (+0x52c), DEF -> `enhanceDefense` (+0x530),
-  Cost -> `enhanceCost` (+0x534), SP Attack Bonus -> `enhanceGuilt` (+0x538). Poi ordina
-  (`[fn]`) e sceglie fino al massimo di ogni parametro.
-- `autoEnhance` era 0 su tutto il master: il formato vecchio non ce l'ha. Regola in
-  `make-game-tables.js`: 1 se `validPack` (unk_1116 del formato vecchio) e type 2/4/5, cioe' Huey/
-  Dewey/Louie e HDL, Chip, Dale, Magic Mirror, Cid/Cid 5/Cid 10 (23 righe). Restano fuori le
-  Scrooge (type 2, unk_1116 0), come nell'originale (Reddit: Optimize non usa le Scrooge). Valori
-  originali non trovati: regola ricostruita.
+  Cost -> `enhanceCost` (+0x534), SP Attack Bonus -> `enhanceGuilt` (+0x538). Then it sorts
+  (`[fn]`) and chooses up to the maximum of every parameter.
+- `autoEnhance` was 0 on the whole master: the old format does not have it. Rule in
+  `make-game-tables.js`: 1 if `validPack` (unk_1116 of the old format) and type 2/4/5, that is Huey/
+  Dewey/Louie and HDL, Chip, Dale, Magic Mirror, Cid/Cid 5/Cid 10 (23 rows). The
+  Scrooges stay out (type 2, unk_1116 0), as in the original (Reddit: Optimize does not use the Scrooges). Original
+  values not found: rebuilt rule.
 
 <a id="skill-banco"></a>
-### Prova al banco del 18-10 (rev 124, salvataggio completo)
+### Bench test of 18-10 (rev 124, full save)
 
-- Migrazione al primo avvio: `skillVersion` 1, 15 skill (8 salvate + 4 di prova + 3 Scrooge fissate).
-- Dettagli: Attack Boost VI (ricostruita) 1/20 al 39% (`invokeProb` 3975), Second Chance (vera) 15/15 al 32%; icone e descrizioni giuste.
-- Crescita: Combat 101 da' `getPoint.exp` 14 con 17 nemici; con EXP a 595 la missione porta la skill a LV 3 e i RESULTS mostrano
-  «Supernova+ - SP Roxas's Attack Boost VI leveled up!» (il client confronta il livello di `userSkills` prima e dopo la risposta di
-  `/stage/clear`, `[fn]`/`[fn]`; nessun campo dedicato, `D:\Progetto_Restauro_KH_UX\tmp\skill\popupnswer.md`).
-- Overwrite: materiale Donald Ver. A con Attack Boost VII 20/20 a sinistra -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
-  Attack Boost VII?», base con Attack Boost VII 20/20. Ordinamento «Skill» della lista: medaglie con skill in cima.
-- Combo «& GA N» (18-10, banco dell'utente): `burstLock` = costo fisso dello speciale in gauge x 10000; AB VIII Max &
-  Lux++ & GA 1 su SP Roxas (speciale da 3 gauge) -> lo speciale costa 1 gauge. `invokeShowTiming` 6 funziona.
-- Attivazione in battaglia (18-10, dal vivo, `relogin.ps1 -EnemyAtk 10`): Second Chance di SP Axel scatta, il
-  giocatore resta in piedi a 1 HP (`screenshots\sc_live.png`, missione 132); il nome di Attack Boost di SP Roxas
-  compare a schermo. Da misurare: l'aumento reale del danno di Attack Boost; le combo «& GA 1/2».
-- Inciampi: `Select-Object -First N` su uno script node lo chiude prima della scrittura (skill di prova persa); il tombstone del
-  servizio sensori dell'emulatore (`android.hardware.sensors`) non e' un crash del gioco.
+- Migration at the first start: `skillVersion` 1, 15 skills (8 saved + 4 test ones + 3 fixed Scrooges).
+- Details: Attack Boost VI (rebuilt) 1/20 at 39% (`invokeProb` 3975), Second Chance (real) 15/15 at 32%; correct icons and descriptions.
+- Growth: Combat 101 gives `getPoint.exp` 14 with 17 enemies; with EXP at 595 the quest brings the skill to LV 3 and the RESULTS show
+  «Supernova+ - SP Roxas's Attack Boost VI leveled up!» (the client compares the level of `userSkills` before and after the response of
+  `/stage/clear`, `[fn]`/`[fn]`; no dedicated field, `D:\Progetto_Restauro_KH_UX\tmp\skill\popupnswer.md`).
+- Overwrite: material Donald Ver. A with Attack Boost VII 20/20 on the left -> «Success Rate 100%», popup «Overwrite Attack Boost VI with
+  Attack Boost VII?», base with Attack Boost VII 20/20. «Skill» sorting of the list: medals with a skill at the top.
+- «& GA N» combos (18-10, user's bench): `burstLock` = fixed cost of the special in gauge x 10000; AB VIII Max &
+  Lux++ & GA 1 on SP Roxas (3-gauge special) -> the special costs 1 gauge. `invokeShowTiming` 6 works.
+- Activation in battle (18-10, live, `relogin.ps1 -EnemyAtk 10`): SP Axel's Second Chance triggers, the
+  player stays standing at 1 HP (`screenshots\sc_live.png`, quest 132); the name of SP Roxas's Attack Boost
+  appears on screen. To be measured: the real damage increase of Attack Boost; the «& GA 1/2» combos.
+- Pitfalls: `Select-Object -First N` on a node script closes it before writing (test skill lost); the tombstone of the
+  emulator's sensor service (`android.hardware.sensors`) is not a game crash.
 
 <a id="mapping-orgxiii"></a>
-## Mapping Organizzazione XIII e Roboloid (I-160, 18-10, rev 128)
+## Organization XIII and Roboloid mapping (I-160, 18-10, rev 128)
 
-- Problema: `make-game-tables.js` prende il Tier dalla riga Roboloid `MEDAL_MAP[id]` e con `KHUX_MEDALS_ALL` aggiunge come
-  `300000+ID` ogni riga non usata. Per i 13 id SE dell'Organizzazione XIII `medal_map.json` puntava alle «X [+]» (Tier 8): le
-  «X A» 3004xx/3006xx diventavano doppioni nostri e le 6★ [+] non avevano riga. Prove: `tmp\sp2b\g4\medal_mapping_audit.md`
-  (gruppo 1), `orgxiii_migration.md`.
-- Correzione in `server/make-game-tables.js`: `MEDAL_MAP_FIX` (23 chiavi: 13 id SE + 10 copie 1xxxxx -> «X A» 6★, Tier 3) applicata
-  con `Object.assign` dopo il caricamento di `MEDAL_MAP`; `EVOLVE_FIX` (stesse 23 chiavi -> 7★ «X A», `validEvolve` 1, 5 Blue Fairy [3]
-  da `blue-fairy.js`). Sta nel repo perche' `medal_map.json` e' esterno (`D:\Progetto_Restauro_KH_UX\medal_gen`) e non
-  versionato: senza la tabella nel generatore una rigenerazione riporterebbe l'errore. Solo id Roboloid/SE, nessun dato SE.
-- Tabella (SE -> «X A» giusta / 7★ «X A» / 6★ [+] nuova, data EN): 31176 Lexaeus 443/300444/301491 2018-05-13; 31196 Xaldin
-  483/300484/301601 2018-09-24 (solo evento); 31206 Saix 486/300487/301531 2018-07-13; 31226 Xemnas 638/300639/301680 2019-01-13;
+- Problem: `make-game-tables.js` takes the Tier from the Roboloid row `MEDAL_MAP[id]` and with `KHUX_MEDALS_ALL` adds as
+  `300000+ID` every unused row. For the 13 SE ids of Organization XIII `medal_map.json` pointed to the «X [+]» (Tier 8): the
+  «X A» 3004xx/3006xx became our duplicates and the 6★ [+] had no row. Evidence: `tmp\sp2b\g4\medal_mapping_audit.md`
+  (group 1), `orgxiii_migration.md`.
+- Fix in `server/make-game-tables.js`: `MEDAL_MAP_FIX` (23 keys: 13 SE ids + 10 copies 1xxxxx -> «X A» 6★, Tier 3) applied
+  with `Object.assign` after loading `MEDAL_MAP`; `EVOLVE_FIX` (same 23 keys -> 7★ «X A», `validEvolve` 1, 5 Blue Fairy [3]
+  from `blue-fairy.js`). It is in the repo because `medal_map.json` is external (`D:\Progetto_Restauro_KH_UX\medal_gen`) and not
+  versioned: without the table in the generator a regeneration would bring the error back. Only Roboloid/SE ids, no SE data.
+- Table (SE -> correct «X A» / 7★ «X A» / new 6★ [+], EN date): 31176 Lexaeus 443/300444/301491 2018-05-13; 31196 Xaldin
+  483/300484/301601 2018-09-24 (event only); 31206 Saix 486/300487/301531 2018-07-13; 31226 Xemnas 638/300639/301680 2019-01-13;
   32186 Marluxia 446/300447/301634 2018-11-13; 32196 Larxene 449/300450/301658 2018-12-13; 32216 Xigbar 489/300490/301745
   2019-02-13; 32236 Axel 641/300642/301563 2018-08-13; 33176 Vexen 452/300453/301446 2018-04-13; 33186 Zexion 455/300456/301511
   2018-06-13; 33206 Demyx 492/300493/301595 2018-09-13; 33216 Luxord 495/300496/301616 2018-10-13; 33236 Roxas 644/300645/301782
-  2019-03-13. Le potenziate 20xxxxx/21xxxxx dell'Org XIII non si rigenerano (nascevano dai deal [+]): ora sono le 2301xxx.
-- Test: `server/test-orgxiii-map.js` (tabella a mano contro il master), `server/test-orgxiii-migration.js`.
-- Catalogo (`recon/tools/make_banner_catalog.py`, 4f1c8a7): alias di Axel/Roxas/Vexen non piu' su SN++, 6.2 su «axel a»/«roxas a»,
-  `clamp_plus_dates` (le [+] non prima di `firstRarity`), `medal_date` in `banner_overrides.tsv` (302074/302075 al 2021-01-01);
-  B0280/B0303 danno la 6★ [+]. Installato con le promesse skill dei 98 banner (`maxSkill`).
-- Immagini (ba2922d): grafica e cutin delle 13 6★ [+] 301446...301782 (imageId = medalId), risorse 42. Al banco le 6★ SE avevano la
-  grafica della [+] (colore sbagliato nei filtri): `norm()` di `recon/tools/fetch_medal_images.py` toglieva il «+», «Vexen [+]» 6★ e
-  «Vexen» 6★ avevano la stessa chiave. Corretto in 989d5de; in `medal_gen` le 23 immagini (Medal_L, Medal_S, Cutin) sono quelle della
-  6★ «X A» 3004xx/3006xx e `medal_map.json` punta lì; risorse 43. Controllo su tutte le 2106 medaglie con grafica: attributo, nome e
-  stelle uguali a Roboloid.
-- Nomi (e53b3d4, rev 128): il master di thethiny (2017) chiama le 5★/6★ SE solo «Lexaeus»; nel 4.3.1 sono «X A» dall'uscita delle
-  «B». Le 36 righe prendono il nome della 7★ «X A» di arrivo dell'Evolve; catalogo rigenerato (5 banner: solo chiavi dei nomi).
-- Nomi 6★ «Illustrated Sora A»/«Riku A» (20-10): 41036 e 42036 (e le boosted 2041036/2042036) erano «Illustrated Sora»/«Riku»; come le 7★ 300572/300576 e la khuxwiki
-  (sortId 448/449) sono «... A». `server/medal-name-fix.js` (`NAME_FIX`, chiamata da make-game-tables.js; da sola corregge il master sul posto); `make-boosted-medals.js`
-  aggiunge 1041036/1042036 (+1000 STR) per B0362/B0363 e gli altri banner con quei nomi. Il catalogo li risolveva gia' per id. Evolve verso la 7★: I-162.
-- Salvataggio (247fbed, `migrateMedalMap` in `server/server.js`, `medalMapVersion` 1-2): `ORGXIII_MEDAL_MAP` (36 voci) porta 3004xx/3006xx
-  all'id SE e le potenziate 20xxxxx/21xxxxx alla 2301xxx; campi con `medalId`: `medals[]`, `medalState`, regali `resourceType` 3;
-  il resto segue `userMedalId`. Salvataggio del banco: 14 copie, nessuna potenziata. Versione 2 (revisione finale): il record del
-  livello Nova (`guiltBurst.first`/`max`, per medalId, non cala mai) prende l'id nuovo al posto del vecchio solo se non c'e' gia'
-  (niente secondo +5 con popup per la stessa medaglia, livello che non scende); la migrazione gira prima di `migrateSkills`.
-- Seguiti aperti dall'audit: I-161 (SN++ 302008-302012 «adjusted» del 07-09-2020, evoluzione con Fantasia Mickey B 300913) e I-162
-  (167 6★ originali senza `validEvolve` verso la 7★).
+  2019-03-13. The boosted 20xxxxx/21xxxxx of Org XIII are not regenerated (they came from the [+] deals): now they are the 2301xxx.
+- Tests: `server/test-orgxiii-map.js` (hand table against the master), `server/test-orgxiii-migration.js`.
+- Catalog (`recon/tools/make_banner_catalog.py`, 4f1c8a7): aliases of Axel/Roxas/Vexen no longer on SN++, 6.2 on «axel a»/«roxas a»,
+  `clamp_plus_dates` (the [+] not before `firstRarity`), `medal_date` in `banner_overrides.tsv` (302074/302075 at 2021-01-01);
+  B0280/B0303 give the 6★ [+]. Installed with the skill promises of the 98 banners (`maxSkill`).
+- Images (ba2922d): graphics and cutins of the 13 6★ [+] 301446...301782 (imageId = medalId), resources 42. On the bench the SE 6★ had the
+  graphics of the [+] (wrong color in the filters): `norm()` of `recon/tools/fetch_medal_images.py` removed the «+», «Vexen [+]» 6★ and
+  «Vexen» 6★ had the same key. Fixed in 989d5de; in `medal_gen` the 23 images (Medal_L, Medal_S, Cutin) are those of the
+  6★ «X A» 3004xx/3006xx and `medal_map.json` points there; resources 43. Check on all the 2106 medals with graphics: attribute, name and
+  stars equal to Roboloid.
+- Names (e53b3d4, rev 128): thethiny's master (2017) calls the SE 5★/6★ just «Lexaeus»; in 4.3.1 they are «X A» since the release of the
+  «B». The 36 rows take the name of the 7★ «X A» at the end of the Evolve; catalog regenerated (5 banners: only name keys).
+- Names of 6★ «Illustrated Sora A»/«Riku A» (20-10): 41036 and 42036 (and the boosted 2041036/2042036) were «Illustrated Sora»/«Riku»; like the 7★ 300572/300576 and the khuxwiki
+  (sortId 448/449) they are «... A». `server/medal-name-fix.js` (`NAME_FIX`, called by make-game-tables.js; on its own it fixes the master in place); `make-boosted-medals.js`
+  adds 1041036/1042036 (+1000 STR) for B0362/B0363 and the other banners with those names. The catalog already resolved them by id. Evolve to the 7★: I-162.
+- Save (247fbed, `migrateMedalMap` in `server/server.js`, `medalMapVersion` 1-2): `ORGXIII_MEDAL_MAP` (36 entries) moves 3004xx/3006xx
+  to the SE id and the boosted 20xxxxx/21xxxxx to 2301xxx; fields with `medalId`: `medals[]`, `medalState`, gifts `resourceType` 3;
+  the rest follows `userMedalId`. Bench save: 14 copies, no boosted ones. Version 2 (final review): the record of the
+  Nova level (`guiltBurst.first`/`max`, per medalId, never decreases) takes the new id in place of the old one only if it is not already there
+  (no second +5 with popup for the same medal, level that does not go down); the migration runs before `migrateSkills`.
+- Open follow-ups from the audit: I-161 (SN++ 302008-302012 «adjusted» of 07-09-2020, evolution with Fantasia Mickey B 300913) and I-162
+  (167 original 6★ without `validEvolve` towards the 7★).
 
 <a id="danno-variabile"></a>
-## Speciali a danno variabile (I-189, analisi e correzione 21-10, da verificare al banco)
+## Variable-damage specials (I-189, analysis and fix 21-10, to be verified on the bench)
 
-Segnalazione dell'utente: Cloud II EX nel video https://www.youtube.com/watch?v=eLmkNDzwuPE (2:02) mostra «x7.12 - 8.64»,
-da noi «x6.90». Analisi offline (decompilato in `D:\Progetto_Restauro_KH_UX\tmp\i189\`, soprattutto `disp.c`):
+User's report: Cloud II EX in the video https://www.youtube.com/watch?v=eLmkNDzwuPE (2:02) shows «x7.12 - 8.64»,
+ours «x6.90». Offline analysis (decompiled code in `D:\Progetto_Restauro_KH_UX\tmp\i189\`, especially `disp.c`):
 
-- Riga burst (lettore `[fn]`, ricerca per id `[fn]`): displayPower +0x2c0 (int64), displayPowerPerEnforce
+- Burst row (reader `[fn]`, lookup by id `[fn]`): displayPower +0x2c0 (int64), displayPowerPerEnforce
   +0x2c8 (5 int64), **displayMaxPower +0x2f0** (int32), displayMaxPowerPerEnforce +0x2f4 (5 int32), basePower +0x308,
   basePowerPerEnforce +0x30c, damageType +0x320, **specialPowerType +0x324**, sp1 +0x328, sp2 +0x330 (int64),
   sp1PerEnforce +0x338, sp2PerEnforce +0x360.
-- Dettaglio (`[fn]`): pallini da userMedal +0xc, displayPower o displayPowerPerEnforce[pallini-1] / 10000 per il
-  fattore guilt ((userMedal +0x10 + 10000)/10000 + (+0x5c)/10000). damageType 2 = testo del danno fisso; altrimenti
-  specialPowerType 1 = un valore, **ogni altro tipo = intervallo** «x a - b» con b = fattore x displayMaxPower(PerEnforce)
-  / 10000. `[fn](dots, row, wantMax)` usa la stessa regola (max solo se il tipo non e' 1 ne' 2).
-- Nostri dati: tutte le 2276 righe burst hanno specialPowerType 1/2 e displayMaxPower 0: sono copie dei modelli di
-  `burst_base.json` (tipo 1) e `medal-power-fix.js` copia da thethiny solo le potenze base/display. Cloud II EX 7★
-  (300999 -> burst 3000999) = tipo 1, 69000 (x6.90; x7.12 a 5 pallini).
-- Originali: thethiny `burst.json` ha 173 righe variabili, tutte con displayMaxPower; tipi 3 (meno HP) e 4 (piu' HP),
+- Detail (`[fn]`): dots from userMedal +0xc, displayPower or displayPowerPerEnforce[dots-1] / 10000 times the
+  guilt factor ((userMedal +0x10 + 10000)/10000 + (+0x5c)/10000). damageType 2 = fixed-damage text; otherwise
+  specialPowerType 1 = one value, **every other type = range** «x a - b» with b = factor x displayMaxPower(PerEnforce)
+  / 10000. `[fn](dots, row, wantMax)` uses the same rule (max only if the type is neither 1 nor 2).
+- Our data: all the 2276 burst rows have specialPowerType 1/2 and displayMaxPower 0: they are copies of the templates of
+  `burst_base.json` (type 1) and `medal-power-fix.js` copies from thethiny only the base/display powers. Cloud II EX 7★
+  (300999 -> burst 3000999) = type 1, 69000 (x6.90; x7.12 at 5 dots).
+- Originals: thethiny `burst.json` has 173 variable rows, all with displayMaxPower; types 3 (less HP) and 4 (more HP),
   38/38: displayPower = basePower*sp1/1e4, displayMaxPower = basePower*(sp1+sp2)/1e4, sp2 = 10000. Roboloid (ID 999):
-  LowMulti 7.12, HighMulti 8.64, Condition HigherHP (i numeri del video a 5 pallini).
-- Condizioni Roboloid -> tipo (abbinate per nome d'attacco): LowerHP 3, HigherHP 4, DrainsHP 5, MoreTurns 6, SPSuccession 7,
+  LowMulti 7.12, HighMulti 8.64, Condition HigherHP (the numbers of the video at 5 dots).
+- Roboloid conditions -> type (matched by attack name): LowerHP 3, HigherHP 4, DrainsHP 5, MoreTurns 6, SPSuccession 7,
   DrainsDEF 16, Poison 20, Sleep 21, Paralysis 22, GaugesFull 23, GaugesUsed 25, LessLUX 27, MoreGaugesPrevMedal 28,
-  MoreLUX 30, HigherSlot 40 (HigherSlot anche 5 e MoreEnemiesDefeated 28: collisioni probabili).
-- Righe colpite: **661** burst Roboloid con Low/High appiattiti (146 HigherHP): 548 col valore basso, **104 col valore
-  alto** (`make-game-tables.js:189` usa `Multi || HighMulti`: oggi fanno troppo danno), 9 nessuno dei due; 391 con una
-  condizione mappata, 270 no (OneEnemy 130, LowerSlot 69, Critical, MoreParty, Slot3-6, MoreSkillsStage: tipo da trovare
-  nel codice del danno). Altre **65** righe con id in thethiny di tipo > 2 hanno perso il tipo.
-- Correzione proposta (non applicata): passo `variablePower` dopo `burstPowerFix` (copia verbatim dei campi variabili da
-  thethiny per le 65; per le 391 tipo dalla mappa e, per 3/4, bp = hi - lo, sp1 = lo*1e4/bp, sp2 = 10000, per pallino
-  bp_i = lo_i*1e4/sp1); riga 189 dal LowMulti. Da verificare in battaglia: l'uso di specialPowerType/sp1/sp2 nel danno
-  (`[fn]`/`[fn]` leggono +0x324) e' dedotto. Formule ricostruite -> Notices.
+  MoreLUX 30, HigherSlot 40 (HigherSlot also 5 and MoreEnemiesDefeated 28: probable collisions).
+- Affected rows: **661** Roboloid bursts with Low/High flattened (146 HigherHP): 548 with the low value, **104 with the high
+  value** (`make-game-tables.js:189` uses `Multi || HighMulti`: today they do too much damage), 9 neither of the two; 391 with a
+  mapped condition, 270 not (OneEnemy 130, LowerSlot 69, Critical, MoreParty, Slot3-6, MoreSkillsStage: type to be found
+  in the damage code). Another **65** rows with an id in thethiny of type > 2 lost their type.
+- Proposed fix (not applied): `variablePower` step after `burstPowerFix` (verbatim copy of the variable fields from
+  thethiny for the 65; for the 391 type from the map and, for 3/4, bp = hi - lo, sp1 = lo*1e4/bp, sp2 = 10000, per dot
+  bp_i = lo_i*1e4/sp1); line 189 from LowMulti. To be verified in battle: the use of specialPowerType/sp1/sp2 in the damage
+  (`[fn]`/`[fn]` read +0x324) is deduced. Rebuilt formulas -> Notices.
 
-**Applicato (21-10)**: `server/variable-power.js` `variablePower(bursts, {origBursts, robo, medals})`, chiamato in
-make-game-tables.js subito dopo `burstPowerFix` e dalla riga di comando di `medal-power-fix.js` (che rimette basePower =
-display: per i tipi 3/4 basePower e' il divario, quindi i due passi vanno sempre insieme); da solo
-`node server/variable-power.js [master] [--rows]`, idempotente. Prova: `node server/test-variable-power.js`.
-- a. **65** righe con id in thethiny tipo > 2: specialPowerType, sp1, sp2, displayMaxPower verbatim; sp1/sp2PerEnforce e
-  displayMaxPowerPerEnforce estesi ai pallini della riga come `ext()` (0 oltre).
-- b. Roboloid con condizione mappata, 391 righe:
-  - **157** tipo 3/4 (LowerHP/HigherHP): lo = LowMulti*1e4, hi = HighMulti*1e4 al pallino massimo, bp = hi - lo,
-    sp1 = round(lo*1e4/bp), sp2 = 10000; per pallino bp_i = round(lo_i*1e4/sp1), max_i = lo_i + bp_i, display = lo_i
-    esatto (scarto di base*sp1/1e4 dal display fino a sp1/2e4 per l'arrotondamento). Cloud II EX 7★: sp1 46842,
-    0 pallini 69000 - 83730 (x6.90 - 8.37), 5 pallini 71200 - 86400 (x7.12 - 8.64).
-  - **17** tipo 20/21/30 (Poison/Sleep/MoreLUX): sugli originali (6/6/14 righe, anche per pallino) max = base + sp1 con
-    sp2 costante 0/0/1e8: base = display = lo_i, sp1 = hi - lo, max_i = lo_i + sp1.
-  - **217** tipo 1 perche' la relazione non e' verificabile sugli originali dello stesso tipo: 5 (7, sp1 9000/9990 non
-    ricavabile), 6 (12), 7 (39), 16 (8), 22 (7, Dark Blizzaga 10511 ha max - base 6000 con sp1 8500), 23 (52), 25 (14),
+**Applied (21-10)**: `server/variable-power.js` `variablePower(bursts, {origBursts, robo, medals})`, called in
+make-game-tables.js right after `burstPowerFix` and from the command line of `medal-power-fix.js` (which puts back basePower =
+display: for types 3/4 basePower is the gap, so the two steps must always go together); on its own
+`node server/variable-power.js [master] [--rows]`, idempotent. Test: `node server/test-variable-power.js`.
+- a. **65** rows with an id in thethiny of type > 2: specialPowerType, sp1, sp2, displayMaxPower verbatim; sp1/sp2PerEnforce and
+  displayMaxPowerPerEnforce extended to the row's dots like `ext()` (0 beyond).
+- b. Roboloid with a mapped condition, 391 rows:
+  - **157** type 3/4 (LowerHP/HigherHP): lo = LowMulti*1e4, hi = HighMulti*1e4 at the maximum dot, bp = hi - lo,
+    sp1 = round(lo*1e4/bp), sp2 = 10000; per dot bp_i = round(lo_i*1e4/sp1), max_i = lo_i + bp_i, display = lo_i
+    exact (deviation of base*sp1/1e4 from the display up to sp1/2e4 because of rounding). Cloud II EX 7★: sp1 46842,
+    0 dots 69000 - 83730 (x6.90 - 8.37), 5 dots 71200 - 86400 (x7.12 - 8.64).
+  - **17** type 20/21/30 (Poison/Sleep/MoreLUX): on the originals (6/6/14 rows, also per dot) max = base + sp1 with
+    constant sp2 0/0/1e8: base = display = lo_i, sp1 = hi - lo, max_i = lo_i + sp1.
+  - **217** type 1 because the relation cannot be verified on the originals of the same type: 5 (7, sp1 9000/9990 not
+    derivable), 6 (12), 7 (39), 16 (8), 22 (7, Dark Blizzaga 10511 has max - base 6000 with sp1 8500), 23 (52), 25 (14),
     27 (3), 28 (9), 40 (66).
-- c. **270** condizioni senza tipo noto, tipo 1: OneEnemy 130, LowerSlot 69, MoreParty 20, Critical 18,
-  MoreEnemiesDefeated 7, Slot5 7, MoreSkillsStage 6, Slot4 6, Slot3 4, Slot6 2, senza condizione 1.
-- Riga 189 di make-game-tables.js e `multiOf` di burstPowerFix (make-game-tables.js e medal-power-fix.js): `Multi ||
-  LowMulti` invece di `Multi || HighMulti`. Sul master: **104** righe cambiano (solo base/display e PerEnforce), il
-  resto identico; medal.json invariato. Una riga Roboloid tipo 4 (3000701) ha dalla khuxwiki 66500 a pallini pieni invece
-  di LowMulti 6.64: tenuto il display della riga, sp1 da Low/High.
-- Notice IMPORTANT «Variable Special Attacks» (routes-info-album.js) dichiara le 174 ricostruite e le altre al valore basso.
+- c. **270** conditions without a known type, type 1: OneEnemy 130, LowerSlot 69, MoreParty 20, Critical 18,
+  MoreEnemiesDefeated 7, Slot5 7, MoreSkillsStage 6, Slot4 6, Slot3 4, Slot6 2, without condition 1.
+- Line 189 of make-game-tables.js and `multiOf` of burstPowerFix (make-game-tables.js and medal-power-fix.js): `Multi ||
+  LowMulti` instead of `Multi || HighMulti`. On the master: **104** rows change (only base/display and PerEnforce), the
+  rest identical; medal.json unchanged. One Roboloid type 4 row (3000701) has from the khuxwiki 66500 at full dots instead
+  of LowMulti 6.64: the row's display kept, sp1 from Low/High.
+- IMPORTANT notice «Variable Special Attacks» (routes-info-album.js) declares the 174 rebuilt ones and the others at the low value.
 
 <a id="danno-variabile-tipi"></a>
-### Tipi di potenza variabile dal codice di battaglia (I-189b, analisi 21-10)
+### Variable power types from the battle code (I-189b, analysis 21-10)
 
-Formula del danno: `switch(specialPowerType)` in **[fn]** (0x00e30f9c..0x00e31480, `tmp\i189b\b2.c`;
-[fn]/0075db5c/0075d408 sono filtri della Medal List, non danno). S1 = sp1 (o sp1PerEnforce[pallini-1]) / 1e4,
-S2 = sp2 / 1e4, B = basePower(PerEnforce) / 1e4 (damageType 2: B = S1); poi fattore d'attributo e (guilt + skill + 1e4)/1e4.
-Stato del giocatore +0x350; **f(x) = x² / (S2 + x²)**.
+Damage formula: `switch(specialPowerType)` in **[fn]** (0x00e30f9c..0x00e31480, `tmp\i189b\b2.c`;
+[fn]/0075db5c/0075d408 are Medal List filters, not damage). S1 = sp1 (or sp1PerEnforce[dots-1]) / 1e4,
+S2 = sp2 / 1e4, B = basePower(PerEnforce) / 1e4 (damageType 2: B = S1); then attribute factor and (guilt + skill + 1e4)/1e4.
+Player state +0x350; **f(x) = x² / (S2 + x²)**.
 
-| tipo | condizione | formula | prova |
+| type | condition | formula | proof |
 |---|---|---|---|
-| 3 | meno HP | B·S2·(S1 + 1 − hp/maxHP) | codice + 8 originali |
-| 4 | piu' HP | B·S2·(S1 + hp/maxHP) | codice + 30 originali |
-| 5 | paga HP | hp <= S1: HP a 1, bonus S2·hp/S1; altrimenti costa S1·maxHP; M = B + S2 | codice + 15 originali |
-| 6 | turni passati (+0x4308 globale) | B + S1·f(turni), dettaglio x 1→10, S2 5 | verificato |
-| 7 | speciali in successione (+0xbc8) | B + S1·f(x), x 1→10, S2 6 | verificato |
-| 8-15 | contatori dei tier dei buff | B + S1·x | solo codice, nessuna condizione |
-| 16 | paga DEF | B + S1·(tier di DEF persi), sp2 30000 | verificato sul divario |
-| 20/21/22 | bersaglio avvelenato/addormentato/paralizzato | B + S1 se vero | verificato |
-| 23 | gauge pieni prima dell'uso (+0xbdc) | B + S1·f(gauge), x 1→20, S2 10 | verificato (Final Boss Xion) |
-| 24 | meno gauge pieni | B − S1·f(gauge) | codice |
-| 25 | gauge usati nel turno (+0xbd4/0xbd8) | B + S1·f(x), x 0→20, S2 10 | verificato (HD Larxene) |
-| 26/27 | costo in gauge della medaglia precedente/successiva | B + S1·f(gauge) | codice |
-| 28 | nemici sconfitti nella missione (+0x4330) | B + S1·f(x), x 0→100, S2 50 | verificato |
-| 29 | meno nemici sconfitti | B − S1·f(x) | codice |
-| 30 | piu' Lux (+8, max 262143) | B + S1·f(x), sp2 1e8 | verificato |
-| 31 | meno Lux | B − S1·f(lux) | codice |
-| 32/33 | piu'/meno attacchi fatti (+0xbcc) | | codice, nessuna condizione |
-| 34 | slot corrente == deck+0x428 | B + S1 | significato ignoto |
-| 35 | bersaglio a HP pieni | B + S1 | codice |
-| 36 | un solo nemico vivo ([fn]) | B + S1 | codice |
-| 37 | skill scattate (+0xbd0, [fn]) | B + S1·f(x) | codice |
-| 38 | indice dello slot (da 0) == S2 | B + S1 | codice |
-| 39 | slot piu' basso, x = n−1−idx | B + S1·f(x) | codice |
-| 40 | slot piu' alto, x = idx | B + S1·f(x), x 1→10, S2 5 | verificato (Jafar) |
-| 41 | valore del deck +0x14 (probabile numero del party) | B + S1·f(x) | dedotto |
-| 42 | gauge prima dell'uso, poi tutti spesi | B + S1·f(x) | codice |
+| 3 | less HP | B·S2·(S1 + 1 − hp/maxHP) | code + 8 originals |
+| 4 | more HP | B·S2·(S1 + hp/maxHP) | code + 30 originals |
+| 5 | pays HP | hp <= S1: HP to 1, bonus S2·hp/S1; otherwise costs S1·maxHP; M = B + S2 | code + 15 originals |
+| 6 | turns passed (+0x4308 global) | B + S1·f(turns), detail x 1→10, S2 5 | verified |
+| 7 | specials in succession (+0xbc8) | B + S1·f(x), x 1→10, S2 6 | verified |
+| 8-15 | counters of the buff tiers | B + S1·x | code only, no condition |
+| 16 | pays DEF | B + S1·(DEF tiers lost), sp2 30000 | verified on the gap |
+| 20/21/22 | target poisoned/asleep/paralyzed | B + S1 if true | verified |
+| 23 | gauges full before use (+0xbdc) | B + S1·f(gauge), x 1→20, S2 10 | verified (Final Boss Xion) |
+| 24 | fewer full gauges | B − S1·f(gauge) | code |
+| 25 | gauges used in the turn (+0xbd4/0xbd8) | B + S1·f(x), x 0→20, S2 10 | verified (HD Larxene) |
+| 26/27 | gauge cost of the previous/next medal | B + S1·f(gauge) | code |
+| 28 | enemies defeated in the quest (+0x4330) | B + S1·f(x), x 0→100, S2 50 | verified |
+| 29 | fewer enemies defeated | B − S1·f(x) | code |
+| 30 | more Lux (+8, max 262143) | B + S1·f(x), sp2 1e8 | verified |
+| 31 | less Lux | B − S1·f(lux) | code |
+| 32/33 | more/fewer attacks made (+0xbcc) | | code, no condition |
+| 34 | current slot == deck+0x428 | B + S1 | meaning unknown |
+| 35 | target at full HP | B + S1 | code |
+| 36 | only one enemy alive ([fn]) | B + S1 | code |
+| 37 | skills triggered (+0xbd0, [fn]) | B + S1·f(x) | code |
+| 38 | slot index (from 0) == S2 | B + S1 | code |
+| 39 | lower slot, x = n−1−idx | B + S1·f(x) | code |
+| 40 | higher slot, x = idx | B + S1·f(x), x 1→10, S2 5 | verified (Jafar) |
+| 41 | deck value +0x14 (probably party size) | B + S1·f(x) | deduced |
+| 42 | gauges before use, then all spent | B + S1·f(x) | code |
 
-Roboloid Low/High = displayPower/displayMaxPower ai pallini pieni (~80 righe abbinate per nome); max − display uguale a
-ogni pallino. Ricostruzione (lo, hi x 1e4): tipi a saturazione sp1 = (hi−lo)/(f(x_hi)−f(x_lo)), sp2 = S2·1e4,
-base_i = lo_i − sp1·f(x_lo), max_i = lo_i + (hi−lo) (riproduce 42 originali su 56; i 14 sbagliati sono copie guaste di
-thethiny: Dark End, Radiant Glory, Gale Assault); tipi a flag (20/21/22/35/36/38) base = display = lo, sp1 = hi−lo, sp2 0
-(38: sp2 = (slot−1)·1e4); tipo 5 base lo, sp2 hi−lo, sp1 9000; tipo 16 base lo, sp1 (hi−lo)/6 (o /3), sp2 30000; tipo 31
-base hi, sp1 hi−lo, sp2 1e8. Condizioni: MoreGaugesPrevMedal = 26 (6 righe «previous») e 27 (3 «next»), LessLUX = 31,
-MoreEnemiesDefeated = 28, OneEnemy = 36 (130), LowerSlot = 39 (69, convenzione del 40), Slot3/4/5/6 = 38 (sp2
-20000/30000/40000/50000), MoreSkillsStage = 37, MoreParty = 41 (dedotto). **Critical (18)**: nessun tipo, usa
-criticalPower (+0x2bc, moltiplicatore; +0x2b8 probabilita'): le nostre righe hanno 10000 = nessun effetto; proposta
-criticalPower = hi/lo·1e4. Curve (S2 e intervallo di x) di 26, 27, 31, 37, 39, 41 senza originale: forma ricostruita.
-Da verificare al banco: cosa contengono +0x4308/+0x4330/+8 e il campo del deck +0x14.
+Roboloid Low/High = displayPower/displayMaxPower at full dots (~80 rows matched by name); max − display equal at
+every dot. Reconstruction (lo, hi x 1e4): saturation types sp1 = (hi−lo)/(f(x_hi)−f(x_lo)), sp2 = S2·1e4,
+base_i = lo_i − sp1·f(x_lo), max_i = lo_i + (hi−lo) (reproduces 42 originals out of 56; the 14 wrong ones are broken copies from
+thethiny: Dark End, Radiant Glory, Gale Assault); flag types (20/21/22/35/36/38) base = display = lo, sp1 = hi−lo, sp2 0
+(38: sp2 = (slot−1)·1e4); type 5 base lo, sp2 hi−lo, sp1 9000; type 16 base lo, sp1 (hi−lo)/6 (or /3), sp2 30000; type 31
+base hi, sp1 hi−lo, sp2 1e8. Conditions: MoreGaugesPrevMedal = 26 (6 rows «previous») and 27 (3 «next»), LessLUX = 31,
+MoreEnemiesDefeated = 28, OneEnemy = 36 (130), LowerSlot = 39 (69, convention of 40), Slot3/4/5/6 = 38 (sp2
+20000/30000/40000/50000), MoreSkillsStage = 37, MoreParty = 41 (deduced). **Critical (18)**: no type, it uses
+criticalPower (+0x2bc, multiplier; +0x2b8 probability): our rows have 10000 = no effect; proposal
+criticalPower = hi/lo·1e4. Curves (S2 and range of x) of 26, 27, 31, 37, 39, 41 without an original: rebuilt shape.
+To be verified on the bench: what +0x4308/+0x4330/+8 and the deck field +0x14 contain.
 
-**Applicato (I-189b, 21-10)**: `server/variable-power.js` (stesso passo dopo `burstPowerFix` in make-game-tables.js e
-nella riga di comando di `medal-power-fix.js`) ricostruisce ora ogni condizione con un tipo; prova
-`node server/test-variable-power.js`. Master servito corretto sul posto con `node server/medal-power-fix.js` (uguale byte
-per byte alla prova su una copia; copia del prima in `D:\Progetto_Restauro_KH_UX\tmp\i189b\backup-master\`): **486** righe
-cambiate (468 nuove variabili + 18 Critical), displayPower e medal.json invariati; righe con tipo > 2: 239 -> **707**.
-- Righe Roboloid per tipo (642): 3: 11, 4: 146, 5: 7, 6: 12, 7: 39, 16: 8, 20: 2, 21: 2, 22: 7, 23: 52, 25: 14, 26: 6,
+**Applied (I-189b, 21-10)**: `server/variable-power.js` (same step after `burstPowerFix` in make-game-tables.js and
+in the command line of `medal-power-fix.js`) now rebuilds every condition with a type; test
+`node server/test-variable-power.js`. Served master fixed in place with `node server/medal-power-fix.js` (byte-for-byte
+equal to the test on a copy; copy of the before state in `D:\Progetto_Restauro_KH_UX\tmp\i189b\backup-master\`): **486** rows
+changed (468 new variable + 18 Critical), displayPower and medal.json unchanged; rows with type > 2: 239 -> **707**.
+- Roboloid rows per type (642): 3: 11, 4: 146, 5: 7, 6: 12, 7: 39, 16: 8, 20: 2, 21: 2, 22: 7, 23: 52, 25: 14, 26: 6,
   27: 3, 28: 7, 30: 13, 31: 3, 36: 130, 37: 6, 38: 19 (Slot3 4, Slot4 6, Slot5 7, Slot6 2), 39: 69, 40: 66, 41: 20.
-  Piu' 65 copiate da thethiny (precedenza), 18 Critical (criticalPower = round(hi/lo·1e4), tipo 1, `critical` = la
-  probabilita' non toccata), 1 senza condizione (3002089) tipo 1.
-- Saturazione (6, 7, 23, 25, 26, 27, 28, 37, 39, 40, 41): sp1 = (hi−lo)/(f(x_hi)−f(x_lo)) calcolato in razionali,
-  base_i = lo_i − sp1·f(x_lo), max_i = lo_i + (hi−lo). Convenzioni [S2, x_lo, x_hi]: 6 [5,1,10], 7 [6,1,10],
-  23 [10,1,20], 25 [10,0,20], 27 [7,0,14] (Zone of Ruin), 28 [50,0,100], 40 [5,1,10]; **curva ricostruita**: 26 come il
-  27, 37 come il 25, 39 e 41 come il 40, 31 come il 30 (sp2 1e8, base = massimo). Riproduce 42 originali su 56 entro 15
-  anche per pallino (i 14 no: Dark End, Radiant Glory, Gale Assault +4/+5). Final Boss Xion 6★ (3001131): 23, sp1 14016,
+  Plus 65 copied from thethiny (precedence), 18 Critical (criticalPower = round(hi/lo·1e4), type 1, `critical` = the
+  probability untouched), 1 without condition (3002089) type 1.
+- Saturation (6, 7, 23, 25, 26, 27, 28, 37, 39, 40, 41): sp1 = (hi−lo)/(f(x_hi)−f(x_lo)) computed in rationals,
+  base_i = lo_i − sp1·f(x_lo), max_i = lo_i + (hi−lo). Conventions [S2, x_lo, x_hi]: 6 [5,1,10], 7 [6,1,10],
+  23 [10,1,20], 25 [10,0,20], 27 [7,0,14] (Zone of Ruin), 28 [50,0,100], 40 [5,1,10]; **rebuilt curve**: 26 like
+  27, 37 like 25, 39 and 41 like 40, 31 like 30 (sp2 1e8, base = maximum). It reproduces 42 originals out of 56 within 15
+  also per dot (the 14 do not: Dark End, Radiant Glory, Gale Assault +4/+5). Final Boss Xion 6★ (3001131): 23, sp1 14016,
   sp2 100000, base 28826, «x3.01 - 4.25»; HD Larxene 6★ (3001223): 25, sp1 19168, base = display 29900, max 48600.
-- Tipo 16: sp1 = (hi−lo)/6 se l'attacco e' Cyclone Sword (originali 10571-10576), /3 per gli altri (originali Blitz e Swift
-  Hero; Wheel Smash di KH III Go Go senza originale segue la maggioranza). Tipo 5: sp1 9000 (anche per Dark Arcanum, che
-  nell'originale +5 ha 9990), sp2 = hi−lo. Tipo 38: sp2 = (slot−1)·1e4.
-- MoreGaugesPrevMedal: 27 se il testo dice «next Medal» (Glacial Arrows, 3), altrimenti 26 (Wind Dash, 6). Attenzione:
-  in thethiny Wind Dash (originale) e' tipo 28 e Gale Assault tipo 27, contro la mappa del codice (28 nemici sconfitti,
-  27 medaglia successiva, 31 meno Lux): si segue il codice, da verificare al banco.
-- 9 righe col display a pallini pieni (khuxwiki) diverso da LowMulti (3000545, 3000701, 3001893, 3001981, 3002008-3002012):
-  display tenuto, divario hi − lo.
+- Type 16: sp1 = (hi−lo)/6 if the attack is Cyclone Sword (originals 10571-10576), /3 for the others (originals Blitz and Swift
+  Hero; Wheel Smash of KH III Go Go without an original follows the majority). Type 5: sp1 9000 (also for Dark Arcanum, which
+  in the original +5 has 9990), sp2 = hi−lo. Type 38: sp2 = (slot−1)·1e4.
+- MoreGaugesPrevMedal: 27 if the text says «next Medal» (Glacial Arrows, 3), otherwise 26 (Wind Dash, 6). Warning:
+  in thethiny Wind Dash (original) is type 28 and Gale Assault type 27, against the code's map (28 enemies defeated,
+  27 next medal, 31 less Lux): the code is followed, to be verified on the bench.
+- 9 rows with the display at full dots (khuxwiki) different from LowMulti (3000545, 3000701, 3001893, 3001981, 3002008-3002012):
+  display kept, gap hi − lo.
