@@ -1,80 +1,80 @@
-# Fase C — i campi delle tabelle `master::`
+# Phase C — the fields of the `master::` tables
 
-Target: `libcocos2dcpp.so` arm64 della build **WW 4.3.1-72**, lo stesso della fase A.
+Target: `libcocos2dcpp.so` arm64 of the **WW 4.3.1-72** build, the same as phase A.
 
 | | |
 |---|---|
-| Classi `master::` con RTTI | **107** |
-| Tabelle con campi estratti | **106** (la 107ª è `Base`, la classe base astratta) |
-| Campi totali | **1.739** |
-| **Delle 54 tabelle rimosse nel passaggio a offline** | **54 su 54, 759 campi** |
-| Tempo di esecuzione | ~3 secondi |
+| `master::` classes with RTTI | **107** |
+| Tables with extracted fields | **106** (the 107th is `Base`, the abstract base class) |
+| Total fields | **1,739** |
+| **Of the 54 tables removed in the switch to offline** | **54 out of 54, 759 fields** |
+| Run time | ~3 seconds |
 
-Risultati: `recon/out/master_fields_ww431.json` (con indirizzi e ordine) e
-`master_fields_ww431.txt` (elenco leggibile).
+Results: `recon/out/master_fields_ww431.json` (with addresses and order) and
+`master_fields_ww431.txt` (readable list).
 
 ---
 
-## 1. Ghidra non serviva
+## 1. Ghidra was not needed
 
-Il piano era estrarre i campi dal decompilato, con un'euristica: raggruppare le
-funzioni che referenziano molte stringhe snake_case brevi. Due problemi, scoperti
-provando.
+The plan was to extract the fields from the decompiled code, with a heuristic: group the
+functions that reference many short snake_case strings. Two problems, discovered
+by trying.
 
-**I campi non sono in snake_case, sono in camelCase** — `medalId`, `maxAttack`,
-`shuffleSkillGroupId`. Un filtro tarato su snake_case li avrebbe persi quasi tutti.
+**The fields are not in snake_case, they are in camelCase** — `medalId`, `maxAttack`,
+`shuffleSkillGroupId`. A filter tuned for snake_case would have missed almost all of them.
 
-**E soprattutto l'euristica non serve**, perché esiste un'attribuzione esatta. Il
-lavoro si fa sull'ELF, in Python puro, senza disassemblatore e senza il progetto
-Ghidra da 829 MB.
+**And above all the heuristic is not needed**, because an exact attribution exists. The
+work is done on the ELF, in pure Python, without a disassembler and without the 829 MB
+Ghidra project.
 
-## 2. La catena
+## 2. The chain
 
-Quattro passaggi, ognuno dei quali è un fatto dell'ABI, non una congettura.
+Four steps, each of which is a fact of the ABI, not a conjecture.
 
-**1 · L'RTTI non si può strippare.** Ogni classe con metodi virtuali lascia in
-`.rodata` il proprio typeinfo-name — `N6master5MedalE` — perché serve a runtime a
-`typeid` e `dynamic_cast`. Tutte e 107 le classi `master::` ce l'hanno.
+**1 · RTTI cannot be stripped.** Every class with virtual methods leaves in
+`.rodata` its own typeinfo name — `N6master5MedalE` — because it is needed at runtime by
+`typeid` and `dynamic_cast`. All 107 `master::` classes have it.
 
-**2 · Dal nome alla vtable.** Secondo l'ABI Itanium la stringa è puntata dal campo
-`name` del typeinfo (offset +8), e l'oggetto typeinfo è puntato dallo slot +8
-della vtable. In una libreria condivisa quegli slot sono a zero nel file: il
-valore vero sta nell'addend di una rilocazione `R_AARCH64_RELATIVE`. Quindi non si
-leggono i byte, si legge `.rela.dyn` — 194.145 rilocazioni, indicizzate una volta.
+**2 · From the name to the vtable.** According to the Itanium ABI the string is pointed to by the
+`name` field of the typeinfo (offset +8), and the typeinfo object is pointed to by slot +8
+of the vtable. In a shared library those slots are zero in the file: the
+real value is in the addend of an `R_AARCH64_RELATIVE` relocation. So you do not
+read the bytes, you read `.rela.dyn` — 194,145 relocations, indexed once.
 
-Risultato: tutte e 106 le vtable concrete, ciascuna con **3 metodi virtuali**. Lo
-slot 0 è lo stesso indirizzo per tutte e 106 — il distruttore di `master::Base` —
-mentre gli slot 1 e 2 sono unici per classe. È la conferma strutturale che le
-tabelle derivano tutte da una base comune.
+Result: all 106 concrete vtables, each with **3 virtual methods**. Slot
+0 is the same address for all 106 — the destructor of `master::Base` —
+while slots 1 and 2 are unique per class. It is the structural confirmation that the
+tables all derive from a common base.
 
-**3 · Chi installa la vtable è un metodo di quella classe.** Un costruttore
-comincia scrivendo il puntatore alla vtable nell'oggetto. Le funzioni che
-costruiscono quell'indirizzo sono quindi i costruttori e i distruttori di quella
-classe **e nessun'altra**: non è un'euristica con falsi positivi, è
-un'attribuzione. Per ciascuna delle 106 classi risulta esattamente una funzione.
+**3 · Whoever installs the vtable is a method of that class.** A constructor
+starts by writing the vtable pointer into the object. The functions that
+build that address are therefore the constructors and destructors of that
+class **and no other**: it is not a heuristic with false positives, it is
+an attribution. For each of the 106 classes exactly one function results.
 
-**4 · Il deserializzatore confronta ogni chiave con un letterale.** Le stringhe che
-quella funzione tocca *sono* i campi della tabella.
+**4 · The deserializer compares each key with a literal.** The strings that
+function touches *are* the fields of the table.
 
-### Due dettagli che rendono il passaggio 4 praticabile
+### Two details that make step 4 practical
 
-**I confini delle funzioni arrivano da `.eh_frame`.** Il binario è strippato, ma il
-C++ con eccezioni descrive ogni funzione in una FDE con indirizzo iniziale e
-lunghezza: **87.437 funzioni con confini esatti**, gratis, senza analisi.
+**Function boundaries come from `.eh_frame`.** The binary is stripped, but
+C++ with exceptions describes every function in an FDE with start address and
+length: **87,437 functions with exact boundaries**, for free, without analysis.
 
-**I riferimenti alle stringhe si decodificano a mano.** Su AArch64 un indirizzo non
-sta nell'istruzione: si costruisce con `ADRP` (pagina da 4 KB) più `ADD` (offset),
-o `ADRP` più `LDR` via GOT. Seguire quelle tre forme tenendo lo stato dei registri
-basta a ricostruire ogni costante indirizzata. Non è un'emulazione: lo stato di un
-registro si dimentica appena un'altra istruzione lo scrive, e funziona perché la
-coppia ADRP/ADD è quasi sempre adiacente.
+**String references are decoded by hand.** On AArch64 an address does not
+fit in the instruction: it is built with `ADRP` (4 KB page) plus `ADD` (offset),
+or `ADRP` plus `LDR` via the GOT. Following those three forms while tracking register state
+is enough to rebuild every addressed constant. It is not an emulation: a
+register's state is forgotten as soon as another instruction writes it, and it works because the
+ADRP/ADD pair is almost always adjacent.
 
-## 3. L'ordine dei campi è l'ordine delle colonne
+## 3. The order of the fields is the order of the columns
 
-Gli indirizzi vengono raccolti **in ordine di apparizione nel codice**, non in un
-insieme. Quell'ordine è l'ordine in cui il parser legge i campi, cioè l'ordine
-delle colonne della tabella — e la chiave primaria viene per prima in **93 tabelle
-su 106**:
+Addresses are collected **in order of appearance in the code**, not into a
+set. That order is the order in which the parser reads the fields, i.e. the order
+of the table's columns — and the primary key comes first in **93 tables
+out of 106**:
 
 ```
 Medal        medalId, imageId, thumbId, cutinId, imageCategory, artId, displayId, sortId, …
@@ -83,59 +83,59 @@ LoginBonus   loginBonusId, bonusType, title, description, comment, day, startDat
 Stage        stageId, stageBinId, id, name, mapName, useAp, chapterId, worldId, …
 ```
 
-Buttare via quell'ordine avrebbe significato ricostruirlo a mano per 106 tabelle.
+Throwing away that order would have meant rebuilding it by hand for 106 tables.
 
-## 4. Le tabelle `*Misc` sono coppie chiave/valore
+## 4. The `*Misc` tables are key/value pairs
 
-Otto tabelle hanno **due soli campi**: `Misc`, `DarkMisc`, `XtresMisc`,
-`MedalMisc`, `BattleMisc`, `DarkBattleMisc` (`{miscId, value}` e simili),
+Eight tables have **only two fields**: `Misc`, `DarkMisc`, `XtresMisc`,
+`MedalMisc`, `BattleMisc`, `DarkBattleMisc` (`{miscId, value}` and similar),
 `SkillExp` (`{expId, value}`), `DarkMapList` (`{mapId, mapListId}`).
 
-Non è un'estrazione fallita: sono genuinamente tabelle a due colonne, dove la
-configurazione sta nelle righe. Una soglia minima di 3 campi — la prima che avevo
-messo — le scartava tutte e otto, e sembravano un buco del metodo.
+It is not a failed extraction: they are genuinely two-column tables, where the
+configuration is in the rows. A minimum threshold of 3 fields — the first one I had
+set — discarded all eight of them, and they looked like a hole in the method.
 
-## 5. Riscontro con la fase A
+## 5. Cross-check with phase A
 
-Ogni campo è letto da una sola chiamata, sempre alla stessa funzione: `0x61f8ec`.
-Sommata alla base immagine con cui Ghidra carica l'ELF (`0x100000`) è
-**`[fn]`**, cioè esattamente il getter di campo JSON già identificato in
-fase A come quello usato da `[fn]` per leggere `nativeSessionId` e
+Every field is read by a single call, always to the same function: `0x61f8ec`.
+Added to the image base with which Ghidra loads the ELF (`0x100000`) it is
+**`[fn]`**, i.e. exactly the JSON field getter already identified in
+phase A as the one used by `[fn]` to read `nativeSessionId` and
 `sharedSecurityKey`.
 
-Due analisi indipendenti — una in Ghidra, una in Python sull'ELF — arrivano alla
-stessa funzione. È il riscontro che serviva.
+Two independent analyses — one in Ghidra, one in Python on the ELF — arrive at the
+same function. It is the cross-check that was needed.
 
-## 6. Cosa manca ancora: i tipi
+## 6. What is still missing: the types
 
-Si hanno i **nomi** dei campi e il loro **ordine**, non i tipi. Il parser chiama il
-getter generico e poi converte *inline*, quindi il bersaglio della chiamata non
-dice se un campo è intero, stringa o booleano.
+We have the **names** of the fields and their **order**, not the types. The parser calls the
+generic getter and then converts *inline*, so the call target does not
+say whether a field is an integer, a string or a boolean.
 
-Tre vie, in ordine di costo:
+Three routes, in order of cost:
 
-1. **Le convenzioni di nome coprono molto**: `*Id`/`sortId`/`num`/`price` interi,
-   `valid*`/`display`/`show` booleani, `name`/`flavor`/`explanation`/`comment`
-   stringhe, `startDate`/`endDate` timestamp.
-2. **Il decompilato di Ghidra** sulle 106 funzioni di parsing — ora che si sa
-   esattamente quali sono, costa minuti, non ore.
-3. **I dati veri**, quando il client parlerà col nostro server: i tipi si leggono
-   dai valori.
+1. **Naming conventions cover a lot**: `*Id`/`sortId`/`num`/`price` integers,
+   `valid*`/`display`/`show` booleans, `name`/`flavor`/`explanation`/`comment`
+   strings, `startDate`/`endDate` timestamps.
+2. **Ghidra's decompiled code** of the 106 parsing functions — now that it is known
+   exactly which ones they are, it costs minutes, not hours.
+3. **The real data**, when the client talks to our server: the types are read
+   from the values.
 
-Per definire lo schema del DB il punto 1 basta a partire, e il punto 3 lo corregge.
+To define the DB schema point 1 is enough to start, and point 3 corrects it.
 
-## 7. Strumenti prodotti
+## 7. Tools produced
 
 | File | |
 |---|---|
-| `recon/tools/vtables.py` | vtable e metodi virtuali di una classe, via RTTI e rilocazioni |
-| `recon/tools/codeindex.py` | confini di funzione da `.eh_frame`, costanti indirizzate da ADRP/ADD |
-| `recon/tools/master_fields.py` | la pipeline completa della fase C |
+| `recon/tools/vtables.py` | vtable and virtual methods of a class, via RTTI and relocations |
+| `recon/tools/codeindex.py` | function boundaries from `.eh_frame`, constants addressed by ADRP/ADD |
+| `recon/tools/master_fields.py` | the complete phase C pipeline |
 
-Nessuna dipendenza, come il resto di `recon/tools/`. `vtables.py` e `codeindex.py`
-non sanno nulla di `master::`: servono per qualunque classe C++ di questo binario,
-e `codeindex.py` rifà in 3 secondi, per tutte le 87.437 funzioni, l'xref sulle
-stringhe che in fase A era costato un progetto Ghidra.
+No dependencies, like the rest of `recon/tools/`. `vtables.py` and `codeindex.py`
+know nothing about `master::`: they work for any C++ class of this binary,
+and `codeindex.py` redoes in 3 seconds, for all 87,437 functions, the xref on the
+strings that in phase A had cost a Ghidra project.
 
 ```bash
 python recon/tools/master_fields.py recon/ext/ww431/libcocos2dcpp.so \

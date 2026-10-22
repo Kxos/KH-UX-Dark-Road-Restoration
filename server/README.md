@@ -1,130 +1,130 @@
-# Server privato KHUX — fase B
+# KHUX private server — phase B
 
-> Pagina storica della fase B (ottobre 2026: primo avvio col telefono fisico). Il server di oggi (banco LDPlayer,
-> master, Shop, medaglie, trait...) e' descritto in [HANDOFF.md](../HANDOFF.md) e in [docs/notes/](../docs/notes/):
+> Historical page of phase B (October 2026: first boot with the physical phone). Today's server (LDPlayer bench,
+> master, Shop, medals, traits...) is described in [HANDOFF.md](../HANDOFF.md) and in [docs/notes/](../docs/notes/):
 > [server.md](../docs/notes/server.md), [banco.md](../docs/notes/banco.md), [medaglie.md](../docs/notes/medaglie.md), [shop.md](../docs/notes/shop.md).
 
-Node, **zero dipendenze**: `crypto` e `zlib` sono nativi, quindi AES-256-CBC e gzip
-senza installare nulla.
+Node, **zero dependencies**: `crypto` and `zlib` are built in, so AES-256-CBC and gzip
+work without installing anything.
 
-## Cosa fa
+## What it does
 
-Risponde ai due scambi iniziali ricavati dal binario (vedi `../PHASE-A.md`) e
-**registra tutto il resto**.
+It answers the two initial exchanges derived from the binary (see `../PHASE-A.md`) and
+**logs everything else**.
 
-| Scambio | Risposta | Letta da |
+| Exchange | Response | Read by |
 |---|---|---|
 | bootstrap | `{maintenance: 0, url, nativeToken}` | `[fn]` |
-| sessione | `{nativeSessionId, sharedSecurityKey}` | `[fn]` |
+| session | `{nativeSessionId, sharedSecurityKey}` | `[fn]` |
 
-Il punto chiave: **la `sharedSecurityKey` la scegliamo noi**, quindi da quel momento
-controlliamo la chiave AES dell'intero canale. E la `url` che consegniamo diventa la
-base di tutte le chiamate successive — per questo non serve patchare il binario.
+The key point: **we choose the `sharedSecurityKey`**, so from that moment on we
+control the AES key of the whole channel. And the `url` we hand over becomes the
+base of all subsequent calls — which is why there is no need to patch the binary.
 
-### Il logger è il vero strumento
+### The logger is the real tool
 
-Gli endpoint di gioco non sono enumerabili dalle stringhe del binario. Ma ogni
-richiesta che il client ci manda viene registrata in `logs/requests.ndjson` con
-metodo, path, header e corpo **decifrato**, e riceve una risposta vuota ma valida
-perché il client prosegua e ci mostri la chiamata successiva.
+The game endpoints cannot be enumerated from the binary's strings. But every
+request the client sends us is logged in `logs/requests.ndjson` with
+method, path, headers and **decrypted** body, and gets an empty but valid response
+so that the client carries on and shows us the next call.
 
-Scoprire la sequenza vale più che rispondere bene a una singola chiamata.
+Discovering the sequence is worth more than answering a single call well.
 
-## Nota sullo schema dell'IV
+## Note on the IV scheme
 
-Il formato del payload è documentato (`JSON → base64 → AES-256-CBC → base64`), ma
-**non sappiamo come viene derivato l'IV**. Invece di indovinare, `khux-codec.js` prova
-quattro strategie — IV a zero, IV anteposto, primi 16 byte della chiave, ultimi 16 — e
-riporta quale ha funzionato. La prima richiesta reale del client ce lo dirà da sola.
+The payload format is documented (`JSON → base64 → AES-256-CBC → base64`), but
+**we do not know how the IV is derived**. Instead of guessing, `khux-codec.js` tries
+four strategies — zero IV, prepended IV, first 16 bytes of the key, last 16 — and
+reports which one worked. The client's first real request will tell us by itself.
 
-Round-trip verificato su tutte e quattro.
+Round-trip verified on all four.
 
-## Avvio
+## Startup
 
 ```bash
 KHUX_PUBLIC_URL="https://192.168.1.198" node server/server.js
 ```
 
-| Variabile | Default | Note |
+| Variable | Default | Notes |
 |---|---|---|
-| `KHUX_PUBLIC_URL` | `https://127.0.0.1` | **L'IP della macchina sulla LAN**, non localhost: è ciò che il telefono deve poter raggiungere |
+| `KHUX_PUBLIC_URL` | `https://127.0.0.1` | **The machine's IP on the LAN**, not localhost: it is what the phone must be able to reach |
 | `KHUX_HTTP_PORT` | `80` | |
-| `KHUX_HTTPS_PORT` | `443` | attivo solo se esistono i certificati |
-| `KHUX_DNS` | attivo | `0` per disattivare il resolver |
+| `KHUX_HTTPS_PORT` | `443` | active only if the certificates exist |
+| `KHUX_DNS` | active | `0` to disable the resolver |
 | `KHUX_DNS_PORT` | `53` | |
-| `KHUX_DNS_UPSTREAM` | `1.1.1.1` | dove inoltrare ciò che non dirottiamo |
-| `KHUX_HIJACK` | `sqex-bridge.jp,kingdomhearts.com,square-enix.com` | suffissi da dirottare |
+| `KHUX_DNS_UPSTREAM` | `1.1.1.1` | where to forward what we do not hijack |
+| `KHUX_HIJACK` | `sqex-bridge.jp,kingdomhearts.com,square-enix.com` | suffixes to hijack |
 
-Le porte 80, 443 e 53 su Windows possono richiedere privilegi elevati: per le prove
-locali usa `KHUX_HTTP_PORT=8080 KHUX_DNS_PORT=5355`.
+Ports 80, 443 and 53 on Windows may require elevated privileges: for local
+tests use `KHUX_HTTP_PORT=8080 KHUX_DNS_PORT=5355`.
 
-## Il resolver DNS
+## The DNS resolver
 
-Integrato, senza dipendenze (`dgram` è nativo). Fa due cose:
+Built in, with no dependencies (`dgram` is built in). It does two things:
 
-1. **Dirotta** i domini elencati in `KHUX_HIJACK` verso il nostro IP. Risponde solo
-   alle query `A`; sulle `AAAA` restituisce una risposta vuota ma valida, che spinge il
-   client su IPv4.
-2. **Inoltra tutto il resto** a monte, così il telefono resta utilizzabile mentre lo
-   usiamo come DNS.
+1. **Hijacks** the domains listed in `KHUX_HIJACK` to our IP. It answers only
+   `A` queries; for `AAAA` it returns an empty but valid response, which pushes the
+   client onto IPv4.
+2. **Forwards everything else** upstream, so the phone stays usable while we
+   use it as DNS.
 
-E soprattutto **registra ogni query** in `logs/dns.ndjson`. Questo risolve l'incognita
-rimasta dalla fase A: l'host del bootstrap non l'abbiamo mai estratto dal binario —
-vive in una libreria impacchettata — e lo conosciamo solo da fonte esterna. Qualunque
-nome il client risolva all'avvio comparirà nel log in chiaro.
+And above all it **logs every query** in `logs/dns.ndjson`. This resolves the unknown
+left over from phase A: we never extracted the bootstrap host from the binary —
+it lives in a packed library — and we know it only from an external source. Whatever
+name the client resolves at startup will appear in the log in clear text.
 
-Se dopo l'avvio del gioco il log DNS mostra un host che non stiamo dirottando,
-aggiungilo a `KHUX_HIJACK` e riprova.
+If after starting the game the DNS log shows a host we are not hijacking,
+add it to `KHUX_HIJACK` and try again.
 
-Sul telefono basta quindi impostare il DNS manuale su `192.168.1.198`: niente app né
-modifiche al router.
+So on the phone it is enough to set the manual DNS to `192.168.1.198`: no apps and no
+router changes.
 
-## Procedura completa con telefono fisico
+## Full procedure with a physical phone
 
-### 1. Certificato
+### 1. Certificate
 
 ```bash
 ./server/make-cert.sh 192.168.1.198
 ```
 
-Genera una CA e un certificato valido per `*.sqex-bridge.jp`, `*.kingdomhearts.com` e
-l'IP indicato.
+Generates a CA and a certificate valid for `*.sqex-bridge.jp`, `*.kingdomhearts.com` and
+the given IP.
 
-### 2. Patch dell'APK
+### 2. APK patch
 
 ```bash
 ./tools/patch-apk.sh "recon/dl/<apk>" 192.168.1.198
 ```
 
-Da Android 7 le app ignorano le CA installate dall'utente. La patch aggiunge un
-`network_security_config.xml` che le dichiara fidate — nessuna modifica al codice.
+Since Android 7, apps ignore user-installed CAs. The patch adds a
+`network_security_config.xml` that declares them trusted — no code changes.
 
-Servono due jar in `tools/bin/`: `apktool.jar` e `uber-apk-signer.jar`.
+Two jars are needed in `tools/bin/`: `apktool.jar` and `uber-apk-signer.jar`.
 
-### 3. Sul telefono
+### 3. On the phone
 
-1. Disinstalla l'app originale: la firma è diversa, non si installa sopra
-2. Installa l'APK ripacchettizzato
-3. Installa `server/certs/ca.crt` come **certificato CA utente**
-4. Fai risolvere `psg.sqex-bridge.jp` verso `192.168.1.198` — DNS locale, oppure un
-   resolver che accetti override
+1. Uninstall the original app: the signature is different, it will not install over it
+2. Install the repackaged APK
+3. Install `server/certs/ca.crt` as a **user CA certificate**
+4. Make `psg.sqex-bridge.jp` resolve to `192.168.1.198` — local DNS, or a
+   resolver that accepts overrides
 
-### 4. Avvia il server e apri il gioco
+### 4. Start the server and open the game
 
-Ogni richiesta comparirà in console. Quelle marcate `[?]` sono endpoint che non
-gestiamo ancora: sono esattamente ciò che vogliamo scoprire.
+Every request will appear in the console. Those marked `[?]` are endpoints we do not
+handle yet: they are exactly what we want to discover.
 
-## Attenzione: VPN
+## Warning: VPN
 
-Su questa macchina risultano attive Appgate SDP e Connect Tunnel. Una VPN può
-dirottare il routing e impedire al telefono di raggiungere il PC sulla rete locale:
-quasi certamente vanno disattivate durante i test.
+On this machine Appgate SDP and Connect Tunnel appear to be active. A VPN can
+hijack the routing and prevent the phone from reaching the PC on the local network:
+they almost certainly have to be disabled during tests.
 
-## File
+## Files
 
 | File | |
 |---|---|
-| `server.js` | server HTTP/HTTPS, rotte, logger |
-| `khux-codec.js` | codec dei payload, con rilevamento della strategia di IV |
-| `make-cert.sh` | generazione di CA e certificato |
-| `logs/requests.ndjson` | ogni richiesta ricevuta — non versionato |
+| `server.js` | HTTP/HTTPS server, routes, logger |
+| `khux-codec.js` | payload codec, with detection of the IV strategy |
+| `make-cert.sh` | generation of CA and certificate |
+| `logs/requests.ndjson` | every request received — not versioned |
