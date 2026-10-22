@@ -8,8 +8,8 @@
  * quando parla con noi, ce la racconta da solo.
  *
  * Contratto ricavato dal binario (vedi PHASE-A.md):
- *   bootstrap -> { maintenance, url, nativeToken }    letto da [fn]
- *   sessione  -> { nativeSessionId, sharedSecurityKey } letto da [fn]
+ *   bootstrap -> { maintenance, url, nativeToken }
+ *   sessione  -> { nativeSessionId, sharedSecurityKey }
  *   header successivi: X-HTTP-USER-TOKEN: <token>
  *
  * Avvio:  node server/server.js
@@ -204,7 +204,7 @@ function route(url) {
   if (p === '/ranking/reward/check') return 'rankingrewardcheck';
   if (routePartyRanking(p)) return routePartyRanking(p);
   // Coliseum PvP (azioni 194-205): respondPvp
-  // /pvp/keyblade resta alla risposta generica (com'era prima del 14-10): con la risposta del ramo pvp
+  // /pvp/keyblade resta alla risposta generica (com'era prima del 14-10): con la risposta completa di pvp
   // (userDecks) ogni battaglia andava in crash creando l'HUD, con solo ret «200 ERROR :196»
   if (p !== '/pvp/keyblade' && (p === '/pvp' || p.startsWith('/pvp/') || p.startsWith('/ranking/pvp'))) return 'pvp'; // anche pvpparade
   if (p.startsWith('/multi/')) return routeMulti(p); // Union Cross: server/multi.js
@@ -243,7 +243,7 @@ function route(url) {
 }
 
 function respondStatus(res) {
-  // PUT /system/status, richiesta 251 (0xfb). Letto da [fn]:
+  // PUT /system/status, richiesta 251 (0xfb). Il client controlla:
   //  - maintenance deve mancare (o essere null), altrimenti ramo manutenzione;
   //  - appStatus.{mode,current,server} devono essere stringhe, altrimenti errore;
   //  - server vuoto = resta sul dominio predefinito e passa al bootstrap. Pieno,
@@ -285,7 +285,7 @@ function clockOffset() {
 function serverTime() {
   return serverTimeAt(realNow());
 }
-// L'ora del server corrispondente a un istante reale (ms). Formato letto da [fn].
+// L'ora del server corrispondente a un istante reale (ms), nel formato che il client si aspetta.
 function serverTimeAt(realMs) {
   return clock.fakeString(realMs, clockOffset());
 }
@@ -293,7 +293,7 @@ function serverTimeAt(realMs) {
 const outTime = (v, fallback) => (typeof v === 'number' ? serverTimeAt(v) : v || fallback);
 
 /**
- * L'involucro "ret" di ogni risposta di gioco, letto da [fn]. Il client
+ * L'involucro "ret" di ogni risposta di gioco. Il client
  * valida i campi in quest'ordine, e al primo tipo sbagliato tratta la risposta
  * come errore: i booleani devono essere booleani, i numeri interi.
  */
@@ -328,8 +328,8 @@ function ret() {
   };
 }
 
-// Le stringhe della risposta a /system/login, nell'ordine in cui le legge
-// [fn]: link a pagine web (supporto, termini, store, social...). Il
+// Le stringhe della risposta a /system/login, nell'ordine in cui il client le legge:
+// link a pagine web (supporto, termini, store, social...). Il
 // client le pretende tutte, come stringhe; vuote bastano per proseguire.
 const LOGIN_LINKS = [
   'support', 'register', 'update', 'help', 'staff', 'agreement', 'license',
@@ -338,12 +338,11 @@ const LOGIN_LINKS = [
   'darkOdds', 'officialTwitterCustom',
 ];
 
-// "data" della risposta di login, letto da [fn]: almeno 4 stringhe
-// Base64 (cocos2d::base64Decode) che il client si aspetta di 8, 32, 32 e 32
+// "data" della risposta di login: almeno 4 stringhe
+// Base64 che il client si aspetta di 8, 32, 32 e 32
 // byte. Hanno l'aria di un seme e di tre chiavi da 256 bit. Il QUARTO e' la chiave
-// dei record md5/size degli indici delle risorse scaricate ([fn] legge
-// l'offset 0x48 del record): deve essere quella con cui recon/tools/
-// resource_index.py ha cifrato l'indice, quindi e' derivata allo stesso modo
+// dei record md5/size degli indici delle risorse scaricate: deve essere quella con cui
+// l'indice e' stato cifrato in fase di build, quindi e' derivata allo stesso modo
 // (o data in esadecimale con KHUX_RESOURCE_KEY). Gli altri tre, casuali ma
 // stabili per tutta la vita del server: a cosa servano non e' ancora chiaro.
 const RESOURCE_KEY = process.env.KHUX_RESOURCE_KEY
@@ -356,13 +355,12 @@ function respondLogin(res) {
   // POST /system/login, azione 251: corpo cifrato {length, digest, ruv,
   // deviceType, systemVersion, appVersion}. length e digest descrivono
   // libcocos2dcpp.so: il server originale ci controllava l'integrita' del client.
-  // Il ramo 0xfb di [fn] pretende systemLogin ([fn]) e data
-  // ([fn]); i link li legge [fn].
+  // La risposta deve contenere systemLogin e data; poi i link (LINK_FIELDS).
   startSession(); // revisione del master fissa fino al prossimo login
   if (player.created) savePlayer();
   const body = {
     ret: ret(),
-    // Un nuovo giocatore NON scarica le risorse all'avvio ([fn]): fa il
+    // Un nuovo giocatore NON scarica le risorse all'avvio: fa il
     // tutorial con la grafica gia' installata (APK + OBB). KHUX_NEWCOMER=0
     // presenta un giocatore esistente, l'unico che arriva all'azione 28.
     systemLogin: { newcomerKhux: isNewcomer(), newcomerDark: isNewcomer() },
@@ -370,33 +368,29 @@ function respondLogin(res) {
   };
   for (const k of LOGIN_LINKS) body[k] = '';
   body.passiveSettingList = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/passive`; // «Passive Effects» (I-065): in https la WebView rifiuta il certificato
-  // «Beginner's Guide» della home: [fn] apre una WebView (titolo testo 106210101)
-  // sull'URL beginnersGuide (link +0x210); vuoto = finestra vuota. Pagina nostra, /web/beginner
+  // «Beginner's Guide» della home: il client apre una WebView (titolo testo 106210101)
+  // sull'URL beginnersGuide; vuoto = finestra vuota. Pagina nostra, /web/beginner
   body.beginnersGuide = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/beginner`;
-  // Legal Information: User Agreement (+0x78) e License (+0x90), WebView (server/legal-pages.js)
+  // Legal Information: User Agreement e License, WebView (server/legal-pages.js)
   body.agreement = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/agreement`;
   body.license = `${SESSION_BASE.replace(/^https:/, 'http:')}/web/license`;
-  // Draw Odds dello Shop (pulsante su ogni piastra, link globale +0xf0, [fn]): il client
+  // Draw Odds dello Shop (pulsante su ogni piastra, link odds): il client
   // accoda il drawMedalTypeId della piastra all'url (banco 16-10: GET /web/gacha/odds9001), da qui la «/»
   body.odds = `${WEB_BASE}/web/gacha/odds/`;
   send(res, 200, body);
 }
 
 function respondCoppa(res) {
-  // GET /system/coppa, azione 26, letto da [fn]: un oggetto "misc" di
+  // GET /system/coppa, azione 26: un oggetto "misc" di
   // interi senza segno, con chiavi numeriche. Il significato dei codici non e'
   // ancora noto; 0 basta perche' il client li accetti.
   const misc = {};
   for (const k of ['116', '804', '900', '901', '902', '903', '904', '905', '906', '907']) {
     misc[k] = 0;
   }
-  // misc 116 non puo' essere 0. A fine download SceneDownload::update ([fn] ->
-  // [fn]) confronta il suo campo +0x3bc (0 dal costruttore) con la voce 116 di
-  // questa mappa (oggetto di sessione +0x3a0, chiave 0x74): se sono uguali chiama un
-  // metodo sul nodo +0x3a8, che nella SceneDownload dei soli master non viene mai creato
-  // (memoria non inizializzata): crash a 0x12c1ee0 dopo ogni aggiornamento dei master
-  // per chi rientra. Trovato con tools/ldplayer/armtrace (x30 = 0xcfb310). Con un valore
-  // diverso il client prende l'altra strada ([fn]) e prosegue verso la home.
+  // misc 116 non puo' essere 0: se coincide con il valore iniziale del client (0), chi rientra
+  // va in crash alla fine di ogni aggiornamento dei master (osservato al banco). Con un valore
+  // diverso il client prosegue verso la home.
   misc['116'] = Number(process.env.KHUX_COPPA_116 || 1);
   send(res, 200, { ret: ret(), misc });
 }
@@ -404,14 +398,14 @@ function respondCoppa(res) {
 function respondResourceSize(res, req) {
   // PUT /system/resourcesize/<data>, azione 242. Corpo: {resoMode,
   // masterRevision, resourceRevision, commonMasterRevision, evResourceIds}.
-  // Il ramo 242 di [fn] legge solo "size", intero senza segno: i byte
+  // Il client legge solo "size", intero senza segno: i byte
   // da scaricare prima di giocare.
   // Con 0 il client salta il download e, senza dati master, va in crash dopo il
   // filmato introduttivo. KHUX_RESOURCE_SIZE serve a provocare il download per
   // scoprirne il protocollo.
   // Se il client dichiara master e risorse gia' aggiornati la dimensione e' 0. (Il «0
   // manda in crash» del 7 ottobre riguardava un client senza master, revisione 0.)
-  // Il crash dopo un aggiornamento dei master per chi rientra (0x12c1ee0) NON dipende da
+  // Il crash dopo un aggiornamento dei master per chi rientra NON dipende da
   // qui: vedi HANDOFF, «Il crash dopo l'aggiornamento dei master».
   const upToDate = Number(req?.masterRevision) >= sessionRevision()
     && Number(req?.resourceRevision) >= latestResourceVersion();
@@ -421,12 +415,12 @@ function respondResourceSize(res, req) {
 // ---------------------------------------------------------------------------
 // Dati master
 //
-// GET /system/master/<data> (azione 27, [fn]) restituisce per ogni
+// GET /system/master/<data> (azione 27) restituisce per ogni
 // tabella {revision, url, key, md5}. Il client scarica url e lo decodifica come
-// ogni risposta "application/encoded-json" o "application/octet-stream"
-// ([fn]): curl_easy_unescape -> base64 -> AES-256-CBC con key (i 32
+// ogni risposta "application/encoded-json" o "application/octet-stream":
+// URL-unescape -> base64 -> AES-256-CBC con key (i 32
 // byte della stringa), IV a zero, PKCS#7 -> JSON. md5: ipotesi, MD5 esadecimale
-// del corpo scaricato (cosi' fa il downloader generico [fn]).
+// del corpo scaricato (come per gli altri download).
 //
 // Le tabelle sono i file <nome>.json di MASTER_DIR (non versionata: sono dati
 // di Square Enix o ne derivano). Nessun file, nessuna tabella.
@@ -646,20 +640,20 @@ function respondMasterFile(req, res) {
 // ---------------------------------------------------------------------------
 // Risorse
 //
-// GET /system/resource (azione 28, richiesta da [fn] con corpo
-// {revision, resoMode}; risposta letta da [fn]):
+// GET /system/resource (azione 28, corpo della richiesta
+// {revision, resoMode}; risposta):
 //   { resource: { mode, minVersion, versions: [ {data: [file], index: [file]} ] } }
 // mode 0 = niente da scaricare, 1 o 2 = scarica. La versione i-esima vale
 // minVersion + i. file = {url, md5, size}: stringhe non vuote e size > 0.
 //
-// Il downloader ([fn] -> [fn]) accetta un file solo se il
+// Il client accetta un file scaricato solo se il
 // corpo e' lungo `size`, il suo MD5 esadecimale e' `md5` e il Content-Type
 // contiene "application/octet-stream". Lo salva nella cartella scrivibile con un
-// nome derivato dall'url; la cache ([fn]) rifa' lo stesso controllo.
+// nome derivato dall'url; la cache rifa' lo stesso controllo.
 //
 // Il client chiede l'azione 28 solo se le revisioni delle risorse differiscono,
 // il giocatore NON e' nuovo e il tutorial risulta finito (stato del tutorial,
-// [fn], campo isFinished).
+// campo isFinished).
 //
 // I pacchetti sono i file di RESOURCE_DIR/<versione>/{data,index}/ (cartella non
 // versionata: conterra' risorse di Square Enix).
@@ -729,7 +723,7 @@ function respondResource(res) {
 }
 
 function respondResourceEv(res) {
-  // GET /system/resourceEv (azione 29, [fn]): array "resourceEv" di
+  // GET /system/resourceEv (azione 29): array "resourceEv" di
   // {resourceId (uint), versions}. Nessuna risorsa evento.
   send(res, 200, { ret: ret(), resourceEv: [] });
 }
@@ -761,11 +755,11 @@ const TUTORIAL_LAST_PHASE = Number(process.env.KHUX_TUTORIAL_LAST_PHASE || 995);
 // finestra appena chiusa, es. 2^28, 2^34, 2^35). A tutorial finito tutte risultano viste
 // (2^53 - 1, il massimo esatto in JSON): altrimenti a ogni rientro il client le mostra
 // tutte in fila, compresa quella di Dark Road, che va in crash
-// (SceneDarkroadHome::darkroadPartySeclectPopup). KHUX_POPUP_FLAG la cambia.
+// (popup del party di Dark Road). KHUX_POPUP_FLAG la cambia.
 const POPUP_ALL_SEEN = Number(process.env.KHUX_POPUP_FLAG || Number.MAX_SAFE_INTEGER);
 
 function respondTutorialStatus(res, req) {
-  // GET/PUT /tutorial/status (azioni 69/70), letto da [fn] alla radice:
+  // GET/PUT /tutorial/status (azioni 69/70), campi alla radice:
   // phase (uint), popupFlag (uint64), isFinished (uint), acquireTutorialJewel
   // (bool). isFinished decide, con newcomer, se scaricare le risorse all'avvio.
   // PUT porta la fase raggiunta (50 prima del Prologue, 995 dopo): si salva e GET la
@@ -790,7 +784,7 @@ function respondTutorialStatus(res, req) {
 
 function respondKhuxLogin(res) {
   // POST /khux/login (azione 252), solo per un giocatore esistente: dopo
-  // /system/coppa. Letto da [fn]: gameLogin.acquirableLoginBonus (bool).
+  // /system/coppa. Risposta: gameLogin.acquirableLoginBonus (bool).
   // nuovo login: il client riprende l'ora da qui, il gemello del mese corrente vale fino al prossimo
   player.clockOffset = clock.twinOffset(realNow());
   savePlayer();
@@ -798,7 +792,7 @@ function respondKhuxLogin(res) {
 }
 
 // Login bonus (I-176, login-bonus.js): true se il giorno (cambio alle 08:00 UTC, come le missioni) non e' ancora stato
-// riscosso; allora il client chiama POST /login/bonus e apre SceneLoginBonus ([fn]). Solo a tutorial finito:
+// riscosso; allora il client chiama POST /login/bonus e apre la scena del login bonus. Solo a tutorial finito:
 // i layout del login bonus arrivano con le risorse, che un giocatore nuovo scarica dopo il tutorial (un layout mancante
 // = crash in GUIReader). KHUX_LOGIN_BONUS=0 lo spegne.
 const LOGIN_BONUS_ON = process.env.KHUX_LOGIN_BONUS !== '0';
@@ -808,7 +802,7 @@ function loginBonusAcquirable() {
 }
 
 function respondLoginBonus(res) {
-  // POST /login/bonus (azione 65, corpo isTrackingEnabled/advertisingId ignorato). Risposta letta da [fn]:
+  // POST /login/bonus (azione 65, corpo isTrackingEnabled/advertisingId ignorato). Risposta:
   // loginBonus {continue {loginBonusId, dayCount}, total {loginBonusId, dayCount}, specials [id]}, tutti obbligatori.
   // I premi vanno nei Presents (la risposta non porta inventario).
   const { state, rewards, response } = loginBonus.claim(player.loginBonus, clock.dayIndex(realNow()), masterRows('loginBonus'));
@@ -860,10 +854,9 @@ function schemaResponse(apiPath) {
   return body;
 }
 
-// GET /user (azione 1, callUserGetAPI). Il ramo 1 di [fn] chiama, tutti
-// obbligatori: [fn] (userData.user), [fn] (userData.userPoint),
-// [fn] (userData.userDetail), [fn] (userData.stageResumption),
-// [fn] (userData.medalResumption), poi pretende userPopUp.isPopBenefitStone.
+// GET /user (azione 1). Campi obbligatori: userData.user, userData.userPoint,
+// userData.userDetail, userData.stageResumption, userData.medalResumption e
+// userPopUp.isPopBenefitStone.
 // Tipi da recon/tools/response_schema.py. I valori sono nostri segnaposto: un
 // giocatore di livello 1, senza progressi.
 const PLAYER_NAME = process.env.KHUX_PLAYER_NAME || 'Player';
@@ -972,10 +965,9 @@ function savePlayer() {
   fs.renameSync(SAVE_FILE + '.tmp', SAVE_FILE);
 }
 
-// L'avatar del giocatore (updateAvatarData di /user/create), come lo leggono
-// [fn] (userAvatar, elementi di userAvatars) e [fn] (elementi di
-// userAvatarParts). Al rientro la home costruisce l'avatar da qui ([fn]):
-// senza, crash.
+// L'avatar del giocatore (updateAvatarData di /user/create): userAvatar (elementi di
+// userAvatars) ed elementi di userAvatarParts. Al rientro la home costruisce l'avatar
+// da qui: senza, crash.
 const AVATAR_COORDINATE = 1;
 
 function userAvatarData() {
@@ -1020,10 +1012,9 @@ function respondUserCreate(res, req) {
   // POST /user/create (azione 253), alla fine del tutorial iniziale (nome, data di
   // nascita, editor avatar, scelta della Union). Corpo: birthday, name, unionId,
   // updateAvatarData {gender, hairPartsId, hairColorPartsId, facePartsId,
-  // bodyPartsId, skinPartsId, accessoriesPartsIds}. Il ramo 253 di [fn]
-  // chiama [fn] con 1 (legge solo systemLogin.newcomerKhux, bool, e lo copia
-  // nel flag "nuovo giocatore" della sessione, +0x88) e [fn]
-  // (gameLogin.acquirableLoginBonus, bool): entrambi obbligatori.
+  // bodyPartsId, skinPartsId, accessoriesPartsIds}. Risposta: systemLogin.newcomerKhux
+  // (bool, il flag «nuovo giocatore») e gameLogin.acquirableLoginBonus (bool): entrambi
+  // obbligatori.
   if (req) {
     player.name = req.name ?? player.name;
     player.unionId = Number(req.unionId ?? player.unionId) || 0;
@@ -1057,14 +1048,14 @@ function deckStats() {
   return { attack, defense };
 }
 
-// Forzieri degli stage. Il client, aprendo un forziere (StageUtil::getTreasurePrizes,
-// [fn]), cerca in userTreasures l'elemento con lo stesso uniqueTreasureId e
+// Forzieri degli stage. Il client, aprendo un forziere,
+// cerca in userTreasures l'elemento con lo stesso uniqueTreasureId e
 // legge la riga di `reward` indicata dalla mappa (stage/mappoi_stg<id>_NN.bin
 // dell'addnl); dei suoi premi tiene quelli il cui tipo compare, nella stessa
-// posizione, in dropItemTypeIds. Tipi ([fn]): 4 monete, 8 CP (Attack Prize,
+// posizione, in dropItemTypeIds. Tipi: 4 monete, 8 CP (Attack Prize,
 // barra degli speciali), 9 HP. Prologue (1010): forziere arancione id 18, reward 81
-// (record 948,1778,81,14,18 della sezione +0x28 di mappoi_stg01010_01.bin, letto da
-// [fn]: x, y, reward, tipo, id).
+// (record 948,1778,81,14,18 della sezione dei forzieri di mappoi_stg01010_01.bin:
+// x, y, reward, tipo, id).
 // Forzieri e nemici di ogni stage: server/game_data/stage_poi.json, generato dalle
 // mappe con recon/tools/stage_poi.py (non versionato: dati di gioco). Le righe di
 // reward le scrive make-game-tables.js: posizione 0 il premio del nemico (tipo 5),
@@ -1105,7 +1096,7 @@ function stageTreasures(stageId) {
     .filter((t) => t.dropItemTypeIds.some(Boolean));
 }
 
-// Drop dei nemici: userEnemyDropItems[] ([fn]: uniqueEnemyId, dropItemTypeIds
+// Drop dei nemici: userEnemyDropItems[] (uniqueEnemyId, dropItemTypeIds
 // int[] <= 4, stealType), come per i forzieri. uniqueEnemyId = ultimo numero del
 // record del nemico nella mappa (x, y, enemyId, 1, 1, 1, 1, id). Il contenuto e' la
 // riga di reward del nemico (make-game-tables.js). Sul banco: con tipo 5 (materiale) il
@@ -1123,9 +1114,9 @@ function stageEnemyDrops(stageId) {
   return ids.map((id) => ({ uniqueEnemyId: id, dropItemTypeIds: [ENEMY_DROP_TYPE], stealType: 0 }));
 }
 
-// Trick Steal del pet (I-137): il client manda isSteal a /stage/start se un trick aperto ha invokeType 1
-// ([fn]); il server sceglie il drop rubato (stealType != 0 -> nemico +0x35a, banner e recovery_skill alla morte)
-// e a /stage/clear ne da' la quantita' x skillValue3, la stessa che il client mostra nei risultati ([fn]: max
+// Trick Steal del pet (I-137): il client manda isSteal a /stage/start se un trick aperto ha invokeType 1;
+// il server sceglie il drop rubato (stealType != 0: banner e recovery_skill alla morte del nemico)
+// e a /stage/clear ne da' la quantita' x skillValue3, la stessa che il client mostra nei risultati (max
 // sv3 dei trick con invokeType 1). Lista della community: 50% di attivazione quando un nemico lascia un drop, una volta per battaglia: un tiro
 // del 50% per nemico con drop, in ordine di uid, il primo che riesce.
 const STEAL_CHANCE = 0.5;
@@ -1149,9 +1140,9 @@ function applySteal(stageId, drops, rng = Math.random, mult = stealMultiplier())
   return drops.map((d) => (d === hit ? { ...d, stealType: 1 } : d));
 }
 
-// userData.userPoint, letto da [fn] sia in GET /user sia in POST /stage/start.
-// Il livello del giocatore e' il rango Lux: la barra dei risultati ([fn] ->
-// [fn]) usa userDetail.luxRank come livello e userPoint.lux come valore,
+// userData.userPoint, in GET /user e in POST /stage/start.
+// Il livello del giocatore e' il rango Lux: la barra dei risultati
+// usa userDetail.luxRank come livello e userPoint.lux come valore,
 // contro le soglie cumulative needExp della tabella player (righe lv e lv+1). Con
 // luxRank 0 la soglia del livello 1 e' 0: «LEVEL UP!» e barra piena a ogni stage.
 function sphereBonus() {
@@ -1165,7 +1156,7 @@ function luxRankFor(lux) {
   return Math.max(1, ...rows.map((r) => r.lv));
 }
 
-// AP. Il client ([fn], AP mostrato; [fn], secondi al pieno) ricalcola
+// AP. Il client (AP mostrato e secondi al pieno) ricalcola
 // da solo la ricarica: se ap < maxAp e lastApDatetime e' passato, AP = ap + (secondi
 // trascorsi) / (misc 101 x 60), fino a maxAp; con ap >= maxAp mostra ap e non ricarica
 // (l'AP oltre il massimo viene dal level up o dal recupero con jewel). Il server tiene
@@ -1218,8 +1209,8 @@ function maxMedal() {
 }
 
 // POST /shop/medal/max (azione 71, Shop > Increase Storage), corpo {count} = scatti del cursore
-// del popup PopupNormal_MedalPossessed1. Ramo 0x7c3a68 di [fn]: solo [fn]
-// (userData.userDetail, obbligatorio: senza, «200 ERROR :71»); i jewel il client li rilegge con
+// del popup PopupNormal_MedalPossessed1. Risposta: solo userData.userDetail
+// (obbligatorio: senza, «200 ERROR :71»); i jewel il client li rilegge con
 // GET /user/stone. Ogni scatto: +5 posti, -100 jewel.
 function respondMedalMax(res, body) {
   const now = serverTime();
@@ -1388,10 +1379,10 @@ function respondGachaList(res) {
   send(res, 200, { ret: ret(), ...data });
 }
 
-// POST /gacha/draw (azione 76): ramo 0x7c46bc di [fn], parser [fn] (userPoint),
-// [fn] (userMedals, userSkills, userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds,
-// effectNumbers: tutti obbligatori) e [fn] (guiltBurstFirst/MaxUserMedalIds). Un rifiuto
-// risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop ([fn]). Si estrae solo dai
+// POST /gacha/draw (azione 76): risposta con userData.userPoint, userMedals, userSkills,
+// userMaterials, gachaBonus, firstGetUserMedalIds, userMedalIds, effectNumbers (tutti
+// obbligatori) e guiltBurstFirst/MaxUserMedalIds. Un rifiuto
+// risponde solo {ret}: «200 ERROR :76» e il client torna allo Shop. Si estrae solo dai
 // banner della lista attuale, dell'ultima /gacha/list inviata o di KHUX_GACHA_SHOW: una richiesta forgiata non arriva ai
 // banner fuori periodo. L'ultima lista conta perche' il client non ricarica /gacha/list quando il Catalog si chiude: pin,
 // unpin o cambio di settimana a Shop aperto lasciano a schermo piastre che la lista attuale non ha piu'.
@@ -1436,7 +1427,7 @@ function respondGachaDraw(res, body) {
     draw.medalIds.forEach((medalId, i) => {
       grantItem(3, medalId, 1);
       const newId = player.medals[player.medals.length - 1].userMedalId;
-      // [fn] cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
+      // il client cerca ogni id in userMedals: per le impilabili la cella ha l'id della prima copia
       const cell = packed.has(medalId) ? stackedMedalList().find((c) => c.copies.includes(newId)) : null;
       const id = cell ? cell.userMedalId : newId;
       userMedalIds.push(id);
@@ -1573,7 +1564,7 @@ function respondGachaPost(res, url) {
 }
 
 // POST /union/change (azione 74, Other > Transfer Unions > OK > scelta della Union > OK), corpo
-// {unionId} 1-5. Stesso ramo della 71 (0x7c3a68): solo userData.userDetail, i jewel il client li
+// {unionId} 1-5. Stessa risposta della 71: solo userData.userDetail, i jewel il client li
 // rilegge. «It will cost 100 Jewels»; i lux settimanali/mensili non li teniamo (niente da azzerare).
 const UNION_CHANGE_COST = 100;
 function respondUnionChange(res, body) {
@@ -1588,8 +1579,8 @@ function respondUnionChange(res, body) {
   send(res, 200, { ret: ret(), userData: { userPoint: userPointData(now), userDetail: userDetailData() } });
 }
 
-// Elemento giocatore [fn] (supportUsers di /stage/support/list, partyLeader e partyUserList del
-// party): il giocatore stesso con una medaglia (userMedal [fn], userSkills[], userAvatar).
+// Elemento giocatore (supportUsers di /stage/support/list, partyLeader e partyUserList del
+// party): il giocatore stesso con una medaglia (userMedal, userSkills[], userAvatar).
 // La medaglia condivisa (Share, player.supportUserMedalId) come userMedal; se manca, la prima dell'elenco
 function sharedMedalData(now) {
   const list = userMedalsData(now);
@@ -1628,11 +1619,11 @@ function userPointData(now) {
     stageSpherePoint: 0, raidSpherePoint: 0, colosseumSpherePoint: 0,
     // da qui in poi uint
     specialPoint: 0, stageSkipTicket: player.stageSkipTicket || 0, superSkipTicket: 0, vipPoint: 0,
-    // livello del Burst (pulsante rosso in battaglia, una volta per missione; [fn] non
+    // livello del Burst (pulsante rosso in battaglia, una volta per missione; il client non
     // lo crea a 0): +1 alla prima guilt di ogni medaglia, +5 alla prima guilt massima
     guiltBurstLv: guiltBurst().level(), multiPoint: 0, missionPoint: 0, limitedVipPoint: 0,
     drawTicket1: 0, drawTicket2: 0, drawTicket3: 0,
-    // biglietti dei banner a tempo (Shop, payType 7/8/9 -> limitedDrawTicket1-3, [fn]); payType 8:
+    // biglietti dei banner a tempo (Shop, payType 7/8/9 -> limitedDrawTicket1-3); payType 8:
     // la valuta stagionale elencata nello Shop (player.drawTickets, server/gacha.js ticketsOf; spec 9.7).
     // premi 40 Platinum Ticket e 41 Draw Ticket (anche Holiday Draw Ticket, Moogle Point, Spooky
     // Cookie: stessa valuta rinominata dall'evento); reference/missions/limited_rewards_map.md
@@ -1642,12 +1633,10 @@ function userPointData(now) {
 
 function respondStageStart(res, req) {
   // POST /stage/start (azione 113). Corpo: stageId, supportUserId, userKeybladeId
-  // (+ stageSkip, eventId, isSteal). Il ramo 113 di [fn] chiama, tutti
-  // obbligatori: [fn] (userData.userPoint), [fn] (userRandomEnemies[],
-  // userEnemyDropItems[], userTreasures[], startStageData, campaigns[],
-  // luxMagnifications) e [fn]("supportUsers"). Elementi: [fn]
-  // (nemico: uniqueEnemyId, dropItemTypeIds int[] <= 4, stealType), [fn]
-  // (tesoro), [fn] (startStageData: stageId, supportUserId uint64,
+  // (+ stageSkip, eventId, isSteal). Risposta, tutto obbligatorio: userData.userPoint,
+  // userRandomEnemies[], userEnemyDropItems[], userTreasures[], startStageData, campaigns[],
+  // luxMagnifications e supportUsers. Elementi: nemico (uniqueEnemyId, dropItemTypeIds
+  // int[] <= 4, stealType), tesoro, startStageData (stageId, supportUserId uint64,
   // userKeybladeId uint64, clearMissionIds int[] <= 3, stageSkip, eventId,
   // highScore uint64).
   const now = serverTime();
@@ -1689,22 +1678,22 @@ function respondStageStart(res, req) {
     // con la lista vuota il client non ha la medaglia dell'amico da mettere nel deck della battaglia
     supportUsers: req?.supportUserId ? [selfPlayerElement(now, sharedMedalData(now))] : [],
     // deck senza gli slot vuoti per la battaglia (vedi sentKeybladeDeck); da verificare che il
-    // ramo 113 li rilegga (I-075)
+    // client li rilegga dalla risposta 113 (I-075)
     userDecks: userDecksData(true),
   });
 }
 
 // Messaggio del Profilo di chi non ne ha scritto uno (ISSUES I-071). Il fumetto bianco
-// sopra l'avatar della home e' MyPage_MpBaloon.json (nodi «avatarFukidashi_%d», creati in
-// [fn]): l'azione casuale dell'avatar ([fn], 10% dei casi) ne scrive
-// Txt_Comment_Label con userData.user.comment (record utente della sessione, +0x3c, 256
+// sopra l'avatar della home e' MyPage_MpBaloon.json (nodi «avatarFukidashi_%d»): ogni tanto
+// (circa 10% delle azioni casuali dell'avatar) il client vi scrive
+// Txt_Comment_Label con userData.user.comment (fino a 256
 // byte), senza controllare che sia vuoto: con comment "" il fumetto compare vuoto. Negli
 // originali li' c'era il messaggio del Profilo (reference\profile: «For hearth and
 // home!»; reference\home: «R.I.P. $5 VIP deal..»). Il campo Message accetta 20 caratteri;
 // il testo d'esempio del layout originale e' «はじめまして！初心者なのでお手柔らかに！».
 const DEFAULT_COMMENT = process.env.KHUX_DEFAULT_COMMENT ?? 'Nice to meet you!';
 
-// userData.user ([fn]): GET /user, /user/profile, POST /user/update
+// userData.user: GET /user, /user/profile, POST /user/update
 function userObject(now) {
   return {
     userId: 1, // uint64
@@ -1736,11 +1725,11 @@ function respondUser(res) {
   send(res, 200, { ret: ret(), userData, userPopUp: { isPopBenefitStone: 0 } });
 }
 
-// GET /mypage (azione 59, ramo 0x7c4eb8 di [fn] -> parser [fn]), tutto
-// obbligatorio e in quest'ordine: adminMypageTexts[] ([fn]: type int, priority int,
-// text stringa), openBanners[] ([fn]: type, id, limitDate), userPresentCount int,
-// isChangeCoordinate int, rankingRewards ([fn], 7 int), backgroundId uint (riga di
-// mypageBackground, senza crash in [fn]; 150911 = sfondo predefinito),
+// GET /mypage (azione 59), tutto
+// obbligatorio e in quest'ordine: adminMypageTexts[] (type int, priority int,
+// text stringa), openBanners[] (type, id, limitDate), userPresentCount int,
+// isChangeCoordinate int, rankingRewards (7 int), backgroundId uint (riga di
+// mypageBackground, senza riga crash; 150911 = sfondo predefinito),
 // isNewAlbumChallenge uint, isMissionReward bool. Prima la dava lo schema generico
 // (schemaResponse): stessi campi e valori, ora con una rotta propria.
 // adminMypageTexts sono i testi dell'amministrazione: forse la striscia scorrevole sotto la
@@ -1763,14 +1752,14 @@ function respondMyPage(res) {
   send(res, 200, body);
 }
 
-// GET /user/profile (azione 5, AvatarInfoDialog::open [fn]; corpo userId e
-// platformType). Parser [fn], tutto obbligatorio: userData.user/userDetail/
-// userPoint ([fn]/0078babc/0078b230, come GET /user) e
-// userData.lastActionDatetime; userMedals ([fn]), userSkills ([fn]),
-// userAvatar ([fn]); userKeyblade (oggetto, [fn]), userRecord
-// ([fn]: 55 contatori uint64), userRanking ([fn]), party ([fn]),
-// linkPlatformId, isLinkThumbnail, userColosseumRanking ([fn]), petBaseSlotMedal,
-// userPvpRanking ([fn]), followerNum, isFollow. Solo il profilo del giocatore.
+// GET /user/profile (azione 5, apertura del Profilo; corpo userId e
+// platformType). Tutto obbligatorio: userData.user/userDetail/
+// userPoint (come GET /user) e
+// userData.lastActionDatetime; userMedals, userSkills,
+// userAvatar; userKeyblade (oggetto), userRecord
+// (55 contatori uint64), userRanking, party,
+// linkPlatformId, isLinkThumbnail, userColosseumRanking, petBaseSlotMedal,
+// userPvpRanking, followerNum, isFollow. Solo il profilo del giocatore.
 const USER_RECORD_KEYS = ['login', 'continueLogin', 'getMoney', 'getSpherePoint', 'useMoney', 'sellMedal',
   'sellMedalCount', 'sellMaterial', 'sellMaterialCount', 'getKizunaPoint', 'useKizunaPoint', 'zukanMedal',
   'yamiSpeedZukan', 'yamiPowerZukan', 'yamiMagicZukan', 'hikariSpeedZukan', 'hikariPowerZukan',
@@ -1782,8 +1771,8 @@ const USER_RECORD_KEYS = ['login', 'continueLogin', 'getMoney', 'getSpherePoint'
   'getMaterial', 'openAllSphere', 'openGrid', 'unionPersonalRankingHighest', 'unionPartyRankingHighest',
   'totalPersonalRankingHighest', 'colosseumRankingHighest', 'pvpRankingRankHighest', 'pvpRankingClassHighest'];
 
-// POST /user/update (azione 38, Name/Message del Profilo): {name, comment}; il ramo del
-// dispatcher rilegge userData.user ([fn])
+// POST /user/update (azione 38, Name/Message del Profilo): {name, comment}; il
+// client rilegge userData.user
 function respondUserUpdate(res, body) {
   if (typeof body?.name === 'string' && body.name) player.name = body.name;
   if (typeof body?.comment === 'string') player.comment = body.comment;
@@ -1791,8 +1780,8 @@ function respondUserUpdate(res, body) {
   send(res, 200, { ret: ret(), userData: { user: userObject(serverTime()) } });
 }
 
-// POST /user/playstyle/update (azione 40) e /user/title/update (azione 41): il ramo rilegge
-// userData.userDetail ([fn]). I campi del corpo che userDetail conosce si salvano
+// POST /user/playstyle/update (azione 40) e /user/title/update (azione 41): il client rilegge
+// userData.userDetail. I campi del corpo che userDetail conosce si salvano
 // nel giocatore (playTimezones, playFrequently, titleLeftId/RightId/PlateId).
 const USER_DETAIL_EDITABLE = ['playTimezones', 'playFrequently', 'titleLeftId', 'titleRightId', 'titlePlateId'];
 function respondUserDetailUpdate(res, apiPath, body) {
@@ -1865,13 +1854,13 @@ function grantItem(type, id, num) {
   else if (type === 4) player.money = (player.money || 0) + num;
   else if (type === 14) player.spherePoint = (player.spherePoint || 0) + num;
   else if (type === 26) player.stageSkipTicket = (player.stageSkipTicket || 0) + num; // Skip Ticket (setItemImageData 1.0.1)
-  // 11 Lux (testo 100200001 in SceneUtil::setItemImageData della 1.0.1, 0x46C71C)
+  // 11 Lux (testo 100200001)
   else if (type === 11) player.lux = (player.lux || 0) + num;
   else if (type === 5 && id) {
     player.materials = player.materials || {};
     player.materials[id] = (player.materials[id] || 0) + num;
   } else if (type === 13 && id) grantKeyblade(id); // keyblade (tabella keyblade)
-  // 40 Platinum Ticket, 41 Draw Ticket (nomi dei tipi 37-42 in [fn]: Bronze, Silver, Gold,
+  // 40 Platinum Ticket, 41 Draw Ticket (tipi 37-42: Bronze, Silver, Gold,
   // Platinum, Draw, Premium Ticket); si spendono nei banner dello Shop (rotte /gacha/*)
   else if (type === 40) player.limitedDrawTicket1 = (player.limitedDrawTicket1 || 0) + num;
   // 41: Draw Ticket (le valute stagionali arrivano con le loro Limited, sotto-progetto 3)
@@ -1879,12 +1868,12 @@ function grantItem(type, id, num) {
   // 7 titolo (userTitles), 20 parte dell'avatar (accessorio, userAvatarParts)
   else if (type === 7 && id) { player.titles = [...new Set([...(player.titles || []), id])]; }
   else if (type === 20 && id) { player.avatarParts = [...new Set([...(player.avatarParts || []), id])]; }
-  // 33 parte dello Spirit (itemId = petPartsId; [fn] caso 0x21: img/petParts/pi%d)
+  // 33 parte dello Spirit (itemId = petPartsId; immagine img/petParts/pi%d)
   else if (type === 33 && id) { if (!PET_ENABLED || !pet().grantPart(id)) console.log(`  [inventario] parte dello Spirit ${id} gia' posseduta o assente`); }
   else console.log(`  [inventario] tipo ${type} (id ${id}, x${num}) non gestito`);
 }
 
-// userMaterials[] ([fn]): userMaterialId uint64, materialId, number
+// userMaterials[]: userMaterialId uint64, materialId, number
 function userMaterialsData() {
   return Object.entries(player.materials || {}).filter(([, n]) => n > 0)
     .map(([id, n]) => ({ userMaterialId: Number(id), materialId: Number(id), number: n }));
@@ -1922,14 +1911,14 @@ function stageRowOf(stageId) {
 const storyKeyOf = (stageId) => stageRowOf(stageId)?.stageId ?? Number(stageId);
 
 // Titolo del giocatore (tabella title: due parole + targa, il cui label sceglie
-// img/userTitle/title_%04d). Con 0 il Profilo va in crash ([fn]). Di default i
+// img/userTitle/title_%04d). Con 0 il Profilo va in crash. Di default i
 // titoli di categoria 1 («Default Title»): «Budding Newbie» sulla targa di Budding.
 function playerTitleIds() {
   return { titleLeftId: player.titleLeftId || 1001, titleRightId: player.titleRightId || 1002,
     titlePlateId: player.titlePlateId || 1001 };
 }
 
-// userData.userDetail ([fn]), in GET /user e POST /stage/clear.
+// userData.userDetail, in GET /user e POST /stage/clear.
 function userDetailData() {
   return {
     level: luxRankFor(player.lux), exp: 0, luxRank: luxRankFor(player.lux), luxGetRatio: 0,
@@ -1948,18 +1937,18 @@ function userDetailData() {
     maxMedal: maxMedal(), mvpCount: 0,
     equipCoordinateNo: player.avatar ? AVATAR_COORDINATE : 0, // coordinato indossato (userAvatars)
     // numero della missione (campo id della tabella stage: Prologue = 1), non lo stageId
-    // (1010): la schermata Quests ([fn]) lo confronta con misc 106 (130) per
+    // (1010): la schermata Quests lo confronta con misc 106 (130) per
     // sbloccare il quarto pulsante, e da sbloccato cerca un testo che non c'e' (crash).
     lastClearStageId: stageNumber(player.lastClearStageId),
-    // isGuilt (+0x44): con 0 niente pulsante del Burst ([fn] -> [fn]), ne'
-    // sblocco/rilancio della guilt e Magic Mirror nel Level Up ([fn]): Power Bangle,
+    // isGuilt: con 0 niente pulsante del Burst, ne'
+    // sblocco/rilancio della guilt e Magic Mirror nel Level Up: Power Bangle,
     // Quest 34 (isGuiltUnlocked). Il pulsante resta nascosto finche' guiltBurstLv e' 0.
-    // isPet (+0x45): 1 = pet sbloccato (6° slot, catena /pet/profile all'avvio): server/pet.js
+    // isPet: 1 = pet sbloccato (6° slot, catena /pet/profile all'avvio): server/pet.js
     isGuilt: isGuiltUnlocked(), isPet: PET_ENABLED ? 1 : 0, pvpClass: 0, pvpMvpCount: 0, // uint
   };
 }
 
-// userData.stageResumption ([fn]): 0 = niente da riprendere.
+// userData.stageResumption: 0 = niente da riprendere.
 function stageResumptionData() {
   return { resumptionStatus: 0, stageId: 0, raidId: 0, colosseumStageId: 0 };
 }
@@ -1968,8 +1957,8 @@ function stageResumptionData() {
 const CONTINUE_STONE = 100;
 
 function respondStageContinue(res, path, body) {
-  // POST /stage/continue (azione 115, dopo il KO) e /stage/retire (114): il ramo
-  // rilegge userKeyblades ([fn]); retire anche userData.stageResumption.
+  // POST /stage/continue (azione 115, dopo il KO) e /stage/retire (114): il client
+  // rilegge userKeyblades; retire anche userData.stageResumption.
   // Il Continue costa CONTINUE_STONE jewel (provato l'11 ottobre: prima restavano invariati);
   // il client li rilegge con GET /user/stone subito dopo.
   if (String(path).toLowerCase() === '/stage/continue') {
@@ -1986,10 +1975,10 @@ function respondStageContinue(res, path, body) {
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userData: { stageResumption: stageResumptionData() } });
 }
 
-// POST /shop/ap/recover (azione 72, costruttore [fn], corpo vuoto): recupero
-// dell'AP con jewel dal popup PopupNormal_AP_Recovery ([fn], che nel testo
-// mostra il prezzo: misc 112 = 100). Il ramo rilegge userData.userPoint ([fn])
-// e userKeyblades ([fn]); i jewel li rilegge con GET /user/stone. Si aggiunge un
+// POST /shop/ap/recover (azione 72, corpo vuoto): recupero
+// dell'AP con jewel dal popup PopupNormal_AP_Recovery (il testo
+// mostra il prezzo: misc 112 = 100). Il client rilegge userData.userPoint
+// e userKeyblades; i jewel li rilegge con GET /user/stone. Si aggiunge un
 // pieno (maxAp) all'AP attuale, come il level up.
 function respondApRecover(res) {
   const cost = miscValue(112, 100);
@@ -2036,20 +2025,20 @@ function grantDeckSkillExp(gained) {
 }
 
 function respondStageClear(res, req) {
-  // POST /stage/clear (azione 116). Il ramo chiama [fn] (userData.userPoint),
-  // [fn] (userData.userDetail), [fn] (stageRewardUserMedalIds[]
+  // POST /stage/clear (azione 116). Risposta: userData.userPoint,
+  // userData.userDetail, il risultato (stageRewardUserMedalIds[]
   // {rewardkind, userMedalId uint64, display}, poi per uno stage normale
   // highScoreReward[] (clearTimeMissionIds[] / pvpPointReward[] in altri modi),
   // firstClearFlag, stageOpenNum, clearMissionIds[], userPvpRanking {rank, class,
-  // point}, status, userMaterials[], getLux uint64), [fn]
-  // (userData.stageResumption) e [fn] (guiltBurstFirstUserMedalIds[],
-  // guiltBurstMaxUserMedalIds[]).
+  // point}, status, userMaterials[], getLux uint64),
+  // userData.stageResumption e guiltBurstFirstUserMedalIds[],
+  // guiltBurstMaxUserMedalIds[].
   const now = serverTime();
   // il corpo non porta stageId (solo l'esito): lo stage e' quello di /stage/start
   // playedId = l'id giocato (POI, Steal); stageId = quello della riga master (la 18300 per le varianti della Q555)
   let playedId = Number(req?.stageId ?? player.currentStageId ?? START_STAGE_ID);
   // Ripiego per la Q978 (onlyDrama, fix round 1 del Task 6): se il client ne mandasse /stage/clear senza /stage/start
-  // (StageSkipActionMap -> [fn], non provato al banco), currentStageId sarebbe ancora la missione prima, gia'
+  // (salto della missione, non provato al banco), currentStageId sarebbe ancora la missione prima, gia'
   // finita. Nessuno stage in corso + currentStageId gia' finito + prossima missione di storia onlyDrama -> quella.
   const pending = player.stageInProgress;
   player.stageInProgress = false;
@@ -2104,7 +2093,7 @@ function respondStageClear(res, req) {
   const apBefore = apState().ap; // con la soglia del livello di prima
   player.lux += lux; // userPoint.lux/totalLux e luxRank nella risposta: dopo lo stage
   // level up: si aggiunge un pieno di AP (il nuovo maxAp) a quello che c'era, anche
-  // oltre il massimo (il client lo ammette: [fn] non ricarica sopra maxAp)
+  // oltre il massimo (il client lo ammette: non ricarica sopra maxAp)
   if (luxRankFor(player.lux) > rankBefore) {
     player.ap = apBefore + maxAp();
     player.apTime = realNow();
@@ -2120,7 +2109,7 @@ function respondStageClear(res, req) {
   });
   cleared.sort((a, b) => a - b).splice(3);
   // «Must clear all together» (combinedSubmissionFlag 1, Proud 801+, I-200): il client riporta ogni obiettivo da solo
-  // (/stage/clear non legge il flag, ricerca Ghidra del 22-10): valgono solo se nella stessa partita ci sono tutti
+  // (/stage/clear non usa il flag, ricerca del 22-10): valgono solo se nella stessa partita ci sono tutti
   const all = Array.from({ length: Math.min(3, stage?.validSubmission || 0) }, (_, i) => i + 1);
   if (stage?.combinedSubmissionFlag && all.length && !all.every((n) => cleared.includes(n))) {
     if (cleared.length) console.log(`[stage] ${stageId}: obiettivi ${cleared} senza gli altri (tutti insieme): non contano`);
@@ -2150,15 +2139,13 @@ function respondStageClear(res, req) {
     status: 0,
     userMaterials: userMaterialsData(),
     getLux: lux, // uint64
-    // stage normale: anche [fn] (pet.userPetParts[]) e [fn]
+    // stage normale: anche pet.userPetParts[] ed
     // (emblemIds[]), entrambi obbligatori (senza: «200 ERROR :116»)
     pet: { userPetParts: PET_ENABLED ? pet().ownedParts() : [] },
     emblemIds: [],
     // poi, tutti obbligatori e in quest'ordine, l'inventario aggiornato:
-    // userMaterials ([fn]), userMedals ([fn]), userSkills
-    // ([fn]), userTitles ([fn]), userKeyblades ([fn]),
-    // userDecks ([fn]), userAvatarParts ([fn]), subslot
-    // ([fn] modo 1), infine getLux
+    // userMaterials, userMedals, userSkills, userTitles, userKeyblades,
+    // userDecks, userAvatarParts, subslot, infine getLux
     userMedals: userMedalsData(now),
     userSkills: userSkillsData(now),
     userTitles: [],
@@ -2239,8 +2226,8 @@ function userSphereAll() {
 }
 
 // POST /user/sphere/check (azioni 60/61): ogni voce di userSphereDatas e' per il client una
-// bacheca appena sbloccata e finisce nell'elenco ([fn]()+0x6a8) da cui la home, i
-// risultati e l'elenco delle bacheche aprono il popup BattleResult_LB_ver120 ([fn]),
+// bacheca appena sbloccata, da cui la home, i
+// risultati e l'elenco delle bacheche aprono il popup BattleResult_LB_ver120,
 // una volta per voce. Si mandano solo le bacheche non ancora annunciate (player.sphereNotified);
 // l'array vuoto svuota l'elenco, la chiave mancante lo lascerebbe com'e'. L'elenco completo
 // arriva da GET /user/sphere. Salvataggi di prima: le bacheche gia' possedute contano come annunciate.
@@ -2300,18 +2287,18 @@ function respondSphereUpdate(res, req) {
   });
 }
 
-// Liste dell'inventario delle risposte 44/49/190 (rami 0x7c33bc e 0x7cad14 di [fn]).
-// Ogni chiave e' OBBLIGATORIA: parser nullo (chiave assente o non array, [fn]) = errore
-// del dispatcher (cbz -> w19 = 0). Ma l'array vuoto e' valido e il client NON sostituisce le
+// Liste dell'inventario delle risposte 44/49/190.
+// Ogni chiave e' OBBLIGATORIA: chiave assente o non array = errore
+// della risposta. Ma l'array vuoto e' valido e il client NON sostituisce le
 // liste: userMaterials/userMedals/userSkills passano voce per voce per un upsert per id (non nel
-// Level Up, ramo 55: li' userSkills sono le skill da togliere, vedi respondMedalEnhance)
-// ([fn] materiali, number 0 = tolto; [fn] medaglie; [fn] skill) che
-// ricopia tutto l'elenco e ne ricostruisce l'indice a ogni voce: con ~2000 medaglie O(n^2),
+// Level Up, azione 55: li' userSkills sono le skill da togliere, vedi respondMedalEnhance;
+// materiali con number 0 = tolti), e il client
+// ricopia tutto l'elenco a ogni voce: con ~2000 medaglie il costo e' quadratico,
 // ~6,5 s di attesa dopo ogni sblocco di nodo (banco 14 ottobre, come I-083 per il Level Up).
 // Con snap (inventorySnapshot preso prima dei premi) si mandano solo le voci nuove o cambiate;
 // se una voce e' sparita (l'upsert non sa togliere medaglie/skill) si rimanda la lista intera.
 // KHUX_FULL_INVENTORY=1 torna alle liste complete. Le altre liste restano complete (piccole;
-// keyblade/deck/parti/titoli non verificati, sub-slot e Burst li sostituisce: +0x890, +0x930).
+// keyblade/deck/parti/titoli non verificati, sub-slot e Burst li sostituiscono).
 const INVENTORY_DELTA = { userMaterials: 'userMaterialId', userMedals: 'userMedalId', userSkills: 'userSkillId' };
 const FULL_INVENTORY = process.env.KHUX_FULL_INVENTORY === '1';
 
@@ -2359,10 +2346,10 @@ function userTitlesData() {
 // ---------------------------------------------------------------------------
 // Missioni (master `mission`, server/tables/mission.json; formato in stage_gen/missions/NOTE.md
 // e docs/notes/home_profilo.md#missioni). La scheda la decide SOLO il client, dal campo
-// missionType della riga del master ([fn]: id della risposta -> riga -> +4):
+// missionType della riga del master:
 // 1 Beginner, 2 Daily, 3 Weekly (party), 4 Limited; il server manda tutte le righe attive
 // in un unico missions[]. Il periodo: giornaliere da startDate + k giorni (l'ora di
-// startDate e' anche quella del conto alla rovescia del client, [fn]),
+// startDate e' anche quella del conto alla rovescia del client),
 // settimanali da startDate + k settimane, Beginner e Limited senza azzeramento (valgono
 // fino a beginnerLimitTime / endDate). conditionId: 1 quest completate, 3/6 Raid Boss,
 // 4/9 Lux, 12 Union Cross, 28 PVP (6, 9 e 12 sono del party: senza party si contano quelli
@@ -2595,11 +2582,10 @@ function settleClock(realMs = realNow()) {
   savePlayer();
 }
 
-// GET /user/mission (azione 187, all'ingresso della home): parser [fn] legge solo
-// "id" (day/isFinish solo per l'azione 183 /user/mission/update), salvato nello stato di
-// gioco +0x830. Non e' la finestra Missioni: id e' la riga di un'altra tabella master
-// ([fn], campi +0x908..+0x914 = stage e intervallo) letta da [fn]; id 0 =
-// nessuna, il client prosegue (callback con true).
+// GET /user/mission (azione 187, all'ingresso della home): il client legge solo
+// "id" (day/isFinish solo per l'azione 183 /user/mission/update). Non e' la finestra
+// Missioni: id e' la riga di un'altra tabella master (stage e intervallo); id 0 =
+// nessuna, il client prosegue.
 function respondUserMission(res) {
   send(res, 200, { ret: ret(), id: 0, day: 0, isFinish: false });
 }
@@ -2643,12 +2629,11 @@ function respondBeginnerPage(res) {
 // resourceType, resourceId, number, limitDatetime, comment, created[, test]}; resourceType
 // come reward.type di grantItem (1/2 jewel, 3 medaglia, 4 munny, 5 materiale, 11 Lux,
 // 13 keyblade, 14 Avatar Coin).
-// GET /user/present (azione 20, nessun parametro; ramo 0x7c3848 di [fn] -> parser
-// [fn], tutto obbligatorio): userPresent {userPresentDatas[], presentCount,
-// presentCountMax, stonePresentCount, stonePresentCountMax} (int). Elemento [fn]:
+// GET /user/present (azione 20, nessun parametro; tutto
+// obbligatorio): userPresent {userPresentDatas[], presentCount,
+// presentCountMax, stonePresentCount, stonePresentCountMax} (int). Elemento:
 // userPresentId uint64, resourceType/resourceId/number int, limitDatetime stringa data,
-// comment stringa, created stringa data (come UserPresent::Present::init della 1.0.1,
-// 0x4A6014). La scena ([fn]) elenca tutte le righe e scrive presentCount/Max
+// comment stringa, created stringa data. La scena elenca tutte le righe e scrive presentCount/Max
 // accanto a «Other» (testo 106250104) e stonePresentCount/Max accanto a «Jewels» (106250103).
 // ---------------------------------------------------------------------------
 const PRESENT_MAX = 200; // «Presents over the limit of 200 will be deleted» (testo 103500013)
@@ -2728,12 +2713,12 @@ function respondUserPresent(res) {
   send(res, 200, { ret: ret(), userPresent: userPresentData() });
 }
 
-// POST /user/present/receive (azione 49, [fn]): {receivePresentIds: [uint64]}, sia
-// Collect sia Collect All. Ramo 0x7cad14 di [fn], tutto obbligatorio: userData
-// (userPoint, [fn]), userMaterials, userMedals, userSkills, userKeyblades, userDecks,
+// POST /user/present/receive (azione 49): {receivePresentIds: [uint64]}, sia
+// Collect sia Collect All. Tutto obbligatorio: userData
+// (userPoint), userMaterials, userMedals, userSkills, userKeyblades, userDecks,
 // userAvatarParts, userTitles, pet, emblemIds, sub-slot, liste del Burst (come 190), poi
 // lastUserPresentIds [uint64]: i regali RIMASTI nella scatola; il client segna come riscossi
-// ([fn], byte +0x40 della riga) quelli della sua lista che non ci sono (0x7d0fd0).
+// quelli della sua lista che non ci sono.
 // userStone non lo legge (la 1.0.1 si'): lo si manda lo stesso per i jewel.
 function respondPresentReceive(res, body) {
   const now = serverTime();
@@ -2790,7 +2775,7 @@ function levelHp(lv = 1) {
   return row ? row.hp : 0;
 }
 
-// userMedals[], elemento letto da [fn] (userSkills al massimo 2,
+// userMedals[], elemento (userSkills al massimo 2,
 // userShuffleSkills).
 // Le medaglie iniziali del deck (userMedalId 1-3) e quelle ricevute come premio
 // (player.medals, userMedalId da 101). player.medalState[userMedalId] = {medalId, level,
@@ -2832,16 +2817,15 @@ function userMedalElement(m, now) {
     userMedalId: m.userMedalId, // uint64
     medalId: m.medalId,
     number: m.number || 1, // uint
-    level: m.level || 1, exp: m.exp || 0, // exp cumulativo (struttura +0x14, livello +0x10)
+    level: m.level || 1, exp: m.exp || 0, // exp cumulativo
     // Level Up con medaglie speciali (server/medal-guilt.js), salvati in medalState: STR/DEF di
     // Chip/Dale, pallini dell'attacco speciale, riduzione del costo di Cid
     attackUpperNumber: m.attackUpperNumber || 0, defenseUpperNumber: m.defenseUpperNumber || 0,
     burstUpperNumber: m.burstUpperNumber || 0,
     lock: player.medalLocks?.[m.userMedalId] ? 1 : 0,
     // upperCost (int con segno): variazione del costo, NEGATIVA per Cid. Il client la nega
-    // ([fn]: oggetto +0x2c = -upperCost) e usa cost - (+0x2c): costo del deck
-    // ([fn]), ordinamento ([fn]), Optimize ([fn]), anteprima ([fn])
-    // ed effetto 6 del risultato ([fn]). medalState.upperCost = riduzione (positiva).
+    // e la sottrae al costo (costo del deck, ordinamento, Optimize, anteprima
+    // ed effetto 6 del risultato). medalState.upperCost = riduzione (positiva).
     upperCost: -(m.upperCost || 0),
     guiltFactor: m.guiltFactor || 0, // guiltFactor: uint, centesimi di % (10000 = +100%)
     // skill (I-088, server/medal-skill.js): solo l'id, l'oggetto va nella lista userSkills
@@ -2852,7 +2836,7 @@ function userMedalElement(m, now) {
 }
 
 // Trait di una medaglia (Moogle Shop): player.medalTraits[userMedalId] = [{userShuffleSkillId,
-// shuffleSkillId, type, getDatetime}]. Elemento letto da [fn]: userShuffleSkillId
+// shuffleSkillId, type, getDatetime}]. Elemento: userShuffleSkillId
 // (uint64), shuffleSkillId, userMedalId (uint64), getDatetime, type (al massimo 6 per medaglia).
 // Skill di una medaglia (server/medal-skill.js): player.medalSkills[userMedalId] = {userSkillId,
 // skillId, level, exp, getDatetime} dopo un Overwrite riuscito; senza voce, le Scrooge hanno la
@@ -2954,13 +2938,13 @@ function migrateMedalMap() {
   savePlayer();
 }
 
-// elemento di userSkills ([fn])
+// elemento di userSkills
 function userSkillElement(m, s, now) {
   return { userSkillId: s.userSkillId, skillId: s.skillId, level: s.level, exp: s.exp || 0,
     userMedalId: m.userMedalId, getDatetime: outTime(s.getDatetime || m.getDatetime, now) };
 }
 
-// lista userSkills ([fn]): tutte le skill delle medaglie possedute, perche' il client
+// lista userSkills: tutte le skill delle medaglie possedute, perche' il client
 // cerca ogni id di userMedal.userSkills in questa tabella (un id mancante = crash)
 function userSkillsData(now = serverTime(), medals = userMedalList()) {
   const out = [];
@@ -2985,10 +2969,10 @@ function medalResumptionData(queue) {
 }
 const specialTraitIds = () => new Set(masterRows('shuffleskill').filter((r) => r.type === 2).map((r) => r.shuffleSkillId));
 
-// POST /user/medal/shuffleskill (azione 57, corpo [fn]): scelta per un trait in sospeso (slot pieni).
+// POST /user/medal/shuffleskill (azione 57): scelta per un trait in sospeso (slot pieni).
 // Replace {userMedalId, userShuffleSkillId: trait da togliere, enableUserShuffleSkillId: il pending}; Skip
-// {userMedalId, userShuffleSkillId: il pending, enableUserShuffleSkillId: 0} ([fn] / [fn]).
-// Risposta: userMedal e medalResumption alla radice, obbligatori ([fn], [fn]); nessuna animazione.
+// {userMedalId, userShuffleSkillId: il pending, enableUserShuffleSkillId: 0}.
+// Risposta: userMedal e medalResumption alla radice, obbligatori; nessuna animazione.
 function respondMedalShuffleSkill(res, body) {
   const medalId = Number(body?.userMedalId), removeId = Number(body?.userShuffleSkillId), enableId = Number(body?.enableUserShuffleSkillId) || 0;
   const queue = player.traitPending || [];
@@ -3009,7 +2993,7 @@ function respondMedalShuffleSkill(res, body) {
     savePlayer();
   } else console.log(`  [trait] scelta senza trait in sospeso: ${JSON.stringify(body)}`);
   const now = serverTime();
-  // userMedal obbligatorio ([fn]): senza la medaglia (venduta) la base della scelta o la prima posseduta
+  // userMedal obbligatorio: senza la medaglia (venduta) la base della scelta o la prima posseduta
   const shown = medal || userMedalList()[0];
   send(res, 200, { ret: ret(), ...(shown ? { userMedal: userMedalElement(shown, now) } : {}), medalResumption: medalResumptionData() });
 }
@@ -3032,7 +3016,7 @@ function touchedMedalsData(baseId, comps, now, baseMedalId) {
     .map((m) => userMedalElement(m, now));
 }
 
-// Curva dell'EXP delle medaglie, come il client ([fn]): per expType t la riga
+// Curva dell'EXP delle medaglie, come la calcola il client: per expType t la riga
 // medalMisc 105+t = [N, A, P]; l'EXP cumulativo per superare il livello L e'
 // A * (L / (N-1)) ^ (P/10000), in float. Tipo 1: L1 8, L2 37, L3 88 (banco: LV1 + 70 EXP
 // = LV3, «LV Up in 18»).
@@ -3051,7 +3035,7 @@ function medalLevelFor(row, lv, exp) {
   return lv;
 }
 
-// EXP dato da un materiale ([fn]): materialExp + B*((lv-1)/(N-1))^(P/10000) con
+// EXP dato da un materiale: materialExp + B*((lv-1)/(N-1))^(P/10000) con
 // [N, B, P] = medalMisc 112; x1,5 (113) se ha lo stesso attributo della base, x1,5 (114)
 // se condividono una fonte (source).
 function materialExpFor(baseRow, matRow, matLevel) {
@@ -3071,10 +3055,10 @@ function setMedalState(id, patch) {
 
 // POST /user/medal/enhance (azione 55, Level Up), corpo visto sul banco:
 // {"baseUserMedalId":1,"componentUserMedalIds":[105],"isOverwriteSkill":0,"numbers":[],
-// "isGreatSuccess":1}. Ramo 55 del dispatcher: userSkills, userData.userPoint, userMedals,
-// poi [fn] (before/afterEnhanceUserMedal come gli elementi di userMedals,
-// enhanceEffect, overwriteSkills, successOverwrite, guiltBurstFirstLv/MaxLv) e pet
-// (facoltativo), infine [fn] (medalResumption). Costo come [fn]: medalMisc 115 (80) x livello x materiali.
+// "isGreatSuccess":1}. Risposta: userSkills, userData.userPoint, userMedals,
+// poi before/afterEnhanceUserMedal (come gli elementi di userMedals),
+// enhanceEffect, overwriteSkills, successOverwrite, guiltBurstFirstLv/MaxLv e pet
+// (facoltativo), infine medalResumption. Costo come nel client: medalMisc 115 (80) x livello x materiali.
 // Great Success: x1,5 (medalMisc 118, ipotesi: il client manda gia' l'esito).
 function respondMedalEnhance(res, body) {
   const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
@@ -3131,10 +3115,10 @@ function respondMedalEnhance(res, body) {
       }
     }
   }
-  // ramo 55: userSkills = id da CANCELLARE dalla tabella skill del client ([fn], 0x7cf0c0), poi
+  // azione 55: userSkills = id da CANCELLARE dalla tabella skill del client, poi
   // upsert di overwriteSkills. Solo le skill dei materiali consumati (mai quella della base, che tiene il
   // suo id): con la lista intera il client svuotava la tabella e l'ordinamento «Skill» della Medal List
-  // crashava al tocco sul risultato (banco 18-10, [fn] -> [fn], riga skill 0)
+  // crashava al tocco sul risultato (banco 18-10)
   const lostSkills = comps.map((m) => [m, medalSkillOf(m)])
     .filter(([, s]) => s && s.userSkillId !== medalSkillOf(base)?.userSkillId)
     .map(([m, s]) => userSkillElement(m, s, now));
@@ -3180,19 +3164,19 @@ function respondMedalEnhance(res, body) {
     beforeEnhanceUserMedal: before,
     afterEnhanceUserMedal: userMedalElement({ ...base, level, exp, ...state }, now),
     enhanceEffect: Number(body.isGreatSuccess) ? 1 : 0,
-    // [fn]: overwriteSkills = elementi userSkill ([fn]), successOverwrite -> +0x2b0
-    // (il risultato mostra il nome della skill nuova della base, [fn])
+    // overwriteSkills = elementi userSkill, successOverwrite
+    // (il risultato mostra il nome della skill nuova della base)
     overwriteSkills: overwriteOk ? userSkillsData(now, [base]) : [],
     successOverwrite: overwriteOk ? 1 : 0,
     guiltBurstFirstLv: burstGain.first, guiltBurstMaxLv: burstGain.max,
-    // [fn], obbligatorio: senza, «200 ERROR :55»; status 1 solo col trait in sospeso di QUESTA fusione (scelta
+    // medalResumption, obbligatorio: senza, «200 ERROR :55»; status 1 solo col trait in sospeso di QUESTA fusione (scelta
     // del trait da sostituire, azione 57): un pending di un'altra medaglia aprirebbe la sua finestra nel risultato di
     // questa (revisione finale 19-10); la coda intera va al login (userData) e al training (244)
     medalResumption: pendingTrait ? medalResumptionData([pendingTrait]) : { userShuffleSkills: [], resumptionStatus: 0 },
-    // [fn] (pet.petSubslot, [fn]): senza, il ramo 55 va in errore se isPet
-    // (+0x45) e' acceso; il ramo lo copia nel pet della sessione solo se esiste (0x7ce17c)
+    // pet.petSubslot: senza, l'azione 55 va in errore se isPet
+    // e' acceso; il client lo usa solo se il pet esiste
     pet: { petSubslot: petSubslotNow() },
-    // letto dal dispatcher dopo pet (0x7cec50, uint64): le medaglie consumate, che il
+    // dopo pet (uint64): le medaglie consumate, che il
     // client toglie dall'elenco; senza, «200 ERROR :55»
     // solo le celle sparite: una pila con copie rimaste resta (arriva in userMedals)
     componentUserMedalIds: cells.filter((id) => !stackedMedalList().some((m) => m.userMedalId === id)),
@@ -3201,8 +3185,8 @@ function respondMedalEnhance(res, body) {
 
 // POST /user/medal/evolve (azione 56), corpo visto sul banco:
 // {"baseUserMedalId":1,"attachmentMedalIds":[116]}. La medaglia diventa evolveId della
-// tabella medal, torna al livello 1; materiali consumati, costo evolveMoney. Ramo 56 del
-// dispatcher: userData.userPoint, userMedals, [fn] (before/afterEvolveUserMedal
+// tabella medal, torna al livello 1; materiali consumati, costo evolveMoney. Risposta:
+// userData.userPoint, userMedals, before/afterEvolveUserMedal
 // come gli elementi di userMedals), pet, poi attachmentMedalIds (uint64).
 function respondMedalEvolve(res, body) {
   const rows = new Map(masterRows('medal').map((r) => [r.medalId, r]));
@@ -3226,7 +3210,7 @@ function respondMedalEvolve(res, body) {
   setMedalState(base.userMedalId, { medalId: row.evolveId, level: 1, exp: 0 });
   for (const m of comps) setMedalState(m.userMedalId, { removed: true });
   // la guilt resta (guilt.md) e l'evoluta e' un medalId nuovo: il Nova sale (+1/+5) in silenzio, letto da
-  // userPoint. Il ramo 56 non legge guiltBurstFirst/MaxUserMedalIds: le copie in attesa si scartano qui,
+  // userPoint. La risposta 56 non usa guiltBurstFirst/MaxUserMedalIds: le copie in attesa si scartano qui,
   // altrimenti la risposta dopo con le liste (stage clear, draw, Moogle Shop) mostrava «NOVA LEVEL UP!»
   // fuori contesto, e il Level Up dopo le sommava al suo popup (final review 2b, I1)
   guiltBurst().lists();
@@ -3240,7 +3224,7 @@ function respondMedalEvolve(res, body) {
     userMedals: touchedMedalsData(base.userMedalId, comps, now, row.evolveId),
     beforeEvolveUserMedal: before,
     afterEvolveUserMedal: userMedalElement({ ...base, medalId: row.evolveId, level: 1, exp: 0 }, now),
-    pet: { petSubslot: petSubslotNow() }, // come il ramo 55 (copia solo se il pet c'e', 0x7ceeac)
+    pet: { petSubslot: petSubslotNow() }, // come l'azione 55 (usato solo se il pet c'e')
     // solo le celle sparite (una pila con copie rimaste resta)
     // e la base, se l'evoluta e' entrata in una pila esistente (validPack, es. Fantasia Mickey B):
     // senza, il client teneva due celle separate fino al login successivo
@@ -3251,8 +3235,8 @@ function respondMedalEvolve(res, body) {
 
 // POST /user/material/sell (azione 50) {userMaterialId, number}: dalla Sell Materials del
 // Moogle Shop (EquipSellScene). Accredita il campo sell della tabella material per copia.
-// Risposta (ramo 50 del dispatcher: [fn] userData.userPoint, poi l'oggetto
-// userMaterial letto da [fn]): userMaterialId, materialId, number = copie rimaste.
+// Risposta: userData.userPoint, poi l'oggetto
+// userMaterial: userMaterialId, materialId, number = copie rimaste.
 function respondMaterialSell(res, body) {
   const id = Number(body?.userMaterialId);
   player.materials = player.materials || {};
@@ -3274,13 +3258,13 @@ function respondMaterialSell(res, body) {
 // POST /moogleshop/buy (azione 248): scambio di un articolo del Moogle Shop (tabella master
 // moogleshop, make-moogleshop.js). Corpo non ancora visto: moogleshopId e quantita' cercati
 // con piu' nomi. payType 1 = jewel (freeStone), altrimenti munny; l'articolo arriva con
-// grantItem(itemType, itemId, itemNum). Risposta (ramo 248: [fn]
-// shuffleskillUserMedals, userMaterials, emblemIds; [fn] guiltBurstFirst/MaxUserMedalIds;
-// [fn] userData.userPoint). I jewel non sono nella risposta.
+// grantItem(itemType, itemId, itemNum). Risposta: shuffleskillUserMedals, userMaterials,
+// emblemIds; guiltBurstFirst/MaxUserMedalIds;
+// userData.userPoint. I jewel non sono nella risposta.
 // Trait (scheda Traits, type 1): corpo {moogleshopId, userMedalId, userShuffleSkillId} dal
 // popup «Select Medal»; userShuffleSkillId = trait da sostituire (0 = slot libero). Il trait
 // e' shuffleSkillId della riga; la medaglia aggiornata torna in shuffleskillUserMedals (stesso
-// formato di userMedals, [fn]). Il costo si scala solo se lo scambio riesce.
+// formato di userMedals). Il costo si scala solo se lo scambio riesce.
 function respondMoogleshopBuy(res, body) {
   body = body || {};
   const id = Number(body.moogleshopId ?? body.id);
@@ -3335,7 +3319,7 @@ function respondMoogleshopBuy(res, body) {
     ret: ret(),
     userData: { userPoint: userPointData(now) },
     shuffleskillUserMedals: changed.map((m) => userMedalElement(m, now)),
-    // [fn] legge anche userMedals e userSkills ([fn]/[fn] col nome
+    // il client legge anche userMedals e userSkills (col nome
     // predefinito): senza, «200 ERROR :248»
     userMedals: inv.userMedals,
     userSkills: inv.userSkills,
@@ -3345,7 +3329,7 @@ function respondMoogleshopBuy(res, body) {
   });
 }
 
-// POST /user/medal/sell (azione 51): risposta letta da [fn] (userData.userPoint).
+// POST /user/medal/sell (azione 51): risposta con userData.userPoint.
 // Il corpo elenca le medaglie vendute: si raccolgono tutti gli userMedalId (campi con quel
 // nome o array di id), si tolgono dal salvataggio e si accredita il campo sell della
 // tabella medal (moltiplicato per number, se c'e'). Le medaglie iniziali del deck
@@ -3399,8 +3383,8 @@ function respondMedalSell(res, body) {
   player.money = (player.money || 0) + gain;
   savePlayer();
   console.log(`  [vendita] medaglie ${[...sold.keys()].join(',') || '(nessun id nel corpo)'}: +${gain} munny`);
-  // ramo 51 del dispatcher (action_case.py): [fn] (userData.userPoint), poi
-  // [fn] (userSkills), [fn] (userMedals), infine sellUserMedalIds;
+  // risposta dell'azione 51: userData.userPoint, poi
+  // userSkills, userMedals, infine sellUserMedalIds;
   // senza i tre in radice «200 ERROR :51»
   const now = serverTime();
   const after = stackedMedalList();
@@ -3418,7 +3402,7 @@ function respondMedalSell(res, body) {
 // POST /user/medal/lock (azione 46), corpo visto sul banco:
 // {"userMedalIds":[110],"isLocks":[1], ...}. Lo stato va in player.medalLocks (anche per
 // le medaglie iniziali 1-3, che non sono in player.medals) e torna nel campo lock di
-// userMedals. Ramo 46 del dispatcher: [fn] (userMedals), deleteUserMedalIds,
+// userMedals. Risposta: userMedals, deleteUserMedalIds,
 // poi isSubslotUpdate (intero letto come flag != 0): senza, «200 ERROR :46».
 function respondMedalLock(res, body) {
   const ids = Array.isArray(body?.userMedalIds) ? body.userMedalIds : [];
@@ -3443,13 +3427,13 @@ function deckMedalIds() {
   return player.deck || startingInventory().medals.map((m) => m.userMedalId);
 }
 
-// Slot vuoti in battaglia: [fn] fa un turno per voce di deckMedals e non salta mai:
+// Slot vuoti in battaglia: il client fa un turno per voce di deckMedals e non salta mai:
 // uno 0 diventa una medaglia finta (master 1, Paperino blu) che attacca; i negativi fanno
 // rifiutare tutto userDecks. Vedi stage_gen\deck_empty_slot e sentKeybladeDeck(id, compact).
 
 // POST /user/medal/remove (azione 237, Unequip dal dettaglio), corpo visto sul banco:
-// {"removeUserMedalId":2}. Lo slot del deck torna vuoto (0). Ramo 237: [fn] =
-// userKeyblades, userDecks, petSubslots (pet di [fn] sulla radice di quel campo),
+// {"removeUserMedalId":2}. Lo slot del deck torna vuoto (0). Risposta:
+// userKeyblades, userDecks, petSubslots,
 // subslotMaxNum + userKeybladeSubslots.
 function respondMedalRemove(res, body) {
   const id = Number(body?.removeUserMedalId);
@@ -3464,9 +3448,9 @@ function respondMedalRemove(res, body) {
     ret: ret(),
     userKeyblades: userKeybladesData(),
     userDecks: userDecksData(),
-    // array (il primo elemento sarebbe letto come petSubslot, [fn] modo 1): con un
-    // elemento il dispatcher lo copia nell'oggetto pet della sessione (+0x7c0) senza controllo
-    // del null (0x7c8d40, il crash di I-005): il pet lo crea solo l'azione 170 (/pet/profile),
+    // array (il primo elemento sarebbe letto come petSubslot): con un
+    // elemento il client lo copia nel pet della sessione anche se il pet non esiste
+    // (crash, I-005): il pet lo crea solo l'azione 170 (/pet/profile),
     // che il client chiede all'avvio solo con isPet 1. Quindi l'elemento solo con KHUX_PET=1.
     petSubslots: PET_ENABLED ? [pet().petSubslotData()] : [],
     subslotMaxNum: kbEvo().subslotMaxNum(), userKeybladeSubslots: userKeybladeSubslotsData(),
@@ -3489,8 +3473,8 @@ function ownedKeyblades() {
 
 // 3 deck per keyblade (update 1.1.2 del 01/09/2016: «Save 3 decks per Keyblade», con almeno un keyblade a +20; pulsanti
 // 1/2/3 di StartDeckEdit2_Panel_KB_ver230 e DeckEdit_SubChange_Ver131). Il client conta i deck di un keyblade dagli
-// userDecks con il suo userKeybladeId, nell'ordine dell'array ([fn]): il deck attivo e' userKeyblades[].userDeckId
-// e i pulsanti cambiano quello ([fn] / [fn]), salvato con l'azione 45 (ricerca 20-10,
+// userDecks con il suo userKeybladeId, nell'ordine dell'array: il deck attivo e' userKeyblades[].userDeckId
+// e i pulsanti cambiano quello, salvato con l'azione 45 (ricerca 20-10,
 // D:\Progetto_Restauro_KH_UX	mp\deckset\RESEARCH.md). Deck 1 = userDeckId = userKeybladeId (player.deck /
 // player.keybladeDecks, come prima), deck 2 e 3 = n x 1.000.000 + userKeybladeId in player.keybladeDeckSets[kb] =
 // {active, 2: [...], 3: [...]}; il 6° slot del pet per deck (petBaseSlots per userDeckId).
@@ -3513,8 +3497,8 @@ function keybladeDeckIds(userKeybladeId) {
 
 // deckMedals da mandare: le medaglie non piu' possedute (vendute, usate come materiale) diventano
 // 0, perche' un id sconosciuto il client lo cerca e non lo trova. Il client usa la lunghezza di
-// deckMedals come numero di slot: Optimize ([fn] -> [fn], struttura userDecks
-// 0x48) riempie solo quelli, e [fn] segna il deck come cambiato (quindi lo manda in
+// deckMedals come numero di slot: Optimize
+// riempie solo quelli, e il client segna il deck come cambiato (quindi lo manda in
 // /user/keyblade/update/170516) confrontando solo quelle voci. Quindi fuori dalla battaglia il
 // deck va completo, con uno 0 per ogni slot vuoto fino agli slot sbloccati (validConsist della
 // riga keyblade): con il deck compatto Optimize riempiva solo gli slot gia' pieni (banco 12
@@ -3582,7 +3566,7 @@ function setKeybladeBurst(v) {
   else player.keybladeBurst = v;
 }
 
-// userKeyblades[], elemento letto da [fn] (deckMedals: al massimo 5 uint64).
+// userKeyblades[], elemento (deckMedals: al massimo 5 uint64).
 // totalAttack/totalDefense = somma del deck, come userPoint.attack/defense. category =
 // quella della tabella keyblade (Starlight 1, Treasure Trove 201, ...).
 function userKeybladeData(k) {
@@ -3594,8 +3578,8 @@ function userKeybladeData(k) {
     category: masterRows('keyblade').find((r) => r.keybladeId === k.keybladeId)?.category ?? 1,
     keybladeId: k.keybladeId,
     deckMedals: sentKeybladeDeck(k.userKeybladeId),
-    // isFavorite: il Profilo (createLayout [fn]) mostra il keyblade preferito; senza
-    // nessun preferito la riga del keyblade resta nulla (crash in [fn])
+    // isFavorite: il Profilo mostra il keyblade preferito; senza
+    // nessun preferito la riga del keyblade resta nulla (crash)
     burst: k.burst, totalAttack: attack, totalDefense: defense,
     isFavorite: k.userKeybladeId === favoriteKeybladeId() ? 1 : 0,
     skillUpperTotalHp: 0, skillUpperTotalBurst: 0, skillUpperTotalAttack: 0,
@@ -3613,8 +3597,8 @@ function respondUserKeyblade(res) {
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData() });
 }
 
-// userDecks[], elemento letto da [fn]: un deck per keyblade.
-// petBaseSlotMedal (uint64, deck +0x40, obbligatorio) = il 6° slot, quello del pet: 0 se
+// userDecks[], elemento: un deck per keyblade.
+// petBaseSlotMedal (uint64, obbligatorio) = il 6° slot, quello del pet: 0 se
 // KHUX_PET e' spento o lo slot e' vuoto (server/pet.js)
 function userDecksData(compact = false) {
   const ownedMedals = new Set(userMedalList().map((m) => m.userMedalId));
@@ -3627,9 +3611,9 @@ function userDecksData(compact = false) {
 }
 
 // POST /user/keyblade/update/170516 (azione 45): il client salva i deck e il preferito.
-// Corpo ([fn]): userKeyblades [{userKeybladeId, userDeckId, isFavorite}] e
+// Corpo: userKeyblades [{userKeybladeId, userDeckId, isFavorite}] e
 // userDecks [{userDeckId, medals (userMedalId[]), petBaseSlotMedal}]. Risposta: userKeyblades
-// ([fn]) e userDecks ([fn]), gli elenchi completi.
+// e userDecks, gli elenchi completi.
 function respondKeybladeUpdate(res, body) {
   const owned = new Set(ownedKeyblades().map((k) => k.userKeybladeId));
   const multi = multiDecksUnlocked();
@@ -3657,12 +3641,12 @@ function respondKeybladeUpdate(res, body) {
   send(res, 200, { ret: ret(), userKeyblades: userKeybladesData(), userDecks: userDecksData() });
 }
 
-// GET /keyblade/subslot: subslotMaxNum (uint) e userKeybladeSubslots[], letti da
-// [fn] (elemento [fn]: keybladeSubslotId uint64, subslotRate uint,
-// subslots[] = {slotNumber 1..subslotMaxNum, userMedalId uint64}, [fn]). Ogni
+// GET /keyblade/subslot: subslotMaxNum (uint) e userKeybladeSubslots[]
+// (elemento: keybladeSubslotId uint64, subslotRate uint,
+// subslots[] = {slotNumber 1..subslotMaxNum, userMedalId uint64}). Ogni
 // keyblade deve avere il suo subslot (userKeybladeSubslotId), anche senza slot: la
-// schermata Equipment ([fn]) lo cerca in una mappa e, se manca, l'indice -1
-// sfora il vettore (std::out_of_range, crash).
+// schermata Equipment lo cerca e, se manca, va in
+// crash.
 function userKeybladeSubslotsData() {
   return kbEvo().userKeybladeSubslotsData(); // server/keyblade-evo.js
 }
@@ -3676,11 +3660,11 @@ function respondUserDeck(res) {
   send(res, 200, { ret: ret(), userDecks: userDecksData() });
 }
 
-// GET /stage/event (azione 109, tasto «Events» dell'elenco Story, [fn]):
-// events[] obbligatorio (elemento [fn] -> [fn]: stages[] come in
+// GET /stage/event (azione 109, tasto «Events» dell'elenco Story):
+// events[] obbligatorio (elemento: stages[] come in
 // /stage/160310, eventStageId int, showIcon int, bannerUrl string, eventType int, status int,
 // endTime "YYYY-MM-DD HH:MM:SS"; poi newStageId int, isLock uint, complete int),
-// highScoreRank uint obbligatorio; eventCategory int facoltativo (radice, +0x71).
+// highScoreRank uint obbligatorio; eventCategory int facoltativo (radice).
 // Senza eventi il client mostra Txt_NoEvent. Per provare un evento: save/event.json con
 // l'array events (forma in docs/notes/server.md).
 function respondStageEvent(res) {
@@ -3691,13 +3675,13 @@ function respondStageEvent(res) {
   }
   send(res, 200, { ret: ret(), events, highScoreRank: 0 });
 }
-// GET /user/notice (azione 241, [fn]): raidNotice {isSelfRaid, isOthersRaid} uint,
+// GET /user/notice (azione 241): raidNotice {isSelfRaid, isOthersRaid} uint,
 // obbligatori. Il client lo chiede scegliendo «Coliseum» nel popup PvP_SelectWindow.
-// GET /colosseum (azione 124, [fn]): colosseumInfo {colosseumStageId int, status int},
-// colosseumStages[] ({stageId, useAp, rank, stageCount} int, [fn]), colosseumRank uint,
+// GET /colosseum (azione 124): colosseumInfo {colosseumStageId int, status int},
+// colosseumStages[] ({stageId, useAp, rank, stageCount} int), colosseumRank uint,
 // userColosseum {userRank, userStageCount, userStageTotalCount} int. status 1 = in corso
-// ([fn] riempie la mappa con colosseumStages), 2 = «This event is unavailable.»
-// ([fn], Txt_Description). Le tabelle master colosseum/colosseumStage della 5.0.1 sono
+// (stage da colosseumStages), 2 = «This event is unavailable.»
+// (Txt_Description). Le tabelle master colosseum/colosseumStage della 5.0.1 sono
 // vuote: senza righe il Colosseo non si puo' giocare, quindi status 2 e nessuno stage.
 function respondColosseum(res) {
   send(res, 200, {
@@ -3708,27 +3692,25 @@ function respondColosseum(res) {
     userColosseum: { userRank: 0, userStageCount: 0, userStageTotalCount: 0 },
   });
 }
-// Coliseum PvP, stato «vuoto» ma valido (nessun avversario, nessuna classifica). Rami di
-// [fn] e parser (indirizzi Ghidra; un parser che restituisce null = «200 ERROR :<id>»):
-// - GET /pvp (195, ramo 0x7ca204, [fn]): pvp {pvpId, playNumber, pvpPoint, pvpClass,
+// Coliseum PvP, stato «vuoto» ma valido (nessun avversario, nessuna classifica). Risposte
+// (un campo obbligatorio mancante = «200 ERROR :<id>»):
+// - GET /pvp (195): pvp {pvpId, playNumber, pvpPoint, pvpClass,
 //   pvpRank uint; openRankingId uint64; numParticipant uint}, tutti obbligatori. pvpId = riga
-//   della tabella master pvp (id 0x47, getter [fn]): il pannello AdventureTop2_PvP_Button
-//   ([fn], detailUrl a +0x94) e [fn] la leggono SENZA controllo del null.
-//   pvpClass 1..8 ([fn]: array::at su pvpClass - 1 con la riga rankingPvp presente).
-// - GET/POST /pvp/keyblade (196/197, ramo 0x7c3b9c, [fn]): pvp.keybladeIds [uint64] e
-//   pvp.userDecks ([fn], elemento [fn] come /user/deck). Corpo del POST
-//   ([fn]): userDecks [{userDeckId, medals, petBaseSlotMedal}], keybladeIds [uint64].
-// - GET /pvp/vs_list (198, ramo 0x7c559c, [fn]): vsUsers [] (elemento [fn]).
-// - GET /ranking/pvpParade (199, ramo 0x7c9a24, [fn]): pvpParade {pvpClass uint,
-//   rankingPvpTopRanker [] (elemento [fn])}.
-// - GET /ranking/pvp, /own, /border (200/201/202, rami 0x7c6ec8/0x7c5d20/0x7c6db0, [fn]
-//   con chiave pvpRanking/pvpRankingOwn/pvpRankingBorder): {rankingDatas [] (elemento
-//   [fn]: userData, userDetail... per giocatore), rankingStatus int, rankingTermStart e
-//   rankingTermEnd "YYYY-MM-DD HH:MM:SS"}. rankingStatus 2 = elenco ([fn]), 1/3 = messaggi.
-// - GET /pvp/rewardlist (203, ramo 0x7ca344, [fn]): pvpPoint uint64, scoreRewardId [uint].
-// - POST /pvp/entry (204), DELETE /pvp/lock (205): nessun parser (0x7d0f0c, esito 1): solo ret.
-// Sequenza AdventureTop PvP: DELETE /pvp/lock (lambda [fn]) -> /pvp ([fn]) ->
-// /pvp/keyblade ([fn]) -> /pvp/vs_list ([fn]) -> [fn] -> [fn].
+//   della tabella master pvp, che il client usa senza controllo (riga assente = crash).
+//   pvpClass 1..8 (con la riga rankingPvp presente).
+// - GET/POST /pvp/keyblade (196/197): pvp.keybladeIds [uint64] e
+//   pvp.userDecks (elementi come /user/deck). Corpo del POST:
+//   userDecks [{userDeckId, medals, petBaseSlotMedal}], keybladeIds [uint64].
+// - GET /pvp/vs_list (198): vsUsers [].
+// - GET /ranking/pvpParade (199): pvpParade {pvpClass uint,
+//   rankingPvpTopRanker []}.
+// - GET /ranking/pvp, /own, /border (200/201/202,
+//   con chiave pvpRanking/pvpRankingOwn/pvpRankingBorder): {rankingDatas [] (elemento:
+//   userData, userDetail... per giocatore), rankingStatus int, rankingTermStart e
+//   rankingTermEnd "YYYY-MM-DD HH:MM:SS"}. rankingStatus 2 = elenco, 1/3 = messaggi.
+// - GET /pvp/rewardlist (203): pvpPoint uint64, scoreRewardId [uint].
+// - POST /pvp/entry (204), DELETE /pvp/lock (205): solo ret.
+// Sequenza del pannello PvP: DELETE /pvp/lock -> /pvp -> /pvp/keyblade -> /pvp/vs_list.
 const PVP_ID = Number(process.env.KHUX_PVP_ID || 1);
 function pvpSeason() {
   // stagione segnaposto: il mese corrente dell'ora del server
@@ -3747,9 +3729,9 @@ function respondPvp(res, p, method, body) {
       player.pvpKeybladeIds = body.keybladeIds.map(Number).filter((n) => Number.isSafeInteger(n) && n >= 0);
       savePlayer();
     }
-    // solo ret, come prima del 14-10: con pvp.userDecks (parser dei deck, [fn]) il client
+    // solo ret, come prima del 14-10: con pvp.userDecks il client
       // sostituiva i deck all'avvio e ogni battaglia andava in crash creando l'HUD del giocatore
-      // ([fn] / [fn], banco 14-10, risorse 35). Il Coliseo PvP resta comunque bloccato (I-120)
+      // (banco 14-10, risorse 35). Il Coliseo PvP resta comunque bloccato (I-120)
       return send(res, 200, { ret: ret() });
   }
   if (p === '/pvp/vs_list') return send(res, 200, { ret: ret(), vsUsers: [] });
@@ -3772,7 +3754,7 @@ function nextStoryRow() {
 }
 
 function respondStageList(res) {
-  // GET /stage/160310 (azione 108, [fn]): stories[] (elemento [fn]:
+  // GET /stage/160310 (azione 108): stories[] (elemento:
   // stageId, useAp, score uint64, playStatus, clearMissionIds int[] <= 3),
   // newStageId, luxRank, openRankingId (uint).
   // Gli stage completati (player.stageScores: stageId -> record di Lux) e poi il primo
@@ -3819,8 +3801,8 @@ function respondStageList(res) {
 // ---------------------------------------------------------------------------
 // Proud Mode (I-200, docs/notes/mappe_storia.md#proud-mode): righe stage kind 4 di make-proud.js, stageId =
 // 1 000 000 + stageId della storia, id = 1 000 000 + numero della missione.
-// GET /stage/hard (azione 110, toProudSelect [fn] -> parser [fn]): stessa forma di /stage/160310.
-// Il pulsante «Proud Mode» del client e' solo un flag (misc 125 != 0, [fn]): lo sblocco e' del server.
+// GET /stage/hard (azione 110, selezione della Proud Mode): stessa forma di /stage/160310.
+// Il pulsante «Proud Mode» del client e' solo un flag (misc 125 != 0): lo sblocco e' del server.
 // Decisione dell'utente (22-10): la Proud Mode si apre col completamento della storia Quest 500 (PROUD_UNLOCK_QUEST);
 // poi Proud N dopo Proud N-1, come la storia (la lista originale = le Proud superate + la prossima, con «NEW»).
 // ---------------------------------------------------------------------------
@@ -3879,7 +3861,7 @@ function respondProudList(res) {
 // il suo tipo JSON sia null. Anche un 0 numerico vale come manutenzione attiva.
 
 function respondSession(res) {
-  // Letto da [fn]: due stringhe, entrambe decise da noi.
+  // Risposta di sessione: due stringhe, entrambe decise da noi.
   send(res, 200, {
     nativeSessionId: SESSION.nativeSessionId,
     sharedSecurityKey: SESSION.sharedSecurityKey,
@@ -3887,9 +3869,9 @@ function respondSession(res) {
 }
 
 function respondBootstrap(res) {
-  // GET /login/token?m=0, letto da [fn]. "url" non e' una base: e' l'URL
+  // GET /login/token?m=0. "url" non e' una base: e' l'URL
   // completo della richiesta di sessione (corpo UUID, deviceType, nativeToken;
-  // risposta letta da [fn]).
+  // risposta {nativeSessionId, sharedSecurityKey}).
   send(res, 200, {
     url: `${SESSION_BASE}/session`,
     nativeToken: SESSION.nativeToken,
@@ -3965,16 +3947,16 @@ function handler(scheme) {
       if (kind === 'petsubslot') return pet().respondSubslot(res, entry.bodyDecoded);
       if (kind === 'petexpedition') return pet().respondExpedition(res, req.method, entry.bodyDecoded, req.url.split('?')[0]);
       if (kind === 'medalpreremove') return pet().respondPreremove(res, '/user/medal/preremove', entry.bodyDecoded);
-      // GET /stage/pickup (azione 250, dopo ogni clear): missioni in evidenza, elemento
-      // [fn]; la chiave e' scritta cosi' nel binario. Nessuna in evidenza: []
+      // GET /stage/pickup (azione 250, dopo ogni clear): missioni in evidenza, sotto la chiave
+      // che il client cerca. Nessuna in evidenza: []
       if (kind === 'stagepickup') return send(res, 200, { ret: ret(), pisckupStages: [] });
       if (kind === 'usermedal') return respondUserMedal(res);
       // GET /user/skill (azione 13): userSkills completa. Senza risposta il client restava con la lista
       // vuota e la cella di una medaglia con skill (Scrooge, Overwrite) cercava il suo userSkillId nella
-      // tabella di sessione +0x1c8 senza trovarlo: riga skill 0 = crash in [fn] (pc 0xeb78a4,
-      // chiamata da [fn]). Moogle Shop > Traits > Select Medal (I-121, banco 14-10)
+      // tabella delle skill senza trovarlo: crash.
+      // Moogle Shop > Traits > Select Medal (I-121, banco 14-10)
       if (kind === 'userskill') return send(res, 200, { ret: ret(), userSkills: userSkillsData() });
-      // GET /user/detail (azione 4, parser [fn]: userData.userDetail): dettaglio di un altro giocatore, chiesto
+      // GET /user/detail (azione 4, risposta userData.userDetail): dettaglio di un altro giocatore, chiesto
       // toccando la medaglia del friend nella lista amici (I-186). L'unico friend (supportUserId 1) e' il giocatore stesso
       if (kind === 'userdetail') return send(res, 200, { ret: ret(), userData: { userDetail: userDetailData() } });
       if (kind === 'medalsell') return respondMedalSell(res, entry.bodyDecoded);
@@ -4034,7 +4016,7 @@ function handler(scheme) {
       if (kind === 'spherecheck') return respondSphereCheck(res);
       if (kind === 'missionreceive') return respondMissionReceive(res, entry.bodyDecoded);
       if (kind === 'userdetailupdate') return respondUserDetailUpdate(res, req.url.split('?')[0], entry.bodyDecoded);
-      // GET /moogleshop/list: [fn], moogleshops[] = {moogleshopId, limitCount} (acquisti
+      // GET /moogleshop/list: moogleshops[] = {moogleshopId, limitCount} (acquisti
       // gia' fatti per riga); le righe vendute stanno nella tabella master moogleshop
       // Prova (10 ottobre): con la tabella piena ma moogleshops vuoto il client scrive «No
       // items available.»: si elencano le righe attive, limitCount = scambi rimasti
@@ -4054,15 +4036,15 @@ function handler(scheme) {
   if (kind === 'colosseum') return respondColosseum(res);
       // GET /campaign (azione 143): campaigns, array di int (id delle campagne attive)
       if (kind === 'campaign') return send(res, 200, { ret: ret(), campaigns: [] });
-      // POST /ranking/reward/check (azione 142, ramo 0x7c9708 di [fn]): prima [fn]
-      // vuole tre array in radice (lastRankingResults, rankingRewardIds, openRankingIds; tipo 3 =
-      // oggetto, 4 = array), poi rankingReward: array vuoto = nessun premio di classifica, salto a
-      // 0x7d0ed0 (esito 1). Senza: «200 ERROR :142» al Challenge della Daily del Coliseum (banco 14-10)
+      // POST /ranking/reward/check (azione 142): il client
+      // vuole tre array in radice (lastRankingResults, rankingRewardIds, openRankingIds),
+      // poi rankingReward: array vuoto = nessun premio di classifica.
+      // Senza: «200 ERROR :142» al Challenge della Daily del Coliseum (banco 14-10)
       if (kind === 'rankingrewardcheck') {
         return send(res, 200, { ret: ret(), lastRankingResults: [], rankingRewardIds: [], openRankingIds: [], rankingReward: [] });
       }
       if (kind === 'pvp') return respondPvp(res, req.url.split('?')[0], req.method, entry.bodyDecoded);
-      // GET /raid/list/181221 (azione 240, [fn]): selfRaid ([fn] modo 0:
+      // GET /raid/list/181221 (azione 240): selfRaid (
       // raidStatus int, raid {raidId uint64, level, useAp, timeLeft, feverFlag,
       // feverTime, stageId, parts[]}) e raids[] ({...raid, isRelief, isEntry}).
       // Nessun raid: raidStatus 0.
@@ -4078,10 +4060,10 @@ function handler(scheme) {
         });
       }
       // GET /user/support: la medaglia di supporto del giocatore (supportUser). Con
-      // medalId 0 la home cerca la medaglia 0 e va in crash ([fn], riga nulla):
+      // medalId 0 la home cerca la medaglia 0 e va in crash (riga nulla):
       // si usa la prima medaglia del deck, con la keyblade iniziale.
       // POST /user/support/update {supportMedalId = userMedalId} (azione 47, Share del dettaglio della medaglia):
-      // stesso ramo della 19 (0x7c4124), stessa risposta; la medaglia scelta resta in player.supportUserMedalId.
+      // stessa risposta della 19; la medaglia scelta resta in player.supportUserMedalId.
       if (kind === 'usersupport') {
         const sid = Number(entry.bodyDecoded?.supportMedalId);
         if (sid && userMedalList().some((u) => u.userMedalId === sid)) {
@@ -4100,10 +4082,10 @@ function handler(scheme) {
           },
         });
       }
-      // GET /stage/support/list (azione 111, [fn] "supportUsers"): prima della
+      // GET /stage/support/list (azione 111, chiave "supportUsers"): prima della
       // scelta del deck. Con la lista vuota il client va in crash sulle statistiche di una
-      // medaglia senza riga ([fn]). Elemento [fn], con userMedal
-      // ([fn] -> [fn]), userSkills[] e userAvatar ([fn]). Un
+      // medaglia senza riga. Elemento con userMedal,
+      // userSkills[] e userAvatar. Un
       // supporto: il giocatore stesso, con la medaglia condivisa (Share).
       if (kind === 'supportlist') {
         const now = serverTime();
@@ -4118,8 +4100,8 @@ function handler(scheme) {
         if (p === '/user/avatar/all') return send(res, 200, { ret: ret(), userAvatars: [userAvatarData()] });
         return send(res, 200, { ret: ret(), userAvatar: userAvatarData() });
       }
-      // GET /raid/reward/151101 (azione 120): userData.userPoint ([fn]),
-      // raidRewards[] ([fn]) e i due array di [fn]. Nessun premio.
+      // GET /raid/reward/151101 (azione 120): userData.userPoint,
+      // raidRewards[] e guiltBurstFirst/MaxUserMedalIds. Nessun premio.
       if (kind === 'raidreward') {
         return send(res, 200, {
           ret: ret(),
@@ -4129,9 +4111,9 @@ function handler(scheme) {
         });
       }
       // GET /user/point (azione 2) e POST /user/sphere/reset (azione 62): solo
-      // userData.userPoint ([fn])
+      // userData.userPoint
       if (kind === 'userpoint') return send(res, 200, { ret: ret(), userData: { userPoint: userPointData(serverTime()) } });
-      // GET /user/stone (azione 7, [fn]): i jewel. freeStone = guadagnati in
+      // GET /user/stone (azione 7): i jewel. freeStone = guadagnati in
       // gioco (premi delle missioni), payStone = comprati (sempre 0)
       if (kind === 'userstone') return send(res, 200, { ret: ret(), userStone: { freeStone: player.freeStone || 0, payStone: 0 } });
       // Presents: GET /user/present (azione 20) e POST /user/present/receive (azione 49)
@@ -4142,10 +4124,10 @@ function handler(scheme) {
       if (kind === 'user') return respondUser(res);
       if (kind === 'userprofile') return respondUserProfile(res);
       if (kind === 'mypage') return respondMyPage(res);
-      // GET /user/birthday (azione 9, [fn]): birthday = AAAAMM (anno = /100, mese =
+      // GET /user/birthday (azione 9): birthday = AAAAMM (anno = /100, mese =
       // %100), dalla data di POST /user/create. Con 0 il client tratta il giocatore come minore
-      // di 13 anni: popup Name/Message senza messaggio (AvatarInfo_Comment_U13, [fn])
-      // GET /user/title (azione 18, [fn]): userTitles[] {userTitleId uint64, titleId}.
+      // di 13 anni: popup Name/Message senza messaggio (AvatarInfo_Comment_U13)
+      // GET /user/title (azione 18): userTitles[] {userTitleId uint64, titleId}.
       // Titoli posseduti: quelli di categoria 1 («Default Title», li ha ogni giocatore) e quelli
       // guadagnati (player.titles). Li elenca il popup Titles del Profilo (Edit, Nameplate).
       if (kind === 'usertitle') {
@@ -4187,7 +4169,7 @@ function kbEvo() {
   });
 }
 
-// Burst: livello, isGuilt e liste di [fn] (server/guilt-burst.js)
+// Burst: livello, isGuilt e liste guiltBurstFirst/MaxUserMedalIds (server/guilt-burst.js)
 var guiltBurstInstance = null;
 function guiltBurst() {
   return guiltBurstInstance ??= makeGuiltBurst({ getPlayer: () => player, userMedalList, masterRows });
@@ -4213,7 +4195,7 @@ function pet() {
     medalResumption: medalResumptionData,
   });
 }
-// petSubslot per i rami 55/56: spento = il segnaposto di prima (tutto a 0)
+// petSubslot per le azioni 55/56: spento = il segnaposto di prima (tutto a 0)
 function petSubslotNow() {
   return PET_ENABLED ? pet().petSubslotData()
     : { subslotUserMedalIds: [], openSkillIds: [], rank: 0, pt: 0, magnification: 0 };
