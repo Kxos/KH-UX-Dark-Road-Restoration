@@ -98,8 +98,8 @@ check(rdBy.get(255).displayId === 5075 && rd.sources[255].graphic === 'dark-road
 check(rdBy.get(1500).displayId === 1500 && rd.sources[1500].graphic === 'family', 'DR: la grafica originale della famiglia vince');
 const rd2 = enemyRowsFor({ 255: { missions: [1] } }, enemies, { proposal, drawn: new Set([24]), drLook });
 check(rd2.rows[0].displayId === 24 && rd2.sources[255].graphic === 'base', 'DR non servita: grafica della base');
-check(Object.entries(DR_LOOK).every(([f, v]) => Number(f) < 5000 && v.displayId >= 5000 && ['high', 'medium'].includes(v.confidence) && v.note),
-  'DR_LOOK: famiglia KHUX -> displayId Dark Road, confidenza high/medium, nota');
+check(Object.entries(DR_LOOK).every(([f, v]) => Number(f) < 5000 && v.displayId > 0 && ['high', 'medium'].includes(v.confidence) && v.note),
+  'DR_LOOK: famiglia KHUX -> displayId Dark Road (or a UX look since 22-10), confidenza high/medium, nota');
 // gia' presenti: niente doppioni
 const again = enemyRowsFor(missing, enemies.concat(res.rows), { stats, proposal, drawn });
 check(again.rows.length === 0, `seconda corsa: +${again.rows.length}`);
@@ -163,6 +163,12 @@ if (fs.existsSync(path.join(MASTER, 'enemy.json')) && fs.existsSync(MISSING)) {
     for (const line of fs.readFileSync(NAMES, 'utf8').split('\n')) {
       const m = /^lwf\/character\/enemy\/(\d+)\/(\w+)\//.exec(line);
       if (m) (anims[m[1]] = anims[m[1]] || new Set()).add(m[2]);
+    }
+    // UX looks (displayId < 5000, 22-10) are served from enemy_gen (make_jp_enemies.py), not from the index
+    const GEN = 'D:/Progetto_Restauro_KH_UX/enemy_gen/files/lwf/character/enemy';
+    for (const v of Object.values(DR_LOOK)) {
+      const dir = path.join(GEN, String(v.displayId));
+      if (v.displayId < 5000 && fs.existsSync(dir)) anims[v.displayId] = new Set(fs.readdirSync(dir));
     }
     const badDr = Object.values(DR_LOOK).filter((v) => !['wait', 'atk1_o', 'dead', 'knockback'].every((a) => anims[v.displayId] && anims[v.displayId].has(a)));
     check(badDr.length === 0, `DR_LOOK senza le 4 animazioni servite: ${badDr.map((v) => v.displayId)}`);

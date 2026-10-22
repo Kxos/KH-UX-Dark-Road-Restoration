@@ -118,7 +118,7 @@ const NOTICES = [
       'Barrier Master, Pot Spider, Apricot Opera, Margoyle and Guard Armor Ω show again their original look, recovered from later versions of the game files or from other places where the same enemy appears (raids, cutscenes).',
       'Chill Ripper shows its original look; only its defeat animation (a puff of smoke) comes from its twin enemy of Dark Road (**reconstructed**).',
       'Eliminator, Emerald Sonata, Poison Archer, Paralysis Archer, Blitz Spear and Wight Knight had only part of their original graphics left: the missing pieces come from their twin enemy of Dark Road, which has the same model, with the colours matched to the surviving original pieces (**recoloured look**, reconstructed).',
-      'Some later enemies whose original graphics are still missing use for now the **look of the same or a similar enemy from Dark Road** (for example Sleep Archer, Pot Scorpion or Amber Opera), until their original graphics are recovered.',
+      'Some later enemies whose original graphics are still missing use for now the **look of the same or a similar enemy**, from Dark Road (for example Sleep Archer, Pot Scorpion or Amber Opera) or from Union χ itself (for example Cherry Kaboom shows as a Minute Bomb and Martial Monkey as a Cheery Ape), until their original graphics are recovered.',
       'Quests 876-979: the original quest files do not say the level of each enemy (the original server gave it), so every enemy fights at the level of the quest: there are no weaker enemies mixed in.',
       'Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.',
       '## Objectives and rewards',

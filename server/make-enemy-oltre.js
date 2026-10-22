@@ -59,6 +59,8 @@ const DETAIL_SHOW = { show: 'show', show_swf: 'showSwf', show_frame: 'showFrame'
 // stesso modello. Boss unici e personaggi (Jafar, Dragon Maleficent, Ralph...) mai su creature diverse: assenti.
 // Nota: 5043 (in enemy_display_map.json «Storming Sheep») e' lo Sleep Archer, 5075 (mappe_storia «Yellow Opera»)
 // l'Apricot Opera (corpo a trivella scuro e oro, fulmini).
+// 22-10 (user, sheets D:\Progetto_Restauro_KH_UX	mp\dr6\sheets): 5040 is a mummy bomb, not the Shadow Witch -> 2506 and
+// 2510 back to their base 11 Wizard; 1552 back to base 9 Bandit; 1537 and 1629 use the closest UX look (displayId < 5000).
 const DR_LOOK = {
   1502: { displayId: 5003, confidence: 'high', note: 'Green Requiem: Opera, specie di Yellow Opera (5003), solo il colore cambia (alternativa 5039 verde con ali)' },
   1503: { displayId: 5039, confidence: 'high', note: 'Emerald Sonata: stessa creatura (corpo verde, cappello d\'oro a spirale, ali d\'oro)' },
@@ -79,17 +81,14 @@ const DR_LOOK = {
   1544: { displayId: 5050, confidence: 'high', note: 'Pot Scorpion: stessa creatura (vaso rosso, corazza blu, coda)' },
   1602: { displayId: 5066, confidence: 'high', note: 'Margoyle: stessa creatura (palla chiodata, collare d\'oro, ali, teschio cornuto)' },
   2505: { displayId: 5058, confidence: 'high', note: 'Wight Knight: stessa creatura (mummia, artigli)' },
-  2506: { displayId: 5040, confidence: 'high', note: 'Shadow Witch: stessa creatura (testa di Shadow, cappello rosso, scopa)' },
   2509: { displayId: 8015, confidence: 'high', note: 'Gargoyle Wizard: stessa creatura in colori scuri (piedistallo con globo, bastone, ali)' },
   240: { displayId: 5074, confidence: 'high', note: 'Trickmaster: stessa creatura (corpo a scacchi arancio, bacchetta)' },
   249: { displayId: 5065, confidence: 'high', note: 'Eliminator: stessa creatura (Defender rosso con muso di lupo)' },
   1527: { displayId: 5057, confidence: 'medium', note: 'Flutterings (sciame): grafica del singolo Fluttering, come Possessors' },
-  1537: { displayId: 5034, confidence: 'medium', note: 'Martial Monkey: Powerwild, Heartless scimmia dello stesso tipo' },
-  1552: { displayId: 5016, confidence: 'medium', note: 'Luna Bandit: Red Bandit (turbante, scimitarra rossa)' },
-  1629: { displayId: 5017, confidence: 'medium', note: 'Cherry Kaboom: bomba con miccia (5017, famiglia Bomb)' },
+  1537: { displayId: 197, confidence: 'medium', note: 'Martial Monkey: Cheery Ape (UX), large upright ape, closest served shape (22-10, user; atkSp falls back to wait)' },
+  1629: { displayId: 147, confidence: 'high', note: 'Cherry Kaboom: Minute Bomb (UX), same round bomb with curled fuse, other colour (22-10, user)' },
   // 2508 Warlock Step -> 5061 (Tornado Step DR) tolto il 22-10: crash all'avvio della battaglia in 703/704 (684 con
   // 5040 ok; tombstone in GUIReader/0x11af9d8, causa nel client non trovata); resta la base 14 Tornado Step UX
-  2510: { displayId: 5040, confidence: 'medium', note: 'Shadow Magician: Shadow Witch (Shadow con cappello e scopa)' },
 };
 
 // D-A: solo gli id di 9-10 cifre sono varianti di un nemico base
