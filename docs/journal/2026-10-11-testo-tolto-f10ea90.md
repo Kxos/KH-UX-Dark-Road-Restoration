@@ -9,14 +9,12 @@ The facts that are still useful have been carried over into docs/notes/.
 
 - **OPEN CRASH: defeat**. 1240 part 2: Bandit + Red Nocturne (ids 9 and 4, Dark Road graphics
   5008/5004) wipe out 3040 HP (LV3 player with 2 medals in a level-27 quest:
-  balancing, not an error); on defeat black screen and crash, pc G11fdc74 in [fn],
-  same function as the pet crash ([fn] builds «<nome>.plist»). Registers in
-  dumps\armtrace\bandit. Analysis in progress together with the pet one (stage_gen\pet_crash).
+  balancing, not an error); on defeat black screen and crash, in the loading of a `.plist` particle like the pet crash.
+  Analysis in progress together with the pet one.
 - **Profile message**: even with Enter or Back after `adb input text` the client sends
 - **OPEN CRASH (already present before, not related to 1060)**: in home, tapping the character
-  in the square (e.g. (950,850)) the client crashes at once, before any request. ARM backtrace
-  (`armtrace\stackcap.ps1 -Tag avtap -NoMenu -Taps '950,850'`): `PetInfoDialog::createLayout`
-  ($_11) -> loading of an LWF with a `.plist` particle ([fn]) -> destructor. In the stack
+  in the square (e.g. (950,850)) the client crashes at once, before any request. The crash happens while the pet info card
+  loads an LWF with a `.plist` particle; the files involved are
   `lwf/character/npc/999/wait/wait.lwf` (our empty 492-byte LWF) and
   `lwf/avatar/body/30001/...`. Likely: the invisible pet (empty LWF) sits on the character and the
   tap opens its info card. The Profile instead opens from the portrait at the top left and works.
@@ -24,12 +22,10 @@ The facts that are still useful have been carried over into docs/notes/.
 - (history) 1060 walked by hand on the bench (smoke.json with
   stageId 1060): the long detour around the arch and the bottleneck on the water lilies can be walked, the target
   is reached. But at the exit towards part 1 (blue arrow, (2200,1760)) the client CRASHES
-  (SIGSEGV null, fault 0x8; ghidra stack b01690 -> [fn], 12d85d0 -> [fn],
-  12d8e44, 12c1154, 1366cac; decompiled C in stage_gen\reach\crash_1060_decomp.c). It is the first
+  (null pointer). It is the first
   transition between parts tested on the bench: it concerns all multi-part quests (86 with 2 parts,
   9 with 3). Hypotheses to verify: global uids across parts (gen_story_maps restarts from 2 for each
-  part, see above «to be renumbered for multi-room") or the format of the exits. Recipe:
-  tombstone.ps1 -> decomp.ps1 -> widget_lookup.py; compare with an original multi-part one.
+  part, see above «to be renumbered for multi-room") or the format of the exits. Compare with an original multi-part one.
 - 1050 fixed (agent): chest uid 4 moved from (2700,1450) to (2290,690), STG totals
   (1,1,2,4); validate_maps: 0 errors on 569 stages. Files outside the repo (stage_gen\files\stage,
   spec_1050.json, reach\REPORT.md); server\game_data\stage_poi.json does not have 1050 (to be regenerated).
@@ -46,7 +42,7 @@ The facts that are still useful have been carried over into docs/notes/.
   («COMPLETE») on the claimed rows. Quest/Lux counters correct after quest 1030; «Collect
   All» ok (Jewel 3000 -> 3060, «All rewards have been collected», rows darkened).
 - Node unlock popup FIXED: Sphere_Incentive_ver240 is not a popup, but the reward icon
-  that [fn] adds into the `Panel` of Sphere_Popup_Get_ver240 (now a 100x100 'build'
+  that the client adds into the `Panel` of Sphere_Popup_Get_ver240 (now a 100x100 'build'
   with reward_icons). Tested: a single window with the icon (gloves), coins 475 -> 470.
   The node price at the top right is like the original (ab_31): it must not be moved.
 - CHANGED BUT NOT YET TESTED (needs `build-resources.ps1 -Quick`, 32 is still the latest):
@@ -139,7 +135,7 @@ revision 77 (raise it after each change of master_data, then relogin.ps1 twice).
    high confidence; no Dark Road graphic has `move`; details and proofs in
    scratchpad\enemymap\). To integrate in make-game-tables (DISPLAY_SUBSTITUTE by name) and to
    test with the zoo quests.
-   Exits agent DONE: `stage_gen\exits\NOTE.md`. The exits between rooms are the block at +0x34
+   Exits agent DONE: `stage_gen\exits\NOTE.md`. The exits between rooms are a block
    of each MAP part (u32 n + n records of 9 integers: x, y, arrow angle, distance, forward/
    back, arrival x/y, destination part, direction; X = 4 + 36n), they trigger within 96
    units; STG [2] = parts | (starting part << 16), [5] initial direction, [10] enemyId of the
@@ -221,9 +217,7 @@ Titles `330,1030`, Name/Message `808,1030`, Play Style `1155,1030`, Outfits `159
 row STR +1000 `600,400`, «Select Medal» `788,1012`, then **drag** the medal onto the
 slot (`Swipe 1640 290 630 330 900`: a tap opens the detail), «Set Trait» `840,1010`; Sell
 Materials `1205,250`, then material `1200,430`, Sell `1183,930`, confirm `1220,715`.
-Medal List: MENU `1790,45`, `1745,697`; Sell Medals `335,262`. Crash capture:
-`$env:KHUX_BASE='0x31d4000'; .\tools\ldplayer\armtrace\stackcap.ps1 -Tag x -NoMenu -Taps ...`
-then `backtrace.py` and the strings of the stack (see the commits of 10 October).
+Medal List: MENU `1790,45`, `1745,697`; Sell Medals `335,262`. Crash analysis: private tools.
 
 **Method (user's rules):** style of every screen from the originals found online
 (screenshots/videos in `reference\<schermata>\`, yt-dlp in `D:\Progetto_Restauro_KH_UX\tools\yt`
@@ -233,9 +227,8 @@ screens and actions not yet dealt with; commit + push after each verified step.
 **Cycle for a missing screen:** `func_strings.py` + `widget_lookup.py` (names
 looked up from the code), `text_ids.py` (missing texts), layout in `make_layouts.py`
 (`build`/`copy`/`scene`/`func`), missing textures in `make_textures.py`, test with
-`build-resources.ps1 -Quick` and `scratchpad tap.ps1`-like (bench_lib Tap/Shot), crashes with
-`tools\ldplayer\tombstone.ps1` or `armtrace\stackcap.ps1 -NoMenu -Taps 'x,y'` +
-`backtrace.py` (KHUX_BASE=0x31d4000) and strings in the stack.
+`build-resources.ps1 -Quick` and `scratchpad tap.ps1`-like (bench_lib Tap/Shot); crashes are analysed
+with private tools.
 
 ### How to resume the work (state as of 9 October 2026, afternoon)
 
