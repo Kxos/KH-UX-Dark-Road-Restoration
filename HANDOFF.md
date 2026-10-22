@@ -17,7 +17,7 @@ the packages we build (original JP/2016 stages and rooms, original and rebuilt C
 enemy graphics). You can play from the new player to the home screen, story quests **1-979** on the original stages
 and rooms (JP 4.3.1 data), Medal List, selling, Level Up, Evolve, Moogle Shop, Shop, Profile, Missions, Avatar Boards,
 pet; every deviation from the original is declared in the in-game Notices
-([docs/NOTICES.md](docs/NOTICES.md), [web page](https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/)).
+([docs/NOTICES.md](docs/NOTICES.md), [web page](https://kxos.github.io/Re-Union-X/notices/)).
 
 ## Restarting
 

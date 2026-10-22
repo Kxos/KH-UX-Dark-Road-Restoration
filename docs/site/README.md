@@ -1,7 +1,7 @@
 # Project portal (Re-Union X)
 
 The portal is `docs/index.html`, served by GitHub Pages at
-<https://kxos.github.io/KH-UX-Dark-Road-Restoration/>. It is static: edit, commit, push, and the page updates
+<https://kxos.github.io/Re-Union-X/>. It is static: edit, commit, push, and the page updates
 within a minute or two. Nothing to build.
 
 | File | Purpose |

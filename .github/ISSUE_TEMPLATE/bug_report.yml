@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thank you for testing! The game is a work in progress: bugs and crashes are expected and every report helps.
-        Setup guide and troubleshooting: [docs/SETUP.md](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/blob/main/docs/SETUP.md).
+        Setup guide and troubleshooting: [docs/SETUP.md](https://github.com/Kxos/Re-Union-X/blob/main/docs/SETUP.md).
         Please never attach Square Enix files (APK, OBB, game data).
   - type: input
     id: summary

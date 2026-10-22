@@ -57,7 +57,7 @@
     }).join('');
   }
   fetch('site/status.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(renderStatus).catch(function () {
-    doc.getElementById('status-summary').innerHTML = 'The status list could not be loaded. See the <a href="https://github.com/Kxos/KH-UX-Dark-Road-Restoration#status">README</a>.';
+    doc.getElementById('status-summary').innerHTML = 'The status list could not be loaded. See the <a href="https://github.com/Kxos/Re-Union-X#status">README</a>.';
   });
 
   // ---- gallery (site/gallery.json: [{"file": "x.png", "caption": "..."}], images in site/gallery/) ----

@@ -43,7 +43,7 @@ LDPlayer 9 emulator on your PC and talking to a local server (`server/server.js`
 Square Enix servers that closed in 2021. Single-player only: new player and Prologue, home screen, story
 quests **1-979** on the original maps and rooms, Medal List, Level Up, Evolve, Moogle Shop, Shop with the
 original banners, Profile, Missions, Avatar Boards, pet. Every difference from the original game is
-explained in the in-game Notices ([web version](https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/)).
+explained in the in-game Notices ([web version](https://kxos.github.io/Re-Union-X/notices/)).
 No Union Cross, raids, Coliseum PvP or events yet.
 
 ## Requirements
@@ -105,7 +105,7 @@ D:\Progetto_Restauro_KH_UX\                    <W>, the work folder (NTFS)
 ```
 
 ```powershell
-git clone https://github.com/Kxos/KH-UX-Dark-Road-Restoration.git D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration
+git clone https://github.com/Kxos/Re-Union-X.git D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration
 cd D:\Progetto_Restauro_KH_UX\Android\KH-UX-Dark-Road-Restoration
 ```
 
@@ -338,7 +338,7 @@ home open advertising tabs in your browser).
 
 Bugs and crashes are expected: please report them, we will try to fix them as soon as possible.
 
-- **[Open a bug report](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)**
+- **[Open a bug report](https://github.com/Kxos/Re-Union-X/issues/new?template=bug_report.yml)**
   (GitHub issue form of this repository), or
 - reply to the [Reddit post](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/).
 

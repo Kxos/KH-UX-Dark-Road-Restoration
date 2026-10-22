@@ -1,10 +1,10 @@
 # Re-Union X
 
-*Un restauro amatoriale di Kingdom Hearts Union χ[Cross]* (repository: KH-UX-Dark-Road-Restoration)
+*Un restauro amatoriale di Kingdom Hearts Union χ[Cross]* (repository: Re-Union-X)
 
 [English](README.md) | **Italiano**
 
-**Come giocare:** [docs/SETUP.md](docs/SETUP.md) (in inglese) · **Sito del progetto:** [Re-Union X](https://kxos.github.io/KH-UX-Dark-Road-Restoration/) · **Cerchiamo aiuto:** [post su Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [Cosa cerchiamo](#cosa-cerchiamo) · **Bug:** [segnala un bug](https://github.com/Kxos/KH-UX-Dark-Road-Restoration/issues/new?template=bug_report.yml)
+**Come giocare:** [docs/SETUP.md](docs/SETUP.md) (in inglese) · **Sito del progetto:** [Re-Union X](https://kxos.github.io/Re-Union-X/) · **Cerchiamo aiuto:** [post su Reddit](https://www.reddit.com/r/KingdomHearts/comments/1xcbwjg/) / [Cosa cerchiamo](#cosa-cerchiamo) · **Bug:** [segnala un bug](https://github.com/Kxos/Re-Union-X/issues/new?template=bug_report.yml)
 
 > Oggi installare il gioco è lungo e complesso (a lavoro finito diventerà un unico launcher), e il gioco è
 > in lavorazione: aspettatevi bug e crash, e segnalateli per favore.
@@ -38,7 +38,7 @@ risorse (layout CocoStudio, testi, animazioni) vengono **ricostruite**: dagli or
 vicini, dai nomi dei widget letti nel codice e da immagini di riferimento dell'epoca.
 
 **[HANDOFF.md](HANDOFF.md)** — come riprendere: stato del banco e prossimo passo.
-**[Notices del gioco](https://kxos.github.io/KH-UX-Dark-Road-Restoration/notices/)** (pagina web nello stile del gioco, in inglese; anche come [docs/NOTICES.md](docs/NOTICES.md)) — come funziona il gioco restaurato e dove differisce dall'originale.
+**[Notices del gioco](https://kxos.github.io/Re-Union-X/notices/)** (pagina web nello stile del gioco, in inglese; anche come [docs/NOTICES.md](docs/NOTICES.md)) — come funziona il gioco restaurato e dove differisce dall'originale.
 **[docs/ISSUES.md](docs/ISSUES.md)** — i problemi aperti e chiusi; note tecniche per area in
 [docs/notes/](docs/notes/), diario completo del lavoro (ogni problema risolto con la sua causa) in
 [docs/journal/](docs/journal/).
