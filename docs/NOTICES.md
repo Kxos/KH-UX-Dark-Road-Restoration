@@ -37,7 +37,9 @@ Quests 617 and 661: the first part of each quest was lost. It is rebuilt in the 
 
 Some enemies show their original look, but a few small graphic details that were lost (for example their **shadow**) are reconstructed from the same enemy or from a standard one.
 
-Barrier Master, Pot Spider, Apricot Opera and Margoyle show again their original look, recovered from later versions of the game files.
+Barrier Master, Pot Spider, Apricot Opera, Margoyle and Guard Armor Ω show again their original look, recovered from later versions of the game files or from other places where the same enemy appears (raids, cutscenes).
+
+Chill Ripper shows its original look; only its defeat animation (a puff of smoke) comes from its twin enemy of Dark Road (**reconstructed**).
 
 Eliminator, Emerald Sonata, Poison Archer, Paralysis Archer, Blitz Spear and Wight Knight had only part of their original graphics left: the missing pieces come from their twin enemy of Dark Road, which has the same model, with the colours matched to the surviving original pieces (**recoloured look**, reconstructed).
 
