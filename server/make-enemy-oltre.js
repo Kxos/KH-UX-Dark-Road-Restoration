@@ -91,6 +91,25 @@ const DR_LOOK = {
   // 5040 ok; tombstone in GUIReader/0x11af9d8, causa nel client non trovata); resta la base 14 Tornado Step UX
 };
 
+// Alleati ospiti (I-199, docs/notes/battaglia.md#alleati-20xx): famiglie 2001-2024 che gli stage JP usano SOLO come
+// unico membro di una squadra col flag 0x20; il client le tiene nella lista degli alleati (4.3.1 [fn]):
+// combattono accanto al giocatore, mai toccabili ne' attaccate. Restano righe enemy (meccanismo originale) ma non
+// sono cloni di nemici: nome del personaggio, curve e mosse della riga originale `template` (2001-2003, WW 5.0.1 =
+// thethiny: 210x283, battlePattern 3), grafica della famiglia se servita (regola degli alleati di make_jp_enemies.py:
+// wait + atk1_o), se no il sosia `look` (2001 Ercole, 2002/2003 portatori di Keyblade; Notice «Story Quests 526-979»).
+// Vale anche per le righe del master (2001, 2002, 2003, 12001, 22001): nome e grafica.
+const ALLY_PATH = process.env.KHUX_ALLY_FAMILIES || path.join(__dirname, '..', 'recon', 'tools', 'ally_families.json');
+function readAllies(p = ALLY_PATH) {
+  const fams = readJson(p, {}).families || {};
+  return Object.fromEntries(Object.entries(fams).map(([k, v]) => [Number(k), v]));
+}
+// grafica di un alleato: la famiglia (servita, < 5000), se no il sosia servito, se no null (resta quella che ha)
+function allyDisplay(fam, a, drawn) {
+  if (fam < 5000 && drawn.has(fam)) return { displayId: fam, graphic: 'family' };
+  if (a.look && drawn.has(a.look)) return { displayId: a.look, graphic: 'look-alike' };
+  return null;
+}
+
 // D-A: solo gli id di 9-10 cifre sono varianti di un nemico base
 const isClone = (id) => id >= 1e8 && id < 1e10;
 // base di un id lungo: ultime 5 cifre se la riga c'e', altrimenti ultime 4 (regola del controller, 21-10)
@@ -140,7 +159,7 @@ function enemyRowsFor(missing, enemyRows, src = {}) {
     const n = String(r.name || '').toLowerCase();
     if (!byName.has(n)) byName.set(n, r);
   }
-  const out = { rows: [], sources: {}, uncovered: [], cloned: 0, fromStats: 0, family: 0 };
+  const out = { rows: [], sources: {}, uncovered: [], cloned: 0, fromStats: 0, family: 0, allies: 0 };
   // byId cresce con le righe aggiunte: le basi delle proposte restano gli originali (out.sources li esclude)
   const add = (row, source) => { out.rows.push(row); out.sources[row.enemyId] = source; byId.set(row.enemyId, row); };
   const ids = Object.keys(missing).map((k) => {
@@ -148,6 +167,19 @@ function enemyRowsFor(missing, enemyRows, src = {}) {
     if (!Number.isInteger(id) || id <= 0 || id > MAX_ID) throw new Error(`enemy-oltre: enemyId ${k} fuori dall'int a 32 bit`);
     return id;
   }).filter((id) => !byId.has(id));
+  // alleati ospiti prima di tutto: mai cloni esatti ne' proposte (I-199)
+  const allies = src.allies || readAllies();
+  const tplOf = (a) => (a && a.template ? byId.get(a.template) : null);
+  for (const id of ids.filter((x) => tplOf(allies[familyOf(x)]))) {
+    const fam = familyOf(id), a = allies[fam], t = tplOf(a);
+    const row = Object.assign(copy(t), { enemyId: id, name: a.name });
+    const g = allyDisplay(fam, a, drawn);
+    if (g) row.displayId = g.displayId;
+    add(row, { kind: 'ally', name: a.name, template: a.template, displayId: row.displayId,
+      graphic: g ? g.graphic : 'template', familyDisplay: fam, confidence: a.confidence });
+    out.allies++;
+  }
+  ids.splice(0, ids.length, ...ids.filter((id) => !out.sources[id]));
   // prima le righe originali come base, poi le corte nuove, poi gli id lunghi (che possono riusare le corte nuove)
   const long = ids.filter(isClone).sort((a, b) => a - b), short = ids.filter((id) => !isClone(id)).sort((a, b) => a - b);
   const pending = [];
@@ -244,6 +276,17 @@ function addRows(enemies, src) {
   strip(enemies, s.missing);
   const res = enemyRowsFor(s.missing, enemies, s);
   enemies.push(...res.rows);
+  // righe alleate del master (2001, 2002, 2003, 12001, 22001): nome del personaggio e grafica (I-199)
+  const allies = s.allies || readAllies();
+  let alliesBase = 0;
+  for (const e of enemies) {
+    const a = allies[familyOf(e.enemyId)];
+    if (!a || res.sources[e.enemyId]) continue;
+    e.name = a.name;
+    const g = allyDisplay(familyOf(e.enemyId), a, s.drawn || new Set());
+    if (g) e.displayId = g.displayId;
+    alliesBase++;
+  }
   if (s.sourcesOut) {
     fs.writeFileSync(s.sourcesOut, JSON.stringify({ _doc: 'fonte di ogni riga enemy delle missioni 526-979 (make-enemy-oltre.js): '
       + 'exact-clone = base a 5/4 cifre; family-clone(confidence) = nemico originale piu\' simile (Notices); uncovered = fuori',
@@ -254,9 +297,9 @@ function addRows(enemies, src) {
       + '(cloni di famiglia diretti; i lunghi «via» copiano la loro corta)');
   }
   console.log(`enemy-oltre: +${res.rows.length} righe (${res.cloned} cloni esatti, ${res.family} cloni di famiglia, `
-    + `${res.fromStats} da fonte); ${res.uncovered.length} senza base, fuori`);
-  return { added: res.rows.length, cloned: res.cloned, family: res.family, fromStats: res.fromStats, sources: res.sources,
-    uncovered: res.uncovered };
+    + `${res.allies} alleati, ${res.fromStats} da fonte); ${res.uncovered.length} senza base, fuori; alleati del master ${alliesBase}`);
+  return { added: res.rows.length, cloned: res.cloned, family: res.family, allies: res.allies, alliesBase,
+    fromStats: res.fromStats, sources: res.sources, uncovered: res.uncovered };
 }
 
 // master gia' costruito: le basi hanno gia' il displayId servito; idempotente
@@ -273,5 +316,5 @@ if (require.main === module) {
   patch(process.argv[2] || path.join(__dirname, 'master_data'), { ...d, drawn: drawnDisplays(), sourcesOut: process.argv[3] || SOURCES_PATH });
 }
 
-module.exports = { MAX_ID, SOURCES_PATH, DR_LOOK, isClone, baseOf, familyOf, drawnDisplays, readDetails, enemyRowsFor, defaultSources, strip, addRows,
+module.exports = { MAX_ID, SOURCES_PATH, DR_LOOK, ALLY_PATH, readAllies, isClone, baseOf, familyOf, drawnDisplays, readDetails, enemyRowsFor, defaultSources, strip, addRows,
   patch };

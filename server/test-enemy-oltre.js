@@ -116,6 +116,30 @@ check(rep.added === 7 && mem.length === enemies.length + 7 && mem.find((r) => r.
 const saved = JSON.parse(fs.readFileSync(path.join(outDir, 'src.json'), 'utf8'));
 check(saved.sources['1500'].kind === 'family-clone' && saved.uncovered.length === 2, 'fonti scritte su file');
 
+// alleati ospiti (I-199): righe dalla riga originale `template`, nome del personaggio, mai cloni ne' proposte; grafica
+// della famiglia se servita, se no il sosia; anche le righe alleate del master (nome e grafica)
+const herc = row(2001, 'sEnm_2001', { displayId: 17, width: 210, height: 283, skillId: [200100, 200101, 200100, 0] });
+const allyTab = { 2001: { name: 'Hercules', template: 2001, look: 2001, confidence: 'high' },
+  2004: { name: 'Aladdin', template: 2001, look: 2001, confidence: 'high' },
+  2024: { name: 'Lauriam', template: 2001, look: 2003, confidence: 'medium' } };
+const allyMissing = { 17112004: { missions: [760] }, 2103002024: { missions: [977] }, 18072001: { missions: [825] } };
+const allyProp = { 17112004: { base: 24, confidence: 'low', name: null, reason: 'Cerberus' }, 2103002024: { base: 24, reason: 'Wyvern' } };
+const al = enemyRowsFor(allyMissing, enemies.concat([herc]), { proposal: allyProp, drawn: new Set([2001, 2003, 24]), allies: allyTab });
+const alBy = new Map(al.rows.map((r) => [r.enemyId, r]));
+check(al.allies === 3 && alBy.get(17112004).name === 'Aladdin' && alBy.get(17112004).displayId === 2001
+  && al.sources[17112004].kind === 'ally' && al.sources[17112004].graphic === 'look-alike', `alleato 17112004: ${JSON.stringify(al.sources[17112004])}`);
+check(JSON.stringify(alBy.get(17112004).skillId) === JSON.stringify(herc.skillId) && alBy.get(17112004).width === 210
+  && JSON.stringify(alBy.get(17112004).hp) === JSON.stringify(herc.hp), 'alleato: curve, mosse e taglia della riga originale');
+check(alBy.get(2103002024).name === 'Lauriam' && alBy.get(2103002024).displayId === 2003, 'alleato lungo: sosia 2003');
+check(alBy.get(18072001).name === 'Hercules' && alBy.get(18072001).displayId === 2001 && al.sources[18072001].graphic === 'family',
+  'alleato della famiglia servita: grafica propria');
+const al2 = enemyRowsFor(allyMissing, enemies.concat([herc]), { proposal: allyProp, drawn: new Set([24]), allies: allyTab });
+check(al2.rows.every((r) => r.displayId === 17) && al2.sources[17112004].graphic === 'template', 'alleato senza grafica servita: resta quella della riga originale');
+const memA = enemies.map((r) => ({ ...r })).concat([{ ...herc }, { ...herc, enemyId: 12001 }]);
+const repA = addRows(memA, { missing: allyMissing, proposal: allyProp, drawn: new Set([2001, 2003]), allies: allyTab });
+check(repA.allies === 3 && repA.alliesBase === 2 && memA.filter((r) => [2001, 12001].includes(r.enemyId))
+  .every((r) => r.name === 'Hercules' && r.displayId === 2001), 'righe alleate del master: nome e grafica');
+
 // --- dati veri su una copia del master ---------------------------------------------------------------------
 const MASTER = path.join(__dirname, 'master_data');
 const MISSING = process.env.KHUX_ENEMIES_OLTRE525 || 'D:\\Progetto_Restauro_KH_UX\\reference\\world_schema\\oltre525\\enemies_oltre525.json';

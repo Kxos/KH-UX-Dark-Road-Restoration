@@ -69,6 +69,15 @@ REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 PNGREF = re.compile(rb'[\w\-.]+\.png')
 MANDATORY = ['wait', 'atk1_o', 'knockback', 'dead']          # + move (eventualmente da wait)
 OPTIONAL = re.compile(r'^(bwait|atkSp|atk\d+_o)$')
+# Guest allies (I-199, recon/tools/ally_families.json): families that the JP stages use only in teams with flag 0x20.
+# The client keeps them in its ally list (4.3.1 [fn]): they enter only wait (field and battle, bwait falls back
+# to it), atk1_o / atkSp (their attack, [fn]) and possibly move (the ally attack waits for the approach);
+# they are never targeted nor killed, so knockback and dead are never opened. Ally rule: wait + atk1_o complete;
+# move, knockback and dead copied from wait when absent or incomplete (safety net: never opened, but no NULL LWF).
+ALLY_MANDATORY = ['wait', 'atk1_o']
+ALLY_FROM_WAIT = ['move', 'knockback', 'dead']
+ALLY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ally_families.json')
+ALLY_FAMILIES = {int(k) for k in json.load(open(ALLY_FILE, encoding='utf-8'))['families']} if os.path.exists(ALLY_FILE) else set()
 ENEMY = 'lwf/character/enemy'
 
 ap = argparse.ArgumentParser()
@@ -343,6 +352,10 @@ def plan_enemy(d):
     todo = {}
     fatal = []
     cat = 1
+    ally = d in ALLY_FAMILIES
+    mandatory = ALLY_MANDATORY if ally else MANDATORY
+    if ally:
+        r['ally'] = True
     for an in MANDATORY + ['move'] + sorted(x for x in anims if OPTIONAL.match(x)):
         st, files, note, c = plan_anim(rel, an, jp_all)
         r['anims'][an] = {'status': st, 'note': note} if note else {'status': st}
@@ -350,16 +363,19 @@ def plan_enemy(d):
             r['anims'][an]['category'] = c
             todo.update(files)
             cat = max(cat, c)
-        elif an in MANDATORY:
+        elif an in mandatory:
             fatal.append(an)
-    if 'wait' not in fatal and r['anims']['move']['status'] in ('assente', 'incompleta'):
-        # move da wait: stessi file (le texture tengono il nome wait_*, che il LWF cita)
-        pre_w, pre_m = '%s/%s/wait/' % (ENEMY, rel), '%s/%s/move/' % (ENEMY, rel)
+    # da wait: move per tutti, knockback e dead solo per gli alleati (stessi file: le texture tengono il nome wait_*,
+    # che il LWF cita)
+    for an in (ALLY_FROM_WAIT if ally else ['move']):
+        if 'wait' in fatal or r['anims'][an]['status'] not in ('assente', 'incompleta'):
+            continue
+        pre_w, pre_m = '%s/%s/wait/' % (ENEMY, rel), '%s/%s/%s/' % (ENEMY, rel, an)
         for n, p in list(todo.items()):
             if n.startswith(pre_w):
                 f = n[len(pre_w):]
-                todo[pre_m + ('move.lwf' if f == 'wait.lwf' else f)] = p
-        r['anims']['move']['status'] = 'da wait (' + r['anims']['move']['status'] + ')'
+                todo[pre_m + (an + '.lwf' if f == 'wait.lwf' else f)] = p
+        r['anims'][an]['status'] = 'da wait (' + r['anims'][an]['status'] + ')'
     if fatal:
         r.update(status='incompleto', why='animazioni obbligatorie mancanti o incomplete: ' + ', '.join(fatal))
         return r, {}
@@ -518,6 +534,7 @@ def main():
            'oltre_incomplete': [r['displayId'] for r in bad if r.get('oltre')],
            'complete_by_category': {c: [r['displayId'] for r in ok if r.get('category') == c] for c in (1, 2, 3, 4)},
            'move_from_wait': [r['displayId'] for r in ok if r['anims']['move']['status'].startswith('da wait')],
+           'allies_complete': [r['displayId'] for r in ok if r.get('ally')],
            'shows': show_res, 'results': results}
     os.makedirs(a.out, exist_ok=True)
     json.dump(rep, open(os.path.join(a.out, 'report.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

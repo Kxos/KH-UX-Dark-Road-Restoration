@@ -45,6 +45,10 @@ Eliminator, Emerald Sonata, Poison Archer, Paralysis Archer, Blitz Spear and Wig
 
 Some later enemies whose original graphics are still missing use for now the **look of the same or a similar enemy**, from Dark Road (for example Sleep Archer, Pot Scorpion or Amber Opera) or from Union χ itself (for example Cherry Kaboom shows as a Minute Bomb and Martial Monkey as a Cheery Ape), until their original graphics are recovered.
 
+In some quests a character fights **at your side** (Hercules, Aladdin, Mog, Phillip, Ephemer, Calhoun, Ralph, the Union leaders and other Keyblade wielders): as in the original game, they join the battle against the boss, attack after your turn and cannot be targeted. Their attacks are the original ally attacks.
+
+Hercules and two Keyblade wielders (Quests 350, 525, 540 and 825) show their original look; their original files have no hit or defeat animation, which an ally never uses, so those show the standing pose (**reconstructed**). The original graphics of the other allies are incomplete: for now they show the look of Hercules (Aladdin, Prince Ali, Phillip, Calhoun, Ralph) or of one of those Keyblade wielders (Ephemer, Mog, the Union leaders), until their own graphics are recovered.
+
 Quests 876-979: the original quest files do not say the level of each enemy (the original server gave it), so every enemy fights at the level of the quest: there are no weaker enemies mixed in.
 
 Quest 978 "What Comes After" has no battle: it only plays its cutscenes, as in the original game.

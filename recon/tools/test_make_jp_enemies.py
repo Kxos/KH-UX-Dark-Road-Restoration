@@ -258,6 +258,25 @@ try:
     r, todo = m.plan_enemy(1905)
     check(r['status'] == 'incompleto' and not todo, 'dead intera con una texture assente: incompleto (%s)' % r)
 
+    # alleati ospiti (I-199, ally_families.json): wait + atk1_o bastano; move, knockback e dead copiati da wait.
+    # Solo per le famiglie alleate: lo stesso nemico con un altro displayId resta incompleto
+    check(2001 in m.ALLY_FAMILIES and 1650 not in m.ALLY_FAMILIES, 'famiglie alleate: %s' % sorted(m.ALLY_FAMILIES)[:5])
+    for fam in ('2001', '1650'):
+        put(fam + '/wait/wait.lwf', lwf('wait_h.png'))
+        put(fam + '/wait/wait_h.png', b'H')
+        put(fam + '/atk1_o/atk1_o.lwf', lwf('atk1_o_h.png'))
+        put(fam + '/atk1_o/atk1_o_h.png', b'I')
+    r, todo = m.plan_enemy(2001)
+    pre = 'lwf/character/enemy/2001/'
+    check(r['status'] == 'completo' and r.get('ally'), 'alleato con wait + atk1_o: completo (%s)' % r.get('why'))
+    check(all(todo.get(pre + an + '/' + an + '.lwf', '').endswith(os.path.join('wait', 'wait.lwf'))
+              and todo.get(pre + an + '/wait_h.png', '').endswith('wait_h.png') for an in ('move', 'knockback', 'dead')),
+          'alleato: move/knockback/dead da wait: %s' % sorted(todo))
+    check(r['anims']['dead']['status'].startswith('da wait'), 'stato dead da wait: %s' % r['anims']['dead'])
+    r, todo = m.plan_enemy(1650)
+    check(r['status'] == 'incompleto' and not todo and not r.get('ally') and 'knockback' in r['why'],
+          'nemico non alleato con solo wait + atk1_o: incompleto (%s)' % r)
+
     # famiglie delle missioni 526-979: id corti e lunghi -> famiglia, solo con la cartella JP (o 2016)
     fams = m.oltre_families([1532, 11532, 1906001532, 1600, 249, 10249, 17112004, 160911501, 99999], served={249})
     check(sorted(fams) == [1532, 1600], 'famiglie: %s' % sorted(fams))

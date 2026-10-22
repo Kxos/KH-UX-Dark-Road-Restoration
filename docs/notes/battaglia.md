@@ -595,7 +595,7 @@ crash expected (the stand-ins have every motion): the user completed 955 (ally 2
 350, 525 and the others were cleared only through the test saves, never watched on the bench. Damage dealt by
 the ally comes from the cloned Wyvern stats (attack up to 18886) at the stage level (e.g. 5500 in 977).
 
-**Proposal (not applied).** (1) Rename the rows to the character (Hercules, Aladdin, Prince Ali?, Mog, Phillip,
+**Proposal** (approved and applied on 22-10, below). (1) Rename the rows to the character (Hercules, Aladdin, Prince Ali?, Mog, Phillip,
 Ephemer, Calhoun?, Ralph, Lauriam, «Keyblade Wielder» for the unnamed ones); the name is not displayed in battle
 but helps our tools. (2) Keep them as enemy rows (that is the original mechanism: no new row type), stop cloning
 boss archetypes: base them on the thethiny 2001-2003 rows (stats, size 210x283, battlePattern 3) with
@@ -609,3 +609,34 @@ Bench check of one per kind (350, 753, 905, 977) before/after.
 Open questions: 2002 = Hercules or a keyblade wielder (525 jpdesc)? Identities of 2003, 2005, 2021-2023; exact
 meaning of `enemyAttack.target` 1/2/3 for an ally (who receives the heal/buff rows); whether an ally enters `move`
 (approach) or attacks in place; what happens to allies at the victory pose.
+
+**Done (22-10, proposal approved by the user).** Table `recon/tools/ally_families.json` (family -> name, template row,
+look-alike, confidence, quests, evidence), read by both generators:
+- `recon/tools/make_jp_enemies.py`: **ally completeness rule**, only for the families of the table (never for
+  enemies): mandatory `wait` + `atk1_o`; `move`, `knockback` and `dead` copied from `wait` when absent or incomplete.
+  They are never opened for an ally (the evidence above), so the copies are only a safety net against the NULL LWF of
+  `[fn]`; `move` may be entered by the attack approach and was already rebuilt from `wait` for every enemy.
+  `atkSp` stays optional (falls back to `wait`). Result: **2001, 2002, 2003 complete** (wait/atk1_o/atkSp JP with
+  textures from the 2016 package, the other three from wait; `report.json` `allies_complete`); 2004-2024 still
+  incomplete (`wait` and `atk1_o` miss most textures in every source). enemy_gen: 145 complete displayIds, +652 files.
+- `server/make-enemy-oltre.js`: ally ids first, never exact clones nor proposals (`kind: 'ally'` in
+  `enemy_oltre_sources.json`): copy of the original template row (2001 for every new ally: curves, size 210x283,
+  battlePattern 3, moves 200100/200101/200100; 2002 keeps its healer moves 200200/200201/200202, 2003 its
+  200300/200301), name of the character, graphic = own family if served, else the look-alike: 2001 Hercules for
+  Aladdin, Prince Ali, Phillip, Calhoun and every Ralph (no Ralph family is complete, 2014/2015/2019/2020 included),
+  2002 for the Keyblade wielder 2005, Mog and Ephemer, 2003 (hooded) for the Union leaders and Lauriam. The master
+  rows 2001, 2002, 2003, 12001, 22001 get the name and their own graphic (before: Armored Knight 17). 17112004 is no
+  longer a Cerberus clone. 23 new ally rows + 5 master rows; the `enemyAttack` rows 200100-200301 were already in
+  the master (enemy-attack-fix.js, thethiny values).
+- Names: Hercules (2001, 18072001, 12001, 22001), Keyblade Wielder (2002: 525 jpdesc and its textures, not Hercules;
+  2003; 2005), Aladdin (2004, 17112004), Mog (2006), Prince Ali (2008), Phillip (2010), Ephemer (2011, 1908002011),
+  Calhoun (2012: only in the two Cy-Bug quests, gun-flash textures, medium), Ralph (2013-2020), Union Leader
+  (2021-2023, which leaders is not known), Lauriam (2024).
+- Notice «Story Quests 526-979»: two lines (allies fight at your side; original look for 2001-2003 with the standing
+  pose for hit/defeat; the others with the look of Hercules or of a Keyblade wielder).
+- Tests: `test_make_jp_enemies.py` (ally with wait + atk1_o complete, the same files on a non-ally family stay
+  incomplete), `test-enemy-oltre.js` (ally rows from the template, look-alike/own/template graphic, master rows).
+- **Needs new resources**: the master now uses displayIds 2001-2003, which exist only in the new enemy_gen; a master
+  served without them crashes the quests with these allies (350, 525, 540, 585, 645, 715, 753-790, 815, 825,
+  856-905, 923-977). Bench: 350, 525, 540, 753, 905, 977 (before: Armored Knight/Wyvern/Cerberus; after: Hercules,
+  Keyblade wielders, look-alikes, ally attacks after the player's turn).
