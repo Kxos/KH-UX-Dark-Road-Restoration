@@ -1,6 +1,6 @@
 """Converte le texture BTF delle risorse (intestazione '\\x89BTF', dati zlib) in PNG.
 
-    python -I recon/tools/btf_to_png.py <file.png BTF> [...]   (scrive <file>.dec.png)
+    python -I recon/tools/btf_to_png.py <file.png BTF> [...] (scrive <file>.dec.png)
 
 Formato osservato: +0x16 u16 larghezza, +0x18 u16 altezza, poi a un offset variabile
 il flusso zlib (78 9c / 78 da / 78 01); i pixel decompressi sono RGBA8888 o, se la

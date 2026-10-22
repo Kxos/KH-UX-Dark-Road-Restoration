@@ -21,6 +21,7 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = r'D:\Progetto_Restauro_KH_UX'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 JP_PUB = private_tools.local_path('jp_data', 'cocostudio', 'publish')
 SERVED_PUB = os.path.join(D, 'catalog', 'files', 'cocostudio', 'publish')

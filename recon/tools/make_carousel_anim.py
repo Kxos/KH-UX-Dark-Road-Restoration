@@ -1,17 +1,15 @@
 """Armatura dei cut-in del carosello (cocostudio/publish/ActMapCarouselAnim) completa per il 4.3.1:
 quella servita (WW, 52 frame) e' una revisione vecchia, I-124 (docs/notes/battaglia.md#hud).
 
-Cosa vuole il client 4.3.1 (CarouselDeck, [fn] -> [fn]: armatura
+Cosa vuole il client 4.3.1 (CarouselDeck: armatura
 «ActMapCarouselAnim», movimento per nome, NULL se il movimento manca):
-- «GuiltBonus» / «GuiltBonus_Plus» ([fn], tabella 0x1f1e820) = la scritta «xxx% BONUS»
-  con la freccia rossa del cut-in dell'attacco speciale con guilt ([fn] -> [fn]).
+- «GuiltBonus» / «GuiltBonus_Plus» = la scritta «xxx% BONUS»
+  con la freccia rossa del cut-in dell'attacco speciale con guilt.
   La servita ha solo «GuiltBonus»: senza «GuiltBonus_Plus» il bonus «+» non si vede (null-safe);
-- ossa «GuiltBIcon»/«GuiltBIcon_eff»: [fn] chiama changeDisplayWithIndex ([fn]
-  -> [fn], nessun controllo del limite) con guiltValue - 1 della medaglia (riga medal
-  +0x4c0). La servita ha 8 immagini (tier 1-8): con una medaglia di tier 9 o 10 (307 righe del
+- ossa «GuiltBIcon»/«GuiltBIcon_eff»: chiama changeDisplayWithIndex (nessun controllo del limite) con guiltValue - 1 della medaglia. La servita ha 8 immagini (tier 1-8): con una medaglia di tier 9 o 10 (307 righe del
   nostro master) l'indice 8/9 legge oltre il vettore = crash al cut-in. Il JP ne ha 10;
 - «PvPGuiltBonus*», «PvPMedalAttack_*» (PvP) e «MedalAttack_SBurst[_Dark]» (Super Burst =
-  Supernova, [fn]) assenti dalla servita.
+  Supernova) assenti dalla servita.
 
 La revisione JP corrente (cartella di riferimento locale, jp_final_4.3.1: ActMapCarouselAnim.<id piu' alto>.ExportJson,
 18 movimenti) li ha tutti ma usa due atlanti, e un plist nuovo (ActMapCarouselAnim1.plist) non si

@@ -24,6 +24,7 @@ SRC, OUT = sys.argv[1], sys.argv[2]
 PUB = 'cocostudio/publish/'
 
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 def jp_latest(name):
     """Percorso assoluto della revisione piu' alta di cocostudio/publish/<name> nei dati JP 4.3.1 (cartella di riferimento locale)
@@ -99,8 +100,8 @@ def P(name, x, y, w, h, children=(), **kw):
 
 
 def obtain_panels(x, y):
-    """Ricompense nei popup di vendita ([fn]): Panel_1..Panel_4 con 1..4 targhette
-    Obtain_Plate_a..d ([fn]: Txt titolo, Txt_Label quantita', Icon ImageView di cui
+    """Ricompense nei popup di vendita: Panel_1..Panel_4 con 1..4 targhette
+    Obtain_Plate_a..d (Txt titolo, Txt_Label quantita', Icon ImageView di cui
     carica la texture). Il codice mostra solo il pannello con il numero giusto di righe."""
     panels = []
     for n in range(1, 5):
@@ -130,7 +131,7 @@ def obtain_plates(cx, cy):
 
 
 def held_plates(y):
-    """Possesso mostrato nelle conferme del Moogle Shop ([fn], [fn]): jewel
+    """Possesso mostrato nelle conferme del Moogle Shop: jewel
     (LB_Jewel con «Held» in Txt_CrownPossessed e il numero in _Label, scritti dal codice) o
     Munny (LB_Munnies, Txt_MunniesPossessed_Label, Txt_Munnies), uno solo visibile secondo
     payType. Targhe centrate in x=480 della radice (finestra del popup OK/Annulla)."""
@@ -145,7 +146,7 @@ def held_plates(y):
 
 
 def reward_icons(x, y):
-    """Icona grande di un premio ([fn], popup dei nodi degli Avatar Boards): un widget per
+    """Icona grande di un premio (popup dei nodi degli Avatar Boards): un widget per
     tipo, cercati tutti dalla radice (senza uno: crash dopo lo sblocco, banco v32). Il codice
     mostra quello del tipo e ne carica la texture."""
     def icon(n):
@@ -179,16 +180,16 @@ def reward_icons(x, y):
 NO_PLATE21 = ('tex', 'Countdown_panel', 'Plate18.png', dict(scale9Enable=False, visible=False))
 
 LAYOUTS = {
-    # Presents ([fn] scena, [fn] base, [fn] pannello): stessi
+    # Presents (scena base pannello): stessi
     # nomi della versione Dark Road (Txt_Wording, Scroll_Area, Txt_None, Txt_Stock*,
     # Button, Close_Button; Panel_Present). La scena toglie CenterUI e LeftUI.
     'PresentBOXScene.json': ('scene', ['CenterUI', 'LeftUI']),
     'PresentBOX_Base_ver400.json': ('copy', 'dark_PresentBOX_base.json', {}, True),
     'PresentBOX_Panel_ver131.json': ('copy', 'dark_PresentBOX_panel.json', {}, True),
-    # Icona di un premio ([fn], anche nelle righe delle Missioni): la copia di Dark Road
+    # Icona di un premio (anche nelle righe delle Missioni): la copia di Dark Road
     # non aveva i widget di KHUX (crash alla prima missione con premio, banco v32). Cerca dalla
-    # radice LuxBoard (bacheca: Select_Board/Select_Base/Select_Kind, [fn]), AVT (parte
-    # dell'avatar: Icon_Avatar, Icon_Base, Gender, [fn]), Star_Area, Incentive (icona
+    # radice LuxBoard (bacheca: Select_Board/Select_Base/Select_Kind), AVT (parte
+    # dell'avatar: Icon_Avatar, Icon_Base, Gender), Star_Area, Incentive (icona
     # img/incentive/IncentiveIcon_NN, materiali, emblemi...), Medal (Medal_S), KB, Stamp
     'PresentBOX_IconPanel_ver131.json': ('build', P('PresentBOX_IconPanel', 0, 0, 80, 80, [
         I('Incentive', 40, 40, 90, 90, 'IncentiveIcon_01.png', s9=False, scale=0.8),
@@ -205,16 +206,16 @@ LAYOUTS = {
             I('Select_Base', 40, 40, 306, 306, 'Board_0001.png', s9=False, scale=0.26),
             I('Select_Kind', 40, 40, 306, 306, 'Kind_0001.png', s9=False, scale=0.26)], visible=False)])),
 
-    # Medal List ([fn] e vicine, [fn] carica la scena e cerca i widget da
+    # Medal List (e vicine carica la scena e cerca i widget da
     # li', ricorsivamente). Disposizione dalle schermate di riferimento
     # (reference\medal_list): in alto Sell Medals, Slots, criterio, Sort; sotto la griglia;
     # in basso la barra di vendita (Win_Bottom: Txt e Txt_Button sono Label).
-    # LeftUI non puo' essere vuoto: [fn] ne prende il primo figlio (crash su vettore
+    # LeftUI non puo' essere vuoto: ne prende il primo figlio (crash su vettore
     # vuoto). MedalSell_Back.json (pulsante Indietro) e' originale e gia' nelle risorse.
     'MedalListScene_ver130.json': ('scene', [('CenterUI', 'publish/MedalList_Gen.json'),
                                              ('LeftUI', 'publish/MedalSell_Back.json')]),
-    # Medal_Sell_Panel e' la barra in alto: [fn] la rende visibile e vi cerca
-    # Button_Sort (con la Label Txt_Sort, scritta dalla callback di [fn]).
+    # Medal_Sell_Panel e' la barra in alto: la rende visibile e vi cerca
+    # Button_Sort (con la Label Txt_Sort, scritta dalla callback).
     'MedalList_Gen.json': ('build', P('medal_list_root', 0, 0, 960, 640, [
         # dietro la griglia: fondo scuro Panel04 (9-slice 50/50) e bordo Panel15 (bordo 50),
         # come DeckEdit_MedalForm; nell'originale va da sotto la barra fino al fondo
@@ -227,14 +228,14 @@ LAYOUTS = {
             I('Img_Bar', 480, 48, 1136, 111, 'Medal_Syn_DeckBase1.png', s9=False),
             B('Button_Sell1', 75, 33, 162, 68, 'But03', 'Sell\nMedals', 24, label='Txt_Sell1', opts=BUTS),
             I('Img_Slots', 250, 45, 218, 26, 'Plate03.png', opts=PLATE3),
-            # contatore ([fn]): Txt_MedalGet = testo 101200050 «Slots», poi medaglie
-            # possedute (Num) / capienza (All), scritte con [fn] (Label con ombra)
+            # contatore: Txt_MedalGet = testo 101200050 «Slots», poi medaglie
+            # possedute (Num) / capienza (All), scritte con (Label con ombra)
             L('Txt_MedalGet', 180, 45, 80, 26, 'Slots', 17),
             L('Txt_MedalGet_Num_Label', 292, 45, 50, 26, '0', 18),
             L('Txt_MedalGet_Slash', 315, 45, 14, 26, '/', 18),
             L('Txt_MedalGet_All_Label', 337, 45, 50, 26, '0', 18),
             I('Img_SortType', 667, 45, 185, 26, 'Plate03.png', opts=PLATE3),
-            # [fn] (barra di ordinamento generica) cerca qui anche Txt_Sort_Label
+            # (barra di ordinamento generica) cerca qui anche Txt_Sort_Label
             # (criterio) e Txt_Filter_On (testo 100100012 «Filter ON»).
             L('Txt_Sort_Label', 667, 45, 180, 26, 'Strength', 18),
             L('Txt_Filter_On', 667, 22, 180, 20, 'Filter ON', 14),
@@ -247,15 +248,15 @@ LAYOUTS = {
             L('Txt', 560, 45, 500, 40, '', 22),
         ], visible=False),
     ])),
-    # Sell Medals ([fn] carica MedalSellScene_ver350, assente). Nomi e genitori dal
+    # Sell Medals (carica MedalSellScene_ver350, assente). Nomi e genitori dal
     # decompilato: dalla radice Scroll_Area, Txt_Money (100300003 «Munny»), Txt_A_Coin
     # (101500006 «Avatar Coins»), Txt_A_Coin_Label, DeckBase2, Txt_Money_Total_Lavel (sic),
     # Button_Back (da MedalSell_Back in LeftUI), BoxNow, BoxMaxLabel; in Medal_Sell_Panel
-    # Txt_Money_Total, Button (con Txt_Sell) e la barra di [fn] (Button_Sort...);
+    # Txt_Money_Total, Button (con Txt_Sell) e la barra (Button_Sort...);
     # Plate_A_Jewel e Plate_A_Ticket con Txt_A_* e Txt_A_*_Label. Disposizione da
     # reference\medal_list\medal_sell_yt_02.jpg: in alto Slots, Munny, criterio, Sort; in
     # basso Sell e i ricavi (Munny, Avatar Coins).
-    # [fn] usa il primo figlio di CenterUI, LeftUI e RightUI (vuoto: pannello).
+    # usa il primo figlio di CenterUI, LeftUI e RightUI (vuoto: pannello).
     'MedalSellScene_ver350.json': ('scene', [('CenterUI', 'publish/MedalSell_Gen.json'),
                                              ('LeftUI', 'publish/MedalSell_Back.json'),
                                              ('RightUI', 'publish/MedalSell_Right.json')]),
@@ -283,8 +284,8 @@ LAYOUTS = {
             # riga alta della barra in basso: titolo «Munny» (il valore e' Txt_Money_Total_Lavel)
             L('Txt_Money_Total', 262, -384, 100, 24, 'Munny', 17),
         ]),
-        # in alto: contatore come in Medal List ([fn] / [fn]), poi i Munny
-        # posseduti: Txt_Money (100300003 «Munny») e Txt_Money_Label ([fn])
+        # in alto: contatore come in Medal List, poi i Munny
+        # posseduti: Txt_Money (100300003 «Munny») e Txt_Money_Label
         I('Plate_Slots', 118, 495, 218, 26, 'Plate03.png', opts=PLATE3),
         L('Txt_MedalGet', 45, 495, 80, 26, 'Slots', 17),
         L('Txt_MedalGet_Num_Label', 160, 495, 50, 26, '0', 18),
@@ -313,8 +314,8 @@ LAYOUTS = {
             L('Txt_A_Ticket_Label', 140, 14, 100, 28, '0', 20),
         ], visible=False),
     ])),
-    # Moogle Shop (SceneMoogleShop, [fn]/[fn]/[fn], schede
-    # [fn]): nessun layout esiste nelle risorse. Disposizione dalla 4.1.0 giapponese
+    # Moogle Shop (schede
+    # ): nessun layout esiste nelle risorse. Disposizione dalla 4.1.0 giapponese
     # (reference\moogle_shop\jp410_*.png, youtube FX5Chfckqkk): schede «Traits»/«Items»
     # (tab0/tab1: pulsante img/ui/Mogshop_tab_*, Txt_Tab, Icon_New), «Sell Materials»
     # arancione in alto a destra, finestra con l'elenco (CenterUI > Mshop_win > Area_Traits,
@@ -324,11 +325,11 @@ LAYOUTS = {
     'MoogleShopScene_ver410.json': ('scene', [('CenterUI', 'publish/MoogleShop_Gen.json'),
                                               ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
     'MoogleShop_Gen.json': ('build', P('moogle_shop_root', 0, 0, 960, 640, [
-        # tab1/tab2 ([fn]: «tab%d» da 1; testi 106220402/403) sono ImageView: il pulsante ([fn]) vi carica img/ui/Mogshop_tab_*
+        # tab1/tab2 («tab%d» da 1; testi 106220402/403) sono ImageView: il pulsante vi carica img/ui/Mogshop_tab_*
         # (da Panel: crash in loadTexture); figli rispetto al centro
         # Misure da reference\moogle_shop\moogle_shop_01.png (area di gioco 1764 px = 1136,
         # scala 1,553): finestra x 2-755, y 4-466; schede ~200x48 a y 492; «Sell Materials»
-        # centrato a x 655; righe larghe 720 ([fn]: 720x184 e 720x110)
+        # centrato a x 655; righe larghe 720 (720x184 e 720x110)
         I('tab1', 115, 492, 200, 48, 'Plate01.png', s9=False, children=[
             L('Txt_Tab', 0, 0, 190, 40, 'Traits', 24),
             I('Icon_New', 80, 22, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.6, visible=False)]),
@@ -351,11 +352,11 @@ LAYOUTS = {
             L('Txt_Munnies', 65, 0, 120, 24, '0', 18)]),
         P('Moogle_Fla', 860, 160, 10, 10),
     ])),
-    # Righe dell'elenco ([fn] le crea: Traits 721x110, Items 721x184; riempite da
-    # [fn] e [fn]). Nomi dal decompilato; disposizione dalle righe della 4.1.0
+    # Righe dell'elenco (le crea: Traits 721x110, Items 721x184; riempite da
+    # ). Nomi dal client; disposizione dalle righe della 4.1.0
     # (riquadro scuro con icona del trait, nome, prezzo a destra; oggetti su targa dorata
     # con «Buy»). Panel_Disable, Caution, LockMask nascosti: li mostra il codice.
-    # Ricerche di changeRowKakusei ([fn], lookups.py): dentro Panel_Disable cerca
+    # Ricerche di changeRowKakusei (lookups.py): dentro Panel_Disable cerca
     # Panel, SkillPanel, SkillPanel_Rare (kakusei_Icon, Txt_KakuseiSkill), Count (Txt_Count,
     # Txt_Count_Cus) e Plate_Count_Rare; dalla riga Jewel/Txt_Jewel, Munnies/Txt_Munnies,
     # Caution, Icon_New, Txt_Limit, LockMask (ImageButton_LockMask, Icon_Lock). Aspetto da
@@ -377,12 +378,12 @@ LAYOUTS = {
                 I('Skill_Base2', 230, 35, 420, 56, 'Plate03.png', opts=PLATE3),
                 I('kakusei_Icon', 34, 35, 60, 60, 'Plate01.png', s9=False),
                 L('Txt_KakuseiSkill', 210, 35, 300, 36, '', 24)], visible=False),
-            # solo Txt_Count: il codice ne fa un CustomRichText «Txt_Count_Cus» ([fn]);
-            # una Label con quel nome verrebbe presa al suo posto (crash a 0x879d40, stack mg12)
+            # solo Txt_Count: il codice ne fa un CustomRichText «Txt_Count_Cus»;
+            # una Label con quel nome verrebbe presa al suo posto (crash)
             P('Count', 480, 6, 220, 26, [
                 L('Txt_Count', 110, 13, 210, 22, '', 16)], visible=False),
             # frameType 1: SkillPanel + Count; altrimenti SkillPanel_Rare + «Count_Rare»
-            # (stringa Plate_Count_Rare + 6; crash a 0xaafe08, stack mg5), con gli stessi testi
+            # (stringa Plate_Count_Rare + 6; crash), con gli stessi testi
             P('Count_Rare', 480, 6, 220, 26, [
                 I('Plate_Count_Rare', 110, 13, 220, 26, 'Plate03.png',
                   opts=dict(PLATE3, colorR=255, colorG=220, colorB=90)),
@@ -399,7 +400,7 @@ LAYOUTS = {
         P('LockMask', 0, 0, 721, 110, [
             B('ImageButton_LockMask', 360, 55, 721, 110, 'But16', None),
             I('Icon_Lock', 650, 55, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False)])),
-    # Ricerche di changeRowItem ([fn], lookups.py sul decompilato): dalla riga Item
+    # Ricerche di changeRowItem (lookups.py sul client): dalla riga Item
     # (testi Txt_Material_Name/_Text), Panel e Panel_Rare (uno solo visibile secondo frameType;
     # Panel_Item dentro quello scelto), But_Buy con dentro ImageButton_Buy1, Count con
     # Plate_Count, Plate_Count_Rare, Txt_Count, Txt_Count_Cus; Jewel/Txt_Jewel, Caution,
@@ -437,11 +438,11 @@ LAYOUTS = {
             B('ImageButton_LockMask', 360, 92, 721, 184, 'But16', None),
             I('Lock_icon', 650, 92, 45, 49, 'Deck_Medal_Lock.png', s9=False)], visible=False)])])),
     # IconPanel: dentro Panel_Item; Base riceve img/ui/Mogshop_plate1.png (make_textures.py)
-    # [fn] (icona generica di un premio: tipo, id, nome, quantita') vi cerca e usa
+    # (icona generica di un premio: tipo, id, nome, quantita') vi cerca e usa
     # senza controlli LuxBoard, AVT, Incentive, Medal, KB, Stamp (Star_Area facoltativo); li
     # nasconde e mostra quello del tipo (3 medaglia, 5 materiale e gli altri -> Incentive).
     # Struttura come i premi di AdventureTop2_SubMission_ver131 (Incentive, Medal, KB, LuxBoard,
-    # AVT); senza: crash all'apertura della scheda Items (mg2, pc 0x74d780)
+    # AVT); senza: crash all'apertura della scheda Items
     'MoogleShop_IconPanel.json': ('build', P('IconPanel', 0, 0, 140, 140, [
         # Base: il codice vi carica img/ui/Mogshop_plate1 solo per Panel_Rare; stessa texture
         # anche in cocostudio/publish per la riga normale (make_textures.py)
@@ -454,17 +455,17 @@ LAYOUTS = {
         P('AVT', 20, 20, 100, 100, visible=False),
         P('Star_Area', 20, 5, 100, 24, visible=False),
         # changeRowItem cerca Icon_Skill dentro Panel_Item (l'icona dell'abilita' delle
-        # medaglie con skillType 3) e ne chiama setVisible senza controlli (mg3, pc 0xab1c84)
+        # medaglie con skillType 3) e ne chiama setVisible senza controlli
         I('Icon_Skill', 115, 115, 40, 40, 'Plate01.png', s9=False, visible=False)])),
-    # Vendita materiali («Sell Materials» del Moogle Shop, [fn]): EquipSellScene e i
+    # Vendita materiali («Sell Materials» del Moogle Shop): EquipSellScene e i
     # suoi layout non esistono. Nessuno screenshot originale trovato: stile della vendita
     # medaglie. Scena: Button_Back, Txt_Money_Total(_Lavel), EquipSell_Scroll_Area, Txt_None.
-    # Riga EquipSell_Block ([fn], riempita da 0x887cc0..): EquipSellBlock con
+    # Riga EquipSell_Block (riempita): EquipSellBlock con
     # MaterialSellIcon, «Txt_data1 » (con lo spazio in coda), Txt_data2, Txt_Material_Name,
     # Txt_MaterialStock_Fix1, Txt_Money_Fix, PanelMask.
     'EquipSellScene.json': ('scene', [('CenterUI', 'publish/EquipSell_Gen.json'),
                                       ('LeftUI', 'publish/MedalSell_Back.json', 0, 576)]),
-    # radice «Panel_1»: il codice cerca Panel_1 e dentro EquipSell_Scroll_Area (0xc5ebd4)
+    # radice «Panel_1»: il codice cerca Panel_1 e dentro EquipSell_Scroll_Area
     'EquipSell_Gen.json': ('build', P('Panel_1', 0, 0, 960, 640, [
         I('Grid_Under', 480, 280, 950, 380, 'Panel04.png', opts=GRID),
         P('EquipSell_Scroll_Area', 9, 95, 942, 370),
@@ -491,11 +492,11 @@ LAYOUTS = {
             I('Icon_Price', 260, 20, 44, 46, 'Icon_Prize.png', s9=False, scale=0.45),
             L('Txt_Money_Fix', 370, 20, 120, 24, '', 20, opts=dict(colorR=255, colorG=230, colorB=60)),
             P('PanelMask', 0, 0, 460, 110, visible=False),
-            # Panel_On: evidenza della riga scelta (cercato da FUN_00888xxx, crash se manca)
+            # Panel_On: evidenza della riga scelta (cercato, crash se manca)
             I('Panel_On', 230, 55, 450, 104, 'Plate02.png', opts=dict(PANEL4, colorR=120, colorG=220, colorB=255),
               visible=False)])])),
     'EquipSell_Dialog_Step1.json': ('func', 'material_sell_popup'),
-    # Conferma ([fn]): popup OK/Annulla con il riepilogo
+    # Conferma: popup OK/Annulla con il riepilogo
     'EquipSell_Dialog_Step2.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
                                     {'Button_OK': 'Button_sell_ok', 'Txt_OK': 'Txt_sell_ok',
                                      'Button_Close': 'Button_cancel', 'Txt_Cancel': 'Txt_cancel',
@@ -507,7 +508,7 @@ LAYOUTS = {
         L('Txt_MoneyTotalStock_Fix2', 380, 260, 150, 26, '', 20)]),
     # Quantita' da vendere di una medaglia impilata (equip_sell_popup, piu' sotto).
     'EquipSell_Medal_Step1_ver131.json': ('func', 'equip_sell_popup'),
-    # Conferma della vendita ([fn]): dal popup generico OK/Annulla originale.
+    # Conferma della vendita: dal popup generico OK/Annulla originale.
     # Button_Sell/Txt_Sell (100100029), Button_Close/Txt_Cancel, Alert_Area (vi aggiunge un
     # PopupNormal_MedalMix_RareCaution_Panel per ogni avviso: Txt_Wording1, Star1, ...).
     'PopupNormal_MedalSell_Check_ver350.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
@@ -517,7 +518,7 @@ LAYOUTS = {
         # finiva schiacciata (9-slice 30x30) e lontana dal testo (banco v33)
         # larga quanto PopupNormal_MedalMix_RareCaution_Panel (600, x = 0 dal codice), centrata
         P('Alert_Area', 180, 255, 600, 40)] + obtain_plates(480, 420)),
-    # Avviso «materiali rari» del Level Up ([fn], anche [fn]): senza il file
+    # Avviso «materiali rari» del Level Up (anche): senza il file
     # GUIReader restituisce un widget nullo e il client va in crash al tocco di Level Up.
     # Cerca NormalText_Window03, Button_OK/Txt_OK, Button_Close/Txt_Cancel, Txt_Wording3
     # (messaggio, testo 101399491) e Alert_Area (un _Panel per ogni avviso).
@@ -535,11 +536,11 @@ LAYOUTS = {
         ('opts', 'Button_OK', dict(y=-134)),
         ('opts', 'Button_Close', dict(y=-134)),
         P('Alert_Area', 180, 290, 600, 40)]),
-    # Riga di un avviso ([fn] Level Up, [fn] vendita): caso 1 = Txt_Wording1
+    # Riga di un avviso (Level Up vendita): caso 1 = Txt_Wording1
     # (101400008 «Includes»), Star1, Txt_Wording2 (101400009 «Medals or higher.»); casi 2-5 =
     # solo Txt_Wording3. Il codice non sposta i figli: «Includes» allineato a destra e la frase
     # a sinistra attorno alle stelle, la riga resta compatta al centro (x 300). Il caso 1 scatta
-    # con rarita' > 2 ([fn]: campo +0x4ac della medaglia, flag +0x520), come la fascia
+    # con rarita' > 2 (della medaglia, flag), come la fascia
     # della vendita: tre stelle, le altre due figlie di Star1 (il codice ne cambia solo la
     # visibilita'; figli di un ImageView rispetto al centro).
     'PopupNormal_MedalMix_RareCaution_Panel.json': ('build', P('Panel_Caution', 0, 0, 600, 40, [
@@ -549,7 +550,7 @@ LAYOUTS = {
             I('Star1_R', 28, 0, 26, 26, 'rare_star.png', s9=False)]),
         L('Txt_Wording2', 426, 20, 260, 36, 'Medals or higher.', 22, opts=dict(hAlignment=0)),
         L('Txt_Wording3', 300, 20, 580, 36, '', 22, visible=False)])),
-    # Rilancio della guilt nel Level Up ([fn]: copia su una medaglia con la guilt gia'
+    # Rilancio della guilt nel Level Up (copia su una medaglia con la guilt gia'
     # sbloccata; senza file crash al tocco di Level Up). Cerca dalla radice Win, Button_OK > Txt_OK
     # (100100001), Button_Close > Txt_Cancel (100100002); in Win: Txt_Wording1 (CustomRichText
     # Txt_Wording1_custom creato dal codice: 101300035 «Attempt to raise special attack bonus\nfrom
@@ -581,17 +582,17 @@ LAYOUTS = {
             L('Txt_Announce', 0, 0, 210, 26, '', 20,
               opts=dict(hAlignment=1, vAlignment=1, colorR=255, colorG=230, colorB=60))])),
         ('add', 'Win', L('Txt_Wording3', 0, -55, 600, 36, '', 22, opts=dict(hAlignment=1, vAlignment=1)))]),
-    # Optimize del Level Up (Button_MaxEnhanced -> SceneMixedMedal::openMaxEnhancePopup, [fn]):
+    # Optimize del Level Up (Button_MaxEnhanced):
     # il layout non esiste in nessuna risorsa; senza, GUIReader legge «widgetTree» da un documento
-    # vuoto ([fn] -> [fn], chiave a 0x191924c) e il client va in crash al tocco
+    # vuoto e il client va in crash al tocco
     # (I-090, banco 12-10). Cerca dalla radice: Scroll_Area (coda di EquipSell_Scroll_Area: vi
     # aggiunge MaxEnhanceMedalScrollView, i materiali scelti), Txt_Title (106220300), Txt_attention
     # (106220301), Base_Money1/Base_Money2 > Txt_Money (100300002/3) e Txt_Money_Label (costo e
-    # Munny posseduti, [fn]), Button_Mix (vi aggiunge il pulsante But01, [fn]) >
+    # Munny posseduti), Button_Mix (vi aggiunge il pulsante But01) >
     # Txt_Mix (106220314 «Level Up»), Announce (facoltativo), Close_Button; per ogni parametro
     # MaxLv/MaxAtk/MaxDef/MaxCost/MaxGuilt: CheckBox_<p> (CheckBox vero: setSelected/isSelected),
-    # Plate_Max (lampeggia; nascosta e mostrata da [fn]), Txt_<p> (testo 106220304/
-    # 306/308/310/312) e Txt_<p>_Label (valore, con ombra [fn]: crash se manca). Nessuno
+    # Plate_Max (lampeggia; nascosta e mostrata), Txt_<p> (testo 106220304/
+    # 306/308/310/312) e Txt_<p>_Label (valore, con ombra crash se manca). Nessuno
     # screenshot originale trovato (reference\optimize: solo testi): finestra Win04 dei popup,
     # targhe Munny e pulsante Level Up come MedalInfo_Mix_ver340, filtri But16 del popup Sort.
     'MedalInfo_MaxEnhanced_ver340.json': ('build', P('Panel_MaxEnhanced', 0, 0, 960, 640, [
@@ -620,18 +621,17 @@ LAYOUTS = {
         I('Button_Mix', 660, 102, 158, 68, 'But01_Off.png', s9=False, children=[
             L('Txt_Mix', 0, 3, 152, 58, 'Level Up', 26, opts=dict(hAlignment=1, vAlignment=1))]),
         B('Close_Button', 884, 604, 64, 64, 'But_Close', None)])),
-    # Conferma dello scambio di un articolo del Moogle Shop (openItemBuyPopup, [fn];
-    # trovato con vtable_users.py dalle lambda; senza file crash leggendo widgetTree, stack
-    # mg10): Txt_Wording (domanda), Txt_CrownPossessed_Label/Txt_CrownPossessed (jewel
+    # Conferma dello scambio di un articolo del Moogle Shop (openItemBuyPopup;
+    # senza file crash): Txt_Wording (domanda), Txt_CrownPossessed_Label/Txt_CrownPossessed (jewel
     # posseduti), LB_Munnies con Txt_MunniesPossessed_Label/Txt_Munnies, Button_OK/Txt_OK,
     # Button_Close/Txt_Cancel. Dal popup OK/Annulla originale.
-    # Anche conferma del trait ([fn]), che cerca in piu' LB_Jewel (targa dei jewel,
+    # Anche conferma del trait, che cerca in piu' LB_Jewel (targa dei jewel,
     # visibile con payType 1 come Txt_CrownPossessed/_Label).
     'MoogleShop_Traits_AddCheck.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
                                         {'4Line_Label': 'Txt_Wording'}, False,
                                         [('text', 'Txt_Wording', ''), ('opts', 'Txt_Wording', dict(y=75, height=100))]
                                         + held_plates(300)),
-    # Conferma del trait su una medaglia senza slot liberi ([fn] con lo slot da
+    # Conferma del trait su una medaglia senza slot liberi (con lo slot da
     # sostituire scelto nel popup): come AddCheck, ma l'OK si chiama Button_Draw (etichetta
     # Txt_Draw: con Txt_OK crash al tocco di «Set Trait», banco ts10) e sopra il
     # costo c'e' Txt_Wording2 (testo 106220410 «Replace X with Y?», CustomRichText creato dal
@@ -644,7 +644,7 @@ LAYOUTS = {
                                                       ('opts', 'Txt_Wording', dict(y=30, height=50)),
                                                       L('Txt_Wording2', 480, 430, 600, 70, '', 22)]
                                                      + held_plates(290)),
-    # Avatar Boards, «Unlock All» ([fn]): Txt_Wording (domanda, anche Xml_Txt_Wording),
+    # Avatar Boards, «Unlock All»: Txt_Wording (domanda, anche Xml_Txt_Wording),
     # Txt_BondsPossessed/_Label (monete possedute), Coin_Icon, Button_OK/Txt_OK,
     # Button_Close/Txt_Cancel. Come le conferme del Moogle Shop (dal popup OK/Annulla originale)
     'PopupNormal_SphereCoinCheck_ver310.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
@@ -656,9 +656,9 @@ LAYOUTS = {
                                                        scale=0.3)]),
                                                  L('Txt_BondsPossessed', 400, 300, 160, 28, 'Held', 22),
                                                  L('Txt_BondsPossessed_Label', 570, 300, 200, 28, '0', 22)]),
-    # popup del nodo sbloccato ([fn] lo carica, [fn] lo centra e cerca
+    # popup del nodo sbloccato (lo carica lo centra e cerca
     # Txt_Get_Label, Panel, Button_Ok/Txt_Ok): dal popup OK originale. Nel suo Panel il codice
-    # aggiunge Sphere_Incentive_ver240 (solo l'icona del premio, riempita da [fn]):
+    # aggiunge Sphere_Incentive_ver240 (solo l'icona del premio, riempita):
     # come popup completo appariva una seconda finestra spostata di Panel (banco v32_unlock4a).
     # Txt_Get_Label a y 45: sotto la scritta CONGRATULATIONS (LWF in Area_Point; a y 78 la
     # copriva, banco q9_get) e sopra l'icona (Panel y 250)
@@ -681,11 +681,11 @@ LAYOUTS = {
                                              P('Panel', 480, 366, 100, 100),
                                              P('Area_Point', 480, 514, 10, 10)]),
     'Sphere_Incentive_ver240.json': ('build', P('Sphere_Incentive_ver240', 0, 0, 100, 100, reward_icons(50, 50))),
-    # ultimo nodo, bacheca completata ([fn]): carica questo layout, cerca Txt_All
-    # (testo 106180205 «You completed the board!», visibile solo con il flag +0x7b3) e poi
-    # chiama [fn] come per Sphere_Popup_Get: servono anche Txt_Get_Label, Panel e
+    # ultimo nodo, bacheca completata: carica questo layout, cerca Txt_All
+    # (testo 106180205 «You completed the board!», visibile solo con il flag) e poi
+    # chiama come per Sphere_Popup_Get: servono anche Txt_Get_Label, Panel e
     # Button_Ok/Txt_Ok (senza, crash al tocco di OK sull'ultimo nodo, banco q10_done).
-    # [fn]: Area_Point (LWF SphereMap_Complete e Result_Reward). Una riga in piu'
+    # Area_Point (LWF SphereMap_Complete e Result_Reward). Una riga in piu'
     # del Get: finestra allungata in basso (in alto resta a y 481), OK e icona piu' bassi;
     # capInsetsY 60: con 0 (originale) si stirava la fascia chiara in cima (banco s3_comp)
     # Aspetto da ab_ref_title_popup_01 (1080p: x = (x'-150)/1,6875, y = 640 - y'/1,6875): cornice
@@ -721,13 +721,13 @@ LAYOUTS = {
                                               # (import_jp_coco, JP_LWF) disegna «COMPLETE» in Area_Point; con la
                                               # vecchia CONGRATULATIONS fissa si leggeva «C oCOMPLETions!» (banco 14-10)
                                               P('Area_Point', 480, 550, 10, 10)]),
-    # Bacheca sbloccata dal level up ([fn], dopo «Level Up!» nei risultati e alla home;
-    # specifica in stage_gen\lb_popup\REPORT.md). Cerca ([fn], ricorsivo dalla radice):
+    # Bacheca sbloccata dal level up (dopo «Level Up!» nei risultati e alla home;
+    # specifica in stage_gen\lb_popup\REPORT.md). Cerca (ricorsivo dalla radice):
     # Txt (Label, «Unlocked an Avatar Board!» 103400060 e varianti per tipo di bacheca),
     # Select_Base/Select_Board/Select_Kind (ImageView: costume img/sphere_incentive/%d, sfondo
     # img/sphere_board/Board_%04d, genere img/sphere_kind/Kind_%04d), Txt_Title_Label (Label,
     # nome della bacheca), Button_Ok (Button) con Txt_OK (Label, 100100001 «OK») e, finita
-    # l'apertura ([fn]), Area_Point (Panel: vi aggiunge la LWF Result_Reward).
+    # l'apertura, Area_Point (Panel: vi aggiunge la LWF Result_Reward).
     # Senza il layout: crash in GUIReader. Dal popup OK originale, carta come
     # SphereBoard_Select_Icon_ver130 (Select_Board sotto Select_Base)
     'BattleResult_LB_ver120.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
@@ -744,13 +744,13 @@ LAYOUTS = {
         ('add', 'NormalText_Window01', I('Title_Plate', 0, -105, 420, 36, 'Plate03.png', opts=PLATE3)),
         ('add', 'NormalText_Window01', L('Txt_Title_Label', 0, -105, 400, 32, '', 24)),
         P('Area_Point', 480, 560, 10, 10)]),
-    # Keyblade ottenuto nei risultati ([fn], da [fn] / [fn] quando la
-    # lista dei premi +0x448 ha voci di tipo 13 = keyblade, [fn]/[fn]): premio di
+    # Keyblade ottenuto nei risultati (quando la
+    # lista dei premi ha voci di tipo 13 = keyblade): premio di
     # prima conclusione (clearGetItemType 13: stage 1110 «The Mine Pt. 2» -> Treasure Trove 2000,
     # 1210, 1310) o delle missioni. Cerca: Txt (Label, nome del keyblade), KB (ImageView, il
     # codice vi carica l'immagine), Panel (Panel), Txt_Title_Label (101910002 «Set Medals in your
     # new Keyblade!»), Txt_KB_Label (103010011 «Quest Completion Reward» / 103010012 / 103010001
-    # / 103010002), Button_Ok con Txt_OK (100100001) e, aperto il popup ([fn]),
+    # / 103010002), Button_Ok con Txt_OK (100100001) e, aperto il popup,
     # Area_Point (LWF Result_Reward). Stessa famiglia di BattleResult_LB_ver120: stessa finestra.
     'BattleResult_KB.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                              {'4Line_Label': 'Txt_KB_Label', 'Button_OK': 'Button_Ok'}, False, [
@@ -766,13 +766,13 @@ LAYOUTS = {
         ('add', 'NormalText_Window01', L('Txt', 0, -62, 400, 32, '', 24)),
         ('add', 'NormalText_Window01', L('Txt_Title_Label', 0, -115, 600, 60, '', 22,
                                          opts=dict(hAlignment=1, vAlignment=1))),
-        # Panel: il codice ne cambia solo una proprieta' (vtable +0x428); trasparente, sotto la finestra
+        # Panel: il codice ne cambia solo una proprieta'; trasparente, sotto la finestra
         ('add', 'Panel_8', P('Panel', 0, 0, 10, 10)),
         P('Area_Point', 480, 560, 10, 10)]),
-    # Riga «abilita' salita di livello» nei risultati ([fn], da [fn] in ogni
-    # scena dei risultati: [fn] normale, raid, Colosseo, ...): per ogni medaglia del deck
+    # Riga «abilita' salita di livello» nei risultati (in ogni
+    # scena dei risultati: normale, raid, Colosseo, ...): per ogni medaglia del deck
     # la cui abilita' (userSkills, al massimo 2) ha un livello piu' alto dopo la quest
-    # ([fn]). Il codice la aggiunge a Scroll_Area della scena dei risultati e cerca solo
+    # . Il codice la aggiunge a Scroll_Area della scena dei risultati e cerca solo
     # Txt_GetItem_Label (100451005 «%s's %s leveled up!»). Dalla riga sorella originale
     # BattleResult_GetItem_ver131 (targa Result_GetItem_Panel), tolte icone e quantita'.
     'BattleResult_Skill_ver130.json': ('copy', 'BattleResult_GetItem_ver131.json', {}, False, [
@@ -781,15 +781,15 @@ LAYOUTS = {
         ('text', 'Txt_GetItem_Num_Label', ''),
         ('text', 'Txt_Wording', '')] + [('opts', n, dict(visible=False)) for n in (
             'UnderPanel', 'Txt_GetItem_Num_Label', 'New', 'GetItem', 'KB', 'LuxBoard', 'AVT', 'Base')]),
-    # Scheda «Events» dell'elenco Story (sbloccata dopo la Quest 14; [fn] crea
-    # AdvEventBannerScrollView, [fn] -> [fn]; risposta GET /stage/event).
-    # [fn] carica il modello di una cella (800x172) e prende la texture di Image_3
-    # (vtable +0x598 renderer, +0x4e8 texture): Image_3 deve essere un ImageView SENZA 9-slice
+    # Scheda «Events» dell'elenco Story (sbloccata dopo la Quest 14; crea
+    #; risposta GET /stage/event).
+    # carica il modello di una cella (800x172) e prende la texture di Image_3
+    # (renderer, texture): Image_3 deve essere un ImageView SENZA 9-slice
     # con una texture servita, altrimenti crash anche senza eventi. Per ogni evento la cella
-    # (clone, [fn] / [fn] / [fn]) cerca: Mask e Icon_Lock (visibili se
+    # (clone) cerca: Mask e Icon_Lock (visibili se
     # isLock 1; Icon_Lock carica img/ui/QuestBut_Lock o ShopBut_Lock_Disable), Icon_Complete
     # (img/ui/Complete_icon1/2 secondo complete), Image_3 (il banner scaricato da bannerUrl,
-    # [fn]), ImageButton_Check (facoltativo: senza, il codice crea un ImageButton
+    # ), ImageButton_Check (facoltativo: senza, il codice crea un ImageButton
     # trasparente sopra Image_3), Plate con Txt_Limit (scadenza, se < 100 giorni), Plate_Unlock
     # con Txt_Unlock (102900040 «Available»), EV_DetailButton (contenitore: il codice vi aggiunge un
     # ImageButton But15 e toglie EV_DetailButton_Draw se c'e'), Txt_EV_Detail (102900044 «Details»),
@@ -809,7 +809,7 @@ LAYOUTS = {
         P('EV_DetailButton', 640, 8, 140, 44),
         L('Txt_EV_Detail', 710, 30, 130, 30, '', 20),
         P('Panel_Eff', 80, 28, 640, 140, visible=False)])),
-    # Pulsanti laterali della mappa di un evento ([fn], aperto dal tocco su un banner):
+    # Pulsanti laterali della mappa di un evento (aperto dal tocco su un banner):
     # AdventureTop2_EV_Button cerca Button_EV_Board_0 (facoltativo, nascosto) e Button_EV_Board
     # con Txt (102920005 «Event Boards» / 102920007 «Special Boards»); AdventureTop2_Raid_Button
     # Button_EV_Board con Txt (102920006 «Raid Boards»). Dal pulsante laterale originale
@@ -821,12 +821,12 @@ LAYOUTS = {
     'AdventureTop2_Raid_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
                                        {'Button_Mu_Board': 'Button_EV_Board'}, False, [
         ('opts', 'Button_Last_Member', dict(visible=False))]),
-    # Colosseo: tessera del menu Quests ([fn]) -> [fn], popup di scelta del modo.
+    # Colosseo: tessera del menu Quests, popup di scelta del modo.
     # Cerca: Txt_PvP_off (Label: 106140105 «No event is being held.» / 106140106 / 106140107,
     # visibile se il PVP non e' disponibile), Panel con Txt (106140108 «Select a mode.»), Title2
     # (visibile se il PVP e' disponibile), Colosseum_But e PvP_But (pulsanti: Colosseum ->
-    # +0x440 = 6 -> [fn](0x11): GET /user/notice, poi GET /colosseum; PvP spento se non
-    # disponibile, [fn]), Close_Button. Finestra blu Win04 come i popup originali, due
+    # = 6: GET /user/notice, poi GET /colosseum; PvP spento se non
+    # disponibile), Close_Button. Finestra blu Win04 come i popup originali, due
     # pulsanti grandi con il nome del modo (testo fisso: il codice non lo scrive).
     'PvP_SelectWindow.json': ('build', P('PvP_SelectWindow', 0, 0, 960, 640, [
         I('Win', 480, 320, 640, 400, 'Win04.png',
@@ -839,31 +839,31 @@ LAYOUTS = {
         I('Title2', 620, 392, 70, 56, 'Deck_Medal_New.png', s9=False, visible=False),
         L('Txt_PvP_off', 620, 220, 260, 60, '', 18, opts=dict(hAlignment=1, vAlignment=1)),
         B('Close_Button', 790, 510, 64, 64, 'But_Close', None)])),
-    # Pulsanti laterali del Colosseo ([fn], dopo GET /colosseum; posizione da +0xa8):
+    # Pulsanti laterali del Colosseo (dopo GET /colosseum; posizione):
     # Button_Ranking/Txt (103300021 «Ranking»), Button_Reward/Txt (103300022 «Tier Rewards»),
-    # Button_Colosseum_Board/Txt (103300023 «Coliseum Boards»); tocchi con [fn]. Dal
+    # Button_Colosseum_Board/Txt (103300023 «Coliseum Boards»); tocchi. Dal
     # pulsante laterale originale AdventureTop2_Multi_Button, terzo pulsante clonato.
     'AdventureTop2_Colosseum_Button.json': ('copy', 'AdventureTop2_Multi_Button.json',
                                             {'Button_Mu_Board': 'Button_Colosseum_Board',
                                              'Button_Last_Member': 'Button_Ranking'}, False, [
         ('clone', 'Button_Ranking', 'Button_Reward', 'Panel_1'),
         ('opts', 'Button_Reward', dict(y=248, visible=True))]),
-    # Celle della mappa del Colosseo ([fn], tipo 3 della vista dei pannelli: Cursor,
+    # Celle della mappa del Colosseo (tipo 3 della vista dei pannelli: Cursor,
     # FaceBook_PhotoPanel facoltativo): stessi widget della cella delle quest
     # AdventureTop2_Adv_Panel_ver120 (originale).
     'AdventureTop2_Colosseum_Panel.json': ('copy', 'AdventureTop2_Adv_Panel_ver120.json', {}, False, []),
-    # Costo del deck superato su «Begin» ([fn]/[fn], StartDeckEditDialog: da
-    # [fn] e [fn] quando [fn] trova il costo > maxDeckCost; anche
-    # [fn], [fn], [fn]). Cerca: 4Line_Label (103000020 «Exceeds
+    # Costo del deck superato su «Begin» (da
+    # quando trova il costo > maxDeckCost; anche
+    # ). Cerca: 4Line_Label (103000020 «Exceeds
     # equipment cost. Please change your Medals.»), Button_Equip con Txt_Equip (100100006
     # «Equipment», porta al deck), Close_Button. Dal popup OK originale con la X tonda.
     'PopupNormal_Cost_Over.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                    {'Button_OK': 'Button_Equip', 'Txt_OK': 'Txt_Equip'}, False, [
         ('text', '4Line_Label', ''),
         ('add', 'NormalText_Window01', B('Close_Button', 300, 141, 64, 64, 'But_Close', None))]),
-    # Uscita dal Deck con deck oltre il costo ([fn], da [fn]; param_3 = deck 1-3
+    # Uscita dal Deck con deck oltre il costo (parametro = deck 1-3
     # oltre il costo). Cerca: 4Line_Label (101200022 «Exceeds equipment cost of %s.», scritto con
-    # [fn]), Button_Equip con Txt_Equip (100100001 «OK»), DeckBut_Area (Panel: il codice
+    # ), Button_Equip con Txt_Equip (100100001 «OK»), DeckBut_Area (Panel: il codice
     # vi aggiunge un'icona Deck_But0N_On per deck, 125 px l'una dall'altra, centrate).
     'DeckEdit_Cost_Over_ver131.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
                                        {'Button_OK': 'Button_Equip', 'Txt_OK': 'Txt_Equip'}, False, [
@@ -873,7 +873,7 @@ LAYOUTS = {
         ('opts', '4Line_Label', dict(y=105, height=100, areaHeight=100, hAlignment=1, vAlignment=1)),
         ('opts', 'Button_Equip', dict(y=-134)),
         ('add', 'NormalText_Window01', P('DeckBut_Area', -250, -70, 500, 100))]),
-    # AP insufficiente ([fn], da [fn]): ricarica con jewel. Cerca: Txt_Wording
+    # AP insufficiente: ricarica con jewel. Cerca: Txt_Wording
     # (102600018 «Not enough AP. Spend %d Jewels to fully restore AP?», resa XML), Txt_Wording2
     # (102600047), Txt_AP_Recovery (102600051 «1 AP restored in %02d:%02d.»),
     # Txt_CrownPossessed (100310002 «Held»), Txt_CrownPossessed_Label, Button_OK/Txt_OK,
@@ -892,7 +892,7 @@ LAYOUTS = {
         ('add', 'NormalText_Window03', L('Txt_AP_Recovery', 0, 12, 612, 34, '', 22,
                                          opts=dict(hAlignment=1, vAlignment=1)))]),
     # Gauge del keyblade al massimo con jewel, dal riquadro del keyblade prima della quest
-    # ([fn], tocco gestito da [fn] in StartDeckEditDialog). Cerca: Txt_Wording
+    # (tocco gestito in). Cerca: Txt_Wording
     # (103000012 «Spend %d Jewels to max out this Keyblade's special attack gauge?», XML),
     # Txt_CrownPossessed (100310002 «Held»), Txt_CrownPossessed_Label, Button_OK/Txt_OK,
     # Button_Close/Txt_Cancel: PopupNormal_Continue_Multi senza la seconda riga e il conto.
@@ -901,7 +901,7 @@ LAYOUTS = {
         ('text', 'Txt_Wording2', ''),
         ('opts', 'Txt_Wording2', dict(visible=False)),
         ('opts', 'Txt_Wording', dict(y=80, height=90))]),
-    # Medaglie oltre il limite ([fn]; da Begin, Medal List, negozio, ...: possedute >=
+    # Medaglie oltre il limite (da Begin, Medal List, negozio, ...: possedute >=
     # userDetail.maxMedal). Cerca: NormalText_Window01, 4Line_Label (102610002/3 + 102610008,
     # resa XML), Button_Extension/Txt_Extension (102610007 «Increase Storage»), Button_Mix/Txt_Mix
     # (101300001 «Level Up»), Button_Sell/Txt_Sell (100100029 «Sell»); nomi letti dalle stringhe
@@ -923,13 +923,13 @@ LAYOUTS = {
         ('opts', 'Button_Mix', dict(x=0, y=-130, normalData={'path': 'But03_Off.png', 'plistFile': '', 'resourceType': 0},
                                     pressedData={'path': 'But03_On.png', 'plistFile': '', 'resourceType': 0})),
         ('opts', 'Button_Sell', dict(x=215, y=-130))]),
-    # Scelta della medaglia a cui dare un trait ([fn], «Exchange» di una riga Traits).
+    # Scelta della medaglia a cui dare un trait («Exchange» di una riga Traits).
     'MoogleShop_Traits_MedalSelect_Pop_ver410.json': ('func', 'trait_medal_select_popup'),
-    # Profilo (AvatarInfoDialog: open [fn] carica la scena nascosta e chiede
-    # GET /user/profile, azione 5; createLayout [fn]). La scena ha UnderUI (Button_A..D
+    # Profilo (open carica la scena nascosta e chiede
+    # GET /user/profile, azione 5; createLayout). La scena ha UnderUI (Button_A..D
     # con Txt_A..D, Button_Invitation, Txt) e LeftUI. Il contenitore (lambda $_17,
-    # [fn]) = AvatarInfo_Oneself_ver131 con sopra AvatarInfo_User_ver260 («User»,
-    # zorder 2); [fn] vi aggiunge le pagine TxtLayer1 = AvatarInfo_Txt_ver340
+    # ) = AvatarInfo_Oneself_ver131 con sopra AvatarInfo_User_ver260 («User»,
+    # zorder 2); vi aggiunge le pagine TxtLayer1 = AvatarInfo_Txt_ver340
     # (originale: statistiche, LUX, ranking, Share, Close_Button, Button_Change) e TxtLayer2 =
     # AvatarInfo_Txt2. Aspetto da reference\profile\profile_06.png (fotogramma 640x360, area
     # di gioco 540x360 da x=50: x = (x'-50)/0,5625, y = (360-y')/0,5625): barra in basso con
@@ -954,10 +954,10 @@ LAYOUTS = {
     'AvatarInfo_Oneself_ver131.json': ('build', P('Oneself', 0, 0, 960, 640, [
         I('Win', 487, 350, 946, 570, 'Win04.png',
           opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200))])),
-    # «User» ([fn]): Base_User (il codice vi carica Plate10) con Union_Symbol
+    # «User»: Base_User (il codice vi carica Plate10) con Union_Symbol
     # (img/union/Union_%02d), Txt_Party/Party_Name, Txt_LV/Txt_LV_Label, MVP_Crown
     # (CrownIcon_Img img/ui/AvtInfo_CrownIcon%d, Crown_Label, CrownNum_Label) e MVP_Trophy
-    # (Trophy_Img, Trophy_Label, TrophyNum_Label); [fn]: Party_Button/Txt_PartyButton.
+    # (Trophy_Img, Trophy_Label, TrophyNum_Label); Party_Button/Txt_PartyButton.
     # Struttura come Offline_Record_Left (versione offline: user_name, union_symbol,
     # mvp_crown, mvp_trophy); posizioni da profile_06 (targa del nome x 27-418, y 547; Party
     # y 500).
@@ -967,11 +967,11 @@ LAYOUTS = {
               I('Union_Symbol', -150, 0, 128, 128, 'Union_03.png', s9=False, scale=0.5),
               # nome del giocatore (stringa composta sullo stack, banco pf10)
               L('My_Name', 20, 0, 280, 34, '', 26)]),
-        # miniatura dell'account collegato ([fn]) a destra della targa del nome,
+        # miniatura dell'account collegato a destra della targa del nome,
         # come in profile_06 (x' 272, y' 52); la mostra il codice secondo isLinkThumbnail
         I('FaceBook_PhotoPanel', 390, 547, 60, 60, 'FaceBook_PhotoPanel01.png', s9=False, scale=0.85,
           visible=False, children=[I('FaceBook_Photo', 30, 30, 50, 50, 'FaceBook_Photo.png', s9=False)]),
-        # titolo ([fn]): targa img/userTitle/title_%04d caricata dal codice, testo
+        # titolo: targa img/userTitle/title_%04d caricata dal codice, testo
         # «sinistra destra» in RankTitle_Name; come AvatarTitle_PanelButton_Big2 (610x82) ma
         # alto quanto la riga del titolo del riferimento (y 613)
         I('RankTitle_Board', 222, 610, 406, 54, 'title_1000.png', s9=False, children=[
@@ -991,15 +991,15 @@ LAYOUTS = {
             L('TrophyNum_Label', 110, 8, 80, 33, '', 22)], visible=False),
         B('Party_Button', 120, 500, 230, 40, 'But01', 'Party', 20, label='Txt_PartyButton', opts=BUTS,
           visible=False)])),
-    # Pagina 2 (Button_Change, [fn]): record del giocatore. Copia della pagina 1
+    # Pagina 2 (Button_Change): record del giocatore. Copia della pagina 1
     # (stesso avatar e anello) con il riquadro dei record: Scroll_Area (vi crea
     # RecordScrollView), Txt_Money/_Label, Txt_MoguPoint/_Label, Txt_LastLogin/_Label,
     # Txt_Timezone con _1/_2/_3_Label, Txt_Style/_Label.
-    # Senza l'anello delle medaglie: con Area_Revolver anche qui [fn] riusa l'anello
+    # Senza l'anello delle medaglie: con Area_Revolver anche qui riusa l'anello
     # della pagina 1 prima che abbia caricato DeckEdit_Revolver (crash, banco pf15)
     # Home: un tocco sulla piazza nasconde i menu e, per chi non e' in party (userParty.isJoin
-    # 0), mostra Chirithy (NPC 999) con una nuvoletta ([fn]): il codice usa solo
-    # Txt_Name (Text::setString «Join a party and make new friends!», 101000022). Mancava in
+    # 0), mostra Chirithy (NPC 999) con una nuvoletta: il codice usa solo
+    # Txt_Name («Join a party and make new friends!», 101000022). Mancava in
     # ogni risorsa: crash in GUIReader (stage_gen\pet_crash). Copia della nuvoletta dell'avatar,
     # testo su due righe.
     'MyPage_ChirishiBaloon.json': ('copy', 'MyPage_AvatarBaloon_ver240.json', {}, False, [
@@ -1008,7 +1008,7 @@ LAYOUTS = {
         ('opts', 'Txt_Wording', dict(visible=False)),
         ('opts', 'LoginTime_Icon', dict(visible=False)),
         ('opts', 'FaceBook_PhotoPanel', dict(visible=False))]),
-    # Sconfitta in solo: popup «Continue» ([fn], param_2 & 1 = multi). Esisteva solo
+    # Sconfitta in solo: popup «Continue» (parametro & 1 = multi). Esisteva solo
     # PopupNormal_Continue_Multi (stessi widget: Txt_Wording/2, Txt_CrownPossessed/_Label,
     # Button_OK/Txt_OK, Button_Close/Txt_Cancel, Txt_Countdown); il conto alla rovescia e'
     # del multigiocatore.
@@ -1037,7 +1037,7 @@ LAYOUTS = {
     # Txt_Comment_Label_U13 al posto del TextField)
     'AvatarInfo_Comment_ver132.json': ('func', 'avatar_comment_popup'),
     'AvatarInfo_Comment_U13_ver132.json': ('func', 'avatar_comment_popup'),
-    # Play Style (Button_C, [fn]), assente dalle risorse. Aspetto da
+    # Play Style (Button_C), assente dalle risorse. Aspetto da
     # reference\profile\profile_16.png (finestra x' 110-530, y' 10-355): «Play Time (Pacific
     # Time)», 6 fasce orarie su due righe, «Select up to 3.» giallo, «Play Style» con
     # Hardcore/Core/Casual, Cancel arancione (Button_Close/Txt_Cancel) e OK rosso. I pulsanti
@@ -1046,7 +1046,7 @@ LAYOUTS = {
         I('Win_PlayStyle', 480, 315, 747, 613, 'Win04.png',
           opts=dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)),
         L('Txt_PlayTime', 146, 592, 400, 30, 'Play Time', 24, opts=dict(anchorPointX=0, hAlignment=0)),
-        # CheckBox ([fn] ne registra l'evento: con Button crash, banco ps2)
+        # CheckBox (ne registra l'evento: con Button crash, banco ps2)
         *[C('Button_PlayTime_' + c, 258 + 222 * (k % 3), 519 - 94 * (k // 3), 218, 52, 'But16',
             [L('Txt_PlayTime_' + c, 0, 0, 208, 44, '', 22)]) for k, c in enumerate('ABCDEF')],
         L('Txt_Select', 480, 356, 500, 28, '', 22, opts=dict(colorR=255, colorG=230, colorB=60)),
@@ -1057,7 +1057,7 @@ LAYOUTS = {
             [L('Txt_Style_' + c, 0, 0, 208, 44, '', 22)]) for k, c in enumerate('ABC')],
         B('Button_Close', 325, 66, 205, 62, 'But03', 'Cancel', 28, label='Txt_Cancel', opts=BUT9),
         B('Button_Ok', 633, 66, 205, 62, 'But01', 'OK', 28, label='Txt_OK', opts=BUT9)])),
-    # Titles (Button_A, [fn]): stessi nomi della versione offline originale
+    # Titles (Button_A): stessi nomi della versione offline originale
     # (Pre_Area per l'anteprima, AvTitleWin con Title A/B, Plate1/2, Button_Plate «Nameplate»)
     # Button_Ok e il separatore non li usa il codice (nessuna ricerca): nascosti, finestra
     # accorciata come in reference\profile\profile_11.png (finisce sotto «Nameplate»)
@@ -1066,7 +1066,7 @@ LAYOUTS = {
         ('opts', 'Img_Separator', dict(visible=False)),
         ('opts', 'PopupNormal_04', dict(height=580, scale9Height=580)),
         ('opts', 'Close_Button', dict(y=279))]),
-    # Avatar Boards, elenco ([fn]): nessun layout Sphere* nelle risorse. Aspetto da
+    # Avatar Boards, elenco: nessun layout Sphere* nelle risorse. Aspetto da
     # reference\avatar_boards\avatar_boards_list_01.jpg (2400x1080: x = (x'-390)/1,6875,
     # y = (1080-y')/1,6875) e ab_29-32.png (video 2017): carosello delle bacheche al centro,
     # in basso «Avatar Coins» (Coin, Txt_Coin_Title, Txt_Coin), nome della bacheca
@@ -1079,9 +1079,9 @@ LAYOUTS = {
     'SphereBoard_Gen.json': ('build', P('sphere_board_root', 0, 0, 960, 640, [
         P('BG', 0, 0, 960, 640),
         L('BoardNone_txt', 480, 341, 600, 40, '', 26, visible=False),
-        # carosello ([fn]: SelectArea, frecce LeftUI_Arrow/RightUI_Arrow ai bordi come in
+        # carosello (SelectArea, frecce LeftUI_Arrow/RightUI_Arrow ai bordi come in
         # avatar_boards_list_01, x' 288 e 2106 -> x -60 e 1017)
-        # posti delle carte ([fn] li cerca dentro SelectArea, banco ab9): centrale e
+        # posti delle carte (li cerca dentro SelectArea, banco ab9): centrale e
         # laterali come in avatar_boards_list_01 (x' 1200/738/1662 -> 480/206/754)
         # y dei posti ignorata dal codice: con SelectArea a 180 le carte finivano sotto la barra in
         # alto (banco v32, centro a y 518): abbassata di 177 per il centro a 341
@@ -1107,13 +1107,13 @@ LAYOUTS = {
             I('Win_Coin_Icon', -72, 0, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.35, opts=dict(opacity=0)),
             L('Txt_Coin_Title', -20, 0, 80, 24, '', 18, visible=False),
             L('Txt_Coin', 85, 0, 120, 30, '0', 26, opts=dict(anchorPointX=1, hAlignment=2, opacity=0))]),
-        # riquadro «Avatar Coins» in basso a sinistra ([fn]: Txt_Coin_Name_Label,
+        # riquadro «Avatar Coins» in basso a sinistra (Txt_Coin_Name_Label,
         # Txt_Coin_Label)
         # riquadro con la linguetta del titolo (Av_Panel1 di make_textures): Win04 in 9-slice non
         # scende sotto ~300 px di altezza (banco ab11)
         # come in ab_ref_list_complete_01: Win09 blu con il bordo chiaro, x 3-181, y 42-122
         I('Coin', 92, 82, 178, 80, 'Win09.png', opts=WIN9, children=[
-              # icona della valuta: [fn] -> [fn] (banco ab10)
+              # icona della valuta: (banco ab10)
               I('SpherePointIcon', -66, 16, 90, 90, 'IncentiveIcon_14.png', s9=False, scale=0.3),
               L('Txt_Coin_Name_Label', 19, 16, 130, 24, 'Avatar Coins', 18),
               I('Coin_Base', 0, -17, 162, 30, 'Plate02.png', opts=PLATE3),
@@ -1139,7 +1139,7 @@ LAYOUTS = {
         P('BoardDetail', 0, 0, 10, 10, [
             B('DetailButton', 480, 180, 200, 52, 'But16', 'Details', 22, label='Txt_Detail', opts=BUT9,
               visible=False)])])),
-    # Carta del carosello ([fn] la carica, [fn] la riempie): Select_Base
+    # Carta del carosello (la carica la riempie): Select_Base
     # (fondo, Board_0001 306x306: l'unica carta rimasta nelle risorse, grigio-azzurra come nei
     # fotogrammi del 2017), Select_Board (img/sphere_board/Board_%04d) e Select_Kind
     # (img/sphere_kind/Kind_%04d, il segno del genere in alto a destra: Kind_0001)
@@ -1149,7 +1149,7 @@ LAYOUTS = {
         I('Select_Base', 153, 153, 306, 306, 'Board_0001.png', s9=False),
         I('Select_Kind', 153, 153, 306, 306, 'Kind_0001.png', s9=False),
         L('Count_Label', 153, 30, 200, 30, '', 22, visible=False),
-        # cercati anche da [fn] (riempimento della carta; senza: crash con una bacheca
+        # cercati anche (riempimento della carta; senza: crash con una bacheca
         # nell'elenco, banco v32): New, Clear (completata), Select_On (carta scelta), costo in
         # Jewel (Jewel_Panel, LB_Jewel, Txt_Jewel_Label), No_Panel/Txt_No_Label, Txt_Offer_Ends
         I('New', 60, 280, 69, 30, 'Deck_Medal_New.png', s9=False, visible=False),
@@ -1165,7 +1165,7 @@ LAYOUTS = {
         P('No_Panel', 53, 300, 200, 40, [I('No_Tab', 100, 20, 195, 30, 'Sphere_No_Tab.png', s9=False),
                                          L('Txt_No_Label', 100, 20, 200, 36, '', 20)], visible=False),
         L('Txt_Offer_Ends', 153, 60, 280, 24, '', 18, visible=False)])),
-    # Bacheca (SceneSphereBoard, [fn]; specifica in stage_gen\boards\LAYOUT.md): il
+    # Bacheca (specifica in stage_gen\boards\LAYOUT.md): il
     # codice cerca G11..G59 (5 righe x 9 colonne, tutte obbligatorie, riga 1 in alto; il nodo
     # va al centro della cella), Grid/Grid_R/Info/LeftUI (animazioni di entrata e uscita, il
     # primo figlio da' la distanza), carta (Select_*), monete, premio, Button e Button_All con
@@ -1208,7 +1208,7 @@ LAYOUTS = {
             # But06: arancione come But03 ma con la variante _Disable (grigio a bacheca completa, come ab_ref)
             B('Button', 893, 44, 114, 64, 'But06', 'Unlock', 26, label='Txt_Release', opts=BUT9),
             B('Button_All', 777, 44, 104, 52, 'But16', 'Unlock All', 18, label='Txt_Release', opts=BUT16)])])),
-    # nodo della bacheca ([fn], posto a (-50,-50) sul nodo): Get (spunta, nascosta
+    # nodo della bacheca (posto a (-50,-50) sul nodo): Get (spunta, nascosta
     # all'inizio), Txt_Incentive_Label, Txt_Price_Label (costo in monete)
     'Sphere_Incentive.json': ('build', P('Sphere_Incentive', 0, 0, 100, 100, [
         # spunta gialla dei nodi sbloccati (ab_ref_node_check_01; Sphere_Node_Check di make_textures):
@@ -1216,7 +1216,7 @@ LAYOUTS = {
         I('Get', 51, 74, 64, 56, 'Sphere_Node_Check.png', s9=False, visible=False),
         L('Txt_Incentive_Label', 50, 20, 100, 20, '', 14, visible=False),
         L('Txt_Price_Label', 90, 67, 50, 24, '0', 20)])),
-    # Missioni (pulsante a pergamena della home, [fn] / [fn] / [fn]):
+    # Missioni (pulsante a pergamena della home):
     # nessun layout ne' riferimento visivo trovato (annotato in HANDOFF). Finestra nello stile
     # dei popup KHUX: schede tab1..tab4 in alto (MyMission_Category, GroupIcon, Icon_Crown),
     # elenco Scroll_Area, «Stock» (Txt_Stock con Txt_Stock_Num_Label / Txt_Stock_All_Label),
@@ -1254,8 +1254,8 @@ LAYOUTS = {
             L('Txt_Warning', 430, 226, 700, 80, '', 24)], visible=False),
         P('Cautio_Panel', 50, 520, 860, 30, [L('Txt', 430, 15, 840, 26, '', 18)], visible=False),
         B('Close_Button', 912, 582, 64, 64, 'But_Close', None)])),
-    # Riga di una missione ([fn] la carica in MissionScrollView, [fn] /
-    # [fn] / [fn] la riempiono): Panel_Present (vi mette PresentBOX_IconPanel),
+    # Riga di una missione (la carica in /
+    # la riempiono): Panel_Present (vi mette PresentBOX_IconPanel),
     # Txt_Mission_Title_Label, Txt_Gift_Name_Label, Panel_Mask e GetStamp (riscossa),
     # ChallengeButton con Button_Challenge/Txt_Challenge, ReceiveButton con Button_Receive/
     # Txt_Receive, Txt_Storage_Date_Label (tempo rimasto), Gauge_Base con Gauge (il codice ne
@@ -1284,25 +1284,25 @@ LAYOUTS = {
           opts=dict(colorR=255, colorG=230, colorB=60)),
         L('Txt_Storage_Date_Label', 870, 108, 220, 24, '', 18, opts=dict(anchorPointX=1, hAlignment=2)),
         # ChallengeButton/ReceiveButton li crea il codice attorno a Button_Challenge/Button_Receive
-        # ([fn]: se esistono gia' li prende per pulsanti suoi: crash, banco v32)
+        # (se esistono gia' li prende per pulsanti suoi: crash, banco v32)
         B('Button_Challenge', 785, 54, 233, 68, 'But03', 'Challenge', 26, label='Txt_Challenge', opts=BUTS),
         B('Button_Receive', 785, 54, 233, 68, 'But01', 'Collect', 26, label='Txt_Receive', opts=BUTS),
         P('Panel_Mask', 50, 3, 836, 138, visible=False,
           opts=dict(colorType=1, bgColorR=0, bgColorG=0, bgColorB=0, bgColorOpacity=120)),
         # riscossa: la scritta COMPLETE delle missioni completate (World_Stage_Clear) sul pulsante
         I('GetStamp', 785, 54, 170, 34, 'World_Stage_Clear.png', s9=False, scale=0.95, visible=False)])),
-    # «Other» del menu ([fn]): vedi other_menu
+    # «Other» del menu: vedi other_menu
     'MenuDialog_ver300.json': ('func', 'other_menu'),
-    # Transfer Unions (I-107): OtherMenuDialog::openBackupPopup ($_91, [fn]) apre la
-    # scelta dell'account [fn] e la conferma [fn], che caricano la variante
-    # dark_ solo con il flag Dark Road ([fn] +0x1a9), altrimenti quella senza prefisso,
+    # Transfer Unions (I-107): ($_91) apre la
+    # scelta dell'account e la conferma che caricano la variante
+    # dark_ solo con il flag Dark Road, altrimenti quella senza prefisso,
     # assente da ogni risorsa (anche JP): crash immediato senza richieste. Copie dei dark_ con le
     # cornici KHUX; i pulsanti Apple/SQEX Bridge (non 9-slice) restano senza immagine come nel dark
     'MenuDialog_account_select_ver401.json': ('copy', 'dark_MenuDialog_account_select_ver401.json', {}, True),
     'MenuDialog_account_select_ok_cancel_ver401.json': ('copy', 'dark_MenuDialog_account_select_ok_cancel_ver401.json', {}, True),
     'TresCommu_CommunicationUser.json': ('build', P('commu_user', 0, 0, 200, 200)),
     'TresCommu_CommunicationOther.json': ('build', P('commu_other', 0, 0, 200, 200)),
-    # Esito ([fn]): popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
+    # Esito: popup OK originale, il messaggio e' Txt_Sell_Ok1. Come nel
     # popup originale (reference\material_sell\complete_thumb.png): «Complete!» in alto,
     # targhe dei guadagni al centro, OK in basso.
     'PopupNormal_MedalSell_Ok_ver350.json': ('copy', 'PopupNormal_Text_34_4Line_Ok.json',
@@ -1310,16 +1310,16 @@ LAYOUTS = {
                                              [('text', 'Txt_Sell_Ok1', ''),
                                               ('opts', 'Txt_Sell_Ok1', dict(y=112, height=40))]
                                              + obtain_plates(480, 325)),
-    # Dettaglio medaglia da Medal List: [fn] carica SlideMedalInfoScene_ver341 sopra
+    # Dettaglio medaglia da Medal List: carica SlideMedalInfoScene_ver341 sopra
     # MedalInfoScene e aggiunge un pulsante al primo figlio di LeftUI e di RightUI (medaglia
     # precedente / successiva). Frecce come MedalInfo_Arrow01.json (Medal_Syn_Arrow01 punta a sinistra).
-    # Il pulsante ([fn]) accetta i tocchi in un rettangolo grande quanto il pannello
+    # Il pulsante accetta i tocchi in un rettangolo grande quanto il pannello
     # ma centrato sulla sua origine (angolo in basso a sinistra): l'origine sta quindi al
     # centro della freccia, e la freccia in (0,0).
     # Layout originali con i testi in giapponese: copie tradotte che sostituiscono
     # l'originale (resource_merge.py --last-wins). Conferma di Unequip nel dettaglio di
     # una medaglia equipaggiata (il pulsante prende il testo da text/ui/106180101).
-    # Dopo Evolve il client riapre MedalInfoScene_ver320 come risultato ([fn]) e cerca
+    # Dopo Evolve il client riapre MedalInfoScene_ver320 come risultato e cerca
     # Panel_MixResult_Area nel layout R1, che l'ha solo la variante R3: crash. Si aggiungono
     # all'R1 originale i due pannelli vuoti dell'R3 (sostituzione, --last-wins).
     'MedalInfo_Information_R1.json': ('copy', 'MedalInfo_Information_R1.json', {}, False, [
@@ -1328,7 +1328,7 @@ LAYOUTS = {
     # Pulsante Supernova in battaglia: l'icona SN dei filtri al posto della bussola SBurst_but01/02
     # (texture SBurst_SN_but01/02 di make_textures.py; sostituzione, --last-wins).
     # Layout WW (posizioni e animazioni del pulsante giuste) + l'ImageView «Medal» della revisione JP piu' recente,
-    # dove [fn] mette img/medal/Medal_S_<imageId>.png della Supernova messa in coda (I-190): superburst_select_window.
+    # dove mette img/medal/Medal_S_<imageId>.png della Supernova messa in coda (I-190): superburst_select_window.
     'ActionMap_SuperBurst_SelectWindow.json': ('func', 'superburst_select_window'),
     'MedalInfo_ReleaseWindow.json': ('copy', 'MedalInfo_ReleaseWindow.json', {}, False,
                                      [# Win_Over (9-slice) usa Panel07, assente da ogni risorsa: stesso
@@ -1346,13 +1346,13 @@ LAYOUTS = {
                                        [('opts', 'Txt_Announce', dict(fontSize=16))]),
     'MedalMix_GuiltMixBalloon2.json': ('copy', 'MedalMix_GuiltMixBalloon2.json', {}, False,
                                        [('opts', 'Txt_Announce', dict(fontSize=16))]),
-    # Evolve ([fn]): senza MedalEvoScene_ver320 [fn] restituisce null e il
+    # Evolve: senza MedalEvoScene_ver320 restituisce null e il
     # client va in crash all'addChild. Nodi come nella ver260 (UnderUI, CenterUI_Left,
     # CenterUI_Right a x=480, LeftUI a y=576), ma Under e Left non esistono in nessuna
     # risorsa: generati con i widget che il codice cerca. UnderUI: Base_Money1/2 (con
-    # Txt_Money, testi 0x5fa74e2/0x5fa74e3, e Txt_Money_Label), Button_LimitCut/
-    # Txt_LimitCut (0x60b3dc1), Button_Sell1/Txt_Sell1 (0x606a9e4), Txt_Wording
-    # (0x60b3dc7). CenterUI_Left: Dummy_Medal1/Star_Area1 (prima) e Dummy_Medal2/
+    # Txt_Money, testi 100300002/100300003, e Txt_Money_Label), Button_LimitCut/
+    # Txt_LimitCut (101400001), Button_Sell1/Txt_Sell1 (101100004), Txt_Wording
+    # (101400007). CenterUI_Left: Dummy_Medal1/Star_Area1 (prima) e Dummy_Medal2/
     # Star_Area2 (dopo).
     'MedalEvoScene_ver320.json': ('scene', [('UnderUI', 'publish/MedalInfo_Evo_Under_Gen.json'),
                                             ('CenterUI_Left', 'publish/MedalInfo_Evo_Left_Gen.json'),
@@ -1375,7 +1375,7 @@ LAYOUTS = {
         ('text', 'ATk', 'STR'), ('text', 'DEF', 'DEF'),
         ('text', 'Burst', 'Special Attack'), ('text', 'BurstName_Label', ''),
         ('text', 'Ability', 'Ability'), ('text', 'BurstCost', 'Required Gauges'),
-        # aggiunti dopo la ver260 ([fn], [fn]): riquadri del Kakusei (skill
+        # aggiunti dopo la ver260: riquadri del Kakusei (skill
         # di risveglio) e del Super Attack, cloni nascosti del riquadro dello speciale
         ('clone_r', 'Base_MedalInfo2', 'Base_KakuseiSkill', 'Panel_1',
          {'BurstName_Label': 'KakuseiSkillName_Label'}),
@@ -1387,16 +1387,16 @@ LAYOUTS = {
     # con «Held N», barra in basso come quella del Level Up (MedalInfo_Mix_ver340).
     'MedalInfo_Evo_Left_Gen.json': ('build', P('Panel_Evo_Left', 0, 0, 480, 640, [
         # Dummy_Medal1/2 sono ImageView: il codice vi carica l'immagine della medaglia
-        # ([fn], loadTexture); da Panel il client va in crash. Immagini Medal_L
+        # (loadTexture); da Panel il client va in crash. Immagini Medal_L
         # 640x640 con la medaglia al centro, scala 0,7; a schermo il centro della medaglia
         # cade (-428, -410)·scala px dalla posizione data (misurato sul banco a 0,3 e 0,42).
         I('Dummy_Medal1', 238, 220, 140, 170, 'Plate01.png', scale=0.7),
         I('Dummy_Medal2', 584, 220, 140, 170, 'Plate01.png', scale=0.7),
         I('Arrow_Evo', 233, 379, 113, 170, 'Medal_Evo_Arrow01.png', s9=False, scale=0.9),
-        # stelle ([fn], scala 0,75): centrate nell'area, che sta sotto la medaglia
+        # stelle (scala 0,75): centrate nell'area, che sta sotto la medaglia
         P('Star_Area1', -88, 256, 300, 30),
         P('Star_Area2', 259, 256, 300, 30)])),
-    # Area ([fn]): i materiali richiesti, un pannello MedalInfo_Evo_Medal ogni 110 px.
+    # Area: i materiali richiesti, un pannello MedalInfo_Evo_Medal ogni 110 px.
     # Barra in basso con le misure del Level Up: Button_LimitCut e Button_Sell1 sono
     # immagini (il codice vi aggiunge il pulsante But01 / But06 e i testi «Evolve» e
     # «Sell Medals»), Base_Money1/2 = Required / Munny con l'icona Icon_Prize.
@@ -1416,10 +1416,10 @@ LAYOUTS = {
         I('Button_Sell1', 491, 49, 119, 58, 'But06_Off.png', children=[
             L('Txt_Sell1', 0, 2, 110, 54, 'Sell Medals', 20)]),
         L('Txt_Wording', 770, 48, 380, 30, '', 18)])),
-    # Materiale richiesto da Evolve ([fn], riempito da [fn]): in Medal_S il
+    # Materiale richiesto da Evolve (riempito): in Medal_S il
     # codice aggiunge l'icona (medalView) e lo ridimensiona; Possession e' un contenitore con
     # Label_9 (testo 101399490) e Num_Label (quantita' posseduta), entrambe con ombra
-    # ([fn]: crash se mancano). L'icona (medalView) ha sotto la sua targhetta scura
+    # (crash se mancano). L'icona (medalView) ha sotto la sua targhetta scura
     # del livello, vuota: come nell'originale «Held N» ci sta sopra (centro dell'icona a
     # (55,95) del pannello, targhetta a y=40, misurati sul banco). Dietro, il cerchio dello
     # slot del Level Up (Medal_Syn_Panel).
@@ -1435,7 +1435,7 @@ LAYOUTS = {
         I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png')])),
     'SlideMedalInfo_Right.json': ('build', P('Panel_Right', 930, 320, 120, 220, [
         I('Arrow01', 0, 0, 56, 134, 'Medal_Syn_Arrow01.png', flipX=True)])),
-    # Popup Sort di Medal List ([fn], [fn]): la ver350 e' la ver320 originale
+    # Popup Sort di Medal List: la ver350 e' la ver320 originale
     # piu' la sezione Dummy_Sb (filtro Super Burst; il codice la nasconde spostando le altre
     # della sua altezza: qui alta 0) e i filtri aggiunti dopo, cloni nascosti di quelli
     # vicini (nomi letti dallo stack al crash, dump mls2).
@@ -1468,8 +1468,8 @@ LAYOUTS = {
          ('clone', 'Filter_RareStarSet7', 'Filter_RareStarSet8', 'Dummy_Filter')]
       + [('clone', 'Filter_Evo', 'Filter_Sb', 'Dummy_Sb')]   # cercato dentro Dummy_Sb (00a482ac)
       + [('clone', 'Filter_Evo', n, 'Dummy_Filter') for n in ('Filter_Subslot', 'Filter_Trait', 'Filter_Evo_Set')]),
-    # Sub-slot del keyblade (I-066: Equipment > «Subslot», SceneDeckEdit::openSubslotPanel =
-    # [fn]). La scena ver340 non esiste: copia della ver310 originale (subslot_scene) con
+    # Sub-slot del keyblade (I-066: Equipment > «Subslot» =
+    # ). La scena ver340 non esiste: copia della ver310 originale (subslot_scene) con
     # Set_Medal nuovo. Il codice cerca dalla radice (ricorsivo): DeckEdit_SubSlot_Select_Medal (nodo)
     # > Win_under > Scroll_Area (vi crea MiniMedalScrollView), DeckEdit_SubSlot_Set_Medal (nodo) >
     # Win_under > Scroll_Area (vi crea KeybladeSubslotMedalView, celle DeckEdit_SubSlotMedal_ver260),
@@ -1478,7 +1478,7 @@ LAYOUTS = {
     # Txt_Subslot_Caution_Label (106140377); nel nodo Set_Medal Txt_KeyBlade_Label (nome del
     # keyblade), Txt_SubSlot_Rate (106140371 «Multipliers»), Txt_SubSlot_Num (106140374 «Equipped
     # Slots»), Txt_KeyBlade_Lv_Rate_Label («x%01.1f» = subslotRate del keyblade). Ad ogni cambio
-    # [fn] scrive Txt_SubSlot_Rate_Label («+%01.3f») e Txt_SubSlot_Num_Label (106140352,
+    # scrive Txt_SubSlot_Rate_Label («+%01.3f») e Txt_SubSlot_Num_Label (106140352,
     # «n/120») nel Set_Medal, mette l'armatura EFFECT (freccia su) in Win_under > panel quando il
     # moltiplicatore sale e fa lampeggiare Panel_34 se gli slot non sono riempiti in ordine.
     # Disposizione da reference\subslot (JP 2018): a sinistra «SUBSLOT», keyblade, moltiplicatore
@@ -1510,7 +1510,7 @@ LAYOUTS = {
         B('BestButton', 215, 45, 220, 68, 'But06', 'Optimize', 24, label='Txt_Best', opts=BUTS),
         L('Txt_NotExist', 215, 340, 380, 60, 'No available Medals.', 22, visible=False)])),
     # Avviso «Medals must be set in order.» (nodo SubSlot_Caution della scena in 379,470): Panel_34
-    # nascosto; [fn] (se uno slot vuoto precede uno pieno) gli mette opacita' 0, lo mostra e
+    # nascosto; (se uno slot vuoto precede uno pieno) gli mette opacita' 0, lo mostra e
     # lo fa comparire e svanire (FadeIn, attesa, FadeOut) senza spostarlo: la posizione e' quella del
     # layout. Nella ver310 originale la griglia occupava tutta l'altezza; qui (Set_Medal ver340 con
     # l'intestazione) va sulla barra «Equipped Slots» (assoluto 262,526, 500x40: y 506..546, sopra il
@@ -1524,8 +1524,8 @@ LAYOUTS = {
               opts=dict(scaleX=500 / 116, scaleY=56 / 26)),
             L('Txt_Subslot_Caution_Label', 250, 28, 480, 52, 'Medals must be\nset in order.', 19)],
           visible=False)])),
-    # Cella di un sub-slot (KeybladeSubslotMedalView: [fn] la carica, 164x154; [fn]
-    # e [fn] la riempiono). Cerca (ricorsivo, tutti obbligatori tranne MatchSlotLWF):
+    # Cella di un sub-slot (la carica, 164x154;
+    # e la riempiono). Cerca (ricorsivo, tutti obbligatori tranne MatchSlotLWF):
     # Medale (tocco spento, visibile), SubSlot_Route_LR/LR1/LR2 (linea verso la cella a destra:
     # base, slot dopo vuoto, slot dopo pieno) e UD/UD1/UD2 (verso la riga sotto, righe a serpentina),
     # MedalBase (ImageView: «img/ui/Subslot_MedalSlot%03d.png» con la category del keyblade; vi
@@ -1534,14 +1534,14 @@ LAYOUTS = {
     # (Deck_Mark_Uplight/Reverse), Medal_S (immagine della medaglia), Txt_Mag_Label («+%01.3f» =
     # bonus del tier), Guilt_Icon (img/ui/guilt/Guilt%d_num_draw), Cursor (vi crea l'armatura
     # Z_SpCursor, cursor_anim, sullo slot da riempire). Aspetto da reference\subslot\subslot_JP_3.
-    # Medal_S: [fn] vi carica la Medal_S della medaglia ([fn], 190x190 come Medal
+    # Medal_S: vi carica la Medal_S della medaglia (190x190 come Medal
     # di DeckEdit_SmallMedal_ver330) senza cambiarne la misura: ignoreSize, scala 1 = medaglia
     # intera che esce dal disco come in subslot_JP_1 (con 89x109 non ignorati era rimpicciolita).
-    # Visibile nel layout: il trascinamento da uno slot ([fn]) crea con [fn](0) una
+    # Visibile nel layout: il trascinamento da uno slot crea con una
     # copia della cella (nasconde Route, MedalBase, Slot, SlotNum, InfoPanel, TYpe), carica la
     # medaglia in Medal_S, la scala 1.5 e la mette sopra la scena, ma non chiama setVisible su
     # Medal_S: nascosto dal layout, nessuna medaglia seguiva il dito (banco sb_4). Gli slot vuoti
-    # lo nascondono da se' ([fn], setVisible 0 se l'id e' 0).
+    # lo nascondono da se' (setVisible 0 se l'id e' 0).
     'DeckEdit_SubSlotMedal_ver260.json': ('build', P('Panel_SubSlotMedal', 0, 0, 164, 154, [
         I('SubSlot_Route_LR', 164, 92, 64, 12, 'Subslot_Route.png', s9=False,
           opts=dict(colorR=90, colorG=100, colorB=150)),
@@ -1571,16 +1571,15 @@ LAYOUTS = {
               visible=False)]),
         P('Cursor', 82, 90, 1, 1)])),
     # Riquadro del moltiplicatore sotto una medaglia del revolver in modalita' sub-slot (DeckRevolverView,
-    # 0x8c9f0c in [fn]: se la cella non ha SubslotInfoPanel carica questo layout, lo clona e lo
+    # se la cella non ha SubslotInfoPanel carica questo layout, lo clona e lo
     # aggiunge ad Area_MedalInfo, 108x31, col nome SubslotInfoPanel; poi Icon_Type carica
     # KeyBlade_type_%02d e Txt_Mag_Label riceve il moltiplicatore). Come Dummy_Mag di
-    # DeckEdit_RevolverMedal_ver330. Guilt_Icon: 0x8ca35c ci carica img/ui/guilt/Guilt%d_num_draw
+    # DeckEdit_RevolverMedal_ver330. Guilt_Icon: ci carica img/ui/guilt/Guilt%d_num_draw
     # (tier della medaglia) senza controllo del null: senza, crash al tocco di «Subslot» (banco v33).
-    # Lo stesso pannello va nelle celle della lista SUBSLOT MEDALS: MiniMedalScrollView ([fn]
-    # = MedalScrollView, celle 120x164 fisse in [fn]) con +0xb26 = 1 e modo 10 ([fn])
-    # crea per ogni cella un DeckRevolverView piccolo ([fn](1) -> [fn]:
+    # Lo stesso pannello va nelle celle della lista SUBSLOT MEDALS (celle 120x164 fisse): il client
+    # crea per ogni cella una medaglia piccola (
     # DeckEdit_SmallMedal_ver330 originale + DeckEdit_Deck_MedalInfo_ver260 in Area_MedalInfo); il
-    # modo 10 di [fn] (switch su +0x470) carica img/ui/Minfo_Pet01.png (assente) in Icon_1 e
+    # in quel modo carica img/ui/Minfo_Pet01.png (assente) in Icon_1 e
     # scrive in Txt_1 «×%01.3f» (106140350), poi aggiunge SubslotInfoPanel con «+%01.3f» (106140372):
     # SubslotInfoPanel deve coprire tutto Area_MedalInfo (108x31) con una targhetta opaca, altrimenti
     # si leggeva «×+0.030» (banco sb_2). Disposizione come subslot_JP_1: tier a sinistra (dentro la
@@ -1591,43 +1590,43 @@ LAYOUTS = {
         L('Txt_Mag_Label', 56, 15, 64, 22, '+0.000', 17),
         I('Icon_Type', 98, 15, 42, 44, 'KeyBlade_type_01.png', s9=False, scale=0.6)])),
     # Dialog del pet «SPIRIT» (PetInfoDialog, I-076/I-077): icona del pet della home e «Swap Gear»
-    # (Button_PowerUp di DeckEdit_PetMedal_ver230) chiamano [fn] -> open [fn], che
+    # (Button_PowerUp di DeckEdit_PetMedal_ver230) chiamano open che
     # carica cocostudio/publish/PetInfoScene_ver320.json (assente: NULL, crash 0x170 dentro
-    # [fn], ritorno 0x90db2c). Dettagli e nomi in pet_info_scene().
-    # [fn] e' il SceneReader (come per MedalListScene): la scena ha un nodo CenterUI col
-    # GUIComponent del layout generato; [fn] cerca i widget attraverso i nodi (banco 12-10:
+    # ritorno). Dettagli e nomi in pet_info_scene.
+    # e' il (come per MedalListScene): la scena ha un nodo CenterUI col
+    # GUIComponent del layout generato; cerca i widget attraverso i nodi (banco 12-10:
     # letto come layout puro -> SIGSEGV 0x0 nel SceneReader).
     'PetInfoScene_ver320.json': ('scene', [('CenterUI', 'publish/PetInfo_Gen_ver320.json')]),
     'PetInfo_Gen_ver320.json': ('func', 'pet_info_scene'),
     # Sotto-schermate del dialog SPIRIT (I-082), assenti da ogni risorsa.
-    # «Name» (Button_A -> [fn] -> [fn]): popup del nome, vedi pet_rename_popup().
+    # «Name» (Button_A): popup del nome, vedi pet_rename_popup.
     'PetInfo_Rename_ver230.json': ('func', 'pet_rename_popup'),
-    # Riga della lista dei Tricks (scroll [fn], init [fn]: cella 304x68 = +0x71c,
-    # nodo con ancora (0.5, 0.5) = PTR_[data] -> 0x2086140, il layout va in «mainPanel» a
+    # Riga della lista dei Tricks (scroll init cella 304x68 =,
+    # nodo con ancora (0.5, 0.5) = il layout va in «mainPanel» a
     # (152, 0) = meta' larghezza: i due mezzi si annullano e l'origine del layout cade sul bordo
     # SINISTRO della cella, x 0 della lista). Banco 12-10 (pt_t1): con la riga centrata
     # sull'origine meta' riga usciva a sinistra della lista, tagliata. Contenuto quindi da 0 a 304
     # (centro a x 152), in basso a y 0..68 (centro 34, gia' giusto al banco). La cella
-    # ([fn]) cerca PetSkill_Panel (se manca esce), vi scrive Txt_PetSkill (nome del trick,
-    # [fn]: Label obbligatoria), mostra Icon_New (trick non ancora visto, [fn];
-    # obbligatoria) e, se in PetSkill_Panel non c'e' SkillButton, ne crea uno ([fn]
-    # «But13», da NON mettere nel layout) che usa PetSkill_Panel come immagine: [fn] ->
-    # [fn] vi carica img/ui/But13_Off.png con ImageView::loadTexture ([fn]), quindi
+    # cerca PetSkill_Panel (se manca esce), vi scrive Txt_PetSkill (nome del trick,
+    # Label obbligatoria), mostra Icon_New (trick non ancora visto;
+    # obbligatoria) e, se in PetSkill_Panel non c'e' SkillButton, ne crea uno (
+    # «But13», da NON mettere nel layout) che usa PetSkill_Panel come immagine:
+    # vi carica img/ui/But13_Off.png con quindi
     # PetSkill_Panel deve essere un ImageView (But13 non esiste: copia di But16 in COPIES). Al tocco
-    # ([fn]) il dettaglio [fn] del dialog. Aspetto: pulsante blu But16 col nome.
+    # il dettaglio del dialog. Aspetto: pulsante blu But16 col nome.
     'PetInfo_PetSkill_Panel_ver230.json': ('build', P('PetSkill_Panel_root', 0, 0, 304, 68, [
         I('PetSkill_Panel', 152, 34, 300, 52, 'But16_Off.png', opts=BUT16, ignoreSize=False, children=[
             L('Txt_PetSkill', 0, 2, 270, 30, '', 22),
             I('Icon_New', 118, 20, 69, 30, 'Deck_Medal_New.png', s9=False, scale=0.55, visible=False)])])),
     # Spirit Training: «Train» (e «Train Now» quando l'allenamento e' pronto) -> GET /pet/expedition
-    # (243, parser [fn]) -> lambda [fn]/[fn] -> scelta delle medaglie
-    # (initPetTrainingMedalSelectPanel, [fn]), vedi pet_training_edit(). «Training Slots»
-    # -> 243 -> [fn] -> openPetTrainingSlotInfoPopup [fn], vedi
-    # pet_training_slot_check(). «Train Now» col tempo d'attesa -> lambda [fn] ->
-    # openPetTrainingRestartPopup [fn] (riavvio a jewel, PUT /pet/expedition/recover 245).
-    # «Outfits» (Button_B): scena ScenePetPartsEdit (init [fn]), parente dell'editor
+    # (243, parser) scelta delle medaglie
+    # (initPetTrainingMedalSelectPanel), vedi pet_training_edit. «Training Slots»
+    # -> 243 -> openPetTrainingSlotInfoPopup vedi
+    # pet_training_slot_check. «Train Now» col tempo d'attesa
+    # openPetTrainingRestartPopup (riavvio a jewel, PUT /pet/expedition/recover 245).
+    # «Outfits» (Button_B): scena (init), parente dell'editor
     # dell'avatar (AvatarEditScene_ver131 + AvatarEdit_*: stessi nodi, nomi di pulsanti diversi).
-    # Il codice cerca dalla radice della scena ([fn]: figlio diretto, poi in profondita',
+    # Il codice cerca dalla radice della scena (figlio diretto, poi in profondita',
     # anche attraverso i nodi): CenterUI_Left, CenterUI_Right, Decision, MyCoordinate, tab1..tab6;
     # dentro CenterUI_Right KB_On, Avatar2, Pet, Pet2, Set_ChangeBut_New (facoltativo); dentro
     # CenterUI_Left Area e Txt_NoPet. Dettagli nelle funzioni pet_edit_*. Scena piatta: tutto
@@ -1644,13 +1643,13 @@ LAYOUTS = {
     'PetEdit_Check2_ver230.json': ('func', 'pet_edit_check2'),
     'PetInfo_TrainingEdit_ver320.json': ('func', 'pet_training_edit'),
     'PetInfo_TrainingSlotCheck_ver320.json': ('func', 'pet_training_slot_check'),
-    # animazione dopo «Train» ([fn], vedi pet_training_production): mancava -> crash in
+    # animazione dopo «Train» (vedi pet_training_production): mancava -> crash in
     # GUIReader subito dopo la 244 e la 170 (I-082)
     'PetInfo_TrainingProduction.json': ('func', 'pet_training_production'),
-    # Riavvio a jewel ([fn]): Txt_Wording ([fn] ne fa un CustomRichText
-    # «Xml_Txt_Wording» col testo 106200405 e i jewel richiesti, pet +0x74: niente widget con quel
+    # Riavvio a jewel: Txt_Wording (ne fa un CustomRichText
+    # «Xml_Txt_Wording» col testo 106200405 e i jewel richiesti, pet: niente widget con quel
     # nome), Txt_CrownPossessed (100310001) e Txt_CrownPossessed_Label (jewel posseduti, somma dei
-    # due contatori di userStone), Txt_Time (tempo rimasto, aggiornato da [fn]),
+    # due contatori di userStone), Txt_Time (tempo rimasto, aggiornato),
     # Button_Close/Txt_Cancel e Button_Ok/Txt_Ok (con la k minuscola). Dal popup OK/Annulla
     # originale come le conferme a jewel del Moogle Shop.
     'PetInfo_TrainingRestartPop_ver320.json': ('copy', 'PopupNormal_Text_34_4Line_OkCancel.json',
@@ -1661,9 +1660,9 @@ LAYOUTS = {
                                                + [L('Txt_Time', 480, 268, 560, 28, '', 20,
                                                     opts=dict(colorR=255, colorG=230, colorB=60))]),
     # Animazioni Armature (.ExportJson) mancanti: senza file la creazione dell'armatura
-    # va in crash ([fn]). Copia di ArrowAnim con armatura e movimento rinominati.
-    # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita ([fn],
-    # movimento Animation1; [fn] lo mostra sulle celle scelte). Nell'originale e' un
+    # va in crash. Copia di ArrowAnim con armatura e movimento rinominati.
+    # Cursor_Anim_MedalSell: segno di selezione delle medaglie nella vendita (
+    # movimento Animation1; lo mostra sulle celle scelte). Nell'originale e' un
     # riquadro bianco arrotondato (reference\medal_list\web_reddit_sell_playingcard.jpg):
     # la cornice bianca con alone del Partner (Deck_Partner_Plate_Cursor 346x122) ricomposta
     # in 9-slice con 8 ossa (frame_armature), 140x176 centrata come il vecchio bagliore.
@@ -1673,48 +1672,48 @@ LAYOUTS = {
     # --last-wins).
     'Cursor_Anim_MedalSell.ExportJson': ('frame', 'Cursor_Anim_MedalSell', 'Cursor_Anim_Partner0.png',
                                          (346, 122), 40, 140, 176, (2, 9), 'EquipmentBGAction0.plist'),
-    # MedalSelectAnimation: selezione delle medaglie ([fn], movimento Medal_Select01).
+    # MedalSelectAnimation: selezione delle medaglie (movimento Medal_Select01).
     'MedalSelectAnimation.ExportJson': ('armature', 'ArrowAnim.ExportJson', 'MedalSelectAnimation',
                                         {'Left': 'Medal_Select01', 'Right': 'Animation1'}),
 }
 
 
-# Testi dell'interfaccia mancanti: text/ui/<id>.txt, letti da [fn] (categoria 0 =
+# Testi dell'interfaccia mancanti: text/ui/<id>.txt, letti (categoria 0 =
 # ui); senza file il risultato e' NULL e la schermata va in crash. Quasi tutti arrivano
 # originali dal pacchetto misc dell'IPA 4.4.0 (import_ui_texts.py, copiati dopo questi e
 # quindi prevalenti); qui solo quelli che li' mancano, dalle immagini di riferimento
 # (reference\) o dall'equivalente Dark Road.
 TEXTS = {
     # Moogle Shop, testi aggiunti con i trait a Munny (4.1.0, assenti anche dall'IPA 4.4.0):
-    # Txt_Munnies accanto ai Munny posseduti (0xe0e7e4; nel video JP «所持マニー») e la
-    # conferma del trait (0xe14394, «マニー5000000を消費して覚醒能力をつけます。»),
+    # Txt_Munnies accanto ai Munny posseduti (nel video JP «所持マニー») e la
+    # conferma del trait («マニー5000000を消費して覚醒能力をつけます。»),
     # sul modello del testo a jewel 106220409
     106260102: 'Munny',
     106260101: 'Setting this trait will cost <important>${1:%d}</important> Munny.',
-    # Presents ([fn])
+    # Presents
     103500013: 'Presents can be collected here.\nPresents over the limit of 200 will be deleted,\n'
                'oldest first, as will those past their expiry date.',   # Txt_Wording
     103500002: 'Presents',      # Txt_Stock_Title
     103500003: 'Collect All',   # Txt_ReceiveAll (Button)
     106250104: 'Other',         # Txt_Stock (Dark Road: その他)
     106250103: 'Jewels',        # Txt_Stock_2 (Dark Road: ジュエル)
-    # Medal List ([fn]: barra di aiuto in alto; [fn]: modalita' vendita)
+    # Medal List (barra di aiuto in alto; modalita' vendita)
     100620045: 'Tap a Medal to see its details.',
-    # Sell Medals ([fn]): titolo di Txt_A_Ticket (accanto a 106130301 «Jewels»)
+    # Sell Medals: titolo di Txt_A_Ticket (accanto a 106130301 «Jewels»)
     106240301: 'Tickets',
-    # esito della vendita ([fn], Txt_Sell_Ok1; l'alternativa 100300009 e' «Complete!»)
+    # esito della vendita (Txt_Sell_Ok1; l'alternativa 100300009 e' «Complete!»)
     106240302: 'Sale complete!',
-    # Menu Quests ([fn]): sbloccato il Colosseo (Quest 130, stage 4100) scrive questo testo
-    # in Txt_Title4 (poi nascosta) con [fn]: assente ovunque (anche nell'IPA 4.4.0) ->
-    # [fn] restituisce NULL e crash a 0x8 (banco colmenu). Testo come 102850010 di Union Cross.
+    # Menu Quests: sbloccato il Colosseo (Quest 130, stage 4100) scrive questo testo
+    # in Txt_Title4 (poi nascosta): assente ovunque (anche nell'IPA 4.4.0) ->
+    # crash (banco colmenu). Testo come 102850010 di Union Cross.
     102850008: 'Available quests!',
-    # Spirit Training (PetTrainingSlotView::init [fn], slot bloccati; assenti anche
+    # Spirit Training (slot bloccati; assenti anche
     # dall'IPA 4.4.0, testi nostri): 106240102 in Txt_Period del 4° slot (Jewel Box E, valido fino a
     # fine mese), 106270102 in Txt_Caution degli slot 2 e 4 quando l'acquisto non e' disponibile
     106240102: 'Valid until the end of the month',
     106270102: 'Not available\nat this time',
 }
-# Popup Sort, scheda Filter ([fn] -> [fn](label, id); filtro [fn]):
+# Popup Sort, scheda Filter (etichette dei filtri):
 # testi assenti ovunque (IPA 4.4.0 e JP 4.3.1: segnaposto «[id]»), nostri, nello stile delle
 # sezioni normali e con i termini NA delle descrizioni («Pierces DEF boost», «SN Renew»).
 # 206-208 = sezione Special Attacks (Filter_Ability_Guard/BaseAttack/BaseDefence), il resto =
@@ -1796,8 +1795,8 @@ TEXTURES = set(open(os.path.join(SRC, '..', 'textures.txt'), encoding='utf-8-sig
 
 # File gia' presenti nelle risorse sotto un altro percorso, copiati (estratti con res_get.py in
 # <cartella layout estratti>) dove il client li cerca: destinazione -> sorgente.
-#  - img/ui/<pulsante>_On/_Off/_Disable: i pulsanti di [fn] caricano
-#    «img/ui/%s_On.png» al tocco ([fn]); 46 varianti esistono solo in
+# - img/ui/<pulsante>_On/_Off/_Disable: i pulsanti caricano
+# «img/ui/%s_On.png» al tocco; 46 varianti esistono solo in
 #    cocostudio/publish (es. But06_On: crash toccando «Sell Medals» in Evolve e Level Up);
 #  - icone delle valute (img/incentive/IncentiveIcon_NN: 04 munny, 14 Avatar Coin) accanto ai
 #    layout, per gli ImageView della vendita. Il jewel NON si copia: in cocostudio/publish la
@@ -1812,7 +1811,7 @@ COPIES.update({PUB + 'MedalInfo_Guilt%d.png' % i: 'img/ui/guilt/MedalInfo_Guilt%
 # «Exchange» del Moogle Shop: al tocco il pulsante carica img/ui/But30_On/Off (assenti:
 # crash, stack mg9); rosso come nell'originale (moogle_shop_01.png) = But01
 COPIES.update({'img/ui/But30_%s.png' % s: PUB + 'But01_%s.png' % s for s in ('Off', 'On')})
-# Banner della scheda Events ([fn]): ImageButton But15 di «Details» (al tocco carica
+# Banner della scheda Events: ImageButton But15 di «Details» (al tocco carica
 # img/ui/But15_On, che esiste solo come dark_But15_On), lucchetto e icona di completamento
 # caricati da img/ui (assenti: dal lucchetto di cocostudio e da AchievedComplete; ShopBut_Lock_Disable
 # lo scrive make_shop_lock.py, I-133)
@@ -1821,7 +1820,7 @@ COPIES.update({'img/ui/But15_On.png': PUB + 'dark_But15_On.png', 'img/ui/QuestBu
                'img/ui/Complete_icon2.png': PUB + 'AchievedComplete.png'})
 COPIES.update({PUB + 'Kakusei_Icon%s.png' % n: 'img/kakusei/Kakusei_Icon%s.png' % n
                for n in ('0010', '0030', '0040', '0050', '0060', '0061', '0070', '0080')})
-# PassiveResult (popup «nuova passiva», [fn], dopo PUT /passive/list isList 0): l'ImageView
+# PassiveResult (popup «nuova passiva», dopo PUT /passive/list isList 0): l'ImageView
 # Panel_Passive ha il 9-slice su Result_Clear_Challenge_Panel01B.png, assente da ogni risorsa: crash
 # in GUIReader (SIGSEGV 0x2c, I-078: Treasure Trove +35 = prima passiva 301350). Copia della 01.
 COPIES[PUB + 'Result_Clear_Challenge_Panel01B.png'] = PUB + 'Result_Clear_Challenge_Panel01.png'
@@ -1830,27 +1829,27 @@ COPIES[PUB + 'Result_Clear_Challenge_Panel01B.png'] = PUB + 'Result_Clear_Challe
 # risorsa: il pulsante blu But16 (come Play Style)
 COPIES.update({'img/ui/But13_%s.png' % s: PUB + 'But16_%s.png' % s for s in ('Off', 'On', 'Disable')})
 # Moogle Shop: l'animazione del moogle (lwf/mogshop/mog_wait) non esiste; LWF vuoto come
-# per gli NPC e il pet ([fn] restituisce NULL se manca: crash). LWF vuoto = empty_lwf.py
+# per gli NPC e il pet (restituisce NULL se manca: crash). LWF vuoto = empty_lwf.py
 # (nostro, un fotogramma, scritto in memoria a ogni build: nessun file in git)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import empty_lwf  # noqa: E402
 empty_lwf.write(os.path.join(OUT, 'lwf', 'mogshop', 'mog_wait', 'mog_wait.lwf'))
 # Potenziamento del keyblade (POST /keyblade/enhance, server/keyblade-evo.js), LWF assenti da
-# ogni risorsa ([fn] -> nullo -> crash): risultato con slot nuovo ([fn]:
+# ogni risorsa (nullo -> crash): risultato con slot nuovo (
 # KeyEvo_Medal_01B col gestore enterFrame di _root, KeyEvo_eff, e sul movie
-# «medal_blank_slot» medal_blank_slot1-3 = attributo 3/1/2, tabella 0x1825aa0), evoluzione
-# del design ([fn]: KeyBlade_Evolution, movie «keyblade_previous»/«keyblade», va
-# avanti quando _root arriva all'ultimo fotogramma) e KeyBlade_StepUp ([fn]).
+# «medal_blank_slot» medal_blank_slot1-3 = attributo 3/1/2), evoluzione
+# del design (KeyBlade_Evolution, movie «keyblade_previous»/«keyblade», va
+# avanti quando _root arriva all'ultimo fotogramma) e KeyBlade_StepUp.
 # LWF vuoti: niente animazione ma il flusso prosegue (un fotogramma = subito alla fine).
 for _p in [['memudemo', 'KeyBlade_Evolution'], ['memudemo', 'KeyBlade_StepUp'],
            ['keyblade', 'KeyEvo', 'KeyEvo_Medal_01B'], ['keyblade', 'KeyEvo', 'KeyEvo_Medal_02'],
            ['keyblade', 'KeyEvo', 'KeyEvo_eff']] + [['keyblade', 'KeyEvo', 'medal_blank_slot%d' % _i] for _i in (1, 2, 3)]:
     empty_lwf.write(os.path.join(OUT, 'lwf', *_p, _p[-1] + '.lwf'))
 # Spirit Training (I-082), LWF assenti da ogni risorsa:
-# - lwf/pet/demo/training_SE ([fn]: suono dell'animazione PetInfo_TrainingProduction,
-#   [fn] -> NULL -> addChild(NULL) se manca): vuoto (un fotogramma = subito alla fine);
-# - lwf/medal/Kakusei/Kakusei_Get1 e _Get2 (roulette e trait ottenuto, [fn] /
-#   [fn]; anche il Moogle Shop) e Kakusei_Icon%04d: LWF NOSTRI di
+# - lwf/pet/demo/training_SE (suono dell'animazione PetInfo_TrainingProduction,
+# NULL -> addChild(NULL) se manca): vuoto (un fotogramma = subito alla fine);
+# - lwf/medal/Kakusei/Kakusei_Get1 e _Get2 (roulette e trait ottenuto /
+#; anche il Moogle Shop) e Kakusei_Icon%04d: LWF NOSTRI di
 #   make_pet_training_fx.py, con le texture delle vignette di PetInfo_TrainingProduction.
 #   Prima Get1/2 erano vuoti: nessun trait nell'animazione, TAP SCREEN sul dettaglio della
 #   medaglia e il trait solo dopo il tocco (segnalazione utente 12-10).
@@ -1867,17 +1866,17 @@ TEXTURES |= set(make_pet_training_fx.TEXTURE_NAMES)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_pet_motions  # noqa: E402
 make_pet_motions.write_all(OUT)
-# Evoluzione del keyblade ([fn]): LWF nostro al posto di quello vuoto scritto sopra (I-078).
+# Evoluzione del keyblade: LWF nostro al posto di quello vuoto scritto sopra (I-078).
 import make_kb_evolution_lwf  # noqa: E402
 make_kb_evolution_lwf.write_all(OUT)
 # Animazioni della guilt (GuiltBonus, _result, _max, cifre Yfix/Rfix): originali JP 4.3.1 importati da
 # import_jp_raisedraw.py nel pacchetto raisedraw_gen (19-10); make_guilt_bonus_lwf.py resta come ripiego.
 
-# Animazione del risultato di Evolve ([fn]: lwf/medal/compose/evolution/
+# Animazione del risultato di Evolve (lwf/medal/compose/evolution/
 # card_evolution_result_%02d, %02d = numero dei materiali): assente da ogni risorsa, il
 # client va in crash dopo la risposta. Copia di quella del Level Up (card_strength_result_01)
 # con LWF e texture rinominati (il nome delle texture comincia col nome del file LWF).
-# Avatar Boards: apertura del nodo ([fn]) e premio/bacheca completata ([fn],
+# Avatar Boards: apertura del nodo e premio/bacheca completata (
 # gotoAndPlay su un'etichetta: con una LWF vuota crash dopo lo sblocco, banco v32), assenti da
 # ogni risorsa: copie dell'animazione del premio dei risultati (Result_Reward), rinominate
 # Texture delle copie (I-085): il LWF non si riscrive, e la sua tabella delle stringhe nomina le
@@ -1905,8 +1904,8 @@ if os.path.isdir(os.path.join(SRC, *_LU.split('/'))):
     for _n in range(1, 6):
         _ev = 'card_evolution_result_%02d' % _n
         _lwf_copy(_LU, 'lwf/medal/compose/evolution/%s/' % _ev, 'card_strength_result_01', _ev)
-    # Level Up con 2-5 materiali ([fn]: card_strength_result_%02d, %02d = numero dei
-    # materiali; NULL da [fn] = crash dopo la risposta, banco gu_17): nelle risorse c'e'
+    # Level Up con 2-5 materiali (card_strength_result_%02d, %02d = numero dei
+    # materiali; NULL = crash dopo la risposta, banco gu_17): nelle risorse c'e'
     # solo la _01, che mostra una sola carta
     for _n in range(2, 6):
         _st = 'card_strength_result_%02d' % _n
@@ -2007,8 +2006,7 @@ def build(s):
 
 
 def sell_popup(icon='MedalSellIcon', name='Txt_Medal_Name_Dlog', extra=(), icon_pos=(-172, 225, 1.5)):
-    """Popup della quantita' da vendere: EquipSell_Medal_Step1_ver131 (medaglie impilate,
-    [fn]) ed EquipSell_Dialog_Step1 (materiali, [fn]). Assenti da ogni
+    """Popup della quantita' da vendere: EquipSell_Medal_Step1_ver131 (medaglie impilate) ed EquipSell_Dialog_Step1 (materiali). Assenti da ogni
     risorsa. Struttura dal discendente di Dark Road dark_Shop_win_check_pop3 (stessi
     panel_MaterialStock, Button_stock_up/down, Slider MaterialStock_bar); aspetto e misure
     dal popup originale (reference\\medal_list\\web_qty_368.png, youtube WiFh447niJY,
@@ -2094,16 +2092,15 @@ def sell_popup(icon='MedalSellIcon', name='Txt_Medal_Name_Dlog', extra=(), icon_
 def equip_sell_popup():
     return sell_popup(extra=[
         # nome con uno spazio ideografico in coda (U+3000), come lo cerca il codice
-        # (0x884688: "Txt_data" + 34 e3 80 80): senza, crash in enableShadow; testo 102000002 = " "
+        # ("Txt_data" + 34 e3 80 80): senza, crash in enableShadow; testo 102000002 = " "
         L('Txt_data4　', 13, 30, 300, 24, '', 18)])
 
 
 def superburst_select_window():
     """ActionMap_SuperBurst_SelectWindow (pulsante Supernova in battaglia). Base = copia WW: con l'intero layout JP
     00338703 il pulsante saliva sopra quello del Burst (fotogrammi di SuperBurst_UI diversi, banco 21-10). Dal JP si
-    prende solo l'ImageView «Medal» (actiontag 12257514, sopra SuperBurst_but) coi suoi fotogrammi in ogni animazione:
-    [fn] ci mette img/medal/Medal_S_<imageId>.png della Supernova scelta e la animazione Receive
-    ([fn] caso 3) la mostra; senza il widget si vedeva solo il lampo (I-190). Pulsante: l'icona SN dei filtri al
+    prende solo l'ImageView «Medal» (actiontag 12257514, sopra SuperBurst_but) coi suoi fotogrammi in ogni animazione: ci mette img/medal/Medal_S_<imageId>.png della Supernova scelta e la animazione Receive
+    (caso 3) la mostra; senza il widget si vedeva solo il lampo (I-190). Pulsante: l'icona SN dei filtri al
     posto della bussola SBurst_but01/02 (texture SBurst_SN_but01/02 di make_textures.py, decisione dell'utente 15-10)."""
     name = 'ActionMap_SuperBurst_SelectWindow.json'
 
@@ -2132,7 +2129,7 @@ def superburst_select_window():
 
 
 def material_sell_popup():
-    """EquipSell_Dialog_Step1 ([fn]): come il popup delle medaglie, con
+    """EquipSell_Dialog_Step1: come il popup delle medaglie, con
     MaterialSellIcon (img/material/material_%d.png), Txt_Material_Name_Dlog,
     Txt_Material_Info_Dlog, Txt_MoneyStock_Fix e Txt_data1."""
     # icona dei materiali (img/material, ~60 px) meno ingrandita di quella delle medaglie;
@@ -2149,17 +2146,17 @@ def material_sell_popup():
 
 
 def trait_medal_select_popup():
-    """MoogleShop_Traits_MedalSelect_Pop_ver410 ([fn]), assente da ogni risorsa.
+    """MoogleShop_Traits_MedalSelect_Pop_ver410, assente da ogni risorsa.
     Disposizione dal video della 4.1.0 giapponese (reference\\moogle_shop\\jp410_136.png,
     1280x720: x = x'/1,127 - 88, y = (720 - y')/1,127): a sinistra la targa del trait
     (SkillPanel: kakusei_Icon, Txt_KakuseiSkill), la medaglia scelta (MedalArea: il codice
-    vi aggiunge la medaglia grande, [fn]), i trait della medaglia
-    (KakuseiSkill_Window, riempita da [fn]) o, senza medaglia, Win_Base con
+    vi aggiunge la medaglia grande), i trait della medaglia
+    (KakuseiSkill_Window, riempita) o, senza medaglia, Win_Base con
     Txt_Traits_Text (testo 106220418), in basso il prezzo (Jewel/Txt_Jewel o
     Munnies/Txt_Munnies secondo payType) e Button_OK/Txt_OK (106220407 «Set Trait»); a
-    destra Win_under: Scroll_Area (griglia delle medaglie, [fn]), Txt_Possession
+    destra Win_under: Scroll_Area (griglia delle medaglie), Txt_Possession
     (101510001 «Slots»), Txt_Cost_Label/Txt_Slash_Label/Txt_CostMax_Label e la barra di
-    ordinamento ([fn]: Button_Sort, Txt_Sort_Label, Txt_Filter_On); Arrow01 tra le
+    ordinamento (Button_Sort, Txt_Sort_Label, Txt_Filter_On); Arrow01 tra le
     due finestre e Close_Button in alto a destra."""
     win = dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
     root = build(P('Panel_MedalSelect', 0, 0, 960, 640, [
@@ -2169,11 +2166,11 @@ def trait_medal_select_popup():
           opts=dict(scale9Enable=True, capInsetsX=32, capInsetsY=0, capInsetsWidth=1, capInsetsHeight=1), children=[
               I('kakusei_Icon', -140, 0, 48, 48, 'Kakusei_Icon0010.png', s9=False, scale=0.75),
               L('Txt_KakuseiSkill', -110, 0, 260, 24, '', 20, opts=dict(anchorPointX=0))]),
-        # [fn] cerca Medal1 dentro MedalArea e vi aggiunge la medaglia ([fn])
+        # cerca Medal1 dentro MedalArea e vi aggiunge la medaglia
         # senza controlli: senza, crash al tocco di «Select Medal» (stack ts3). La medaglia
         # vuota (nessuna scelta) ha il centro 88 px sopra e a destra di Medal1 (banco): la
         # medaglia e' 176x176 con l'angolo in basso a sinistra sull'origine di Medal1, e
-        # Medal1 ha la stessa misura (bersaglio del trascinamento, [fn])
+        # Medal1 ha la stessa misura (bersaglio del trascinamento)
         P('MedalArea', 115, 272, 160, 180, [P('Medal1', 80, 90, 176, 176)]),
         # stessa cornice e misura di KakuseiSkill_Window a uno slot (bordo superiore a 372),
         # che la copre del tutto quando si sceglie una medaglia (il codice non la nasconde)
@@ -2211,7 +2208,7 @@ def trait_medal_select_popup():
              disabledData=tex('But_CloseA.png'), scale9Enable=False)
     # KakuseiSkill_Window dalla finestra dei trait del dettaglio medaglia originale (stessi
     # nomi: Txt_SkillTitle, Txt_Skill_Num, Panel; ImageView ancorata in alto, alta per uno
-    # slot): [fn] l'allunga di 52 per ogni slot oltre il primo e vi aggiunge le righe
+    # slot): l'allunga di 52 per ogni slot oltre il primo e vi aggiunge le righe
     # MedalInfo_KakuseiInfo_ver150 («infoPanel%d») 52 px l'una sotto l'altra.
     src = json.load(open(os.path.join(SRC, *PUB.split('/'), 'MedalInfo_KakuseiInfoWindow_ver150.json'),
                          encoding='utf-8-sig'))
@@ -2229,16 +2226,16 @@ def _layout(root):
     return data
 
 
-# Outfits del pet (PetEditScene_ver230, ScenePetPartsEdit init [fn]). Disposizione da
+# Outfits del pet (PetEditScene_ver230 init). Disposizione da
 # reference\pet\pet_ref_04.png (1721x931 senza la barra in alto: x = x'/1,793, y = 520 - y'/1,793):
 # schede Head..Accessories sopra la finestra blu, parti in due colonne, Remove arancione e Save
 # rosso in basso, pet a destra con «OUTFIT n» e il pulsante ciclico.
 def pet_edit_win():
-    """Nodo CenterUI_Left: tab1..tab6 ([fn]: ImageView a cui il pulsante «Av_Make_Win_But»
+    """Nodo CenterUI_Left: tab1..tab6 (ImageView a cui il pulsante «Av_Make_Win_But»
     creato dal codice carica img/ui/Av_Make_Win_But_Off/On, servite; Txt_Tab = 106110401-406 Head,
-    Ears, Body, Legs, Tail, Accessories; Icon_New facoltativo, [fn]), Area (lista delle
-    parti [fn], celle PetEdit_Panel_ver230 298x122 in due colonne), Txt_NoPet
-    ([fn]: 106110409 «There are no Spirit parts.», visibile con la lista vuota). Come
+    Ears, Body, Legs, Tail, Accessories; Icon_New facoltativo), Area (lista delle
+    parti celle PetEdit_Panel_ver230 298x122 in due colonne), Txt_NoPet
+    (106110409 «There are no Spirit parts.», visibile con la lista vuota). Come
     AvatarEdit_Win_ver131 senza la fascia COST/filtro dell'avatar."""
     tabs = [I('tab%d' % (i + 1), -246 + 98 * i, 214, 104, 56, 'Av_Make_Win_But_Off.png', s9=False, scale=0.93,
               children=[L('Txt_Tab', 0, -4, 100, 42, '', 22),
@@ -2251,10 +2248,9 @@ def pet_edit_win():
 
 
 def pet_edit_right():
-    """Nodo CenterUI_Right: KB_On (il codice lo nasconde), Avatar2 ([fn] vi mette l'avatar
-    [fn] accanto, poi lo toglie), Pet e Pet2 ([fn]: i due pet [fn], aggiunti
+    """Nodo CenterUI_Right: KB_On (il codice lo nasconde), Avatar2 (vi mette l'avatar accanto, poi lo toglie), Pet e Pet2 (i due pet aggiunti
     al genitore nella loro posizione: dentro un pannello in scala 2 come il pet del dialog).
-    Set_ChangeBut_New (pet / pet con l'avatar, [fn]) e' facoltativo e non c'e': carica
+    Set_ChangeBut_New (pet / pet con l'avatar) e' facoltativo e non c'e': carica
     cocostudio/publish/PetChangeBut_*.png, assenti da ogni risorsa."""
     return _layout(P('PetEdit_Right', 0, 0, 960, 640, [
         P('KB_On', 0, 0, 10, 10, visible=False),
@@ -2264,9 +2260,8 @@ def pet_edit_right():
 
 
 def pet_edit_decision():
-    """Nodo Decision ([fn] lo mostra): Button_PetSave > Txt_PetSave (106110407 «Save»,
-    lambda [fn] -> salvataggio [fn], POST /pet/coordinate/update 173, poi
-    PetEdit_Check2), Button_Remove > Txt_Remove (106110400 «Remove», [fn]; [fn] lo
+    """Nodo Decision (lo mostra): Button_PetSave > Txt_PetSave (106110407 «Save» salvataggio POST /pet/coordinate/update 173, poi
+    PetEdit_Check2), Button_Remove > Txt_Remove (106110400 «Remove»; lo
     abilita/spegne). Come AvatarEdit_Decision."""
     return _layout(P('PetEdit_Decision', 0, 0, 960, 100, [
         B('Button_Remove', 96, 48, 200, 68, 'But03', 'Remove', 28, label='Txt_Remove', opts=BUTS),
@@ -2274,8 +2269,8 @@ def pet_edit_decision():
 
 
 def pet_edit_coordinate():
-    """Nodo MyCoordinate ([fn] lo mostra): Box_Num (ImageView: [fn] vi carica
-    img/ui/Av_Box_Num%d.png, servite 1-6) e Button_Switch (outfit successivo 1..6, [fn]).
+    """Nodo MyCoordinate (lo mostra): Box_Num (ImageView: vi carica
+    img/ui/Av_Box_Num%d.png, servite 1-6) e Button_Switch (outfit successivo 1..6).
     Come AvatarEdit_MyCoordinate (Button_Coordinate con Box_Num, Button_Switch con l'icona), con
     la scritta «OUTFIT» gialla del riferimento al posto del titolo giapponese."""
     return _layout(P('PetEdit_MyCoordinate', 0, 0, 960, 100, [
@@ -2287,8 +2282,7 @@ def pet_edit_coordinate():
 
 
 def pet_edit_panel():
-    """Cella di una parte ([fn]: 298x122, layout in «mainPanel», setOpacity su Panel;
-    [fn] la riempie): Area_Point, Icon_Base, Icon_New, Txt_Equip_New (testo), Panel_On
+    """Cella di una parte (298x122, layout in «mainPanel», setOpacity su Panel; la riempie): Area_Point, Icon_Base, Icon_New, Txt_Equip_New (testo), Panel_On
     (selezionata), Icon_Pet (img/petParts/pi%d.png, assenti: ImageView senza 9-slice), Txt_Name,
     Txt_Category. Come AvatarEdit_Panel_ver131 (Win09, Av_Make_Panel_01_M, Av_Make_Panel_On)."""
     return _layout(P('PetEdit_Panel', 0, 0, 298, 122, [
@@ -2304,9 +2298,9 @@ def pet_edit_panel():
 
 
 def pet_edit_check2():
-    """«Style saved!» dopo Save ([fn]): Win_04 (animazione d'apertura) con Txt_Wording
-    (106110410) e Pet (il pet salvato [fn] va al suo posto, Pet viene tolto); un tocco
-    chiude ([fn]). Come AvatarEdit_Check2 (Win01, sfondo Av_Make_Win_Bg), in blu Win04 come
+    """«Style saved!» dopo Save: Win_04 (animazione d'apertura) con Txt_Wording
+    (106110410) e Pet (il pet salvato va al suo posto, Pet viene tolto); un tocco
+    chiude. Come AvatarEdit_Check2 (Win01, sfondo Av_Make_Win_Bg), in blu Win04 come
     reference\\pet\\pet_ref_10."""
     win4 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
     return _layout(P('PetEdit_Check2', 0, 0, 960, 640, [
@@ -2318,13 +2312,13 @@ def pet_edit_check2():
 
 
 def pet_training_slots(cxs, cys):
-    """Slot dello Spirit Training (PetTrainingSlotView::init [fn], cercati dentro MedalArea):
-    per i = 1..4 Medal%d (vi aggiunge la cella DeckMedalView [fn]: 175x175 con l'angolo in
+    """Slot dello Spirit Training (cercati dentro MedalArea):
+    per i = 1..4 Medal%d (vi aggiunge la cella 175x175 con l'angolo in
     basso a sinistra sull'origine, come nel dialog), MedalLock_Panel%d (slot bloccato, con
-    Txt_Caution: 106200407/408/409 o 106270102; per lo slot 3 [fn] ne fa un CustomRichText
+    Txt_Caution: 106200407/408/409 o 106270102; per lo slot 3 ne fa un CustomRichText
     «Xml_Txt_Caution») e Period_NamePanel%d con Txt_Period (scadenza «Till Expiry: %s» 106200410 o
     «Valid for %s» 106200419). Slot aperti = 1 + openMedalSlotNumber di GET /pet/expedition con
-    scadenza futura ([fn]). Centri delle celle in (cxs[i], cys[i]) rispetto a MedalArea."""
+    scadenza futura. Centri delle celle in (cxs[i], cys[i]) rispetto a MedalArea."""
     out = []
     for i, (cx, cy) in enumerate(zip(cxs, cys), 1):
         out.append(P('Medal%d' % i, cx - 88, cy - 88, 175, 175))
@@ -2341,17 +2335,15 @@ def pet_training_slots(cxs, cys):
 
 
 def pet_training_edit():
-    """PetInfo_TrainingEdit_ver320 (Spirit Training, scelta delle medaglie: [fn] =
-    initPetTrainingMedalSelectPanel), assente da ogni risorsa. Nomi dal decompilato:
-    - Win_under ([fn] dalla radice): Button_Sort > Txt_Sort, Txt_Sort_Label, Txt_Filter_On
-      (barra d'ordinamento [fn]), Scroll_Area ([fn]: MedalScrollView [fn],
-      modo 4), Txt_Possession (101510001 «Slots»), Txt_Cost_Label / Txt_Slash_Label /
+    """PetInfo_TrainingEdit_ver320 (Spirit Training, scelta delle medaglie: initPetTrainingMedalSelectPanel), assente da ogni risorsa. Nomi dal client:
+    - Win_under (dalla radice): Button_Sort > Txt_Sort, Txt_Sort_Label, Txt_Filter_On
+      (barra d'ordinamento), Scroll_Area (modo 4), Txt_Possession (101510001 «Slots»), Txt_Cost_Label / Txt_Slash_Label /
       Txt_CostMax_Label (medaglie possedute / massimo); Win_under e' anche il riquadro di rilascio
-      del trascinamento ([fn]);
-    - Win2A (finestra di sinistra, presa dalle lambda), Close_Button ([fn]), Button_Training
-      > Txt_Training (106200426 «Train»: POST /pet/expedition 244 {userMedalIds}, [fn]),
+      del trascinamento;
+    - Win2A (finestra di sinistra, presa dalle), Close_Button, Button_Training
+      > Txt_Training (106200426 «Train»: POST /pet/expedition 244 {userMedalIds}),
       Arrow01;
-    - MedalArea ([fn] = initPetTrainingSlotView): PetTrainingSlotView a 4 slot, vedi
+    - MedalArea (initPetTrainingSlotView): a 4 slot, vedi
       pet_training_slots.
     Stessa disposizione della scelta medaglia dei trait (trait_medal_select_popup): a sinistra gli
     slot 2x2 con «Train» in basso, a destra MEDAL con la griglia e Sort; stile dei riferimenti
@@ -2384,10 +2376,9 @@ def pet_training_edit():
 
 
 def pet_training_slot_check():
-    """PetInfo_TrainingSlotCheck_ver320 («Training Slots»: [fn] =
-    openPetTrainingSlotInfoPopup), assente da ogni risorsa. Il codice cerca solo MedalArea e
-    Win_under ([fn]: i 4 slot di pet_training_slots e il riquadro di rilascio) e
-    Close_Button (lambda 01ee12d8). Finestra blu con i 4 slot in fila e la X in alto a destra."""
+    """PetInfo_TrainingSlotCheck_ver320 («Training Slots»: openPetTrainingSlotInfoPopup), assente da ogni risorsa. Il codice cerca solo MedalArea e
+    Win_under (i 4 slot di pet_training_slots e il riquadro di rilascio) e
+    Close_Button (01ee12d8). Finestra blu con i 4 slot in fila e la X in alto a destra."""
     win = dict(scale9Enable=True, capInsetsX=50, capInsetsY=60, capInsetsWidth=1, capInsetsHeight=200)
     root = build(P('PetTrainingSlot_root', 0, 0, 960, 640, [
         I('Win_under', 480, 330, 880, 400, 'Win04.png', opts=win),
@@ -2411,20 +2402,19 @@ def _action_frame(fid, x, y, scale=1.0, opacity=255):
 def pet_training_production():
     """PetInfo_TrainingProduction (animazione dopo «Train», I-082), assente da ogni risorsa: senza,
     dopo POST /pet/expedition (244) e GET /pet/profile il client andava in crash in GUIReader
-    (SIGSEGV 0xc00000001, sullo stack la stringa «widgetTree» 0x191924c). Catena: la 170 del ramo
-    244 ([fn]) chiude il pannello di scelta ([fn]) -> lambda di createLayout
-    ([fn] / [fn], +0x59b = 1; per le medaglie successive [fn]) ->
-    [fn]: MedalMixResultScene_ver320 (originale) e sopra questo layout, aggiunto col nome
-    PetTrainingAnime. Il codice ([fn], [fn]) cerca:
+    (SIGSEGV sullo stack la stringa «widgetTree»). Catena: la 170 del ramo
+    244 chiude il pannello di scelta di createLayout
+    (= 1; per le medaglie successive): MedalMixResultScene_ver320 (originale) e sopra questo layout, aggiunto col nome
+    PetTrainingAnime. Il codice cerca:
     - per i = 1..3 «%dPet» con dentro «Pet_Shadow» e «Pet» (nascosti dal codice; della texture di
-      Pet fa la maschera, getVirtualRenderer()->getTexture(): ImageView con texture vera, quella
+      Pet fa la maschera, getVirtualRenderer->getTexture: ImageView con texture vera, quella
       dell'icona del pet della home GlobalNavi Topinfo_Pet_Mask) e «%d_parameter» (scala e
-      posizione del pet nella maschera, [fn]): nel genitore di Pet aggiunge il pet ritagliato
+      posizione del pet nella maschera): nel genitore di Pet aggiunge il pet ritagliato
       (PetIcon%d / PetIconShadow%d, movimenti training1/training2);
     - «4Pet»: vi aggiunge il pet intero (PetIcon4, training3);
-    - l'azione «Training_Anime» del layout (ActionManagerEx, chiave = nome del file): [fn]
-      (stop) senza controllo del null, poi play con la callback [fn] che va avanti
-      ([fn] -> [fn] -> [fn], Kakusei_Get1). Il tocco (pulsante tapBtn
+    - l'azione «Training_Anime» del layout (ActionManagerEx, chiave = nome del file):
+      (stop) senza controllo del null, poi play con la callback che va avanti
+      (Kakusei_Get1). Il tocco (pulsante tapBtn
       creato dal codice) salta l'animazione.
     Aspetto dall'originale (video kTJoSgXii1E, reference\\pet\\pet_training_anim_03-05.png,
     NOTE.md §10): fumetto senza testo su fondo bianco, quattro vignette inclinate col bordo nero
@@ -2440,7 +2430,7 @@ def pet_training_production():
       all'altezza e centrato, lo schermo e' x -88..1048);
     - pet enorme come nell'originale: maschere invertite (il client cancella il pet dove la
       maschera e' opaca, blend {0, 1-srcA}) e %d_parameter calcolato da
-      make_pet_training_fx.pet_parameter ([fn]/[fn]: k = min(max(1, scala GLView),
+      make_pet_training_fx.pet_parameter (k = min(max(1, scala GLView),
       3,9 / s); posizione * k + testa = piedi del pet nella maschera). 1Pet s 4,2 = pet intero
       alto quanto la vignetta; 2Pet s 6,5 = solo il muso; 3Pet s 3,9 nella fascia; 4Pet s 3,4
       (nodo scalato) corre da destra a sinistra (il pet guarda a -x; training3 = corsa);
@@ -2510,14 +2500,12 @@ def pet_training_production():
 
 
 def pet_rename_popup():
-    """PetInfo_Rename_ver230 (nome del pet, «Name» del dialog SPIRIT: Button_A -> lambda [fn]
-    -> [fn]), assente da ogni risorsa. Stessi nomi del popup Nome del Profilo offline
-    (Offline_AvatarInfo_Comment, originale), cercati da [fn]: Txt_Name ([fn],
-    106110501 «Name»), Txt_Name_Label (TextField: [fn] + [fn] lo sostituiscono
+    """PetInfo_Rename_ver230 (nome del pet, «Name» del dialog SPIRIT: Button_A), assente da ogni risorsa. Stessi nomi del popup Nome del Profilo offline
+    (Offline_AvatarInfo_Comment, originale), cercati: Txt_Name (106110501 «Name»), Txt_Name_Label (TextField: lo sostituiscono
     col campo vero, lunghezza massima = misc 134), Txt_Limit1 (100100037 «Max %d char.»),
-    Txt_Caution (102300007), Button_Close con Txt_Cancel (100100002) = annulla ([fn]),
-    Button_Ok con Txt_OK (100100001) = conferma ([fn]: nome vuoto -> 102300003, poi
-    POST /pet/name [fn]). Aspetto come Name/Message del Profilo (avatar_comment_popup:
+    Txt_Caution (102300007), Button_Close con Txt_Cancel (100100002) = annulla,
+    Button_Ok con Txt_OK (100100001) = conferma (nome vuoto -> 102300003, poi
+    POST /pet/name). Aspetto come Name/Message del Profilo (avatar_comment_popup:
     reference\\profile\\profile_13.png): riquadro scuro del nome, Cancel arancione e OK rosso."""
     d = json.load(open(os.path.join(SRC, *PUB.split('/'), 'Offline_AvatarInfo_Comment.json'), encoding='utf-8-sig'))
     t = d['widgetTree']
@@ -2543,8 +2531,8 @@ def pet_rename_popup():
 
 
 def avatar_comment_popup():
-    """AvatarInfo_Comment_ver132 e _U13_ver132 (popup Name/Message del Profilo, [fn];
-    conferma [fn]), assenti dalle risorse. Base: Offline_AvatarInfo_Comment
+    """AvatarInfo_Comment_ver132 e _U13_ver132 (popup Name/Message del Profilo;
+    conferma), assenti dalle risorse. Base: Offline_AvatarInfo_Comment
     (originale: finestra, AV_Name con il TextField Txt_Name_Label, Txt_Limit1, Txt_Caution,
     Button_Ok, Button_Close). Il codice cerca anche Txt_Comment, Txt_Limit2, il TextField
     Txt_Comment_Label (e TextField_Comment nella conferma), Txt_Comment_Label_U13, Txt_OK e
@@ -2562,12 +2550,12 @@ def avatar_comment_popup():
     center = dict(hAlignment=1, vAlignment=1)
     find(t, 'Txt_Name_Label')['options'].update(width=380, height=40, areaWidth=380, areaHeight=40, fontSize=26, **center)
     # Txt_Name e Txt_Comment sono i titoli dei due riquadri (il codice scrive «Message» nel
-    # secondo); [fn] crea accanto a Txt_Name_Label e Txt_Comment_Label una Text con
-    # le stesse proprieta' in cui la callback dei campi ([fn]) copia il testo
+    # secondo); crea accanto a Txt_Name_Label e Txt_Comment_Label una Text con
+    # le stesse proprieta' in cui la callback dei campi copia il testo
     find(t, 'Txt_Name')['options'].update(x=-196, y=204, text='')
     find(t, 'Txt_Limit1')['options'].update(x=133, y=204)
     find(t, 'Txt_Caution')['options'].update(x=0, y=88, fontSize=18)
-    # riquadro del messaggio: copia di AV_Name col TextField Txt_Comment_Label ([fn]
+    # riquadro del messaggio: copia di AV_Name col TextField Txt_Comment_Label (
     # lo sostituisce con il campo vero e nasconde l'originale)
     clone(t, 'AV_Name', 'AV_Comment', 'NormalText_Window03', visible=True)
     box = find(t, 'AV_Comment')
@@ -2594,7 +2582,7 @@ def avatar_comment_popup():
 
 
 def other_menu():
-    """MenuDialog_ver300 («Other» del menu, [fn]), assente dalle risorse. Base:
+    """MenuDialog_ver300 («Other» del menu), assente dalle risorse. Base:
     MenuDialog_ver150 (originale KHUX: finestra Win11, griglia 3 x 5 di pulsanti con icona
     Menu_But_NN e testo). La ver300 cerca in piu' Achievement (con Image_android, l'icona
     Google Play al posto di quella di Game Center) e TitleButton (ritorno al titolo); non
@@ -2616,7 +2604,7 @@ def other_menu():
     for n in ('SerialCodeButton', 'FaceBookButton', 'FaceBookButton_Logout'):
         find(t, n)['options']['visible'] = False
     win = find(t, 'MainMenu_Dialog')
-    # [fn] cerca anche TwitterButton con il figlio Image (banco ot3): copia nascosta
+    # cerca anche TwitterButton con il figlio Image (banco ot3): copia nascosta
     # del pulsante Facebook
     tw = json.loads(json.dumps(find(t, 'FaceBookButton')))
     tw['options'].update(name='TwitterButton', visible=False)
@@ -2642,7 +2630,7 @@ def other_menu():
 
 
 def subslot_scene():
-    """DeckEditSubSlotScene_ver340 ([fn]): la ver310 originale (nodi Set_Medal x=0,
+    """DeckEditSubSlotScene_ver340: la ver310 originale (nodi Set_Medal x=0,
     Select_Medal x=530 con la freccia Arrow01, SubSlot_UpArrowEff = armatura
     DeckEdit_KBStrength_ResultArrow_Animation, SubSlot_Caution) con il Set_Medal ver340 generato
     (la ver260 servita non ha i testi che il codice cerca)."""
@@ -2656,36 +2644,35 @@ def subslot_scene():
 
 
 def pet_info_scene():
-    """PetInfo_Gen_ver320, layout del nodo CenterUI di PetInfoScene_ver320 (dialog «SPIRIT» del pet, PetInfoDialog: open [fn], dopo GET
-    /user/profile (5) e GET /pet/profile (170) createLayout [fn]), assente da ogni risorsa.
-    Nomi (ricerca ricorsiva [fn], prima in profondita': il Close_Button principale va
-    prima dei popup che hanno il loro) e tipi dal decompilato:
-    - Pet_Info ([fn], [fn]): Txt_Pet_Name (nome), Txt_Pet_Rank (106110102 «Rank»),
-      Txt_Pet_Rank_Num (106110103 «%d»): Label (ombra [fn]). AtlasLabel_EXP (crenatura,
-      [fn]) e Gauge_EXP ([fn]/0c90/09d4: ProgressBar_EXP, ProgressBar_RED,
+    """PetInfo_Gen_ver320, layout del nodo CenterUI di PetInfoScene_ver320 (dialog «SPIRIT» del pet: open dopo GET
+    /user/profile (5) e GET /pet/profile (170) createLayout), assente da ogni risorsa.
+    Nomi (ricerca ricorsiva prima in profondita': il Close_Button principale va
+    prima dei popup che hanno il loro) e tipi dal client:
+    - Pet_Info: Txt_Pet_Name (nome), Txt_Pet_Rank (106110102 «Rank»),
+      Txt_Pet_Rank_Num (106110103 «%d»): Label (ombra). AtlasLabel_EXP (crenatura) e Gauge_EXP (09d4: ProgressBar_EXP, ProgressBar_RED,
       Gage_EXP_Res, AtlasLabel_EXP) = barra «LV Up in N» copiata da MedalInfo_Mix_ver340.
     - PetInfo_Medal: Txt_5 («×%01.3f», 106110207 = magnification del rango), Area_Arrow1/2 (vi
       aggiunge le armature DeckEdit_KBStrength_ResultArrow_Animation, freccia su).
     - Pet_LvUp (banner RANK UP!: Panel_img, Txt_Skill, Icon_New), mosso solo dall'azione «Panel_in»
-      di PetInfo_PetLvUp_Panel_Ver230.json (ActionManager, NULL tollerato): nascosto.
+      di PetInfo_PetLvUp_Panel_Ver230.json (NULL tollerato): nascosto.
     - UnderUI > Button_A/Txt_A (106110203 «Name») e Button_B/Txt_B (106110204 «Outfits»);
       PowerUp_Button/Txt_PowerUP (106110205 «Gear»), PetSkill_Button/Txt_PetSkill (106110206
-      «Tricks»), Close_Button: tutti Button (setTouchEnabled +0x520).
-    - PetTraing (Spirit Training, [fn]/0090e660/0090dca4): PetTraing_But/Txt_Training
+      «Tricks»), Close_Button: tutti Button (setTouchEnabled).
+    - PetTraing (Spirit Training/0090e660/0090dca4): PetTraing_But/Txt_Training
       (106200400 «Train»), PetTraing_ChargButton/Txt_TrainingCharg (106200401 «Train Now»),
       PetTraing_Slot/Txt_PetSkill (106200429 «Training Slots»), Txt_TotalTitle/TotalNum_Label,
       Txt_MonthTitle/MonthNum_Label (106200402/403, expeditionTotal/MonthlyNum), Txt_Time
       (106200404 «Training Ready in %02d:%02d:%02d»), Icon_New.
-    - MedalArea > Medal1..Medal6 ([fn]: vi aggiunge le celle medaglia 175x175 senza
+    - MedalArea > Medal1..Medal6 (vi aggiunge le celle medaglia 175x175 senza
       controllo del null) + subslotView creato dal codice al centro di MedalArea.
-    - Dummy > Pet: il codice vi aggiunge il pet ([fn], nodo petNode) in movimento wait.
-    - Pop_MedalForm (Gear, [fn]/[fn]; il nome «Scroll_Area» e' la coda della stringa
-      EquipSell_Scroll_Area+10 a 0x1830dde, 0x911200: con EquipSell_Scroll_Area NULL e crash a 0x9112a0, «Swap Gear» lo apre subito): Win_under >
-      Scroll_Area (lista medaglie MedalScrollView modo 8, celle 120x164, 3 colonne),
+    - Dummy > Pet: il codice vi aggiunge il pet (nodo petNode) in movimento wait.
+    - Pop_MedalForm (Gear; il nome «Scroll_Area» e' la coda della stringa
+      EquipSell_Scroll_Area+10: con EquipSell_Scroll_Area NULL e crash, «Swap Gear» lo apre subito): Win_under >
+      Scroll_Area (lista medaglie modo 8, celle 120x164, 3 colonne),
       Txt_Possession (101510001 «Slots»), Txt_Cost_Label, Txt_Slash_Label, Txt_CostMax_Label;
       Close_Button, BestButton > Txt_Best (106110301 «Optimize»), Arrow01. Win_under e' anche il
-      riquadro di rilascio del trascinamento ([fn]). Come DeckEdit_MedalForm.
-    - Pop_PetSkill_Info (Tricks, [fn]): Win (animazione d'apertura), Close_Button,
+      riquadro di rilascio del trascinamento. Come DeckEdit_MedalForm.
+    - Pop_PetSkill_Info (Tricks): Win (animazione d'apertura), Close_Button,
       PetSkill_List > Area (lista) e Txt (106110903 «No learned tricks.»).
     Aspetto da reference\\pet\\pet_spirit_training_02.png (1764x992: x = x'/1,553 - 88,
     y = 640 - y'/1,55) e pet_spirit_edit_01.jpg (Gear: finestra MEDALS a destra, Optimize, «<»)."""
@@ -2694,8 +2681,8 @@ def pet_info_scene():
     # restava di 436 e la striscia del Rank, larga 362, usciva dal dialog: segnalazione utente 12-10)
     plate13 = dict(scale9Enable=True, capInsetsX=50, capInsetsY=0, capInsetsWidth=387, capInsetsHeight=36)
     yellow = dict(colorR=255, colorG=220, colorB=40)
-    # sei celle 3x2 come nel riferimento; MedalArea in 10,85. La cella DeckMedalView ([fn]
-    # -> [fn], DeckEdit_RevolverMedal_ver330 175x175) sta con l'angolo in basso a sinistra
+    # sei celle 3x2 come nel riferimento; MedalArea in 10,85. La cella (
+    #, DeckEdit_RevolverMedal_ver330 175x175) sta con l'angolo in basso a sinistra
     # sull'origine di Medal%d e nessun codice ne cambia la scala: la scala di Medal%d la rimpicciolisce.
     # Riferimenti riportati a 960x640 (pet_spirit_yt_03 / _edit_01, banco 12-10 pt_4/pt_5):
     # monete vuote ~110 di diametro (le nostre 118, medaglie ~180 contro ~165: piu' grandi e
@@ -2774,11 +2761,11 @@ def pet_info_scene():
             I('Arrow01', -7, 298, 56, 134, 'Medal_Syn_Arrow01.png', s9=False, scale=0.8),
             B('BestButton', -50, 118, 196, 68, 'But06', 'Optimize', 24, label='Txt_Best', opts=BUTS)],
           visible=False),
-        # Tricks: il pulsante (lambda [fn]) chiama [fn] su Pop_PetSkill_Info, che vi
+        # Tricks: il pulsante chiama su Pop_PetSkill_Info, che vi
         # cerca PetSkill_Info (dettaglio, lo nasconde: senza, crash) e PetSkill_List > Area (lista
-        # [fn], celle PetInfo_PetSkill_Panel_ver230 304x68) e Txt («No learned tricks.»,
-        # elenco = openSkillIds della riga petRank del rango, [fn]). Toccando un trick
-        # ([fn]) mostra PetSkill_Info e vi scrive Txt_PetSkill_Title (nome), Txt_Efficacy_Title
+        # celle PetInfo_PetSkill_Panel_ver230 304x68) e Txt («No learned tricks.»,
+        # elenco = openSkillIds della riga petRank del rango). Toccando un trick
+        # mostra PetSkill_Info e vi scrive Txt_PetSkill_Title (nome), Txt_Efficacy_Title
         # (106110901 «Details»), Txt_Efficacy, Txt_Trigger_Title (106110902 «Conditions»), Txt_Trigger
         # (riga petSkill); ritoccarlo lo nasconde. Lista a sinistra, dettaglio a destra.
         P('Pop_PetSkill_Info', 0, 0, 960, 640, [
@@ -2786,7 +2773,7 @@ def pet_info_scene():
                 L('Txt_Title', -350, 205, 300, 40, 'TRICKS', 30, opts=dict(anchorPointX=0)),
                 B('Close_Button', 365, 225, 70, 70, 'But_Close'),
                 I('List_Base', -195, -20, 340, 410, 'Panel04.png', opts=GRID),
-                # la lista prende la misura di Area ([fn]: setContentSize, addChild) e mette
+                # la lista prende la misura di Area (setContentSize, addChild) e mette
                 # le celle da 304 a x 0: Area larga quanto la cella e centrata nel riquadro
                 P('PetSkill_List', -360, -220, 330, 400, [
                     P('Area', 13, 0, 304, 400),

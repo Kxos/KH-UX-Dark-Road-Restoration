@@ -3,9 +3,8 @@
     python -I recon/tools/jp_coco_widgets.py <libcocos2dcpp.so> <decompilato.c> <report.json di
         import_jp_coco.py> <stage_gen\\files> [<uscita.tsv>]
 
-<decompilato.c> = le funzioni attorno ai caricatori dei layout (who_refs.py sulle stringhe
-`cocostudio/publish/<nome>`, poi Ghidra su finestre di indirizzi: docs/notes/risorse_layout.md
-#jp-originali). I nomi cercati dal codice sono quelli che widget_lookup.py ricostruisce dalle
+<decompilato.c> = l'analisi locale (privata) delle funzioni attorno ai caricatori dei layout
+(who_refs.py sulle stringhe `cocostudio/publish/<nome>`). I nomi cercati dal codice sono quelli che widget_lookup.py ricostruisce dalle
 stringhe corte sullo stack (tutte le chiamate) piu' le stringhe del binario citate dal C
 (s_<nome>_<indirizzo>). Per ogni radice: nomi solo nostri (anche nei sotto-layout `*_Gen`
 delle scene) e, fra questi, quelli che compaiono nel codice -> da guardare a mano.

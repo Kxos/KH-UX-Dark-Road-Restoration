@@ -1,13 +1,9 @@
-"""Il ramo di un'azione nel dispatcher delle risposte ([fn]): indirizzo, e
-nelle sue prime istruzioni le chiamate (parser candidati) e le chiavi lette
-direttamente sulla radice.
+"""Il ramo di un'azione nel dispatcher delle risposte del client: le chiamate nelle sue prime
+istruzioni (parser candidati) e le chiavi lette direttamente sulla radice della risposta.
+Serve a ricavare lo schema JSON che il client si aspetta per un'azione. Strumento di ricerca:
+il disassemblato lineare in ingresso si produce con strumenti privati.
 
-La tabella di salto sta a 0x177e414 (indirizzi Ghidra), indice = id - 1, voci
-int32 relative alla tabella. Il disassemblato lineare viene da
-recon/ghidra/khux_linear.py sull'intervallo 0x7c3204-0x7d1080.
-
-    python -I recon/tools/action_case.py <libcocos2dcpp.so> <disassemblato lineare> <id> [n istruzioni]
-"""
+    python -I recon/tools/action_case.py <libcocos2dcpp.so> <disassemblato lineare> <id> [n istruzioni]"""
 import os
 import re
 import struct

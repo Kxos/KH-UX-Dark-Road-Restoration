@@ -55,7 +55,7 @@ check(m.sound_names(['se_b', 'playBGM_x', 'se_a', 'se_a', 'se_', 'isPlaySE_1', '
 check(m.sound_names(['playSE_ui2_se_000075', 'isPlaySound_1', 'playSE_']) == ['ui2_se_000075'],
       'sound_names: playSE_ (ruota del trait Kakusei_Get1/2, I-084)')
 
-# --- id come [fn]: testo text/audio, poi atoi del nome
+# --- id come testo text/audio, poi atoi del nome
 check(m.c_atoi(' 509000390\r\n') == 509000390 and m.c_atoi('-12x') == -12 and m.c_atoi('abc') == 0, 'c_atoi')
 check(m.resolve('ui2_se_000039', '509000390') == 509000390, 'resolve: testo')
 check(m.resolve('509000740', None) == 509000740, 'resolve: atoi del nome senza testo')
@@ -204,5 +204,5 @@ if errori:
     for e in errori:
         print(' -', e)
     sys.exit(1)
-print('OK: eventi LWF, id come [fn], revisioni JP, piano, collect (statici, owned, scritture), '
+print('OK: eventi LWF, id come, revisioni JP, piano, collect (statici, owned, scritture), '
       'Served.read/_read_at a cavallo dei pezzi, cache e impronta, JP vero')

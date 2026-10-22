@@ -2,8 +2,8 @@
 
     python -I recon/tools/npc_placeholders.py <stage_gen/files> [--served names.tsv ...] [--report out.json]
 
-Il client ([fn], animazione d'attesa dell'NPC, da [fn] -> [fn]) formatta
-lwf/character/npc/%d/wait/wait.lwf, la carica con [fn] (NULL se manca) e fa addChild(NULL):
+Il client (animazione d'attesa dell'NPC) formatta
+lwf/character/npc/%d/wait/wait.lwf, la carica con (NULL se manca) e fa addChild(NULL):
 crash alle stanze con un NPC senza LWF (quest 953-955, NPC 11018). Per ogni id NPC di ogni parte di
 ogni stage in <files>/stage senza wait.lwf servita (elenchi --served) o gia' generata, scrive
 l'LWF vuoto di empty_lwf.py (nostro) in <files>/lwf/character/npc/<id>/wait/wait.lwf. Gira PRIMA di

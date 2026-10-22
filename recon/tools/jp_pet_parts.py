@@ -1,14 +1,14 @@
 """Parti dello Spirit (pet) dai dati JP 4.3.1: grafica lwf/pet/part e icone img/petParts.
 
 Il client disegna il pet attaccando `lwf/pet/part/%03d/<parte>/<parte>.lwf` (id % 1000 per le parti
-303xxx-309xxx, id intero per gli accessori 4xxxxx; [fn]) e mostra nell'editor degli outfit
+303xxx-309xxx, id intero per gli accessori 4xxxxx) e mostra nell'editor degli outfit
 `img/petParts/pi<id>.png`. Le risorse WW servono solo la serie 001. Nella copia JP locale i file
 uguali sono stati tenuti una volta sola: 445 LWF e qualche texture mancano nelle cartelle delle serie
 che li condividono con un'altra (stessa specie: 001, 002 e 015 sono tutte «neko»). Si recuperano dalla
 cartella gemella con la stessa parte, la stessa texture (nome e dimensioni) e il numero piu' vicino;
 7 LWF hanno gemelle che differiscono di pochi float (posizioni): si prende la piu' vicina.
 
-    python -I recon/tools/jp_pet_parts.py <JP_ROOT>     (resoconto, non scrive nulla)
+    python -I recon/tools/jp_pet_parts.py <JP_ROOT> (resoconto, non scrive nulla)
 """
 import os
 import re

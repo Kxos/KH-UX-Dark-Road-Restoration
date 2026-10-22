@@ -5,21 +5,19 @@ ShopBut_Lock_Disable.png, pulsante rosso di estrazione spento img/ui/But07_Disab
 
 <cartella catalogo estratto> = res_bulk.py (catalog\\files); <uscita> = stage_gen\\files.
 
-La piastra di un'estrazione ([fn], layout ShopDraw_3Plate_Plate_ver310) carica sempre
+La piastra di un'estrazione (layout ShopDraw_3Plate_Plate_ver310) carica sempre
 nell'ImageView Lock_icon (118x118, scala 0.9, figlio di LockMask) una delle due texture, anche
-quando la piastra non e' bloccata: ShopBut_Lock se il flag +0x350 del singleton [fn] e'
+quando la piastra non e' bloccata: ShopBut_Lock se il flag del singleton e'
 acceso, altrimenti ShopBut_Lock_Disable. Nessuna delle due e' in una risorsa servita (Dark Road le
-ha rinominate in dark_Icon_Lock / dark_Icon_Lock_Disable): senza, crash 0x2c in
-ImageView::loadTexture all'apertura dello Shop con una piastra. La texture dello stesso layout e
+ha rinominate in dark_Icon_Lock / dark_Icon_Lock_Disable): senza, crash 0x2c in all'apertura dello Shop con una piastra. La texture dello stesso layout e
 dell'icona delle missioni (QuestBut_Lock, 118x118) e' identica a dark_Icon_Lock: si copiano le due
 originali di Dark Road (lucchetto azzurro e la sua versione grigia), lette dal catalogo locale al
 momento del build. Nel repository solo questo script, mai le bitmap.
 
 Piastra bloccata (benefitId del master DrawMedalType che il giocatore non ha): i pulsanti di
-estrazione DrawButton1 (But07, rosso) e DrawButton3 (But24, oro) passano a spento con
-[fn](btn, 1) -> [fn], che carica «img/ui/%s_Disable.png» su un ImageView con
-9-slice: But24_Disable esiste, But07_Disable no (crash 0x2c, banco 16-10, stringa di 24 caratteri
-nel tombstone). Le due texture hanno la stessa sagoma 60x118 (9-slice a meta', capInsetsX 30) e
+estrazione DrawButton1 (But07, rosso) e DrawButton3 (But24, oro) passano a spento: il client
+carica «img/ui/%s_Disable.png» su un ImageView con
+9-slice: But24_Disable esiste, But07_Disable no (crash, banco 16-10). Le due texture hanno la stessa sagoma 60x118 (9-slice a meta', capInsetsX 30) e
 lo spento originale e' grigio: But07_Disable = copia di But24_Disable.
 """
 import os

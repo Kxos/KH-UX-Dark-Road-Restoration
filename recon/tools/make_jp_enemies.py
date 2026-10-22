@@ -1,19 +1,18 @@
 """Pacchetto statico delle grafiche originali dei nemici (JP 4.3.1 + 2016) per il client: enemy_gen\\files.
 
     python recon/tools/make_jp_enemies.py [--out D:\\Progetto_Restauro_KH_UX\\enemy_gen] [--story-only]
-        [--ids 2,3] [--dry] [--jobs N]             (Pillow: senza -I)
+        [--ids 2,3] [--dry] [--jobs N] (Pillow: senza -I)
 
 Le risorse WW servono lwf/character/enemy/<displayId>/ solo per 6 nemici KHUX (1, 6, 8, 17, 37, 1020)
 e per le serie di Dark Road: make-game-tables.js da' a tutti gli altri un sostituto (Shadow, Armored
 Knight...). Qui si ricostruiscono le cartelle dei displayId originali (master_data\\enemy_display_orig.json)
 che il master usa e che nessun indice serve (names_v4.tsv + ipa431\\names_addnl.tsv), dalle fonti in
 sola lettura: dati JP 4.3.1 della cartella di riferimento locale (`lwf/character/enemy/`, PNG veri, nomi con revisione
-`<nome>.<8 cifre>.<ext>`: vale la piu' alta, come latest() di import_jp_coco.py) e pacchetto 2016
+`<nome>.<8 cifre>.<ext>`: vale la piu' alta, come latest di import_jp_coco.py) e pacchetto 2016
 (<ref_work>\\bundle2016\\files\\lwf\\character\\enemy, gia' BTF).
 
-Animazioni (docs/notes/battaglia.md#nemici-jp): [fn] apre per stato la LWF della tabella
-0x1f1cc88 {wait, bwait, move, atk%d_o, atkSp, knockback, dead}; [fn] rende NULL se il file
-manca e il chiamante lo dereferenzia: crash. bwait e atkSp sono facoltative ([fn] ne prova
+Animazioni (docs/notes/battaglia.md#nemici-jp): apre per stato la LWF della {wait, bwait, move, atk%d_o, atkSp, knockback, dead}; rende NULL se il file
+manca e il chiamante lo dereferenzia: crash. bwait e atkSp sono facoltative (ne prova
 l'esistenza: assenti -> wait); atk%d_o usa attackMotion di enemyAttack (oggi sempre 1).
   * obbligatorie: wait, atk1_o, knockback, dead e move;
   * move assente o incompleta nelle fonti (142 dei 360 nemici JP non l'hanno: piante, boss fermi)
@@ -70,8 +69,8 @@ PNGREF = re.compile(rb'[\w\-.]+\.png')
 MANDATORY = ['wait', 'atk1_o', 'knockback', 'dead']          # + move (eventualmente da wait)
 OPTIONAL = re.compile(r'^(bwait|atkSp|atk\d+_o)$')
 # Guest allies (I-199, recon/tools/ally_families.json): families that the JP stages use only in teams with flag 0x20.
-# The client keeps them in its ally list (4.3.1 [fn]): they enter only wait (field and battle, bwait falls back
-# to it), atk1_o / atkSp (their attack, [fn]) and possibly move (the ally attack waits for the approach);
+# The client keeps them in its ally list (4.3.1): they enter only wait (field and battle, bwait falls back
+# to it), atk1_o / atkSp (their attack) and possibly move (the ally attack waits for the approach);
 # they are never targeted nor killed, so knockback and dead are never opened. Ally rule: wait + atk1_o complete;
 # move, knockback and dead copied from wait when absent or incomplete (safety net: never opened, but no NULL LWF).
 ALLY_MANDATORY = ['wait', 'atk1_o']

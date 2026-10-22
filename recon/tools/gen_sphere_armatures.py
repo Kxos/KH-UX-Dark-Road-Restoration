@@ -328,7 +328,7 @@ def main():
         names = list(imgs)
         for sb in 'SB':
             name = f'Z_SpRoute_{sb}_{kind}'
-            # indice 0/1/2 = stato del nodo a cui porta il percorso (playWithIndex in [fn])
+            # indice 0/1/2 = stato del nodo a cui porta il percorso (playWithIndex)
             movs = [mov('Lock', 1, [('Route', [frame(0, 0)])]),
                     mov('Release', 1, [('Route', [frame(0, 1)])]),
                     mov('Target', 41, [('Route', [dict(f, dI=2) for f in pulse])])]

@@ -122,7 +122,7 @@ for suf in ('Off', 'On'):
     b.alpha_composite(hslice(load('cocostudio/publish/But16_%s.png' % suf), 95, 58, 30), (0, 7))
     save('But23_%s.png' % suf, b)
 def mog_tab(active):
-    """Scheda del Moogle Shop (img/ui/Mogshop_tab_Off/_On, pulsante di [fn]):
+    """Scheda del Moogle Shop (img/ui/Mogshop_tab_Off/_On, pulsante):
     linguetta arrotondata in alto; spenta blu scuro con bordo azzurro, accesa azzurra
     (reference\\moogle_shop\\jp410_160.png); 200x48 come le schede di moogle_shop_01.png."""
     w, h = 200, 48
@@ -153,7 +153,7 @@ def save_ui(name, im):
 
 def mog_plate():
     """Riquadro dell'icona di un articolo del Moogle Shop (img/ui/Mogshop_plate1.png, Base di
-    MoogleShop_IconPanel, caricato da [fn]): quadrato arrotondato quasi nero con
+    MoogleShop_IconPanel, caricato): quadrato arrotondato quasi nero con
     bordo chiaro sottile (reference\\moogle_shop\\moogle_shop_01.png)."""
     w = 140
     im = Image.new('RGBA', (w * S, w * S), (0, 0, 0, 0))
@@ -174,7 +174,7 @@ def mog_plate():
 
 def mog_row(gold, pressed):
     """Righe dei trait del Moogle Shop: img/ui/But29_* (blu) e But31_* (dorata, offerte a
-    tempo), caricate da changeRowKakusei ([fn], crash in loadTexture se mancano).
+    tempo), caricate da changeRowKakusei (crash in loadTexture se mancano).
     Colori da reference\\moogle_shop\\moogle_shop_traits_yt_03.jpg: blu 30,110,200 ->
     20,80,170 con bordo azzurro; dorata 250,175,50 -> 225,120,20 con bordo giallo chiaro.
     Premuta un po' piu' scura."""
@@ -209,8 +209,7 @@ save('Mogshop_plate1.png', mog_plate())          # Base di MoogleShop_IconPanel 
 
 
 def mission_tab(state):
-    """Schede della finestra Missioni (img/ui/MyMission_Category_On/_Off/_Disable, pulsante
-    di [fn] -> [fn]): linguetta 176x50 arrotondata in alto, aperta in basso
+    """Schede della finestra Missioni (img/ui/MyMission_Category_On/_Off/_Disable, pulsante): linguetta 176x50 arrotondata in alto, aperta in basso
     sulla finestra. Colori da reference\\other_menu\\missions_list_01.jpg: spenta blu notte
     19,37,113 con bordo 30,75,160; accesa 36,80,145 con bordo azzurro 70,146,206."""
     w, h = 176, 50
@@ -279,7 +278,7 @@ save('MyMission_GroupIcon1.png', mission_group_icon(1))
 # Icone dei materiali assenti dalle risorse (ce ne sono 9): scaricate dalla khuxwiki con
 # fetch_material_icons.py in reference\materials, ritagliate sul contenuto e messe al centro
 # di una tela 80x90 come le originali (contenuto ~50-66 px). Servono a Sell Materials e al
-# Moogle Shop ([fn]: img/material/material_%d.png).
+# Moogle Shop (img/material/material_%d.png).
 MAT = os.path.join(src, '..', '..', 'reference', 'materials')
 if os.path.isdir(MAT):
     for fn in sorted(os.listdir(MAT)):
@@ -300,7 +299,7 @@ if os.path.isdir(MAT):
 # sono solo le tier 1-8: MedalInfo_Guilt (100x100, sagoma blu notte con la cifra: dettaglio e
 # filtro), Guilt_draw / Guilt_num_draw (57x53), Guilt_Err (36x36 rossa), Guilt4_On (e Guilt5_On in
 # publish). Il client 4.3.1 conosce le tier 9-10 (filtro Filter_Guilt1..10) e carica anche
-# Guilt%d_On/_Off/_num e MD_Guilt%d_On/_Off/_Num ([fn], icone del keyblade). Riferimento:
+# Guilt%d_On/_Off/_num e MD_Guilt%d_On/_Off/_Num (icone del keyblade). Riferimento:
 # le icone della khuxwiki (pagina «Special Attack Bonus», scaricate in reference\medal_tier: attive
 # = Guilt_On 34x34 per le tier 1-8 e 42x42 per 9-10, inattive 42x42 = Guilt_Off). Sagome delle tier
 # 9-10 dalle icone inattive della wiki; cifre «9» = «6» ruotato di 180 gradi, «0» = «8» senza la
@@ -871,7 +870,7 @@ def no_tab():
 
 def sphere_congrats():
     """Sphere_Congrats: scritta «CONGRATULATIONS!» con le stelle ai lati, fissa, per il popup del
-    titolo (Sphere_Popup_Comp: aperto con param_4 0, [fn] non avvia la LWF del banner).
+    titolo (Sphere_Popup_Comp: aperto con parametro 0 non avvia la LWF del banner).
     Lettere e stella dalla LWF Result_Reward (layouts\\orig: «重複したアイテムのフォルダー_1..10»
     = C O N G R A T U L A, 11..16 = T I O N S !), C piu' grande come in ab_ref_title_popup_01
     (1080p: banner x 290-1640, y 70-235 -> circa 800x98 nel layout 960x640)."""
@@ -1027,7 +1026,7 @@ save('Guiltburst_but02.png', burst_button(True))
 save('Guiltburst_Shadow.png', burst_shadow())
 save('Guiltburst_eff02.png', burst_glow())
 save('Guiltburst_eff03.png', burst_ring())
-# Stemma della Union nell'anello delle medaglie del Profilo ([fn]: Revolver >
+# Stemma della Union nell'anello delle medaglie del Profilo (Revolver >
 # Revolver_Center, «img/union/Union_%02d.png»; crash in loadTexture se manca). Nelle risorse
 # c'e' solo cocostudio/publish/Union_03 (128x128): le altre dalle Union_L_%02d (330x330).
 _up = os.path.join(out, 'img', 'union')
@@ -1041,8 +1040,8 @@ for _n in range(1, 6):
         shutil.copyfile(os.path.join(src, 'cocostudio', 'publish', 'Union_L_%02d%s.png' % (_n, _s)),
                         os.path.join(_up, 'Union_L_%02d%s.png' % (_n, _s)))
 print('img/union/Union_01..05, Union_L_01..05')
-# Tendina del passaggio fra le parti di una missione ([fn]: «img/wipe/wipe_%d.png», %d =
-# worldId della tabella world il cui worldName e' il prefisso della stanza, [fn]; Sprite
+# Tendina del passaggio fra le parti di una missione («img/wipe/wipe_%d.png», %d =
+# worldId della tabella world il cui worldName e' il prefisso della stanza; Sprite
 # che non si carica -> crash nel distruttore). Nelle risorse c'e' solo wipe_1 (DB): copie per gli altri.
 _wp = os.path.join(out, 'img', 'wipe')
 os.makedirs(_wp, exist_ok=True)
@@ -1054,7 +1053,7 @@ print('img/wipe/wipe_%s' % ','.join(map(str, _wids)))
 
 def slot_num(d):
     """Deck_Slot_Num_4/5 (34x26, cifra accanto a Deck_Slot «SLOT» sugli slot vuoti del keyblade:
-    FUN_... carica «img/ui/Deck_Slot_Num_%d.png» con il numero dello slot; le risorse hanno solo
+    il client carica «img/ui/Deck_Slot_Num_%d.png» con il numero dello slot; le risorse hanno solo
     1-3, lo slot 4 sbloccato all'evoluzione restava con l'«1» del layout, I-068). Forma della cifra
     dal foglio Mu_Num_Slot (stesso carattere, 44 px per cifra); colori come Deck_Slot_Num_2:
     riempimento bianco e contorno nero ad alfa 128, alone bianco tenue."""
@@ -1087,8 +1086,7 @@ for _d in (4, 5, 6):   # 6 = slot del pet (Spirit, KHUX_PET)
 # reference\subslot\subslot_JP_1.png e subslot_JP_3.png (khux-guides, JP 2018): ogni slot e' un
 # disco blu notte con due anelli blu-viola, «SLOT n» grigio al centro, linee rosa fra gli slot.
 def subslot_disc():
-    """Subslot_MedalSlot (128x128, MedalBase delle celle DeckEdit_SubSlotMedal_ver260; il codice,
-    [fn], carica «img/ui/Subslot_MedalSlot%03d.png» con la category del keyblade: 001,
+    """Subslot_MedalSlot (128x128, MedalBase delle celle DeckEdit_SubSlotMedal_ver260; il codice, carica «img/ui/Subslot_MedalSlot%03d.png» con la category del keyblade: 001,
     201 ... 1901, assenti da ogni risorsa). Disco 14,22,48 con anello esterno 70,90,170 sfumato
     e anello interno sottile 40,55,110."""
     def f(r):
@@ -1119,7 +1117,7 @@ def subslot_info_plate():
     """Subslot_InfoPlate (116x26, base_Type di DeckEdit_SubSlot_MedalInfo_ver260 = SubslotInfoPanel):
     pillola blu notte 6,32,66 con il filo azzurro 70,170,235 sopra e sotto, come la targhetta tier /
     «+0,005» / attributo sotto le medaglie di subslot_JP_1. Opaca: copre Icon_1/Txt_1 «×0.030» di
-    DeckEdit_Deck_MedalInfo_ver260, che il modo 10 di [fn] mostra nello stesso Area_MedalInfo
+    DeckEdit_Deck_MedalInfo_ver260, che il modo 10 mostra nello stesso Area_MedalInfo
     con img/ui/Minfo_Pet01.png (assente da ogni risorsa)."""
     w, h = 116, 26
     im = Image.new('RGBA', (w * S, h * S), (0, 0, 0, 0))
@@ -1136,7 +1134,7 @@ save('Subslot_Route.png', subslot_route())
 save('Subslot_InfoPlate.png', subslot_info_plate())
 for _c in (1, 201, 301, 401, 501, 701, 901, 1101, 1201, 1301, 1401, 1501, 1601, 1701, 1801, 1901):
     save_ui('Subslot_MedalSlot%03d.png' % _c, subslot_disc())
-# Contrassegni e bagliore dell'attributo delle celle ([fn]): il codice li carica da img/ui,
+# Contrassegni e bagliore dell'attributo delle celle: il codice li carica da img/ui,
 # le risorse li hanno solo in cocostudio/publish (Deck_Mark_Uplight/Reverse, Deck_Medal1) o non li
 # hanno (Deck_Medal2: il verde della Speed, tinta di Deck_Medal1 rossa; Deck_Medal3 c'e')
 for _n in ('Deck_Mark_Uplight', 'Deck_Mark_Reverse', 'Deck_Medal1'):

@@ -1,4 +1,4 @@
-"""Nomi e header dei primi record BGAD di un file (lettore [fn]).
+"""Nomi e header dei primi record BGAD di un file (lettore).
 
 Utile per gli indici (.png): record "/", "md5", "size". I nomi dei record dei
 pacchetti (.mp4, OBB) usano un'altra cifratura, non ancora nota.

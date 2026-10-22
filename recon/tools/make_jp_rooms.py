@@ -1,12 +1,12 @@
 """Pacchetto statico delle stanze recuperate (JP 4.3.1 + 2016) per il client: rooms_gen\\files.
 
     python recon/tools/make_jp_rooms.py [--out D:\\Progetto_Restauro_KH_UX\\rooms_gen] [--story-only]
-        [--rooms R1,R2] [--dry] [--jobs N]          (Pillow: senza -I)
+        [--rooms R1,R2] [--dry] [--jobs N] (Pillow: senza -I)
 
 Fonti (solo lettura): stanze unite di rooms_merge_v2.py in <ref_work>\\rooms_merged\\<stanza>\\
 (i 4 .bin, tessere e immagini intere gia' scelti e ricostruiti) e, per cio' che li' manca, i dati JP
 4.3.1 della cartella di riferimento locale (`map/`, `lwf/map/`; nomi con revisione `<nome>.<8 cifre>.<ext>`: vale la
-revisione piu' alta, come latest() di import_jp_coco.py).
+revisione piu' alta, come latest di import_jp_coco.py).
 
 Per ogni stanza di rooms_merged la cui `map/<S>/<S>_info.bin` non e' gia' servita (indice
 names_v4.tsv + ipa431\\names_addnl.tsv + pacchetti generati stage_gen\\files, medal_gen\\files) e
@@ -53,7 +53,7 @@ TILE = 256
 REV = re.compile(r'^(.*)\.(\d{8})(\.[^.]+)$')
 # segnaposto delle tessere vuote originali (map/DB_0000_00_00/..._base1_001.png della 5.0.1)
 # 45 byte, come l'originale. Fino al 20-10 qui c'era un 00 in piu' all'offset 16 (46 byte): campi slittati, il
-# client leggeva 0x05000100 byte di dati da un file di 46 e andava in crash entrando nelle 86 stanze generate con
+# client leggeva byte di dati da un file di 46 e andava in crash entrando nelle 86 stanze generate con
 # tessere trasparenti (quest 13 e 524, banco 20-10); le tessere scritte cosi' si riscrivono (BAD_PLACEHOLDER)
 PLACEHOLDER = bytes.fromhex('89425446000001000000000000000000010000000000000100010000000001'
                             '0001000100050000000000000000')

@@ -2,32 +2,26 @@
 assente da ogni risorsa: LWF NOSTRO, scritto da zero (nessun byte degli originali), con le
 texture disegnate qui. Prima c'era il LWF vuoto di make_layouts.py (si saltava l'animazione).
 
-Cosa vuole il client (decompilato 4.3.1, I-078):
-- [fn] (risposta di POST /keyblade/enhance) confronta il displayId (+0xcc della riga
-  keyblade) di prima e di dopo; se cambia chiama [fn]:
-  - strato nero a schermo intero + questo LWF ([fn]: NULL se manca = crash) messo al
-    centro dello schermo (winSize * 0.5): l'origine (0, 0) del LWF e' il centro dello schermo;
-  - gestore «enterFrame» sull'istanza «_root» (lambda vtable 0x1f513e8 -> [fn]): quando
-    il fotogramma corrente del movie (+0xdc) e' uguale al numero dei fotogrammi (+0xd8), cioe'
-    all'ultimo, lancia l'azione che chiama [fn]: toglie strato e LWF e apre il risultato
-    ([fn] -> [fn], DeckEdit_KBStrength_Result_ver210). Nessun evento «end»;
-  - gestore «load» sull'istanza «keyblade_previous» ([fn]) e su «keyblade»
-    ([fn]): vtable +0x5c8 (attachLWF) attacca nel movie che ha generato il «load» il LWF
-    lwf/avatar/keyblade/keyblade_%04d_%02d (displayId / 100, displayId % 100) del keyblade di
-    prima e di quello nuovo, col nome di attacco uguale all'istanza.
-  - [fn] registra un gestore solo se il nome e' nella tabella instanceName: «_root»,
-    «keyblade_previous» e «keyblade» devono esserci (altrimenti niente keyblade, e senza
-    «_root» il flusso si fermerebbe sul nero).
+Cosa si aspetta il client 4.3.1 (I-078):
+- dopo la risposta di POST /keyblade/enhance, se il displayId del keyblade cambia, mostra uno
+  strato nero a schermo intero con questo LWF al centro (l'origine (0, 0) del LWF e' il centro
+  dello schermo); se il file manca va in crash;
+- quando il movie «_root» arriva all'ultimo fotogramma toglie strato e LWF e apre il risultato
+  (DeckEdit_KBStrength_Result_ver210). Nessun evento «end»;
+- al «load» delle istanze «keyblade_previous» e «keyblade» attacca in quel movie il LWF
+  lwf/avatar/keyblade/keyblade_%04d_%02d (displayId / 100, displayId % 100) del keyblade di
+  prima e di quello nuovo;
+- «_root», «keyblade_previous» e «keyblade» devono esserci (altrimenti niente keyblade, e senza
+  «_root» il flusso si fermerebbe sul nero).
 Quindi: radice con i due movie vuoti (istanze keyblade_previous / keyblade, piazzati dal primo
 fotogramma cosi' il «load» arriva subito e il LWF del keyblade nuovo, anche quello da 234
 texture del +35, si carica prima di vedersi), bagliore, raggi, lampo e anello; STOP
-sull'ultimo fotogramma (ci resta: la condizione di [fn] vale da li' in poi).
+sull'ultimo fotogramma (il client resta li').
 
 Posa del keyblade: rotazione 161 gradi e centro dell'arte dei LWF del keyblade (~(8, -31) in
 coordinate locali, keyblade_rule.lwf_center sugli stadi 01-05) portato sull'origine.
 
-    python -I recon/tools/make_kb_evolution_lwf.py <uscita>     (es. stage_gen\\files)
-"""
+    python -I recon/tools/make_kb_evolution_lwf.py <uscita> (es. stage_gen\\files)"""
 import math
 import os
 import sys

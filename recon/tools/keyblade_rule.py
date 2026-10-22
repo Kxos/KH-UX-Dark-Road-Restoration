@@ -1,10 +1,10 @@
 """rule/keyblade_rule.bin: posa del LWF del keyblade nei riquadri dei menu, ricentrata.
 
-Il formato ([fn]): record da 0x44 byte = int keybladeId + 4 modi x (rotazione x10000
-in gradi, scala x10000, x, y). [fn] carica lwf/avatar/keyblade/keyblade_%04d_%02d
+Il formato: record da 0x44 byte = int keybladeId + 4 modi x (rotazione x10000
+in gradi, scala x10000, x, y). carica lwf/avatar/keyblade/keyblade_%04d_%02d
 (displayId), cerca il record del keybladeId, poi quello della serie (id/1000*1000), poi 1000,
 e applica setRotation(rot/10000), setScale(scala/10000), setPosition(x, y) del modo chiesto
-(3 = riquadro di «Select a Keyblade», [fn]). Se il LWF manca usa
+(3 = riquadro di «Select a Keyblade»). Se il LWF manca usa
 img/keyBlade/KeyBlade_%06d.png. Il file servito ha solo 1000..11000 (le serie 12000-16000
 prendono la posa di Starlight) e i LWF della 5.0.1 non sono centrati con quei valori: Treasure
 Trove a destra/in alto e tagliato (banco 11 ottobre). Le stesse LWF le usa l'avatar (parti

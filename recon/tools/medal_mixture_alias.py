@@ -1,6 +1,6 @@
 """Alias delle cartelle mixture/medal/compose/<imageId>/Medal_L per l'animazione di Level Up ed Evolve.
 
-Il client ([fn] Level Up, [fn] Evolve) aggancia a ogni istanza drowMedalNNN dei LWF
+Il client (Level Up Evolve) aggancia a ogni istanza drowMedalNNN dei LWF
 card_strength_result/card_evolution_result la LWF mixture/medal/compose/<imageId>/Medal_L/Medal_L.lwf
 (imageId = campo +4 della riga medal). Il WW ne serve solo 21: per le altre medaglie le cornici restavano
 vuote (banco 19-10). Negli originali la Medal_L.lwf e' la stessa per tutte (648 byte, una texture dal nome

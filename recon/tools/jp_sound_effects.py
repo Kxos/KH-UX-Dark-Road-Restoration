@@ -1,8 +1,8 @@
 """Effetti sonori originali citati dai LWF serviti o generati e assenti dalle risorse: dal JP 4.3.1.
 
-Il client suona gli eventi dei LWF (AudioLWFNode, [fn]/[fn]): `se_<nome>` (e
-`playBGM_<nome>`) -> [fn] -> id = [fn](<nome>) (testo `text/audio/<nome>`), se 0
-`atoi(<nome>)` -> [fn] carica `audio/%09d.akb`; senza file non suona nulla. L'estrazione x10
+Il client suona gli eventi dei LWF (AudioLWFNode): `se_<nome>` (e
+`playBGM_<nome>`) -> id = (testo `text/audio/<nome>`), se 0
+`atoi(<nome>)` carica `audio/%09d.akb`; senza file non suona nulla. L'estrazione x10
 (`se_ui2_se_000039` in raidgacha_result_display_10) e il popup del Nova (`se_ui2_se_000074` in
 GuiltBonus_BurstLvup) erano muti: gli AKB 509000390/509000740 mancano da OBB 5.0.1 + addnl.
 
@@ -28,6 +28,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = r'D:\Progetto_Restauro_KH_UX'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 JP_ROOT = private_tools.local_path('jp_data')
 STATIC_PACKS = ('medal_gen', 'rooms_gen', 'enemy_gen', 'raisedraw_gen')
@@ -73,7 +74,7 @@ def c_atoi(s):
 
 
 def resolve(name, text):
-    """id come [fn]: atoi del testo text/audio/<nome> (None = assente), se 0 atoi del nome."""
+    """id come atoi del testo text/audio/<nome> (None = assente), se 0 atoi del nome."""
     return (c_atoi(text) if text is not None else 0) or c_atoi(name)
 
 

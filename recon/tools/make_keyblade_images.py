@@ -2,10 +2,9 @@
 assenti da ogni risorsa servita: le ricostruisce dalla grafica vera del keyblade, la bitmap
 del LWF lwf/avatar/keyblade/keyblade_%04d_%02d (displayId / 100, displayId % 100).
 
-Chi le usa: [fn] (icona e nome di un premio per tipo; tipo 13 = keyblade:
-sprintf(KeyBlade_%06d, riga keyblade +0xcc = displayId)), da cui il popup
-BattleResult_KB ([fn], «Set Medals in your new Keyblade!»); anche [fn] e
-[fn]. Senza il file l'ImageView KB teneva la texture del layout
+Chi le usa: (icona e nome di un premio per tipo; tipo 13 = keyblade:
+sprintf(KeyBlade_%06d, = displayId)), da cui il popup
+BattleResult_KB («Set Medals in your new Keyblade!»); anche. Senza il file l'ImageView KB teneva la texture del layout
 (Deck_KeyBlade_0701_05 = Olympia, nuvole bianche) per ogni keyblade.
 
 Formato come Deck_KeyBlade_0701_05 (l'unica immagine «da deck» rimasta, 440x340): keyblade in

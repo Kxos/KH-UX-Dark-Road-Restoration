@@ -1,49 +1,36 @@
 """Spirit Training (I-082): risultato del trait e animazione del pet, assenti da ogni risorsa.
 
 Scrive (chiamato da make_layouts.py, sezione pet):
-- lwf/medal/Kakusei/Kakusei_Get1 e Kakusei_Get2: LWF NOSTRI per KakuseiLWFNode (classe con
-  vtable 0x1f5e558, creata da [fn], init [fn], update [fn]);
+- lwf/medal/Kakusei/Kakusei_Get1 e Kakusei_Get2: LWF NOSTRI;
 - lwf/medal/Kakusei/Kakusei_Icon%04d: icona del trait (texture img/kakusei/Kakusei_Icon%04d
-  copiata), attaccata dal client al movie Â«Kakusei_IconÂ» ([fn]);
+  copiata), attaccata dal client al movie «Kakusei_Icon»;
 - cocostudio/publish/PetTraining_*.png: le vignette del fumetto di PetInfo_TrainingProduction
   (make_layouts.pet_training_production).
 
-Cosa fa l'originale (video kTJoSgXii1E, reference\\pet\\pet_training_anim_*.png, NOTE.md Â§10) e
-cosa chiede il client 4.3.1 (decompilato):
-1. Â«TrainÂ» -> per ogni medaglia [fn] (PetInfoDialog::openTrainingMedalKakuseiResultPopup):
-   sotto c'e' MedalMixResultScene_ver320 (dettaglio della medaglia, Close nascosto), sopra
-   PetInfo_TrainingProduction (azione Training_Anime) = fumetto bianco con quattro vignette
-   inclinate (scacchi verde acqua, linee viola, fascia azzurra con stelle, selciato arancione) e il
-   pet in ognuna. Fine azione o tocco -> [fn] -> [fn].
-2. [fn]: Kakusei_Get1 al centro. Raggio bianco da sinistra, anello iridescente, lampo
-   bianco, poi una pillola nera col bordo azzurro luminoso con icona e nome del trait in giallo che
-   cambiano come una slot machine (~4 al secondo). Nel client: gestore Â«loadÂ» del movie
-   Â«Kakusei_IconÂ» ([fn] -> nodo +0x558), [fn] = lista delle righe shuffleskill
-   dello stesso type (+8) con rate (+0xc4) != 0; gli eventi del LWF passano dal dispatcher
-   [fn] (tabella dei gestori a nodo +0x570): Â«tgtComment_<testo>Â» (indice 21 -> +0x960,
-   [fn]: abilita, nodo +0x528) e Â«dispString_<n>Â» (indice 22 -> +0x990, [fn]:
-   nodo +0x538 = 1) -> nell'update un trait a caso della lista ([fn]) e [fn]:
-   setString del testo del LWF (nodo +0x530, il LWFTextTTFRenderer passato alla callback
-   [fn], font DFPSoGei 24) con sprintf(nome, valore) e attachLWF di
-   lwf/medal/Kakusei/Kakusei_Icon%04d (riga +4) nel movie. Senza testo nel LWF +0x530 resta NULL
-   e [fn] va in crash: serve un oggetto testo (font Â«_systemÂ» come i drama). Fine di _root
-   (gestore enterFrame [fn]: ultimo fotogramma) o tocco -> Get2.
-3. [fn]: Kakusei_Get2. Il Â«loadÂ» di Kakusei_Icon ([fn]) mette nodo +0x53a = 1 e
-   +0x560 = trait ottenuto (indice +0x148 della medaglia = primo trait di type 2): al
-   Â«dispStringÂ» [fn] mette +0x539 e l'update mostra QUEL trait. Lampo sulla pillola,
-   stelle gialle; STOP sull'ultimo fotogramma: [fn] ferma il nodo ([fn]) ma lo
-   lascia visibile e apre Â«TAP SCREENÂ» ([fn]): il trait resta leggibile prima del tocco.
-4. Tocco -> [fn] nasconde Get2 -> [fn] -> [fn]: il trait entra nella riga
-   Special Trait di MedalMixResultScene (armatura MedalInfo_Anim, dissolvenza) -> TAP SCREEN.
+Cosa fa l'originale (video kTJoSgXii1E, reference\\pet\\pet_training_anim_*.png, NOTE.md §10) e
+cosa si aspetta il client 4.3.1:
+1. «Train» -> per ogni medaglia sotto c'e' MedalMixResultScene_ver320 (dettaglio della medaglia,
+   Close nascosto), sopra PetInfo_TrainingProduction (azione Training_Anime) = fumetto bianco con
+   quattro vignette inclinate (scacchi verde acqua, linee viola, fascia azzurra con stelle,
+   selciato arancione) e il pet in ognuna. Fine azione o tocco.
+2. Kakusei_Get1 al centro. Raggio bianco da sinistra, anello iridescente, lampo bianco, poi una
+   pillola nera col bordo azzurro luminoso con icona e nome del trait in giallo che cambiano come
+   una slot machine (~4 al secondo): il client sceglie a caso fra le righe shuffleskill dello
+   stesso type con rate != 0, reagisce agli eventi LWF «tgtComment_<testo>» e «dispString_<n>»,
+   scrive nome e valore nell'oggetto testo del LWF e attacca lwf/medal/Kakusei/Kakusei_Icon%04d
+   nel movie «Kakusei_Icon». Senza oggetto testo nel LWF il client va in crash: serve un testo
+   (font «_system» come i drama). Fine di _root (ultimo fotogramma) o tocco -> Get2.
+3. Kakusei_Get2: mostra il trait ottenuto. Lampo sulla pillola, stelle gialle; STOP sull'ultimo
+   fotogramma: resta visibile e compare «TAP SCREEN»: il trait resta leggibile prima del tocco.
+4. Il tocco nasconde Get2: il trait entra nella riga Special Trait di MedalMixResultScene
+   (armatura MedalInfo_Anim, dissolvenza) -> TAP SCREEN.
 Prima i due LWF erano vuoti: niente roulette ne' trait, subito TAP SCREEN sul dettaglio e il trait
 solo dopo il tocco (segnalazione utente 12-10).
 
-Anche SceneMoogleShop::openKakuseiResultPopup ([fn] / [fn] / [fn]) usa
-Kakusei_Get1/2 per i trait comprati (type 1): make-pet-tables.js da' rate 100 ai trait normali
-perche' la lista della roulette non sia vuota (std::out_of_range).
+Anche il Moogle Shop usa Kakusei_Get1/2 per i trait comprati (type 1): make-pet-tables.js da'
+rate 100 ai trait normali perche' la lista della roulette non sia vuota.
 
-    python -I recon/tools/make_pet_training_fx.py <uscita> <cartella layout estratti>
-"""
+    python -I recon/tools/make_pet_training_fx.py <uscita> <cartella layout estratti>"""
 import math
 import os
 import random
@@ -254,7 +241,7 @@ YELLOW = (1.0, 0.92, 0.25, 1.0)
 
 
 def _pill_layers(lw, objs, icon_scale):
-    """movie Kakusei_Icon (istanza cercata dal client) e testo text1 (TextRenderer -> +0x530)."""
+    """movie Kakusei_Icon (istanza cercata dal client) e testo text1 (TextRenderer)."""
     objs['icon'] = lw.movie('Kakusei_Icon')
     lw.instance('Kakusei_Icon')
     objs['text'] = lw.text(TEXT_W, TEXT_H, 22, YELLOW)
@@ -521,21 +508,21 @@ def _pattern(name, w, h):
     return im
 
 
-# Ritaglio del pet nelle vignette ([fn] -> [fn] -> [fn] / [fn]):
+# Ritaglio del pet nelle vignette:
 # - il pet (scala s = scaleX di «%d_parameter») e' disegnato in una RenderTexture grande quanto la
 #   texture di «Pet» (moltiplicata per k), poi la texture di «Pet» ci viene disegnata sopra con
-#   blend {GL_ZERO, GL_ONE_MINUS_SRC_ALPHA} ([data] = 0, 0x303): dove la maschera e' OPACA il
+# blend {GL_ZERO, GL_ONE_MINUS_SRC_ALPHA} (0, 0x303): dove la maschera e' OPACA il
 #   pet si CANCELLA. La maschera quindi e' bianca FUORI dalla vignetta e trasparente dentro (prima
 #   era il contrario: al banco il pet si vedeva solo fuori dalle vignette, nei triangoli bianchi);
-# - k = min(max(1, GLView scaleX), |3,9 / s|) ([data] = 3,9; scaleX = 1080/640 sul banco);
+# - k = min(max(1, GLView scaleX), |3,9 / s|) (3,9; scaleX = 1080/640 sul banco);
 # - origine (piedi) del pet nella maschera, unita' del layout dall'angolo in basso a sinistra,
 #   y in su: (hx + k * px, -hy + k * py) con (px, py) = posizione di «%d_parameter» e (hx, hy) =
-#   testa del pet ([fn]: head_sp + pet_center = (-9, -24) + (-8,1, -13,85) della parte
-#   001/face_sp, y del LWF in giu'); per 2Pet il codice somma anche altezza_testa * s (pet +0x9a4,
+# testa del pet (head_sp + pet_center = (-9, -24) + (-8,1, -13,85) della parte
+# 001/face_sp, y del LWF in giu'); per 2Pet il codice somma anche altezza_testa * s (pet,
 #   dalla tabella master 0xb: assente = 0);
 # - il ritaglio e' centrato sulla posizione di Pet (e Pet_Shadow), cioe' sul centro della vignetta.
 PET_HEAD = (-17.1, -37.85)        # testa del pet a riposo (LWF, y in giu')
-PET_SCALE_CAP = 3.9               # [data]
+PET_SCALE_CAP = 3.9               #
 GLVIEW_SCALE = 1080 / 640         # banco 1920x1080
 
 

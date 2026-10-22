@@ -2,11 +2,7 @@
 
     python -I recon/tools/ui_text_ids.py <libcocos2dcpp.so> <nomi.tsv> [uscita.tsv]
 
-[fn] (file 0x619f18) legge text/<cat>/<id>.txt: w0 = categoria (0 = ui), w1 = id.
-Per ogni BL a quella funzione si cerca, nelle 12 istruzioni prima, il valore costante di w1
-(movz/movn/movk, orr da wzr) e di w0. Gli id calcolati a runtime sfuggono.
-Uscita: id, presente/manca, indirizzo Ghidra della chiamata.
-"""
+Gli id calcolati a runtime sfuggono. Uscita: id, presente/manca."""
 import re
 import struct
 import sys

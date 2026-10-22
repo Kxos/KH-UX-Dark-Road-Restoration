@@ -2,12 +2,12 @@
 
     python recon/tools/make_quest_thumbs.py <stage.json> <originali> <cache> <uscita> [--report r.json] [--force]
 
-Il client ([fn] / [fn], riquadro «Panel» della missione) compone il percorso con
-worldId (+0x118) e thumbId (+0x11c) della riga master stage e chiama ImageView::loadTexture
-([fn]). Se il file non c'e', initWithFile fallisce e il riquadro tiene la texture di
+Il client (riquadro «Panel» della missione) compone il percorso con
+worldId e thumbId della riga master stage e chiama
+. Se il file non c'e', initWithFile fallisce e il riquadro tiene la texture di
 prima: i riquadri del carosello si riciclano scorrendo con le frecce, quindi le missioni senza
 file mostrano la miniatura di un'altra missione (Agrabah con la piazza di Daybreak Town) o il
-«?» di stage_select_ico_Blank ([fn], missioni non sbloccate). Delle 99 coppie usate
+«?» di stage_select_ico_Blank (missioni non sbloccate). Delle 99 coppie usate
 dalle missioni 1-525 le risorse ne hanno 4 (1_0, 1_40000, 2_0, 2_10000): qui si fanno le altre.
 
 thumbId = stanza*10000 + variante*100 + sottovariante, la stanza della mappa
@@ -16,7 +16,7 @@ quattro originali). Sorgente: le anteprime delle stanze di Roboloid/khux (images
 <Mondo>_<stanza>[_<variante>].png, scaricate in <cache>); ritaglio 145x132 come le originali,
 alpha e bordo chiaro presi dalle originali (<originali> = cartella con stage_select_ico_*.png, BTF
 o PNG: catalog\\files\\img\\adventure\\stage o reference\\quest_list). Anche stage_select_ico_Soon
-([fn] con il flag 1, assente dalle risorse): copia di Blank finche' non si trova
+(con il flag 1, assente dalle risorse): copia di Blank finche' non si trova
 l'originale. Le originali non si riscrivono. Uscita in BTF a palette (riserva del pacchetto).
 Pillow e numpy: senza -I.
 """

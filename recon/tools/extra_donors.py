@@ -36,6 +36,8 @@ TABLE = os.path.join(HERE, 'extra_donors.tsv')
 RECOLOUR_TABLE = os.path.join(HERE, 'jp_recoloured.tsv')
 DEEP_TABLE = os.path.join(HERE, 'extra_donors_deep.tsv')
 D = r'D:\Progetto_Restauro_KH_UX'
+import sys  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 ROOTS = {
     'jp431': [private_tools.local_path('jp_data')],

@@ -53,6 +53,7 @@ from scipy.sparse import csgraph
 
 D = r'D:\Progetto_Restauro_KH_UX'
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 CFG = {
     'schema': D + r'\reference\world_schema\schema_v2\schema_mondi.json',

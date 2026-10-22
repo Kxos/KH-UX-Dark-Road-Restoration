@@ -199,12 +199,12 @@ lwf/loginbonus/LoginBonus_BG/	b16
 lwf/loginbonus/LoginBonus_Welcome/	b16
 lwf/loginbonus/LoginBonus_Stamp/	b16
 #     timbro piccolo nell'angolo (screenshot 2020-21): LWF JP piu' recente (rev. 00191275, scala 0.439), le 5 texture
-#     restano quelle del 2016 (il JP non ha png_KeyBlade_ef1); suono del timbro (codice della scena, [fn])
+#     restano quelle del 2016 (il JP non ha png_KeyBlade_ef1); suono del timbro (codice della scena)
 lwf/loginbonus/LoginBonus_Stamp/LoginBonus_Stamp.lwf	jp
 audio/509100630.akb	b16,jp
 
-# 34. Effetti dei Tricks del pet (I-137): [fn] 0xe Esuna/HP Recovery -> pet_eff_0004, 0xf P/S/M Attack Boost -> pet_eff_0005
-#     (codice - 10); senza il LWF crash NULL in [fn] (banco 20-10, speciale di Naminé). Dal JP 4.3.1; 6 texture
+# 34. Effetti dei Tricks del pet (I-137): 0xe Esuna/HP Recovery -> pet_eff_0004, 0xf P/S/M Attack Boost -> pet_eff_0005
+#     (codice - 10); senza il LWF crash NULL (banco 20-10, speciale di Naminé). Dal JP 4.3.1; 6 texture
 #     assenti dall'estrazione JP sono copie di quelle di pet_eff_0005/0006 (stessi offset nel 2016)
 lwf/ability/hit_effect/pet_eff_0004/	jp
 lwf/ability/hit_effect/pet_eff_0005/	jp
@@ -216,7 +216,7 @@ lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e
 lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031322e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031302e706e67.png
 lwf/ability/hit_effect/pet_eff_0005/pet_eff_0005_e38393e38383e38388e3839ee38383e383972031332e706e67.png	jp	lwf/ability/hit_effect/pet_eff_0006/pet_eff_0006_e38393e38383e38388e3839ee38383e383972031312e706e67.png
 
-# 35. Numero del deck nel popup di Optimize («Optimize Medals for <keyblade>?», I-179): [fn] carica
+# 35. Numero del deck nel popup di Optimize («Optimize Medals for <keyblade>?», I-179): carica
 #     img/ui/Deck_But%02d_On.png (N = deck attivo + 1), assente da WW 5.0.1, JP 4.3.1 e 2016: restava l'immagine del
 #     layout (Deck_But01_On, StartDeckEdit2_Popup_AutoChangeCheck_ver260), quindi sempre «1» anche col deck 2 o 3 (banco
 #     20-10). Stesse texture dei pulsanti 1/2/3 (cocostudio/publish), sotto il nome che il codice cerca
@@ -884,13 +884,13 @@ audio/503001226.akb	b16,jp
 audio/503001227.akb	b16,jp
 
 # 37. Avviso «Coerce» dei nemici (I-183, smoke 21-10: 1160, 11170, 15050, 15340 crashavano all'avvio, GUIReader in
-#     [fn] con cocostudio/publish/ActionMapCoerceEnmAnim.ExportJson assente; armature Coerce_Alert/Coerce_EF01)
+# con cocostudio/publish/ActionMapCoerceEnmAnim.ExportJson assente; armature Coerce_Alert/Coerce_EF01)
 cocostudio/publish/ActionMapCoerceEnmAnim.ExportJson	b16,jp
 cocostudio/publish/ActionMapCoerceEnmAnim0.plist	b16,jp
 cocostudio/publish/ActionMapCoerceEnmAnim0.png	b16,jp
 
 # 38. Pioggia delle stanze (I-184, smoke 21-10: 2140 e 10400 dei Dwarf Woodlands crashavano dopo il filmato):
-#     [fn] caso 1 apre lwf/map/hole_rain/hole_rain.lwf e non controlla il NULL. Completa nel 2016.
+# caso 1 apre lwf/map/hole_rain/hole_rain.lwf e non controlla il NULL. Completa nel 2016.
 #     hole_thunder (caso 4): nel JP solo la LWF, texture assenti ovunque: non servita finche' una stanza non la chiede.
 lwf/map/hole_rain/	b16,jp
 
@@ -900,7 +900,7 @@ audio/501005002.akb	b16,jp
 audio/501000630.akb	b16
 
 # 40. Transizioni fra le parti delle missioni nei mondi di Ralph (I-009, D-C): righe world 11-14 NL/HD/CS/SR
-#     (server/make-story-oltre.js) -> img/wipe/wipe_<worldId>.png ([fn], worldId dal prefisso della stanza):
+#     (server/make-story-oltre.js) -> img/wipe/wipe_<worldId>.png (worldId dal prefisso della stanza):
 #     martello 11 Niceland, Cy-Bug 12 Hero's Duty, stella 13 Game Central Station, coppa 14 Sugar Rush. Solo nel JP
 img/wipe/wipe_1[1-4].png	jp
 

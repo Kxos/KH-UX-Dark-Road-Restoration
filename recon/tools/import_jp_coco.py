@@ -26,7 +26,7 @@ Regole (docs/notes/risorse_layout.md#jp-originali):
 Controlli che fermano la radice (non si scrive nulla della sua chiusura, resta il generato):
 9-slice su una texture che non ci sarebbe (crash 0x2c, I-049), plist non servito (i plist
 nuovi non si caricano), texture assente ovunque (salvo `+absent-ok`), widget `Txt_*_Cus`
-(lo crea [fn]), widget richiesti dal codice (`need=`) assenti nell'originale, layout
+(lo crea), widget richiesti dal codice (`need=`) assenti nell'originale, layout
 assente in JP.
 
 Manifest della provenienza in `<report>/manifest.json`: alla corsa successiva i file scritti
@@ -45,6 +45,7 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = r'D:\Progetto_Restauro_KH_UX'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 JP_ROOT = private_tools.local_path('jp_data')
 PUB = 'cocostudio/publish/'
@@ -449,8 +450,8 @@ for n in ours:
 
 # ---- armature originali JP su un plist libero (scritte piu' avanti) ---------------------------
 # Armature che il client WW crea e che nessuna risorsa serve: senza ExportJson la creazione va in
-# crash ([fn]). Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle
-# classifiche ([fn] con Ranking_MainPanel_ver230; SIGSEGV a 0x8 dopo /ranking/lux/border,
+# crash. Cursor_Anim_Ranking/Ranking2: bagliore della riga del giocatore nelle
+# classifiche (con Ranking_MainPanel_ver230; SIGSEGV a 0x8 dopo /ranking/lux/border,
 # banco 14-10). I plist con un nome nuovo non si caricano (docs/notes/risorse_layout.md#regole): il
 # plist e la texture vanno sul nome di un plist servito che il binario non cita mai; le due armature
 # hanno lo stesso fotogramma (Rank_Panel_User_Eff.png) e condividono il plist. La texture di
@@ -464,7 +465,7 @@ JP_ARM = {'Cursor_Anim_Ranking': ('MyPageAnime0', 'Cursor_Anim_Ranking0'),
           'Cursor_Anim_Ranking2': ('MyPageAnime0', 'Cursor_Anim_Ranking0'),
           'Cursor_Anim_Proud': ('ActMapTreasureBoxExAnim0', 'Cursor_Anim_Proud0')}
 
-results, writes = [], {}            # writes: nome publish -> ('jp', percorso, dati|None) | ('delete',)
+results, writes = [], {}            # writes: nome publish -> ('jp', percorso, dati|None) | ('delete')
 for root, opts in roots:
     r = dict(root=root, status='ok', block=[], warn=[], layouts=[], keep_served=[], keep_ours=[],
              textures_new=[], textures_replaced=[], textures_kept_ours=[], texts=[], kind=None)
@@ -533,7 +534,7 @@ for root, opts in roots:
         names_all.update(names)
         for w in names:
             if CUS.match(w):
-                r['block'].append('%s: widget %s (lo crea [fn])' % (name, w))
+                r['block'].append('%s: widget %s (lo crea il client)' % (name, w))
         for s in subs:
             if s.endswith('.ExportJson') and s[:-len('.ExportJson')] in JP_ARM and s not in served:
                 _w = 'armatura %s sul plist %s (JP_ARM)' % (s, JP_ARM[s[:-len('.ExportJson')]][0])
@@ -657,8 +658,8 @@ _npc = os.path.join(JP_ROOT, 'lwf', 'character', 'npc')
 if os.path.isdir(_npc):
     LWF_FILL += [os.path.join(_npc, n, 'wait') for n in sorted(os.listdir(_npc)) if os.path.isdir(os.path.join(_npc, n, 'wait'))]
 # Icone di stato sopra l'avatar in battaglia (I-124, docs/notes/battaglia.md#hud): BattleStateIcon
-# [fn] carica lwf/battle/ActMapBuffDeBuffAnim/<BIconNN|DIconNN>/... (tabelle 0x1f1be08 buff,
-# 0x1f1be88 debuff) e il tier BuffNum_Up/DownNN (0x1f1bf28, indice tier + 20); [fn] le
+# carica lwf/battle/ActMapBuffDeBuffAnim/<BIconNN|DIconNN>/... (tabelle buff,
+# debuff) e il tier BuffNum_Up/DownNN (indice tier + 20); le
 # icone del Reflect lwf/battle/ActMapReflectionAnim/RIcon_* (se il file esiste). Nessuna delle due
 # cartelle e' servita (names_v4 e addnl): niente icone, niente crash. Le texture condivise stanno
 # una sola volta nell'estrazione JP (es. «素材画像_Buff01» in DIcon02): le stesse cartelle fanno
@@ -713,9 +714,9 @@ for d in JP_LWF:
 
 # ---- immagini originali JP assenti dalle risorse WW -------------------------------------------
 # Cartelle img/ di cui il client WW chiede file che nessuna risorsa serve. PlayerStatusIndicator:
-# [fn] sceglie la cornice dell'avatar dell'HUD per soglie (Avatar_Circle_03..06, Side_02..04);
+# sceglie la cornice dell'avatar dell'HUD per soglie (Avatar_Circle_03..06, Side_02..04);
 # servite solo Circle_03/04/05: oltre la soglia (HP saliti con le Avatar Boards) texture nulla e
-# crash a ogni battaglia (pc 0xb17adc, indirizzo 0x24; banco 14-10). Solo i file non serviti.
+# crash a ogni battaglia (indirizzo 0x24; banco 14-10). Solo i file non serviti.
 JP_IMG = ['img/ui/PlayerStatusIndicator']
 _served_all = set()
 for _tsv in (os.path.join(D, 'resource_data', 'names_v4.tsv'), os.path.join(D, 'ipa431', 'names_addnl.tsv')):
@@ -734,7 +735,7 @@ for d in JP_IMG:
             name = d + '/' + rel
             if rel.endswith('.png') and name not in _served_all:
                 writes.setdefault(name, ('jp', p, None))
-# icone SN/SN+/SN++ della Supernova ([fn]): img/ui/SBurst_Icon1..3 e ...R (il JP tiene le
+# icone SN/SN+/SN++ della Supernova: img/ui/SBurst_Icon1..3 e ...R (il JP tiene le
 # non R in cocostudio/publish) e le texture del pannello assenti dalle risorse WW
 _jp_pub = os.path.join(JP_ROOT, 'cocostudio', 'publish')
 for _n in (1, 2, 3):
@@ -746,9 +747,9 @@ for _t in ('SBurst_Icon1.png', 'SBurst_Icon2.png', 'SBurst_Icon3.png', 'SBurst_P
     if os.path.exists(os.path.join(_jp_pub, _t)) and 'cocostudio/publish/' + _t not in _served_all:
         writes.setdefault(_t, ('jp', os.path.join(_jp_pub, _t), None))
 
-# righe delle classifiche ([fn]): numero di posizione 1-10 img/colosseum/Colosseum_Rank_Num%d
+# righe delle classifiche: numero di posizione 1-10 img/colosseum/Colosseum_Rank_Num%d
 # (la 3 il JP la tiene in cocostudio/publish) e fumetti img/ranking/Rank_Balloon* di
-# Ranking_IconPanel_ver131 ([fn]); Rank_Balloon1_01 manca anche nel JP: copia di 1_02 (stesso
+# Ranking_IconPanel_ver131; Rank_Balloon1_01 manca anche nel JP: copia di 1_02 (stesso
 # fumetto azzurro). Rank_Title_%d (scritte «N位» disegnate, schermata dei premi) non si importa.
 _rank_img = {'img/colosseum/Colosseum_Rank_Num%d.png' % n: os.path.join(JP_ROOT, 'img', 'colosseum', 'Colosseum_Rank_Num%d.png' % n)
              for n in range(1, 11)}
@@ -756,7 +757,7 @@ _rank_img['img/colosseum/Colosseum_Rank_Num3.png'] = os.path.join(_jp_pub, 'Colo
 for _b in ('1_02', '1_03', '2_01', '2_02', '2_03'):
     _rank_img['img/ranking/Rank_Balloon%s.png' % _b] = os.path.join(JP_ROOT, 'img', 'ranking', 'Rank_Balloon%s.png' % _b)
 _rank_img['img/ranking/Rank_Balloon1_01.png'] = _rank_img['img/ranking/Rank_Balloon1_02.png']
-# icona del rango del party ([fn] da [fn], party.rank): img/partyRank/Party_RankIcon1..5, corone
+# icona del rango del party (party.rank): img/partyRank/Party_RankIcon1..5, corone
 # arcobaleno/argento luccicante/oro/argento/bronzo; la 1 il JP la tiene in cocostudio/publish
 for _n in range(1, 6):
     _rank_img['img/partyRank/Party_RankIcon%d.png' % _n] = os.path.join(JP_ROOT, 'img', 'partyRank', 'Party_RankIcon%d.png' % _n)

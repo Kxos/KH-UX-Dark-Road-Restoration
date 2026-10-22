@@ -1,28 +1,9 @@
-"""Vtable e metodi virtuali di una classe C++, ricavati dall'RTTI di un ELF.
-
-Perche' serve: `libcocos2dcpp.so` e' strippato al 95%, quindi i metodi non hanno
-nome. Ma se una classe ha metodi virtuali ha anche RTTI, e il *typeinfo-name* e'
-una stringa in `.rodata`: non si puo' strippare, perche' serve a runtime a
-`dynamic_cast` e `typeid`. Da li' si risale a tutto il resto.
-
-La catena, secondo l'ABI Itanium:
-
-    "N6master5MedalE"            stringa del typeinfo-name in .rodata
-       ^-- puntata da
-    typeinfo.name                campo a offset +8 dell'oggetto typeinfo
-       ^-- l'oggetto typeinfo e' puntato da
-    vtable[1]                    slot a offset +8 della vtable
-                                 (slot 0 = offset-to-top)
-    vtable[2...]                 i puntatori ai metodi virtuali
-
-In una libreria condivisa quegli slot sono a zero nel file: il valore vero sta
-nell'addend di una rilocazione `R_AARCH64_RELATIVE`. Quindi non si leggono i
-byte, si legge `.rela.dyn`.
+"""Vtable e metodi virtuali di una classe C++, ricavati dall'RTTI di un ELF (ABI Itanium).
+Strumento di ricerca; recon/tools/master_fields.py lo usa per i nomi dei campi master.
 
 Uso:
     python recon/tools/vtables.py <elf> [--ns master] [--json out.json]
-    python recon/tools/vtables.py <elf> --name Medal --name Shop
-"""
+    python recon/tools/vtables.py <elf> --name Medal --name Shop"""
 
 import argparse
 import json

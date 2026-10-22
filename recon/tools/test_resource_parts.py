@@ -11,7 +11,7 @@ import resource_parts as rp  # noqa: E402
 
 G = 1 << 31
 
-# nomi dei pezzi come [fn] («%s.%d» dall'1)
+# nomi dei pezzi come («%s.%d» dall'1)
 assert rp.part_name('misc.mp4', 0) == 'misc.mp4'
 assert rp.part_name('misc.mp4', 1) == 'misc.mp4.1'
 assert rp.part_name('misc.mp4', 9) == 'misc.mp4.9'

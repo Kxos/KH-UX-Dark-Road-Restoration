@@ -1,12 +1,9 @@
-"""Stringhe citate (ADRP+ADD) dentro una o piu' funzioni, direttamente dal binario.
+"""Stringhe citate (ADRP+ADD) dentro uno o piu' intervalli di codice, direttamente dal binario.
 
-Complemento di widget_lookup.py: trova anche i nomi di widget composti a pezzi che il
-decompilatore mostra come s_<nome>_01xxxxxx (es. Txt_data4 + U+3000 in EquipSell).
-Indirizzi Ghidra (file + 0x100000); la funzione finisce al primo RET dopo l'inizio
-oppure all'indirizzo di fine dato.
+Complemento di widget_lookup.py: trova anche i nomi di widget composti a pezzi. L'intervallo
+finisce al primo RET dopo l'inizio oppure all'indirizzo di fine dato.
 
-    python -I recon/tools/func_strings.py <libcocos2dcpp.so> <inizio>[-<fine>] ...
-"""
+    python -I recon/tools/func_strings.py <libcocos2dcpp.so> <inizio>[-<fine>] ..."""
 import struct
 import sys
 

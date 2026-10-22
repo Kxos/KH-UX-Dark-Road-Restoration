@@ -2,8 +2,7 @@
 risorse servite hanno solo MedalType3 (Magic, blu): ricostruiti 1 (Power, rosso),
 2 (Speed, verde) e MedalType01 come copie di MedalType3 con le texture ricolorate.
 
-Chi li usa: la cella della medaglia ([fn], DeckEdit_RevolverMedal_ver330, chiamata da
-[fn]): se l'attributo della medaglia (riga medal +0x494) e' quello dello slot del
+Chi li usa: la cella della medaglia (DeckEdit_RevolverMedal_ver330, chiamata): se l'attributo della medaglia e' quello dello slot del
 keyblade (attribute[] della tabella keyblade; 4 = qualsiasi, nessun bagliore) crea
 sprintf(lwf/medal/medaltype/MedalType%d/MedalType%d.lwf, attributo) e, nei modi di cella
 2/4/5/6/7, MedalType01/MedalType01.lwf. Con il file assente il nodo LWF e' nullo e il client va

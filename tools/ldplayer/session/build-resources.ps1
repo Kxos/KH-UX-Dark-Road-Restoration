@@ -124,19 +124,19 @@ python -I recon\tools\import_npc_talk.py "$D\resource_data\names_v4.tsv" "$refWo
   "$jpData\text\drama" `
   "$sg\files\stage" "$sg\files" --report "$sg\npc_talk.json"
 if ($LASTEXITCODE) { throw 'import_npc_talk fallito' }
-# pulsante «Overwrite Skill» del Level Up acceso (I-157): [fn] carica skill_mix_button_On/_Disable e,
+# pulsante «Overwrite Skill» del Level Up acceso (I-157): il client carica skill_mix_button_On/_Disable e,
 # acceso, le cornici Medal_Syn_Select_Panel02 in img/ui; WW serve solo _Off (acceso restava grigio). BTF del 2016
 # Icona skill 3 (thumbId 3: Lux Plus e le combo «& Lux Plus»): WW serve img/skill/Skill_Icon1,2,4-9 ma non la 3;
 # senza, il riquadro teneva l'icona di prima (Lux Plus con la freccia rossa di Attack Boost, banco 18-10)
 # Controllo delle immagini dal nome composto con un numero (18-10, risorse_layout.md#icone-numerate): le
 # mancanti con una fonte. Dal pacchetto 2016 (BTF uguali byte per byte ai WW dove ci sono entrambi):
-# - IncentiveIcon_NN: icona di un premio per tipo, costanti di [fn] (tipo 7 titolo, 8 CP, 9 HP, 26 Skip
+# - IncentiveIcon_NN: icona di un premio per tipo, costanti (tipo 7 titolo, 8 CP, 9 HP, 26 Skip
 #   Ticket, ... usati da reward/mission); WW serve solo 02/04/14. Escluse 10 e 12 (giapponese disegnato)
-# - material_54 (material.materialId 54, Remembrance Gem; [fn] tipo 5, riga material +0)
-# - Prize_Treasure02-04 ([fn], «Prize_Treasure%02d» dal premio +0x48; WW solo 01)
-# - Topinfo_BarBut1,3-7 _Off/_On ([fn]/[fn]/[fn]: «Button_%d», indice+1; WW solo 2)
-# - Deck_Arrow_U/R1-3 (frecce del bonus di attributo del deck, [fn]; WW solo publish/Deck_Arrow_U1)
-# - tutorial_N ([fn] -> [fn] «tutorial_%d», id 1-65 costanti dei chiamanti): le 19 del 2016
+# - material_54 (material.materialId 54, Remembrance Gem; tipo 5, riga material +0)
+# - Prize_Treasure02-04 («Prize_Treasure%02d» dal premio; WW solo 01)
+# - Topinfo_BarBut1,3-7 _Off/_On («Button_%d», indice+1; WW solo 2)
+# - Deck_Arrow_U/R1-3 (frecce del bonus di attributo del deck; WW solo publish/Deck_Arrow_U1)
+# - tutorial_N («tutorial_%d», id 1-65 costanti dei chiamanti): le 19 del 2016
 #   in inglese; quelle dei soli dati JP (48-65) hanno il testo giapponese e restano assenti (ISSUES I-159)
 # - light/NPC/39994,39996,39997 (immagini dei SEQ light novel 1010151/1989901, comando 4002)
 $img16 = @('ui\skill_mix_button_On', 'ui\skill_mix_button_Disable', 'ui\Medal_Syn_Select_Panel02', 'skill\Skill_Icon3',
@@ -153,10 +153,10 @@ foreach ($n in $img16) {
     Copy-Item $src "$sg\files\img\$n.png" -Force
 }
 # Dai dati JP 4.3.1 (PNG, revisione piu' alta; btf_fix le premoltiplica), senza testo disegnato:
-# - IncentiveIcon_30-32, 35-41 ([fn]: 40 Platinum Ticket e 41 Draw Ticket nelle missioni 4059/4060/4091)
-# - AvtInfo_CrownIcon1-3 / trophyIcon1-2 del Profilo ([fn]: corona = (mvpCount-1)/50+1, trofeo =
+# - IncentiveIcon_30-32, 35-41 (40 Platinum Ticket e 41 Draw Ticket nelle missioni 4059/4060/4091)
+# - AvtInfo_CrownIcon1-3 / trophyIcon1-2 del Profilo (corona = (mvpCount-1)/50+1, trofeo =
 #   (pvpMvpCount-1)/50+1 senza segno, fino a 4; col nostro 0 il client chiede CrownIcon1 e trophyIcon4)
-# - cifre del danno dmgGuardBreak/dmgReflection_num0-9 e _comma (tabella 0x1f2c2a0 di [fn], tipi 5 e 6)
+# - cifre del danno dmgGuardBreak/dmgReflection_num0-9 e _comma (tipi 5 e 6)
 $jpImg = "$jpData\img"
 $imgJp = @(30, 31, 32, 35, 36, 37, 38, 39, 40, 41) | ForEach-Object { 'incentive\IncentiveIcon_{0:D2}' -f $_ }
 $imgJp += @('ui\AvtInfo_CrownIcon1', 'ui\AvtInfo_CrownIcon2', 'ui\AvtInfo_CrownIcon3', 'ui\AvtInfo_trophyIcon1', 'ui\AvtInfo_trophyIcon2')

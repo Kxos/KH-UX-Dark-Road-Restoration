@@ -11,7 +11,7 @@ Spec:
      "areas": [{"template": 0, "poly": [[x, y] x 4] | null, "enemies": [[enemyId, x, y], ...]}],
      "chests": [[x, y, reward, tipo], ...],
      "objects": [[x, y, a, b], ...],
-     "c_point": [x, y]}                       punto della sezione C (copiata dal modello)
+     "c_point": [x, y]} punto della sezione C (copiata dal modello)
 Ogni area copia i campi dell'area "template" del modello (l'area 0 del 1040 e' l'arena del
 bersaglio, con il poligono a +0x24) e prende i suoi nemici dalla spec. Uid: nemici da 2,
 poi forzieri, come nelle mappe vere. Ogni punto deve essere percorribile con un margine

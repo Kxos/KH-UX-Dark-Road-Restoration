@@ -1,6 +1,6 @@
 """Empty LWF (format 0x121010) written by our own code: one frame, no graphics, no events.
 
-    python -I recon/tools/empty_lwf.py <out.lwf>        writes the file
+    python -I recon/tools/empty_lwf.py <out.lwf> writes the file
 
 The client crashes when some LWFs are missing (it loads them and adds a NULL child): NPC idle
 animations, the Moogle Shop moogle, keyblade evolution, Spirit Training. An empty movie with a

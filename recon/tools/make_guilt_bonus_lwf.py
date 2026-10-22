@@ -5,16 +5,13 @@ Animazione dello sblocco/rilancio della guilt (SP Attack Bonus) nel Level Up
 (lwf/medal/guilt_bonus/GuiltBonus/GuiltBonus.lwf), assente da ogni risorsa: LWF NOSTRO, scritto
 da zero con le texture disegnate qui (I-079, banco gu_23: crash dopo la risposta).
 
-Cosa vuole il client (decompilato 4.3.1): [fn], dopo il risultato del Level Up con
-una guilt nuova, carica questo LWF ([fn]: NULL se manca = crash) in uno strato sopra
-la schermata, alla meta' del nodo della medaglia (+0x2b8, piu' lo scarto +0x2c0), e registra
-con [fn] un solo gestore: Â«enterFrameÂ» sull'istanza Â«_rootÂ» (lambda vtable 0x1f61b58),
-lo stesso schema di KeyBlade_Evolution (make_kb_evolution_lwf.py): si va avanti quando il
-fotogramma corrente arriva all'ultimo. Quindi: bagliore viola, raggi, lampo, anello e stella
-dorati; STOP sull'ultimo fotogramma.
+Cosa si aspetta il client 4.3.1: dopo il risultato del Level Up con una guilt nuova carica questo
+LWF (se manca va in crash) sopra la schermata, al centro della medaglia, e va avanti quando il
+movie «_root» arriva all'ultimo fotogramma (stesso schema di KeyBlade_Evolution,
+make_kb_evolution_lwf.py). Quindi: bagliore viola, raggi, lampo, anello e stella dorati; STOP
+sull'ultimo fotogramma.
 
-    python -I recon/tools/make_guilt_bonus_lwf.py <uscita>     (es. stage_gen\\files)
-"""
+    python -I recon/tools/make_guilt_bonus_lwf.py <uscita> (es. stage_gen\\files)"""
 import math
 import os
 import sys
@@ -89,11 +86,11 @@ def build():
     return lw.build(frames, len(ORDER)), files
 
 
-#  Risultato del rilancio ([fn], dopo la risposta del Level Up con una guilt nuova):
+# Risultato del rilancio (dopo la risposta del Level Up con una guilt nuova):
 #  lwf/medal/guilt_bonus/GuiltBonus_result/GuiltBonus_result.lwf (NULL = crash, banco gu_58) con
 #  Â«enterFrameÂ» su _root (avanti all'ultimo fotogramma) e un gestore Â«loadÂ» per ogni cifra della
-#  nuova percentuale sulle istanze num1 (unita'), num2, num3 (lambda vtable 0x1f61c48 ->
-#  [fn]): attachLWF nel movie di lwf/medal/guilt_bonus/GuiltBonus_Yfix%d (la cifra).
+# nuova percentuale sulle istanze num1 (unita'), num2, num3:
+# attachLWF nel movie di lwf/medal/guilt_bonus/GuiltBonus_Yfix%d (la cifra).
 #  Qui: +, tre movie vuoti per le cifre (da destra a sinistra) e %, che entrano con un rimbalzo.
 RESULT = 'GuiltBonus_result'
 MAX = 'GuiltBonus_max'
@@ -177,8 +174,8 @@ def write_all(out):
     data, files = build()
     _write(out, NAME, data, files)
     _write(out, RESULT, *build_result())
-    # guilt arrivata al massimo ([fn]): GuiltBonus_max + cifre GuiltBonus_Rfix%d (stesso
-    # schema: enterFrame su _root, load su num1..num3, lambda 0x1f60cd8 -> [fn]); rosse
+    # guilt arrivata al massimo: GuiltBonus_max + cifre GuiltBonus_Rfix%d (stesso
+    # schema: enterFrame su _root, load su num1..num3); rosse
     _write(out, MAX, *build_result(MAX, RED))
     for n in range(10):
         _write(out, *build_digit(n))

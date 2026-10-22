@@ -1,9 +1,7 @@
-"""Id dei testi text/ui caricati ([fn], categoria 0) in intervalli di codice, e quali
-mancano: costanti costruite con MOV+MOVK nello stesso registro poco prima della chiamata.
+"""Id dei testi text/ui caricati dal client in intervalli di codice, e quali mancano.
 
     python -I recon/tools/text_ids.py <libcocos2dcpp.so> <nomi serviti.tsv> <cartella testi
-        generati (stage_gen\\files\\text\\ui)> <inizio-fine> ...      (indirizzi Ghidra)
-"""
+        generati (stage_gen\\files\\text\\ui)> <inizio-fine> ..."""
 import os
 import struct
 import sys
@@ -29,8 +27,8 @@ for arg in sys.argv[4:]:
             imm = w & 0x3ffffff
             if imm & (1 << 25):
                 imm -= 1 << 26
-            # qualunque chiamata con un id di testo in un registro ([fn] in w1,
-            # [fn] e simili in w2)
+            # qualunque chiamata con un id di testo in un registro (in w1,
+            # e simili in w2)
             for r, v in regs.items():
                 if 100000000 <= v < 120000000:
                     found.setdefault(v, pc)

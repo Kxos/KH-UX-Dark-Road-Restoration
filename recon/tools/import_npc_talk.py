@@ -3,11 +3,10 @@ dalle risorse servite: dal pacchetto globale 2016 (inglese), in mancanza dai dat
 
     python -I recon/tools/import_npc_talk.py <nomi serviti.tsv> <bundle2016> <jp text/drama> <cartella stage> <uscita> [--report r.json]
 
-Client (4.3.1 [fn] init dell'NPC, [fn] finestra di dialogo; 1.0.1 con simboli
-MapNonPlayableCharacter::init/get_talk, SceneActionMap::makeTalkWindow): i due int a +0x14 e +0x18
+Formato (client 4.3.1): i due int a +0x14 e +0x18
 del record npc della MAP sono i testi; tipo 3 usa il primo, tipo 1 il primo o il secondo (la
-nuvoletta NPCTalkIcon compare per i tipi 1 e 3). Il testo e' `TextData::get(1 = drama,
-id % 200000000 + 200000000)` = text/drama/<n>.txt; se manca la finestra non si apre e il tocco
+nuvoletta NPCTalkIcon compare per i tipi 1 e 3). Il testo e' (categoria 1 = drama,
+id % 200000000 + 200000000) = text/drama/<n>.txt; se manca la finestra non si apre e il tocco
 non fa nulla (missione 132, stage 5020: 204050201). Le pagine sono separate da 0x0C.
 
 <bundle2016> = estrazione del pacchetto 2016 (files\ con gli stub risolti e la revisione piu'

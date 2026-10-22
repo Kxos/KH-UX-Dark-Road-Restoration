@@ -20,7 +20,7 @@
 PresentBOXScene.json
 PresentBOX_Base_ver400.json
 # la revisione 00265720 locale e' un pannello di icone (33 widget, nessuno di quelli cercati
-# da [fn]/[fn]): si usa la prima, con i nomi del codice
+#/): si usa la prima, con i nomi del codice
 PresentBOX_Panel_ver131.json            rev=0 need=Panel_Present,Txt_Gift_Name_Label,Txt_Storage_Date_Label,Button,Txt_Receive
 PresentBOX_IconPanel_ver131.json        need=LuxBoard,AVT,Incentive,Medal,KB,Stamp
 
@@ -90,8 +90,8 @@ AvatarInfo_Comment_U13_ver132.json
 AvatarInfo_PlayStyle.json
 AvatarTitle_Base.json
 # Boosters del Profilo (I-123): assenti da ogni risorsa WW, crash dopo PUT /emblem/list.
-# [fn] (Emblem_Base: Close_Button, Scroll_Area, Txt_None 106120213), cella
-# [fn]/[fn] (Emblem_Panel, caricato sempre all'init della lista)
+# (Emblem_Base: Close_Button, Scroll_Area, Txt_None 106120213), cella
+# (Emblem_Panel, caricato sempre all'init della lista)
 Emblem_Base.json                        need=Close_Button,Scroll_Area,Txt_None
 Emblem_Panel.json                       need=Emblem_Base,Panel_Emblem,Txt_Emblem_Name_Label,Area_Ticker_Emblem_Name,mask,Txt_Emblem_Detail_Label,Txt_Storage_Date_Label,Txt_Storage_Date_Title
 TresCommu_CommunicationUser.json
@@ -124,31 +124,31 @@ PopupNormal_Ability_MAX.json
 AdventureTop2_EV_Banner_ver220.json     need=Image_3
 
 # --- Da decidere (restano i generati) ---
-? MedalInfo_Information_R1.json         # WW servito senza Panel_MixResult_Area/Tap_Screen_Area (crash dopo Evolve, [fn]); JP non ha Tap_Screen_Area
-? PetInfo_TrainingSlotCheck_ver320.json # l'originale non ha Win_under, che [fn] usa senza controllo ([fn])
-? Sphere_Popup_Get_ver240.json          # l'originale JP non ha Button_Ok/Txt_Ok, che [fn] usa senza controllo (crash al nodo sbloccato)
+? MedalInfo_Information_R1.json         # WW servito senza Panel_MixResult_Area/Tap_Screen_Area (crash dopo Evolve); JP non ha Tap_Screen_Area
+? PetInfo_TrainingSlotCheck_ver320.json # l'originale non ha Win_under, che il client usa senza controllo
+? Sphere_Popup_Get_ver240.json          # l'originale JP non ha Button_Ok/Txt_Ok, che il client usa senza controllo (crash al nodo sbloccato)
 ? Sphere_Popup_Comp_ver310.json         # SphereMap_Complete assente ovunque; cornice diversa dal riferimento WW (ab_ref_title_popup_01)
 ? PvP_SelectWindow.json                 # QuestBut6_Title/QuestBut7_Title con giapponese disegnato («VS エネミー»): da ridisegnare
 ? AdventureTop2_EV_Button.json          # World_Ico7A/7B assenti ovunque: pulsante senza icona (il nostro usa World_Ico10)
 ? AdventureTop2_Colosseum_Button.json   # World_Ico8A/8B assenti ovunque: pulsante senza icona
-? AdventureTop2_Colosseum_Panel.json    # le celle ([fn], [fn], [fn]) cercano Avatar/Story/SubClear* assenti nell'originale; Colosseo non provabile offline
-? AdventureTop2_Raid_Button.json        # Button_Last_Member cercato da [fn] e assente nell'originale; Raid non provabile offline
+? AdventureTop2_Colosseum_Panel.json    # le celle cercano Avatar/Story/SubClear* assenti nell'originale; Colosseo non provabile offline
+? AdventureTop2_Raid_Button.json        # Button_Last_Member cercato dal client e assente nell'originale; Raid non provabile offline
 
 # --- Other e Shop: crash senza richieste al server (I-107, I-109, I-100; 14-10) ---
-# Transfer Unions: SceneTakeOver::init ([fn]) carica Information2_TakeoverCheck senza controllo
+# Transfer Unions: carica Information2_TakeoverCheck senza controllo
 Information2_TakeoverCheck.json
-# Legal Information: OtherMenuDialog::openLegalPopup ([fn], da [fn])
+# Legal Information:
 Legal.json
-# Increase Storage: popup del limite delle medaglie ([fn]) e conferma ([fn])
+# Increase Storage: popup del limite delle medaglie e conferma
 # set=: i testi WW (Current capacity: N / (Max: 3000 slots)) sono piu' lunghi dei JP e le due
 # etichette (310 e 230 di area, 240..550 e 489..719) si sovrapponevano (banco 14-10): spostate ai lati, font 24
 PopupNormal_MedalPossessed1_ver350.json  set=Txt_UpperLimit1.x=-310,Txt_UpperLimit1.width=330,Txt_UpperLimit1.areaWidth=330,Txt_UpperLimit1.fontSize=24,Txt_UpperLimit2.x=310,Txt_UpperLimit2.width=280,Txt_UpperLimit2.areaWidth=280,Txt_UpperLimit2.fontSize=24
 PopupNormal_MedalPossessed2.json
 
 # --- Party e classifiche (I-006, I-106, I-113, I-114; 14-10) ---
-# PartyTopScene_ver131 ([fn]) assente da ogni risorsa WW: GUIReader null, SIGSEGV a 0x170 aprendo
-# Party / Party Search (dopo POST /party/login). Classifiche: Ranking_MainPanel_ver230 ([fn]),
-# RankingPartyScene_ver1301 ([fn]) e le altre scene/pannelli che il client WW cita. Controllo
+# PartyTopScene_ver131 assente da ogni risorsa WW: GUIReader null, SIGSEGV a 0x170 aprendo
+# Party / Party Search (dopo POST /party/login). Classifiche: Ranking_MainPanel_ver230,
+# RankingPartyScene_ver1301 e le altre scene/pannelli che il client WW cita. Controllo
 # import_jp_coco.py --check: tutte ok tranne 4 con texture assenti ovunque (sotto, da decidere).
 PartyTopScene.json
 PartyTopScene_ver131.json
@@ -205,10 +205,10 @@ Ranking_Reward_ver1301.json             +absent-ok  # Rank_Title_3 dal 2016 (ori
 RankingRewardScene_ver1301.json         +absent-ok  # Rank_Title_3 dal 2016 (originals.tsv, I-170; img/ranking/Rank_Title_%d.png)
 
 # --- Other: Notices e Album (I-104, I-105; 14-10) ---
-# WebView delle notizie ([fn], se il flag dark di [fn] e' spento): uguale al WW 4.4.0
+# delle notizie (se il flag dark e' spento): uguale al WW 4.4.0
 Information2_Base.json
-# Album: scena ([fn]), sfide ([fn], [fn], [fn], [fn]) e cella
-# ([fn]). La cella WW cerca Txt_Medal_Label («?» sulle medaglie non possedute) senza controllo
+# Album: scena, sfide e cella
+# . La cella WW cerca Txt_Medal_Label («?» sulle medaglie non possedute) senza controllo
 # e il layout JP non l'ha: clone=Origine>Nuovo[@Rif] copia un widget (alla posizione di Rif)
 AlbumScene_ver130.json
 Album_Medal_ver140.json                 clone=Txt_Medal_Num_Label>Txt_Medal_Label@Medal_S
@@ -216,31 +216,30 @@ Album_Challenge_ver112.json
 Album_Challenge_Panel_ver112.json
 Album_Reward_Set_ver112.json
 Album_Challenge_Receive_ver112.json
-# Transfer Unions (I-107, banco 14-10 con armtrace): Other -> [fn] -> [fn]/[fn] ->
-# [fn] carica Union_Popup2.json (cambio di Union, non trasferimento dell account), assente: GUIReader
-# [fn] -> [fn] su un nodo nullo. L originale ha Button_Close/OK, Txt_Wording1/2, Txt_10Line_Label_0_1
+# Transfer Unions (I-107, banco 14-10): Other -> il client
+# carica Union_Popup2.json (cambio di Union, non trasferimento dell account), assente: crash. L originale ha Button_Close/OK, Txt_Wording1/2, Txt_10Line_Label_0_1
 Union_Popup2.json
 # Filter della lista della storia (15-10, segnalazione dell'utente): AdventureTop2_FilterButton_ver106 servito, il popup
 # AdventureTop2_Filter_ver106 no (GUIReader su documento vuoto, crash al tocco di Filter)
 AdventureTop2_Filter_ver106.json
-# Segnalino «Medal STR/DEF +N» sotto gli HP (BaseBuff, I-155, docs/notes/battaglia.md#basebuff): [fn]
-# carica ActionMap_BaseBuff_Avt/_Enm e _eff (assenti dalle risorse WW) solo se esistono, [fn] li aggancia
+# Segnalino «Medal STR/DEF +N» sotto gli HP (BaseBuff, I-155, docs/notes/battaglia.md#basebuff):
+# carica ActionMap_BaseBuff_Avt/_Enm e _eff (assenti dalle risorse WW) solo se esistono li aggancia
 # ai nodi BaseBuff_Avt_Null1/2 dell'HUD (controlla il null). I due nodi ci sono solo nella revisione JP 00360289
 # del layout dell'HUD: il resto e' uguale al WW, quindi si innestano nel WW servito (122,20 e 96,-6 sotto Panel_8)
 ActionMap_BaseBuff_Avt.json
 ActionMap_BaseBuff_Enm.json
 ActionMap_BaseBuff_eff.json
 ActionMap_PlayerStatusField_new.json    rev=360289 graft=BaseBuff_Avt_Null1,BaseBuff_Avt_Null2
-# Lato nemico: [fn] cerca BaseBuff_Enm1/2 nella barra del nemico. Il WW li ha solo in
+# Lato nemico: cerca BaseBuff_Enm1/2 nella barra del nemico. Il WW li ha solo in
 # RaidBattle_EnemyStatusField_S e _S_Raid; nelle revisioni JP ci sono anche in _L, _L_Multi e _S_Boss
 RaidBattle_EnemyStatusField_L.json         rev=438800 graft=BaseBuff_Enm1,BaseBuff_Enm2
 RaidBattle_EnemyStatusField_L_Multi.json   rev=376985 graft=BaseBuff_Enm1,BaseBuff_Enm2
 RaidBattle_EnemyStatusField_S_Boss.json    rev=376981 graft=BaseBuff_Enm1,BaseBuff_Enm2
 # pannello del tempo delle missioni a tempo: il client lo carica nelle 699-704 (Hidden Staircase), assente -> crash in GUIReader (banco 22-10)
 ActMapTimeAttack_TimePanel.json
-# Proud Mode (I-200, docs/notes/mappe_storia.md#proud-mode): popup di partenza StartDeckProudScene_ver260 ([fn]),
+# Proud Mode (I-200, docs/notes/mappe_storia.md#proud-mode): popup di partenza StartDeckProudScene_ver260,
 # servita dal WW senza i suoi sotto-layout StartDeckProud_Base/Button_Skip/Button_Start/Rules_ver131 e
-# AdventureTop2_Proud_RaidInfo_Start (anche [fn]), ne' le texture rosse Win01_pm, Panel03_pm (9-slice, anche
-# StartDeckProud_Panel_KB(_Ad)_ver230 di [fn]), Panel04_pm, Plate11_pm, Plate18_pm, Deck_Panel_StartDeck_pm (9-slice,
+# AdventureTop2_Proud_RaidInfo_Start (anche), ne' le texture rosse Win01_pm, Panel03_pm (9-slice, anche
+# StartDeckProud_Panel_KB(_Ad)_ver230), Panel04_pm, Plate11_pm, Plate18_pm, Deck_Panel_StartDeck_pm (9-slice,
 # crash 0x2c), PMode_Rule_Logo, PMode_Rule_Panel_A, Charge_CloseBut_Off/On; cursore Cursor_Anim_Proud con JP_ARM
 StartDeckProudScene_ver260.json

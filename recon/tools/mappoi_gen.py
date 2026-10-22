@@ -3,20 +3,20 @@ della stessa stanza, con altri nemici e forzieri.
 
     python -I recon/tools/mappoi_gen.py <modello.bin> <spec.json> <uscita.bin>
 
-Formato (parser del client [fn], ricavato sulle mappe 1010-1030):
+Formato (parser del client ricavato sulle mappe 1010-1030):
     +0x00 'MAP\\0', u32 versione (16), ... nome della stanza (es. 'DW_0001_00_00')
-    +0x24 u32 X      (inizio del blocco dati: 4 o 40)
-    +0x28 u32 A, +0x2c B, +0x30 C   posizioni delle sezioni dopo i nemici, meno 0x34
+    +0x24 u32 X (inizio del blocco dati: 4 o 40)
+    +0x28 u32 A, +0x2c B, +0x30 C posizioni delle sezioni dopo i nemici, meno 0x34
     X+0x34 u32 numero di aree, X+0x38 u32 numero di nemici
     X+0x3c aree da 0x44 byte: [0] primo nemico, [1] quanti, poi dati della zona
            (l'area 0 del modello 1030 e' l'arena del bersaglio, con il poligono)
     poi i nemici da 0x20 byte: x, y, enemyId, 1, 1, 1, reward, uid
     A+0x34 forzieri: u32 n, n x (x, y, reward, tipo, uid)
-    B+0x34 oggetti:  u32 n, n x 4 interi        C+0x34 altra sezione, poi zeri
+    B+0x34 oggetti: u32 n, n x 4 interi C+0x34 altra sezione, poi zeri
 Il modello da' aree, oggetti e coda; la spec:
-    {"areas": [[[enemyId, count], ...], ...],   un elenco per area del modello
-     "chests": [[reward, tipo], ...],            alle posizioni dei forzieri del modello
-     "dropReward": 1}                            riga reward dei nemici (1 = predefinita)
+    {"areas": [[[enemyId, count], ...], ...], un elenco per area del modello
+     "chests": [[reward, tipo], ...], alle posizioni dei forzieri del modello
+     "dropReward": 1} riga reward dei nemici (1 = predefinita)
 Le posizioni dei nemici di ogni area sono quelle del modello per la stessa area (se ne
 servono di piu', si ripetono spostate di 40 unita'). Gli uid: nemici da 2, poi forzieri.
 """

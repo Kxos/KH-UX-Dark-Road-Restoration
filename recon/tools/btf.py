@@ -1,7 +1,7 @@
 """Texture BTF delle risorse (i .png di cocostudio/, img/, lwf/ non sono PNG veri).
 
 Intestazione (little endian):
-    +0x00 '\\x89BTF'   +0x10 u8 tipo
+    +0x00 '\\x89BTF' +0x10 u8 tipo
     +0x16 u16 larghezza, u16 altezza della tela
     +0x1a u16 x, u16 y dell'immagine ritagliata dentro la tela
     +0x1e u16 larghezza, u16 altezza dell'immagine
@@ -10,7 +10,7 @@ tipo 9: palette, +0x22 u16 numero di colori N, dati zlib da +0x28: N colori RGBA
         indice di un byte per pixel
 tipo 1: segnaposto (1x1)
 
-    python -I recon/tools/btf.py <file.btf> <uscita.png>     (Pillow: senza -I se serve)
+    python -I recon/tools/btf.py <file.btf> <uscita.png> (Pillow: senza -I se serve)
 """
 import struct
 import zlib

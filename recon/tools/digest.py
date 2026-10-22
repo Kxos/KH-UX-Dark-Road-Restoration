@@ -1,10 +1,8 @@
-"""Comprime l'output di Ghidra in un digest di pochi KB.
+"""Riassume in un digest di pochi KB l'output di un'analisi locale del client (cartella privata).
 
-Uso:  python recon/tools/digest.py recon/ghidra/out/ww431
+Uso:  python recon/tools/digest.py <cartella dell'analisi>
 
-Scrive DIGEST.md nella stessa cartella e lo stampa. Serve a leggere il risultato
-dell'analisi senza scorrere megabyte di decompilato e di stringhe.
-"""
+Scrive DIGEST.md nella stessa cartella e lo stampa."""
 import json
 import os
 import re

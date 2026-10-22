@@ -1,5 +1,5 @@
 {
-  "_nota": "BGM Medals (khuxwiki Category:BGM_Medals, reference\\bgm_medals): nome medaglia -> id del suono (audio/<id>.akb, nome in text/audio JP). medal.bgm = id ([fn], +0x56c). Abbinamenti incerti in _incerti.",
+  "_nota": "BGM Medals (khuxwiki Category:BGM_Medals, reference\\bgm_medals): nome medaglia -> id del suono (audio/<id>.akb, nome in text/audio JP). medal.bgm = id. Abbinamenti incerti in _incerti.",
   "_incerti": {
     "Roxas Art (EX)": "The Other Promise: roxas_ex_theme (id vicino a onewing/Sephiroth EX), non verificato a orecchio",
     "Illustrated Roxas": "The Other Promise: roxas_theme2 (id accanto a namine_theme, medaglie 300949/300951)",

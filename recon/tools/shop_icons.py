@@ -11,6 +11,7 @@ import os
 import sys
 from PIL import Image
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # with python -I the script folder is not on sys.path
 import private_tools  # noqa: E402  (local reference data folders, see private_tools.py)
 DEFAULT_BASE = private_tools.local_path('jp_data')  # a local reference data folder, not provided by this project
 SIZE = 48

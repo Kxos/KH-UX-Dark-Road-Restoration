@@ -7,8 +7,7 @@ per tutte) e le vecchie 4, 6, 7, 8 (record piu' corti, vedi LAYOUT; `client_layo
 Senza --json stampa per ogni stage le somme delle parti contro i totali dell'STG.
 Da codice: `parse_stg(bytes)`, `parse_map(bytes, part=0)`, `load_stage(files, sid)`, `iter_stage_files(dir)`.
 
-Struttura (client WW 4.3.1, `[fn]` squadre/nemici, `[fn]` forzieri; 1.0.1 con simboli:
-StageManager::createMap{Transfer,Enemy,Treasure,Material,Npc}Info). Il client NON legge la versione
+Struttura (formato letto dal client WW 4.3.1: uscite, squadre/nemici, forzieri, materiali, npc). Il client NON legge la versione
 (+0x04): gli offset delle sezioni sono nell'intestazione e i record hanno la stessa misura in 13..17.
 Verifica: tutte le 9.173 parti JP (ogni revisione) e le 1.300 del 2016 hanno sezioni contigue, senza
 buchi ne' coda; nei file < 13 le misure sotto non tornerebbero (sezioni sovrapposte).
@@ -19,13 +18,13 @@ buchi ne' coda; nei file < 13 le misure sotto non tornerebbero (sezioni sovrappo
   MAP: +0x00 'MAP\\0', +0x04 versione, +0x08 ?, +0x0c nome stanza (16 byte), +0x1c short meteo,
        +0x20/+0x24/+0x28/+0x2c/+0x30 = offset - 0x34 delle sezioni uscite / nemici / forzieri /
        materiali / npc (dati dopo l'intestazione da 0x34 byte).
-       uscite:   n, n x 9 int32 (x, y, angolo freccia, distanza, [4], arrivo x, y, parte, verso)
-       nemici:   n_squadre, n_nemici, n_squadre x 0x44 (17 int32: [0] primo nemico, [1] quanti,
+       uscite: n, n x 9 int32 (x, y, angolo freccia, distanza, [4], arrivo x, y, parte, verso)
+       nemici: n_squadre, n_nemici, n_squadre x 0x44 (17 int32: [0] primo nemico, [1] quanti,
                  [4] bit0 = squadra boss, [5] uid squadra, [8] verso, [9..16] poligono 4 punti),
                  n_nemici x 0x20 (x, y, enemyId, f3, f4, livello, rewardId, uid)
        forzieri: n, n x 0x14 (x, y, rewardId, aspetto, uid)
        materiali:n, n x 0x10 (x, y, materialId, quantita')
-       npc:      n, n x 0x20 (x, y, id, short tipo, short ?, short verso, short livello, int talk,
+       npc: n, n x 0x20 (x, y, id, short tipo, short ?, short verso, short livello, int talk,
                  int talk2, int ordine). talk/talk2 = testi di dialogo: il client apre
                  text/drama/<talk % 200000000 + 200000000>.txt (tipo 3 talk; tipo 1 talk o talk2;
                  tipo 4 non parla, valori 1/2). Vedi import_npc_talk.py.

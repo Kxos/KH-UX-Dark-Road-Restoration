@@ -1,9 +1,6 @@
-﻿"""Chi usa un indirizzo: BL/B diretti, ADRP+ADD, rilocazioni RELATIVE con quell'addend.
+﻿"""Chi usa un indirizzo del binario: BL/B diretti, ADRP+ADD, rilocazioni RELATIVE. Strumento di ricerca.
 
-Indirizzi nel FILE (Ghidra - 0x100000). Stampa anche l'equivalente Ghidra.
-
-    python -I recon/tools/who_refs.py recon/tools <libcocos2dcpp.so> <ind_file> [...]
-"""
+    python -I recon/tools/who_refs.py recon/tools <libcocos2dcpp.so> <indirizzo nel file> [...]"""
 import struct
 import sys
 sys.path.insert(0, sys.argv[1])

@@ -1,9 +1,9 @@
 """Grafica e testi della piastra «Banner Catalog» dello Shop (docs/superpowers/specs/2026-10-16-shop-banner-design.md 4.1).
 
-    python recon/tools/make_shop_art.py <stage_gen\\files> <server\\game_data>     (Pillow: senza -I)
+    python recon/tools/make_shop_art.py <stage_gen\\files> <server\\game_data> (Pillow: senza -I)
 
 La piastra Catalog e' un'estrazione a Gold Ticket (payType 6) che nessuno possiede: il pulsante resta
-grigio ([fn]) e mostra i testi 106140420-424 e l'icona img/incentive/Star7_Ticket_39.png.
+grigio e mostra i testi 106140420-424 e l'icona img/incentive/Star7_Ticket_39.png.
 Qui i testi diventano l'invito ad aprire Details e l'icona (originale con il segno «仮») diventa un
 piccolo elenco di banner. Si scrive anche il banner 640x140 della piastra (servito dal server,
 /web/gacha/img/9001.png). Testi dopo la copia dei testi IPA in build-resources.ps1 (altrimenti

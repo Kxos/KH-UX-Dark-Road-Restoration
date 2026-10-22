@@ -8,9 +8,8 @@ versione 5.0.1 non va bene col client 4.3.1, quindi si estrae quella dell'addnl 
 <uscita> (stage_gen\\files) e il pacchetto generato la serve al suo posto.
 
 I-091, keyblade invisibile nel campo da fermo: il client 4.3.1 mette l'avatar fermo del
-campo in lwf/avatar/motion/wait ([fn] -> [fn](avatar, 0x1b)) e attacca il
-keyblade al movie di nome di istanza "key" (parte 30 della tabella 0x1f18970,
-[fn]). Il wait.lwf dell'OBB 5.0.1 e' una posa frontale (faccia serious_o_c) senza
+campo in lwf/avatar/motion/wait e attacca il
+keyblade al movie di nome di istanza "key". Il wait.lwf dell'OBB 5.0.1 e' una posa frontale (faccia serious_o_c) senza
 "key", "shadow" ne' "mark"; quello dell'addnl 4.3.1 ha key, shadow, mark e face_normal_o_c,
 come nei video del gioco (reference\\field_idle). Anche win_levelup 5.0.1 non ha key, shadow
 ne' faccia; quello 4.3.1 si'.

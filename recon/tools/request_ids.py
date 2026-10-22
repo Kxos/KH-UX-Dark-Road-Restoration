@@ -1,9 +1,7 @@
-"""Costruttori delle richieste: funzioni che chiamano la coda delle richieste
-([fn] Ghidra, 6bba54 nel file) e scrivono l'id dell'azione in [xN,#0x28].
-Stampa id e stringhe del corpo (es. [fn] [28] ['revision', 'resoMode']).
+"""Id delle azioni delle richieste e stringhe dei loro corpi, letti dal binario del client.
+Stampa id e chiavi del corpo (es. [28] ['revision', 'resoMode']). Strumento di ricerca.
 
-    python -I recon/tools/request_ids.py recon/tools <libcocos2dcpp.so> 6bba54 [id,id,...]
-"""
+    python -I recon/tools/request_ids.py recon/tools <libcocos2dcpp.so> <indirizzo> [id,id,...]"""
 import struct
 import sys
 import collections

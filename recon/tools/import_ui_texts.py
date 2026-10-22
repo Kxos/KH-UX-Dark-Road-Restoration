@@ -32,7 +32,7 @@ if len(sys.argv) > 5:
 # testi dell'IPA 4.4.0 il cui id ha cambiato significato: si scrivono questi
 OVERRIDE = {
     'text/ui/106180101.txt': 'Unequip',   # 4.3.1 «取りはずし» (pulsante del dettaglio), 4.4.0 «Remove All»
-    # filtro dei colpi e delle barre ([fn], 0xa49bb4/0xa49d80): sprintf con un numero,
+    # filtro dei colpi e delle barre: sprintf con un numero,
     # 0x...C9/CB per i pulsanti, 0x...CA/CC per l'ultimo («o piu'»); nella 4.4.0 sono
     # segnaposto «[id]»
     'text/ui/106240201.txt': '%d', 'text/ui/106240202.txt': '%d+',

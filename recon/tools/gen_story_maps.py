@@ -600,7 +600,7 @@ def door_px(folder, xy, pts):
 
 def exit_angle(folder, pts, p, cent):
     """Angolo della freccia verso l'esterno della zona percorribile nel punto dell'uscita (media dei
-    pixel bloccati entro 160). Il client ([fn]/[fn], reference/world_schema/
+    pixel bloccati entro 160). Il client (reference/world_schema/
     freccia_uscita.md) disegna la freccia 40-80 unita' PRIMA dell'uscita, verso l'interno, con la punta
     verso l'esterno: (x - d sin a, y + d cos a), d in [40, 80]. Senza pixel bloccati vicini: dal centro."""
     import math

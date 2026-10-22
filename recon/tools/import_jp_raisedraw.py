@@ -4,13 +4,13 @@
                                               --report <stage_gen\\raisedraw_report.json> [--check]
                                               (Pillow: senza -I)
 
-SceneDrawRaise (init [fn], tmp\\gacha_re\\findings.md par. 4) apre
+Il client apre
 lwf/raisedraw/demo/raidgacha_result_display_%02d/ (%02d = medaglie estratte, 1-10; file mancante =
 crash) e per ogni medaglia lwf/raisedraw/Medal/Medal_D_Up|Rev|None<rare> secondo darklight.
 Le risorse WW servono solo raidgacha_result_display_01 e Medal_D_Up3 (catalog\\raisedraw_ww,
 estratte una volta da build-resources.ps1 con res_bulk.py).
 
-LWF: la revisione JP piu' alta (`<nome>.<8 cifre>.lwf`, come latest() di import_jp_coco.py; la
+LWF: la revisione JP piu' alta (`<nome>.<8 cifre>.lwf`, come latest di import_jp_coco.py; la
 00152892 di raidgacha_result_display_01 e' identica byte per byte alla LWF WW servita).
 Texture richieste = tabella delle texture della LWF (header: Data[8] texture {stringId, formato,
 larghezza, altezza, scala}, Data[35] stringhe), non le stringhe .png: i segnaposto

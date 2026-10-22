@@ -19,8 +19,8 @@ Formato di map/<S>/<S>_info.bin («BMI»), letto dal caricatore della mappa (str
       -> map/<stanza>/<stanza>_<livello>/<stanza>_<livello>_NNN.png
   poi nI record da 52 byte: stanza[16] livello[16] w h x y flag
       -> map/<stanza>/<stanza>_<livello>.png
-  poi nO record da 52 byte: nome[16] 0[16] x y 0 flag 0  -> lwf/map/<nome>/<nome>.lwf (+ png citati)
-Tessere da 256x256, numerate da 001 in righe: ceil(W/256) * ceil(H/256) ([fn]: indice =
+  poi nO record da 52 byte: nome[16] 0[16] x y 0 flag 0 -> lwf/map/<nome>/<nome>.lwf (+ png citati)
+Tessere da 256x256, numerate da 001 in righe: ceil(W/256) * ceil(H/256) (indice =
 colonna + colonne * riga + 1, nome con sprintf; texture assente -> sprite nullo -> crash).
 Il nome «stanza» dei record puo' essere un'altra stanza (DB_0018_01_00 usa i livelli di DB_0018_00_00).
 """
@@ -162,9 +162,8 @@ def lwf_pngs(name):
 
 
 def check_room(room):
-    """Gruppi che mandano in crash (base1, livelli a tessere, .bin): [fn] crea lo sprite della
-    tessera senza controllare la texture. Avvisi (immagini intere, oggetti lwf e loro png):
-    [fn] controlla il nodo nullo e l'oggetto resta vuoto (DW_0001/DW_0003, con lwf assenti,
+    """Gruppi che mandano in crash (base1, livelli a tessere, .bin): crea lo sprite della
+    tessera senza controllare la texture. Avvisi (immagini intere, oggetti lwf e loro png): controlla il nodo nullo e l'oggetto resta vuoto (DW_0001/DW_0003, con lwf assenti,
     giocate sul banco)."""
     req = ['map/%s/%s_%s.bin' % (room, room, k) for k in ('info', 'cls', 'chp', 'jmp')]
     r = {'room': room}
@@ -175,7 +174,7 @@ def check_room(room):
         return r
     info = parse_info(b)
     r['info'] = {k: info[k] for k in ('name', 'w', 'h', 'size_ok')}
-    # base1 della stanza scritta nel BMI a +0x10 (alias grafico: createMapFieldLayer, decompilato 1.0.1);
+    # base1 della stanza scritta nel BMI a +0x10 (alias grafico: il client carica le tessere di quella stanza);
     # nelle nostre 86 nome = cartella, fra le recuperate di rooms_gen ci sono alias (DB_0020_00_01 -> DB_0020_00_00)
     bn = info['name'] or room
     fatal = {'base1 (%s, %dx%d)' % (bn, info['w'], info['h']): [

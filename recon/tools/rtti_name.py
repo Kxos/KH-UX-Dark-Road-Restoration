@@ -1,7 +1,5 @@
-# Nome RTTI di una vtable letto direttamente dal .so (senza Ghidra): l'indirizzo Ghidra e' l'inizio
-# della vtable (offset-to-top, typeinfo, ...). Per le lambda std::function il puntatore che il
-# decompilato mostra (&PTR_FUN_xxx) e' il vptr: passare vptr - 0x10.
-#   python -I rtti_name.py <libcocos2dcpp.so> <ghidra_vtable> ...
+# Nome RTTI di una vtable letto direttamente dal .so (ABI Itanium). Strumento di ricerca.
+#   python -I rtti_name.py <libcocos2dcpp.so> <vtable> ...
 import struct, sys
 path = sys.argv[1]
 d = open(path, 'rb').read()

@@ -1,17 +1,13 @@
-"""Id costanti passati a un getter di tabella master, con i chiamanti.
+"""Id costanti passati a un getter di tabella master, con il numero di chiamanti.
 
-Il getter di una riga per id (per `misc`: [fn] in Ghidra, 0xdfe8b4 nel
-file) riceve l'id in un registro e restituisce la riga tramite x8. Se la riga non
-c'e' restituisce null, e quasi tutti i chiamanti la usano senza controllarla: il
-primo crash dopo il filmato era proprio `misc` 804 mancante. Questo script trova,
-per ogni BL al getter, il valore costante del registro dell'id (MOVZ/MOVK/MOV
-tracciati in avanti dentro la funzione). Gli id calcolati a runtime sono solo
-contati.
+Se la riga di un id non c'e' il client riceve null e di solito va in crash: per esempio la
+riga `misc` 804 mancante. Questo script trova gli id costanti chiesti dal client, cosi' il
+server puo' fornire tutte le righe necessarie (recon/out/misc_ids_ww431.txt). Gli id
+calcolati a runtime sono solo contati.
 
     python -I recon/tools/getter_ids.py <libcocos2dcpp.so> <getter, indirizzo nel file> [registro]
 
-Uscita: una riga per id, `id  n_chiamanti  chiamanti (indirizzi Ghidra)`.
-"""
+Uscita: una riga per id, `id n_chiamanti chiamanti`."""
 import collections
 import os
 import struct

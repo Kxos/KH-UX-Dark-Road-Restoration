@@ -6,12 +6,12 @@
 Prima forma: le parti dell'addnl (chiave dei record in BGAD_KEY, esadecimale, la chiave 5.0.1 come per
 bgad_extract.py). Seconda forma: file sciolti (es. stage_gen\\orig_stages\\stage; con piu' cartelle
 vince l'ultima per lo stesso file), letti con l'STG: si scartano gli stage incoerenti.
-Lettura con il parser esatto recon/tools/mapfile.py (formato del client [fn] / [fn]):
+Lettura con il parser esatto recon/tools/mapfile.py (formato del client):
 nemici = record da 8 interi (x, y, enemyId, f3, f4, livello, reward, uid), forzieri = record da 5
 (x, y, reward, tipo, uid). uid e' l'id univoco che il client cerca in userTreasures /
 userEnemyDropItems di /stage/start e che riporta in /stage/clear (getTreasures, getEnemyDropItems);
 reward e' la riga della tabella reward (per i nemici di solito 1, per alcuni una sua, es. 80002:
-letta da [fn], se manca il client va in crash dopo /stage/start; make-game-tables.js crea
+letta, se manca il client va in crash dopo /stage/start; make-game-tables.js crea
 una riga per ogni reward di questo file). Si riportano tutti i nemici, anche quelli delle squadre
 con il bit 0x20 (non contate nei totali dell'STG). Alcuni uid di nemici non compaiono come record
 (es. 1 nel Prologue: sono gli uid delle squadre): il server usa tutti gli uid fino al massimo.

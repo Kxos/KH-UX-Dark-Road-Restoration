@@ -1,18 +1,9 @@
-"""Nomi di widget cercati da una funzione, ricostruiti dal C decompilato (khux_decomp.py).
-
-Il compilatore costruisce i nomi come stringhe corte di libc++ sullo stack: primo byte =
-lunghezza*2, poi i caratteri, scritti byte per byte (local_X[i] = 0x54), a pezzi di
-stringhe del binario (s_Nome_<ind>[k], (undefined7)s_Nome._a_b_, SUB81(s_Nome._a_8_,k),
-*(undefined8 *)(local_X + n) = s_Nome._a_8_) o con costanti (uStack_X = 0x6f6c). Qui si
-simulano queste scritture: le variabili local_X/uStack_X/acStack_X/auStack_X/cStack_X
-stanno all'indirizzo -X. A ogni chiamata con argomento &V o V si decodifica la stringa
-corta all'indirizzo di V; si stampano chiamata e nome.
+"""Nomi di widget che il client cerca in un layout, ricavati dall'analisi locale (privata) di una
+funzione. Serve a sapere quali widget un layout CocoStudio deve contenere.
 
     python -I recon/tools/widget_lookup.py <libcocos2dcpp.so> <file.c> [funzione ...]
 
-Le funzioni che contano: [fn] (figlio per nome, ricorsivo), [fn] (testo
-di un figlio), thunk_[fn]. Senza elenco stampa tutte le chiamate.
-"""
+Senza elenco stampa tutte le chiamate."""
 import re
 import sys
 
@@ -30,7 +21,7 @@ def sdata(addr_hex):
 
 
 def string_bytes(expr):
-    """s_Name_ADDR._a_b_ -> bytes a..a+b ; s_Name_ADDR[k] -> 1 byte ; s_Name_ADDR -> whole."""
+    """s_Name_ADDR._a_b_ -> bytes a..a+b; s_Name_ADDR[k] -> 1 byte; s_Name_ADDR -> whole."""
     m = re.fullmatch(r's_\w+?_([0-9a-f]{8})\._(\d+)_(\d+)_', expr)
     if m:
         d = sdata(m.group(1)); a, b = int(m.group(2)), int(m.group(3))

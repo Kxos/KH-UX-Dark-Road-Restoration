@@ -3,77 +3,65 @@
 (nessun byte degli originali). I movimenti sono scheletri che muovono le parti del pet gia'
 servite (lwf/pet/part/001, 9 parti); gli effetti hanno texture disegnate qui.
 
-Perche' (ISSUES I-005, docs/notes/home_profilo.md#pet): con userDetail.isPet 1 la battaglia crea
-il PetActor ([fn] / [fn] -> [fn] -> [fn] -> Pet [fn]) e
-lo fa muovere con Pet::playMotion ([fn], tabella dei 30 nomi a 0x1f32138 ->
-[fn] carica il LWF e gli aggancia il dispatcher degli eventi [fn]).
+Perche' (ISSUES I-005, docs/notes/home_profilo.md#pet): con userDetail.isPet 1 la battaglia mostra
+il pet e lo anima con questi LWF.
 
-Come si disegna il pet (decompilato 4.3.1):
-- il LWF del movimento non contiene grafica: [fn] (vtable +0x4d8, chiamata da
-  [fn]) registra per ognuno dei 23 nomi della tabella 0x1f32080 (ac_mask, ac_hat1-4,
-  ear_front1_am, ear_front2_am, ear_back_am, face_sp, ac_necklace1-3, left_front_leg,
-  left_back_leg, right_front_leg, right_back_leg, bag_front, bag_back, body_main, tail_front,
-  tail_back, ac_special, ac_mouth) i gestori «load»/«enterFrame» del movie con quel NOME DI
-  ISTANZA ([fn] -> [fn]). Al «load» ([fn]) il pet carica e attacca
-  in quel movie il LWF della parte (vtable +0x5c8 / [fn]):
+Cosa si aspetta il client:
+- il LWF del movimento non contiene grafica: il client cerca i movie con questi NOMI DI ISTANZA
+  (ac_mask, ac_hat1-4, ear_front1_am, ear_front2_am, ear_back_am, face_sp, ac_necklace1-3,
+  left_front_leg, left_back_leg, right_front_leg, right_back_leg, bag_front, bag_back, body_main,
+  tail_front, tail_back, ac_special, ac_mouth) e al loro «load» vi attacca il LWF della parte
   lwf/pet/part/%03d/<nome>/<nome>.lwf con %03d = id della parte % 1000 (se < 400000);
-- l'id viene dal coordinato del pet (pet.userPetCoordinate di /pet/profile, sessione +0x7c0
-  +0x24 -> [fn] -> [fn]): accessoryMask (ac_mask), accessoryHat (ac_hat1-4),
-  earPartsId (ear_*), facePartsId (face_sp), accessoryNecklace (ac_necklace1-3), legPartsId
-  (4 zampe), accessoryBackpack (bag_*), bodyPartsId (body_main), tailPartsId (tail_*),
-  accessorySpecial, accessoryMouth ([fn]). Con 0 il percorso e' .../000/..., assente.
-- altri movie: body_sp (facoltativo, [fn]), spt_shadow (ombra, [fn]/fc94),
-  pet_center (dentro face_sp), <parte>_top ([fn]), spirit. head_sp invece e' obbligatorio non
-  appena si carica face_sp (vedi HEAD sotto: senza, crash della home nel ritratto del pet).
-- il nodo del pet lo sposta il codice (jump2: [fn] salta vicino all'avatar) e lo gira
-  con setScaleX(+-1) come l'avatar: le parti 001 guardano a sinistra, quindi «avanti» = -x.
+- l'id viene dal coordinato del pet (pet.userPetCoordinate di /pet/profile): accessoryMask
+  (ac_mask), accessoryHat (ac_hat1-4), earPartsId (ear_*), facePartsId (face_sp),
+  accessoryNecklace (ac_necklace1-3), legPartsId (4 zampe), accessoryBackpack (bag_*), bodyPartsId
+  (body_main), tailPartsId (tail_*), accessorySpecial, accessoryMouth. Con 0 il percorso e'
+  .../000/..., assente.
+- altri movie: body_sp (facoltativo), spt_shadow (ombra), pet_center (dentro face_sp),
+  <parte>_top, spirit. head_sp invece e' obbligatorio non appena si carica face_sp (vedi HEAD
+  sotto: senza, crash della home nel ritratto del pet).
+- il pet guarda come l'avatar: le parti 001 guardano a sinistra, quindi «avanti» = -x.
 
 Quindi qui ogni movimento e' una radice con head_sp + 9 movie vuoti chiamati come le parti di 001
 (nessun movie per le parti che non esistono: niente load, niente file mancanti), con le matrici
 di una piccola posa per fotogramma. Il server deve mandare earPartsId, facePartsId, legPartsId,
 bodyPartsId e tailPartsId = 1 (server/pet.js); con 0 il pet resta invisibile come prima.
 
-Eventi (invariati): il pet cambia stato solo sull'evento LWF «end» ([fn] -> gestore
-+0x140 -> 4 nella coda +0x818; [fn] / [fn] -> [fn]). La sequenza
-d'attacco ([fn]) aspetta il pet pronto ([fn] / [fn]). I movimenti in
-ciclo (wait, bwait, walk, run, win, waitb, rolling1/2, training*) non hanno «end».
-Turno del 6° slot ([fn]): [fn] col tipo d'attacco +0x668 = 1 (singolo) o 2
-(tutti) fa giocare al PET battle_normal / battle_all ([fn]) e l'avatar resta fermo;
-con 3 (speciale) l'avatar fa la sua speciale (segnale 0x3e) anche nel turno del pet, come
-nell'originale (reference\\pet\\pet_battle_0*.png). Il danno del pet parte dagli eventi del suo
-LWF come per l'avatar (atk2: «knockback_2» + «effectStart_1» nello stesso fotogramma):
-«effectStart» -> 1 nella coda +0x818 -> [fn] -> colpo [fn] con l'effetto
-[fn] -> [fn] (0xb battle_normal, 0xc battle_all, 0xd battle_skill) ->
-lwf/ability/hit_effect/pet_eff_%04d (codice - 10). [fn] da' NULL se il file manca e
-[fn] non controlla (crash); [fn] chiude l'effetto all'ultimo fotogramma.
+Eventi: il pet cambia stato solo sull'evento LWF «end»; i movimenti in ciclo (wait, bwait, walk,
+run, win, waitb, rolling1/2, training*) non hanno «end». Nel turno del 6° slot con un attacco
+singolo o su tutti il pet gioca battle_normal / battle_all e l'avatar resta fermo; con uno
+speciale l'avatar fa la sua speciale anche nel turno del pet, come nell'originale
+(reference\\pet\\pet_battle_0*.png). Il danno del pet parte dagli eventi del suo LWF come per
+l'avatar (atk2: «knockback_2» + «effectStart_1» nello stesso fotogramma): «effectStart» apre
+lwf/ability/hit_effect/pet_eff_%04d (codice dell'effetto - 10; 0xb battle_normal, 0xc battle_all,
+0xd battle_skill); se il file manca il client va in crash.
 
 Formato 0x121010 come gli originali (lwf/avatar/motion/atk2, lwf/pet/part/001/*): stringhe,
 nomi di istanza, eventi e linkage in ordine alfabetico; place = (profondita', oggetto|1<<31,
 istanza, matrice); matrici con il bit 31 (tabella matrix); alpha senza bit (alphaTransform);
 ogni fotogramma elenca tutti gli oggetti (PLACE al primo, MOVEM/MOVEMC dopo).
 
-    python -I recon/tools/make_pet_motions.py <uscita>     (es. stage_gen\\files)
+    python -I recon/tools/make_pet_motions.py <uscita> (es. stage_gen\\files)
 
-Lo chiama anche make_layouts.py (dopo i LWF vuoti), quindi build-resources.ps1 lo include.
-"""
+Lo chiama anche make_layouts.py (dopo i LWF vuoti), quindi build-resources.ps1 lo include."""
 import math
 import os
 import struct
 import sys
 import zlib
 
-# indice di [fn] -> nome (tabella 0x1f32138)
+# indice -> nome
 MOTIONS = ['wait', 'bwait', 'walk', 'run', 'jump', 'win', 'wait_accent', 'battle_normal', 'battle_all',
            'deathblow_normal', 'deathblow_normal_after', 'battle_skill', 'recovery_skill', 'jump2',
            'deathblow_normal2', 'deathblow_normal_after2', 'jump3', 'waitb', 'rolling1', 'rolling2',
            'rolling3', 'pvp_start', 'pvp_turn_win', 'pvp_turn_lose', 'pvp_total_win', 'pvp_total_lose',
            'pvp_total_draw', 'training1', 'training2', 'training3']
-# quelli di cui [fn] gestisce la fine (casi 4, 6, 7-0x10, 0x14-0x1a)
+# quelli di cui gestisce la fine (casi 4, 6, 7-0x10, 0x14-0x1a)
 WITH_END = {4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26}
 # colpi: contraccolpo e colpo nello stesso fotogramma e ordine dell'avatar (atk2)
 HIT = ['knockback_2', 'effectStart_1']
 WITH_HIT = {7, 8, 11}   # battle_normal, battle_all, battle_skill
-# effetti del colpo del pet ([fn]: pet_eff_%04d, codice 0xb-0xd - 10)
+# effetti del colpo del pet (pet_eff_%04d, codice 0xb-0xd - 10)
 PET_EFFECTS = ['pet_eff_%04d' % i for i in (1, 2, 3)]
 
 # sezioni dell'intestazione del formato 0x121010 (ordine verificato sugli originali)
@@ -252,10 +240,10 @@ RIG = [('tail_back', 13, -16), ('ear_back_am', -23, -47), ('right_back_leg', 10,
        ('left_front_leg', -15, -15), ('face_sp', -9, -24), ('ear_front1_am', -9, -48)]
 CENTER = (-2, -24)          # perno del corpo per rotazioni e schiacciamenti
 # movie vuoto obbligatorio appena il muso c'e': il «load» di face_sp registra «pet_center» sulla
-# parte ([fn] -> [fn]/[fn]: pet +0x8a0) e il ritratto del pet
-# ([fn], icona della home) chiede la testa a [fn], che controlla solo +0x8a0 e
-# poi legge Movie::getX/getY ([fn]/c94, movie +0xf0) di head_sp (+0x898, «load» di un
-# movie chiamato head_sp, [fn]): senza head_sp e' NULL -> SIGSEGV a 0xf0 in home
+# parte (pet) e il ritratto del pet
+# (icona della home) chiede la testa, che controlla solo e
+# poi legge/getY (movie) di head_sp («load» di un
+# movie chiamato head_sp): senza head_sp e' NULL -> SIGSEGV a 0xf0 in home
 # (banco 11-10 notte, crash dopo /system/push/regist). Testa = head_sp + pet_center.
 HEAD = 'head_sp'
 LEGS = {'right_back_leg', 'right_front_leg', 'left_back_leg', 'left_front_leg'}

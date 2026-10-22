@@ -1,7 +1,6 @@
 """Grafica del deck per keyblade e per attributo, di cui le risorse servite hanno solo la
 versione di Starlight / Magic. Senza, «Select a Keyblade» va in crash appena il deck di un
-keyblade nuovo ha medaglie (banco 11 ottobre, Treasure Trove dopo Optimize: fault 0x0 a
-0x8d00e0, LWF nullo).
+keyblade nuovo ha medaglie (banco 11 ottobre, Treasure Trove dopo Optimize: fault 0x0, LWF nullo).
 
 - img/carouselDeck/Deck%03d.png, DeckButton_%03d.png, DeckMedalNumUI_%03d.png,
   DeckMedalNumUI_pvp_%03d.png: %03d = displayId / 100 del keyblade (Starlight 001, Treasure Trove

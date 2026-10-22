@@ -1,10 +1,7 @@
-"""Chi crea una lambda (std::function) di cui si conosce una funzione della vtable (es. il
-target() trovato dalla stringa di typeinfo): cerca nelle rilocazioni R_AARCH64_RELATIVE gli
-slot che puntano alla funzione, poi nel codice le coppie ADRP+ADD che calcolano un indirizzo
-nella stessa vtable (fino a 0x40 byte prima dello slot). Indirizzi Ghidra (file + 0x100000).
+"""Riferimenti a una funzione nota attraverso le tabelle di funzioni del binario (rilocazioni
+R_AARCH64_RELATIVE e coppie ADRP+ADD). Strumento di ricerca.
 
-    python -I recon/tools/vtable_users.py <libcocos2dcpp.so> <funzione> ...
-"""
+    python -I recon/tools/vtable_users.py <libcocos2dcpp.so> <funzione> ..."""
 import struct
 import sys
 

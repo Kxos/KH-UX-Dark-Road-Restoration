@@ -1,9 +1,9 @@
 """Dove finiscono i byte delle risorse nei pezzi del client (files/r/misc.mp4, misc.mp4.1, ...).
 
-Il client concatena i "data" scaricati e li spezza in pezzi da 2 GiB ([fn]): misc.mp4,
-poi misc.mp4.1, misc.mp4.2 ... fino a misc.mp4.9 (il lettore [fn] apre al massimo 10
+Il client concatena i "data" scaricati e li spezza in pezzi da 2 GiB: misc.mp4,
+poi misc.mp4.1, misc.mp4.2 ... fino a misc.mp4.9 (il lettore apre al massimo 10
 file). Un offset globale del flusso concatenato sta nel pezzo offset >> 31, all'offset locale
-offset & 0x7fffffff (DividedFilesInputStream::read, [fn]). Vedi
+offset & 0x7fffffff. Vedi
 docs/notes/risorse_layout.md#pezzi.
 
 segments(offset, lunghezza) da' i segmenti (pezzo, offset locale, lunghezza) di una scrittura,
@@ -32,8 +32,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-PART = 1 << 31          # 0x80000000 a 0x19265a0 della libreria
-MAX_PARTS = 10          # misc.mp4 + .1 .. .9 (0x19265a8)
+PART = 1 << 31          # 0x80000000 = 2 GiB
+MAX_PARTS = 10          # misc.mp4 + .1 .. .9
 
 
 def part_name(base, part):
