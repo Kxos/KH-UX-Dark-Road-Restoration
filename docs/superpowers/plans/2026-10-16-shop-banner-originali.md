@@ -1,58 +1,58 @@
-# Shop, sotto-progetto 2: elenco dei banner originali — piano di implementazione
+# Shop, sub-project 2: list of the original banners — implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** i 808 banner originali (813 meno Blind Box e tutorial) sono descritti da un catalogo generato con tipo, prezzi, valuta, date, quest di sblocco, pool per epoca e garanzie; il server li estrae con le probabilita' ricostruite della spec 9.2, il catalogo WebView li mostra tutti, e lo Shop mostra una lista provvisoria (banner sbloccati e attivi alla data del punto nella storia) finche' il sotto-progetto 3 non porta rotazione e filtri.
+**Goal:** the 808 original banners (813 minus Blind Box and tutorial) are described by a generated catalog with type, prices, currency, dates, unlock quest, per-era pool and guarantees; the server draws them with the reconstructed odds of spec 9.2, the WebView catalog shows them all, and the Shop shows a provisional list (banners unlocked and active at the date of the point in the story) until sub-project 3 brings rotation and filters.
 
-**Architecture:** due script Python nel repo (`recon/tools/banner_sources.py`, `recon/tools/make_banner_catalog.py`, portati dagli script di ricerca in `D:\Progetto_Restauro_KH_UX\tmp\sp2\scripts`) leggono wiki, TSV dei banner, notice e `medal.json` e scrivono `server/game_data/gacha_catalog.json`: per ogni banner una **ricetta** del pool (sotto-set, nomi, modalita'), piu' le tabelle dei sotto-set e delle medaglie con la data di ogni rarita'. Un terzo script (`recon/tools/make_banner_images.py`) scrive le immagini 640x140. Il server espande le ricette alla data giusta (`server/gacha-data.js`), applica prezzi, valute, limiti e garanzie (`server/gacha.js`) e scrive il master `drawMedalType` con `server/make-banners.js`.
+**Architecture:** two Python scripts in the repo (`recon/tools/banner_sources.py`, `recon/tools/make_banner_catalog.py`, ported from the research scripts in `D:\Progetto_Restauro_KH_UX\tmp\sp2\scripts`) read the wiki, the banner TSV, the notices and `medal.json` and write `server/game_data/gacha_catalog.json`: for each banner a pool **recipe** (sub-sets, names, mode), plus the tables of the sub-sets and of the medals with the date of each rarity. A third script (`recon/tools/make_banner_images.py`) writes the 640x140 images. The server expands the recipes at the right date (`server/gacha-data.js`), applies prices, currencies, limits and guarantees (`server/gacha.js`) and writes the `drawMedalType` master with `server/make-banners.js`.
 
-**Tech Stack:** Node (server, nessuna dipendenza esterna), Python 3 + Pillow (`recon/tools`), PowerShell (banco LDPlayer).
+**Tech Stack:** Node (server, no external dependencies), Python 3 + Pillow (`recon/tools`), PowerShell (LDPlayer bench).
 
-**Spec:** `docs/superpowers/specs/2026-10-16-shop-banner-design.md`, sezione 9 (decisioni del sotto-progetto 2, approvate il 16-10) e sezioni 3, 4.4, 4.8, 6 punto 2. Ricerca e dati di appoggio: `D:\Progetto_Restauro_KH_UX\tmp\sp2\research.md` (+ `banners_sp2.tsv/.json`, `subsets.json`, `medal_release.json`, `ends.tsv`, `incomplete.tsv`, `images.tsv`, `stats.json`, script in `scripts\`). Sotto-progetto 1: `docs/superpowers/plans/2026-10-16-shop-estrazioni.md`, `docs/notes/shop.md`.
+**Spec:** `docs/superpowers/specs/2026-10-16-shop-banner-design.md`, section 9 (decisions of sub-project 2, approved on 16-10) and sections 3, 4.4, 4.8, 6 point 2. Research and supporting data: `D:\Progetto_Restauro_KH_UX\tmp\sp2\research.md` (+ `banners_sp2.tsv/.json`, `subsets.json`, `medal_release.json`, `ends.tsv`, `incomplete.tsv`, `images.tsv`, `stats.json`, scripts in `scripts\`). Sub-project 1: `docs/superpowers/plans/2026-10-16-shop-estrazioni.md`, `docs/notes/shop.md`.
 
 ## Global Constraints
 
-- APK originale non modificato: si cambiano solo risposte del server, tabelle master, risorse scaricabili e pagine WebView.
-- Repo: solo codice e documentazione originali. Mai APK, asset, master data, immagini, testi della wiki o dei notice nel repo: `server/master_data/`, `server/game_data/`, `server/save/` sono ignorati da git. Nel repo solo gli script e `recon/tools/banner_overrides.tsv` (dati scritti da noi: numeri letti dai notice, con la fonte).
-- Git: sempre `git -c safe.directory=*`; messaggio in un file UTF-8 senza BOM in `D:\Progetto_Restauro_KH_UX\tmp\msg_*.txt` scritto col tool Write, poi `git commit -F <file>`; `git pull --rebase` prima di `git push`; messaggi in italiano che finiscono con `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; mai `git add -A` (file per nome; `.claude/` non e' tracciata). Commit e push a ogni task verificato.
-- Shell degli agenti: heredoc ed echo trasformano `\t` e `\f` in byte di controllo. Scrivere i file con Edit/Write e dopo ogni modifica controllare che non ci siano byte di controllo diversi da `\n` (e `\t` solo nei TSV): `python -c "import sys;d=open(sys.argv[1],'rb').read();print([i for i,b in enumerate(d) if b<32 and b not in (9,10,13)][:5])" <file>`.
-- Codice e commenti in italiano, nello stile dei file vicini. Testi mostrati al giocatore in inglese.
-- Test: script autonomi (`node server/test-<nome>.js`, `python recon/tools/test_<nome>.py`) che stampano `OK: ...` o `ERRORI (n)` ed escono con 1; mai il salvataggio vero (`KHUX_SAVE` in una cartella temporanea).
-- Piastre: mai `price` 0, mai `benefitId` != 0, mai payType 3 ne' 9 nella lista. Jewel = payType 1. payType 4/5/6 (Bronze/Silver/Gold, PvP) solo nel catalogo (spec 9.6). La piastra Catalog resta payType 6, id 9001.
-- Risposta di `/gacha/draw`: `effectNumbers` solo 0; `gachaBonus` sempre `{addType: 1, number: 0, userMedalIds: []}`; ogni id di `userMedalIds` deve comparire in `userMedals` della risposta; al massimo 10 medaglie.
-- Rarita' e medaglie solo se uscite entro la data di riferimento del banner (spec 9.3): niente 6★ estraibili prima del 15/07/2016, niente 7★ prima del 25/05/2018. Nessuna eccezione per i banner gratuiti o VIP (spec 9.5, richiesta dell'utente).
-- Ogni differenza dall'originale va spiegata nelle Notices in gioco, in inglese.
-- Banco: tocchi solo a gioco vivo (`AppAlive`); SKIP nei dialoghi; copia del salvataggio prima delle prove; file pesanti in `D:\Progetto_Restauro_KH_UX\tmp`; un solo processo Ghidra alla volta.
+- Original APK unmodified: only server responses, master tables, downloadable resources and WebView pages are changed.
+- Repo: only original code and documentation. Never APKs, assets, master data, images, wiki or notice texts in the repo: `server/master_data/`, `server/game_data/`, `server/save/` are ignored by git. In the repo only the scripts and `recon/tools/banner_overrides.tsv` (data written by us: numbers read from the notices, with the source).
+- Git: always `git -c safe.directory=*`; message in a UTF-8 file without BOM in `D:\Progetto_Restauro_KH_UX\tmp\msg_*.txt` written with the Write tool, then `git commit -F <file>`; `git pull --rebase` before `git push`; messages in Italian ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; never `git add -A` (files by name; `.claude/` is not tracked). Commit and push at every verified task.
+- Agent shells: heredoc and echo turn `\t` and `\f` into control bytes. Write the files with Edit/Write and after every change check that there are no control bytes other than `\n` (and `\t` only in TSVs): `python -c "import sys;d=open(sys.argv[1],'rb').read();print([i for i,b in enumerate(d) if b<32 and b not in (9,10,13)][:5])" <file>`.
+- Code and comments in Italian, in the style of the neighbouring files. Texts shown to the player in English.
+- Tests: standalone scripts (`node server/test-<name>.js`, `python recon/tools/test_<name>.py`) that print `OK: ...` or `ERRORI (n)` and exit with 1; never the real save (`KHUX_SAVE` in a temporary folder).
+- Tiles: never `price` 0, never `benefitId` != 0, never payType 3 or 9 in the list. Jewels = payType 1. payType 4/5/6 (Bronze/Silver/Gold, PvP) only in the catalog (spec 9.6). The Catalog tile stays payType 6, id 9001.
+- `/gacha/draw` response: `effectNumbers` only 0; `gachaBonus` always `{addType: 1, number: 0, userMedalIds: []}`; every id in `userMedalIds` must appear in `userMedals` of the response; at most 10 medals.
+- Rarities and medals only if released by the banner's reference date (spec 9.3): no 6★ drawable before 15/07/2016, no 7★ before 25/05/2018. No exception for free or VIP banners (spec 9.5, user's request).
+- Every difference from the original must be explained in the in-game Notices, in English.
+- Bench: taps only while the game is alive (`AppAlive`); SKIP in dialogues; copy the save before testing; heavy files in `D:\Progetto_Restauro_KH_UX\tmp`; only one Ghidra process at a time.
 
 ## Review Focus
 
-1. Banner permanente (DAILY DEAL!, SMALL DEAL!) per un giocatore all'inizio della storia: il pool contiene solo medaglie uscite entro la data del suo punto nella storia, mai medaglie di set successivi (test nel Task 5).
-2. Free Deal VIP e banner gratuiti: costano 1 Jewel, una sola estrazione gratuita VIP al giorno fra tutte, e il pool rispetta la data del banner come gli altri (test nel Task 6).
-3. Banner con prezzo calante o prima estrazione gratuita: il prezzo della lista e quello scalato coincidono dopo ogni estrazione (contatore salvato in `player.gacha.count`; test nel Task 6).
-4. Valute del payType 8: la lista non mostra mai insieme due banner di valute diverse e `limitedDrawTicket2` riporta la valuta elencata; un vecchio salvataggio con `limitedDrawTicket2` non perde biglietti (test nei Task 6 e 8).
-5. Medaglie impilabili (Dual Meow Wow del Platinum Ticket Draw): l'id restituito e' quello della cella che il client vede, presente in `userMedals` (test nel Task 8).
+1. Permanent banner (DAILY DEAL!, SMALL DEAL!) for a player at the start of the story: the pool contains only medals released by the date of their point in the story, never medals of later sets (test in Task 5).
+2. Free Deal VIP and free banners: they cost 1 Jewel, a single free VIP draw per day across all of them, and the pool respects the banner date like the others (test in Task 6).
+3. Banner with decreasing price or free first draw: the price in the list and the one deducted match after every draw (counter saved in `player.gacha.count`; test in Task 6).
+4. payType 8 currencies: the list never shows two banners of different currencies together and `limitedDrawTicket2` reports the listed currency; an old save with `limitedDrawTicket2` does not lose tickets (test in Tasks 6 and 8).
+5. Stackable medals (Dual Meow Wow of the Platinum Ticket Draw): the returned id is the one of the cell the client sees, present in `userMedals` (test in Task 8).
 
 ---
 
-## File
+## Files
 
-| File | Stato | Responsabilita' |
+| File | Status | Responsibility |
 |---|---|---|
-| `recon/tools/banner_sources.py` | nuovo | sotto-set datati, medaglie per set, data di ogni rarita', note complete delle righe Shop della wiki |
-| `recon/tools/make_banner_catalog.py` | nuovo | ricette dei banner: tipo, flag, valuta, prezzi, date, sblocco, pool, garanzie, abilita', motivi «solo catalogo»; scrive `server/game_data/gacha_catalog.json` |
-| `recon/tools/banner_overrides.tsv` | nuovo | prezzi/dimensioni/date letti dai notice per le righe incomplete (dati nostri, con la fonte) |
-| `recon/tools/make_banner_images.py` | nuovo | immagini 640x140 (PNG a palette o a colori pieni) in `server/game_data/gacha_img/` |
-| `recon/tools/test_banner_sources.py`, `test_make_banner_catalog.py`, `test_make_banner_images.py` | nuovi | prove offline |
-| `server/gacha-data.js` | modifica | catalogo, data del punto nella storia, espansione dei pool, probabilita' 9.2, estrazione, abilita' |
-| `server/make-banners.js` | riscritto | master `drawMedalType` (piastra Catalog + 808 banner) dal catalogo |
-| `server/gacha.js` | modifica | lista provvisoria, prezzi dinamici, valute, limiti giornalieri e VIP, pity, pagine WebView |
-| `server/server.js` | modifica | caricamento del catalogo, migrazione dei biglietti, celle impilabili, abilita' estratte, `KHUX_GACHA_SHOW` |
-| `server/routes-info-album.js` | modifica | Notices |
-| `server/test-gacha-data.js`, `test-make-banners.js`, `test-gacha.js`, `test-gacha-server.js` | modifica | prove offline |
-| `tools/ldplayer/session/run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1` | modifica | revisione 119, `-GachaShow` al posto di `-GachaTest` |
-| `docs/notes/shop.md`, `docs/ISSUES.md`, `HANDOFF.md`, `docs/notes/server.md` | modifica | stato |
+| `recon/tools/banner_sources.py` | new | dated sub-sets, medals per set, date of each rarity, complete notes of the wiki Shop rows |
+| `recon/tools/make_banner_catalog.py` | new | banner recipes: type, flags, currency, prices, dates, unlock, pool, guarantees, skills, «catalog only» reasons; writes `server/game_data/gacha_catalog.json` |
+| `recon/tools/banner_overrides.tsv` | new | prices/sizes/dates read from the notices for the incomplete rows (our data, with the source) |
+| `recon/tools/make_banner_images.py` | new | 640x140 images (palette or full-colour PNG) in `server/game_data/gacha_img/` |
+| `recon/tools/test_banner_sources.py`, `test_make_banner_catalog.py`, `test_make_banner_images.py` | new | offline tests |
+| `server/gacha-data.js` | modify | catalog, date of the point in the story, pool expansion, 9.2 odds, draw, skills |
+| `server/make-banners.js` | rewritten | `drawMedalType` master (Catalog tile + 808 banners) from the catalog |
+| `server/gacha.js` | modify | provisional list, dynamic prices, currencies, daily and VIP limits, pity, WebView pages |
+| `server/server.js` | modify | catalog loading, ticket migration, stackable cells, drawn skills, `KHUX_GACHA_SHOW` |
+| `server/routes-info-album.js` | modify | Notices |
+| `server/test-gacha-data.js`, `test-make-banners.js`, `test-gacha.js`, `test-gacha-server.js` | modify | offline tests |
+| `tools/ldplayer/session/run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1` | modify | revision 119, `-GachaShow` instead of `-GachaTest` |
+| `docs/notes/shop.md`, `docs/ISSUES.md`, `HANDOFF.md`, `docs/notes/server.md` | modify | status |
 
-## Formato di `server/game_data/gacha_catalog.json` (contratto fra Python e Node)
+## Format of `server/game_data/gacha_catalog.json` (contract between Python and Node)
 
 ```json
 {
@@ -74,66 +74,66 @@
 }
 ```
 
-- Nomi delle medaglie sempre **normalizzati** (`norm`: spazi unificati, minuscolo, `\u00a0` -> spazio).
-- `medals[n].ids`: solo righe di `medal.json` con `type === 1` e `validPack !== 1`; terzo campo = data della variante (`rare_date` della ricerca, mai prima di `date`).
-- `pool.mode`: `sets` (note «Draws from sets»), `list` (note «Draws from the following medals»), `inherit` (ultimo banner documentato + uscite dopo `inheritAfter`), `released` (tutte le medaglie standard uscite entro la data), `evolve` (`evolve: [[medalId, livello], ...]`, ids espliciti anche impilabili).
+- Medal names always **normalised** (`norm`: spaces unified, lowercase, `\u00a0` -> space).
+- `medals[n].ids`: only `medal.json` rows with `type === 1` and `validPack !== 1`; third field = date of the variant (`rare_date` of the research, never before `date`).
+- `pool.mode`: `sets` (notes «Draws from sets»), `list` (notes «Draws from the following medals»), `inherit` (last documented banner + releases after `inheritAfter`), `released` (all the standard medals released by the date), `evolve` (`evolve: [[medalId, level], ...]`, explicit ids, stackable ones included).
 - `currency`: `jewel`, `platinum`, `draw`, `holiday`, `spooky`, `moogle`, `bronze`, `silver`, `gold`, `points`.
 - `catalogOnly`: `null`, `INCOMPLETE`, `PVP_TICKETS`, `DRAW_POINTS`, `VIP_TWIN`.
 - `skill`: `null`, `{"table": "50106", "slots": "first"}` (SKILL), `{"table": "72415", "slots": "all"}` (SN, SEVEN).
-- `bonus`: oggetti regalati a ogni estrazione (note «Includes N bonus ...», spec 9.2): `[[resourceType, id, numero], ...]` con 3 = medaglia (Magic Mirror 90156, Magic Broom 300948, ...) e 5 = materiale (Power Gem 48, Speed Gem 49, Magic Gem 50, ...); vanno nel Present Box.
-- `end`: `null` solo se l'originale non ha fine e nessuna regola la ricostruisce (nessun caso atteso dopo il Task 3).
+- `bonus`: items given with every draw (notes «Includes N bonus ...», spec 9.2): `[[resourceType, id, number], ...]` with 3 = medal (Magic Mirror 90156, Magic Broom 300948, ...) and 5 = material (Power Gem 48, Speed Gem 49, Magic Gem 50, ...); they go to the Present Box.
+- `end`: `null` only if the original has no end and no rule reconstructs it (no case expected after Task 3).
 
 ---
 
-### Task 1: prova al banco del PNG a palette
+### Task 1: bench test of the palette PNG
 
-Modello consigliato: Opus (banco).
+Recommended model: Opus (bench).
 
-**Files:** nessun file del repo. Solo `server/game_data/gacha_img/10001.png` (fuori da git).
+**Files:** no repo file. Only `server/game_data/gacha_img/10001.png` (outside git).
 
 **Interfaces:**
-- Produces: la decisione «palette» o «full» per `make_banner_images.py` (Task 4), scritta nel registro dell'esecuzione e in `docs/notes/shop.md` al Task 9.
+- Produces: the «palette» or «full» decision for `make_banner_images.py` (Task 4), written in the execution log and in `docs/notes/shop.md` in Task 9.
 
-- [ ] **Step 1: Copia e conversione**
+- [ ] **Step 1: Copy and conversion**
 
-Copiare `server\save` in `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-sp2`. Copiare `server\game_data\gacha_img\10001.png` in `D:\Progetto_Restauro_KH_UX\tmp\sp2\10001_full.png`, poi:
+Copy `server\save` to `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-sp2`. Copy `server\game_data\gacha_img\10001.png` to `D:\Progetto_Restauro_KH_UX\tmp\sp2\10001_full.png`, then:
 
 ```bash
 python -c "from PIL import Image;im=Image.open('D:/Progetto_Restauro_KH_UX/tmp/sp2/10001_full.png').convert('RGB');im.quantize(256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.FLOYDSTEINBERG).save('server/game_data/gacha_img/10001.png',optimize=True)"
 ```
 
-Expected: il file nuovo e' circa un quarto del vecchio; `python -c "from PIL import Image;print(Image.open('server/game_data/gacha_img/10001.png').mode)"` stampa `P`.
+Expected: the new file is about a quarter of the old one; `python -c "from PIL import Image;print(Image.open('server/game_data/gacha_img/10001.png').mode)"` prints `P`.
 
-- [ ] **Step 2: Banco**
+- [ ] **Step 2: Bench**
 
-Server con `tools\ldplayer\session\relogin.ps1 -Tag pal` (revisione 118). Con `. .\tools\ldplayer\bench_lib.ps1`: Shop > Draw, screenshot `Shot sp2_palette`. Expected: il banner Daily Deal si vede come prima, senza strisce o immagine vuota; nessun crash.
+Server with `tools\ldplayer\session\relogin.ps1 -Tag pal` (revision 118). With `. .\tools\ldplayer\bench_lib.ps1`: Shop > Draw, screenshot `Shot sp2_palette`. Expected: the Daily Deal banner looks as before, without stripes or an empty image; no crash.
 
-- [ ] **Step 3: Esito**
+- [ ] **Step 3: Outcome**
 
-Se l'immagine e' corretta: decisione «palette». Se manca o e' rovinata: decisione «full» (PNG a colori pieni, ~129 MB). Rimettere comunque `10001_full.png` al suo posto. Nessun commit (nessun file del repo cambia): annotare l'esito nel registro dell'esecuzione.
+If the image is correct: «palette» decision. If it is missing or damaged: «full» decision (full-colour PNG, ~129 MB). Put `10001_full.png` back in its place anyway. No commit (no repo file changes): note the outcome in the execution log.
 
 ---
 
-### Task 2: `recon/tools/banner_sources.py` (sotto-set, date delle medaglie, note complete)
+### Task 2: `recon/tools/banner_sources.py` (sub-sets, medal dates, complete notes)
 
-Modello consigliato: Sonnet.
+Recommended model: Sonnet.
 
 **Files:**
 - Create: `recon/tools/banner_sources.py`
 - Create: `recon/tools/test_banner_sources.py`
 
 **Interfaces:**
-- Consumes: `D:\Progetto_Restauro_KH_UX\tmp\sp2\scripts\common.py`, `sets.py`, `medals.py`, `wikishop.py` (codice di ricerca da portare).
-- Produces (usate dal Task 3):
+- Consumes: `D:\Progetto_Restauro_KH_UX\tmp\sp2\scripts\common.py`, `sets.py`, `medals.py`, `wikishop.py` (research code to port).
+- Produces (used by Task 3):
   - `norm(s) -> str`
   - `infomedals(wiki: dict) -> list[dict]`
-  - `english_subsets(wiki) -> {'subsets': [...], 'extras': [...], 'nasets': {...}}` (stesso formato di `subsets.json`)
-  - `medal_release(subsets: dict, wiki: dict, medal_rows: list, banner_rows: list) -> list[dict]` (stesso formato di `medal_release.json`: `name, set, subset, date, date_src, cls, class1, class2, nano, rows, rare_date`)
-  - `wiki_shop_rows(wiki) -> list[dict]` (stesso formato di `wiki_shop_rows.json`)
+  - `english_subsets(wiki) -> {'subsets': [...], 'extras': [...], 'nasets': {...}}` (same format as `subsets.json`)
+  - `medal_release(subsets: dict, wiki: dict, medal_rows: list, banner_rows: list) -> list[dict]` (same format as `medal_release.json`: `name, set, subset, date, date_src, cls, class1, class2, nano, rows, rare_date`)
+  - `wiki_shop_rows(wiki) -> list[dict]` (same format as `wiki_shop_rows.json`)
 
-- [ ] **Step 1: Test che fallisce**
+- [ ] **Step 1: Failing test**
 
-`recon/tools/test_banner_sources.py`, nello stile di `test_import_jp_raisedraw.py` (lista `errori`, `check`, «OK»/«ERRORI»). Wiki sintetica:
+`recon/tools/test_banner_sources.py`, in the style of `test_import_jp_raisedraw.py` (`errori` list, `check`, «OK»/«ERRORI»). Synthetic wiki:
 
 ```python
 WIKI = {
@@ -149,35 +149,35 @@ WIKI = {
 }
 ```
 
-Per i cicli 1-59 di `english_subsets`, le pagine mancanti valgono testo vuoto e vanno saltate (la ricerca le aveva tutte: aggiungere `if not hm: continue`). Controlli:
-- `english_subsets(WIKI)['subsets']` contiene `{'set': 1, 'id': '1.2', 'date': '2016-04-21', 'members': ['Alice', 'Hades'], ...}` e `{'set': 2, 'id': '2.1', 'date': '2016-05-13', 'members': ['Key Art #1', 'Sephiroth'], ...}`;
-- `extras` contiene la Moogle Medal con data `2016-05-02`;
-- `nasets['1']['medals']` (chiave stringa come nel JSON) ha Alice con `cls` `SR`;
-- `medal_release(...)` con `medal_rows = [{'medalId': 1001, 'name': 'Sora', 'rare': 3, 'type': 1, 'validPack': 0, 'darklight': 1}, {'medalId': 301001, 'name': 'Sora', 'rare': 7, 'type': 1, 'validPack': 0, 'darklight': 1}]` e `banner_rows = []`: Sora ha `subset` `1.1`, `date` `2016-04-07`, `rows` con entrambe le righe;
+For the loops 1-59 of `english_subsets`, the missing pages count as empty text and must be skipped (the research had them all: add `if not hm: continue`). Checks:
+- `english_subsets(WIKI)['subsets']` contains `{'set': 1, 'id': '1.2', 'date': '2016-04-21', 'members': ['Alice', 'Hades'], ...}` and `{'set': 2, 'id': '2.1', 'date': '2016-05-13', 'members': ['Key Art #1', 'Sephiroth'], ...}`;
+- `extras` contains the Moogle Medal with date `2016-05-02`;
+- `nasets['1']['medals']` (string key as in the JSON) has Alice with `cls` `SR`;
+- `medal_release(...)` with `medal_rows = [{'medalId': 1001, 'name': 'Sora', 'rare': 3, 'type': 1, 'validPack': 0, 'darklight': 1}, {'medalId': 301001, 'name': 'Sora', 'rare': 7, 'type': 1, 'validPack': 0, 'darklight': 1}]` and `banner_rows = []`: Sora has `subset` `1.1`, `date` `2016-04-07`, `rows` with both rows;
 - `norm('Hades\u00a0 A')` == `'hades a'`.
 
-Il test richiama le funzioni con i dati in memoria (nessun file).
+The test calls the functions with in-memory data (no files).
 
-- [ ] **Step 2: Verificare che fallisca**
+- [ ] **Step 2: Verify that it fails**
 
 Run: `python recon/tools/test_banner_sources.py`
-Expected: ImportError (`banner_sources` non esiste).
+Expected: ImportError (`banner_sources` does not exist).
 
-- [ ] **Step 3: Implementazione (port)**
+- [ ] **Step 3: Implementation (port)**
 
-Creare `recon/tools/banner_sources.py` copiando le funzioni degli script di ricerca, con questi cambi e nient'altro:
-- intestazione: commento sullo scopo (fonti: khuxwiki Category:English Set 1-59, Template:NASets, InfoMedal; righe Shop/2016-2020) e sul fatto che i dati letti restano fuori dal repo;
-- da `common.py`: solo `infomedals`; niente percorsi assoluti: le funzioni ricevono i dati come argomenti;
-- da `sets.py`: `toks` e il corpo di `main` diventano `english_subsets(wiki)` che **restituisce** il dizionario (niente `json.dump`, niente print), con `if not hm: continue` per le pagine assenti; chiavi di `nasets` come stringhe (`str(n)`);
-- da `medals.py`: `norm` e il corpo di `main` diventano `medal_release(subsets, wiki, medal_rows, banner_rows)` che restituisce `out` (niente file); il dizionario `MONABBR` resta locale;
-- da `wikishop.py`: `norm_img` e `wiki_shop_rows(wiki)` che restituisce la lista;
-- in fondo `if __name__ == '__main__':` che, dato `--wiki`, `--medals`, `--banners` e `--out DIR`, scrive i tre JSON in `DIR` (stessi nomi dei file di ricerca), per confronto manuale.
+Create `recon/tools/banner_sources.py` by copying the functions of the research scripts, with these changes and nothing else:
+- header: comment on the purpose (sources: khuxwiki Category:English Set 1-59, Template:NASets, InfoMedal; Shop/2016-2020 rows) and on the fact that the data read stays outside the repo;
+- from `common.py`: only `infomedals`; no absolute paths: the functions receive the data as arguments;
+- from `sets.py`: `toks` and the body of `main` become `english_subsets(wiki)` which **returns** the dictionary (no `json.dump`, no print), with `if not hm: continue` for the missing pages; `nasets` keys as strings (`str(n)`);
+- from `medals.py`: `norm` and the body of `main` become `medal_release(subsets, wiki, medal_rows, banner_rows)` which returns `out` (no files); the `MONABBR` dictionary stays local;
+- from `wikishop.py`: `norm_img` and `wiki_shop_rows(wiki)` which returns the list;
+- at the bottom `if __name__ == '__main__':` which, given `--wiki`, `--medals`, `--banners` and `--out DIR`, writes the three JSONs in `DIR` (same names as the research files), for manual comparison.
 
-- [ ] **Step 4: Test e confronto con la ricerca**
+- [ ] **Step 4: Test and comparison with the research**
 
 Run: `python recon/tools/test_banner_sources.py` -> `OK`.
 Run: `python recon/tools/banner_sources.py --wiki D:/Progetto_Restauro_KH_UX/wiki/wiki_all.json --medals server/master_data/medal.json --banners D:/Progetto_Restauro_KH_UX/reference/banners/banners_ww.tsv --out D:/Progetto_Restauro_KH_UX/tmp/sp2/port`
-Expected: i tre file in `tmp\sp2\port` sono uguali a quelli di `tmp\sp2` (`python -c` che carica le coppie e confronta con `==`); 248 sotto-set, 816 medaglie, 795 con righe.
+Expected: the three files in `tmp\sp2\port` are equal to those in `tmp\sp2` (`python -c` that loads the pairs and compares with `==`); 248 sub-sets, 816 medals, 795 with rows.
 
 - [ ] **Step 5: Commit**
 
@@ -189,22 +189,22 @@ git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 
 ---
 
-### Task 3: `recon/tools/make_banner_catalog.py` (ricette dei banner)
+### Task 3: `recon/tools/make_banner_catalog.py` (banner recipes)
 
-Modello consigliato: Opus (molte regole, riscontro con i numeri della ricerca).
+Recommended model: Opus (many rules, cross-check with the research numbers).
 
 **Files:**
 - Create: `recon/tools/make_banner_catalog.py`
-- Create: `recon/tools/banner_overrides.tsv` (solo intestazione in questo task)
+- Create: `recon/tools/banner_overrides.tsv` (header only in this task)
 - Create: `recon/tools/test_make_banner_catalog.py`
 
 **Interfaces:**
-- Consumes: `banner_sources` (Task 2); `D:\Progetto_Restauro_KH_UX\tmp\sp2\scripts\analyze.py` e `incomplete.py` (codice da portare).
-- Produces: `server/game_data/gacha_catalog.json` nel formato del contratto sopra; funzioni pubbliche usate dai test: `classify(row, notes)`, `parse_price(p)`, `currency_of(row, typ)`, `end_of(row, typ, rows, notices)`, `unlock_quest(start, story)`, `pool_recipe(row, notes, typ, docs, sub_members)`, `guarantee_of(row, notes)`, `day_limit(notes, typ)`, `vip_twins(rows)`, `bonus_of(notes, medal_rows, material_rows)`, `build_catalog(inputs) -> dict`.
+- Consumes: `banner_sources` (Task 2); `D:\Progetto_Restauro_KH_UX\tmp\sp2\scripts\analyze.py` and `incomplete.py` (code to port).
+- Produces: `server/game_data/gacha_catalog.json` in the format of the contract above; public functions used by the tests: `classify(row, notes)`, `parse_price(p)`, `currency_of(row, typ)`, `end_of(row, typ, rows, notices)`, `unlock_quest(start, story)`, `pool_recipe(row, notes, typ, docs, sub_members)`, `guarantee_of(row, notes)`, `day_limit(notes, typ)`, `vip_twins(rows)`, `bonus_of(notes, medal_rows, material_rows)`, `build_catalog(inputs) -> dict`.
 
-- [ ] **Step 1: Test che fallisce**
+- [ ] **Step 1: Failing test**
 
-`recon/tools/test_make_banner_catalog.py` con righe sintetiche (dizionari con le colonne di `banners_ww.tsv`: `row_id, name, start_pt, end_pt, status, currency, price, draw_size, rarity_mix, featured_medals, guarantees, notes, image_file, image_size, seasonal, event_tie_in, source_url, confidence`). Controlli:
+`recon/tools/test_make_banner_catalog.py` with synthetic rows (dictionaries with the columns of `banners_ww.tsv`: `row_id, name, start_pt, end_pt, status, currency, price, draw_size, rarity_mix, featured_medals, guarantees, notes, image_file, image_size, seasonal, event_tie_in, source_url, confidence`). Checks:
 
 ```python
 R = lambda **k: {**{c: '' for c in COLS}, **k}
@@ -236,7 +236,7 @@ twins = m.vip_twins([R(row_id='B1', name='Supernova Deal', start_pt='2019-03-01'
 check(twins == {'B2'}, f'gemelli VIP {twins}')
 ```
 
-`guarantee_of` restituisce anche `featured` (nomi normalizzati della frase «If bought N times ... X»; per «within N draws» `pity = N` e `featured` = medaglie in vetrina della riga). Il test di integrazione (ultimo controllo) gira solo se esistono i file veri:
+`guarantee_of` also returns `featured` (normalised names from the phrase «If bought N times ... X»; for «within N draws» `pity = N` and `featured` = the row's showcased medals). The integration test (last check) runs only if the real files exist:
 
 ```python
 if os.path.exists(WIKI) and os.path.exists(TSV):
@@ -254,47 +254,47 @@ if os.path.exists(WIKI) and os.path.exists(TSV):
     check(b11['pool']['sets'] == ['1.1', '1.2', '1.3', '2.1'] and b11['epicBoost'], 'B0011 senza 2.2 e Epic')
 ```
 
-- [ ] **Step 2: Verificare che fallisca**
+- [ ] **Step 2: Verify that it fails**
 
 Run: `python recon/tools/test_make_banner_catalog.py`
 Expected: ImportError.
 
-- [ ] **Step 3: Implementazione (port di `analyze.py` + regole della spec 9)**
+- [ ] **Step 3: Implementation (port of `analyze.py` + rules of spec 9)**
 
-`make_banner_catalog.py` porta da `analyze.py` `full_notes`, `classify`, `parse_price`, `series_key`, `notice_end`, `end_of`, `unlock_quest`, `setrefs`, `names_listed` e la parte del pool di `main`, senza variabili globali (i dati passano come argomenti). Cambi rispetto alla ricerca:
+`make_banner_catalog.py` ports from `analyze.py` `full_notes`, `classify`, `parse_price`, `series_key`, `notice_end`, `end_of`, `unlock_quest`, `setrefs`, `names_listed` and the pool part of `main`, without global variables (the data is passed as arguments). Changes compared to the research:
 
-1. **Ingressi** (`default_inputs()`): `KHUX_WIKI_JSON` (default `D:/Progetto_Restauro_KH_UX/wiki/wiki_all.json`), `KHUX_BANNERS_TSV` (`.../reference/banners/banners_ww.tsv`), `KHUX_STORY_TSV` (`.../reference/story/story_release_ww.tsv`), `KHUX_NOTICES_JSON` (`.../reference/banners/notices.json`: copiarlo una volta da `D:\Progetto_Restauro_KH_UX\tmp\banners\notices.json`, perche' `tmp` non e' durevole), `server/master_data/medal.json`, `server/master_data/material.json`, `recon/tools/banner_overrides.tsv`. Percorsi di default calcolati dalla radice del repo (`<repo>/../..`), come `server/make-banners.js`.
-2. **Esclusi:** `X_BLINDBOX` e `X_TUTORIAL` non entrano in `banners`.
-3. **`end_of`:** togliere le regole smentite (spec 9.8): via «next of series - 1 day», «weekly Supernova Deal 7 days», «1st of month -> month end». Ordine: originale; Draw Points -> `2021-06-29`; notice con punteggio >= 5; `supernova deal|gem deal|free deal|sn\+ falling price|ffbe campaign` -> 1 giorno (`start`); notice debole; Beginner 2019 -> `2020-10-11`; Beginner 2020 -> `2021-02-24`; altrimenti 1 giorno. `endSource` = la fonte (`original`, `notice <id>`, `1 day (series rule)`, ...).
-4. **`currency_of(row, typ)`:** `(payType, currency)` con `{'Bronze Ticket': (4,'bronze'), 'Silver Ticket': (5,'silver'), 'Gold Ticket': (6,'gold'), 'Platinum Ticket': (7,'platinum'), 'Draw Ticket': (8,'draw'), 'Holiday Draw Ticket': (8,'holiday'), 'Spooky Cookie': (8,'spooky'), 'Moogle Point': (8,'moogle'), 'Draw Point': (9,'points')}`, dopo aver tolto `', VIP only'` e `'Free, '`; tutto il resto (Jewels, Free, vuota) `(1, 'jewel')`. B0787 «Ticket Draw x10» (2021-01, «Holiday» nel TSV): `(8, 'draw')` (errore del TSV, research.md §2).
-5. **`prices`:** `parse_price`; lista vuota -> riga `INCOMPLETE` salvo override. I prezzi 0 restano 0 nella ricetta: e' `gacha.js` che li porta a 1 Jewel (Task 6).
-6. **`day_limit(notes, typ)`:** `3` se `(\d+|three) times per day|3×/day`, `1` se `once (per|a) day` o `typ == 'DAILY'`, altrimenti `0`.
-7. **`vipFree`:** `True` se `typ == 'FREE'` e flag `VIP`.
-8. **`vip_twins(rows)`:** righe con `VIP` nella valuta o nel prezzo per cui esiste una riga non VIP con la stessa `start_pt` e lo stesso `series_key` del nome senza `(VIP)`/`VIP:`. Atteso sui dati veri: 41. `catalogOnly = 'VIP_TWIN'`.
-9. **`catalogOnly`:** in quest'ordine `VIP_TWIN`; `PVP_TICKETS` per payType 4/5/6; `DRAW_POINTS` per payType 9; `INCOMPLETE` se mancano `prices` o `lotCount` dopo fratelli e override.
-10. **Righe incomplete:** porta di `incomplete.py` (fratello di serie piu' vicino con prezzo e dimensione: 11 righe), poi gli override di `banner_overrides.tsv` (colonne `row_id`, `field` in `price|draw_size|rarity_mix|end_pt`, `value`, `source`), che vincono su tutto.
+1. **Inputs** (`default_inputs()`): `KHUX_WIKI_JSON` (default `D:/Progetto_Restauro_KH_UX/wiki/wiki_all.json`), `KHUX_BANNERS_TSV` (`.../reference/banners/banners_ww.tsv`), `KHUX_STORY_TSV` (`.../reference/story/story_release_ww.tsv`), `KHUX_NOTICES_JSON` (`.../reference/banners/notices.json`: copy it once from `D:\Progetto_Restauro_KH_UX\tmp\banners\notices.json`, because `tmp` is not durable), `server/master_data/medal.json`, `server/master_data/material.json`, `recon/tools/banner_overrides.tsv`. Default paths computed from the repo root (`<repo>/../..`), like `server/make-banners.js`.
+2. **Excluded:** `X_BLINDBOX` and `X_TUTORIAL` do not go into `banners`.
+3. **`end_of`:** remove the disproven rules (spec 9.8): drop «next of series - 1 day», «weekly Supernova Deal 7 days», «1st of month -> month end». Order: original; Draw Points -> `2021-06-29`; notice with score >= 5; `supernova deal|gem deal|free deal|sn\+ falling price|ffbe campaign` -> 1 day (`start`); weak notice; Beginner 2019 -> `2020-10-11`; Beginner 2020 -> `2021-02-24`; otherwise 1 day. `endSource` = the source (`original`, `notice <id>`, `1 day (series rule)`, ...).
+4. **`currency_of(row, typ)`:** `(payType, currency)` with `{'Bronze Ticket': (4,'bronze'), 'Silver Ticket': (5,'silver'), 'Gold Ticket': (6,'gold'), 'Platinum Ticket': (7,'platinum'), 'Draw Ticket': (8,'draw'), 'Holiday Draw Ticket': (8,'holiday'), 'Spooky Cookie': (8,'spooky'), 'Moogle Point': (8,'moogle'), 'Draw Point': (9,'points')}`, after removing `', VIP only'` and `'Free, '`; everything else (Jewels, Free, empty) `(1, 'jewel')`. B0787 «Ticket Draw x10» (2021-01, «Holiday» in the TSV): `(8, 'draw')` (TSV error, research.md §2).
+5. **`prices`:** `parse_price`; empty list -> `INCOMPLETE` row unless overridden. Prices 0 stay 0 in the recipe: it is `gacha.js` that raises them to 1 Jewel (Task 6).
+6. **`day_limit(notes, typ)`:** `3` if `(\d+|three) times per day|3×/day`, `1` if `once (per|a) day` or `typ == 'DAILY'`, otherwise `0`.
+7. **`vipFree`:** `True` if `typ == 'FREE'` and flag `VIP`.
+8. **`vip_twins(rows)`:** rows with `VIP` in the currency or in the price for which there is a non-VIP row with the same `start_pt` and the same `series_key` of the name without `(VIP)`/`VIP:`. Expected on the real data: 41. `catalogOnly = 'VIP_TWIN'`.
+9. **`catalogOnly`:** in this order `VIP_TWIN`; `PVP_TICKETS` for payType 4/5/6; `DRAW_POINTS` for payType 9; `INCOMPLETE` if `prices` or `lotCount` are missing after siblings and overrides.
+10. **Incomplete rows:** port of `incomplete.py` (closest series sibling with price and size: 11 rows), then the overrides from `banner_overrides.tsv` (columns `row_id`, `field` in `price|draw_size|rarity_mix|end_pt`, `value`, `source`), which win over everything.
 11. **`pool`:** 
-    - note con set -> `{'mode': 'sets', 'sets': refs espansi}`: `24.3` -> `['24.3a', '24.3b']` se esistono le varianti a lettera; set senza sotto-set nella wiki (27.6, 40.6, 41.x) -> `names` delle medaglie di quel set uscite entro l'inizio (come la ricerca);
+    - notes with sets -> `{'mode': 'sets', 'sets': expanded refs}`: `24.3` -> `['24.3a', '24.3b']` if the letter variants exist; sets without sub-sets in the wiki (27.6, 40.6, 41.x) -> `names` of the medals of that set released by the start (like the research);
     - «Draws from the following medals» -> `{'mode': 'list', 'names': ...}`;
-    - nessuna nota e banner `PERMANENT` o nessun banner documentato prima -> `{'mode': 'released'}`;
-    - nessuna nota -> `{'mode': 'inherit', 'sets': set dell'ultimo banner documentato dello stesso tipo (o di qualunque tipo), 'inheritAfter': la sua data, 'names': nomi dei link [[...]] nelle note}`;
-    - `T_EVOLVE` -> `{'mode': 'evolve', 'evolve': [[medalId, livello], ...]}` dalle righe di `medal.json` con nome `Blue Fairy [SA Bonus LV n]` (Bronze LV1-3, Silver LV4-8 dal 14/09/2018 e LV3-8 prima, Gold LV5-8) o `Dual Meow Wow [SAB LV n]` (Platinum LV7-9); verificare i nomi esatti in `medal.json` con un `grep` prima di scrivere la regex;
-    - `featured` = medaglie della colonna `featured_medals` + `guarantee.featured`, normalizzate.
-12. **`epicBoost`:** `True` se le note complete contengono `higher chances? of (being|the other \d+ being) Epic` o `chance to obtain Epic` (Epic Medal Carnival, DAILY/SMALL DEAL Epic del 24/06-15/07/2016).
-13. **`bonus`:** dalle note complete, `[Ii]ncludes? (a|one|two|three|five|\d+) bonus (.*?)(?:\.|$)` (togliere `'''`): numero in parole -> cifra; nome = primo link `[[...]]` o template `{{b|...}}`/`{{n|...}}` (stessa resa di `banner_sources.toks`); se il nome e' una gemma (`material.json`, campo `name`) -> `[5, materialId, n]`; altrimenti medaglia per nome (e stella se scritta, es. «6★») in `medal.json` di qualunque `type` -> `[3, medalId, n]`; i nomi non trovati (es. «Scrooge Medal with the ... Skill», Trait e Imitation) si saltano e si contano nella stampa finale (`bonus saltati`). Test: `m.bonus_of("Includes '''three''' bonus 6★ [[Magic Mirror]] Medals.", MEDALS, MATERIALS) == [[3, 90156, 3]]` e `m.bonus_of('Includes two bonus [[Power Gem]]s.', MEDALS, MATERIALS) == [[5, 48, 2]]` con tabelle sintetiche nel test.
-14. **`skill`:** `SKILL` -> `{'table': '50106', 'slots': 'first'}`; `SN` e `SEVEN` con inizio >= `2020-12-01` (prima data del notice 72415 nei TSV; verificare la data del notice con `notices.json` e usarla) -> `{'table': '72415', 'slots': 'all'}`; altrimenti `None`.
-15. **`firstRarity`:** prima comparsa di ogni stella nei `rarity_mix` (come `first_rarity` della ricerca); atteso `6 -> 2016-07-15`, `7 -> 2018-05-25`.
-16. **`story`:** righe di `story_release_ww.tsv` come `[first_quest, last_quest, ww_release_date]` in ordine.
-17. **`subsets` e `medals`:** da `banner_sources` (Task 2), con nomi normalizzati; `medals[n].ids` solo righe `type 1`, `validPack != 1`; `rare_date` per la variante, minimo `date`.
-18. **Uscita:** `main()` scrive `server/game_data/gacha_catalog.json` (UTF-8, `ensure_ascii=False`, separatori compatti) e stampa i conteggi per tipo, `catalogOnly` e sblocchi a 525.
+    - no notes and a `PERMANENT` banner or no documented banner before -> `{'mode': 'released'}`;
+    - no notes -> `{'mode': 'inherit', 'sets': sets of the last documented banner of the same type (or of any type), 'inheritAfter': its date, 'names': names of the [[...]] links in the notes}`;
+    - `T_EVOLVE` -> `{'mode': 'evolve', 'evolve': [[medalId, level], ...]}` from the `medal.json` rows named `Blue Fairy [SA Bonus LV n]` (Bronze LV1-3, Silver LV4-8 from 14/09/2018 and LV3-8 before, Gold LV5-8) or `Dual Meow Wow [SAB LV n]` (Platinum LV7-9); verify the exact names in `medal.json` with a `grep` before writing the regex;
+    - `featured` = medals of the `featured_medals` column + `guarantee.featured`, normalised.
+12. **`epicBoost`:** `True` if the complete notes contain `higher chances? of (being|the other \d+ being) Epic` or `chance to obtain Epic` (Epic Medal Carnival, DAILY/SMALL DEAL Epic of 24/06-15/07/2016).
+13. **`bonus`:** from the complete notes, `[Ii]ncludes? (a|one|two|three|five|\d+) bonus (.*?)(?:\.|$)` (strip `'''`): number in words -> digit; name = first `[[...]]` link or `{{b|...}}`/`{{n|...}}` template (same rendering as `banner_sources.toks`); if the name is a gem (`material.json`, field `name`) -> `[5, materialId, n]`; otherwise medal by name (and star if written, e.g. «6★») in `medal.json` of any `type` -> `[3, medalId, n]`; names not found (e.g. «Scrooge Medal with the ... Skill», Trait and Imitation) are skipped and counted in the final printout (`bonus saltati`). Test: `m.bonus_of("Includes '''three''' bonus 6★ [[Magic Mirror]] Medals.", MEDALS, MATERIALS) == [[3, 90156, 3]]` and `m.bonus_of('Includes two bonus [[Power Gem]]s.', MEDALS, MATERIALS) == [[5, 48, 2]]` with synthetic tables in the test.
+14. **`skill`:** `SKILL` -> `{'table': '50106', 'slots': 'first'}`; `SN` and `SEVEN` with start >= `2020-12-01` (first date of notice 72415 in the TSVs; verify the notice date with `notices.json` and use it) -> `{'table': '72415', 'slots': 'all'}`; otherwise `None`.
+15. **`firstRarity`:** first appearance of each star in the `rarity_mix` (like `first_rarity` of the research); expected `6 -> 2016-07-15`, `7 -> 2018-05-25`.
+16. **`story`:** rows of `story_release_ww.tsv` as `[first_quest, last_quest, ww_release_date]` in order.
+17. **`subsets` and `medals`:** from `banner_sources` (Task 2), with normalised names; `medals[n].ids` only `type 1`, `validPack != 1` rows; `rare_date` for the variant, minimum `date`.
+18. **Output:** `main()` writes `server/game_data/gacha_catalog.json` (UTF-8, `ensure_ascii=False`, compact separators) and prints the counts per type, `catalogOnly` and unlocks at 525.
 
-Creare `recon/tools/banner_overrides.tsv` con la sola intestazione `row_id\tfield\tvalue\tsource` (tab vero: scriverlo col tool Write e controllare i byte).
+Create `recon/tools/banner_overrides.tsv` with only the header `row_id\tfield\tvalue\tsource` (real tab: write it with the Write tool and check the bytes).
 
-- [ ] **Step 4: Test e numeri**
+- [ ] **Step 4: Tests and numbers**
 
 Run: `python recon/tools/test_make_banner_catalog.py` -> `OK`.
 Run: `python recon/tools/make_banner_catalog.py`
-Expected: 808 banner; tipi come nel test; `catalogOnly`: VIP_TWIN 41, PVP_TICKETS 4, DRAW_POINTS 7, INCOMPLETE <= 31; sblocchi a 525: 78. File di circa 1 MB.
+Expected: 808 banners; types as in the test; `catalogOnly`: VIP_TWIN 41, PVP_TICKETS 4, DRAW_POINTS 7, INCOMPLETE <= 31; unlocks at 525: 78. File of about 1 MB.
 
 - [ ] **Step 5: Commit**
 
@@ -306,9 +306,9 @@ git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 
 ---
 
-### Task 4: override delle righe incomplete e immagini
+### Task 4: overrides of the incomplete rows and images
 
-Modello consigliato: Sonnet.
+Recommended model: Sonnet.
 
 **Files:**
 - Modify: `recon/tools/banner_overrides.tsv`
@@ -316,14 +316,14 @@ Modello consigliato: Sonnet.
 - Create: `recon/tools/test_make_banner_images.py`
 
 **Interfaces:**
-- Consumes: `gacha_catalog.json` (Task 3); decisione del Task 1 (`palette` o `full`).
-- Produces: `server/game_data/gacha_img/<drawMedalTypeId>.png` per ogni banner; `make_banner_images.fit(im) -> Image` (640x140), `make_banner_images.plate(name) -> Image`.
+- Consumes: `gacha_catalog.json` (Task 3); decision of Task 1 (`palette` or `full`).
+- Produces: `server/game_data/gacha_img/<drawMedalTypeId>.png` for every banner; `make_banner_images.fit(im) -> Image` (640x140), `make_banner_images.plate(name) -> Image`.
 
-- [ ] **Step 1: Override dai notice**
+- [ ] **Step 1: Overrides from the notices**
 
-Per ogni riga ancora `INCOMPLETE` (stampata dal Task 3), leggere il notice in `reference\banners\notices.json` (id nei `source_url` della riga, o ricerca del nome nel titolo) e aggiungere a `banner_overrides.tsv` le righe `price`, `draw_size` (`x10`), `rarity_mix` (formato `6★:1 5★:9`) ed eventualmente `end_pt`, con `source` = `notice <id>`. B0205 (cinque Foreteller in una riga): un solo banner con i valori comuni del notice. Le righe senza dati nel notice restano incomplete (solo catalogo, spec 9.1). Rilanciare `python recon/tools/make_banner_catalog.py` e annotare nel registro quante righe restano `INCOMPLETE`.
+For each row still `INCOMPLETE` (printed by Task 3), read the notice in `reference\banners\notices.json` (id in the row's `source_url`, or search for the name in the title) and add to `banner_overrides.tsv` the rows `price`, `draw_size` (`x10`), `rarity_mix` (format `6★:1 5★:9`) and possibly `end_pt`, with `source` = `notice <id>`. B0205 (five Foretellers in one row): a single banner with the notice's common values. The rows without data in the notice stay incomplete (catalog only, spec 9.1). Re-run `python recon/tools/make_banner_catalog.py` and note in the log how many rows stay `INCOMPLETE`.
 
-- [ ] **Step 2: Test delle immagini che fallisce**
+- [ ] **Step 2: Failing image test**
 
 ```python
 from PIL import Image
@@ -338,25 +338,25 @@ check(m.save_png(Image.new('RGB', (640, 140)), os.path.join(tmp, 'a.png'), 'pale
 check(Image.open(os.path.join(tmp, 'a.png')).size == (640, 140), 'misura salvata')
 ```
 
-- [ ] **Step 3: Verificare che fallisca**
+- [ ] **Step 3: Verify that it fails**
 
 Run: `python recon/tools/test_make_banner_images.py` -> ImportError.
 
-- [ ] **Step 4: Implementazione**
+- [ ] **Step 4: Implementation**
 
 `make_banner_images.py`:
-- `fit(im)`: `convert('RGB')`; se il rapporto larghezza/altezza differisce da 640/140 meno dell'1% -> `resize((640, 140), Image.LANCZOS)`; altrimenti ritaglio centrale al rapporto 640/140 e poi resize.
-- `plate(name)`: sfondo a gradiente verticale blu scuro (`#0d2a4a` -> `#174a5c`, colori della pagina del catalogo), bordo oro 3 px (`#d8b25a`), nome centrato in bianco con `ImageFont.truetype('C:/Windows/Fonts/arialbd.ttf', 34)` (ripiego `ImageFont.load_default()`), ridotto finche' entra in 600 px.
-- `save_png(im, path, mode)`: `palette` -> `im.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save(path, optimize=True)`; `full` -> `im.save(path, optimize=True)`; restituisce True.
-- `main()`: argomenti `--mode palette|full` (default `palette`), `--img-dir` (default `<repo>/../../reference/banners/img`), `--catalog` (default `server/game_data/gacha_catalog.json`), `--out` (default `server/game_data/gacha_img`). Per ogni banner: immagine `image` (prima parte prima dello spazio se ce ne sono piu' di una) se esiste; altrimenti quella del banner `imageFrom`; altrimenti quella di un banner della stessa serie (`series_key` uguale, da `make_banner_catalog`) con immagine; altrimenti `plate(name)`. Non toccare `9001.png` (piastra Catalog, `make_shop_art.py`). Stampa conteggi (copiate, ridimensionate, da fratello, generate) e MB totali.
+- `fit(im)`: `convert('RGB')`; if the width/height ratio differs from 640/140 by less than 1% -> `resize((640, 140), Image.LANCZOS)`; otherwise central crop to the 640/140 ratio and then resize.
+- `plate(name)`: dark blue vertical gradient background (`#0d2a4a` -> `#174a5c`, colours of the catalog page), 3 px gold border (`#d8b25a`), name centred in white with `ImageFont.truetype('C:/Windows/Fonts/arialbd.ttf', 34)` (fallback `ImageFont.load_default()`), shrunk until it fits in 600 px.
+- `save_png(im, path, mode)`: `palette` -> `im.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save(path, optimize=True)`; `full` -> `im.save(path, optimize=True)`; returns True.
+- `main()`: arguments `--mode palette|full` (default `palette`), `--img-dir` (default `<repo>/../../reference/banners/img`), `--catalog` (default `server/game_data/gacha_catalog.json`), `--out` (default `server/game_data/gacha_img`). For each banner: image `image` (first part before the space if there is more than one) if it exists; otherwise the one of the `imageFrom` banner; otherwise the one of a banner of the same series (same `series_key`, from `make_banner_catalog`) with an image; otherwise `plate(name)`. Do not touch `9001.png` (Catalog tile, `make_shop_art.py`). Prints counts (copied, resized, from sibling, generated) and total MB.
 
-Nel Task 3, `imageFrom` vale gia' il `rowId` del banner che fornisce l'immagine per DAILY DEAL/SMALL DEAL Epic (B0022, B0024, B0028, B0030 -> immagine di B0001/B0027), Skills to Thrill 2017 (B0133/B0134/B0147/B0148 -> il Skills to Thrill precedente con immagine) e B0612 Supernova+ - Aced Returns (-> il Supernova Aced precedente); se non e' cosi', aggiungerlo li' (`make_banner_catalog.py`) in questo task e rilanciare il test del Task 3.
+In Task 3, `imageFrom` already holds the `rowId` of the banner that provides the image for DAILY DEAL/SMALL DEAL Epic (B0022, B0024, B0028, B0030 -> image of B0001/B0027), Skills to Thrill 2017 (B0133/B0134/B0147/B0148 -> the previous Skills to Thrill with an image) and B0612 Supernova+ - Aced Returns (-> the previous Supernova Aced); if not, add it there (`make_banner_catalog.py`) in this task and re-run the Task 3 test.
 
-- [ ] **Step 5: Test e generazione**
+- [ ] **Step 5: Tests and generation**
 
 Run: `python recon/tools/test_make_banner_images.py` -> `OK`.
-Run: `python recon/tools/make_banner_images.py --mode <decisione del Task 1>`
-Expected: 808 file; con `palette` circa 32 MB in tutto; al massimo 5 piastre generate (B0009, B0077, B0493, B0497, B0623). Aprire 3 immagini a caso (una ridimensionata, una da fratello, una generata) col tool Read per controllarle.
+Run: `python recon/tools/make_banner_images.py --mode <decision of Task 1>`
+Expected: 808 files; with `palette` about 32 MB in all; at most 5 generated tiles (B0009, B0077, B0493, B0497, B0623). Open 3 random images (one resized, one from a sibling, one generated) with the Read tool to check them.
 
 - [ ] **Step 6: Commit**
 
@@ -368,32 +368,32 @@ git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 
 ---
 
-### Task 5: `server/gacha-data.js` (catalogo, pool per epoca, probabilita', estrazione)
+### Task 5: `server/gacha-data.js` (catalog, per-era pool, odds, draw)
 
-Modello consigliato: Opus.
+Recommended model: Opus.
 
 **Files:**
 - Modify: `server/gacha-data.js`
 - Modify: `server/test-gacha-data.js`
 
 **Interfaces:**
-- Consumes: formato di `gacha_catalog.json` (contratto sopra).
-- Produces (Task 6-8):
+- Consumes: format of `gacha_catalog.json` (contract above).
+- Produces (Tasks 6-8):
   - `CATALOG_ID` (9001), `UPGRADE` `{3: 0.10, 4: 0.06, 5: 0.04, 6: 0.03}`, `EPIC_UPGRADE` 0.15, `FEATURED_WEIGHT` 2
-  - `loadCatalog(file) -> {banners, subsets, medals, firstRarity, story}` (vuoto ma valido se il file manca o e' rotto)
-  - `storyDay(catalog, quest) -> 'YYYY-MM-DD'` (data della tranche che contiene la quest; la prima se quest < 1)
-  - `asOf(banner, day) -> 'YYYY-MM-DD'` (inizio del banner; per i `PERMANENT` `day` limitato a [start, end])
-  - `expandPool(banner, catalog, asOf) -> {pool: {rare: [ids]}, featuredIds: [ids], listIds: [ids], weighted: [[id, peso]]}`
-  - `slotRarities(banner)` (invariata), `parseRarityMix(s)` (invariata)
-  - `slotOdds(banner, ex) -> [[{rare, pct}], ...]` (pct con 2 decimali; slot a lista: `[{list: true, pct: 100}]`)
-  - `rollDraw(banner, ex, rng, state) -> {medalIds, featured}`; `state = {draws, sinceFeatured}` (estrazioni gia' fatte su quel banner)
+  - `loadCatalog(file) -> {banners, subsets, medals, firstRarity, story}` (empty but valid if the file is missing or broken)
+  - `storyDay(catalog, quest) -> 'YYYY-MM-DD'` (date of the tranche that contains the quest; the first one if quest < 1)
+  - `asOf(banner, day) -> 'YYYY-MM-DD'` (banner start; for `PERMANENT` ones `day` clamped to [start, end])
+  - `expandPool(banner, catalog, asOf) -> {pool: {rare: [ids]}, featuredIds: [ids], listIds: [ids], weighted: [[id, weight]]}`
+  - `slotRarities(banner)` (unchanged), `parseRarityMix(s)` (unchanged)
+  - `slotOdds(banner, ex) -> [[{rare, pct}], ...]` (pct with 2 decimals; list slot: `[{list: true, pct: 100}]`)
+  - `rollDraw(banner, ex, rng, state) -> {medalIds, featured}`; `state = {draws, sinceFeatured}` (draws already done on that banner)
   - `SKILL_TABLES`, `rollSkill(spec, slotIndex, skillRows, rng) -> skillId | null`
-  - `drawMedalTypeRow(...)` (invariata), `bannerById(list, id)` (invariata)
-  - rimossi: `UPGRADE_CHANCE`, `loadBanners`
+  - `drawMedalTypeRow(...)` (unchanged), `bannerById(list, id)` (unchanged)
+  - removed: `UPGRADE_CHANCE`, `loadBanners`
 
-- [ ] **Step 1: Test che falliscono**
+- [ ] **Step 1: Failing tests**
 
-Riscrivere `server/test-gacha-data.js` (tenere i controlli di `parseRarityMix`, `slotRarities`, `drawMedalTypeRow`). Catalogo sintetico:
+Rewrite `server/test-gacha-data.js` (keep the checks of `parseRarityMix`, `slotRarities`, `drawMedalTypeRow`). Synthetic catalog:
 
 ```js
 const CAT = {
@@ -411,42 +411,42 @@ const B = (o) => ({ rowId: 'B9', drawMedalTypeId: 10009, lotCount: 3, rarityMix:
   guarantee: { list: [], count: 0, pity: null, every: null }, skill: null, ...o });
 ```
 
-Controlli:
+Checks:
 - `storyDay(CAT, 525) === '2016-12-08'`, `storyDay(CAT, 210) === '2016-04-21'`, `storyDay(CAT, 0) === '2016-04-07'`;
 - `asOf(B({}), '2016-12-08') === '2016-05-01'`; `asOf(B({ flags: ['PERMANENT'] }), '2016-12-08') === '2016-05-31'`; `asOf(B({ flags: ['PERMANENT'] }), '2016-04-07') === '2016-05-01'`;
-- set: `expandPool(B({}), CAT, '2016-05-01').pool` -> `{3: [31], 4: [41], 5: [51]}` (6★ non estraibile prima del 15/07/2016; niente Hades: 2.2 non citato);
-- epoca 7★: con `rarityMix [[6, 1]]` e asOf `2018-06-01` il pool ha `7: [71]`; con asOf `2018-05-01` no;
-- `released`: `B({ pool: { mode: 'released', ... } })` a `2016-04-30` -> solo Sora; a `2016-06-01` -> Sora e Hades; mai `vip` (classe V);
-- `inherit` con `inheritAfter: '2016-04-07'` e `sets: ['1.1']` a `2016-06-01` -> Sora e Hades;
-- sotto-set con data successiva ad asOf ignorato (`sets: ['2.2']` a `2016-05-01` -> pool vuoto);
+- sets: `expandPool(B({}), CAT, '2016-05-01').pool` -> `{3: [31], 4: [41], 5: [51]}` (6★ not drawable before 15/07/2016; no Hades: 2.2 not cited);
+- 7★ era: with `rarityMix [[6, 1]]` and asOf `2018-06-01` the pool has `7: [71]`; with asOf `2018-05-01` it does not;
+- `released`: `B({ pool: { mode: 'released', ... } })` at `2016-04-30` -> only Sora; at `2016-06-01` -> Sora and Hades; never `vip` (class V);
+- `inherit` with `inheritAfter: '2016-04-07'` and `sets: ['1.1']` at `2016-06-01` -> Sora and Hades;
+- sub-set dated after asOf ignored (`sets: ['2.2']` at `2016-05-01` -> empty pool);
 - `evolve`: `B({ lotCount: 5, pool: { mode: 'evolve', evolve: [[301682, 7], [301683, 8], [301684, 9]] } })` -> `weighted` = `[[301682, 0.45], [301683, 0.45], [301684, 0.1]]`;
-- `slotOdds` di `B({})` espanso a `2016-05-01`: slot 4★ -> `[{rare: 4, pct: 94}, {rare: 5, pct: 6}]`; slot 3★ -> `[{rare: 3, pct: 90}, {rare: 4, pct: 10}]`;
-- `epicBoost`: slot 3★ -> `[{rare: 3, pct: 85}, {rare: 5, pct: 15}]`;
-- `rollDraw` deterministico con `seq(...)`: senza promozione `[41, 31, 31]`; con `rng` 0.01 sul primo slot -> 5★ (51);
-- slot a lista: `guarantee: { list: ['sora', 'hades'], count: 1 }`, `featured: ['hades']`, pool a `2016-06-01`: il primo slot pesca da `listIds` con Hades peso 2 (rng 0.0 -> primo elemento; rng 0.99 -> Hades);
-- pity: `guarantee: { pity: 3 }`, `featured: ['hades']`, `state {draws: 2, sinceFeatured: 2}` -> il primo slot e' una medaglia di Hades e `featured === true`; con `sinceFeatured: 1` nessun obbligo;
-- every: `guarantee: { list: ['hades'], count: 1, every: 3 }`: con `state.draws` 2 (terza estrazione) il primo slot e' Hades; con `draws` 0 no;
-- `rollSkill({ table: '72415', slots: 'all' }, 1, rows, () => 0.0)` restituisce l'id di Attack Boost I; con `() => 0.99` `null`; `rollSkill({ table: '50106', slots: 'first' }, 1, rows, () => 0)` `null` (solo il primo slot); con slot 0 restituisce sempre uno skill. `rows` = `new Map([[1100, {skillId: 1100, name: 'Attack Boost I'}], [1102, {name: 'Attack Boost All I', skillId: 1102}], [1101, {name: 'Attack Boost II', skillId: 1101}]])`;
+- `slotOdds` of `B({})` expanded at `2016-05-01`: 4★ slot -> `[{rare: 4, pct: 94}, {rare: 5, pct: 6}]`; 3★ slot -> `[{rare: 3, pct: 90}, {rare: 4, pct: 10}]`;
+- `epicBoost`: 3★ slot -> `[{rare: 3, pct: 85}, {rare: 5, pct: 15}]`;
+- deterministic `rollDraw` with `seq(...)`: without promotion `[41, 31, 31]`; with `rng` 0.01 on the first slot -> 5★ (51);
+- list slot: `guarantee: { list: ['sora', 'hades'], count: 1 }`, `featured: ['hades']`, pool at `2016-06-01`: the first slot picks from `listIds` with Hades weight 2 (rng 0.0 -> first element; rng 0.99 -> Hades);
+- pity: `guarantee: { pity: 3 }`, `featured: ['hades']`, `state {draws: 2, sinceFeatured: 2}` -> the first slot is a Hades medal and `featured === true`; with `sinceFeatured: 1` no obligation;
+- every: `guarantee: { list: ['hades'], count: 1, every: 3 }`: with `state.draws` 2 (third draw) the first slot is Hades; with `draws` 0 it is not;
+- `rollSkill({ table: '72415', slots: 'all' }, 1, rows, () => 0.0)` returns the id of Attack Boost I; with `() => 0.99` `null`; `rollSkill({ table: '50106', slots: 'first' }, 1, rows, () => 0)` `null` (only the first slot); with slot 0 it always returns a skill. `rows` = `new Map([[1100, {skillId: 1100, name: 'Attack Boost I'}], [1102, {name: 'Attack Boost All I', skillId: 1102}], [1101, {name: 'Attack Boost II', skillId: 1101}]])`;
 - `loadCatalog('/non/esiste.json')` -> `{banners: [], subsets: {}, medals: {}, firstRarity: {}, story: []}`.
 
-- [ ] **Step 2: Verificare che falliscano**
+- [ ] **Step 2: Verify that they fail**
 
 Run: `node server/test-gacha-data.js`
-Expected: `ERRORI` (funzioni assenti).
+Expected: `ERRORI` (missing functions).
 
-- [ ] **Step 3: Implementazione**
+- [ ] **Step 3: Implementation**
 
-Sostituire in `server/gacha-data.js` la parte delle probabilita' e del caricamento; intestazione aggiornata (spec 9.2/9.3, catalogo scritto da `recon/tools/make_banner_catalog.py`).
+Replace in `server/gacha-data.js` the odds and loading part; updated header (spec 9.2/9.3, catalog written by `recon/tools/make_banner_catalog.py`).
 
 ```js
 const CATALOG_ID = 9001;
-// Probabilita' RICOSTRUITE (spec 9.2): lo slot r★ sale di una stella con UPGRADE[r] se quella
-// stella ha medaglie nel pool (cioe' era estraibile alla data del banner); i banner «Epic» del 2016
-// mandano 3★/4★ a 5★ con EPIC_UPGRADE. Negli slot a lista la medaglia in vetrina pesa FEATURED_WEIGHT.
+// RECONSTRUCTED odds (spec 9.2): the r★ slot goes up one star with UPGRADE[r] if that
+// star has medals in the pool (i.e. it was drawable at the banner's date); the 2016 «Epic» banners
+// send 3★/4★ to 5★ with EPIC_UPGRADE. In list slots the showcased medal weighs FEATURED_WEIGHT.
 const UPGRADE = { 3: 0.10, 4: 0.06, 5: 0.04, 6: 0.03 };
 const EPIC_UPGRADE = 0.15;
 const FEATURED_WEIGHT = 2;
-const STD_CLS = new Set(['', 'SR', 'L']); // classi Template:NASets estraibili (non Event/VIP/Bonus)
+const STD_CLS = new Set(['', 'SR', 'L']); // drawable Template:NASets classes (not Event/VIP/Bonus)
 const EMPTY = () => ({ banners: [], subsets: {}, medals: {}, firstRarity: {}, story: [] });
 
 function loadCatalog(file) {
@@ -508,7 +508,7 @@ function expandPool(banner, catalog, at) {
 }
 ```
 
-Estrazione:
+Draw:
 
 ```js
 const poolOf = (pool, rare) => pool[rare] || pool[String(rare)] || [];
@@ -519,7 +519,7 @@ function pickWeighted(items, rng) {
   for (const [id, w] of items) { if ((x -= w) < 0) return id; }
   return items[items.length - 1][0];
 }
-// salita dello slot: { to, p } oppure null
+// slot upgrade: { to, p } or null
 function upgradeOf(banner, pool, rare) {
   if (banner.epicBoost && rare < 5 && poolOf(pool, 5).length) return { to: 5, p: EPIC_UPGRADE };
   if (UPGRADE[rare] && poolOf(pool, rare + 1).length) return { to: rare + 1, p: UPGRADE[rare] };
@@ -563,7 +563,7 @@ function slotOdds(banner, ex) {
 }
 ```
 
-Abilita' (spec 9.2; notice 50106 VIP Daily Skills to Thrill e 72415 SN+ Falling Price; solo le skill che esistono in `skill.json`, il resto della probabilita' va a «nessuna skill»; per 50106 lo slot ha sempre una skill, quindi le probabilita' si riscalano sulle skill presenti; skill al livello 1):
+Skills (spec 9.2; notice 50106 VIP Daily Skills to Thrill and 72415 SN+ Falling Price; only the skills that exist in `skill.json`, the rest of the probability goes to «no skill»; for 50106 the slot always has a skill, so the odds are rescaled over the skills present; skills at level 1):
 
 ```js
 const SKILL_TABLES = {
@@ -587,7 +587,7 @@ function rollSkill(spec, slotIndex, skillRows, rng) {
 - [ ] **Step 4: Test**
 
 Run: `node server/test-gacha-data.js` -> `OK`.
-Con il catalogo vero: `node -e` che carica `server/game_data/gacha_catalog.json`, espande ogni banner non `catalogOnly` alla sua data (`asOf(b, '2021-06-29')`) e stampa quanti hanno uno slot senza medaglie alla sua stella o sotto. Expected: 0 (oppure elencarli nel registro: li scarta il server, Task 8).
+With the real catalog: a `node -e` that loads `server/game_data/gacha_catalog.json`, expands every non-`catalogOnly` banner at its date (`asOf(b, '2021-06-29')`) and prints how many have a slot without medals at its star or below. Expected: 0 (or list them in the log: the server discards them, Task 8).
 
 - [ ] **Step 5: Commit**
 
@@ -597,64 +597,64 @@ git -c safe.directory=* commit -F D:/Progetto_Restauro_KH_UX/tmp/msg_sp2_t5.txt
 git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 ```
 
-(I test di `gacha.js` e `server.js` si rompono fino ai Task 6-8: e' atteso; il server non va avviato fra il Task 5 e il Task 8.)
+(The tests of `gacha.js` and `server.js` break until Tasks 6-8: this is expected; the server must not be started between Task 5 and Task 8.)
 
 ---
 
-### Task 6: `server/gacha.js` (lista provvisoria, prezzi, valute, limiti, pity) e `server/make-banners.js`
+### Task 6: `server/gacha.js` (provisional list, prices, currencies, limits, pity) and `server/make-banners.js`
 
-Modello consigliato: Opus.
+Recommended model: Opus.
 
 **Files:**
-- Modify: `server/gacha.js` (logica; le pagine al Task 7)
+- Modify: `server/gacha.js` (logic; the pages in Task 7)
 - Rewrite: `server/make-banners.js`
 - Modify: `server/test-gacha.js`, `server/test-make-banners.js`
 
 **Interfaces:**
 - Consumes: `gacha-data` (Task 5).
-- Produces (Task 7-8):
+- Produces (Tasks 7-8):
   - `SHOP_MAX` 8; `drawable(b, sizes) -> bool` (`!b.catalogOnly && sizes.has(b.lotCount)`)
-  - `shopBanners(banners, {storyQuest, storyDay, sizes, show}) -> banner[]` (lista provvisoria)
-  - `priceFor(banner, player) -> number` (mai 0)
+  - `shopBanners(banners, {storyQuest, storyDay, sizes, show}) -> banner[]` (provisional list)
+  - `priceFor(banner, player) -> number` (never 0)
   - `balance(player, banner) -> number`, `walletName(banner) -> string`
-  - `gachaListData(banners, player, {realMs, webBase, sizes, storyQuest, storyDay, show}) -> {gachaList, petGachaList}`; scrive `player.gacha.listedCurrency`
+  - `gachaListData(banners, player, {realMs, webBase, sizes, storyQuest, storyDay, show}) -> {gachaList, petGachaList}`; writes `player.gacha.listedCurrency`
   - `checkDraw(banner, player, body, {realMs, freeSlots, sizes, storyQuest, show}) -> string|null`
-  - `payDraw(banner, player, realMs, gotFeatured) -> number` (prezzo pagato)
+  - `payDraw(banner, player, realMs, gotFeatured) -> number` (price paid)
   - `drawState(player, banner) -> {draws, sinceFeatured}`
-  - `catalogRow()`, `catalogPlate(webBase)`, `drawResultFields(...)` (invariate)
-  - `ticketsOf(player) -> {draw, holiday, spooky, moogle}` (crea `player.drawTickets`, migra `limitedDrawTicket2` una volta)
+  - `catalogRow()`, `catalogPlate(webBase)`, `drawResultFields(...)` (unchanged)
+  - `ticketsOf(player) -> {draw, holiday, spooky, moogle}` (creates `player.drawTickets`, migrates `limitedDrawTicket2` once)
   - `make-banners.js`: `masterRows(catalog) -> row[]`, `commentOf(banner) -> string`
 
-- [ ] **Step 1: Test che falliscono**
+- [ ] **Step 1: Failing tests**
 
-`server/test-gacha.js` (riscrivere le parti cambiate; `realMs` fissi come nei test attuali). Banner sintetici con i campi del contratto. Casi:
-- `priceFor`: `prices [0, 3000]` -> 1 alla prima, 3000 dopo una estrazione (`player.gacha.count[id] = 1`); `prices [3000, 2500, 2200, 1900]` -> 3000, 2500, 2200, 1900, 1900 per 0..4 estrazioni; `prices [0]` -> sempre 1;
-- `shopBanners` con `storyQuest 525`, `storyDay '2016-12-08'`, `sizes {1,3,10}`: entra un banner `start 2016-12-01 end 2016-12-15 unlockQuest 525`; non entra lo stesso con `unlockQuest 540`; non entra uno con `end 2016-11-30`; entra un `PERMANENT` `2016-04-07 -> 2018-01-31`; non entra un `catalogOnly` ne' uno con `lotCount 5`; `show` (Set di rowId) aggiunge un banner qualunque purche' `drawable`; al massimo `SHOP_MAX`, ordine per `start` decrescente; due banner payType 8 `draw` e `spooky`: entra solo il primo in ordine;
-- valute: `ticketsOf({limitedDrawTicket2: 7})` -> `{draw: 7, holiday: 0, spooky: 0, moogle: 0}` e `limitedDrawTicket2` cancellato; `balance` di un banner `spooky` legge `drawTickets.spooky`;
-- `gachaListData` con un banner `spooky` elencato: `player.gacha.listedCurrency === 'spooky'`; piastra con `price` = `priceFor` e `userLimitedCount`;
-- limiti: `dayLimit 3` -> tre estrazioni nello stesso giorno, la quarta rifiutata; `vipFree` -> dopo una estrazione su un banner VIP gratuito, un secondo banner VIP gratuito dello stesso giorno e' rifiutato (`'estrazione gratuita VIP gia\' usata oggi'`) e `userLimitedCount` 0 per entrambi; il giorno dopo di nuovo 1;
-- `checkDraw`: rifiuta `catalogOnly` (`'banner solo nel catalogo'`), `unlockQuest > storyQuest` (`'banner bloccato'`), payType 4/5/6/9, fondi < `priceFor`, box pieno;
-- `payDraw`: scala `priceFor` dal portafoglio giusto, incrementa `player.gacha.count[id]`, azzera `sinceFeatured[id]` se `gotFeatured`, altrimenti +1; restituisce il prezzo;
-- `make-banners`: `masterRows(catalog)` ha 1 + N righe, prima la piastra 9001; ogni riga ha `price >= 1`, `payType` in `[1, 4, 5, 6, 7, 8]` (payType 9 -> 1), `benefitId 0`; `commentOf` di `rarityMix [[6,1],[5,9]]`, `lotCount 10`, `pity 10` -> `'10 Medals: 1x 6★+, 9x 5★+ - featured Medal guaranteed within 10 draws'`; nessun `%` sciolto.
+`server/test-gacha.js` (rewrite the changed parts; fixed `realMs` as in the current tests). Synthetic banners with the contract fields. Cases:
+- `priceFor`: `prices [0, 3000]` -> 1 on the first, 3000 after one draw (`player.gacha.count[id] = 1`); `prices [3000, 2500, 2200, 1900]` -> 3000, 2500, 2200, 1900, 1900 for 0..4 draws; `prices [0]` -> always 1;
+- `shopBanners` with `storyQuest 525`, `storyDay '2016-12-08'`, `sizes {1,3,10}`: a banner `start 2016-12-01 end 2016-12-15 unlockQuest 525` goes in; the same one with `unlockQuest 540` does not; one with `end 2016-11-30` does not; a `PERMANENT` `2016-04-07 -> 2018-01-31` goes in; a `catalogOnly` one does not, nor one with `lotCount 5`; `show` (Set of rowIds) adds any banner as long as it is `drawable`; at most `SHOP_MAX`, ordered by descending `start`; two payType 8 banners `draw` and `spooky`: only the first in order goes in;
+- currencies: `ticketsOf({limitedDrawTicket2: 7})` -> `{draw: 7, holiday: 0, spooky: 0, moogle: 0}` and `limitedDrawTicket2` deleted; `balance` of a `spooky` banner reads `drawTickets.spooky`;
+- `gachaListData` with a `spooky` banner listed: `player.gacha.listedCurrency === 'spooky'`; tile with `price` = `priceFor` and `userLimitedCount`;
+- limits: `dayLimit 3` -> three draws on the same day, the fourth refused; `vipFree` -> after a draw on a free VIP banner, a second free VIP banner on the same day is refused (`'estrazione gratuita VIP gia\' usata oggi'`) and `userLimitedCount` 0 for both; the next day 1 again;
+- `checkDraw`: refuses `catalogOnly` (`'banner solo nel catalogo'`), `unlockQuest > storyQuest` (`'banner bloccato'`), payType 4/5/6/9, funds < `priceFor`, full box;
+- `payDraw`: deducts `priceFor` from the right wallet, increments `player.gacha.count[id]`, resets `sinceFeatured[id]` if `gotFeatured`, otherwise +1; returns the price;
+- `make-banners`: `masterRows(catalog)` has 1 + N rows, the 9001 tile first; every row has `price >= 1`, `payType` in `[1, 4, 5, 6, 7, 8]` (payType 9 -> 1), `benefitId 0`; `commentOf` of `rarityMix [[6,1],[5,9]]`, `lotCount 10`, `pity 10` -> `'10 Medals: 1x 6★+, 9x 5★+ - featured Medal guaranteed within 10 draws'`; no loose `%`.
 
-- [ ] **Step 2: Verificare che falliscano**
+- [ ] **Step 2: Verify that they fail**
 
-Run: `node server/test-gacha.js` e `node server/test-make-banners.js` -> `ERRORI`.
+Run: `node server/test-gacha.js` and `node server/test-make-banners.js` -> `ERRORI`.
 
-- [ ] **Step 3: Implementazione di `gacha.js`**
+- [ ] **Step 3: Implementation of `gacha.js`**
 
-Intestazione aggiornata (spec 9.4-9.7; lista provvisoria fino al sotto-progetto 3). Codice:
+Updated header (spec 9.4-9.7; provisional list until sub-project 3). Code:
 
 ```js
 const SHOP_MAX = 8;
 const WALLET = { 1: 'freeStone', 7: 'limitedDrawTicket1' }; // payType 8: player.drawTickets[currency]
 const TICKET_CURRENCIES = ['draw', 'holiday', 'spooky', 'moogle'];
-const VIP_FREE = 'vipFree'; // chiave del limite condiviso delle Free Deal VIP (spec 9.5)
+const VIP_FREE = 'vipFree'; // key of the shared limit of the Free Deal VIP (spec 9.5)
 
 function ticketsOf(player) {
   if (!player.drawTickets) {
     player.drawTickets = Object.fromEntries(TICKET_CURRENCIES.map((c) => [c, 0]));
-    player.drawTickets.draw = player.limitedDrawTicket2 || 0; // salvataggi del sotto-progetto 1
+    player.drawTickets.draw = player.limitedDrawTicket2 || 0; // saves from sub-project 1
     delete player.limitedDrawTicket2;
   }
   return player.drawTickets;
@@ -692,9 +692,9 @@ function shopBanners(banners, { storyQuest, storyDay, sizes, show }) {
 }
 ```
 
-Per i `PERMANENT` `activeOn` usa le loro date originali (es. DAILY DEAL! 2016-04-07 -> 2018-01-31), quindi restano nella lista mentre il punto nella storia cade nella loro epoca (spec 4.5).
+For the `PERMANENT` ones `activeOn` uses their original dates (e.g. DAILY DEAL! 2016-04-07 -> 2018-01-31), so they stay in the list while the point in the story falls within their era (spec 4.5).
 
-Limiti giornalieri (sostituiscono `dayLeft`): `player.gacha = {day, used: {id: n, vipFree: n}, count: {id: n}, sinceFeatured: {id: n}, listedCurrency}`; al cambio di giorno (`clock.dayIndex(realMs)`) si azzera solo `used`.
+Daily limits (they replace `dayLeft`): `player.gacha = {day, used: {id: n, vipFree: n}, count: {id: n}, sinceFeatured: {id: n}, listedCurrency}`; when the day changes (`clock.dayIndex(realMs)`) only `used` is reset.
 
 ```js
 function usedToday(player, key, realMs) {
@@ -708,17 +708,17 @@ function dayLeft(player, b, realMs) {
 }
 ```
 
-`plate(b, webBase, userLimitedCount, price)`: come ora con `price` dal parametro e `isDayLimited: b.dayLimit || b.vipFree ? 1 : 0`. `gachaListData`: `ticketsOf(player)`, lista = `[catalogPlate, ...shopBanners(...).map((b) => plate(b, webBase, dayLeft(player, b, realMs), priceFor(b, player)))]`, `gstate(player).listedCurrency` = currency del primo banner payType 8 elencato (o `'draw'`).
+`plate(b, webBase, userLimitedCount, price)`: as now with `price` from the parameter and `isDayLimited: b.dayLimit || b.vipFree ? 1 : 0`. `gachaListData`: `ticketsOf(player)`, list = `[catalogPlate, ...shopBanners(...).map((b) => plate(b, webBase, dayLeft(player, b, realMs), priceFor(b, player)))]`, `gstate(player).listedCurrency` = currency of the first payType 8 banner listed (or `'draw'`).
 
-`checkDraw(banner, player, body, {realMs, freeSlots, sizes, storyQuest, show})`, nell'ordine: sconosciuto; `catalogOnly` -> `'banner solo nel catalogo'`; payType non in `[1, 7, 8]` -> `payType N non estraibile`; `unlockQuest > storyQuest` e non in `show` -> `'banner bloccato'`; dimensione senza animazione; limite (`vipFree`: `'estrazione gratuita VIP gia\' usata oggi'`; `dayLimit`: `'limite giornaliero raggiunto'`); `balance < priceFor`; box.
+`checkDraw(banner, player, body, {realMs, freeSlots, sizes, storyQuest, show})`, in order: unknown; `catalogOnly` -> `'banner solo nel catalogo'`; payType not in `[1, 7, 8]` -> `payType N non estraibile`; `unlockQuest > storyQuest` and not in `show` -> `'banner bloccato'`; size without animation; limit (`vipFree`: `'estrazione gratuita VIP gia\' usata oggi'`; `dayLimit`: `'limite giornaliero raggiunto'`); `balance < priceFor`; box.
 
-`payDraw(banner, player, realMs, gotFeatured)`: `const price = priceFor(banner, player); spend(...)`; poi `count[id]++`, `sinceFeatured[id] = gotFeatured ? 0 : (sinceFeatured[id] || 0) + 1`; per `vipFree`/`dayLimit` aggiorna `used` (con azzeramento al cambio di giorno, come oggi); restituisce `price`.
+`payDraw(banner, player, realMs, gotFeatured)`: `const price = priceFor(banner, player); spend(...)`; then `count[id]++`, `sinceFeatured[id] = gotFeatured ? 0 : (sinceFeatured[id] || 0) + 1`; for `vipFree`/`dayLimit` updates `used` (with the reset when the day changes, as today); returns `price`.
 
 `drawState(player, b) = { draws: drawCount(player, b), sinceFeatured: gstate(player).sinceFeatured?.[b.drawMedalTypeId] || 0 }`.
 
-- [ ] **Step 4: Implementazione di `make-banners.js`**
+- [ ] **Step 4: Implementation of `make-banners.js`**
 
-Riscrivere: intestazione (fonte `server/game_data/gacha_catalog.json` scritto da `recon/tools/make_banner_catalog.py`; uscita `server/master_data/drawMedalType.json`; poi alzare `KHUX_REVISION`).
+Rewrite: header (source `server/game_data/gacha_catalog.json` written by `recon/tools/make_banner_catalog.py`; output `server/master_data/drawMedalType.json`; then raise `KHUX_REVISION`).
 
 ```js
 function commentOf(b) {
@@ -736,11 +736,11 @@ function masterRows(catalog) {
 }
 ```
 
-`main()`: carica il catalogo con `gd.loadCatalog`, esce con errore se `banners` e' vuoto («lanciare prima recon/tools/make_banner_catalog.py»), scrive il master, stampa il numero di righe e «poi alzare KHUX_REVISION (drawMedalType)». Niente piu' TSV, wiki, pool o immagini qui. `module.exports = { commentOf, masterRows }`.
+`main()`: loads the catalog with `gd.loadCatalog`, exits with an error if `banners` is empty («lanciare prima recon/tools/make_banner_catalog.py»), writes the master, prints the number of rows and «poi alzare KHUX_REVISION (drawMedalType)». No more TSV, wiki, pools or images here. `module.exports = { commentOf, masterRows }`.
 
 - [ ] **Step 5: Test**
 
-Run: `node server/test-gacha.js` e `node server/test-make-banners.js` -> `OK`. Poi `node server/make-banners.js` -> 809 righe.
+Run: `node server/test-gacha.js` and `node server/test-make-banners.js` -> `OK`. Then `node server/make-banners.js` -> 809 rows.
 
 - [ ] **Step 6: Commit**
 
@@ -752,33 +752,33 @@ git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 
 ---
 
-### Task 7: pagine WebView (catalogo di 808 banner, dettagli, Draw Odds)
+### Task 7: WebView pages (catalog of 808 banners, details, Draw Odds)
 
-Modello consigliato: Sonnet.
+Recommended model: Sonnet.
 
 **Files:**
-- Modify: `server/gacha.js` (pagine)
+- Modify: `server/gacha.js` (pages)
 - Modify: `server/test-gacha.js`
 
 **Interfaces:**
 - Consumes: `gacha-data.slotOdds`, `expandPool` (Task 5); `priceFor`, `drawable`, `shopBanners` (Task 6).
-- Produces (Task 8): `RESTORED_QUEST` (525), `catalogPage(banners, ctx) -> html`, `detailPage(banner, ex, medalNames, ctx) -> html`, `oddsPage(entries) -> html` con `entries = [{banner, ex}]`, `stateOf(banner, ctx) -> {key, text}`.
+- Produces (Task 8): `RESTORED_QUEST` (525), `catalogPage(banners, ctx) -> html`, `detailPage(banner, ex, medalNames, ctx) -> html`, `oddsPage(entries) -> html` with `entries = [{banner, ex}]`, `stateOf(banner, ctx) -> {key, text}`.
 
-- [ ] **Step 1: Test che falliscono**
+- [ ] **Step 1: Failing tests**
 
 In `test-gacha.js`:
-- `stateOf` con `ctx = {storyQuest: 300, storyDay: '2016-05-12', sizes, show: new Set(), shown: Set di drawMedalTypeId della lista}`: banner nella lista -> `{key: 'now', text: 'In the Shop now'}`; `unlockQuest 450` -> `{key: 'locked', text: 'Unlocks after Story Quest 450'}`; `unlockQuest 600` -> `{key: 'locked', text: 'Unlocks after Story Quest 600 — coming with a future update'}` (oltre `RESTORED_QUEST` = 525, costante esportata da `gacha.js`, spec 4.4); `catalogOnly 'PVP_TICKETS'` -> `Requires PvP tickets — coming with a future update`; `DRAW_POINTS` -> `Draw Points — coming with a future update`; `VIP_TWIN` -> `VIP variant, not reproduced`; `INCOMPLETE` -> `Original details missing — not available`; dimensione senza animazione -> `This draw size is not available yet`; sbloccato ma fuori periodo -> `Not in the Shop now`;
-- `catalogPage` con 3 banner: contiene 3 `loading="lazy"`, i nomi con escape HTML (`<b>` nel nome diventa `&lt;b&gt;`), lo stato di ciascuno e il link `/web/gacha/detail/<id>`;
-- `detailPage`: contiene «Draw rates», la parola `reconstructed` accanto alle probabilita' degli slot, `original` accanto alla composizione («Medal rarities of each draw: original») e, se `guarantee.pity`, la frase `Featured Medal guaranteed within N draws (original)`; per `skill` la tabella delle abilita' con `(original rates, notice)`; per `evolve` i livelli con le percentuali (10% al livello piu' alto);
-- `oddsPage([{banner, ex}])`: una sezione per banner con le righe di `slotOdds`.
+- `stateOf` with `ctx = {storyQuest: 300, storyDay: '2016-05-12', sizes, show: new Set(), shown: Set of drawMedalTypeIds of the list}`: banner in the list -> `{key: 'now', text: 'In the Shop now'}`; `unlockQuest 450` -> `{key: 'locked', text: 'Unlocks after Story Quest 450'}`; `unlockQuest 600` -> `{key: 'locked', text: 'Unlocks after Story Quest 600 — coming with a future update'}` (beyond `RESTORED_QUEST` = 525, constant exported by `gacha.js`, spec 4.4); `catalogOnly 'PVP_TICKETS'` -> `Requires PvP tickets — coming with a future update`; `DRAW_POINTS` -> `Draw Points — coming with a future update`; `VIP_TWIN` -> `VIP variant, not reproduced`; `INCOMPLETE` -> `Original details missing — not available`; size without animation -> `This draw size is not available yet`; unlocked but out of period -> `Not in the Shop now`;
+- `catalogPage` with 3 banners: contains 3 `loading="lazy"`, the names with HTML escaping (`<b>` in the name becomes `&lt;b&gt;`), the state of each and the link `/web/gacha/detail/<id>`;
+- `detailPage`: contains «Draw rates», the word `reconstructed` next to the slot odds, `original` next to the composition («Medal rarities of each draw: original») and, if `guarantee.pity`, the phrase `Featured Medal guaranteed within N draws (original)`; for `skill` the skills table with `(original rates, notice)`; for `evolve` the levels with the percentages (10% at the highest level);
+- `oddsPage([{banner, ex}])`: one section per banner with the `slotOdds` rows.
 
-- [ ] **Step 2: Verificare che falliscano**
+- [ ] **Step 2: Verify that they fail**
 
 Run: `node server/test-gacha.js` -> `ERRORI`.
 
-- [ ] **Step 3: Implementazione**
+- [ ] **Step 3: Implementation**
 
-Tenere `page()`, `esc()`; `priceText(b, price)` riceve il prezzo; `PAY` aggiunge `spooky: 'Spooky Cookies'`, `moogle: 'Moogle Points'`, `holiday: 'Holiday Draw Tickets'`, `draw: 'Draw Tickets'` per payType 8 (via `b.currency`). Catalogo: un blocco per banner in ordine di `start`, con `<img loading="lazy" width="640" height="140">`, nome, date originali (con «(end date reconstructed)» se `endSource` non e' `original`), prezzo, stato da `stateOf`; in cima una riga «808 original banners. Banners unlock with the Story, as in the original game.» (numero calcolato). Dettagli: immagine, prezzo, date, stato, «Draw rates» con la nota «Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.», tabella `slotOdds` (gli slot a lista: «one of the listed Medals, featured Medals twice as likely»), garanzie, abilita' (`SKILL_TABLES` con le sole skill presenti), elenco delle medaglie per rarita' come oggi (da `ex.pool`, o i livelli per `evolve`). Draw Odds: come oggi con `entries`.
+Keep `page()`, `esc()`; `priceText(b, price)` receives the price; `PAY` adds `spooky: 'Spooky Cookies'`, `moogle: 'Moogle Points'`, `holiday: 'Holiday Draw Tickets'`, `draw: 'Draw Tickets'` for payType 8 (via `b.currency`). Catalog: one block per banner in `start` order, with `<img loading="lazy" width="640" height="140">`, name, original dates (with «(end date reconstructed)» if `endSource` is not `original`), price, state from `stateOf`; at the top a line «808 original banners. Banners unlock with the Story, as in the original game.» (computed number). Details: image, price, dates, state, «Draw rates» with the note «Medal rarities of each draw: original. Chances of one more star: reconstructed for this restoration.», `slotOdds` table (the list slots: «one of the listed Medals, featured Medals twice as likely»), guarantees, skills (`SKILL_TABLES` with only the skills present), list of medals per rarity as today (from `ex.pool`, or the levels for `evolve`). Draw Odds: as today with `entries`.
 
 - [ ] **Step 4: Test**
 
@@ -794,58 +794,58 @@ git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 
 ---
 
-### Task 8: collegamento in `server/server.js`, Notices
+### Task 8: wiring in `server/server.js`, Notices
 
-Modello consigliato: Opus.
+Recommended model: Opus.
 
 **Files:**
-- Modify: `server/server.js` (blocco Shop > Draw, righe ~1108-1210; `userPointData` ~1262-1266; `grantItem` tipo 41 ~1496; caricamento del salvataggio)
+- Modify: `server/server.js` (Shop > Draw block, lines ~1108-1210; `userPointData` ~1262-1266; `grantItem` type 41 ~1496; save loading)
 - Modify: `server/routes-info-album.js`
-- Modify: `server/test-gacha-server.js`, `server/test-notices.js` se controlla i testi
+- Modify: `server/test-gacha-server.js`, `server/test-notices.js` if it checks the texts
 
 **Interfaces:**
-- Consumes: Task 5-7.
-- Produces: rotte invariate (`/gacha/list`, `/gacha/draw`, `/web/gacha/*`); `KHUX_GACHA_SHOW` (rowId separati da virgola) al posto di `KHUX_GACHA_TEST`; export di test `gachaCatalog`, `reloadGachaBanners`, `sanitizeBanners`.
+- Consumes: Tasks 5-7.
+- Produces: unchanged routes (`/gacha/list`, `/gacha/draw`, `/web/gacha/*`); `KHUX_GACHA_SHOW` (comma-separated rowIds) instead of `KHUX_GACHA_TEST`; test exports `gachaCatalog`, `reloadGachaBanners`, `sanitizeBanners`.
 
-- [ ] **Step 1: Test che falliscono**
+- [ ] **Step 1: Failing tests**
 
-In `server/test-gacha-server.js` (stesso impianto: `KHUX_SAVE` temporaneo, catalogo sintetico scritto in un file temporaneo passato con `KHUX_GACHA_BANNERS`), sostituire il catalogo del sotto-progetto 1 con uno nel formato nuovo (sotto-set, medaglie con id veri di `medal.json` di rarita' 3-5, un banner `PERMANENT`, un banner VIP gratuito, un banner `evolve` con le righe `Dual Meow Wow [SAB LV 7-9]` di `medal.json`, un banner `catalogOnly`). Casi:
-- `/gacha/list` con la storia del salvataggio di prova: piastra 9001 + i banner attesi da `shopBanners`; prezzo dinamico;
-- `/gacha/draw` sul banner `PERMANENT`: medaglie solo del pool espanso alla data della storia del giocatore (giocatore alla quest 200: niente medaglie con data > `2016-04-07` nel risultato);
-- `/gacha/draw` sul banner `evolve` (con `KHUX_GACHA_SHOW` che lo contiene e 1 biglietto Platinum): ogni id di `userMedalIds` compare in `userMedals` della risposta (cella impilata: l'id della cella, cioe' la prima copia), e due estrazioni di fila restituiscono lo stesso id di cella;
-- banner `catalogOnly`: rifiuto `{ret}` senza addebito;
-- salvataggio con `limitedDrawTicket2: 4` e nessun `drawTickets`: dopo il primo `/gacha/list`, `userPoint.limitedDrawTicket2` vale 4 e il salvataggio ha `drawTickets.draw === 4`;
+In `server/test-gacha-server.js` (same setup: temporary `KHUX_SAVE`, synthetic catalog written to a temporary file passed with `KHUX_GACHA_BANNERS`), replace the sub-project 1 catalog with one in the new format (sub-sets, medals with real `medal.json` ids of rarity 3-5, a `PERMANENT` banner, a free VIP banner, an `evolve` banner with the `Dual Meow Wow [SAB LV 7-9]` rows of `medal.json`, a `catalogOnly` banner). Cases:
+- `/gacha/list` with the story of the test save: tile 9001 + the banners expected by `shopBanners`; dynamic price;
+- `/gacha/draw` on the `PERMANENT` banner: medals only from the pool expanded at the date of the player's story (player at quest 200: no medals with date > `2016-04-07` in the result);
+- `/gacha/draw` on the `evolve` banner (with `KHUX_GACHA_SHOW` containing it and 1 Platinum ticket): every id in `userMedalIds` appears in `userMedals` of the response (stacked cell: the id of the cell, i.e. the first copy), and two draws in a row return the same cell id;
+- `catalogOnly` banner: `{ret}` refusal without charge;
+- save with `limitedDrawTicket2: 4` and no `drawTickets`: after the first `/gacha/list`, `userPoint.limitedDrawTicket2` is 4 and the save has `drawTickets.draw === 4`;
 - `grantItem(41, 0, 3)` -> `drawTickets.draw` +3;
-- bonus: banner con `bonus [[5, 48, 2]]`: dopo l'estrazione `player.presents` ha una voce `resourceType 5`, `resourceId 48`, `number 2`;
-- SKILL: banner con `skill {table: '50106', slots: 'first'}`: la risposta contiene in `userSkills` un oggetto con `userMedalId` della prima medaglia e `level 1`, e `player.medalSkills[userMedalId]` esiste;
-- catalogo assente: lista con la sola piastra 9001, estrazione rifiutata.
+- bonus: banner with `bonus [[5, 48, 2]]`: after the draw `player.presents` has an entry `resourceType 5`, `resourceId 48`, `number 2`;
+- SKILL: banner with `skill {table: '50106', slots: 'first'}`: the response contains in `userSkills` an object with the `userMedalId` of the first medal and `level 1`, and `player.medalSkills[userMedalId]` exists;
+- catalog missing: list with only tile 9001, draw refused.
 
-- [ ] **Step 2: Verificare che falliscano**
+- [ ] **Step 2: Verify that they fail**
 
 Run: `node server/test-gacha-server.js` -> `ERRORI`.
 
-- [ ] **Step 3: Implementazione**
+- [ ] **Step 3: Implementation**
 
-Nel blocco Shop > Draw:
-- `GACHA_FILE` default `game_data/gacha_catalog.json`; `GACHA_SHOW = new Set((process.env.KHUX_GACHA_SHOW || '').split(',').filter(Boolean))`; togliere `GACHA_TEST`.
-- `gachaCatalog()` memorizza `gachaData.loadCatalog(GACHA_FILE)` con i banner passati da `sanitizeBanners`; `reloadGachaBanners()` azzera.
-- `sanitizeBanners(catalog)`: per ogni banner non `catalogOnly` e non `evolve`, espande il pool alla data piu' larga (`asOf(b, '2021-06-29')`) e lo scarta (`console.log` come oggi) se uno slot non ha medaglie alla sua stella o sotto. Le medaglie impilabili non entrano gia' nel catalogo (`validPack != 1`, Task 3), tranne `evolve`.
+In the Shop > Draw block:
+- `GACHA_FILE` default `game_data/gacha_catalog.json`; `GACHA_SHOW = new Set((process.env.KHUX_GACHA_SHOW || '').split(',').filter(Boolean))`; remove `GACHA_TEST`.
+- `gachaCatalog()` memoises `gachaData.loadCatalog(GACHA_FILE)` with the banners passed through `sanitizeBanners`; `reloadGachaBanners()` resets it.
+- `sanitizeBanners(catalog)`: for every banner that is neither `catalogOnly` nor `evolve`, expands the pool at the widest date (`asOf(b, '2021-06-29')`) and discards it (`console.log` as today) if a slot has no medals at its star or below. Stackable medals are already kept out of the catalog (`validPack != 1`, Task 3), except `evolve`.
 - `storyCtx()` = `{ storyQuest: stageNumber(lastStoryStageId()), storyDay: gachaData.storyDay(cat, storyQuest) }`.
-- `expandFor(b)` = `gachaData.expandPool(b, cat, gachaData.asOf(b, storyCtx().storyDay))`, con cache per `drawMedalTypeId + asOf` (Map, svuotata da `reloadGachaBanners`).
-- `respondGachaList`: `gacha.gachaListData(cat.banners, player, { realMs, webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW, ...storyCtx() })`; `savePlayer()` se `ticketsOf` ha migrato o `listedCurrency` e' cambiato.
-- `respondGachaDraw`: `checkDraw(..., { ...storyCtx(), show: GACHA_SHOW, ... })`; `const ex = expandFor(banner)`; `rollDraw(banner, ex, Math.random, gacha.drawState(player, banner))`; dopo `grantItem(3, medalId, 1)` l'id da restituire e' quello della cella: `const cell = stackedMedalList().find((c) => c.copies.includes(newId)); userMedalIds.push(cell ? cell.userMedalId : newId)` ([fn]: il client cerca l'id in userMedals; per le impilabili la cella ha l'id della prima copia, `stackedMedalList`); `firstGetUserMedalIds` come oggi ma con l'id della cella. Abilita': per ogni slot `i`, `const sk = gachaData.rollSkill(banner.skill, i, skillRowsById(), Math.random)`; se c'e' e la medaglia non e' impilabile: `player.nextUserSkillId = (player.nextUserSkillId || 0) + 1; (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() }` (stesso formato dell'Overwrite, ~riga 2491); `inventoryBlocks` manda gia' `userSkills` delle medaglie toccate (verificarlo nel test). `gacha.payDraw(banner, player, realMs, featured)`; per ogni voce di `banner.bonus`: `addPresent(type, id, n, 'Bonus: ' + banner.name)` (il Present Box lo mostra; spec 9.2); log col prezzo restituito.
-- `respondGachaWeb`: catalogo con `stateOf` (ctx con `shown` = id della lista attuale), dettagli con `expandFor(banner)` per qualunque banner del catalogo (anche bloccato o solo catalogo: la pagina mostra cosa conterrebbe), odds.
+- `expandFor(b)` = `gachaData.expandPool(b, cat, gachaData.asOf(b, storyCtx().storyDay))`, with a cache per `drawMedalTypeId + asOf` (Map, emptied by `reloadGachaBanners`).
+- `respondGachaList`: `gacha.gachaListData(cat.banners, player, { realMs, webBase: WEB_BASE, sizes: GACHA_SIZES, show: GACHA_SHOW, ...storyCtx() })`; `savePlayer()` if `ticketsOf` migrated or `listedCurrency` changed.
+- `respondGachaDraw`: `checkDraw(..., { ...storyCtx(), show: GACHA_SHOW, ... })`; `const ex = expandFor(banner)`; `rollDraw(banner, ex, Math.random, gacha.drawState(player, banner))`; after `grantItem(3, medalId, 1)` the id to return is the one of the cell: `const cell = stackedMedalList().find((c) => c.copies.includes(newId)); userMedalIds.push(cell ? cell.userMedalId : newId)` ([fn]: the client looks for the id in userMedals; for stackable ones the cell has the id of the first copy, `stackedMedalList`); `firstGetUserMedalIds` as today but with the cell id. Skills: for each slot `i`, `const sk = gachaData.rollSkill(banner.skill, i, skillRowsById(), Math.random)`; if there is one and the medal is not stackable: `player.nextUserSkillId = (player.nextUserSkillId || 0) + 1; (player.medalSkills ||= {})[newId] = { userSkillId: player.nextUserSkillId, skillId: sk, level: 1, exp: 0, getDatetime: realNow() }` (same format as Overwrite, ~line 2491); `inventoryBlocks` already sends the `userSkills` of the touched medals (verify it in the test). `gacha.payDraw(banner, player, realMs, featured)`; for each entry of `banner.bonus`: `addPresent(type, id, n, 'Bonus: ' + banner.name)` (the Present Box shows it; spec 9.2); log with the returned price.
+- `respondGachaWeb`: catalog with `stateOf` (ctx with `shown` = ids of the current list), details with `expandFor(banner)` for any banner of the catalog (even locked or catalog-only: the page shows what it would contain), odds.
 - `userPointData`: `limitedDrawTicket2: gacha.ticketsOf(player)[player.gacha?.listedCurrency || 'draw'] || 0`.
-- `grantItem` tipo 41: `gacha.ticketsOf(player).draw += num` (commento: le valute stagionali arrivano con le loro Limited, sotto-progetto 3).
+- `grantItem` type 41: `gacha.ticketsOf(player).draw += num` (comment: the seasonal currencies come with their Limited events, sub-project 3).
 
-Notices (`routes-info-album.js`), testi in inglese:
-- `DIFFERENCES_BODY`: sostituire la riga delle probabilita' con «Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner's Details say so.» e aggiungere «Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.» e «Free draws cost 1 Jewel. VIP Free Deals are open to everyone, with one free VIP draw per day in total.» e «Seasonal draw currencies (Spooky Cookies, Moogle Points, Holiday Draw Tickets) are kept separately; the Shop shows one of them at a time.»
-- notizia «Shop»: aggiungere «Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story; banners unlock with the Story, as in the original game.»
-Aggiornare `test-notices.js` se controlla il numero di righe.
+Notices (`routes-info-album.js`), texts in English:
+- `DIFFERENCES_BODY`: replace the odds line with «Shop draw rates are reconstructed where the original game did not publish them (Medal rarities, guarantees and Skill rates are original): Draw Odds and each banner's Details say so.» and add «Bonus items of a draw (Magic Mirror, Gems...) arrive in your Presents.» and «Free draws cost 1 Jewel. VIP Free Deals are open to everyone, with one free VIP draw per day in total.» and «Seasonal draw currencies (Spooky Cookies, Moogle Points, Holiday Draw Tickets) are kept separately; the Shop shows one of them at a time.»
+- «Shop» notice: add «Every original banner is in the Banner Catalog. Until the next update the Shop lists the banners that were running at your point in the Story; banners unlock with the Story, as in the original game.»
+Update `test-notices.js` if it checks the number of lines.
 
 - [ ] **Step 4: Test**
 
-Run: `node server/test-gacha-server.js`, `node server/test-gacha.js`, `node server/test-gacha-data.js`, `node server/test-make-banners.js`, `node server/test-notices.js`, `node server/test-beginner.js`, `node server/test-medal-guilt.js "$PWD/server"` -> tutti `OK`.
+Run: `node server/test-gacha-server.js`, `node server/test-gacha.js`, `node server/test-gacha-data.js`, `node server/test-make-banners.js`, `node server/test-notices.js`, `node server/test-beginner.js`, `node server/test-medal-guilt.js "$PWD/server"` -> all `OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -857,38 +857,38 @@ git -c safe.directory=* pull --rebase && git -c safe.directory=* push
 
 ---
 
-### Task 9: revisione 119, prove al banco e documentazione
+### Task 9: revision 119, bench tests and documentation
 
-Modello consigliato: Opus (banco).
+Recommended model: Opus (bench).
 
 **Files:**
-- Modify: `tools/ldplayer/session/run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1` (default 118 -> 119; `-GachaTest` -> `[string]$GachaShow` che imposta `$env:KHUX_GACHA_SHOW`)
+- Modify: `tools/ldplayer/session/run-server.ps1`, `relogin.ps1`, `cycle.ps1`, `update-resources.ps1` (default 118 -> 119; `-GachaTest` -> `[string]$GachaShow` which sets `$env:KHUX_GACHA_SHOW`)
 - Modify: `docs/notes/shop.md`, `docs/ISSUES.md`, `HANDOFF.md`, `docs/notes/server.md`
 
-- [ ] **Step 1: Generazione**
+- [ ] **Step 1: Generation**
 
-Copia del salvataggio in `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-sp2` (se non gia' fatta al Task 1). Poi:
-`python recon/tools/make_banner_catalog.py`, `python recon/tools/make_banner_images.py --mode <decisione>`, `node server/make-banners.js`.
+Copy of the save to `D:\Progetto_Restauro_KH_UX\tmp\save-backup-before-sp2` (if not already done in Task 1). Then:
+`python recon/tools/make_banner_catalog.py`, `python recon/tools/make_banner_images.py --mode <decision>`, `node server/make-banners.js`.
 
-- [ ] **Step 2: Script e revisione 119**
+- [ ] **Step 2: Scripts and revision 119**
 
-Default 118 -> 119 nei quattro script; `-GachaShow` passato fino a `run-server.ps1`. `.\tools\ldplayer\session\update-resources.ps1 -Revision 119` (nessuna risorsa nuova: solo master). Expected: `GET /master/drawMedalType` nel log, home raggiunta.
+Default 118 -> 119 in the four scripts; `-GachaShow` passed through to `run-server.ps1`. `.\tools\ldplayer\session\update-resources.ps1 -Revision 119` (no new resources: master only). Expected: `GET /master/drawMedalType` in the log, home reached.
 
-- [ ] **Step 3: Prove al banco (in serie, `AppAlive` prima di ogni tocco, SKIP nei dialoghi, screenshot `Shot sp2_<nome>`)**
+- [ ] **Step 3: Bench tests (serially, `AppAlive` before every tap, SKIP in dialogues, screenshots `Shot sp2_<name>`)**
 
-1. Shop > Draw con la storia attuale: piastra Catalog + i banner attivi alla data del punto nella storia (annotare quali e confrontarli con `shopBanners` calcolato a mano); immagini corrette.
-2. Details della Catalog: elenco di 808 banner che scorre senza blocchi, stati («In the Shop now», «Unlocks after Story Quest N — coming with a future update», «VIP variant, not reproduced»); aprire tre dettagli (uno bloccato del 2019, uno SKILL, un Platinum).
-3. Estrazione x3 o x10 da un banner della lista; medaglie del periodo giusto (confronto con il log `[gacha]`); jewel scalati come il prezzo della piastra.
-4. Banco con `relogin.ps1 -Tag s7 -GachaShow B0306` (7★ Medal Deal, id >= 300000) e jewel sufficienti: animazione e risultato corretti con medaglie 7★ (spec 9.3, prova obbligatoria). Se crasha: fermare tutto, `tools\ldplayer\armtrace\tombstone.ps1`, annotare e aprire un ISSUE; il Task resta aperto finche' non e' chiaro.
-5. Platinum Ticket Draw: `-GachaShow B0456`, 1 biglietto Platinum nel salvataggio (a server fermo); estrazione x5: Dual Meow Wow LV7-9 nell'elenco, impilati in una cella; seconda estrazione con un altro biglietto: la cella cresce, nessun crash.
-6. Prezzo calante: `-GachaShow` con un banner FALLING del catalogo che abbia `lotCount` 10 (sceglierlo da `gacha_catalog.json`); dopo una estrazione la piastra mostra lo scalino successivo.
-7. Free Deal VIP: `-GachaShow` con due Free Deal VIP; la prima estrazione costa 1 Jewel, poi entrambe risultano esaurite fino al giorno dopo.
-8. Dieci aperture dello Shop: nessun crash. Notices: righe nuove.
-Tornare al server normale (senza `-GachaShow`) e ripristinare biglietti e jewel usati per le prove dal backup se servono.
+1. Shop > Draw with the current story: Catalog tile + the banners active at the date of the point in the story (note which ones and compare them with `shopBanners` computed by hand); correct images.
+2. Details of the Catalog: list of 808 banners that scrolls without freezing, states («In the Shop now», «Unlocks after Story Quest N — coming with a future update», «VIP variant, not reproduced»); open three details (a locked one from 2019, a SKILL one, a Platinum one).
+3. x3 or x10 draw from a banner of the list; medals of the right period (compare with the `[gacha]` log); jewels deducted matching the tile's price.
+4. Bench with `relogin.ps1 -Tag s7 -GachaShow B0306` (7★ Medal Deal, id >= 300000) and sufficient jewels: correct animation and result with 7★ medals (spec 9.3, mandatory test). If it crashes: stop everything, `tools\ldplayer\armtrace\tombstone.ps1`, note it and open an ISSUE; the Task stays open until it is clear.
+5. Platinum Ticket Draw: `-GachaShow B0456`, 1 Platinum ticket in the save (with the server stopped); x5 draw: Dual Meow Wow LV7-9 in the list, stacked in one cell; second draw with another ticket: the cell grows, no crash.
+6. Decreasing price: `-GachaShow` with a FALLING banner of the catalog that has `lotCount` 10 (pick it from `gacha_catalog.json`); after one draw the tile shows the next step.
+7. Free Deal VIP: `-GachaShow` with two Free Deal VIP; the first draw costs 1 Jewel, then both show as exhausted until the next day.
+8. Ten Shop openings: no crash. Notices: new lines.
+Go back to the normal server (without `-GachaShow`) and restore the tickets and jewels used for the tests from the backup if needed.
 
-- [ ] **Step 4: Documentazione**
+- [ ] **Step 4: Documentation**
 
-`docs/notes/shop.md`: sezione «Sotto-progetto 2» (catalogo generato e suo formato, comandi nell'ordine, lista provvisoria, regole di prezzo/valute/limiti/pity/abilita', esiti delle prove con i nomi degli screenshot, decisione palette/full). `docs/ISSUES.md`: ISSUE aperti per quanto emerso (es. righe ancora `INCOMPLETE`, banner scartati da `sanitizeBanners`), «ultimo» aggiornato. `HANDOFF.md`: Shop sotto-progetto 2 fatto, BASE 119, comandi di generazione. `docs/notes/server.md`: BASE 119, `KHUX_GACHA_SHOW`.
+`docs/notes/shop.md`: «Sub-project 2» section (generated catalog and its format, commands in order, provisional list, price/currency/limit/pity/skill rules, test outcomes with the screenshot names, palette/full decision). `docs/ISSUES.md`: open ISSUEs for whatever came up (e.g. rows still `INCOMPLETE`, banners discarded by `sanitizeBanners`), «last» marker updated. `HANDOFF.md`: Shop sub-project 2 done, BASE 119, generation commands. `docs/notes/server.md`: BASE 119, `KHUX_GACHA_SHOW`.
 
 - [ ] **Step 5: Commit**
 
