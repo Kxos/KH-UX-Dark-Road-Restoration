@@ -99,6 +99,9 @@ recon/tools/bgi_keyhunt.py
 recon/tools/pack_keyhunt.py
 recon/tools/spriters/
 tools/segdl.ps1
+tools/patch-apk.sh
+recon/tools/remote_zip.py
+recon/tools/remote_zip_ls.py
 tools/bin/
 server/game_data/
 

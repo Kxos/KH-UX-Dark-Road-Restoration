@@ -103,7 +103,6 @@ recon/dl/ ext/ web/     Proprietary material — NOT versioned
 | `vtables.py` | Vtables and virtual methods of a C++ class, via RTTI and relocations |
 | `codeindex.py` | Function boundaries from `.eh_frame`; constants addressed by ADRP/ADD |
 | `master_fields.py` | The phase C pipeline: from `master::` classes to their fields |
-| `remote_zip_ls.py` | Index of a remote ZIP via HTTP range — inspects multi-GB archives without downloading them |
 | `strings.py` | String extractor for binaries |
 | `demangle.py` | Recovers and classifies Itanium C++ symbols |
 | `scope_methods.py` | Lists class members matching a pattern |

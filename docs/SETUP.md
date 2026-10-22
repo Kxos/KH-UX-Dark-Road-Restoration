@@ -499,7 +499,6 @@ All overridable by an environment variable, but the defaults point to the author
 | File:line | Value |
 |---|---|
 | `recon/ghidra/decomp.ps1:8`, `recon/ghidra/run-ww.bat:26` | `JAVA_HOME = D:\Programmi\Android\Android Studio\jbr` |
-| `tools/patch-apk.sh:4` | example IP `192.168.1.198` (argument); the patched APK is refused by LIAPP anyway |
 
 ### Not in files, but machine state
 

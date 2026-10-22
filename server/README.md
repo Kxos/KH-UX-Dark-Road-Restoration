@@ -90,23 +90,17 @@ router changes.
 Generates a CA and a certificate valid for `*.sqex-bridge.jp`, `*.kingdomhearts.com` and
 the given IP.
 
-### 2. APK patch
+### 2. APK
 
-```bash
-./tools/patch-apk.sh "recon/dl/<apk>" 192.168.1.198
-```
+Use the original APK as it is: a repackaged APK is refused by the game's protector
+([protector.md](../docs/notes/protector.md)). Since Android 7 apps ignore user-installed CAs, so the
+CA must be a **system** CA (on the LDPlayer bench `tools/ldplayer/phaseb-guest.sh` installs it).
 
-Since Android 7, apps ignore user-installed CAs. The patch adds a
-`network_security_config.xml` that declares them trusted — no code changes.
+### 3. On the device
 
-Two jars are needed in `tools/bin/`: `apktool.jar` and `uber-apk-signer.jar`.
-
-### 3. On the phone
-
-1. Uninstall the original app: the signature is different, it will not install over it
-2. Install the repackaged APK
-3. Install `server/certs/ca.crt` as a **user CA certificate**
-4. Make `psg.sqex-bridge.jp` resolve to `192.168.1.198` — local DNS, or a
+1. Install the original APK
+2. Install `server/certs/ca.crt` as a **system CA certificate**
+3. Make `psg.sqex-bridge.jp` resolve to `192.168.1.198` — local DNS, or a
    resolver that accepts overrides
 
 ### 4. Start the server and open the game

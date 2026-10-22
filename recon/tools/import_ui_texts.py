@@ -8,7 +8,7 @@ Copia in <uscita>/text/ui/ tutti i testi ui dell'IPA 4.4.0 assenti dalle risorse
 <testi serviti> = cartella con i text/ui/*.txt serviti estratti (res_get.py): quelli in
 giapponese (es. 106180101 «取りはずし», Unequip) si prendono anch'essi dall'IPA e il
 pacchetto generato li sostituisce (resource_merge.py --last-wins).
-misc.mp4 si estrae dall'IPA con remote_zip.py (21 MB). Usa bgad_extract.py.
+misc.mp4 si estrae dall'IPA (21 MB). Usa bgad_extract.py.
 """
 import os
 import re
